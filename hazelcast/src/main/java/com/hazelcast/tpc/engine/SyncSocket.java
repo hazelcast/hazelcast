@@ -3,7 +3,7 @@ package com.hazelcast.tpc.engine;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.tpc.engine.frame.Frame;
+import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 
 import java.io.Closeable;
 import java.io.UncheckedIOException;
@@ -30,16 +30,16 @@ public abstract class SyncSocket implements Closeable {
     protected volatile SocketAddress remoteAddress;
     protected volatile SocketAddress localAddress;
 
-    protected final SwCounter framesWritten = newSwCounter();
+    protected final SwCounter ioBuffersWritten = newSwCounter();
 
-    protected final SwCounter framesRead = newSwCounter();
+    protected final SwCounter ioBuffersRead = newSwCounter();
 
     protected final SwCounter bytesRead = newSwCounter();
 
     protected final SwCounter bytesWritten = newSwCounter();
 
-    public final long framesWritten() {
-        return framesWritten.get();
+    public final long ioBuffersWritten() {
+        return ioBuffersWritten.get();
     }
 
     public final long bytesRead() {
@@ -50,8 +50,8 @@ public abstract class SyncSocket implements Closeable {
         return bytesWritten.get();
     }
 
-    public final long framesRead() {
-        return framesRead.get();
+    public final long ioBuffersRead() {
+        return ioBuffersRead.get();
     }
 
     /**
@@ -101,16 +101,22 @@ public abstract class SyncSocket implements Closeable {
     public abstract int sendBufferSize();
 
     /**
-     * Reads a single Frame from this SyncSocket and will block if there is no frame.
+     * TODO: Method needs to be redesigned; An IOBuffer should be passed as argument
+     * and it should complete as soon as bytes are available.
+     *
+     * Reads a single IOBuffer from this SyncSocket and will block if there is no frame.
      *
      * This method is not thread-safe.
      *
      * @return the read Frame.
      * @throws java.io.UncheckedIOException if a problem happened while reading the frame.
      */
-    public abstract Frame read();
+    public abstract IOBuffer read();
 
     /**
+     * TODO: Method needs to be redesigned; An IOBuffer should be passed as argument
+     * and it should complete as soon as bytes are available.
+     *
      * Tries to read a single Frame from this SyncSocket.
      *
      * This method is not thread-safe.
@@ -118,7 +124,7 @@ public abstract class SyncSocket implements Closeable {
      * @return the read frame or null if not enough data was available to read a full frame.
      * @throws java.io.UncheckedIOException if a problem happened while reading the frame.
      */
-    public abstract Frame tryRead();
+    public abstract IOBuffer tryRead();
 
     /**
      * Writes any scheduled frames are flushed to the socket. THis call blocks until any
@@ -129,7 +135,7 @@ public abstract class SyncSocket implements Closeable {
     public abstract void flush();
 
     /**
-     * Writes a frame to the SyncSocket. The frame isn't actually written; it is just
+     * Writes an IOBuffer to the SyncSocket. The IOBuffer isn't immediately written; it is just
      * buffered.
      *
      * This call can be used to buffer a series of request and then call
@@ -137,30 +143,30 @@ public abstract class SyncSocket implements Closeable {
      *
      * This method is not thread-safe.
      *
-     * There is no guarantee that frame is actually going to be received by the caller if
-     * the SyncSocket has accepted the frame. E.g. when the connection closes.
+     * There is no guarantee that IOBuffer is actually going to be received by the caller if
+     * the SyncSocket has accepted the IOBuffer. E.g. when the connection closes.
      *
-     * @param frame the frame to write.
-     * @return true if the frame was accepted, false if there was an overload.
+     * @param buf the IOBuffer to write.
+     * @return true if the IOBuffer was accepted, false otherwise.
      */
-    public abstract boolean write(Frame frame);
+    public abstract boolean write(IOBuffer buf);
 
     /**
-     * Writes a frame and writes it to the socket.
+     * Writes a buf and writes it to the socket.
      *
-     * This is the same as calling {@link #write(Frame)} followed by a {@link #flush()}.
+     * This is the same as calling {@link #write(IOBuffer)} followed by a {@link #flush()}.
      *
-     * There is no guarantee that frame is actually going to be received by the caller if
-     * the SyncSocket has accepted the frame. E.g. when the connection closes.
+     * There is no guarantee that buf is actually going to be received by the caller if
+     * the SyncSocket has accepted the buf. E.g. when the connection closes.
      *
      * This method is not thread-safe.
      *
      * If there was no space, a {@link #flush()} is still triggered.
      *
-     * @param frame the frame to write.
-     * @return true if the frame was accepted, false if there was an overload.
+     * @param buf the buf to write.
+     * @return true if the buf was accepted, false if there was an overload.
      */
-    public abstract boolean writeAndFlush(Frame frame);
+    public abstract boolean writeAndFlush(IOBuffer buf);
 
     /**
      * Connects synchronously to some address.

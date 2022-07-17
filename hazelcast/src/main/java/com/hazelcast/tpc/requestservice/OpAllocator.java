@@ -18,7 +18,7 @@ package com.hazelcast.tpc.requestservice;
 
 import com.hazelcast.bulktransport.impl.BulkTransportOp;
 import com.hazelcast.bulktransport.impl.InitBulkTransportOp;
-import com.hazelcast.tpc.engine.frame.Frame;
+import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 import com.hazelcast.table.impl.GetOp;
 import com.hazelcast.table.impl.NoOp;
 import com.hazelcast.table.impl.QueryOp;
@@ -28,7 +28,7 @@ import com.hazelcast.table.impl.UpsertOp;
 
 import java.util.function.Supplier;
 
-import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_REQ_OPCODE;
+import static com.hazelcast.tpc.engine.iobuffer.IOBuffer.OFFSET_REQ_OPCODE;
 import static com.hazelcast.tpc.requestservice.OpCodes.BULK_TRANSPORT;
 import static com.hazelcast.tpc.requestservice.OpCodes.GET;
 import static com.hazelcast.tpc.requestservice.OpCodes.INIT_BULK_TRANSPORT;
@@ -60,7 +60,7 @@ public final class OpAllocator {
         pools[BULK_TRANSPORT] = new Pool(BulkTransportOp::new);
     }
 
-    public Op allocate(Frame request) {
+    public Op allocate(IOBuffer request) {
         int opcode = request.getInt(OFFSET_REQ_OPCODE);
         Pool pool = pools[opcode];
         pool.allocated++;

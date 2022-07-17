@@ -1,6 +1,6 @@
 package com.hazelcast.tpc.offheapmap;
 
-import com.hazelcast.tpc.engine.frame.Frame;
+import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -21,18 +21,18 @@ public class BinTest {
         byte[] value = "foo".getBytes();
         System.out.println("value.length:"+value.length);
 
-        Frame frame = new Frame(32)
+        IOBuffer buf = new IOBuffer(32)
                 .writeInt(-1)
                 .writeSizedBytes(value)
                 .constructComplete();
 
-        System.out.println(frame.position());
-        System.out.println(frame.byteBuffer().limit());
+        System.out.println(buf.position());
+        System.out.println(buf.byteBuffer().limit());
 
-        frame.position(INT_SIZE_IN_BYTES);
+        buf.position(INT_SIZE_IN_BYTES);
 
         Bin bin = new Bin();
-        bin.init(frame);
+        bin.init(buf);
         assertEquals(value.length, bin.size());
         assertArrayEquals(value, bin.bytes());
     }

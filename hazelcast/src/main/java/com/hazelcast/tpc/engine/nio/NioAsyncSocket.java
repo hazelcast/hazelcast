@@ -19,7 +19,7 @@ package com.hazelcast.tpc.engine.nio;
 import com.hazelcast.tpc.engine.AsyncSocket;
 import com.hazelcast.tpc.engine.Eventloop;
 import com.hazelcast.tpc.engine.ReadHandler;
-import com.hazelcast.tpc.engine.frame.Frame;
+import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.IOException;
@@ -54,7 +54,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         return new NioAsyncSocket();
     }
 
-    private int unflushedFramesCapacity = 65536;
+    private int unflushedBufsCapacity = 65536;
     private NioAsyncReadHandler readHandler;
     // immutable state
     private final SocketChannel socketChannel;
@@ -79,7 +79,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     //  concurrent
     public final AtomicReference<Thread> flushThread = new AtomicReference<>();
-    public MpmcArrayQueue<Frame> unflushedFrames;
+    public MpmcArrayQueue<IOBuffer> unflushedBufs;
     private CompletableFuture<AsyncSocket> connectFuture;
     private final EventLoopHandler eventLoopHandler = new EventLoopHandler();
 
@@ -120,8 +120,8 @@ public final class NioAsyncSocket extends AsyncSocket {
         this.readHandler.init(this);
     }
 
-    public void setUnflushedFramesCapacity(int unflushedFramesCapacity) {
-        this.unflushedFramesCapacity = checkPositive("unflushedFramesCapacity", unflushedFramesCapacity);
+    public void setUnflushedBufsCapacity(int unflushedBufsCapacity) {
+        this.unflushedBufsCapacity = checkPositive("unflushedBufsCapacity", unflushedBufsCapacity);
     }
 
     public void setRegularSchedule(boolean regularSchedule) {
@@ -231,7 +231,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         NioEventloop eventloop = (NioEventloop) checkNotNull(l);
         this.eventloop = eventloop;
         this.eventloopThread = eventloop.eventloopThread();
-        this.unflushedFrames = new MpmcArrayQueue<>(unflushedFramesCapacity);
+        this.unflushedBufs = new MpmcArrayQueue<>(unflushedBufsCapacity);
 
         if (!eventloop.registerResource(NioAsyncSocket.this)) {
             throw new IllegalStateException("Can't activate NioAsynSocket, eventloop not active");
@@ -271,7 +271,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     private void resetFlushed() {
         flushThread.set(null);
 
-        if (!unflushedFrames.isEmpty()) {
+        if (!unflushedBufs.isEmpty()) {
             if (flushThread.compareAndSet(null, Thread.currentThread())) {
                 eventloop.execute(eventLoopHandler);
             }
@@ -279,24 +279,24 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public boolean write(Frame frame) {
-        return unflushedFrames.add(frame);
+    public boolean write(IOBuffer buf) {
+        return unflushedBufs.add(buf);
     }
 
     @Override
-    public boolean writeAll(Collection<Frame> frames) {
-        return unflushedFrames.addAll(frames);
+    public boolean writeAll(Collection<IOBuffer> bufs) {
+        return unflushedBufs.addAll(bufs);
     }
 
     @Override
-    public boolean writeAndFlush(Frame frame) {
-        boolean result = write(frame);
+    public boolean writeAndFlush(IOBuffer buf) {
+        boolean result = write(buf);
         flush();
         return result;
     }
 
     @Override
-    public boolean unsafeWriteAndFlush(Frame frame) {
+    public boolean unsafeWriteAndFlush(IOBuffer buf) {
         Thread currentFlushThread = flushThread.get();
         Thread currentThread = Thread.currentThread();
 
@@ -306,22 +306,22 @@ public final class NioAsyncSocket extends AsyncSocket {
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
                 eventloop.localRunQueue.add(eventLoopHandler);
-                if (ioVector.add(frame)) {
+                if (ioVector.add(buf)) {
                     result = true;
                 } else {
-                    result = unflushedFrames.add(frame);
+                    result = unflushedBufs.add(buf);
                 }
             } else {
-                result = unflushedFrames.add(frame);
+                result = unflushedBufs.add(buf);
             }
         } else if (currentFlushThread == eventloopThread) {
-            if (ioVector.add(frame)) {
+            if (ioVector.add(buf)) {
                 result = true;
             } else {
-                result = unflushedFrames.add(frame);
+                result = unflushedBufs.add(buf);
             }
         } else {
-            result = unflushedFrames.add(frame);
+            result = unflushedBufs.add(buf);
             flush();
         }
         return result;
@@ -409,7 +409,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
             handleWriteCnt.inc();
 
-            ioVector.fill(unflushedFrames);
+            ioVector.fill(unflushedBufs);
             long written = ioVector.write(socketChannel);
 
             bytesWritten.inc(written);

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.tpc.engine.frame;
+package com.hazelcast.tpc.engine.iobuffer;
 
 import com.hazelcast.tpc.engine.AsyncSocket;
 
@@ -42,7 +42,7 @@ import static com.hazelcast.internal.util.QuickMath.nextPowerOfTwo;
 
 // response
 // call id: long 12
-public class Frame {
+public class IOBuffer {
 
     public static final int FLAG_OP = 1 << 1;
     public static final int FLAG_OP_RESPONSE = 1 << 2;
@@ -52,7 +52,7 @@ public class Frame {
     public static final int RESPONSE_TYPE_EXCEPTION = 1;
 
     public CompletableFuture future;
-    public Frame next;
+    public IOBuffer next;
     public AsyncSocket socket;
 
     public static final int OFFSET_SIZE = 0;
@@ -68,29 +68,29 @@ public class Frame {
 
     public boolean trackRelease;
     private ByteBuffer buff;
-    public FrameAllocator allocator;
+    public IOBufferAllocator allocator;
     public boolean concurrent = false;
 
     // make field?
     protected AtomicInteger refCount = new AtomicInteger();
 
-    public Frame() {
+    public IOBuffer() {
     }
 
-    public Frame(int size) {
+    public IOBuffer(int size) {
         this(size, false);
     }
 
-    public Frame(int size, boolean direct) {
+    public IOBuffer(int size, boolean direct) {
         //todo: allocate power of 2.
         this.buff = direct ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
     }
 
-    public Frame(ByteBuffer buffer) {
+    public IOBuffer(ByteBuffer buffer) {
         this.buff = buffer;
     }
 
-    public Frame newFuture() {
+    public IOBuffer newFuture() {
         this.future = new CompletableFuture();
         return this;
     }
@@ -99,7 +99,7 @@ public class Frame {
         buff.clear();
     }
 
-    public Frame writeRequestHeader(int partitionId, int opcode) {
+    public IOBuffer writeRequestHeader(int partitionId, int opcode) {
         ensureRemaining(OFFSET_REQ_PAYLOAD);
         buff.putInt(-1); //size
         buff.putInt(FLAG_OP);
@@ -109,11 +109,11 @@ public class Frame {
         return this;
     }
 
-    public Frame writeResponseHeader(int partitionId, long callId) {
+    public IOBuffer writeResponseHeader(int partitionId, long callId) {
         return writeResponseHeader(partitionId, callId, 0);
     }
 
-    public Frame writeResponseHeader(int partitionId, long callId, int flags) {
+    public IOBuffer writeResponseHeader(int partitionId, long callId, int flags) {
         ensureRemaining(OFFSET_RES_PAYLOAD);
         buff.putInt(-1);  //size
         buff.putInt(FLAG_OP_RESPONSE | flags);
@@ -127,7 +127,7 @@ public class Frame {
         return (flags & flag) != 0;
     }
 
-    public Frame addFlags(int addedFlags) {
+    public IOBuffer addFlags(int addedFlags) {
         int oldFlags = buff.getInt(OFFSET_FLAGS);
         buff.putInt(OFFSET_FLAGS, oldFlags | addedFlags);
         return this;
@@ -153,13 +153,13 @@ public class Frame {
         buff.putInt(0, size);
     }
 
-    public Frame writeByte(byte value) {
+    public IOBuffer writeByte(byte value) {
         ensureRemaining(BYTE_SIZE_IN_BYTES);
         buff.put(value);
         return this;
     }
 
-    public Frame writeChar(char value) {
+    public IOBuffer writeChar(char value) {
         ensureRemaining(CHAR_SIZE_IN_BYTES);
         buff.putChar(value);
         return this;
@@ -169,20 +169,20 @@ public class Frame {
         buff.putInt(pos, value);
     }
 
-    public Frame writeInt(int value) {
+    public IOBuffer writeInt(int value) {
         ensureRemaining(BYTES_INT);
         buff.putInt(value);
         return this;
     }
 
-    public Frame writeSizedBytes(byte[] src) {
+    public IOBuffer writeSizedBytes(byte[] src) {
         ensureRemaining(src.length + BYTES_INT);
         buff.putInt(src.length);
         buff.put(src);
         return this;
     }
 
-    public Frame writeBytes(byte[] src) {
+    public IOBuffer writeBytes(byte[] src) {
         ensureRemaining(src.length);
         buff.put(src);
         return this;
@@ -193,7 +193,7 @@ public class Frame {
     }
 
     // very inefficient
-    public Frame writeString(String s) {
+    public IOBuffer writeString(String s) {
         int length = s.length();
 
         ensureRemaining(BYTES_INT + length * BYTES_CHAR);
@@ -222,7 +222,7 @@ public class Frame {
         return sb.toString();
     }
 
-    public Frame writeLong(long value) {
+    public IOBuffer writeLong(long value) {
         ensureRemaining(BYTES_LONG);
         buff.putLong(value);
         return this;
@@ -257,12 +257,12 @@ public class Frame {
         }
     }
 
-    public Frame reconstructComplete() {
+    public IOBuffer reconstructComplete() {
         buff.flip();
         return this;
     }
 
-    public Frame constructComplete() {
+    public IOBuffer constructComplete() {
         buff.putInt(OFFSET_SIZE, buff.position());
         buff.flip();
         return this;
@@ -276,7 +276,7 @@ public class Frame {
         return buff.get(index);
     }
 
-    public Frame write(ByteBuffer src, int count) {
+    public IOBuffer write(ByteBuffer src, int count) {
         ensureRemaining(count);
 
         if (src.remaining() <= count) {
@@ -290,12 +290,12 @@ public class Frame {
         return this;
     }
 
-    public Frame position(int position) {
+    public IOBuffer position(int position) {
         buff.position(position);
         return this;
     }
 
-    public Frame incPosition(int delta) {
+    public IOBuffer incPosition(int delta) {
         buff.position(buff.position() + delta);
         return this;
     }
@@ -317,7 +317,7 @@ public class Frame {
             for (; ; ) {
                 int current = refCount.get();
                 if (current == 0) {
-                    throw new IllegalStateException("Can't acquire a freed frame");
+                    throw new IllegalStateException("Can't acquire a freed IOBuffer");
                 }
 
                 if (refCount.compareAndSet(current, current + 1)) {

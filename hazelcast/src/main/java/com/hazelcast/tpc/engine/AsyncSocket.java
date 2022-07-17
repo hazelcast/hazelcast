@@ -19,7 +19,7 @@ package com.hazelcast.tpc.engine;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.tpc.engine.frame.Frame;
+import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 
 import java.io.Closeable;
 import java.net.SocketAddress;
@@ -45,20 +45,20 @@ public abstract class AsyncSocket implements Closeable {
     protected volatile SocketAddress remoteAddress;
     protected volatile SocketAddress localAddress;
 
-    protected final SwCounter framesWritten = newSwCounter();
+    protected final SwCounter ioBuffersWritten = newSwCounter();
 
     protected final SwCounter bytesRead = newSwCounter();
 
     protected final SwCounter bytesWritten = newSwCounter();
 
-    protected final SwCounter framesRead = newSwCounter();
+    protected final SwCounter ioBuffersRead = newSwCounter();
 
     protected final SwCounter handleWriteCnt = newSwCounter();
 
     protected final SwCounter readEvents = newSwCounter();
 
-    public final long framesWritten() {
-        return framesWritten.get();
+    public final long ioBuffersWritten() {
+        return ioBuffersWritten.get();
     }
 
     public final long bytesRead() {
@@ -69,8 +69,8 @@ public abstract class AsyncSocket implements Closeable {
         return bytesWritten.get();
     }
 
-    public final long framesRead() {
-        return framesRead.get();
+    public final long ioBuffersRead() {
+        return ioBuffersRead.get();
     }
 
     public final long handleWriteCnt() {
@@ -151,10 +151,10 @@ public abstract class AsyncSocket implements Closeable {
     public abstract void activate(Eventloop eventloop);
 
     /**
-     * Ensures that any scheduled frames are flushed to the socket.
+     * Ensures that any scheduled IOBuffers are flushed to the socket.
      *
      * What happens under the hood is that the AsyncSocket is scheduled in the
-     * {@link Eventloop} where at some point in the future the frames get written
+     * {@link Eventloop} where at some point in the future the IOBuffers get written
      * to the socket.
      *
      * This method is thread-safe.
@@ -162,45 +162,45 @@ public abstract class AsyncSocket implements Closeable {
     public abstract void flush();
 
     /**
-     * Writes a frame to the AsyncSocket without scheduling the AsyncSocket
+     * Writes a IOBuffer to the AsyncSocket without scheduling the AsyncSocket
      * in the eventloop.
      *
-     * This call can be used to buffer a series of frames and then call
+     * This call can be used to buffer a series of IOBuffers and then call
      * {@link #flush()} to trigger the actual writing to the socket.
      *
-     * There is no guarantee that frame is actually going to be received by the caller after
-     * the AsyncSocket has accepted the frame. E.g. when the TCP/IP connection is dropped.
+     * There is no guarantee that IOBuffer is actually going to be received by the caller after
+     * the AsyncSocket has accepted the IOBuffer. E.g. when the TCP/IP connection is dropped.
      *
      * This method is thread-safe.
      *
-     * @param frame the frame to write.
-     * @return true if the frame was accepted, false if there was an overload.
+     * @param buf the IOBuffer to write.
+     * @return true if the IOBuffer was accepted, false otherwise.
      */
-    public abstract boolean write(Frame frame);
+    public abstract boolean write(IOBuffer buf);
 
-    public abstract boolean writeAll(Collection<Frame> frames);
+    public abstract boolean writeAll(Collection<IOBuffer> bufs);
 
     /**
-     * Writes a frame and flushes it.
+     * Writes a IOBuffer and flushes it.
      *
-     * This is the same as calling {@link #write(Frame)} followed by a {@link #flush()}.
+     * This is the same as calling {@link #write(IOBuffer)} followed by a {@link #flush()}.
      *
-     * There is no guarantee that frame is actually going to be received by the caller if
-     * the AsyncSocket has accepted the frame. E.g. when the connection closes.
+     * There is no guarantee that IOBuffer is actually going to be received by the caller if
+     * the AsyncSocket has accepted the IOBuffer. E.g. when the connection closes.
      *
      * This method is thread-safe.
      *
-     * @param frame the frame to write.
-     * @return true if the frame was accepted, false if there was an overload.
+     * @param buf the IOBuffer to write.
+     * @return true if the IOBuffer was accepted, false otherwise.
      */
-    public abstract boolean writeAndFlush(Frame frame);
+    public abstract boolean writeAndFlush(IOBuffer buf);
 
     /**
-     * Writes a frame and ensure it gets written.
+     * Writes a IOBuffer and ensure it gets written.
      *
      * Should only be called from within the Eventloop.
      */
-    public abstract boolean unsafeWriteAndFlush(Frame frame);
+    public abstract boolean unsafeWriteAndFlush(IOBuffer buf);
 
     /**
      * Connects asynchronously to some address.

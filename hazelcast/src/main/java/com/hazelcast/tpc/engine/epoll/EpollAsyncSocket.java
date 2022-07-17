@@ -19,7 +19,7 @@ package com.hazelcast.tpc.engine.epoll;
 import com.hazelcast.tpc.engine.AsyncSocket;
 import com.hazelcast.tpc.engine.Eventloop;
 import com.hazelcast.tpc.engine.ReadHandler;
-import com.hazelcast.tpc.engine.frame.Frame;
+import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 import io.netty.channel.epoll.LinuxSocket;
 import io.netty.channel.epoll.Native;
 import org.jctools.queues.MpmcArrayQueue;
@@ -61,11 +61,11 @@ public final class EpollAsyncSocket extends AsyncSocket {
     // ======================================================
     // private
     private final IOVector ioVector = new IOVector();
-    private int unflushedFramesCapacity = 65536;
+    private int unflushedBufsCapacity = 65536;
 
     //  concurrent
     public final AtomicReference<Thread> flushThread = new AtomicReference<>();
-    public MpmcArrayQueue<Frame> unflushedFrames;
+    public MpmcArrayQueue<IOBuffer> unflushedBufs;
     //public final ConcurrentLinkedQueue<Frame> unflushedFrames = new ConcurrentLinkedQueue<>();
 
     private int flags = Native.EPOLLET;
@@ -209,7 +209,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
         EpollEventloop eventloop = (EpollEventloop) checkNotNull(l);
         this.eventloop = eventloop;
         this.eventloopThread = eventloop.eventloopThread();
-        this.unflushedFrames = new MpmcArrayQueue<>(unflushedFramesCapacity);
+        this.unflushedBufs = new MpmcArrayQueue<>(unflushedBufsCapacity);
 
         if (!eventloop.registerResource(EpollAsyncSocket.this)) {
             throw new IllegalStateException("Can't activate socket, eventloop is not running");
@@ -265,7 +265,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
     public void resetFlushed() {
         flushThread.set(null);
 
-        if (!unflushedFrames.isEmpty()) {
+        if (!unflushedBufs.isEmpty()) {
             if (flushThread.compareAndSet(null, Thread.currentThread())) {
                 eventloop.execute(eventLoopHandler);
             }
@@ -273,24 +273,24 @@ public final class EpollAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public boolean write(Frame frame) {
-        return unflushedFrames.add(frame);
+    public boolean write(IOBuffer buf) {
+        return unflushedBufs.add(buf);
     }
 
     @Override
-    public boolean writeAll(Collection<Frame> frames) {
-        return unflushedFrames.addAll(frames);
+    public boolean writeAll(Collection<IOBuffer> bufs) {
+        return unflushedBufs.addAll(bufs);
     }
 
     @Override
-    public boolean writeAndFlush(Frame frame) {
-        boolean result = write(frame);
+    public boolean writeAndFlush(IOBuffer buf) {
+        boolean result = write(buf);
         flush();
         return result;
     }
 
     @Override
-    public boolean unsafeWriteAndFlush(Frame frame) {
+    public boolean unsafeWriteAndFlush(IOBuffer buf) {
         Thread currentFlushThread = flushThread.get();
         Thread currentThread = Thread.currentThread();
 
@@ -300,23 +300,23 @@ public final class EpollAsyncSocket extends AsyncSocket {
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
                 eventloop.localRunQueue.add(eventLoopHandler);
-                if (ioVector.add(frame)) {
+                if (ioVector.add(buf)) {
                     result = true;
                 } else {
 
-                    result = unflushedFrames.add(frame);
+                    result = unflushedBufs.add(buf);
                 }
             } else {
-                result = unflushedFrames.add(frame);
+                result = unflushedBufs.add(buf);
             }
         } else if (currentFlushThread == eventloopThread) {
-            if (ioVector.add(frame)) {
+            if (ioVector.add(buf)) {
                 result = true;
             } else {
-                result = unflushedFrames.add(frame);
+                result = unflushedBufs.add(buf);
             }
         } else {
-            result = unflushedFrames.add(frame);
+            result = unflushedBufs.add(buf);
             flush();
 
         }
@@ -400,7 +400,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
             }
             handleWriteCnt.inc();
 
-            ioVector.fill(unflushedFrames);
+            ioVector.fill(unflushedBufs);
             long written = ioVector.write(socket);
 
             bytesWritten.inc(written);

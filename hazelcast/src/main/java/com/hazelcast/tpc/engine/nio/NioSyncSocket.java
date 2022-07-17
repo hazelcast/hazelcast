@@ -1,7 +1,7 @@
 package com.hazelcast.tpc.engine.nio;
 
 import com.hazelcast.tpc.engine.SyncSocket;
-import com.hazelcast.tpc.engine.frame.Frame;
+import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -136,7 +136,7 @@ public final class NioSyncSocket extends SyncSocket {
     }
 
     @Override
-    public Frame read() {
+    public IOBuffer read() {
         if (receiveBuffer == null) {
             receiveBuffer = ByteBuffer.allocateDirect(receiveBufferSize());
             receiveBuffer.flip();
@@ -144,9 +144,9 @@ public final class NioSyncSocket extends SyncSocket {
 
         try {
             for (; ; ) {
-                Frame frame = readHandler.decode(receiveBuffer);
-                if (frame != null) {
-                    return frame;
+                IOBuffer buf = readHandler.decode(receiveBuffer);
+                if (buf != null) {
+                    return buf;
                 }
 
                 if (receiveBuffer.hasRemaining()) {
@@ -170,16 +170,16 @@ public final class NioSyncSocket extends SyncSocket {
     }
 
     @Override
-    public Frame tryRead() {
+    public IOBuffer tryRead() {
         if (receiveBuffer == null) {
             receiveBuffer = ByteBuffer.allocateDirect(receiveBufferSize());
             receiveBuffer.flip();
         }
 
         try {
-            Frame frame = readHandler.decode(receiveBuffer);
-            if (frame != null) {
-                return frame;
+            IOBuffer buf = readHandler.decode(receiveBuffer);
+            if (buf != null) {
+                return buf;
             }
 
             if (receiveBuffer.hasRemaining()) {
@@ -215,14 +215,14 @@ public final class NioSyncSocket extends SyncSocket {
     }
 
     @Override
-    public boolean write(Frame frame) {
-        checkNotNull(frame);
-        return ioVector.add(frame);
+    public boolean write(IOBuffer buf) {
+        checkNotNull(buf);
+        return ioVector.add(buf);
     }
 
     @Override
-    public boolean writeAndFlush(Frame frame) {
-        boolean result = write(frame);
+    public boolean writeAndFlush(IOBuffer buf) {
+        boolean result = write(buf);
         flush();
         return result;
     }

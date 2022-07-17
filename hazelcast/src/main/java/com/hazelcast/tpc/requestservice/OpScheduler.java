@@ -20,13 +20,13 @@ import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.tpc.engine.actor.Actor;
 import com.hazelcast.tpc.util.CircularQueue;
 import com.hazelcast.tpc.engine.Eventloop;
-import com.hazelcast.tpc.engine.frame.Frame;
-import com.hazelcast.tpc.engine.frame.FrameAllocator;
+import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
+import com.hazelcast.tpc.engine.iobuffer.IOBufferAllocator;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
-import static com.hazelcast.tpc.engine.frame.Frame.*;
-import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_REQ_PAYLOAD;
-import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_RES_PAYLOAD;
+import static com.hazelcast.tpc.engine.iobuffer.IOBuffer.*;
+import static com.hazelcast.tpc.engine.iobuffer.IOBuffer.OFFSET_REQ_PAYLOAD;
+import static com.hazelcast.tpc.engine.iobuffer.IOBuffer.OFFSET_RES_PAYLOAD;
 import static com.hazelcast.tpc.requestservice.Op.BLOCKED;
 import static com.hazelcast.tpc.requestservice.Op.COMPLETED;
 import static com.hazelcast.tpc.requestservice.Op.EXCEPTION;
@@ -53,8 +53,8 @@ public final class OpScheduler implements Eventloop.Scheduler {
     private final SwCounter exceptions = newSwCounter();
     private final CircularQueue<Op> runQueue;
     private final int batchSize;
-    private final FrameAllocator localResponseFrameAllocator;
-    private final FrameAllocator remoteResponseFrameAllocator;
+    private final IOBufferAllocator localResponseIOBufferAllocator;
+    private final IOBufferAllocator remoteResponseIOBufferAllocator;
     private final OpAllocator opAllocator;
     private Eventloop eventloop;
     private Actor[] partitionActors;
@@ -62,12 +62,12 @@ public final class OpScheduler implements Eventloop.Scheduler {
     public OpScheduler(int capacity,
                        int batchSize,
                        Managers managers,
-                       FrameAllocator localResponseFrameAllocator,
-                       FrameAllocator remoteResponseFrameAllocator) {
+                       IOBufferAllocator localResponseIOBufferAllocator,
+                       IOBufferAllocator remoteResponseIOBufferAllocator) {
         this.runQueue = new CircularQueue<>(capacity);
         this.batchSize = batchSize;
-        this.localResponseFrameAllocator = localResponseFrameAllocator;
-        this.remoteResponseFrameAllocator = remoteResponseFrameAllocator;
+        this.localResponseIOBufferAllocator = localResponseIOBufferAllocator;
+        this.remoteResponseIOBufferAllocator = remoteResponseIOBufferAllocator;
         this.opAllocator = new OpAllocator(this, managers);
     }
 
@@ -81,7 +81,7 @@ public final class OpScheduler implements Eventloop.Scheduler {
     }
 
     @Override
-    public void schedule(Frame request) {
+    public void schedule(IOBuffer request) {
         Op op = opAllocator.allocate(request);
 //        if (op.partitionId >= 0) {
 //            Actor partitionActor = partitionActors[op.partitionId];
@@ -97,8 +97,8 @@ public final class OpScheduler implements Eventloop.Scheduler {
         op.partitionId =request.getInt(OFFSET_PARTITION_ID);
         op.callId = request.getLong(OFFSET_REQ_CALL_ID);
         op.response = request.future != null
-                ? remoteResponseFrameAllocator.allocate(OFFSET_RES_PAYLOAD)
-                : localResponseFrameAllocator.allocate(OFFSET_RES_PAYLOAD);
+                ? remoteResponseIOBufferAllocator.allocate(OFFSET_RES_PAYLOAD)
+                : localResponseIOBufferAllocator.allocate(OFFSET_RES_PAYLOAD);
         op.request = request.position(OFFSET_REQ_PAYLOAD);
         schedule(op);
     }
@@ -109,7 +109,7 @@ public final class OpScheduler implements Eventloop.Scheduler {
         if (runQueue.offer(op)) {
             runSingle();
         } else {
-            Frame response = op.response;
+            IOBuffer response = op.response;
             response.writeResponseHeader(op.partitionId, op.callId, FLAG_OP_RESPONSE_CONTROL)
                     .writeInt(RESPONSE_TYPE_OVERLOAD)
                     .constructComplete();

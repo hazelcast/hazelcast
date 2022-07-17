@@ -31,11 +31,11 @@ import com.hazelcast.tpc.engine.ReadHandler;
 import com.hazelcast.tpc.engine.epoll.EpollAsyncServerSocket;
 import com.hazelcast.tpc.engine.epoll.EpollEventloop;
 import com.hazelcast.tpc.engine.epoll.EpollReadHandler;
-import com.hazelcast.tpc.engine.frame.ParallelFrameAllocator;
-import com.hazelcast.tpc.engine.frame.Frame;
-import com.hazelcast.tpc.engine.frame.FrameAllocator;
-import com.hazelcast.tpc.engine.frame.SerialFrameAllocator;
-import com.hazelcast.tpc.engine.frame.UnpooledFrameAllocator;
+import com.hazelcast.tpc.engine.iobuffer.ParallelIOBufferAllocator;
+import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
+import com.hazelcast.tpc.engine.iobuffer.IOBufferAllocator;
+import com.hazelcast.tpc.engine.iobuffer.SerialIOBufferAllocator;
+import com.hazelcast.tpc.engine.iobuffer.UnpooledIOBufferAllocator;
 import com.hazelcast.tpc.engine.nio.NioAsyncServerSocket;
 import com.hazelcast.tpc.engine.nio.NioAsyncSocket;
 import com.hazelcast.tpc.engine.nio.NioEventloop;
@@ -58,7 +58,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
-import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_REQ_CALL_ID;
+import static com.hazelcast.tpc.engine.iobuffer.IOBuffer.OFFSET_REQ_CALL_ID;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 
@@ -154,14 +154,14 @@ public class RequestService {
         Engine.Configuration configuration = new Engine.Configuration();
         configuration.setThreadFactory(TPCEventloopThread::new);
         configuration.setEventloopConfigUpdater(eventloopConfiguration -> {
-            FrameAllocator remoteResponseFrameAllocator = new ParallelFrameAllocator(128, true);
-            FrameAllocator localResponseFrameAllocator = new SerialFrameAllocator(128, true);
+            IOBufferAllocator remoteResponseIOBufferAllocator = new ParallelIOBufferAllocator(128, true);
+            IOBufferAllocator localResponseIOBufferAllocator = new SerialIOBufferAllocator(128, true);
 
             OpScheduler opScheduler = new OpScheduler(32768,
                     Integer.MAX_VALUE,
                     managers,
-                    localResponseFrameAllocator,
-                    remoteResponseFrameAllocator);
+                    localResponseIOBufferAllocator,
+                    remoteResponseIOBufferAllocator);
 
             eventloopConfiguration.setScheduler(opScheduler);
         });
@@ -215,12 +215,12 @@ public class RequestService {
                 RequestNioReadHandler readHandler = new RequestNioReadHandler();
                 readHandler.opScheduler = (OpScheduler) eventloop.scheduler();
                 readHandler.responseHandler = responseHandler;
-                readHandler.requestFrameAllocator = poolRequests
-                        ? new SerialFrameAllocator(128, true)
-                        : new UnpooledFrameAllocator();
-                readHandler.remoteResponseFrameAllocator = poolRemoteResponses
-                        ? new ParallelFrameAllocator(128, true)
-                        : new UnpooledFrameAllocator();
+                readHandler.requestIOBufferAllocator = poolRequests
+                        ? new SerialIOBufferAllocator(128, true)
+                        : new UnpooledIOBufferAllocator();
+                readHandler.remoteResponseIOBufferAllocator = poolRemoteResponses
+                        ? new ParallelIOBufferAllocator(128, true)
+                        : new UnpooledIOBufferAllocator();
                 return readHandler;
             };
             readHandlerSuppliers.put(eventloop, readHandlerSupplier);
@@ -258,12 +258,12 @@ public class RequestService {
                     RequestIOUringReadHandler readHandler = new RequestIOUringReadHandler();
                     readHandler.opScheduler = (OpScheduler) eventloop.scheduler();
                     readHandler.responseHandler = responseHandler;
-                    readHandler.requestFrameAllocator = poolRequests
-                            ? new SerialFrameAllocator(128, true)
-                            : new UnpooledFrameAllocator();
-                    readHandler.remoteResponseFrameAllocator = poolRemoteResponses
-                            ? new ParallelFrameAllocator(128, true)
-                            : new UnpooledFrameAllocator();
+                    readHandler.requestIOBufferAllocator = poolRequests
+                            ? new SerialIOBufferAllocator(128, true)
+                            : new UnpooledIOBufferAllocator();
+                    readHandler.remoteResponseIOBufferAllocator = poolRemoteResponses
+                            ? new ParallelIOBufferAllocator(128, true)
+                            : new UnpooledIOBufferAllocator();
                     return readHandler;
                 };
                 readHandlerSuppliers.put(eventloop, readHandlerSupplier);
@@ -296,12 +296,12 @@ public class RequestService {
                     RequestEpollReadHandler readHandler = new RequestEpollReadHandler();
                     readHandler.opScheduler = (OpScheduler) eventloop.scheduler();
                     readHandler.responseHandler = responseHandler;
-                    readHandler.requestFrameAllocator = poolRequests
-                            ? new SerialFrameAllocator(128, true)
-                            : new UnpooledFrameAllocator();
-                    readHandler.remoteResponseFrameAllocator = poolRemoteResponses
-                            ? new ParallelFrameAllocator(128, true)
-                            : new UnpooledFrameAllocator();
+                    readHandler.requestIOBufferAllocator = poolRequests
+                            ? new SerialIOBufferAllocator(128, true)
+                            : new UnpooledIOBufferAllocator();
+                    readHandler.remoteResponseIOBufferAllocator = poolRemoteResponses
+                            ? new ParallelIOBufferAllocator(128, true)
+                            : new UnpooledIOBufferAllocator();
                     return readHandler;
                 };
                 readHandlerSuppliers.put(eventloop, readHandlerSupplier);
@@ -357,7 +357,7 @@ public class RequestService {
         logger.info("RequestService terminated");
     }
 
-    public CompletableFuture invoke(Frame request, AsyncSocket socket) {
+    public CompletableFuture invoke(IOBuffer request, AsyncSocket socket) {
         ensureActive();
 
         CompletableFuture future = request.future;

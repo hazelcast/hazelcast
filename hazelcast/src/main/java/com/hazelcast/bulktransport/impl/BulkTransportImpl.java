@@ -3,8 +3,8 @@ package com.hazelcast.bulktransport.impl;
 import com.hazelcast.bulktransport.BulkTransport;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.tpc.engine.AsyncSocket;
-import com.hazelcast.tpc.engine.frame.Frame;
-import com.hazelcast.tpc.engine.frame.FrameAllocator;
+import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
+import com.hazelcast.tpc.engine.iobuffer.IOBufferAllocator;
 import com.hazelcast.tpc.requestservice.RequestService;
 
 import java.io.File;
@@ -23,7 +23,7 @@ public class BulkTransportImpl implements BulkTransport {
     private final int reactor;
     private final int receiveBufferSize;
     private AsyncSocket[] channels;
-    private FrameAllocator frameAllocator;
+    private IOBufferAllocator frameAllocator;
 
     public BulkTransportImpl(RequestService requestService, Address address, int reactor) {
         this.requestService = requestService;
@@ -63,13 +63,13 @@ public class BulkTransportImpl implements BulkTransport {
 
         CompletableFuture[] futures = new CompletableFuture[channels.length];
         for (AsyncSocket channel : channels) {
-            Frame request = frameAllocator.allocate()
+            IOBuffer request = frameAllocator.allocate()
                     .newFuture()
                     .writeRequestHeader(-1, INIT_BULK_TRANSPORT)
                     .constructComplete();
 
             requestService.invoke(request, channel).thenAccept(o -> {
-                Frame request1 = frameAllocator.allocate()
+                IOBuffer request1 = frameAllocator.allocate()
                         .newFuture()
                         .writeRequestHeader(-1, BULK_TRANSPORT)
                         .constructComplete();

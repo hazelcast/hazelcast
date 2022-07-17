@@ -16,27 +16,27 @@
 
 package com.hazelcast.tpc.requestservice;
 
-import com.hazelcast.tpc.engine.frame.Frame;
-import com.hazelcast.tpc.engine.frame.FrameAllocator;
+import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
+import com.hazelcast.tpc.engine.iobuffer.IOBufferAllocator;
 import com.hazelcast.tpc.engine.nio.NioAsyncReadHandler;
 
 import java.nio.ByteBuffer;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.tpc.engine.frame.Frame.FLAG_OP_RESPONSE;
+import static com.hazelcast.tpc.engine.iobuffer.IOBuffer.FLAG_OP_RESPONSE;
 
 public class RequestNioReadHandler extends NioAsyncReadHandler {
 
-    private Frame inboundFrame;
-    public FrameAllocator requestFrameAllocator;
-    public FrameAllocator remoteResponseFrameAllocator;
+    private IOBuffer inboundFrame;
+    public IOBufferAllocator requestIOBufferAllocator;
+    public IOBufferAllocator remoteResponseIOBufferAllocator;
     public OpScheduler opScheduler;
-    public Consumer<Frame> responseHandler;
+    public Consumer<IOBuffer> responseHandler;
 
     @Override
     public void onRead(ByteBuffer buffer) {
-        Frame responseChain = null;
+        IOBuffer responseChain = null;
         for (; ; ) {
             if (inboundFrame == null) {
                 if (buffer.remaining() < INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES) {
@@ -46,9 +46,9 @@ public class RequestNioReadHandler extends NioAsyncReadHandler {
                 int size = buffer.getInt();
                 int flags = buffer.getInt();
                 if ((flags & FLAG_OP_RESPONSE) == 0) {
-                    inboundFrame = requestFrameAllocator.allocate(size);
+                    inboundFrame = requestIOBufferAllocator.allocate(size);
                 } else {
-                    inboundFrame = remoteResponseFrameAllocator.allocate(size);
+                    inboundFrame = remoteResponseIOBufferAllocator.allocate(size);
                 }
                 inboundFrame.byteBuffer().limit(size);
                 inboundFrame.writeInt(size);

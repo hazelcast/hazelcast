@@ -16,7 +16,7 @@
 
 package com.hazelcast.tpc.offheapmap;
 
-import com.hazelcast.tpc.engine.frame.Frame;
+import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 import sun.misc.Unsafe;
 
 import java.nio.ByteBuffer;
@@ -28,7 +28,7 @@ import static sun.misc.Unsafe.ARRAY_BYTE_BASE_OFFSET;
 
 public final class Bin {
 
-    private Frame frame;
+    private IOBuffer buf;
     private ByteBuffer buffer;
     private int dataOffset;
     private int size;
@@ -43,12 +43,12 @@ public final class Bin {
         return bytes;
     }
 
-    public void init(Frame frame) {
-        this.frame = frame;
-        this.buffer = frame.byteBuffer();
-        this.size = frame.readInt();
-        this.dataOffset = frame.position();
-        frame.incPosition(size);
+    public void init(IOBuffer buf) {
+        this.buf = buf;
+        this.buffer = buf.byteBuffer();
+        this.size = buf.readInt();
+        this.dataOffset = buf.position();
+        buf.incPosition(size);
     }
 
     // Todo: very inefficient.
@@ -60,7 +60,7 @@ public final class Bin {
 
         address += BYTES_INT;
 
-        ByteBuffer buffer = frame.byteBuffer();
+        ByteBuffer buffer = buf.byteBuffer();
         for (int k = 0; k < size; k++) {
             if (buffer.get(dataOffset + k) != unsafe.getByte(address + k)) {
                 return false;
@@ -89,7 +89,7 @@ public final class Bin {
         unsafe.putInt(dstAddress, size);
         dstAddress += INT_SIZE_IN_BYTES;
 
-        ByteBuffer buffer = frame.byteBuffer();
+        ByteBuffer buffer = buf.byteBuffer();
         if (buffer.hasArray()) {
             unsafe.copyMemory(buffer.array(), ARRAY_BYTE_BASE_OFFSET + dataOffset, null, dstAddress, size);
         } else {
@@ -107,6 +107,6 @@ public final class Bin {
     }
 
     public void clear() {
-        this.frame = null;
+        this.buf = null;
     }
 }

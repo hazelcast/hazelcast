@@ -19,7 +19,7 @@ package com.hazelcast.tpc.engine.iouring;
 import com.hazelcast.tpc.engine.AsyncSocket;
 import com.hazelcast.tpc.engine.Eventloop;
 import com.hazelcast.tpc.engine.ReadHandler;
-import com.hazelcast.tpc.engine.frame.Frame;
+import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.unix.Buffer;
 import io.netty.channel.unix.IovArray;
@@ -69,8 +69,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     // ======================================================
     // concurrent state
     public AtomicReference<Thread> flushThread = new AtomicReference<>();
-    public final MpmcArrayQueue<Frame> unflushedFrames = new MpmcArrayQueue<>(4096);
-    //public final ConcurrentLinkedQueue<Frame> unflushedFrames = new ConcurrentLinkedQueue<>();
+    public final MpmcArrayQueue<IOBuffer> unflushedBufs = new MpmcArrayQueue<>(4096);
 
     // isolated state.
     public IovArray iovArray;
@@ -248,7 +247,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
 
         flushThread.set(null);
 
-        if (!unflushedFrames.isEmpty()) {
+        if (!unflushedBufs.isEmpty()) {
             if (flushThread.compareAndSet(null, Thread.currentThread())) {
                 eventloop.execute(eventloopHandler);
             }
@@ -256,24 +255,24 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public boolean write(Frame frame) {
-        return unflushedFrames.add(frame);
+    public boolean write(IOBuffer buf) {
+        return unflushedBufs.add(buf);
     }
 
     @Override
-    public boolean writeAll(Collection<Frame> frames) {
-        return unflushedFrames.addAll(frames);
+    public boolean writeAll(Collection<IOBuffer> bufs) {
+        return unflushedBufs.addAll(bufs);
     }
 
     @Override
-    public boolean writeAndFlush(Frame frame) {
-        boolean result = unflushedFrames.add(frame);
+    public boolean writeAndFlush(IOBuffer buf) {
+        boolean result = unflushedBufs.add(buf);
         flush();
         return result;
     }
 
     @Override
-    public boolean unsafeWriteAndFlush(Frame frame) {
+    public boolean unsafeWriteAndFlush(IOBuffer buf) {
         Thread currentFlushThread = flushThread.get();
         Thread currentThread = Thread.currentThread();
 
@@ -283,22 +282,22 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
                 eventloop.localRunQueue.add(eventloopHandler);
-                if (ioVector.add(frame)) {
+                if (ioVector.add(buf)) {
                     result = true;
                 } else {
-                    result = unflushedFrames.add(frame);
+                    result = unflushedBufs.add(buf);
                 }
             } else {
-                result = unflushedFrames.add(frame);
+                result = unflushedBufs.add(buf);
             }
         } else if (currentFlushThread == eventloopThread) {
-            if (ioVector.add(frame)) {
+            if (ioVector.add(buf)) {
                 result = true;
             } else {
-                result = unflushedFrames.add(frame);
+                result = unflushedBufs.add(buf);
             }
         } else {
-            result = unflushedFrames.add(frame);
+            result = unflushedBufs.add(buf);
             flush();
         }
         return result;
@@ -309,7 +308,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         if (closed.compareAndSet(false, true)) {
             System.out.println("Closing  " + this);
 
-            //todo: also think about releasing the resources like frame buffers
+            //todo: also think about releasing the resources like IOBuffers
             // perhaps add a one time close check
 
             if (socket != null) {
@@ -369,10 +368,10 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                 throw new RuntimeException("Channel should be in flushed state");
             }
 
-            ioVector.fill(unflushedFrames);
+            ioVector.fill(unflushedBufs);
 
-            int frameCount = ioVector.size();
-            if (frameCount == 1) {
+            int ioVectorSize = ioVector.size();
+            if (ioVectorSize == 1) {
                 ByteBuffer buffer = ioVector.get(0).byteBuffer();
                 sq.addWrite(socket.intValue(),
                         Buffer.memoryAddress(buffer),

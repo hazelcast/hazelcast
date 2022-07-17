@@ -14,27 +14,27 @@
  * limitations under the License.
  */
 
-package com.hazelcast.tpc.engine.frame;
+package com.hazelcast.tpc.engine.iobuffer;
 
 /**
- * A {@link FrameAllocator} that doesn't do any pooling of requests.
+ * A {@link IOBufferAllocator} that doesn't do any pooling of IOBuffers.
  */
-public final class UnpooledFrameAllocator implements FrameAllocator {
+public final class UnpooledIOBufferAllocator implements IOBufferAllocator {
 
-    public UnpooledFrameAllocator() {
+    public UnpooledIOBufferAllocator() {
     }
 
     @Override
-    public Frame allocate() {
+    public IOBuffer allocate() {
         throw new RuntimeException();
     }
 
     @Override
-    public Frame allocate(int minSize) {
-        return new Frame(minSize);
+    public IOBuffer allocate(int minSize) {
+        return new IOBuffer(minSize);
     }
 
     @Override
-    public void free(Frame frame) {
+    public void free(IOBuffer buf) {
     }
 }

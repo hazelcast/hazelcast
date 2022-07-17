@@ -16,7 +16,7 @@
 
 package com.hazelcast.tpc.engine;
 
-import com.hazelcast.tpc.engine.frame.Frame;
+import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 
 /**
  * A scheduler that doesn't do anything.
@@ -33,6 +33,6 @@ public class NopScheduler implements Eventloop.Scheduler {
     }
 
     @Override
-    public void schedule(Frame task) {
+    public void schedule(IOBuffer task) {
     }
 }

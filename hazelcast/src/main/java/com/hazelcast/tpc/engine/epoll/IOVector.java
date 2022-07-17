@@ -16,7 +16,7 @@
 
 package com.hazelcast.tpc.engine.epoll;
 
-import com.hazelcast.tpc.engine.frame.Frame;
+import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 import io.netty.channel.epoll.LinuxSocket;
 
 import java.io.IOException;
@@ -28,7 +28,7 @@ public final class IOVector {
     private final static int IOV_MAX = 1024;
 
     private final ByteBuffer[] array = new ByteBuffer[IOV_MAX];
-    private final Frame[] frames = new Frame[IOV_MAX];
+    private final IOBuffer[] bufs = new IOBuffer[IOV_MAX];
     private int size = 0;
     private long pending;
 
@@ -36,29 +36,29 @@ public final class IOVector {
         return size == 0;
     }
 
-    public void fill(Queue<Frame> queue) {
+    public void fill(Queue<IOBuffer> queue) {
         int count = IOV_MAX - size;
         for (int k = 0; k < count; k++) {
-            Frame frame = queue.poll();
-            if (frame == null) {
+            IOBuffer buf = queue.poll();
+            if (buf == null) {
                 break;
             }
 
-            ByteBuffer buffer = frame.byteBuffer();
+            ByteBuffer buffer = buf.byteBuffer();
             array[size] = buffer;
-            frames[size] = frame;
+            bufs[size] = buf;
             size++;
             pending += buffer.remaining();
         }
     }
 
-    public boolean add(Frame frame) {
+    public boolean add(IOBuffer buf) {
         if (size == IOV_MAX) {
             return false;
         } else {
-            ByteBuffer buffer = frame.byteBuffer();
+            ByteBuffer buffer = buf.byteBuffer();
             array[size] = buffer;
-            frames[size] = frame;
+            bufs[size] = buf;
             size++;
             pending += buffer.remaining();
             return true;
@@ -81,8 +81,8 @@ public final class IOVector {
         if (written == pending) {
             for (int k = 0; k < size; k++) {
                 array[k] = null;
-                frames[k].release();
-                frames[k] = null;
+                bufs[k].release();
+                bufs[k] = null;
             }
             size = 0;
             pending = 0;
@@ -97,15 +97,15 @@ public final class IOVector {
                     } else {
                         array[toIndex] = array[k];
                         array[k] = null;
-                        frames[toIndex] = frames[k];
-                        frames[k] = null;
+                        bufs[toIndex] = bufs[k];
+                        bufs[k] = null;
                         toIndex++;
                     }
                 } else {
                     size--;
                     array[k] = null;
-                    frames[k].release();
-                    frames[k] = null;
+                    bufs[k].release();
+                    bufs[k] = null;
                 }
             }
             pending -= written;

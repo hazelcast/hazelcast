@@ -23,12 +23,12 @@ import com.hazelcast.tpc.engine.AsyncSocket;
 import com.hazelcast.tpc.engine.Engine;
 import com.hazelcast.tpc.engine.Eventloop;
 import com.hazelcast.tpc.engine.actor.ActorRef;
-import com.hazelcast.tpc.engine.frame.Frame;
+import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
-import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_REQ_CALL_ID;
+import static com.hazelcast.tpc.engine.iobuffer.IOBuffer.OFFSET_REQ_CALL_ID;
 
 /**
  * An {@link ActorRef} that routes messages to the {@link PartitionActor}.
@@ -36,7 +36,7 @@ import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_REQ_CALL_ID;
  * todo:
  * Should also handle redirect messages.
  */
-public final class PartitionActorRef extends ActorRef<Frame> {
+public final class PartitionActorRef extends ActorRef<IOBuffer> {
 
     private final int partitionId;
     private final InternalPartitionService partitionService;
@@ -59,8 +59,8 @@ public final class PartitionActorRef extends ActorRef<Frame> {
         this.eventloop = engine.eventloop(hashToIndex(partitionId, engine.eventloopCount()));
     }
 
-    public CompletableFuture<Frame> submit(Frame request) {
-        CompletableFuture<Frame> future = request.future;
+    public CompletableFuture<IOBuffer> submit(IOBuffer request) {
+        CompletableFuture<IOBuffer> future = request.future;
 
         Address address = partitionService.getPartitionOwner(partitionId);
         if (address.equals(thisAddress)) {
@@ -87,7 +87,7 @@ public final class PartitionActorRef extends ActorRef<Frame> {
     }
 
     @Override
-    public void send(Frame request) {
+    public void send(IOBuffer request) {
         submit(request);
     }
 }

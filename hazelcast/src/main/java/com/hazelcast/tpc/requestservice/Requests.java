@@ -16,7 +16,7 @@
 
 package com.hazelcast.tpc.requestservice;
 
-import com.hazelcast.tpc.engine.frame.Frame;
+import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 import org.jctools.util.PaddedAtomicLong;
 
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,7 +41,7 @@ import static java.lang.System.currentTimeMillis;
  */
 class Requests {
 
-    final ConcurrentMap<Long, Frame> map = new ConcurrentHashMap<>();
+    final ConcurrentMap<Long, IOBuffer> map = new ConcurrentHashMap<>();
     final PaddedAtomicLong started = new PaddedAtomicLong();
     final PaddedAtomicLong completed = new PaddedAtomicLong();
     private final int concurrentRequestLimit;
@@ -101,7 +101,7 @@ class Requests {
     }
 
     void shutdown() {
-        for (Frame request : map.values()) {
+        for (IOBuffer request : map.values()) {
             request.future.completeExceptionally(new RuntimeException("Shutting down"));
         }
     }

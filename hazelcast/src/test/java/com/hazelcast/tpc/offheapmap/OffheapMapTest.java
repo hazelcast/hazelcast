@@ -1,6 +1,6 @@
 package com.hazelcast.tpc.offheapmap;
 
-import com.hazelcast.tpc.engine.frame.Frame;
+import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -45,35 +45,35 @@ public class OffheapMapTest {
         byte[] keyBytes = key.getBytes();
         byte[] valueBytes = value.getBytes();
 
-        Frame frame = new Frame(32)
+        IOBuffer buf = new IOBuffer(32)
                 .writeInt(-1)
                 .writeSizedBytes(keyBytes)
                 .writeSizedBytes(valueBytes)
                 .constructComplete();
 
-        frame.position(INT_SIZE_IN_BYTES);
+        buf.position(INT_SIZE_IN_BYTES);
 
         Bin keyBin = new Bin();
-        keyBin.init(frame);
+        keyBin.init(buf);
 
         Bin valueBin = new Bin();
-        valueBin.init(frame);
+        valueBin.init(buf);
 
         map.set(keyBin, valueBin);
     }
 
     public String get(String key) {
         byte[] keyBytes = key.getBytes();
-        Frame frame = new Frame(32)
+        IOBuffer buf = new IOBuffer(32)
                 .writeInt(-1)
                 .writeSizedBytes(keyBytes)
                 .constructComplete();
 
-        frame.position(INT_SIZE_IN_BYTES);
+        buf.position(INT_SIZE_IN_BYTES);
 
         Bin keyBin = new Bin();
-        keyBin.init(frame);
-        Frame response = new Frame(32);
+        keyBin.init(buf);
+        IOBuffer response = new IOBuffer(32);
         Bout valueBout = new Bout();
         valueBout.init(response);
         map.get(keyBin, valueBout);

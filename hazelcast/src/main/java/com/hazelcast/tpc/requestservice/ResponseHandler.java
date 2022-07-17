@@ -17,19 +17,19 @@
 package com.hazelcast.tpc.requestservice;
 
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
-import com.hazelcast.tpc.engine.frame.Frame;
+import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
-import static com.hazelcast.tpc.engine.frame.Frame.FLAG_OP_RESPONSE_CONTROL;
-import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_RES_CALL_ID;
-import static com.hazelcast.tpc.engine.frame.Frame.OFFSET_RES_PAYLOAD;
-import static com.hazelcast.tpc.engine.frame.Frame.RESPONSE_TYPE_EXCEPTION;
-import static com.hazelcast.tpc.engine.frame.Frame.RESPONSE_TYPE_OVERLOAD;
+import static com.hazelcast.tpc.engine.iobuffer.IOBuffer.FLAG_OP_RESPONSE_CONTROL;
+import static com.hazelcast.tpc.engine.iobuffer.IOBuffer.OFFSET_RES_CALL_ID;
+import static com.hazelcast.tpc.engine.iobuffer.IOBuffer.OFFSET_RES_PAYLOAD;
+import static com.hazelcast.tpc.engine.iobuffer.IOBuffer.RESPONSE_TYPE_EXCEPTION;
+import static com.hazelcast.tpc.engine.iobuffer.IOBuffer.RESPONSE_TYPE_OVERLOAD;
 
-class ResponseHandler implements Consumer<Frame> {
+class ResponseHandler implements Consumer<IOBuffer> {
 
     private final ResponseThread[] threads;
     private final int threadCount;
@@ -61,7 +61,7 @@ class ResponseHandler implements Consumer<Frame> {
     }
 
     @Override
-    public void accept(Frame response) {
+    public void accept(IOBuffer response) {
         try {
             if (response.next != null) {
                 int index = threadCount == 0
@@ -76,8 +76,8 @@ class ResponseHandler implements Consumer<Frame> {
         }
     }
 
-    private void process(Frame response) {
-        int partitionId = response.getInt(Frame.OFFSET_PARTITION_ID);
+    private void process(IOBuffer response) {
+        int partitionId = response.getInt(IOBuffer.OFFSET_PARTITION_ID);
 
         Requests requests;
         if (partitionId >= 0) {
@@ -93,7 +93,7 @@ class ResponseHandler implements Consumer<Frame> {
 
         long callId = response.getLong(OFFSET_RES_CALL_ID);
 
-        Frame request = requests.map.remove(callId);
+        IOBuffer request = requests.map.remove(callId);
         if (request == null) {
             System.out.println("Dropping response " + response + ", invocation with id " + callId
                     + ", partitionId: " + partitionId + " not found");
@@ -128,7 +128,7 @@ class ResponseHandler implements Consumer<Frame> {
 
     private class ResponseThread extends Thread {
 
-        private final MPSCQueue<Frame> queue;
+        private final MPSCQueue<IOBuffer> queue;
         private volatile boolean shuttingdown = false;
 
         private ResponseThread(int index) {
@@ -140,21 +140,21 @@ class ResponseHandler implements Consumer<Frame> {
         public void run() {
             try {
                 while (!shuttingdown) {
-                    Frame frame;
+                    IOBuffer buf;
                     if (spin) {
                         do {
-                            frame = queue.poll();
-                        } while (frame == null);
+                            buf = queue.poll();
+                        } while (buf == null);
                     } else {
-                        frame = queue.take();
+                        buf = queue.take();
                     }
 
                     do {
-                        Frame next = frame.next;
-                        frame.next = null;
-                        process(frame);
-                        frame = next;
-                    } while (frame != null);
+                        IOBuffer next = buf.next;
+                        buf.next = null;
+                        process(buf);
+                        buf = next;
+                    } while (buf != null);
                 }
             } catch (InterruptedException e) {
                 System.out.println("ResponseThread stopping due to interrupt");

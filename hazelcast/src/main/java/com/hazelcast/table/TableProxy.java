@@ -20,10 +20,9 @@ import com.hazelcast.bulktransport.BulkTransport;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.tpc.engine.frame.ParallelFrameAllocator;
-import com.hazelcast.tpc.engine.frame.Frame;
-import com.hazelcast.tpc.engine.frame.FrameAllocator;
-import com.hazelcast.tpc.requestservice.OpCodes;
+import com.hazelcast.tpc.engine.iobuffer.ParallelIOBufferAllocator;
+import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
+import com.hazelcast.tpc.engine.iobuffer.IOBufferAllocator;
 import com.hazelcast.tpc.requestservice.PartitionActorRef;
 import com.hazelcast.tpc.requestservice.RequestService;
 import com.hazelcast.bulktransport.impl.BulkTransportImpl;
@@ -49,7 +48,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
     private final RequestService requestService;
     private final String name;
     private final int partitionCount;
-    private final FrameAllocator frameAllocator;
+    private final IOBufferAllocator frameAllocator;
     private final int requestTimeoutMs;
     private final PartitionActorRef[] partitionActorRefs;
 
@@ -58,7 +57,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
         this.requestService = nodeEngine.getRequestService();
         this.name = name;
         this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        this.frameAllocator = new ParallelFrameAllocator(128, true);
+        this.frameAllocator = new ParallelIOBufferAllocator(128, true);
         this.requestTimeoutMs = requestService.getRequestTimeoutMs();
         this.partitionActorRefs = requestService.partitionActorRefs();
     }
@@ -70,9 +69,9 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
 
     @Override
     public void upsert(V v) {
-        CompletableFuture<Frame> f = asyncUpsert(v);
+        CompletableFuture<IOBuffer> f = asyncUpsert(v);
         try {
-            Frame frame = f.get(23, SECONDS);
+            IOBuffer frame = f.get(23, SECONDS);
             frame.release();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -83,7 +82,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
         Item item = (Item) v;
 
         int partitionId = hashToIndex(Long.hashCode(item.key), partitionCount);
-        Frame request = frameAllocator.allocate(60)
+        IOBuffer request = frameAllocator.allocate(60)
                 .newFuture()
                 .writeRequestHeader(partitionId, TABLE_UPSERT)
                 .writeString(name)
@@ -100,7 +99,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
 
         if (concurrency == 1) {
             try {
-                Frame frame = asyncNoop().get(23, SECONDS);
+                IOBuffer frame = asyncNoop().get(23, SECONDS);
                 frame.release();
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -111,9 +110,9 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
                 futures[k] = asyncNoop();
             }
 
-            for (CompletableFuture<Frame> f : futures) {
+            for (CompletableFuture<IOBuffer> f : futures) {
                 try {
-                    Frame frame = f.get(requestTimeoutMs, MILLISECONDS);
+                    IOBuffer frame = f.get(requestTimeoutMs, MILLISECONDS);
                     frame.release();
                 } catch (Exception e) {
                     throw new RuntimeException(e);
@@ -124,18 +123,18 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
 
     @Override
     public void noop() {
-        CompletableFuture<Frame> f = asyncNoop();
+        CompletableFuture<IOBuffer> f = asyncNoop();
         try {
-            Frame frame = f.get(requestTimeoutMs, MILLISECONDS);
+            IOBuffer frame = f.get(requestTimeoutMs, MILLISECONDS);
             frame.release();
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
 
-    private CompletableFuture<Frame> asyncNoop() {
+    private CompletableFuture<IOBuffer> asyncNoop() {
         int partitionId = ThreadLocalRandom.current().nextInt(partitionCount);
-        Frame request = frameAllocator.allocate(32)
+        IOBuffer request = frameAllocator.allocate(32)
                 .newFuture()
                 .writeRequestHeader(partitionId, NOOP)
                 .constructComplete();
@@ -150,9 +149,9 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
             futures[k] = asyncUpsert(values[k]);
         }
 
-        for (CompletableFuture<Frame> f : futures) {
+        for (CompletableFuture<IOBuffer> f : futures) {
             try {
-                Frame frame = f.get(requestTimeoutMs, MILLISECONDS);
+                IOBuffer frame = f.get(requestTimeoutMs, MILLISECONDS);
                 frame.release();
             } catch (Exception e) {
                 throw new RuntimeException(e);
@@ -169,15 +168,15 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
     public void set(byte[] key, byte[] value) {
         int partitionId = hashToIndex(Arrays.hashCode(key), partitionCount);
 
-        Frame request = frameAllocator.allocate(60)
+        IOBuffer request = frameAllocator.allocate(60)
                 .newFuture()
                 .writeRequestHeader(partitionId, SET)
                 .writeSizedBytes(key)
                 .writeSizedBytes(value)
                 .constructComplete();
-        CompletableFuture<Frame> f = partitionActorRefs[partitionId].submit(request);
+        CompletableFuture<IOBuffer> f = partitionActorRefs[partitionId].submit(request);
         try {
-            Frame frame = f.get(requestTimeoutMs, MILLISECONDS);
+            IOBuffer frame = f.get(requestTimeoutMs, MILLISECONDS);
             frame.release();
         } catch (Exception e) {
             throw new RuntimeException(e);
@@ -188,7 +187,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
     public void bogusQuery() {
         CompletableFuture[] futures = new CompletableFuture[partitionCount];
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
-            Frame request = frameAllocator.allocate(60)
+            IOBuffer request = frameAllocator.allocate(60)
                     .newFuture()
                     .writeRequestHeader(partitionId, QUERY)
                     .constructComplete();
@@ -208,13 +207,13 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
     public byte[] get(byte[] key) {
         int partitionId = hashToIndex(Arrays.hashCode(key), partitionCount);
 
-        Frame request = frameAllocator.allocate(60)
+        IOBuffer request = frameAllocator.allocate(60)
                 .newFuture()
                 .writeRequestHeader(partitionId, GET)
                 .writeSizedBytes(key)
                 .constructComplete();
-        CompletableFuture<Frame> f = partitionActorRefs[partitionId].submit(request);
-        Frame response = null;
+        CompletableFuture<IOBuffer> f = partitionActorRefs[partitionId].submit(request);
+        IOBuffer response = null;
         try {
             response = f.get(requestTimeoutMs, MILLISECONDS);
             int length = response.readInt();

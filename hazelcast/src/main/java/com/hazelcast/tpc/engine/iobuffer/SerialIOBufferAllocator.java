@@ -14,44 +14,44 @@
  * limitations under the License.
  */
 
-package com.hazelcast.tpc.engine.frame;
+package com.hazelcast.tpc.engine.iobuffer;
 
 import java.nio.ByteBuffer;
 
 /**
- * A {@link FrameAllocator} that can only be used serially (so by a single thread).
+ * A {@link IOBufferAllocator} that can only be used serially (so by a single thread).
  */
-public final class SerialFrameAllocator implements FrameAllocator {
+public final class SerialIOBufferAllocator implements IOBufferAllocator {
     private final int minSize;
     private final boolean direct;
     private long newAllocateCnt = 0;
     private long allocateCnt = 0;
-    private Frame[] frames = new Frame[4096];
+    private IOBuffer[] bufs = new IOBuffer[4096];
     private int index = -1;
 
-    public SerialFrameAllocator(int minSize, boolean direct) {
+    public SerialIOBufferAllocator(int minSize, boolean direct) {
         this.minSize = minSize;
         this.direct = direct;
     }
 
     @Override
-    public Frame allocate() {
+    public IOBuffer allocate() {
         allocateCnt++;
 
         if (index == -1) {
             // the pool is empty.
-            // and lets create a set of frames so we don't end up
-            // continuously asking the queue for requests.
-            for (int k = 0; k < frames.length; k++) {
+            // and lets create a set of bufs so we don't end up
+            // continuously asking the queue for ones.
+            for (int k = 0; k < bufs.length; k++) {
                 //newAllocations.incrementAndGet();
-                //System.out.println(" new frame");
+                //System.out.println(" new buf");
                 ByteBuffer buffer = direct ? ByteBuffer.allocateDirect(minSize) : ByteBuffer.allocate(minSize);
-                Frame frame = new Frame(buffer);
-                frame.concurrent = false;
+                IOBuffer buf = new IOBuffer(buffer);
+                buf.concurrent = false;
                 newAllocateCnt++;
-                frame.allocator = this;
+                buf.allocator = this;
                 index++;
-                frames[k] = frame;
+                bufs[k] = buf;
             }
         }
 //
@@ -59,33 +59,33 @@ public final class SerialFrameAllocator implements FrameAllocator {
 //            System.out.println("New allocate percentage:" + (newAllocateCnt * 100f) / allocateCnt + "%");
 //        }
 
-        Frame frame = frames[index];
-        frames[index] = null;
+        IOBuffer buf = bufs[index];
+        bufs[index] = null;
         index--;
-        frame.acquire();
-        return frame;
+        buf.acquire();
+        return buf;
     }
 
     @Override
-    public Frame allocate(int minSize) {
-        Frame frame = allocate();
-        frame.ensureRemaining(minSize);
-        return frame;
+    public IOBuffer allocate(int minSize) {
+        IOBuffer buf = allocate();
+        buf.ensureRemaining(minSize);
+        return buf;
     }
 
     @Override
-    public void free(Frame frame) {
-        frame.clear();
-        frame.next = null;
-        frame.future = null;
+    public void free(IOBuffer buf) {
+        buf.clear();
+        buf.next = null;
+        buf.future = null;
 
-        if (index == frames.length - 1) {
-            Frame[] newframes = new Frame[frames.length * 2];
-            System.arraycopy(frames, 0, newframes, 0, frames.length);
-            frames = newframes;
+        if (index == bufs.length - 1) {
+            IOBuffer[] newBuf = new IOBuffer[bufs.length * 2];
+            System.arraycopy(bufs, 0, newBuf, 0, bufs.length);
+            bufs = newBuf;
         }
 
         index++;
-        frames[index] = frame;
+        bufs[index] = buf;
     }
 }

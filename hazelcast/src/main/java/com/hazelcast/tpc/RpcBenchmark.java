@@ -18,9 +18,9 @@ package com.hazelcast.tpc;
 
 
 import com.hazelcast.internal.util.ThreadAffinity;
-import com.hazelcast.tpc.engine.frame.Frame;
-import com.hazelcast.tpc.engine.frame.FrameAllocator;
-import com.hazelcast.tpc.engine.frame.SerialFrameAllocator;
+import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
+import com.hazelcast.tpc.engine.iobuffer.IOBufferAllocator;
+import com.hazelcast.tpc.engine.iobuffer.SerialIOBufferAllocator;
 import com.hazelcast.tpc.engine.nio.NioAsyncServerSocket;
 import com.hazelcast.tpc.engine.nio.NioAsyncSocket;
 import com.hazelcast.tpc.engine.nio.NioEventloop;
@@ -62,11 +62,11 @@ public class RpcBenchmark {
         long startMs = System.currentTimeMillis();
 
         for (int k = 0; k < concurrency; k++) {
-            Frame frame = new Frame(128);
-            frame.writeInt(-1);
-            frame.writeLong(requestTotal / concurrency);
-            frame.constructComplete();
-            clientSocket.write(frame);
+            IOBuffer buf = new IOBuffer(128);
+            buf.writeInt(-1);
+            buf.writeLong(requestTotal / concurrency);
+            buf.constructComplete();
+            clientSocket.write(buf);
         }
         clientSocket.flush();
 
@@ -91,7 +91,7 @@ public class RpcBenchmark {
         NioAsyncSocket clientSocket = NioAsyncSocket.open();
         clientSocket.tcpNoDelay(true);
         clientSocket.readHandler(new NioAsyncReadHandler() {
-            private final FrameAllocator responseAllocator = new SerialFrameAllocator(8, true);
+            private final IOBufferAllocator responseAllocator = new SerialIOBufferAllocator(8, true);
 
             @Override
             public void onRead(ByteBuffer buffer) {
@@ -105,11 +105,11 @@ public class RpcBenchmark {
                     if (l == 0) {
                         latch.countDown();
                     } else {
-                        Frame frame = responseAllocator.allocate(8);
-                        frame.writeInt(-1);
-                        frame.writeLong(l);
-                        frame.constructComplete();
-                        socket.unsafeWriteAndFlush(frame);
+                        IOBuffer buf = responseAllocator.allocate(8);
+                        buf.writeInt(-1);
+                        buf.writeLong(l);
+                        buf.constructComplete();
+                        socket.unsafeWriteAndFlush(buf);
                     }
                 }
             }
@@ -134,7 +134,7 @@ public class RpcBenchmark {
         serverSocket.accept(socket -> {
             socket.tcpNoDelay(true);
             socket.readHandler(new NioAsyncReadHandler() {
-                private final FrameAllocator responseAllocator = new SerialFrameAllocator(8, true);
+                private final IOBufferAllocator responseAllocator = new SerialIOBufferAllocator(8, true);
 
                 @Override
                 public void onRead(ByteBuffer buffer) {
@@ -145,11 +145,11 @@ public class RpcBenchmark {
                         int size = buffer.getInt();
                         long l = buffer.getLong();
 
-                        Frame frame = responseAllocator.allocate(8);
-                        frame.writeInt(-1);
-                        frame.writeLong(l - 1);
-                        frame.constructComplete();
-                        socket.unsafeWriteAndFlush(frame);
+                        IOBuffer buf = responseAllocator.allocate(8);
+                        buf.writeInt(-1);
+                        buf.writeLong(l - 1);
+                        buf.constructComplete();
+                        socket.unsafeWriteAndFlush(buf);
                     }
                 }
             });

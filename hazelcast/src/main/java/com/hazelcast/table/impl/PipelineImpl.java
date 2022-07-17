@@ -18,8 +18,8 @@ package com.hazelcast.table.impl;
 
 import com.hazelcast.internal.util.collection.Long2ObjectHashMap;
 import com.hazelcast.tpc.engine.SyncSocket;
-import com.hazelcast.tpc.engine.frame.Frame;
-import com.hazelcast.tpc.engine.frame.FrameAllocator;
+import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
+import com.hazelcast.tpc.engine.iobuffer.IOBufferAllocator;
 import com.hazelcast.tpc.requestservice.RequestService;
 import com.hazelcast.table.Pipeline;
 
@@ -32,12 +32,12 @@ import static com.hazelcast.tpc.requestservice.OpCodes.NOOP;
 public final class PipelineImpl implements Pipeline {
 
     private final RequestService requestService;
-    private final FrameAllocator frameAllocator;
+    private final IOBufferAllocator frameAllocator;
     private final Long2ObjectHashMap longToObjectHashMap = new Long2ObjectHashMap();
     private int partitionId = -1;
     private SyncSocket syncSocket;
 
-    public PipelineImpl(RequestService requestService, FrameAllocator frameAllocator) {
+    public PipelineImpl(RequestService requestService, IOBufferAllocator frameAllocator) {
         this.requestService = requestService;
         this.frameAllocator = frameAllocator;
     }
@@ -53,7 +53,7 @@ public final class PipelineImpl implements Pipeline {
             throw new RuntimeException("Cross partition request detected; expected " + this.partitionId + " found: " + partitionId);
         }
 
-        Frame request = frameAllocator.allocate(32)
+        IOBuffer request = frameAllocator.allocate(32)
                 .writeRequestHeader(partitionId, NOOP)
                 .constructComplete();
 
@@ -81,7 +81,7 @@ public final class PipelineImpl implements Pipeline {
         return partitionId;
     }
 
-    public List<Frame> getRequests() {
+    public List<IOBuffer> getRequests() {
         return null;//requests;
     }
 }

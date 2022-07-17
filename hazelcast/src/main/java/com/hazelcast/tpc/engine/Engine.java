@@ -27,7 +27,6 @@ import com.hazelcast.tpc.engine.nio.NioEventloop;
 import com.hazelcast.tpc.engine.epoll.EpollEventloop;
 import com.hazelcast.tpc.engine.iouring.IOUringEventloop;
 import com.hazelcast.tpc.engine.nio.NioEventloop.NioConfiguration;
-import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -371,8 +370,8 @@ public final class Engine {
         }
 
         private void monitor(AsyncSocket socket, long elapsed) {
-            long packetsRead = socket.framesRead.get();
-            LongHolder prevPacketsRead = getPrev(socket.framesRead);
+            long packetsRead = socket.ioBuffersRead.get();
+            LongHolder prevPacketsRead = getPrev(socket.ioBuffersRead);
             long packetsReadDelta = packetsRead - prevPacketsRead.value;
 
             if (!silent) {
@@ -411,18 +410,18 @@ public final class Engine {
             if (packetsReadDelta == 0 || true) {
                 if (socket instanceof NioAsyncSocket) {
                     NioAsyncSocket c = (NioAsyncSocket) socket;
-                    boolean hasData = !c.unflushedFrames.isEmpty() || !c.ioVector.isEmpty();
+                    boolean hasData = !c.unflushedBufs.isEmpty() || !c.ioVector.isEmpty();
                     //if (nioChannel.flushThread.get() == null && hasData) {
-                    log(socket + " is stuck: unflushed-frames:" + c.unflushedFrames.size()
+                    log(socket + " is stuck: unflushed-iobuffers:" + c.unflushedBufs.size()
                             + " ioVector.empty:" + c.ioVector.isEmpty()
                             + " flushed:" + c.flushThread.get()
                             + " eventloop.contains:" + c.eventloop().concurrentRunQueue.contains(c));
                     //}
                 } else if (socket instanceof IOUringAsyncSocket) {
                     IOUringAsyncSocket c = (IOUringAsyncSocket) socket;
-                    boolean hasData = !c.unflushedFrames.isEmpty() || !c.ioVector.isEmpty();
+                    boolean hasData = !c.unflushedBufs.isEmpty() || !c.ioVector.isEmpty();
                     //if (c.flushThread.get() == null && hasData) {
-                    log(socket + " is stuck: unflushed-frames:" + c.unflushedFrames.size()
+                    log(socket + " is stuck: unflushed-isbuffers:" + c.unflushedBufs.size()
                             + " ioVector.empty:" + c.ioVector.isEmpty()
                             + " flushed:" + c.flushThread.get()
                             + " eventloop.contains:" + c.eventloop().concurrentRunQueue.contains(c));

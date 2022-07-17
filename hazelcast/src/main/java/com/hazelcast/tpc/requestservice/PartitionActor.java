@@ -1,7 +1,7 @@
 package com.hazelcast.tpc.requestservice;
 
 import com.hazelcast.tpc.engine.actor.Actor;
-import com.hazelcast.tpc.engine.frame.Frame;
+import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 
 
 /**
@@ -12,6 +12,6 @@ public class PartitionActor extends Actor {
 
     @Override
     public void process(Object m) {
-        Frame request = (Frame) m;
+        IOBuffer request = (IOBuffer) m;
     }
 }

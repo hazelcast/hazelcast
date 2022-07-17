@@ -16,8 +16,8 @@
 
 package com.hazelcast.tpc.requestservice;
 
-import com.hazelcast.tpc.engine.frame.Frame;
-import com.hazelcast.tpc.engine.frame.FrameAllocator;
+import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
+import com.hazelcast.tpc.engine.iobuffer.IOBufferAllocator;
 import io.netty.buffer.ByteBuf;
 import com.hazelcast.tpc.engine.iouring.IOUringAsyncReadHandler;
 
@@ -25,20 +25,20 @@ import java.nio.ByteBuffer;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.tpc.engine.frame.Frame.FLAG_OP_RESPONSE;
+import static com.hazelcast.tpc.engine.iobuffer.IOBuffer.FLAG_OP_RESPONSE;
 
 public class RequestIOUringReadHandler extends IOUringAsyncReadHandler {
-    private Frame inboundFrame;
-    public FrameAllocator requestFrameAllocator;
-    public FrameAllocator remoteResponseFrameAllocator;
-    public Consumer<Frame> responseHandler;
+    private IOBuffer inboundBuf;
+    public IOBufferAllocator requestIOBufferAllocator;
+    public IOBufferAllocator remoteResponseIOBufferAllocator;
+    public Consumer<IOBuffer> responseHandler;
     public OpScheduler opScheduler;
 
     @Override
     public void onRead(ByteBuf buf) {
-        Frame responses = null;
+        IOBuffer responses = null;
         for (; ; ) {
-            if (inboundFrame == null) {
+            if (inboundBuf == null) {
                 if (buf.readableBytes() < INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES) {
                     break;
                 }
@@ -47,41 +47,41 @@ public class RequestIOUringReadHandler extends IOUringAsyncReadHandler {
                 int frameFlags = buf.readInt();
 
                 if ((frameFlags & FLAG_OP_RESPONSE) == 0) {
-                    inboundFrame = requestFrameAllocator.allocate(size);
+                    inboundBuf = requestIOBufferAllocator.allocate(size);
                 } else {
-                    inboundFrame = remoteResponseFrameAllocator.allocate(size);
+                    inboundBuf = remoteResponseIOBufferAllocator.allocate(size);
                 }
-                inboundFrame.byteBuffer().limit(size);
-                inboundFrame.writeInt(size);
-                inboundFrame.writeInt(frameFlags);
-                inboundFrame.socket = socket;
+                inboundBuf.byteBuffer().limit(size);
+                inboundBuf.writeInt(size);
+                inboundBuf.writeInt(frameFlags);
+                inboundBuf.socket = socket;
             }
 
-            if (inboundFrame.remaining() > buf.readableBytes()) {
-                ByteBuffer buffer = inboundFrame.byteBuffer();
+            if (inboundBuf.remaining() > buf.readableBytes()) {
+                ByteBuffer buffer = inboundBuf.byteBuffer();
                 int oldLimit = buffer.limit();
                 buffer.limit(buffer.position() + buf.readableBytes());
                 buf.readBytes(buffer);
                 buffer.limit(oldLimit);
             } else {
-                buf.readBytes(inboundFrame.byteBuffer());
+                buf.readBytes(inboundBuf.byteBuffer());
             }
 
-            if (!inboundFrame.isComplete()) {
+            if (!inboundBuf.isComplete()) {
                 break;
             }
 
-            inboundFrame.reconstructComplete();
+            inboundBuf.reconstructComplete();
             //framesRead.inc();
 
-            if (inboundFrame.isFlagRaised(FLAG_OP_RESPONSE)) {
-                inboundFrame.next = responses;
-                responses = inboundFrame;
+            if (inboundBuf.isFlagRaised(FLAG_OP_RESPONSE)) {
+                inboundBuf.next = responses;
+                responses = inboundBuf;
             } else {
-                opScheduler.schedule(inboundFrame);
+                opScheduler.schedule(inboundBuf);
                 // frameHandler.handleRequest(inboundFrame);
             }
-            inboundFrame = null;
+            inboundBuf = null;
         }
 
         if (responses != null) {

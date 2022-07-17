@@ -16,8 +16,8 @@
 
 package com.hazelcast.tpc.requestservice;
 
-import com.hazelcast.tpc.engine.frame.Frame;
-import com.hazelcast.tpc.engine.frame.FrameAllocator;
+import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
+import com.hazelcast.tpc.engine.iobuffer.IOBufferAllocator;
 import com.hazelcast.tpc.engine.epoll.EpollAsyncSocket;
 import com.hazelcast.tpc.engine.epoll.EpollReadHandler;
 
@@ -25,15 +25,15 @@ import java.nio.ByteBuffer;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.tpc.engine.frame.Frame.FLAG_OP_RESPONSE;
+import static com.hazelcast.tpc.engine.iobuffer.IOBuffer.FLAG_OP_RESPONSE;
 
 public class RequestEpollReadHandler extends EpollReadHandler {
 
     public OpScheduler opScheduler;
-    public Consumer<Frame> responseHandler;
-    public FrameAllocator requestFrameAllocator;
-    public FrameAllocator remoteResponseFrameAllocator;
-    private Frame inboundFrame;
+    public Consumer<IOBuffer> responseHandler;
+    public IOBufferAllocator requestIOBufferAllocator;
+    public IOBufferAllocator remoteResponseIOBufferAllocator;
+    private IOBuffer inboundBuf;
     private EpollAsyncSocket asyncSocket;
 
     @Override
@@ -43,9 +43,9 @@ public class RequestEpollReadHandler extends EpollReadHandler {
 
     @Override
     public void onRead(ByteBuffer receiveBuffer) {
-        Frame responseChain = null;
+        IOBuffer responseChain = null;
         for (; ; ) {
-            if (inboundFrame == null) {
+            if (inboundBuf == null) {
                 if (receiveBuffer.remaining() < INT_SIZE_IN_BYTES + INT_SIZE_IN_BYTES) {
                     break;
                 }
@@ -53,33 +53,33 @@ public class RequestEpollReadHandler extends EpollReadHandler {
                 int size = receiveBuffer.getInt();
                 int flags = receiveBuffer.getInt();
                 if ((flags & FLAG_OP_RESPONSE) == 0) {
-                    inboundFrame = requestFrameAllocator.allocate(size);
+                    inboundBuf = requestIOBufferAllocator.allocate(size);
                 } else {
-                    inboundFrame = remoteResponseFrameAllocator.allocate(size);
+                    inboundBuf = remoteResponseIOBufferAllocator.allocate(size);
                 }
-                inboundFrame.byteBuffer().limit(size);
-                inboundFrame.writeInt(size);
-                inboundFrame.writeInt(flags);
-                inboundFrame.socket = asyncSocket;
+                inboundBuf.byteBuffer().limit(size);
+                inboundBuf.writeInt(size);
+                inboundBuf.writeInt(flags);
+                inboundBuf.socket = asyncSocket;
             }
 
-            int size = inboundFrame.size();
-            int remaining = size - inboundFrame.position();
-            inboundFrame.write(receiveBuffer, remaining);
+            int size = inboundBuf.size();
+            int remaining = size - inboundBuf.position();
+            inboundBuf.write(receiveBuffer, remaining);
 
-            if (!inboundFrame.isComplete()) {
+            if (!inboundBuf.isComplete()) {
                 break;
             }
 
-            inboundFrame.reconstructComplete();
-            inboundFrame = null;
+            inboundBuf.reconstructComplete();
+            inboundBuf = null;
             //framesRead.inc();
 
-            if (inboundFrame.isFlagRaised(FLAG_OP_RESPONSE)) {
-                inboundFrame.next = responseChain;
-                responseChain = inboundFrame;
+            if (inboundBuf.isFlagRaised(FLAG_OP_RESPONSE)) {
+                inboundBuf.next = responseChain;
+                responseChain = inboundBuf;
             } else {
-                opScheduler.schedule(inboundFrame);
+                opScheduler.schedule(inboundBuf);
             }
         }
 

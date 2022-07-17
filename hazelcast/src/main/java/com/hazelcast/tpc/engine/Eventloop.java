@@ -22,7 +22,7 @@ import com.hazelcast.internal.util.ThreadAffinityHelper;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.tpc.engine.frame.Frame;
+import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 import com.hazelcast.tpc.util.CircularQueue;
 import org.jctools.queues.MpmcArrayQueue;
 
@@ -336,7 +336,7 @@ public abstract class Eventloop {
      * @return true if the task was accepted, false otherwise.
      * @throws NullPointerException if request is null.
      */
-    public final boolean execute(Frame request) {
+    public final boolean execute(IOBuffer request) {
         if (concurrentRunQueue.offer(request)) {
             wakeup();
             return true;
@@ -392,8 +392,8 @@ public abstract class Eventloop {
                 } catch (Exception e) {
                     e.printStackTrace();
                 }
-            } else if (task instanceof Frame) {
-                scheduler.schedule((Frame) task);
+            } else if (task instanceof IOBuffer) {
+                scheduler.schedule((IOBuffer) task);
             } else {
                 throw new RuntimeException("Unrecognized type:" + task.getClass());
             }
@@ -607,7 +607,7 @@ public abstract class Eventloop {
 
         boolean tick();
 
-        void schedule(Frame task);
+        void schedule(IOBuffer task);
     }
 
     /**

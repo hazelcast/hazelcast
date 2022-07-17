@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.tpc.engine.frame;
+package com.hazelcast.tpc.engine.iobuffer;
 
 
 import org.jctools.queues.MessagePassingQueue;
@@ -24,11 +24,11 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * A {@link FrameAllocator} that can be used in parallel by multiple threads.
+ * A {@link IOBufferAllocator} that can be used in parallel by multiple threads.
  */
-public class ParallelFrameAllocator implements FrameAllocator {
+public class ParallelIOBufferAllocator implements IOBufferAllocator {
 
-    private final MpmcArrayQueue<Frame> queue = new MpmcArrayQueue<>(4096);
+    private final MpmcArrayQueue<IOBuffer> queue = new MpmcArrayQueue<>(4096);
 
     private static final AtomicLong newAllocations = new AtomicLong(0);
     private static final AtomicLong pooledAllocations = new AtomicLong(0);
@@ -39,31 +39,31 @@ public class ParallelFrameAllocator implements FrameAllocator {
     static class Pool {
         private long newAllocateCnt = 0;
         private long allocateCnt = 0;
-        private Frame[] frames = new Frame[128];
+        private IOBuffer[] bufs = new IOBuffer[128];
         private int index = -1;
-        private final MessagePassingQueue.Consumer<Frame> consumer = frame -> {
+        private final MessagePassingQueue.Consumer<IOBuffer> consumer = buf -> {
             index++;
-            frames[index] = frame;
+            bufs[index] = buf;
         };
     }
 
     private final static ThreadLocal<Pool> POOL = new ThreadLocal<>();
     private final int minSize;
 
-    public ParallelFrameAllocator(int minSize, boolean direct) {
+    public ParallelIOBufferAllocator(int minSize, boolean direct) {
         this.minSize = minSize;
         this.direct = direct;
     }
 
     @Override
-    public Frame allocate(int minSize) {
-        Frame frame = allocate();
-        frame.ensureRemaining(minSize);
-        return frame;
+    public IOBuffer allocate(int minSize) {
+        IOBuffer buf = allocate();
+        buf.ensureRemaining(minSize);
+        return buf;
     }
 
     @Override
-    public Frame allocate() {
+    public IOBuffer allocate() {
         Pool pool = POOL.get();
         if (pool == null) {
             pool = new Pool();
@@ -74,31 +74,31 @@ public class ParallelFrameAllocator implements FrameAllocator {
             // the pool is empty.
 
             int count = 0;
-            for (int k = 0; k < pool.frames.length; k++) {
-                Frame frame = queue.poll();
-                if (frame == null) {
+            for (int k = 0; k < pool.bufs.length; k++) {
+                IOBuffer buf = queue.poll();
+                if (buf == null) {
                     break;
                 }
                 count++;
                 pool.index++;
-                pool.frames[pool.index] = frame;
+                pool.bufs[pool.index] = buf;
             }
 
-            // Lets gets some frames from the queue.
-            //int count = queue.drain(pool.consumer, pool.frames.length);
+            // Lets gets some bufs from the queue.
+            //int count = queue.drain(pool.consumer, pool.bufs.length);
 
-            // and lets create a bunch of frames ourselves so we don't end up
+            // and lets create a bunch of bufs ourselves so we don't end up
             // continuously asking the queue for requests.
-            for (int k = count; k < pool.frames.length; k++) {
+            for (int k = count; k < pool.bufs.length; k++) {
                 //newAllocations.incrementAndGet();
-                //System.out.println(" new frame");
+                //System.out.println(" new buf");
                 ByteBuffer buffer = direct ? ByteBuffer.allocateDirect(minSize) : ByteBuffer.allocate(minSize);
-                Frame frame = new Frame(buffer);
-                frame.concurrent = true;
-                frame.allocator = this;
+                IOBuffer buf = new IOBuffer(buffer);
+                buf.concurrent = true;
+                buf.allocator = this;
                 pool.newAllocateCnt++;
                 pool.index++;
-                pool.frames[k] = frame;
+                pool.bufs[k] = buf;
             }
         }
 
@@ -106,47 +106,47 @@ public class ParallelFrameAllocator implements FrameAllocator {
 //            System.out.println("New allocate percentage:" + (pool.newAllocateCnt * 100f) / pool.allocateCnt + "%");
 //        }
 
-        Frame frame = pool.frames[pool.index];
-        pool.frames[pool.index] = null;
+        IOBuffer buf = pool.bufs[pool.index];
+        pool.bufs[pool.index] = null;
         pool.index--;
 
         // for debugging; it should not be needed. We should be able to do a lazySet 1
         for (; ; ) {
-            int c = frame.refCount.get();
+            int c = buf.refCount.get();
             if (c != 0) {
-                throw new RuntimeException("Ref count should be 0, but was: " + frame.refCount());
+                throw new RuntimeException("Ref count should be 0, but was: " + buf.refCount());
             }
 
-            if (frame.refCount.compareAndSet(0, 1)) {
+            if (buf.refCount.compareAndSet(0, 1)) {
                 break;
             }
         }
-        return frame;
+        return buf;
     }
 
     @Override
-    public void free(Frame frame) {
-        if (frame.refCount.get() != 0) {
-            throw new RuntimeException("Frame refCount should be 0, but was:" + frame.refCount.get());
+    public void free(IOBuffer buf) {
+        if (buf.refCount.get() != 0) {
+            throw new RuntimeException("refCount should be 0, but was:" + buf.refCount.get());
         }
 
-        frame.clear();
-        frame.next = null;
-        frame.future = null;
+        buf.clear();
+        buf.next = null;
+        buf.future = null;
 
         Pool pool = POOL.get();
         if (pool == null) {
             // if pool == null:
             // if the thread has never allocated anything, we don't want to create
             // a pool for that thread.
-            queue.offer(frame);
-        } else if (pool.index == pool.frames.length - 1) {
+            queue.offer(buf);
+        } else if (pool.index == pool.bufs.length - 1) {
             // the pool of the object is full, so lets toss it in the queue.
-            queue.offer(frame);
+            queue.offer(buf);
         } else {
             // there is space in the pool.
             pool.index++;
-            pool.frames[pool.index] = frame;
+            pool.bufs[pool.index] = buf;
         }
     }
 }

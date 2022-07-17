@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.tpc.engine.frame;
+package com.hazelcast.tpc.engine.iobuffer;
 
-public interface FrameAllocator {
+public interface IOBufferAllocator {
 
-    Frame allocate();
+    IOBuffer allocate();
 
-    Frame allocate(int minSize);
+    IOBuffer allocate(int minSize);
 
-    void free(Frame frame);
+    void free(IOBuffer buf);
 }
