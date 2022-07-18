@@ -35,9 +35,6 @@ import static com.hazelcast.jet.impl.util.Util.toList;
  * with one that will wrap its processors using {@code wrapperSupplier}.
  */
 public final class WrappingProcessorSupplier implements ProcessorSupplier, IdentifiedDataSerializable {
-
-    private static final long serialVersionUID = 1L;
-
     private ProcessorSupplier wrapped;
     private FunctionEx<Processor, Processor> wrapperSupplier;
 
