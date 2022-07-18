@@ -62,6 +62,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.cp.internal.RaftService.CP_SUBSYSTEM_MANAGEMENT_EXECUTOR;
 import static com.hazelcast.cp.internal.raft.QueryPolicy.LEADER_LOCAL;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getDefaultAsyncExecutor;
 import static com.hazelcast.internal.util.ExceptionUtil.peel;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -150,7 +151,7 @@ class RaftGroupMembershipManager {
                     } else {
                         logger.warning("Could not get CP group info of " + groupId, t);
                     }
-                });
+                }, getDefaultAsyncExecutor());
             }
         }
 
@@ -303,7 +304,7 @@ class RaftGroupMembershipManager {
                         latch.countDown();
                     }
                 }
-            });
+            }, getDefaultAsyncExecutor());
         }
 
         private void addMember(CountDownLatch latch, Map<CPGroupId, BiTuple<Long, Long>> changedGroups,
@@ -318,7 +319,7 @@ class RaftGroupMembershipManager {
                     checkMemberAddCommitIndex(changedGroups, change, t);
                     latch.countDown();
                 }
-            });
+            }, getDefaultAsyncExecutor());
         }
 
         private void checkMemberAddCommitIndex(Map<CPGroupId, BiTuple<Long, Long>> changedGroups, CPGroupMembershipChange change,

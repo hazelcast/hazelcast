@@ -77,6 +77,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.function.Functions.entryKey;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getDefaultAsyncExecutor;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
@@ -595,7 +596,7 @@ public class MasterJobContext {
             // StartExecutionOp, so wait for that too.
             mc.snapshotContext().terminalSnapshotFuture()
                     // have to use Async version, the future is completed inside a synchronized block
-                    .whenCompleteAsync(withTryCatch(logger, (r, e) -> finalizeJob(finalError)));
+                    .whenCompleteAsync(withTryCatch(logger, (r, e) -> finalizeJob(finalError)), getDefaultAsyncExecutor());
         } else {
             if (error instanceof ExecutionNotFoundException) {
                 // If the StartExecutionOperation didn't find the execution, it means that it was cancelled.

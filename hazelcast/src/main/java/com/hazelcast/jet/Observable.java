@@ -33,6 +33,8 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.getDefaultAsyncExecutor;
+
 /**
  * Represents a flowing sequence of events produced by {@linkplain
  * Sinks#observable(String) observable sinks}. To observe the events, call
@@ -207,7 +209,7 @@ public interface Observable<T> extends Iterable<T> {
         return CompletableFuture.supplyAsync(() -> {
             Spliterator<T> spliterator = Spliterators.spliteratorUnknownSize(iterator, 0);
             return fn.apply(StreamSupport.stream(spliterator, false));
-        });
+        }, getDefaultAsyncExecutor());
     }
 
     /**

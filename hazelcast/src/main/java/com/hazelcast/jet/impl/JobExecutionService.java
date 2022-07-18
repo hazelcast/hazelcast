@@ -73,6 +73,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.getDefaultAsyncExecutor;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.EXECUTION;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
@@ -576,7 +577,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                     } else {
                         logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " completed");
                     }
-                }));
+                }), getDefaultAsyncExecutor());
     }
 
     @Override

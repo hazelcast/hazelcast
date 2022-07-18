@@ -39,6 +39,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.getDefaultAsyncExecutor;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
@@ -311,7 +312,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     private NonCompletableFuture doSubmitJob(Object jobDefinition, JobConfig config) {
         NonCompletableFuture submitFuture = new NonCompletableFuture();
         SubmitJobCallback callback = new SubmitJobCallback(submitFuture, jobDefinition, config);
-        invokeSubmitJob(jobDefinition, config).whenCompleteAsync(callback);
+        invokeSubmitJob(jobDefinition, config).whenCompleteAsync(callback, getDefaultAsyncExecutor());
         return submitFuture;
     }
 
@@ -334,7 +335,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
                         throw new IllegalStateException("job already completed");
                     }
                 }))
-                .whenCompleteAsync(withTryCatch(logger, joinJobCallback));
+                .whenCompleteAsync(withTryCatch(logger, joinJobCallback), getDefaultAsyncExecutor());
     }
 
     protected void checkNotLightJob(String msg) {
@@ -406,7 +407,7 @@ public abstract class AbstractJobProxy<C, M> implements Job {
         @Override
         protected void retryActionInt(Throwable t) {
             logger.fine("Resubmitting job " + idAndName() + " after " + t.getClass().getSimpleName());
-            invokeSubmitJob(jobDefinition, config).whenCompleteAsync(this);
+            invokeSubmitJob(jobDefinition, config).whenCompleteAsync(this, getDefaultAsyncExecutor());
         }
 
         @Override

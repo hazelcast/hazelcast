@@ -118,6 +118,7 @@ import java.util.function.Supplier;
 import static com.hazelcast.core.EntryEventType.CLEAR_ALL;
 import static com.hazelcast.internal.util.CollectionUtil.asIntegerList;
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+import static com.hazelcast.internal.util.ConcurrencyUtil.getDefaultAsyncExecutor;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
 import static com.hazelcast.internal.util.IterableUtil.nullToEmpty;
@@ -1276,7 +1277,7 @@ abstract class MapProxySupport<K, V>
                     } else {
                         resultFuture.completeExceptionally(throwable);
                     }
-                });
+                }, getDefaultAsyncExecutor());
         return resultFuture;
     }
 
