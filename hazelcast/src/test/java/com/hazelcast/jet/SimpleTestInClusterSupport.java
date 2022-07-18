@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.idToString;
 import static java.util.stream.Collectors.joining;
+import static org.junit.Assert.assertEquals;
 
 /**
  * Base class for tests that share the cluster for all jobs. The subclass must
@@ -109,6 +110,11 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
                          .collect(Collectors.joining(", ", "[", "]")));
         for (DistributedObject o : objects) {
             o.destroy();
+        }
+        for (HazelcastInstance instance : instances) {
+            assertTrueEventually(() -> {
+                assertEquals(0, getNodeEngineImpl(instance).getEventService().getEventQueueSize());
+            });
         }
     }
 
