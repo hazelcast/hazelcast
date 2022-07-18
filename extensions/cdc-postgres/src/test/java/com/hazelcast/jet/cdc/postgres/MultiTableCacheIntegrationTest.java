@@ -232,7 +232,7 @@ public class MultiTableCacheIntegrationTest extends AbstractPostgresCdcIntegrati
         @Override
         public Object process(Entry<Integer, OrdersOfCustomer> entry) {
             try {
-                boolean deletion = DELETE.equals(record.operation());
+                boolean deletion = DELETE == record.operation();
                 OrdersOfCustomer value = entry.getValue();
                 if (deletion) {
                     if (value != null) {
