@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.LifecycleEvent;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.infoschema.MappingColumnsTable;
@@ -35,12 +36,13 @@ import com.hazelcast.sql.impl.schema.view.View;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.stream.Collectors;
+import java.util.function.BiFunction;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static java.util.Arrays.asList;
@@ -59,10 +61,24 @@ public class TableResolverImpl implements TableResolver {
             asList(CATALOG, SCHEMA_NAME_PUBLIC)
     );
 
+    private static final List<BiFunction<List<Mapping>, List<View>, Table>> ADDITIONAL_TABLE_PRODUCERS = Arrays.asList(
+            (m, v) -> new TablesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m, v),
+            (m, v) -> new MappingsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m),
+            (m, v) -> new MappingColumnsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m, v),
+            (m, v) -> new ViewsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, v)
+    );
+
     private final NodeEngine nodeEngine;
     private final TablesStorage tableStorage;
     private final SqlConnectorCache connectorCache;
     private final List<TableListener> listeners;
+
+    // These fields should normally be volatile because we're accessing them from multiple threads. But we
+    // don't care if some thread doesn't see a newer value written by another thread. Each thread will write
+    // the same value (we assume that the number of mappings and views doesn't change much), so we
+    // shave a tiny bit of performance from not synchronizing :)
+    private int lastViewsSize;
+    private int lastMappingsSize;
 
     public TableResolverImpl(
             NodeEngine nodeEngine,
@@ -77,19 +93,23 @@ public class TableResolverImpl implements TableResolver {
         // because listeners are invoked asynchronously from the calling thread,
         // local changes are handled in createMapping() & removeMapping(), thus
         // we skip events originating from local member to avoid double processing
-        this.tableStorage.registerListener(new TablesStorage.EntryListenerAdapter() {
-            @Override
-            public void entryUpdated(EntryEvent<String, Object> event) {
-                if (!event.getMember().localMember()) {
-                    listeners.forEach(TableListener::onTableChanged);
-                }
-            }
+        nodeEngine.getHazelcastInstance().getLifecycleService().addLifecycleListener(event -> {
+            if (event.getState() == LifecycleEvent.LifecycleState.STARTED) {
+                this.tableStorage.registerListener(new TablesStorage.EntryListenerAdapter() {
+                    @Override
+                    public void entryUpdated(EntryEvent<String, Object> event) {
+                        if (!event.getMember().localMember()) {
+                            listeners.forEach(TableListener::onTableChanged);
+                        }
+                    }
 
-            @Override
-            public void entryRemoved(EntryEvent<String, Object> event) {
-                if (!event.getMember().localMember()) {
-                    listeners.forEach(TableListener::onTableChanged);
-                }
+                    @Override
+                    public void entryRemoved(EntryEvent<String, Object> event) {
+                        if (!event.getMember().localMember()) {
+                            listeners.forEach(TableListener::onTableChanged);
+                        }
+                    }
+                });
             }
         });
     }
@@ -178,29 +198,33 @@ public class TableResolverImpl implements TableResolver {
     @Override
     public List<Table> getTables() {
         Collection<Object> objects = tableStorage.allObjects();
-        List<Table> tables = new ArrayList<>(objects.size() + 3);
+        List<Table> tables = new ArrayList<>(objects.size() + ADDITIONAL_TABLE_PRODUCERS.size());
+
+        int lastMappingsSize = this.lastMappingsSize;
+        int lastViewsSize = this.lastViewsSize;
+
+        // Trying to avoid list growing.
+        List<Mapping> mappings = lastMappingsSize == 0 ? new ArrayList<>() : new ArrayList<>(lastMappingsSize);
+        List<View> views = lastViewsSize == 0 ? new ArrayList<>() : new ArrayList<>(lastViewsSize);
+
         for (Object o : objects) {
             if (o instanceof Mapping) {
                 tables.add(toTable((Mapping) o));
+                mappings.add((Mapping) o);
             } else if (o instanceof View) {
                 tables.add(toTable((View) o));
+                views.add((View) o);
             } else {
                 throw new RuntimeException("Unexpected: " + o);
             }
         }
 
-        Collection<Mapping> mappings = objects.stream()
-                .filter(o -> o instanceof Mapping)
-                .map(m -> (Mapping) m)
-                .collect(Collectors.toList());
-        Collection<View> views = objects.stream()
-                .filter(o -> o instanceof View)
-                .map(v -> (View) v)
-                .collect(Collectors.toList());
-        tables.add(new TablesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, mappings, views));
-        tables.add(new MappingsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, mappings));
-        tables.add(new MappingColumnsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, mappings, views));
-        tables.add(new ViewsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, views));
+        ADDITIONAL_TABLE_PRODUCERS.forEach(
+                producer -> tables.add(producer.apply(mappings, views)));
+
+        this.lastViewsSize = views.size();
+        this.lastMappingsSize = mappings.size();
+
         return tables;
     }
 
