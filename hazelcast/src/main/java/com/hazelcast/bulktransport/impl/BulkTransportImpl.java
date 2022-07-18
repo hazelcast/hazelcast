@@ -64,13 +64,11 @@ public class BulkTransportImpl implements BulkTransport {
         CompletableFuture[] futures = new CompletableFuture[channels.length];
         for (AsyncSocket channel : channels) {
             IOBuffer request = frameAllocator.allocate()
-                    .newFuture()
                     .writeRequestHeader(-1, INIT_BULK_TRANSPORT)
                     .constructComplete();
 
             requestService.invoke(request, channel).thenAccept(o -> {
                 IOBuffer request1 = frameAllocator.allocate()
-                        .newFuture()
                         .writeRequestHeader(-1, BULK_TRANSPORT)
                         .constructComplete();
                 CompletableFuture future1 = requestService.invoke(request1, channel);

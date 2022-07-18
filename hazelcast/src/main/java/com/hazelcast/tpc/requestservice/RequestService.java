@@ -165,7 +165,8 @@ public class RequestService {
                     Integer.MAX_VALUE,
                     managers,
                     localResponseAllocator,
-                    remoteResponseAllocator);
+                    remoteResponseAllocator,
+                    responseHandler);
 
             eventloopConfiguration.setScheduler(opScheduler);
         });
@@ -361,10 +362,10 @@ public class RequestService {
         logger.info("RequestService terminated");
     }
 
-    public CompletableFuture invoke(IOBuffer request, AsyncSocket socket) {
+    public RequestFuture invoke(IOBuffer request, AsyncSocket socket) {
         ensureActive();
 
-        CompletableFuture future = request.future;
+        RequestFuture future = new RequestFuture(request);
         // we need to acquire the frame because storage will release it once written
         // and we need to keep the frame around for the response.
         request.acquire();
@@ -372,7 +373,7 @@ public class RequestService {
         long callId = requests.nextCallId();
         request.putLong(OFFSET_REQ_CALL_ID, callId);
         //System.out.println("request.refCount:"+request.refCount());
-        requests.map.put(callId, request);
+        requests.map.put(callId, future);
         socket.writeAndFlush(request);
         return future;
     }

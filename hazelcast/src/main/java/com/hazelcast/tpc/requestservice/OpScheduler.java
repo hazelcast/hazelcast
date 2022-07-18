@@ -24,8 +24,13 @@ import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 import com.hazelcast.tpc.engine.iobuffer.IOBufferAllocator;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
+import static com.hazelcast.tpc.requestservice.FrameCodec.FLAG_OP_RESPONSE_CONTROL;
+import static com.hazelcast.tpc.requestservice.FrameCodec.OFFSET_PARTITION_ID;
+import static com.hazelcast.tpc.requestservice.FrameCodec.OFFSET_REQ_CALL_ID;
 import static com.hazelcast.tpc.requestservice.FrameCodec.OFFSET_REQ_PAYLOAD;
 import static com.hazelcast.tpc.requestservice.FrameCodec.OFFSET_RES_PAYLOAD;
+import static com.hazelcast.tpc.requestservice.FrameCodec.RESPONSE_TYPE_EXCEPTION;
+import static com.hazelcast.tpc.requestservice.FrameCodec.RESPONSE_TYPE_OVERLOAD;
 import static com.hazelcast.tpc.requestservice.Op.BLOCKED;
 import static com.hazelcast.tpc.requestservice.Op.COMPLETED;
 import static com.hazelcast.tpc.requestservice.Op.EXCEPTION;
@@ -57,16 +62,19 @@ public final class OpScheduler implements Eventloop.Scheduler {
     private final OpAllocator opAllocator;
     private Eventloop eventloop;
     private Actor[] partitionActors;
+    private ResponseHandler responseHandler;
 
     public OpScheduler(int capacity,
                        int batchSize,
                        Managers managers,
                        IOBufferAllocator localResponseAllocator,
-                       IOBufferAllocator remoteResponseAllocator) {
+                       IOBufferAllocator remoteResponseAllocator,
+                       ResponseHandler responseHandler) {
         this.runQueue = new CircularQueue<>(capacity);
         this.batchSize = batchSize;
         this.localResponseAllocator = localResponseAllocator;
         this.remoteResponseAllocator = remoteResponseAllocator;
+        this.responseHandler = responseHandler;
         this.opAllocator = new OpAllocator(this, managers);
     }
 
@@ -93,8 +101,8 @@ public final class OpScheduler implements Eventloop.Scheduler {
 //
 //        }
 
-        op.partitionId =request.getInt(FrameCodec.OFFSET_PARTITION_ID);
-        op.callId = request.getLong(FrameCodec.OFFSET_REQ_CALL_ID);
+        op.partitionId =request.getInt(OFFSET_PARTITION_ID);
+        op.callId = request.getLong(OFFSET_REQ_CALL_ID);
         op.response = request.socket != null
                 ? remoteResponseAllocator.allocate(OFFSET_RES_PAYLOAD)
                 : localResponseAllocator.allocate(OFFSET_RES_PAYLOAD);
@@ -109,8 +117,8 @@ public final class OpScheduler implements Eventloop.Scheduler {
             runSingle();
         } else {
             IOBuffer response = op.response;
-            response.writeResponseHeader(op.partitionId, op.callId, FrameCodec.FLAG_OP_RESPONSE_CONTROL)
-                    .writeInt(FrameCodec.RESPONSE_TYPE_OVERLOAD)
+            response.writeResponseHeader(op.partitionId, op.callId, FLAG_OP_RESPONSE_CONTROL)
+                    .writeInt(RESPONSE_TYPE_OVERLOAD)
                     .constructComplete();
             sendResponse(op);
         }
@@ -155,8 +163,8 @@ public final class OpScheduler implements Eventloop.Scheduler {
                 case EXCEPTION:
                     exceptions.inc();
                     op.response.clear();
-                    op.response.writeResponseHeader(op.partitionId, op.callId, FrameCodec.FLAG_OP_RESPONSE_CONTROL)
-                            .writeInt(FrameCodec.RESPONSE_TYPE_EXCEPTION)
+                    op.response.writeResponseHeader(op.partitionId, op.callId, FLAG_OP_RESPONSE_CONTROL)
+                            .writeInt(RESPONSE_TYPE_EXCEPTION)
                             .writeString(exception.getMessage())
                             .constructComplete();
                     sendResponse(op);
@@ -172,10 +180,10 @@ public final class OpScheduler implements Eventloop.Scheduler {
     }
 
     private void sendResponse(Op op) {
-        if (op.request.future == null) {
+        if (op.request.socket != null) {
             op.request.socket.unsafeWriteAndFlush(op.response);
         } else {
-            op.request.future.complete(op.response);
+            responseHandler.accept(op.response);
         }
         op.request.release();
         op.release();

@@ -37,10 +37,10 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * Responsible for scheduling I/O requests.
- *
+ * <p>
  * If the maxConcurrency isn't reached, the ioRequests will be submitted to the ringbuffer. Otherwise
  * the can be buffer until maxPending is reached. After that they will get rejected.
- *
+ * <p>
  * What isn't great is that the maxConcurrency is global. This is fine if you just have a single
  * storage device; but if you have 2 or more than this can lead to saturation or under utilization.
  */
@@ -74,12 +74,12 @@ public class IORequestScheduler {
 
     /**
      * This method should be called before the IORequestScheduler is being used.
-     *
+     * <p>
      * This method is not thread-safe.
      *
-     * @param path the path to the storage device.
+     * @param path          the path to the storage device.
      * @param maxConcurrent the maximum number of concurrent requests for the device.
-     * @param maxPending the maximum number of request that can be buffered
+     * @param maxPending    the maximum number of request that can be buffered
      */
     public void registerStorageDevice(String path, int maxConcurrent, int maxPending) {
         File file = new File(path);
@@ -128,12 +128,12 @@ public class IORequestScheduler {
     }
 
     Promise issue(IOUringAsyncFile file,
-                         byte op,
-                         int flags,
-                         int rwFlags,
-                         long bufferAddress,
-                         int length,
-                         long offset) {
+                  byte op,
+                  int flags,
+                  int rwFlags,
+                  long bufferAddress,
+                  int length,
+                  long offset) {
 
         IoRequest req = ioRequestAllocator.allocate();
         req.file = file;
@@ -178,7 +178,7 @@ public class IORequestScheduler {
 
     /**
      * A handler for all {@link IoRequest} instances for a single {@link AsyncFile}
-     *
+     * <p>
      * This approach is needed because the way netty has exposed the ringbuffer. Otherwise,
      * it would be better to have IORequests for a single storage device.
      */

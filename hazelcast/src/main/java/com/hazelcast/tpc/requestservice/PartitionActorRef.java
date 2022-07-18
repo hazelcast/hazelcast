@@ -32,7 +32,7 @@ import static com.hazelcast.tpc.requestservice.FrameCodec.OFFSET_REQ_CALL_ID;
 
 /**
  * An {@link ActorRef} that routes messages to the {@link PartitionActor}.
- *
+ * <p>
  * todo:
  * Should also handle redirect messages.
  */
@@ -59,12 +59,18 @@ public final class PartitionActorRef extends ActorRef<IOBuffer> {
         this.eventloop = engine.eventloop(hashToIndex(partitionId, engine.eventloopCount()));
     }
 
-    public CompletableFuture<IOBuffer> submit(IOBuffer request) {
-        CompletableFuture<IOBuffer> future = request.future;
+    public RequestFuture<IOBuffer> submit(IOBuffer request) {
+        RequestFuture future = new RequestFuture(request);
+
+        long callId = requests.nextCallId();
+
+        request.putLong(OFFSET_REQ_CALL_ID, callId);
+        requests.map.put(callId, future);
 
         Address address = partitionService.getPartitionOwner(partitionId);
         if (address.equals(thisAddress)) {
-             eventloop.execute(request);
+            //TODO: deal with return value
+            eventloop.execute(request);
         } else {
             // todo: this should in theory not be needed. We could use the last
             // address and only in case of a redirect, we update.
@@ -75,10 +81,6 @@ public final class PartitionActorRef extends ActorRef<IOBuffer> {
             // we need to acquire the frame because storage will release it once written
             // and we need to keep the frame around for the response.
             request.acquire();
-            long callId = requests.nextCallId();
-
-            request.putLong(OFFSET_REQ_CALL_ID, callId);
-            requests.map.put(callId, request);
 
             //todo: deal with return value.
             socket.writeAndFlush(request);

@@ -447,7 +447,11 @@
             <artifactId>jaydio</artifactId>
             <version>0.2-SNAPSHOT</version>
         </dependency>
-
+        <dependency>
+            <groupId>com.boundary</groupId>
+            <artifactId>high-scale-lib</artifactId>
+            <version>1.0.6</version>
+        </dependency>
         <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-common</artifactId>

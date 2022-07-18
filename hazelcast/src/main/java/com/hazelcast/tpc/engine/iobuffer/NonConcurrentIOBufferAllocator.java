@@ -79,7 +79,6 @@ public final class NonConcurrentIOBufferAllocator implements IOBufferAllocator {
     public void free(IOBuffer buf) {
         buf.clear();
         buf.next = null;
-        buf.future = null;
 
         if (index == bufs.length - 1) {
             IOBuffer[] newBuf = new IOBuffer[bufs.length * 2];

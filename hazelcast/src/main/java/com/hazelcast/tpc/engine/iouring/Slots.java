@@ -33,7 +33,7 @@ public final class Slots<E> {
     }
 
     public int insert(E item) {
-        if(pos == 0){
+        if (pos == 0) {
             throw new RuntimeException();
         }
 

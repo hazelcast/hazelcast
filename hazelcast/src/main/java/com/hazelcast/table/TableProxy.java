@@ -83,7 +83,6 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
 
         int partitionId = hashToIndex(Long.hashCode(item.key), partitionCount);
         IOBuffer request = requestAllocator.allocate(60)
-                .newFuture()
                 .writeRequestHeader(partitionId, TABLE_UPSERT)
                 .writeString(name)
                 .writeLong(item.key)
@@ -135,7 +134,6 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
     private CompletableFuture<IOBuffer> asyncNoop() {
         int partitionId = ThreadLocalRandom.current().nextInt(partitionCount);
         IOBuffer request = requestAllocator.allocate(32)
-                .newFuture()
                 .writeRequestHeader(partitionId, NOOP)
                 .constructComplete();
         return partitionActorRefs[partitionId].submit(request);
@@ -169,7 +167,6 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
         int partitionId = hashToIndex(Arrays.hashCode(key), partitionCount);
 
         IOBuffer request = requestAllocator.allocate(60)
-                .newFuture()
                 .writeRequestHeader(partitionId, SET)
                 .writeSizedBytes(key)
                 .writeSizedBytes(value)
@@ -188,8 +185,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
         CompletableFuture[] futures = new CompletableFuture[partitionCount];
         for (int partitionId = 0; partitionId < partitionCount; partitionId++) {
             IOBuffer request = requestAllocator.allocate(60)
-                    .newFuture()
-                    .writeRequestHeader(partitionId, QUERY)
+                     .writeRequestHeader(partitionId, QUERY)
                     .constructComplete();
             futures[partitionId] = partitionActorRefs[partitionId].submit(request);
         }
@@ -208,7 +204,6 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
         int partitionId = hashToIndex(Arrays.hashCode(key), partitionCount);
 
         IOBuffer request = requestAllocator.allocate(60)
-                .newFuture()
                 .writeRequestHeader(partitionId, GET)
                 .writeSizedBytes(key)
                 .constructComplete();

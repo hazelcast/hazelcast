@@ -135,7 +135,6 @@ public class ConcurrentIOBufferAllocator implements IOBufferAllocator {
 
         buf.clear();
         buf.next = null;
-        buf.future = null;
 
         Pool pool = POOL.get();
         if (pool == null) {

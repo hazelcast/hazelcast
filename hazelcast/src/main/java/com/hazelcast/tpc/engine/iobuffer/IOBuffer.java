@@ -33,7 +33,6 @@ import static com.hazelcast.internal.util.QuickMath.nextPowerOfTwo;
 
 public class IOBuffer {
 
-    public CompletableFuture future;
     public IOBuffer next;
     public AsyncSocket socket;
 
@@ -59,11 +58,6 @@ public class IOBuffer {
 
     public IOBuffer(ByteBuffer buffer) {
         this.buff = buffer;
-    }
-
-    public IOBuffer newFuture() {
-        this.future = new CompletableFuture();
-        return this;
     }
 
     public void clear() {

@@ -91,15 +91,17 @@ class ResponseHandler implements Consumer<IOBuffer> {
 
         long callId = response.getLong(OFFSET_RES_CALL_ID);
 
-        IOBuffer request = requests.map.remove(callId);
-        if (request == null) {
+        RequestFuture future = requests.map.remove(callId);
+        if (future == null) {
             System.out.println("Dropping response " + response + ", invocation with id " + callId
                     + ", partitionId: " + partitionId + " not found");
             return;
         }
 
+        requests.complete();
+
         response.position(OFFSET_RES_PAYLOAD);
-        CompletableFuture future = request.future;
+        IOBuffer request = future.clearRequest();
         int flags = request.flags();
         if ((flags & FLAG_OP_RESPONSE_CONTROL) == 0) {
             future.complete(response);
@@ -120,8 +122,9 @@ class ResponseHandler implements Consumer<IOBuffer> {
             }
         }
 
-        requests.complete();
-        request.release();
+        if (request.socket != null) {
+            request.release();
+        }
     }
 
     private class ResponseThread extends Thread {

@@ -352,7 +352,7 @@ public final class NioAsyncSocket extends AsyncSocket {
                 key = socketChannel.register(selector, OP_CONNECT, eventLoopHandler);
                 connectFuture = future;
                 socketChannel.connect(address);
-            }catch (IOException e){
+            } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
         });

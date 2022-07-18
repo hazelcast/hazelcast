@@ -61,9 +61,9 @@ public abstract class Actor implements Runnable {
 
     /**
      * Activates the Actor on the given eventloop.
-     *
+     * <p>
      * This method is not thread-safe.
-     *
+     * <p>
      * This method should only be called once.
      *
      * @param eventloop the Eventloop this actor belongs to.

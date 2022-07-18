@@ -72,7 +72,7 @@ public final class CircularQueue<E> {
         return capacity - size();
     }
 
-    public int capacity(){
+    public int capacity() {
         return capacity;
     }
 
