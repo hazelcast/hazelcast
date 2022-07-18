@@ -28,14 +28,14 @@ import java.util.ArrayList;
 @NotThreadSafe
 public final class UnorderedJsonArrayAggAggregation implements SqlAggregation {
     private final ArrayList<Object> values = new ArrayList<>();
-    private boolean isAbsentOnNull;
+    private final ArrayList<Boolean> isAbsentOnNull = new ArrayList<>();
 
     @SuppressWarnings("unused") // used for deserialization
     private UnorderedJsonArrayAggAggregation() {
     }
 
     private UnorderedJsonArrayAggAggregation(boolean isAbsentOnNull) {
-        this.isAbsentOnNull = isAbsentOnNull;
+        this.isAbsentOnNull.add(isAbsentOnNull);
     }
 
     public static UnorderedJsonArrayAggAggregation create(boolean isAbsentOnNull) {
@@ -55,6 +55,7 @@ public final class UnorderedJsonArrayAggAggregation implements SqlAggregation {
 
     @Override
     public Object collect() {
+        boolean isAbsentOnNull = this.isAbsentOnNull.get(0);
         StringBuilder sb = new StringBuilder();
         boolean firstValue = true;
         sb.append("[");
@@ -85,7 +86,7 @@ public final class UnorderedJsonArrayAggAggregation implements SqlAggregation {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeBoolean(isAbsentOnNull);
+        out.writeBoolean(isAbsentOnNull.get(0));
         out.write(values.size());
         for (Object o : values) {
             out.writeObject(o);
@@ -94,7 +95,7 @@ public final class UnorderedJsonArrayAggAggregation implements SqlAggregation {
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        isAbsentOnNull = in.readBoolean();
+        isAbsentOnNull.add(in.readBoolean());
         int size = in.readInt();
         values.ensureCapacity(size);
         for (int i = 0; i < size; i++) {
