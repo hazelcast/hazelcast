@@ -28,18 +28,18 @@ import java.util.List;
 import static com.hazelcast.tpc.requestservice.OpCodes.NOOP;
 
 
-// todo: we don't need a frame for all the requests. We should just add to an existing frame.
+// todo: we don't need a IOBuffer for all the requests. We should just add to an existing IOBuffer.
 public final class PipelineImpl implements Pipeline {
 
     private final RequestService requestService;
-    private final IOBufferAllocator frameAllocator;
+    private final IOBufferAllocator requestAllocator;
     private final Long2ObjectHashMap longToObjectHashMap = new Long2ObjectHashMap();
     private int partitionId = -1;
     private SyncSocket syncSocket;
 
-    public PipelineImpl(RequestService requestService, IOBufferAllocator frameAllocator) {
+    public PipelineImpl(RequestService requestService, IOBufferAllocator requestAllocator) {
         this.requestService = requestService;
-        this.frameAllocator = frameAllocator;
+        this.requestAllocator = requestAllocator;
     }
 
     public void noop(int partitionId) {
@@ -53,7 +53,7 @@ public final class PipelineImpl implements Pipeline {
             throw new RuntimeException("Cross partition request detected; expected " + this.partitionId + " found: " + partitionId);
         }
 
-        IOBuffer request = frameAllocator.allocate(32)
+        IOBuffer request = requestAllocator.allocate(32)
                 .writeRequestHeader(partitionId, NOOP)
                 .constructComplete();
 
@@ -67,10 +67,10 @@ public final class PipelineImpl implements Pipeline {
     }
 
     public void await(){
-//        for(Future<Frame> f: futures){
+//        for(Future<IOBuffer> f: futures){
 //            try {
-//                Frame frame = f.get(requestService.getRequestTimeoutMs(), MILLISECONDS);
-//                frame.release();
+//                IOBuffer buf = f.get(requestService.getRequestTimeoutMs(), MILLISECONDS);
+//                buf.release();
 //            } catch (Exception e) {
 //                throw new RuntimeException(e);
 //            }
