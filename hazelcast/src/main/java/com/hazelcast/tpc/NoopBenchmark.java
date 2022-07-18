@@ -36,7 +36,7 @@ public class NoopBenchmark {
         long count = 0;
         for (int k = 0; k < iterations; k++) {
 
-            if (count % 10_000 == 0) {
+            if (count % 1_000_000 == 0) {
                 System.out.println("at k:" + count);
             }
 
