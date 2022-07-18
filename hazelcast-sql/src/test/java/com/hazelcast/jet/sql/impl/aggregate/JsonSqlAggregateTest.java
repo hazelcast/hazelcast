@@ -45,7 +45,7 @@ public class JsonSqlAggregateTest extends SqlJsonTestSupport {
 
         assertRowsAnyOrder("SELECT JSON_ARRAYAGG(name) FROM " + name + " WHERE 1=2", singletonList(new Row((Object) null)));
         assertRowsAnyOrder("SELECT JSON_ARRAYAGG(name NULL ON NULL) FROM " + name + " WHERE 1=2", singletonList(new Row((Object) null)));
-        assertRowsAnyOrder("SELECT JSON_ARRAYAGG(name ABSENT ON NULL) from " + name + " WHERE 1=2", singletonList(new Row((Object) null)));
+        assertRowsAnyOrder("SELECT JSON_ARRAYAGG(name ABSENT ON NULL) FROM " + name + " WHERE 1=2", singletonList(new Row((Object) null)));
         assertRowsAnyOrder("SELECT JSON_ARRAYAGG(name) FROM " + name + " WHERE name IS NULL", singletonList(new Row((Object) null)));
     }
 
