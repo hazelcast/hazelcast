@@ -34,6 +34,7 @@ import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.Addresses;
 import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
@@ -98,6 +99,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
@@ -115,6 +117,7 @@ import static com.hazelcast.core.LifecycleEvent.LifecycleState.CLIENT_CHANGED_CL
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.ThreadAffinity.newSystemThreadAffinity;
+import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 
 /**
@@ -134,6 +137,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     private final int connectionTimeoutMillis;
     private final HazelcastClientInstanceImpl client;
     private final Collection<ConnectionListener> connectionListeners = new CopyOnWriteArrayList<>();
+    private volatile ClientConnectionProcessListener connectionProcessListener = ClientConnectionProcessListener.NOOP;
     private final NioNetworking networking;
 
     private final long authenticationTimeout;
@@ -408,6 +412,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
         // try the current cluster
         if (doConnectToCandidateCluster(currentContext, false)) {
+            connectionProcessListener.clusterConnectionSucceeded(currentContext.getClusterName());
             return;
         }
 
@@ -452,7 +457,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         return false;
     }
 
-    Connection connect(Object target, Function<Object, Connection> getOrConnectFunction) {
+    <A> Connection connect(A target, Function<A, Connection> getOrConnectFunction,
+                           Function<A, Address> addressTranslator) {
         try {
             logger.info("Trying to connect to " + target);
             return getOrConnectFunction.apply(target);
@@ -462,10 +468,25 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         } catch (ClientNotAllowedInClusterException e) {
             logger.warning("Exception during initial connection to " + target + ": " + e);
             throw e;
+        } catch (TargetDisconnectedException e) {
+            return handleExceptionWithAddressTranslation(e, connectionProcessListener::remoteClosedConnection,
+                    addressTranslator, target);
         } catch (Exception e) {
-            logger.warning("Exception during initial connection to " + target + ": " + e);
-            return null;
+            return handleExceptionWithAddressTranslation(e, connectionProcessListener::connectionAttemptFailed,
+                    addressTranslator, target);
         }
+    }
+
+    private <A> Connection handleExceptionWithAddressTranslation(Exception e, Consumer<Address> listenerFunction,
+            Function<A, Address> addressTranslator, A target) {
+        logger.warning("Exception during initial connection to " + target + ": " + e);
+        try {
+            listenerFunction.accept(addressTranslator.apply(target));
+        } catch (Exception e2) {
+            logger.warning("failed to translate address, can't fire connectionAttemptFailed() event for target "
+                    + target, e2);
+        }
+        return null;
     }
 
     private void fireLifecycleEvent(LifecycleState state) {
@@ -488,7 +509,10 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 for (Member member : memberList) {
                     checkClientActive();
                     triedAddressesPerAttempt.add(member.getAddress());
-                    Connection connection = connect(member, o -> getOrConnectToMember((Member) o, switchingToNextCluster));
+                    reportAddressConnectionAttempt(this::translate, member);
+                    Connection connection = connect(member,
+                            o -> getOrConnectToMember(o, switchingToNextCluster),
+                            this::translate);
                     if (connection != null) {
                         return true;
                     }
@@ -500,8 +524,10 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                         //if we can not add it means that it is already tried to be connected with the member list
                         continue;
                     }
-
-                    Connection connection = connect(address, o -> getOrConnectToAddress((Address) o, switchingToNextCluster));
+                    reportAddressConnectionAttempt(this::translate, address);
+                    Connection connection = connect(address,
+                            o -> getOrConnectToAddress(o, switchingToNextCluster),
+                            this::translate);
                     if (connection != null) {
                         return true;
                     }
@@ -517,7 +543,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             logger.warning("Stopped trying on the cluster: " + context.getClusterName()
                     + " reason: " + e.getMessage());
         }
-
+        connectionProcessListener.clusterConnectionFailed(context.getClusterName());
         logger.info("Unable to connect to any address from the cluster with name: " + context.getClusterName()
                 + ". The following addresses were tried: " + triedAddresses);
         return false;
@@ -551,7 +577,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     Collection<Address> getPossibleMemberAddresses(AddressProvider addressProvider) {
         Collection<Address> addresses = new LinkedHashSet<>();
         try {
-            Addresses result = addressProvider.loadAddresses();
+            Addresses result = addressProvider.loadAddresses(connectionProcessListener);
             if (shuffleMemberList) {
                 // The relative order between primary and secondary addresses should not be changed.
                 // so we shuffle the lists separately and then add them to the final list so that
@@ -725,6 +751,17 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
     }
 
+    private <A> void reportAddressConnectionAttempt(Function<A, Address> addressTranslator, A target) {
+        try {
+            if (connectionProcessListener != ClientConnectionProcessListener.NOOP) {
+                connectionProcessListener.attemptingToConnectToAddress(addressTranslator.apply(target));
+            }
+        }  catch (Exception e) {
+            logger.warning("failed to translate address, can't fire attemptingToConnectToAddress() event for target "
+                    + target, e);
+        }
+    }
+
     private Address translate(Member member) {
         return translate(member, AddressProvider::translate);
     }
@@ -798,7 +835,13 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
     @Override
     public void addConnectionListener(ConnectionListener connectionListener) {
-        connectionListeners.add(connectionListener);
+        connectionListeners.add(requireNonNull(connectionListener, "connectionListener cannot be null"));
+    }
+
+    @Override
+    public void addClientConnectionProcessListener(ClientConnectionProcessListener listener) {
+        ExceptionCatchingConnectionProcessListener wrapper = new ExceptionCatchingConnectionProcessListener(listener, logger);
+        connectionProcessListener = connectionProcessListener.withAdditionalListener(wrapper);
     }
 
     public Credentials getCurrentCredentials() {
@@ -985,14 +1028,17 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         }
         switch (authenticationStatus) {
             case AUTHENTICATED:
+                executor.execute(() -> connectionProcessListener.authenticationSuccess(connection.getInitAddress()));
                 break;
             case CREDENTIALS_FAILED:
                 AuthenticationException authException = new AuthenticationException("Authentication failed. The configured "
                         + "cluster name on the client (see ClientConfig.setClusterName()) does not match the one configured "
                         + "in the cluster or the credentials set in the Client security config could not be authenticated");
                 connection.close("Failed to authenticate connection", authException);
+                executor.execute(() -> connectionProcessListener.credentialsFailed(connection.getInitAddress()));
                 throw authException;
             case NOT_ALLOWED_IN_CLUSTER:
+                executor.execute(() -> connectionProcessListener.clientNotAllowedInCluster(connection.getInitAddress()));
                 ClientNotAllowedInClusterException notAllowedException =
                         new ClientNotAllowedInClusterException("Client is not allowed in the cluster");
                 connection.close("Failed to authenticate connection", notAllowedException);
