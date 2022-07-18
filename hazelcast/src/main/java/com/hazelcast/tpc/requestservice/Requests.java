@@ -19,6 +19,8 @@ package com.hazelcast.tpc.requestservice;
 import org.jctools.maps.NonBlockingHashMapLong;
 import org.jctools.util.PaddedAtomicLong;
 
+import java.util.concurrent.ConcurrentHashMap;
+
 import static java.lang.System.currentTimeMillis;
 
 /**
@@ -39,6 +41,7 @@ import static java.lang.System.currentTimeMillis;
 class Requests {
 
     final NonBlockingHashMapLong<RequestFuture> map = new NonBlockingHashMapLong<>();
+    //final ConcurrentHashMap<Long,RequestFuture> map = new ConcurrentHashMap<Long,RequestFuture>();
     final PaddedAtomicLong started = new PaddedAtomicLong();
     final PaddedAtomicLong completed = new PaddedAtomicLong();
     private final int concurrentRequestLimit;
