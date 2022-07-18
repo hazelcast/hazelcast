@@ -44,8 +44,8 @@ import static com.hazelcast.spi.impl.AbstractInvocationFuture.wrapOrPeel;
  * using methods with the {@code Async} suffix) or custom executor (when using
  * methods with the {@code Async} suffix and an {@link Executor} argument).
  * Both default and async execution use the default async executor, which is
- * either the {@link ForkJoinPool#commonPool()} or, in case it does not support
- * parallelism of at least 2, a thread-per-task executor.
+ * either the {@link java.util.concurrent.Executors#newFixedThreadPool(int)} of {@link ForkJoinPool#commonPool()}'s size
+ * or, in case FJP does not support parallelism of at least 2, a thread-per-task executor.
  *
  * <p>This class provides static factory methods for more specific implementations
  * supporting custom default async executor or deserialization of completion value.
