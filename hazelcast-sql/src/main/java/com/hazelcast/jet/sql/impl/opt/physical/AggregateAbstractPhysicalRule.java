@@ -25,11 +25,12 @@ import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.aggregate.AvgSqlAggregations;
 import com.hazelcast.jet.sql.impl.aggregate.CountSqlAggregations;
-import com.hazelcast.jet.sql.impl.aggregate.JsonArrayAggAggregation;
 import com.hazelcast.jet.sql.impl.aggregate.MaxSqlAggregation;
 import com.hazelcast.jet.sql.impl.aggregate.MinSqlAggregation;
+import com.hazelcast.jet.sql.impl.aggregate.OrderedJsonArrayAggAggregation;
 import com.hazelcast.jet.sql.impl.aggregate.SqlAggregation;
 import com.hazelcast.jet.sql.impl.aggregate.SumSqlAggregations;
+import com.hazelcast.jet.sql.impl.aggregate.UnorderedJsonArrayAggAggregation;
 import com.hazelcast.jet.sql.impl.aggregate.ValueSqlAggregation;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastJsonArrayAggFunction;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
@@ -249,9 +250,9 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         @Override
         public SqlAggregation getEx() {
             if (comparator == null) {
-                return JsonArrayAggAggregation.createUnordered(isAbsentOnNull);
+                return UnorderedJsonArrayAggAggregation.create(isAbsentOnNull);
             } else {
-                return JsonArrayAggAggregation.createOrdered(comparator, isAbsentOnNull, aggIndex);
+                return OrderedJsonArrayAggAggregation.create(comparator, isAbsentOnNull, aggIndex);
             }
         }
 
