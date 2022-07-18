@@ -16,7 +16,6 @@
 
 package com.hazelcast.test.archunit;
 
-import com.tngtech.archunit.base.DescribedPredicate;
 import com.tngtech.archunit.base.Optional;
 import com.tngtech.archunit.core.domain.JavaClass;
 import com.tngtech.archunit.core.domain.JavaField;
@@ -90,7 +89,7 @@ public final class ArchUnitRules {
 
     static class CompletableFutureAsyncActionsWithExecutorOnlyCondition extends ArchCondition<JavaClass> {
 
-        public CompletableFutureAsyncActionsWithExecutorOnlyCondition() {
+        CompletableFutureAsyncActionsWithExecutorOnlyCondition() {
             super("use CompletableFuture async actions only with explicit executor service");
         }
 
@@ -110,7 +109,9 @@ public final class ArchUnitRules {
         }
 
         private boolean isFromCompletableFuture(JavaMethodCall methodCalled) {
-            return methodCalled.getTarget().getOwner().isEquivalentTo(CompletableFuture.class);
+            JavaClass calledClass = methodCalled.getTarget().getOwner();
+            return calledClass.isAssignableFrom(CompletableFuture.class)
+                    && !calledClass.isAssignableFrom("com.hazelcast.spi.impl.InternalCompletableFuture");
         }
 
         private boolean withoutExecutorArgument(List<JavaType> parameterTypes) {
