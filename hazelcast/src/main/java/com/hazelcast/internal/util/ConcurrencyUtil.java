@@ -18,6 +18,7 @@ package com.hazelcast.internal.util;
 
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
@@ -51,8 +52,9 @@ public final class ConcurrencyUtil {
 
     static {
         Executor asyncExecutor;
-        if (ForkJoinPool.getCommonPoolParallelism() > 1) {
-            asyncExecutor = ForkJoinPool.commonPool();
+        int commonPoolParallelism = ForkJoinPool.getCommonPoolParallelism();
+        if (commonPoolParallelism > 1) {
+            asyncExecutor = Executors.newFixedThreadPool(commonPoolParallelism);
         } else {
             asyncExecutor = command -> new Thread(command).start();
         }
