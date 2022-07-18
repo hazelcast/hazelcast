@@ -97,6 +97,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
+import static com.hazelcast.config.ConfigXmlGenerator.endpointConfigElementName;
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
 import static com.hazelcast.internal.config.ConfigSections.LICENSE_KEY;
 import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.classNameOrImplClass;
@@ -1137,27 +1138,6 @@ public class DynamicConfigYamlGenerator {
         }
 
         return aliasedDiscoveryConfigAsMap;
-    }
-
-    private static String endpointConfigElementName(EndpointConfig endpointConfig) {
-        if (endpointConfig instanceof ServerSocketEndpointConfig) {
-            switch (endpointConfig.getProtocolType()) {
-                case REST:
-                    return "rest-server-socket-endpoint-config";
-                case WAN:
-                    return "wan-server-socket-endpoint-config";
-                case CLIENT:
-                    return "client-server-socket-endpoint-config";
-                case MEMBER:
-                    return "member-server-socket-endpoint-config";
-                case MEMCACHE:
-                    return "memcache-server-socket-endpoint-config";
-                default:
-                    throw new IllegalStateException("Not recognised protocol type");
-            }
-        }
-
-        return "wan-endpoint-config";
     }
 
     private static Map<String, Object> getDiscoveryConfigAsMap(DiscoveryConfig discoveryConfig) {

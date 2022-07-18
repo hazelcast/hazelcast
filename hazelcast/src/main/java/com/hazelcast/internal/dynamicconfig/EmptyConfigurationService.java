@@ -236,5 +236,6 @@ class EmptyConfigurationService implements ConfigurationService {
 
     @Override
     public void updateTcpIpConfigMemberList(List<String> memberList) {
+        throw new IllegalStateException("Cannot update the member list of TCP-IP join config while Hazelcast is starting.");
     }
 }

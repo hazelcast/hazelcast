@@ -696,7 +696,7 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    private String endpointConfigElementName(EndpointConfig endpointConfig) {
+    public static String endpointConfigElementName(EndpointConfig endpointConfig) {
         if (endpointConfig instanceof ServerSocketEndpointConfig) {
             switch (endpointConfig.getProtocolType()) {
                 case REST:
