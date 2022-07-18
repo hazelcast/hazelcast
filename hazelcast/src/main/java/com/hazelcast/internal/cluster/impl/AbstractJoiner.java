@@ -247,8 +247,8 @@ public abstract class AbstractJoiner
             timeout -= SPLIT_BRAIN_SLEEP_TIME_MILLIS;
             if (timeout < 0) {
                 logger.fine("Could not send SplitBrainJoinMessage to the " + target
-                        + " since the local member could not connect to that target address for"
-                        + SPLIT_BRAIN_CONN_TIMEOUT_MILLIS + " seconds, which is the split brain"
+                        + " since the local member could not connect to that target address for "
+                        + SPLIT_BRAIN_CONN_TIMEOUT_MILLIS + " millis, which is the split brain"
                         + " connection timeout");
                 return null;
             }

@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.concurrent.CompletionStage;
 import java.util.logging.Level;
 
+import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
 import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_500;
 import static com.hazelcast.internal.ascii.rest.RestCallExecution.ObjectType.MAP;
@@ -423,12 +424,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
 
     private void handleTcpIpMemberList(HttpGetCommand command) {
         Config config = getNode().getConfig();
-        TcpIpConfig tcpIpConfig;
-        if (config.getAdvancedNetworkConfig().isEnabled()) {
-            tcpIpConfig = config.getAdvancedNetworkConfig().getJoin().getTcpIpConfig();
-        } else {
-            tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
-        }
+        TcpIpConfig tcpIpConfig = getActiveMemberNetworkConfig(config).getJoin().getTcpIpConfig();
         if (tcpIpConfig.isEnabled()) {
             List<String> members = tcpIpConfig.getMembers();
             JsonArray membersArray = new JsonArray();

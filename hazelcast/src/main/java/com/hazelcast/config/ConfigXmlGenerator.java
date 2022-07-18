@@ -76,6 +76,7 @@ import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.rep
 import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.ringbufferXmlGenerator;
 import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.scheduledExecutorXmlGenerator;
 import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.setXmlGenerator;
+import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.tcpIpConfigXmlGenerator;
 import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.topicXmlGenerator;
 import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.wanReplicationXmlGenerator;
 import static com.hazelcast.internal.util.Preconditions.isNotNull;
@@ -601,7 +602,7 @@ public class ConfigXmlGenerator {
         gen.open("join");
         autoDetectionConfigXmlGenerator(gen, join);
         multicastConfigXmlGenerator(gen, join);
-        tcpConfigXmlGenerator(gen, join);
+        tcpIpConfigXmlGenerator(gen, config);
         aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(join));
         discoveryStrategyConfigXmlGenerator(gen, join.getDiscoveryConfig());
         gen.close();
@@ -629,7 +630,7 @@ public class ConfigXmlGenerator {
         gen.open("join");
         autoDetectionConfigXmlGenerator(gen, join);
         multicastConfigXmlGenerator(gen, join);
-        tcpConfigXmlGenerator(gen, join);
+        tcpIpConfigXmlGenerator(gen, config);
         aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(join));
         discoveryStrategyConfigXmlGenerator(gen, join.getDiscoveryConfig());
         gen.close();
@@ -757,18 +758,6 @@ public class ConfigXmlGenerator {
             }
             gen.close();
         }
-    }
-
-    private static void tcpConfigXmlGenerator(XmlGenerator gen, JoinConfig join) {
-        TcpIpConfig c = join.getTcpIpConfig();
-        gen.open("tcp-ip", "enabled", c.isEnabled(), "connection-timeout-seconds", c.getConnectionTimeoutSeconds())
-                .open("member-list");
-        for (String m : c.getMembers()) {
-            gen.node("member", m);
-        }
-        gen.close()
-                .node("required-member", c.getRequiredMember())
-                .close();
     }
 
     private static void interfacesConfigXmlGenerator(XmlGenerator gen, InterfacesConfig interfaces) {
