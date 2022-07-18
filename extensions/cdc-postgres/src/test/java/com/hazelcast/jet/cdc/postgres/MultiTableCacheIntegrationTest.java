@@ -45,13 +45,14 @@ import static com.hazelcast.jet.cdc.Operation.DELETE;
 import static com.hazelcast.jet.cdc.Operation.INSERT;
 import static com.hazelcast.jet.cdc.Operation.SYNC;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static java.lang.String.format;
 import static java.util.Objects.requireNonNull;
 
 @Category(NightlyTest.class)
 public class MultiTableCacheIntegrationTest extends AbstractPostgresCdcIntegrationTest {
 
     private static final String CACHE = "cache";
-    private static final int REPEATS = 1;
+    private static final int REPEATS = 1000;
 
     @Test
     public void ordersOfCustomers() throws Exception {
@@ -102,10 +103,10 @@ public class MultiTableCacheIntegrationTest extends AbstractPostgresCdcIntegrati
             batch.add("UPDATE orders SET quantity='" + i + "' WHERE id=10004");
 
             batch.add("DELETE FROM orders WHERE id=10003");
-            batch.add("INSERT INTO orders VALUES (10007, '2016-02-19', 1002, 2, 106)");
         }
         executeBatch(batch.toArray(new String[0]));
         executeBatch("DELETE FROM customers WHERE id=1005");
+        executeBatch("INSERT INTO orders VALUES (10007, '2016-02-19', 1002, 2, 106)");
 
         //then
         expected = toMap(
@@ -187,7 +188,7 @@ public class MultiTableCacheIntegrationTest extends AbstractPostgresCdcIntegrati
 
         @Override
         public String toString() {
-            return String.format("%s, Orders: %s", customer, orders);
+            return format("%s, Orders: %s", customer, orders);
         }
     }
 
