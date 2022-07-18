@@ -16,12 +16,8 @@
 
 package com.hazelcast.tpc.requestservice;
 
-import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 import org.jctools.maps.NonBlockingHashMapLong;
 import org.jctools.util.PaddedAtomicLong;
-
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import static java.lang.System.currentTimeMillis;
 

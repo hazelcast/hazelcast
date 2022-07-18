@@ -21,6 +21,8 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.table.Table;
 
 public class NoopBenchmark {
+    public static long operations = 5_000_000;
+    public static int concurrency = 2;
 
     public static void main(String[] args) throws Exception {
         HazelcastInstance node1 = Hazelcast.newHazelcastInstance();
@@ -28,15 +30,13 @@ public class NoopBenchmark {
 
         Table table = node1.getTable("piranaha");
 
-        long operations = 5_000_000;
-        int concurrency = 2;
         long iterations = operations / concurrency;
 
         long startMs = System.currentTimeMillis();
         long count = 0;
         for (int k = 0; k < iterations; k++) {
 
-            if (count % 1_000_000 == 0) {
+            if (count % 10_000 == 0) {
                 System.out.println("at k:" + count);
             }
 
