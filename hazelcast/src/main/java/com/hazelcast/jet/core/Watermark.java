@@ -90,7 +90,7 @@ public final class Watermark implements SpecialBroadcastItem {
     public String toString() {
         return timestamp ==
                 WatermarkCoalescer.IDLE_MESSAGE_TIME
-                        ? "Watermark{IDLE_MESSAGE"
+                        ? "Watermark{IDLE_MESSAGE}"
                         : "Watermark{ts=" + toLocalTime(timestamp)
                 + ", key=" + key + "}";
     }
