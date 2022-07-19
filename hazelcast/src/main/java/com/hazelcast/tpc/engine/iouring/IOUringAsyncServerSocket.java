@@ -154,8 +154,9 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            System.out.println("Closing  " + this);
-
+            if(logger.isInfoEnabled()) {
+                logger.info("Closing  " + this);
+            }
             eventloop.deregisterResource(this);
             try {
                 serverSocket.close();
@@ -184,7 +185,9 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
         eventloop.execute(() -> {
             this.consumer = consumer;
             sq_addAccept();
-            System.out.println("ServerSocket listening at " + localAddress());
+            if(logger.isInfoEnabled()) {
+                logger.info("ServerSocket listening at " + localAddress());
+            }
         });
     }
 
@@ -195,14 +198,15 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
             sq_addAccept();
 
             if (res < 0) {
-                System.out.println("Problem: IORING_OP_ACCEPT res: " + res);
+                logger.warning("Problem: IORING_OP_ACCEPT res: " + res);
             } else {
                 // System.out.println(getName() + " handle IORING_OP_ACCEPT fd:" + fd + " serverFd:" + serverSocket.intValue() + "res:" + res);
 
                 SocketAddress address = SockaddrIn.readIPv4(acceptMemory.memoryAddress, inet4AddressArray);
 
-                System.out.println(this + " new connected accepted: " + address);
-
+                if(logger.isInfoEnabled()) {
+                    logger.info(this + " new connected accepted: " + address);
+                }
                 LinuxSocket socket = new LinuxSocket(res);
                 IOUringAsyncSocket asyncSocket = new IOUringAsyncSocket(socket);
                 consumer.accept(asyncSocket);

@@ -124,7 +124,9 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            System.out.println("Closing  " + this);
+            if(logger.isInfoEnabled()) {
+                logger.info("Closing  " + this);
+            }
             closeResource(serverSocketChannel);
             eventloop.deregisterResource(this);
         }
@@ -133,7 +135,9 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     @Override
     public void bind(SocketAddress local) {
         try {
-            System.out.println(eventloopThread.getName() + " Binding to " + local);
+            if(logger.isInfoEnabled()) {
+                logger.info(eventloopThread.getName() + " Binding to " + local);
+            }
             serverSocketChannel.bind(local);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -144,8 +148,11 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         eventloop.execute(() -> {
             try {
                 serverSocketChannel.register(selector, OP_ACCEPT, new EventloopHandler(consumer));
-                System.out.println(eventloopThread.getName() + " ServerSocket listening at "
-                        + serverSocketChannel.getLocalAddress());
+
+                if(logger.isInfoEnabled()) {
+                    logger.info(eventloopThread.getName() + " ServerSocket listening at "
+                            + serverSocketChannel.getLocalAddress());
+                }
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }

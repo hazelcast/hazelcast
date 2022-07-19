@@ -306,8 +306,9 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            System.out.println("Closing  " + this);
-
+            if(logger.isInfoEnabled()) {
+                logger.info("Closing  " + this);
+            }
             //todo: also think about releasing the resources like IOBuffers
             // perhaps add a one time close check
 
@@ -412,7 +413,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                     resetFlushed();
                 }
             } else {
-                System.out.println("Problem: handle_IORING_OP_READ res:" + res);
+                logger.warning("Problem: handle_IORING_OP_READ res:" + res);
             }
         }
     }

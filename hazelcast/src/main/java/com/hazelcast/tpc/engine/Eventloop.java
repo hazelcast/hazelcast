@@ -499,7 +499,9 @@ public abstract class Eventloop {
                 if (engine != null) {
                     engine.notifyEventloopTerminated();
                 }
-                System.out.println(Thread.currentThread().getName() + " terminated");
+                if (logger.isInfoEnabled()) {
+                    logger.info(Thread.currentThread().getName() + " terminated");
+                }
             }
         }
     }

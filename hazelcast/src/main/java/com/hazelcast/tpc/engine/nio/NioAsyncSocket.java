@@ -330,8 +330,9 @@ public final class NioAsyncSocket extends AsyncSocket {
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            System.out.println("Closing  " + this);
-
+            if(logger.isInfoEnabled()) {
+                logger.info("Closing  " + this);
+            }
             closeResource(socketChannel);
             if (eventloop != null) {
                 eventloop.deregisterResource(NioAsyncSocket.this);
@@ -341,7 +342,10 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     @Override
     public CompletableFuture<AsyncSocket> connect(SocketAddress address) {
-        System.out.println("Connect to address:" + address);
+        if(logger.isInfoEnabled()) {
+            logger.info("Connect to address:" + address);
+        }
+
         CompletableFuture<AsyncSocket> future = new CompletableFuture<>();
         eventloop.execute(() -> {
             try {
