@@ -139,7 +139,7 @@ public class SqlClientResultTest extends SqlTestSupport {
             SqlClientResult sqlClientResult = (SqlClientResult) result;
             assertTrue(sqlClientResult.isInfiniteRows());
         }
-        try (SqlR esult result = execute("select * from " + MAP_NAME)) {
+        try (SqlResult result = execute("select * from " + MAP_NAME)) {
             SqlClientResult sqlClientResult = (SqlClientResult) result;
             assertFalse(sqlClientResult.isInfiniteRows());
         }
