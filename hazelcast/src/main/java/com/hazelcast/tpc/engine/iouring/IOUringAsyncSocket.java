@@ -344,8 +344,6 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         CompletableFuture<AsyncSocket> future = new CompletableFuture<>();
 
         try {
-            //System.out.println(getName() + " connectRequest to address:" + address);
-
             if (socket.connect(address)) {
                 this.remoteAddress = socket.remoteAddress();
                 this.localAddress = socket.localAddress();
