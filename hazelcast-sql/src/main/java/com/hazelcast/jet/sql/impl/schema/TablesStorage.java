@@ -21,8 +21,10 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapEvent;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.replicatedmap.ReplicatedMap;
@@ -36,8 +38,10 @@ import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
@@ -46,14 +50,16 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 public class TablesStorage {
-
     private static final int MAX_CHECK_ATTEMPTS = 5;
     private static final long SLEEP_MILLIS = 100;
 
     private static final String CATALOG_MAP_NAME = "__sql.catalog";
 
     private final NodeEngine nodeEngine;
+    private final Object mergingMutex = new Object();
     private final ILogger logger;
+
+    private volatile boolean storageMovedToNew;
 
     public TablesStorage(NodeEngine nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -61,15 +67,21 @@ public class TablesStorage {
     }
 
     void put(String name, Mapping mapping) {
-        storage().put(name, mapping);
-        awaitMappingOnAllMembers(name, mapping);
+        newStorage().put(name, mapping);
+        if (useOldStorage()) {
+            oldStorage().put(name, mapping);
+            awaitMappingOnAllMembers(name, mapping);
+        }
     }
 
     void put(String name, View view) {
-        storage().put(name, view);
-        awaitMappingOnAllMembers(name, view);
+        newStorage().put(name, view);
+        if (useOldStorage()) {
+            oldStorage().put(name, view);
+            awaitMappingOnAllMembers(name, view);
+        }
     }
-
+    // TODO: old storage check
     void put(String name, Type type) {
         // TODO Case sensitive?
         storage().put(name.toLowerCase(Locale.ROOT), type);
@@ -77,17 +89,24 @@ public class TablesStorage {
     }
 
     boolean putIfAbsent(String name, Mapping mapping) {
-        Object previous = storage().putIfAbsent(name, mapping);
-        awaitMappingOnAllMembers(name, mapping);
-        return previous == null;
+        Object previousNew = newStorage().putIfAbsent(name, mapping);
+        Object previousOld = null;
+        if (useOldStorage()) {
+            previousOld = oldStorage().putIfAbsent(name, mapping);
+        }
+        return previousNew == null && previousOld == null;
     }
 
     boolean putIfAbsent(String name, View view) {
-        Object previous = storage().putIfAbsent(name, view);
-        awaitMappingOnAllMembers(name, view);
-        return previous == null;
+        Object previousNew = newStorage().putIfAbsent(name, view);
+        Object previousOld = null;
+        if (useOldStorage()) {
+            previousOld = oldStorage().putIfAbsent(name, view);
+        }
+        return previousNew == null && previousOld == null;
     }
 
+    // TODO: old storage check
     boolean putIfAbsent(String name, Type type) {
         // TODO Case sensitive?
         Object previous = storage().putIfAbsent(name, type);
@@ -96,9 +115,15 @@ public class TablesStorage {
     }
 
     Mapping removeMapping(String name) {
-        return (Mapping) storage().remove(name);
+        Mapping removedNew = (Mapping) newStorage().remove(name);
+        Mapping removedOld = null;
+        if (useOldStorage()) {
+            removedOld = (Mapping) oldStorage().remove(name);
+        }
+        return removedNew == null ? removedOld : removedNew;
     }
 
+    // TODO: old storage check
     public Collection<Type> getAllTypes() {
         return storage().values().stream()
                 .filter(o -> o instanceof Type)
@@ -106,16 +131,18 @@ public class TablesStorage {
                 .collect(Collectors.toList());
     }
 
+    // TODO: old storage check
     public Type getType(final String name) {
         return (Type) storage().get(name.toLowerCase(Locale.ROOT));
     }
 
+    // TODO: old storage check
     public Type removeType(String name) {
         return (Type) storage().remove(name.toLowerCase(Locale.ROOT));
     }
 
     View getView(String name) {
-        Object obj = storage().get(name);
+        Object obj = mergedStorage().get(name);
         if (obj instanceof View) {
             return (View) obj;
         }
@@ -123,15 +150,20 @@ public class TablesStorage {
     }
 
     View removeView(String name) {
-        return (View) storage().remove(name);
+        View removedNew = (View) newStorage().remove(name);
+        View removedOld = null;
+        if (useOldStorage()) {
+            removedOld = (View) oldStorage().remove(name);
+        }
+        return removedNew == null ? removedOld : removedNew;
     }
 
     Collection<Object> allObjects() {
-        return storage().values();
+        return mergedStorage().values();
     }
 
     Collection<String> mappingNames() {
-        return storage().values()
+        return mergedStorage().values()
                 .stream()
                 .filter(m -> m instanceof Mapping)
                 .map(m -> ((Mapping) m).name())
@@ -139,7 +171,7 @@ public class TablesStorage {
     }
 
     Collection<String> viewNames() {
-        return storage().values()
+        return mergedStorage().values()
                 .stream()
                 .filter(v -> v instanceof View)
                 .map(v -> ((View) v).name())
@@ -147,15 +179,47 @@ public class TablesStorage {
     }
 
     void registerListener(EntryListener<String, Object> listener) {
-        // do not try to implicitly create ReplicatedMap
-        // TODO: perform this check in a single place i.e. SqlService ?
         if (!nodeEngine.getLocalMember().isLiteMember()) {
-            storage().addEntryListener(listener);
+            newStorage().addEntryListener(listener, false);
+            oldStorage().addEntryListener(listener);
         }
     }
 
-    private ReplicatedMap<String, Object> storage() {
+    ReplicatedMap<String, Object> oldStorage() {
+        // To remove in 5.3. We are using the old storage if the cluster version is lower than 5.2. We destroy the old catalog
+        // during the first read after the cluster version is upgraded to > =5.2. We do not synchronize put operations to the old
+        // catalog, so it is possible that destroy happens before put, and we end up with a leaked ReplicatedMap.
         return nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
+    }
+
+    IMap<String, Object> newStorage() {
+        return nodeEngine.getHazelcastInstance().getMap(CATALOG_MAP_NAME);
+    }
+
+    private Map<String, Object> mergedStorage() {
+        IMap<String, Object> newStorage = newStorage();
+        if (useOldStorage()) {
+            Map<String, Object> mergedCatalog = new HashMap<>();
+            mergedCatalog.putAll(newStorage);
+            mergedCatalog.putAll(oldStorage());
+            return mergedCatalog;
+        } else {
+            if (!storageMovedToNew) {
+                synchronized (mergingMutex) {
+                    if (!storageMovedToNew) {
+                        ReplicatedMap<String, Object> oldStorage = oldStorage();
+                        oldStorage.forEach(newStorage::putIfAbsent);
+                        oldStorage.destroy();
+                        storageMovedToNew = true;
+                    }
+                }
+            }
+            return newStorage;
+        }
+    }
+
+    private boolean useOldStorage() {
+        return !nodeEngine.getClusterService().getClusterVersion().isGreaterOrEqual(Versions.V5_2);
     }
 
     private Collection<Address> getMemberAddresses() {
