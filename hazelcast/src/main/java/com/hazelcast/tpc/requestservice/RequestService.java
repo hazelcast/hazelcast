@@ -373,7 +373,7 @@ public class RequestService {
         long callId = requests.nextCallId();
         request.putLong(OFFSET_REQ_CALL_ID, callId);
         //System.out.println("request.refCount:"+request.refCount());
-        requests.map.put(callId, future);
+      //  requests.map.put(callId, future);
         socket.writeAndFlush(request);
         return future;
     }

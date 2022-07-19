@@ -40,10 +40,10 @@ import static com.hazelcast.tpc.requestservice.Op.EXCEPTION;
  * overload can happen at 2 levels
  * 1) a single asyncsocket exceeding the maximum number of requests
  * 2) a single asyncsocket exceeded the maximum number of request of the event loop
- *
+ * <p>
  * In the first case we want to slow down the reader and signal sender.
  * In the second case want to slow down all the readers and signal all senders.
- *
+ * <p>
  * The problem with slowing down senders is that sockets can send
  * either requests or responses. We want to slow down the rate of sending
  * requests, but we don't want to slow down the rate of responses or
@@ -101,7 +101,7 @@ public final class OpScheduler implements Eventloop.Scheduler {
 //
 //        }
 
-        op.partitionId =request.getInt(OFFSET_PARTITION_ID);
+        op.partitionId = request.getInt(OFFSET_PARTITION_ID);
         op.callId = request.getLong(OFFSET_REQ_CALL_ID);
         op.response = request.socket != null
                 ? remoteResponseAllocator.allocate(OFFSET_RES_PAYLOAD)

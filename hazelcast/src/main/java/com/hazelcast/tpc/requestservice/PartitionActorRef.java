@@ -62,10 +62,9 @@ public final class PartitionActorRef extends ActorRef<IOBuffer> {
     public RequestFuture<IOBuffer> submit(IOBuffer request) {
         RequestFuture future = new RequestFuture(request);
 
-        long callId = requests.nextCallId();
+        //long callId = requests.nextCallId();
 
-        request.putLong(OFFSET_REQ_CALL_ID, callId);
-        requests.map.put(callId, future);
+        requests.slots.put(future);
 
         Address address = partitionService.getPartitionOwner(partitionId);
         if (address.equals(thisAddress)) {

@@ -27,8 +27,8 @@ public class LocalNoopBenchmark {
 
         Table table = node1.getTable("piranaha");
 
-        long operations = 5_000_000;
-        int concurrency = 2;
+        long operations = 25_000_000;
+        int concurrency = 200;
         long iterations = operations / concurrency;
 
         long startMs = System.currentTimeMillis();

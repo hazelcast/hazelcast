@@ -183,12 +183,12 @@ public class IORequestScheduler {
      * it would be better to have IORequests for a single storage device.
      */
     class AsyncFileIoHandler implements CompletionListener {
-        private final Slots<IoRequest> ioSlots;
+        private final IOSlots<IoRequest> ioSlots;
         private final IOUringAsyncFile file;
 
         private AsyncFileIoHandler(IOUringAsyncFile file) {
             this.file = file;
-            this.ioSlots = new Slots<>(file.dev.maxConcurrent);
+            this.ioSlots = new IOSlots<>(file.dev.maxConcurrent);
         }
 
         @Override

@@ -48,7 +48,6 @@ public final class OpAllocator {
     public OpAllocator(OpScheduler scheduler, Managers managers) {
         this.scheduler = scheduler;
         this.manager = managers;
-
         this.pools = new Pool[MAX_OPCODE + 1];
         pools[TABLE_UPSERT] = new Pool(UpsertOp::new);
         pools[TABLE_SELECT_BY_KEY] = new Pool(SelectByKeyOp::new);

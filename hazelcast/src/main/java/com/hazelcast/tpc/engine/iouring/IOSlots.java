@@ -16,20 +16,20 @@
 
 package com.hazelcast.tpc.engine.iouring;
 
-public final class Slots<E> {
+public final class IOSlots<E> {
 
     private int[] tags;
     private E[] items;
     private int pos;
 
-    public Slots(int size) {
-        tags = new int[size];
-        items = (E[]) new Object[size];
+    public IOSlots(int size) {
+        this.tags = new int[size];
+        this.items = (E[]) new Object[size];
 
         for (int k = 0; k < size; k++) {
             tags[k] = k;
         }
-        pos = size;
+        this.pos = size;
     }
 
     public int insert(E item) {

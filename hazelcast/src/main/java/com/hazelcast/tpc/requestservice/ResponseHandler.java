@@ -15,19 +15,35 @@
  */
 
 package com.hazelcast.tpc.requestservice;
+/*
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 import com.hazelcast.internal.util.concurrent.MPSCQueue;
 import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 
-import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
 import static com.hazelcast.tpc.requestservice.FrameCodec.FLAG_OP_RESPONSE_CONTROL;
+import static com.hazelcast.tpc.requestservice.FrameCodec.OFFSET_PARTITION_ID;
 import static com.hazelcast.tpc.requestservice.FrameCodec.OFFSET_RES_CALL_ID;
 import static com.hazelcast.tpc.requestservice.FrameCodec.OFFSET_RES_PAYLOAD;
 import static com.hazelcast.tpc.requestservice.FrameCodec.RESPONSE_TYPE_EXCEPTION;
 import static com.hazelcast.tpc.requestservice.FrameCodec.RESPONSE_TYPE_OVERLOAD;
+
 
 class ResponseHandler implements Consumer<IOBuffer> {
 
@@ -75,7 +91,7 @@ class ResponseHandler implements Consumer<IOBuffer> {
     }
 
     private void process(IOBuffer response) {
-        int partitionId = response.getInt(FrameCodec.OFFSET_PARTITION_ID);
+        int partitionId = response.getInt(OFFSET_PARTITION_ID);
 
         Requests requests;
         if (partitionId >= 0) {
@@ -91,7 +107,7 @@ class ResponseHandler implements Consumer<IOBuffer> {
 
         long callId = response.getLong(OFFSET_RES_CALL_ID);
 
-        RequestFuture future = requests.map.remove(callId);
+        RequestFuture future = requests.slots.remove(callId);
         if (future == null) {
             System.out.println("Dropping response " + response + ", invocation with id " + callId
                     + ", partitionId: " + partitionId + " not found");
@@ -101,7 +117,8 @@ class ResponseHandler implements Consumer<IOBuffer> {
         requests.complete();
 
         response.position(OFFSET_RES_PAYLOAD);
-        IOBuffer request = future.clearRequest();
+        IOBuffer request = future.request;
+        future.request = null;
         int flags = request.flags();
         if ((flags & FLAG_OP_RESPONSE_CONTROL) == 0) {
             future.complete(response);

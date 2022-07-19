@@ -20,7 +20,6 @@ import com.hazelcast.tpc.engine.AsyncSocket;
 import com.hazelcast.tpc.requestservice.FrameCodec;
 
 import java.nio.ByteBuffer;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.nio.Bits.BYTES_CHAR;
@@ -40,7 +39,6 @@ public class IOBuffer {
     private ByteBuffer buff;
     public IOBufferAllocator allocator;
     public boolean concurrent = false;
-
     // make field?
     protected AtomicInteger refCount = new AtomicInteger();
 

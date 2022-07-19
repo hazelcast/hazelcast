@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.tpc.engine;
 
 import net.smacke.jaydio.DirectIoLib;
@@ -64,6 +80,9 @@ public abstract class AsyncFile {
      * needs to be properly aligned. So if there would be a map.get, you can't just start adding
      * the data after.
      *
+     * todo: use an IOBuffer instead of an bufferAddress/length. This way can integrate with
+     * AsyncFileChannel.
+     *
      * @param offset the offset.
      * @param length the number of bytes to read.
      * @return
@@ -71,6 +90,9 @@ public abstract class AsyncFile {
     public abstract Promise pread(long offset, int length, long bufferAddress);
 
     /**
+     * todo: use an IOBuffer instead of an bufferAddress/length. This way can integrate with
+     * AsyncFileChannel.
+     *
      * @param offset
      * @param length
      * @param bufferAddress
