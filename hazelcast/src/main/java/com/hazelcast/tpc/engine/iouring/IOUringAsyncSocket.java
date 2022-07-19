@@ -306,7 +306,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
     @Override
     public void close() {
         if (closed.compareAndSet(false, true)) {
-            if(logger.isInfoEnabled()) {
+            if (logger.isInfoEnabled()) {
                 logger.info("Closing  " + this);
             }
             //todo: also think about releasing the resources like IOBuffers
@@ -337,6 +337,10 @@ public final class IOUringAsyncSocket extends AsyncSocket {
 
     @Override
     public CompletableFuture<AsyncSocket> connect(SocketAddress address) {
+        if (logger.isFineEnabled()) {
+            logger.fine("Connect to address:" + address);
+        }
+
         CompletableFuture<AsyncSocket> future = new CompletableFuture<>();
 
         try {
@@ -346,9 +350,12 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                 this.remoteAddress = socket.remoteAddress();
                 this.localAddress = socket.localAddress();
 
+                if (logger.isInfoEnabled()) {
+                    logger.info("Connected from " + localAddress + "->" + remoteAddress);
+                }
+
                 eventloop.execute(() -> sq_addRead());
 
-                logger.info("Socket connected to " + address);
                 future.complete(this);
             } else {
                 future.completeExceptionally(new IOException("Could not connect to " + address));

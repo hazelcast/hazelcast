@@ -436,7 +436,9 @@ public final class NioAsyncSocket extends AsyncSocket {
                 socketChannel.finishConnect();
                 remoteAddress = socketChannel.getRemoteAddress();
                 localAddress = socketChannel.getLocalAddress();
-                logger.info("Channel established " + localAddress + "->" + remoteAddress);
+                if (logger.isInfoEnabled()) {
+                    logger.info("Connected from " + localAddress + "->" + remoteAddress);
+                }
                 socketChannel.register(selector, OP_READ, this);
                 connectFuture.complete(NioAsyncSocket.this);
             } catch (IOException e) {
