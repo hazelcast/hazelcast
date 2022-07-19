@@ -154,14 +154,18 @@ public class RequestService {
         Engine.Configuration configuration = new Engine.Configuration();
         configuration.setThreadFactory(TPCEventloopThread::new);
         configuration.setEventloopConfigUpdater(eventloopConfiguration -> {
-            IOBufferAllocator remoteResponseIOBufferAllocator = new ConcurrentIOBufferAllocator(128, true);
-            IOBufferAllocator localResponseIOBufferAllocator = new NonConcurrentIOBufferAllocator(128, true);
+            // remote responses will be created and released by the TPC thread.
+            // So a non-concurrent allocator is good enough.
+            IOBufferAllocator remoteResponseAllocator = new NonConcurrentIOBufferAllocator(128, true);
+            // local responses will be created by the TPC thread, but will be released by a user thread.
+            // So a concurrent allocator is needed.
+            IOBufferAllocator localResponseAllocator = new ConcurrentIOBufferAllocator(128, true);
 
             OpScheduler opScheduler = new OpScheduler(32768,
                     Integer.MAX_VALUE,
                     managers,
-                    localResponseIOBufferAllocator,
-                    remoteResponseIOBufferAllocator);
+                    localResponseAllocator,
+                    remoteResponseAllocator);
 
             eventloopConfiguration.setScheduler(opScheduler);
         });

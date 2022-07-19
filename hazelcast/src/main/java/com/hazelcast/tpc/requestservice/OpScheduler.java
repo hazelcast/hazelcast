@@ -52,8 +52,8 @@ public final class OpScheduler implements Eventloop.Scheduler {
     private final SwCounter exceptions = newSwCounter();
     private final CircularQueue<Op> runQueue;
     private final int batchSize;
-    private final IOBufferAllocator localResponseIOBufferAllocator;
-    private final IOBufferAllocator remoteResponseIOBufferAllocator;
+    private final IOBufferAllocator localResponseAllocator;
+    private final IOBufferAllocator remoteResponseAllocator;
     private final OpAllocator opAllocator;
     private Eventloop eventloop;
     private Actor[] partitionActors;
@@ -61,12 +61,12 @@ public final class OpScheduler implements Eventloop.Scheduler {
     public OpScheduler(int capacity,
                        int batchSize,
                        Managers managers,
-                       IOBufferAllocator localResponseIOBufferAllocator,
-                       IOBufferAllocator remoteResponseIOBufferAllocator) {
+                       IOBufferAllocator localResponseAllocator,
+                       IOBufferAllocator remoteResponseAllocator) {
         this.runQueue = new CircularQueue<>(capacity);
         this.batchSize = batchSize;
-        this.localResponseIOBufferAllocator = localResponseIOBufferAllocator;
-        this.remoteResponseIOBufferAllocator = remoteResponseIOBufferAllocator;
+        this.localResponseAllocator = localResponseAllocator;
+        this.remoteResponseAllocator = remoteResponseAllocator;
         this.opAllocator = new OpAllocator(this, managers);
     }
 
@@ -95,9 +95,9 @@ public final class OpScheduler implements Eventloop.Scheduler {
 
         op.partitionId =request.getInt(FrameCodec.OFFSET_PARTITION_ID);
         op.callId = request.getLong(FrameCodec.OFFSET_REQ_CALL_ID);
-        op.response = request.future != null
-                ? remoteResponseIOBufferAllocator.allocate(OFFSET_RES_PAYLOAD)
-                : localResponseIOBufferAllocator.allocate(OFFSET_RES_PAYLOAD);
+        op.response = request.socket != null
+                ? remoteResponseAllocator.allocate(OFFSET_RES_PAYLOAD)
+                : localResponseAllocator.allocate(OFFSET_RES_PAYLOAD);
         op.request = request.position(OFFSET_REQ_PAYLOAD);
         schedule(op);
     }
