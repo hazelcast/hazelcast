@@ -87,7 +87,7 @@ public final class UnorderedJsonArrayAggAggregation implements SqlAggregation {
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeBoolean(isAbsentOnNull.get(0));
-        out.write(values.size());
+        out.writeInt(values.size());
         for (Object o : values) {
             out.writeObject(o);
         }
