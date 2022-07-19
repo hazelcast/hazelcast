@@ -413,11 +413,6 @@ public class BasicNestedFieldsTest extends SqlJsonTestSupport {
         createType(client(), "UserType", User.class);
         createType(client(), "OfficeType", Office.class);
         createType(client(), "OrganizationType", Organization.class);
-        try {
-            Thread.sleep(1000);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
 
         final IMap<Long, User> testMap = client().getMap("test");
         execute("CREATE MAPPING test "
