@@ -25,7 +25,7 @@ import java.nio.ByteBuffer;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.tpc.engine.iobuffer.IOBuffer.FLAG_OP_RESPONSE;
+import static com.hazelcast.tpc.requestservice.FrameCodec.FLAG_OP_RESPONSE;
 
 public class RequestIOUringReadHandler extends IOUringAsyncReadHandler {
     private IOBuffer inboundBuf;

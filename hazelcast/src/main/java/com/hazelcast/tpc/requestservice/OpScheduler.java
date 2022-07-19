@@ -24,9 +24,8 @@ import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 import com.hazelcast.tpc.engine.iobuffer.IOBufferAllocator;
 
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
-import static com.hazelcast.tpc.engine.iobuffer.IOBuffer.*;
-import static com.hazelcast.tpc.engine.iobuffer.IOBuffer.OFFSET_REQ_PAYLOAD;
-import static com.hazelcast.tpc.engine.iobuffer.IOBuffer.OFFSET_RES_PAYLOAD;
+import static com.hazelcast.tpc.requestservice.FrameCodec.OFFSET_REQ_PAYLOAD;
+import static com.hazelcast.tpc.requestservice.FrameCodec.OFFSET_RES_PAYLOAD;
 import static com.hazelcast.tpc.requestservice.Op.BLOCKED;
 import static com.hazelcast.tpc.requestservice.Op.COMPLETED;
 import static com.hazelcast.tpc.requestservice.Op.EXCEPTION;
@@ -94,8 +93,8 @@ public final class OpScheduler implements Eventloop.Scheduler {
 //
 //        }
 
-        op.partitionId =request.getInt(OFFSET_PARTITION_ID);
-        op.callId = request.getLong(OFFSET_REQ_CALL_ID);
+        op.partitionId =request.getInt(FrameCodec.OFFSET_PARTITION_ID);
+        op.callId = request.getLong(FrameCodec.OFFSET_REQ_CALL_ID);
         op.response = request.future != null
                 ? remoteResponseIOBufferAllocator.allocate(OFFSET_RES_PAYLOAD)
                 : localResponseIOBufferAllocator.allocate(OFFSET_RES_PAYLOAD);
@@ -110,8 +109,8 @@ public final class OpScheduler implements Eventloop.Scheduler {
             runSingle();
         } else {
             IOBuffer response = op.response;
-            response.writeResponseHeader(op.partitionId, op.callId, FLAG_OP_RESPONSE_CONTROL)
-                    .writeInt(RESPONSE_TYPE_OVERLOAD)
+            response.writeResponseHeader(op.partitionId, op.callId, FrameCodec.FLAG_OP_RESPONSE_CONTROL)
+                    .writeInt(FrameCodec.RESPONSE_TYPE_OVERLOAD)
                     .constructComplete();
             sendResponse(op);
         }
@@ -156,8 +155,8 @@ public final class OpScheduler implements Eventloop.Scheduler {
                 case EXCEPTION:
                     exceptions.inc();
                     op.response.clear();
-                    op.response.writeResponseHeader(op.partitionId, op.callId, FLAG_OP_RESPONSE_CONTROL)
-                            .writeInt(RESPONSE_TYPE_EXCEPTION)
+                    op.response.writeResponseHeader(op.partitionId, op.callId, FrameCodec.FLAG_OP_RESPONSE_CONTROL)
+                            .writeInt(FrameCodec.RESPONSE_TYPE_EXCEPTION)
                             .writeString(exception.getMessage())
                             .constructComplete();
                     sendResponse(op);

@@ -28,7 +28,7 @@ import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
-import static com.hazelcast.tpc.engine.iobuffer.IOBuffer.OFFSET_REQ_CALL_ID;
+import static com.hazelcast.tpc.requestservice.FrameCodec.OFFSET_REQ_CALL_ID;
 
 /**
  * An {@link ActorRef} that routes messages to the {@link PartitionActor}.

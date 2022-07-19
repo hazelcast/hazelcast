@@ -23,11 +23,11 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
-import static com.hazelcast.tpc.engine.iobuffer.IOBuffer.FLAG_OP_RESPONSE_CONTROL;
-import static com.hazelcast.tpc.engine.iobuffer.IOBuffer.OFFSET_RES_CALL_ID;
-import static com.hazelcast.tpc.engine.iobuffer.IOBuffer.OFFSET_RES_PAYLOAD;
-import static com.hazelcast.tpc.engine.iobuffer.IOBuffer.RESPONSE_TYPE_EXCEPTION;
-import static com.hazelcast.tpc.engine.iobuffer.IOBuffer.RESPONSE_TYPE_OVERLOAD;
+import static com.hazelcast.tpc.requestservice.FrameCodec.FLAG_OP_RESPONSE_CONTROL;
+import static com.hazelcast.tpc.requestservice.FrameCodec.OFFSET_RES_CALL_ID;
+import static com.hazelcast.tpc.requestservice.FrameCodec.OFFSET_RES_PAYLOAD;
+import static com.hazelcast.tpc.requestservice.FrameCodec.RESPONSE_TYPE_EXCEPTION;
+import static com.hazelcast.tpc.requestservice.FrameCodec.RESPONSE_TYPE_OVERLOAD;
 
 class ResponseHandler implements Consumer<IOBuffer> {
 
@@ -75,7 +75,7 @@ class ResponseHandler implements Consumer<IOBuffer> {
     }
 
     private void process(IOBuffer response) {
-        int partitionId = response.getInt(IOBuffer.OFFSET_PARTITION_ID);
+        int partitionId = response.getInt(FrameCodec.OFFSET_PARTITION_ID);
 
         Requests requests;
         if (partitionId >= 0) {

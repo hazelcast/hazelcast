@@ -8,7 +8,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.internal.nio.Bits.*;
-import static com.hazelcast.tpc.engine.iobuffer.IOBuffer.FLAG_OP_RESPONSE_CONTROL;
+import static com.hazelcast.tpc.requestservice.FrameCodec.FLAG_OP_RESPONSE_CONTROL;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;

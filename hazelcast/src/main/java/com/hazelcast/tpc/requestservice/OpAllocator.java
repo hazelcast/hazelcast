@@ -28,7 +28,7 @@ import com.hazelcast.table.impl.UpsertOp;
 
 import java.util.function.Supplier;
 
-import static com.hazelcast.tpc.engine.iobuffer.IOBuffer.OFFSET_REQ_OPCODE;
+import static com.hazelcast.tpc.requestservice.FrameCodec.OFFSET_REQ_OPCODE;
 import static com.hazelcast.tpc.requestservice.OpCodes.BULK_TRANSPORT;
 import static com.hazelcast.tpc.requestservice.OpCodes.GET;
 import static com.hazelcast.tpc.requestservice.OpCodes.INIT_BULK_TRANSPORT;

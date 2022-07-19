@@ -17,6 +17,7 @@
 package com.hazelcast.tpc.engine.iobuffer;
 
 import com.hazelcast.tpc.engine.AsyncSocket;
+import com.hazelcast.tpc.requestservice.FrameCodec;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.CompletableFuture;
@@ -27,44 +28,14 @@ import static com.hazelcast.internal.nio.Bits.BYTES_INT;
 import static com.hazelcast.internal.nio.Bits.BYTES_LONG;
 import static com.hazelcast.internal.nio.Bits.BYTE_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.CHAR_SIZE_IN_BYTES;
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.QuickMath.nextPowerOfTwo;
 
 
-// always
-// size: int
-// flags: int
-// partitionId: int  : 8
-
-// request
-// callid: long: 12
-// opcode: 20
-
-// response
-// call id: long 12
 public class IOBuffer {
-
-    public static final int FLAG_OP = 1 << 1;
-    public static final int FLAG_OP_RESPONSE = 1 << 2;
-    public static final int FLAG_OP_RESPONSE_CONTROL = 1 << 3;
-
-    public static final int RESPONSE_TYPE_OVERLOAD = 0;
-    public static final int RESPONSE_TYPE_EXCEPTION = 1;
 
     public CompletableFuture future;
     public IOBuffer next;
     public AsyncSocket socket;
-
-    public static final int OFFSET_SIZE = 0;
-    public static final int OFFSET_FLAGS = OFFSET_SIZE + BYTES_INT;
-    public static final int OFFSET_PARTITION_ID = OFFSET_FLAGS + BYTES_INT;
-
-    public static final int OFFSET_REQ_CALL_ID = OFFSET_PARTITION_ID + BYTES_INT;
-    public static final int OFFSET_REQ_OPCODE = OFFSET_REQ_CALL_ID + BYTES_LONG;
-    public static final int OFFSET_REQ_PAYLOAD = OFFSET_REQ_OPCODE + BYTES_INT;
-
-    public static final int OFFSET_RES_CALL_ID = OFFSET_PARTITION_ID + BYTES_INT;
-    public static final int OFFSET_RES_PAYLOAD = OFFSET_RES_CALL_ID + BYTES_LONG;
 
     public boolean trackRelease;
     private ByteBuffer buff;
@@ -100,9 +71,9 @@ public class IOBuffer {
     }
 
     public IOBuffer writeRequestHeader(int partitionId, int opcode) {
-        ensureRemaining(OFFSET_REQ_PAYLOAD);
+        ensureRemaining(FrameCodec.OFFSET_REQ_PAYLOAD);
         buff.putInt(-1); //size
-        buff.putInt(FLAG_OP);
+        buff.putInt(FrameCodec.FLAG_OP);
         buff.putInt(partitionId);
         buff.putLong(-1); //callid
         buff.putInt(opcode);
@@ -114,27 +85,27 @@ public class IOBuffer {
     }
 
     public IOBuffer writeResponseHeader(int partitionId, long callId, int flags) {
-        ensureRemaining(OFFSET_RES_PAYLOAD);
+        ensureRemaining(FrameCodec.OFFSET_RES_PAYLOAD);
         buff.putInt(-1);  //size
-        buff.putInt(FLAG_OP_RESPONSE | flags);
+        buff.putInt(FrameCodec.FLAG_OP_RESPONSE | flags);
         buff.putInt(partitionId);
         buff.putLong(callId);
         return this;
     }
 
     public boolean isFlagRaised(int flag) {
-        int flags = buff.getInt(OFFSET_FLAGS);
+        int flags = buff.getInt(FrameCodec.OFFSET_FLAGS);
         return (flags & flag) != 0;
     }
 
     public IOBuffer addFlags(int addedFlags) {
-        int oldFlags = buff.getInt(OFFSET_FLAGS);
-        buff.putInt(OFFSET_FLAGS, oldFlags | addedFlags);
+        int oldFlags = buff.getInt(FrameCodec.OFFSET_FLAGS);
+        buff.putInt(FrameCodec.OFFSET_FLAGS, oldFlags | addedFlags);
         return this;
     }
 
     public int flags() {
-        return buff.getInt(OFFSET_FLAGS);
+        return buff.getInt(FrameCodec.OFFSET_FLAGS);
     }
 
     public ByteBuffer byteBuffer() {
@@ -263,7 +234,7 @@ public class IOBuffer {
     }
 
     public IOBuffer constructComplete() {
-        buff.putInt(OFFSET_SIZE, buff.position());
+        buff.putInt(FrameCodec.OFFSET_SIZE, buff.position());
         buff.flip();
         return this;
     }
