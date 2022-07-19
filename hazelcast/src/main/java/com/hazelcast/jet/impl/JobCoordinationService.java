@@ -337,20 +337,21 @@ public class JobCoordinationService {
 
         checkPermissions(subject, dag);
 
-        // Initialize and start the job (happens in the constructor). We do this before adding the actual
+        // Initialize and start the job. We do this before adding the actual
         // LightMasterContext to the map to avoid possible races of the job initialization and cancellation.
-        LightMasterContext mc = new LightMasterContext(nodeEngine, this, dag, jobId, jobConfig, subject);
-        oldContext = lightMasterContexts.put(jobId, mc);
-        assert oldContext == UNINITIALIZED_LIGHT_JOB_MARKER;
+        return LightMasterContext.createContext(nodeEngine, this, dag, jobId, jobConfig, subject)
+                .thenComposeAsync(mc -> {
+                    Object oldCtx = lightMasterContexts.put(jobId, mc);
+                    assert oldCtx == UNINITIALIZED_LIGHT_JOB_MARKER;
+                    scheduleJobTimeout(jobId, jobConfig.getTimeoutMillis());
 
-        scheduleJobTimeout(jobId, jobConfig.getTimeoutMillis());
-
-        return mc.getCompletionFuture()
-                .whenComplete((r, t) -> {
-                    Object removed = lightMasterContexts.remove(jobId);
-                    assert removed instanceof LightMasterContext : "LMC not found: " + removed;
-                    unscheduleJobTimeout(jobId);
-                });
+                    return mc.getCompletionFuture()
+                      .whenComplete((r, t) -> {
+                          Object removed = lightMasterContexts.remove(jobId);
+                          assert removed instanceof LightMasterContext : "LMC not found: " + removed;
+                          unscheduleJobTimeout(jobId);
+                      });
+                }, coordinationExecutor());
     }
 
     public long getJobSubmittedCount() {

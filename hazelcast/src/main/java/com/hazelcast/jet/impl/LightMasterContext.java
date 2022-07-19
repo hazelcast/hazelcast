@@ -56,13 +56,14 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.createExecutionPlans;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 
-public class LightMasterContext {
+public final class LightMasterContext {
 
     private static final Object NULL_OBJECT = new Object() {
         @Override
@@ -84,17 +85,26 @@ public class LightMasterContext {
     private final CompletableFuture<Void> jobCompletionFuture = new CompletableFuture<>();
     private final Set<Vertex> vertices;
 
-    @SuppressWarnings("checkstyle:ExecutableStatementCount")
-    public LightMasterContext(
-            NodeEngineImpl nodeEngine, JobCoordinationService coordinationService, DAG dag, long jobId,
-            JobConfig config, Subject subject
-    ) {
+    private LightMasterContext(NodeEngine nodeEngine, long jobId, ILogger logger, String jobIdString,
+                              JobConfig jobConfig, Map<MemberInfo, ExecutionPlan> executionPlanMap,
+                              Set<Vertex> vertices) {
         this.nodeEngine = nodeEngine;
         this.jobId = jobId;
-        this.jobConfig = config;
+        this.logger = logger;
+        this.jobIdString = jobIdString;
+        this.jobConfig = jobConfig;
+        this.executionPlanMap = executionPlanMap;
+        this.vertices = vertices;
+    }
 
-        logger = nodeEngine.getLogger(LightMasterContext.class);
-        jobIdString = idToString(jobId);
+    @SuppressWarnings("checkstyle:ExecutableStatementCount")
+    public static CompletableFuture<LightMasterContext> createContext(
+            NodeEngineImpl nodeEngine, JobCoordinationService coordinationService, DAG dag, long jobId,
+            JobConfig  jobConfig, Subject subject
+    ) {
+
+        ILogger logger = nodeEngine.getLogger(LightMasterContext.class);
+        String jobIdString = idToString(jobId);
 
         // find a subset of members with version equal to the coordinator version.
         MembersView membersView = Util.getMembersView(nodeEngine);
@@ -122,30 +132,31 @@ public class LightMasterContext {
             logFine(logger, "Building execution plan for %s", jobIdString);
         }
 
-        vertices = new HashSet<>();
+        Set<Vertex> vertices = new HashSet<>();
         dag.iterator().forEachRemaining(vertices::add);
-        Map<MemberInfo, ExecutionPlan> executionPlanMapTmp;
-        try {
-            executionPlanMapTmp =
-                    createExecutionPlans(nodeEngine, members, dag, jobId, jobId, config, 0, true, subject)
-                            .get();
-        } catch (Throwable e) {
-            executionPlanMap = null;
-            finalizeJob(e);
-            return;
-        }
-        executionPlanMap = executionPlanMapTmp;
-        logFine(logger, "Built execution plans for %s", jobIdString);
-        Set<MemberInfo> participants = executionPlanMap.keySet();
-        Function<ExecutionPlan, Operation> operationCtor = plan -> {
-            Data serializedPlan = nodeEngine.getSerializationService().toData(plan);
-            return new InitExecutionOperation(jobId, jobId, membersView.getVersion(), coordinatorVersion, participants,
-                    serializedPlan, true);
-        };
-        invokeOnParticipants(operationCtor,
-                responses -> finalizeJob(findError(responses)),
-                error -> cancelInvocations()
-        );
+        return createExecutionPlans(nodeEngine, members, dag, jobId, jobId, jobConfig, 0, true, subject)
+                .handleAsync((planMap, e) -> {
+                    LightMasterContext mc = new LightMasterContext(nodeEngine, jobId, logger,
+                            jobIdString, jobConfig, planMap, vertices);
+                    if (e != null) {
+                        mc.finalizeJob(e);
+                        throw rethrow(e);
+                    }
+                    logFine(logger, "Built execution plans for %s", jobIdString);
+                    Set<MemberInfo> participants = planMap.keySet();
+                    Function<ExecutionPlan, Operation> operationCtor = plan -> {
+                        Data serializedPlan = nodeEngine.getSerializationService().toData(plan);
+                        return new InitExecutionOperation(jobId, jobId, membersView.getVersion(), coordinatorVersion,
+                                participants, serializedPlan, true);
+                    };
+
+                    mc.invokeOnParticipants(operationCtor,
+                            responses ->  mc.finalizeJob(mc.findError(responses)),
+                            error ->  mc.cancelInvocations()
+                    );
+
+                    return mc;
+                }, coordinationService.coordinationExecutor());
     }
 
     public long getJobId() {

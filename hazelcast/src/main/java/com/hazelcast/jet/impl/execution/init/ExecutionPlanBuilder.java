@@ -48,6 +48,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
@@ -57,6 +58,7 @@ import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static java.util.concurrent.CompletableFuture.runAsync;
 import static java.util.stream.Collectors.toMap;
 
 public final class ExecutionPlanBuilder {
@@ -135,8 +137,7 @@ public final class ExecutionPlanBuilder {
                 }
             };
             if (metaSupplier.initIsCooperative()) {
-                action.run();
-                futures[entry.requiredPosition] = completedFuture(null);
+                futures[entry.requiredPosition] = runAsync(action, CALLER_RUNS);
             } else {
                 futures[entry.requiredPosition] = CompletableFuture.runAsync(action, initOffloadExecutor);
             }
