@@ -32,7 +32,6 @@ import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
@@ -81,9 +80,9 @@ public class TypesStorage extends TablesStorage {
 
         boolean result = true;
         if (onlyIfAbsent) {
-            result = putIfAbsent(name.toLowerCase(Locale.ROOT), type);
+            result = putIfAbsent(name, type);
         } else {
-            put(name.toLowerCase(Locale.ROOT), type);
+            put(name, type);
         }
 
         fixTypeReferences(type);

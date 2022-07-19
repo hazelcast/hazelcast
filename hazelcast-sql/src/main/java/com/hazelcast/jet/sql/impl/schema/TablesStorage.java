@@ -40,7 +40,6 @@ import com.hazelcast.sql.impl.schema.view.View;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
@@ -81,11 +80,13 @@ public class TablesStorage {
             awaitMappingOnAllMembers(name, view);
         }
     }
-    // TODO: old storage check
+
     void put(String name, Type type) {
-        // TODO Case sensitive?
-        storage().put(name.toLowerCase(Locale.ROOT), type);
-        awaitMappingOnAllMembers(name.toLowerCase(Locale.ROOT), type);
+        newStorage().put(name, type);
+        if (useOldStorage()) {
+            oldStorage().put(name, type);
+            awaitMappingOnAllMembers(name, type);
+        }
     }
 
     boolean putIfAbsent(String name, Mapping mapping) {
@@ -106,12 +107,13 @@ public class TablesStorage {
         return previousNew == null && previousOld == null;
     }
 
-    // TODO: old storage check
     boolean putIfAbsent(String name, Type type) {
-        // TODO Case sensitive?
-        Object previous = storage().putIfAbsent(name, type);
-        awaitMappingOnAllMembers(name, type);
-        return previous == null;
+        Object previousNew = newStorage().putIfAbsent(name, type);
+        Object previousOld = null;
+        if (useOldStorage()) {
+            previousOld = oldStorage().putIfAbsent(name, type);
+        }
+        return previousNew == null && previousOld == null;
     }
 
     Mapping removeMapping(String name) {
@@ -123,22 +125,28 @@ public class TablesStorage {
         return removedNew == null ? removedOld : removedNew;
     }
 
-    // TODO: old storage check
     public Collection<Type> getAllTypes() {
-        return storage().values().stream()
+        return mergedStorage().values().stream()
                 .filter(o -> o instanceof Type)
                 .map(o -> (Type) o)
                 .collect(Collectors.toList());
     }
 
-    // TODO: old storage check
     public Type getType(final String name) {
-        return (Type) storage().get(name.toLowerCase(Locale.ROOT));
+        Object obj = mergedStorage().get(name);
+        if (obj instanceof Type) {
+            return (Type) obj;
+        }
+        return null;
     }
 
-    // TODO: old storage check
     public Type removeType(String name) {
-        return (Type) storage().remove(name.toLowerCase(Locale.ROOT));
+        Type removedNew = (Type) newStorage().remove(name);
+        Type removedOld = null;
+        if (useOldStorage()) {
+            removedOld = (Type) oldStorage().remove(name);
+        }
+        return removedNew == null ? removedOld : removedNew;
     }
 
     View getView(String name) {
