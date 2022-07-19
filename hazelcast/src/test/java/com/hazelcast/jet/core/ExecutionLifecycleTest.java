@@ -714,7 +714,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         List<Future<Job>> submitFutures = new ArrayList<>();
 
         // When
-        int numJobs = 1;
+        int numJobs = 4;
         for (int i = 0; i < numJobs; i++) {
             submitFutures.add(spawn(() -> newJob(dagBlocking)));
         }
@@ -780,7 +780,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         List<Future<Job>> submitFutures = new ArrayList<>();
 
         // When
-        int numJobs = 2;
+        int numJobs = 5;
         for (int i = 0; i < numJobs; i++) {
             submitFutures.add(spawn(() -> newJob(dagBlocking)));
         }
@@ -844,7 +844,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         List<Future<Job>> submitFutures = new ArrayList<>();
 
         // When
-        int numJobs = 2;
+        int numJobs = 5;
         for (int i = 0; i < numJobs; i++) {
             submitFutures.add(spawn(() -> newJob(dagBlocking)));
         }
