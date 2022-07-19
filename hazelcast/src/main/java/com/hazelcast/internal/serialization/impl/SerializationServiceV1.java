@@ -169,7 +169,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
 
         // Called here so that we can make sure that we are not overriding
         // any of the default serializers registered above with the Compact
-        // serialization, unless the user configured to so explicitly.
+        // serialization, unless the user configured to do so explicitly.
         verifyDefaultSerializersNotOverriddenWithCompact();
     }
 
