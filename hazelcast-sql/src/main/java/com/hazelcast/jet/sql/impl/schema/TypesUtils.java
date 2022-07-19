@@ -19,6 +19,8 @@ package com.hazelcast.jet.sql.impl.schema;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -26,52 +28,45 @@ public final class TypesUtils {
     private TypesUtils() { }
 
     public static QueryDataType convertTypeToQueryDataType(final Type rootType, final TypesStorage typesStorage) {
-        final Map<String, QueryDataType> discoveredTypes = new HashMap<>();
-
-        traverseTypeHierarchy(rootType, discoveredTypes, typesStorage);
-        populateTypeInformation(discoveredTypes, typesStorage);
-
-        return discoveredTypes.get(rootType.getName());
+        return convertTypeToQueryDataTypeInt(rootType.getName(), rootType, typesStorage, new HashMap<>());
     }
 
-    public static void traverseTypeHierarchy(final Type current,
-                                             final Map<String, QueryDataType> discovered,
-                                             final TablesStorage tablesStorage
+    /**
+     * If `type` is null, `typeName` will be used to look it up from the storage.
+     */
+    private static QueryDataType convertTypeToQueryDataTypeInt(
+            @Nonnull final String typeName,
+            @Nullable Type type,
+            @Nonnull final TablesStorage tablesStorage,
+            @Nonnull final Map<String, QueryDataType> seen
     ) {
-        discovered.putIfAbsent(current.getName(), current.toQueryDataTypeRef());
+        QueryDataType convertedType = seen.get(typeName);
+        if (convertedType != null) {
+            return convertedType;
+        }
 
-        for (int i = 0; i < current.getFields().size(); i++) {
-            final Type.TypeField field = current.getFields().get(i);
+        if (type == null) {
+            type = tablesStorage.getType(typeName);
+        }
+
+        // At this point the `convertedType` lacks fields. We put it to the `seen` map for the purpose of resolving
+        // cyclic references, we'll add the fields later below.
+        convertedType = type.toQueryDataTypeRef();
+        seen.putIfAbsent(type.getName(), convertedType);
+
+        for (Type.TypeField field : type.getFields()) {
+            QueryDataType queryDataType;
             if (field.getQueryDataType().isCustomType()) {
-                final String fieldTypeName = field.getQueryDataType().getObjectTypeName();
-                if (!discovered.containsKey(fieldTypeName)) {
-                    traverseTypeHierarchy(tablesStorage.getType(fieldTypeName), discovered, tablesStorage);
-                }
+                queryDataType = convertTypeToQueryDataTypeInt(field.getQueryDataType().getObjectTypeName(),
+                        null, tablesStorage, seen);
+            } else {
+                queryDataType = field.getQueryDataType();
             }
+
+            convertedType.getObjectFields().add(
+                    new QueryDataType.QueryDataTypeField(field.getName(), queryDataType));
         }
-    }
 
-    public static void populateTypeInformation(final Map<String, QueryDataType> types, final TablesStorage tablesStorage) {
-        for (final QueryDataType queryDataType : types.values()) {
-            final Type type = tablesStorage.getType(queryDataType.getObjectTypeName());
-
-            // TODO: different type kinds
-            queryDataType.setObjectTypeClassName(type.getJavaClassName());
-
-            for (int i = 0; i < type.getFields().size(); i++) {
-                final Type.TypeField field = type.getFields().get(i);
-                if (field.getQueryDataType().isCustomType()) {
-                    queryDataType.getObjectFields().add(new QueryDataType.QueryDataTypeField(
-                            field.getName(),
-                            types.get(field.getQueryDataType().getObjectTypeName())
-                    ));
-                } else {
-                    queryDataType.getObjectFields().add(new QueryDataType.QueryDataTypeField(
-                            field.getName(),
-                            field.getQueryDataType()
-                    ));
-                }
-            }
-        }
+        return convertedType;
     }
 }
