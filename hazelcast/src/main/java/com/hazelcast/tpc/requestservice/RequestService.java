@@ -31,10 +31,10 @@ import com.hazelcast.tpc.engine.ReadHandler;
 import com.hazelcast.tpc.engine.epoll.EpollAsyncServerSocket;
 import com.hazelcast.tpc.engine.epoll.EpollEventloop;
 import com.hazelcast.tpc.engine.epoll.EpollReadHandler;
-import com.hazelcast.tpc.engine.iobuffer.ParallelIOBufferAllocator;
+import com.hazelcast.tpc.engine.iobuffer.ConcurrentIOBufferAllocator;
 import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 import com.hazelcast.tpc.engine.iobuffer.IOBufferAllocator;
-import com.hazelcast.tpc.engine.iobuffer.SerialIOBufferAllocator;
+import com.hazelcast.tpc.engine.iobuffer.NonConcurrentIOBufferAllocator;
 import com.hazelcast.tpc.engine.iobuffer.UnpooledIOBufferAllocator;
 import com.hazelcast.tpc.engine.nio.NioAsyncServerSocket;
 import com.hazelcast.tpc.engine.nio.NioAsyncSocket;
@@ -154,8 +154,8 @@ public class RequestService {
         Engine.Configuration configuration = new Engine.Configuration();
         configuration.setThreadFactory(TPCEventloopThread::new);
         configuration.setEventloopConfigUpdater(eventloopConfiguration -> {
-            IOBufferAllocator remoteResponseIOBufferAllocator = new ParallelIOBufferAllocator(128, true);
-            IOBufferAllocator localResponseIOBufferAllocator = new SerialIOBufferAllocator(128, true);
+            IOBufferAllocator remoteResponseIOBufferAllocator = new ConcurrentIOBufferAllocator(128, true);
+            IOBufferAllocator localResponseIOBufferAllocator = new NonConcurrentIOBufferAllocator(128, true);
 
             OpScheduler opScheduler = new OpScheduler(32768,
                     Integer.MAX_VALUE,
@@ -216,10 +216,10 @@ public class RequestService {
                 readHandler.opScheduler = (OpScheduler) eventloop.scheduler();
                 readHandler.responseHandler = responseHandler;
                 readHandler.requestIOBufferAllocator = poolRequests
-                        ? new SerialIOBufferAllocator(128, true)
+                        ? new NonConcurrentIOBufferAllocator(128, true)
                         : new UnpooledIOBufferAllocator();
                 readHandler.remoteResponseIOBufferAllocator = poolRemoteResponses
-                        ? new ParallelIOBufferAllocator(128, true)
+                        ? new ConcurrentIOBufferAllocator(128, true)
                         : new UnpooledIOBufferAllocator();
                 return readHandler;
             };
@@ -259,10 +259,10 @@ public class RequestService {
                     readHandler.opScheduler = (OpScheduler) eventloop.scheduler();
                     readHandler.responseHandler = responseHandler;
                     readHandler.requestIOBufferAllocator = poolRequests
-                            ? new SerialIOBufferAllocator(128, true)
+                            ? new NonConcurrentIOBufferAllocator(128, true)
                             : new UnpooledIOBufferAllocator();
                     readHandler.remoteResponseIOBufferAllocator = poolRemoteResponses
-                            ? new ParallelIOBufferAllocator(128, true)
+                            ? new ConcurrentIOBufferAllocator(128, true)
                             : new UnpooledIOBufferAllocator();
                     return readHandler;
                 };
@@ -297,10 +297,10 @@ public class RequestService {
                     readHandler.opScheduler = (OpScheduler) eventloop.scheduler();
                     readHandler.responseHandler = responseHandler;
                     readHandler.requestIOBufferAllocator = poolRequests
-                            ? new SerialIOBufferAllocator(128, true)
+                            ? new NonConcurrentIOBufferAllocator(128, true)
                             : new UnpooledIOBufferAllocator();
                     readHandler.remoteResponseIOBufferAllocator = poolRemoteResponses
-                            ? new ParallelIOBufferAllocator(128, true)
+                            ? new ConcurrentIOBufferAllocator(128, true)
                             : new UnpooledIOBufferAllocator();
                     return readHandler;
                 };

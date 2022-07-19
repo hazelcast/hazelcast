@@ -25,8 +25,11 @@ import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * A {@link IOBufferAllocator} that can be used in parallel by multiple threads.
+ *
+ * It also allows the {@link #allocate()} of a {@link IOBuffer} to be done by a different
+ * thread than {@link #free(IOBuffer)}.
  */
-public class ParallelIOBufferAllocator implements IOBufferAllocator {
+public class ConcurrentIOBufferAllocator implements IOBufferAllocator {
 
     private final MpmcArrayQueue<IOBuffer> queue = new MpmcArrayQueue<>(4096);
 
@@ -50,7 +53,7 @@ public class ParallelIOBufferAllocator implements IOBufferAllocator {
     private final static ThreadLocal<Pool> POOL = new ThreadLocal<>();
     private final int minSize;
 
-    public ParallelIOBufferAllocator(int minSize, boolean direct) {
+    public ConcurrentIOBufferAllocator(int minSize, boolean direct) {
         this.minSize = minSize;
         this.direct = direct;
     }

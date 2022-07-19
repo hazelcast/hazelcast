@@ -20,8 +20,10 @@ import java.nio.ByteBuffer;
 
 /**
  * A {@link IOBufferAllocator} that can only be used serially (so by a single thread).
+ *
+ * {@link #allocate()} should be done by the same thread as {@link #free(IOBuffer)}.
  */
-public final class SerialIOBufferAllocator implements IOBufferAllocator {
+public final class NonConcurrentIOBufferAllocator implements IOBufferAllocator {
     private final int minSize;
     private final boolean direct;
     private long newAllocateCnt = 0;
@@ -29,7 +31,7 @@ public final class SerialIOBufferAllocator implements IOBufferAllocator {
     private IOBuffer[] bufs = new IOBuffer[4096];
     private int index = -1;
 
-    public SerialIOBufferAllocator(int minSize, boolean direct) {
+    public NonConcurrentIOBufferAllocator(int minSize, boolean direct) {
         this.minSize = minSize;
         this.direct = direct;
     }

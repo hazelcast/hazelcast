@@ -3,7 +3,7 @@ package com.hazelcast.tpc.engine.nio;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 import com.hazelcast.tpc.engine.iobuffer.IOBufferAllocator;
-import com.hazelcast.tpc.engine.iobuffer.SerialIOBufferAllocator;
+import com.hazelcast.tpc.engine.iobuffer.NonConcurrentIOBufferAllocator;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -70,7 +70,7 @@ public class NioSyncSocket_IntegrationTest {
         clientSocket = NioSyncSocket.open();
         clientSocket.tcpNoDelay(true);
         clientSocket.readHandler(new NioSyncReadHandler() {
-            private final IOBufferAllocator responseAllocator = new SerialIOBufferAllocator(8, true);
+            private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
 
             @Override
             public IOBuffer decode(ByteBuffer buffer) {
@@ -96,7 +96,7 @@ public class NioSyncSocket_IntegrationTest {
         serverSocket.accept(socket -> {
             socket.tcpNoDelay(true);
             socket.readHandler(new NioAsyncReadHandler() {
-                private final IOBufferAllocator responseAllocator = new SerialIOBufferAllocator(8, true);
+                private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
 
                 @Override
                 public void onRead(ByteBuffer buffer) {

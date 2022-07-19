@@ -4,7 +4,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 import com.hazelcast.tpc.engine.iobuffer.IOBufferAllocator;
-import com.hazelcast.tpc.engine.iobuffer.SerialIOBufferAllocator;
+import com.hazelcast.tpc.engine.iobuffer.NonConcurrentIOBufferAllocator;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
@@ -83,7 +83,7 @@ public class NioAsyncSocket_IntegrationTest {
         NioAsyncSocket clientSocket = NioAsyncSocket.open();
         clientSocket.tcpNoDelay(true);
         clientSocket.readHandler(new NioAsyncReadHandler() {
-            private final IOBufferAllocator responseAllocator = new SerialIOBufferAllocator(8, true);
+            private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
 
             @Override
             public void onRead(ByteBuffer buffer) {
@@ -119,7 +119,7 @@ public class NioAsyncSocket_IntegrationTest {
         serverSocket.accept(socket -> {
             socket.tcpNoDelay(true);
             socket.readHandler(new NioAsyncReadHandler() {
-                private final IOBufferAllocator responseAllocator = new SerialIOBufferAllocator(8, true);
+                private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
 
                 @Override
                 public void onRead(ByteBuffer buffer) {

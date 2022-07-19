@@ -20,7 +20,7 @@ import com.hazelcast.bulktransport.BulkTransport;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.AbstractDistributedObject;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.tpc.engine.iobuffer.ParallelIOBufferAllocator;
+import com.hazelcast.tpc.engine.iobuffer.ConcurrentIOBufferAllocator;
 import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 import com.hazelcast.tpc.engine.iobuffer.IOBufferAllocator;
 import com.hazelcast.tpc.requestservice.PartitionActorRef;
@@ -57,7 +57,7 @@ public class TableProxy<K, V> extends AbstractDistributedObject implements Table
         this.requestService = nodeEngine.getRequestService();
         this.name = name;
         this.partitionCount = nodeEngine.getPartitionService().getPartitionCount();
-        this.requestAllocator = new ParallelIOBufferAllocator(128, true);
+        this.requestAllocator = new ConcurrentIOBufferAllocator(128, true);
         this.requestTimeoutMs = requestService.getRequestTimeoutMs();
         this.partitionActorRefs = requestService.partitionActorRefs();
     }
