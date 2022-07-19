@@ -65,10 +65,10 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
     public static final int MAX_DECIMAL_PRECISION = 76;
     public static final int MAX_DECIMAL_SCALE = 38;
-    public static final int OBJECT_TYPE_KIND_NONE = TypeKind.NONE.ordinal();
-    public static final int OBJECT_TYPE_KIND_JAVA = TypeKind.JAVA.ordinal();
-    public static final int OBJECT_TYPE_KIND_PORTABLE = TypeKind.PORTABLE.ordinal();
-    public static final int OBJECT_TYPE_KIND_COMPACT = TypeKind.COMPACT.ordinal();
+    public static final int OBJECT_TYPE_KIND_NONE = TypeKind.NONE.value();
+    public static final int OBJECT_TYPE_KIND_JAVA = TypeKind.JAVA.value();
+    public static final int OBJECT_TYPE_KIND_PORTABLE = TypeKind.PORTABLE.value();
+    public static final int OBJECT_TYPE_KIND_COMPACT = TypeKind.COMPACT.value();
 
     public static final QueryDataType VARCHAR = new QueryDataType(StringConverter.INSTANCE);
     public static final QueryDataType VARCHAR_CHARACTER = new QueryDataType(CharacterConverter.INSTANCE);

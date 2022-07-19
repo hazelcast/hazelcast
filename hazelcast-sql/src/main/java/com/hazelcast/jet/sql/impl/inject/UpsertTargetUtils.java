@@ -18,6 +18,8 @@ package com.hazelcast.jet.sql.impl.inject;
 
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.jet.sql.impl.type.converter.ToConverters;
+import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -27,12 +29,17 @@ import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 
 public final class UpsertTargetUtils {
 
     private UpsertTargetUtils() { }
 
-    public static Object convertRowToTargetType(final Object value, final QueryDataType type) {
+    public static Object convertRowToJavaType(final Object value, final QueryDataType type) {
         final Class<?> targetClass = ReflectionUtils.loadClass(type.getObjectTypeClassName());
         if (value.getClass().isAssignableFrom(targetClass)) {
             return value;
@@ -53,7 +60,7 @@ public final class UpsertTargetUtils {
             final QueryDataType.QueryDataTypeField typeField = type.getObjectFields().get(i);
             final boolean isRowValueField = rowValue.getValues().get(i) instanceof RowValue;
             final Object fieldValue = isRowValueField
-                    ? convertRowToTargetType(rowValue.getValues().get(i), typeField.getDataType())
+                    ? convertRowToJavaType(rowValue.getValues().get(i), typeField.getDataType())
                     : rowValue.getValues().get(i);
             Method setter = ReflectionUtils.findPropertySetter(targetClass, typeField.getName());
 
@@ -97,5 +104,74 @@ public final class UpsertTargetUtils {
         }
 
         return result;
+    }
+
+    public static GenericRecord convertRowToCompactType(RowValue rowValue, QueryDataType targetDataType) {
+        final GenericRecordBuilder recordBuilder = GenericRecordBuilder.compact(targetDataType.getObjectTypeName());
+
+        setFields(rowValue, targetDataType, recordBuilder);
+
+        return recordBuilder.build();
+    }
+
+    private static void setFields(RowValue rowValue, QueryDataType targetDataType, GenericRecordBuilder recordBuilder) {
+        for (int i = 0; i < targetDataType.getObjectFields().size(); i++) {
+            final QueryDataType.QueryDataTypeField field = targetDataType.getObjectFields().get(i);
+            final Object fieldValue = rowValue.getValues().get(i);
+            switch (field.getDataType().getTypeFamily()) {
+                case VARCHAR:
+                    recordBuilder.setString(field.getName(), (String) fieldValue);
+                    break;
+                case BOOLEAN:
+                    recordBuilder.setNullableBoolean(field.getName(), (Boolean) fieldValue);
+                    break;
+                case TINYINT:
+                    recordBuilder.setNullableInt8(field.getName(), (Byte) fieldValue);
+                    break;
+                case SMALLINT:
+                    recordBuilder.setNullableInt16(field.getName(), (Short) fieldValue);
+                    break;
+                case INTEGER:
+                    recordBuilder.setNullableInt32(field.getName(), (Integer) fieldValue);
+                    break;
+                case BIGINT:
+                    recordBuilder.setNullableInt64(field.getName(), (Long) fieldValue);
+                    break;
+                case DECIMAL:
+                    recordBuilder.setDecimal(field.getName(), (BigDecimal) fieldValue);
+                    break;
+                case REAL:
+                    recordBuilder.setNullableFloat32(field.getName(), (Float) fieldValue);
+                    break;
+                case DOUBLE:
+                    recordBuilder.setNullableFloat64(field.getName(), (Double) fieldValue);
+                    break;
+                case TIME:
+                    recordBuilder.setTime(field.getName(), (LocalTime) fieldValue);
+                    break;
+                case DATE:
+                    recordBuilder.setDate(field.getName(), (LocalDate) fieldValue);
+                    break;
+                case TIMESTAMP:
+                    recordBuilder.setTimestamp(field.getName(), (LocalDateTime) fieldValue);
+                    break;
+                case TIMESTAMP_WITH_TIME_ZONE:
+                    recordBuilder.setTimestampWithTimezone(field.getName(), (OffsetDateTime) fieldValue);
+                    break;
+                case OBJECT:
+                    final GenericRecordBuilder nestedRecordBuilder = GenericRecordBuilder
+                            .compact(field.getDataType().getObjectTypeName());
+                    setFields((RowValue) fieldValue, field.getDataType(), nestedRecordBuilder);
+                    recordBuilder.setGenericRecord(field.getName(), nestedRecordBuilder.build());
+                    break;
+                case INTERVAL_YEAR_MONTH:
+                case INTERVAL_DAY_SECOND:
+                case MAP:
+                case JSON:
+                case ROW:
+                default:
+                    throw QueryException.error("Unsupported upsert type: " + field.getDataType());
+            }
+        }
     }
 }

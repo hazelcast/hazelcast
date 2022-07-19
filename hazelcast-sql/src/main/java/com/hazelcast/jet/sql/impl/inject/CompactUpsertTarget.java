@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nonnull;
@@ -87,6 +88,8 @@ class CompactUpsertTarget implements UpsertTarget {
                 return value -> builder.setTimestamp(path, (LocalDateTime) value);
             case TIMESTAMP_WITH_TIMEZONE:
                 return value -> builder.setTimestampWithTimezone(path, (OffsetDateTime) value);
+            case COMPACT:
+                return createRowValueInjector(path, queryDataType);
             default:
                 throw QueryException.error(kind + " kind is not supported in SQL with Compact format!");
         }
@@ -102,5 +105,11 @@ class CompactUpsertTarget implements UpsertTarget {
         GenericRecord record = builder.build();
         builder = null;
         return record;
+    }
+
+    private UpsertInjector createRowValueInjector(String path, QueryDataType targetDataType) {
+        return value -> {
+            builder.setGenericRecord(path, UpsertTargetUtils.convertRowToCompactType((RowValue) value, targetDataType));
+        };
     }
 }

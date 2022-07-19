@@ -81,8 +81,9 @@ public class Type implements IdentifiedDataSerializable, Serializable {
             case JAVA:
                 return new QueryDataType(name, javaClassName);
             case PORTABLE:
+                return new QueryDataType(name, QueryDataType.OBJECT_TYPE_KIND_PORTABLE);
             case COMPACT:
-                return new QueryDataType(name);
+                return new QueryDataType(name, QueryDataType.OBJECT_TYPE_KIND_COMPACT);
             default:
                 throw new UnsupportedOperationException("Not implemented yet.");
         }
@@ -234,6 +235,8 @@ public class Type implements IdentifiedDataSerializable, Serializable {
             }
 
             final Converter converter = Converters.getConverter(converterId);
+            // TODO: simplify, generify
+            // Used for partially initialized Java types
             this.queryDataType = converter.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)
                     && ((typeName != null && !typeName.isEmpty()) || queryDataTypeMetadata != null
                     && !queryDataTypeMetadata.isEmpty())

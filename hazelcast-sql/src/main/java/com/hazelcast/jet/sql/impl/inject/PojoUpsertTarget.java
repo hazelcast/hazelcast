@@ -74,7 +74,7 @@ class PojoUpsertTarget implements UpsertTarget {
             }
             try {
                 if (value instanceof RowValue) {
-                    method.invoke(pojo, UpsertTargetUtils.convertRowToTargetType(value, targetType));
+                    method.invoke(pojo, UpsertTargetUtils.convertRowToJavaType(value, targetType));
                 } else {
                     method.invoke(pojo, value);
                 }
@@ -91,7 +91,7 @@ class PojoUpsertTarget implements UpsertTarget {
             }
             try {
                 if (value instanceof RowValue) {
-                    field.set(pojo, UpsertTargetUtils.convertRowToTargetType(value, targetType));
+                    field.set(pojo, UpsertTargetUtils.convertRowToJavaType(value, targetType));
                 } else {
                     field.set(pojo, value);
                 }

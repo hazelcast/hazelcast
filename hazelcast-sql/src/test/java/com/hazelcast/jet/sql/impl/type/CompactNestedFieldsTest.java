@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.type;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.jet.sql.SqlJsonTestSupport;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -62,20 +61,39 @@ public class CompactNestedFieldsTest extends SqlJsonTestSupport {
                         + "'valueCompactTypeName'='user'"
                         + ")");
 
-        // TODO INSERT
-        instance().getMap("test").put(1L, GenericRecordBuilder.compact("user")
-                .setInt64("id", 1L)
-                .setString("name", "user1")
-                .setGenericRecord("organization", GenericRecordBuilder.compact("organization")
-                        .setInt64("id", 1L)
-                        .setString("name", "organization1")
-                        .setGenericRecord("office", GenericRecordBuilder.compact("office")
-                                .setInt64("id", 1L)
-                                .setString("name", "office1")
-                                .build())
-                        .build())
-                .build());
-
+        instance().getSql().execute("INSERT INTO test VALUES (1, 1, 'user1', (1, 'organization1', (1, 'office1')))");
         assertRowsAnyOrder("SELECT (organization).office.name FROM test", rows(1, "office1"));
+    }
+
+    @Test
+    public void test_existingCompactType() {
+        instance().getSql().execute("CREATE TYPE Office ("
+                + "id BIGINT, "
+                + "name VARCHAR "
+                + ") OPTIONS ('format'='compact', 'compactTypeName'='Office')");
+
+        instance().getSql().execute("CREATE TYPE Organization ("
+                + "id BIGINT, "
+                + "name VARCHAR, "
+                + "office Office"
+                + ") OPTIONS ('format'='compact', 'compactTypeName'='Organization')");
+
+        instance().getSql().execute("CREATE TYPE \"User\" ("
+                + "id BIGINT, "
+                + "name VARCHAR, "
+                + "organization Organization"
+                + ") OPTIONS ('format'='compact', 'compactTypeName'='User')");
+
+        instance().getSql().execute(
+                "CREATE MAPPING test "
+                        + "TYPE IMap "
+                        + "OPTIONS ("
+                        + "'keyFormat'='bigint',"
+                        + "'valueFormat'='compact',"
+                        + "'valueCompactTypeName'='User'"
+                        + ")");
+
+        instance().getSql().execute("INSERT INTO test VALUES (1, (1, 'user1', (1, 'organization1', (1, 'office1'))))");
+        assertRowsAnyOrder("SELECT (this).organization.office.name FROM test", rows(1, "office1"));
     }
 }

@@ -16,11 +16,14 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
+import com.hazelcast.sql.impl.expression.RowValue;
+import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nullable;
 
-import static com.hazelcast.jet.sql.impl.inject.UpsertTargetUtils.convertRowToTargetType;
+import static com.hazelcast.jet.sql.impl.inject.UpsertTargetUtils.convertRowToCompactType;
+import static com.hazelcast.jet.sql.impl.inject.UpsertTargetUtils.convertRowToJavaType;
 
 public class HazelcastObjectUpsertTarget implements UpsertTarget {
     private Object object;
@@ -34,7 +37,16 @@ public class HazelcastObjectUpsertTarget implements UpsertTarget {
     @Override
     public UpsertInjector createInjector(@Nullable final String path, final QueryDataType queryDataType) {
         return value -> {
-            this.object = convertRowToTargetType(value, queryDataType);
+            switch (TypeKind.of(queryDataType.getObjectTypeKind())) {
+                case JAVA:
+                    this.object = convertRowToJavaType(value, queryDataType);
+                    break;
+                case COMPACT:
+                    this.object = convertRowToCompactType((RowValue) value, queryDataType);
+                    break;
+                default:
+                    break;
+            }
         };
     }
 

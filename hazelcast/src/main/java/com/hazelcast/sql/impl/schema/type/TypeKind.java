@@ -16,9 +16,25 @@
 
 package com.hazelcast.sql.impl.schema.type;
 
+import java.util.Arrays;
+
 public enum TypeKind {
-    NONE,
-    JAVA,
-    PORTABLE,
-    COMPACT;
+    NONE(0),
+    JAVA(1),
+    PORTABLE(2),
+    COMPACT(3);
+
+    private final int value;
+
+    TypeKind(int value) {
+        this.value = value;
+    }
+
+    public int value() {
+        return value;
+    }
+
+    public static TypeKind of(int value) {
+        return Arrays.stream(values()).filter(v -> v.value == value).findFirst().orElse(null);
+    }
 }

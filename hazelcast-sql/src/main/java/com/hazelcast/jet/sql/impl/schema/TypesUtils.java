@@ -38,8 +38,7 @@ public final class TypesUtils {
                                              final Map<String, QueryDataType> discovered,
                                              final TablesStorage tablesStorage
     ) {
-        // TODO: proper conversion for all kinds
-        discovered.putIfAbsent(current.getName(), new QueryDataType(current.getName(), current.getJavaClassName()));
+        discovered.putIfAbsent(current.getName(), current.toQueryDataTypeRef());
 
         for (int i = 0; i < current.getFields().size(); i++) {
             final Type.TypeField field = current.getFields().get(i);
@@ -55,7 +54,10 @@ public final class TypesUtils {
     public static void populateTypeInformation(final Map<String, QueryDataType> types, final TablesStorage tablesStorage) {
         for (final QueryDataType queryDataType : types.values()) {
             final Type type = tablesStorage.getType(queryDataType.getObjectTypeName());
+
+            // TODO: different type kinds
             queryDataType.setObjectTypeClassName(type.getJavaClassName());
+
             for (int i = 0; i < type.getFields().size(); i++) {
                 final Type.TypeField field = type.getFields().get(i);
                 if (field.getQueryDataType().isCustomType()) {
