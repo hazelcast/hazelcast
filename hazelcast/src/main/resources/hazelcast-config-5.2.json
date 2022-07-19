@@ -227,6 +227,9 @@
         },
         "network": {
           "$ref": "#/definitions/ClientNetwork"
+        },
+        "sql": {
+          "$ref": "#/definitions/SqlClient"
         }
       }
     },
@@ -4219,6 +4222,15 @@
           "type": "string"
         },
         "format-pattern": {
+          "type": "string"
+        }
+      }
+    },
+    "SqlClient": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "resubmission-mode": {
           "type": "string"
         }
       }

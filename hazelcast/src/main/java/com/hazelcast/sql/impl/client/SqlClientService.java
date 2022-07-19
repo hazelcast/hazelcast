@@ -129,7 +129,6 @@ public class SqlClientService implements SqlService {
             RuntimeException error = rethrow(e, connection);
             SqlResubmissionResult resubmissionResult = resubmitIfPossible(res, error);
             if (resubmissionResult == null) {
-                res.onExecuteError(error);
                 throw error;
             }
             res.onResubmissionResponse(resubmissionResult);

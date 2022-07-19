@@ -181,6 +181,7 @@ public class ClientConfig {
         userContext = new ConcurrentHashMap<>(config.userContext);
         metricsConfig = new ClientMetricsConfig(config.metricsConfig);
         instanceTrackingConfig = new InstanceTrackingConfig(config.instanceTrackingConfig);
+        sqlConfig = new ClientSqlConfig(config.sqlConfig);
     }
 
     /**

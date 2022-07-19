@@ -88,6 +88,7 @@ import java.util.Random;
 import java.util.Set;
 
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.ASYNC;
+import static com.hazelcast.client.config.ClientSqlResubmissionMode.RETRY_SELECTS;
 import static com.hazelcast.client.config.impl.ClientAliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
 import static com.hazelcast.config.EvictionPolicy.LFU;
 import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_SIZE;
@@ -771,6 +772,13 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(originalConfig.isEnabled(), generatedConfig.isEnabled());
         assertEquals(originalConfig.getFileName(), generatedConfig.getFileName());
         assertEquals(originalConfig.getFormatPattern(), generatedConfig.getFormatPattern());
+    }
+
+    @Test
+    public void testSqlConfig() {
+        clientConfig.setSqlConfig(new ClientSqlConfig().setSqlResubmissionMode(RETRY_SELECTS));
+        ClientConfig actual = newConfigViaGenerator();
+        assertEquals(clientConfig.getSqlConfig(), actual.getSqlConfig());
     }
 
     private ClientConfig newConfigViaGenerator() {

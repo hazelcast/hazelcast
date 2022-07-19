@@ -327,3 +327,6 @@ hazelcast-client:
 
   instance-tracking:
     enabled: false
+
+  sql:
+    resubmission-mode: RETRY_SELECTS
