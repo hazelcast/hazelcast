@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.metadata;
 
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.hazelcast.jet.sql.impl.opt.FullScan;
 import com.hazelcast.jet.sql.impl.opt.SlidingWindow;
 import com.hazelcast.jet.sql.impl.opt.logical.DropLateItemsLogicalRel;
@@ -44,11 +44,10 @@ import org.apache.calcite.util.Util;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Method;
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.unwrapAsOperatorOperand;
 
@@ -70,21 +69,20 @@ public final class HazelcastRelMdWatermarkedFields
 
     @SuppressWarnings("unused")
     public WatermarkedFields extractWatermarkedFields(FullScan rel, RelMetadataQuery mq) {
-        return watermarkedFieldByIndex(rel, rel.watermarkedColumnIndex());
+        return watermarkedFieldByIndex(rel.watermarkedColumnIndex());
     }
 
     @SuppressWarnings("unused")
     public WatermarkedFields extractWatermarkedFields(WatermarkLogicalRel rel) {
-        return watermarkedFieldByIndex(rel, rel.watermarkedColumnIndex());
+        return watermarkedFieldByIndex(rel.watermarkedColumnIndex());
     }
 
     @Nullable
-    public static WatermarkedFields watermarkedFieldByIndex(RelNode rel, int watermarkedFieldIndex) {
+    public static WatermarkedFields watermarkedFieldByIndex(int watermarkedFieldIndex) {
         if (watermarkedFieldIndex < 0) {
             return null;
         }
-        return new WatermarkedFields(ImmutableMap.of(watermarkedFieldIndex,
-                rel.getCluster().getRexBuilder().makeInputRef(rel, watermarkedFieldIndex)));
+        return new WatermarkedFields(ImmutableSet.of(watermarkedFieldIndex));
     }
 
     @SuppressWarnings("unused")
@@ -93,16 +91,15 @@ public final class HazelcastRelMdWatermarkedFields
         WatermarkedFields inputWatermarkedFields = query.extractWatermarkedFields(rel.getInput());
 
         if (inputWatermarkedFields == null
-                || !inputWatermarkedFields.getPropertiesByIndex().containsKey(rel.orderingFieldIndex())) {
+                || !inputWatermarkedFields.getFieldIndexes().contains(rel.orderingFieldIndex())) {
             // if there's no watermarked field in the input to a window function, or if the field used to
             // calculate window bounds isn't watermarked, the window bounds aren't watermarked either
             return inputWatermarkedFields;
         }
 
         RexBuilder rexBuilder = rel.getCluster().getRexBuilder();
-        return inputWatermarkedFields.merge(new WatermarkedFields(ImmutableMap.of(
-                rel.windowStartIndex(), rexBuilder.makeInputRef(rel, rel.windowStartIndex()),
-                rel.windowEndIndex(), rexBuilder.makeInputRef(rel, rel.windowEndIndex()))));
+        return inputWatermarkedFields.union(new WatermarkedFields(
+                ImmutableSet.of(rel.windowStartIndex(), rel.windowEndIndex())));
     }
 
     @SuppressWarnings("unused")
@@ -113,7 +110,7 @@ public final class HazelcastRelMdWatermarkedFields
             return null;
         }
 
-        Map<Integer, RexNode> outputWmFields = new HashMap<>();
+        Set<Integer> outputWmFields = new HashSet<>();
         List<RexNode> projectList = rel.getProgram().expandList(rel.getProgram().getProjectList());
         for (int i = 0; i < projectList.size(); i++) {
             RexNode project = projectList.get(i);
@@ -122,8 +119,8 @@ public final class HazelcastRelMdWatermarkedFields
             //  transformations of input references.
             if (project2 instanceof RexInputRef) {
                 int index = ((RexInputRef) project2).getIndex();
-                if (inputWmFields.getPropertiesByIndex().containsKey(index)) {
-                    outputWmFields.put(i, project);
+                if (inputWmFields.getFieldIndexes().contains(index)) {
+                    outputWmFields.add(i);
                 }
             }
         }
@@ -148,11 +145,11 @@ public final class HazelcastRelMdWatermarkedFields
         // The fields, by which the aggregation groups, and which are aggregated on input, are watermarked
         // also on the output.
         Iterator<Integer> groupedIndexes = rel.getGroupSets().get(0).iterator();
-        Map<Integer, RexNode> outputProperties = new HashMap<>();
+        Set<Integer> outputProperties = new HashSet<>();
         for (int outputIndex = 0; groupedIndexes.hasNext(); outputIndex++) {
             int groupedBy = groupedIndexes.next();
-            if (inputWmFields.getPropertiesByIndex().containsKey(groupedBy)) {
-                outputProperties.put(outputIndex, rel.getCluster().getRexBuilder().makeInputRef(rel, outputIndex));
+            if (inputWmFields.getFieldIndexes().contains(groupedBy)) {
+                outputProperties.add(outputIndex);
             }
         }
 
@@ -171,14 +168,16 @@ public final class HazelcastRelMdWatermarkedFields
     @SuppressWarnings("unused")
     public WatermarkedFields extractWatermarkedFields(Union rel, RelMetadataQuery mq) {
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
-        WatermarkedFields wmFields = new WatermarkedFields(Collections.emptyMap());
-        for (RelNode input : rel.getInputs()) {
-            WatermarkedFields watermarkedFields = query.extractWatermarkedFields(input);
-            if (!wmFields.equals(watermarkedFields)) {
-                wmFields = wmFields.merge(watermarkedFields);
+        assert !rel.getInputs().isEmpty();
+        Set<Integer> wmFields = new HashSet<>(query.extractWatermarkedFields(rel.getInput(0)).getFieldIndexes());
+        for (int i = 1; i < rel.getInputs().size(); i++) {
+            WatermarkedFields wmFields2 = query.extractWatermarkedFields(rel.getInputs().get(i));
+            if (wmFields2 == null) {
+                return null;
             }
+            wmFields.retainAll(wmFields2.getFieldIndexes());
         }
-        return wmFields;
+        return new WatermarkedFields(wmFields);
     }
 
     @SuppressWarnings("unused")
