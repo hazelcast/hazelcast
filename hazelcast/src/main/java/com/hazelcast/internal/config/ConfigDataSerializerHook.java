@@ -161,6 +161,7 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int TIERED_STORE_CONFIG = 64;
     public static final int MEMORY_TIER_CONFIG = 65;
     public static final int DISK_TIER_CONFIG = 66;
+    public static final int BTREE_INDEX_CONFIG = 67;
 
     private static final int LEN = DISK_TIER_CONFIG + 1;
 
