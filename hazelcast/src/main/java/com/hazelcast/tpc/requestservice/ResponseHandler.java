@@ -63,10 +63,8 @@ class ResponseHandler implements Consumer<IOBuffer> {
     @Override
     public void accept(IOBuffer response) {
         try {
-            if (response.next != null) {
-                int index = threadCount == 0
-                        ? 0
-                        : hashToIndex(response.getLong(OFFSET_RES_CALL_ID), threadCount);
+            if (response.next != null && threadCount > 0) {
+                int index = hashToIndex(response.getLong(OFFSET_RES_CALL_ID), threadCount);
                 threads[index].queue.add(response);
             } else {
                 process(response);
