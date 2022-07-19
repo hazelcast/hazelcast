@@ -890,6 +890,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
         dispose(onClusterChangeDisposables);
         clusterService.onClusterConnect();
+        clientStatisticsService.onClusterConnect();
     }
 
     public void waitForInitialMembershipEvents() {
