@@ -30,6 +30,7 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
+import javax.annotation.concurrent.GuardedBy;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
@@ -57,6 +58,10 @@ public class SqlClientResult implements SqlResult {
     /** Whether the result is closed. When {@code true}, there is no need to send the "cancel" request to the server. */
     private boolean closed;
 
+    /** Whether the result set is unbounded. */
+    @GuardedBy("mux")
+    private Boolean isInfiniteRows;
+
     /** Fetch descriptor. Available when the fetch operation is in progress. */
     private SqlFetchResult fetch;
 
@@ -73,9 +78,11 @@ public class SqlClientResult implements SqlResult {
     public void onExecuteResponse(
         SqlRowMetadata rowMetadata,
         SqlPage rowPage,
-        long updateCount
+        long updateCount,
+        Boolean isInfiniteRows
     ) {
         synchronized (mux) {
+            this.isInfiniteRows = isInfiniteRows;
             if (closed) {
                 // The result is already closed, ignore the response.
                 return;
@@ -377,6 +384,12 @@ public class SqlClientResult implements SqlResult {
             }
 
             return new JetSqlRow(service.getSerializationService(), values);
+        }
+    }
+
+    public Boolean isInfiniteRows() {
+        synchronized (mux) {
+            return isInfiniteRows;
         }
     }
 }
