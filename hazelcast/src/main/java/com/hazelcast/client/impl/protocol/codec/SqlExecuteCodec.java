@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Starts execution of an SQL query (as of 4.2).
  */
-@Generated("475d16a09dbaf512b9100bcd1e5bd8e4")
+@Generated("9b95472501ff4d52610e2c2c6fc44819")
 public final class SqlExecuteCodec {
     //hex: 0x210400
     public static final int REQUEST_MESSAGE_TYPE = 2163712;
@@ -170,7 +170,7 @@ public final class SqlExecuteCodec {
         public @Nullable com.hazelcast.sql.impl.client.SqlError error;
 
         /**
-         * Is the result unbounded.
+         * Is the result set unbounded.
          */
         public boolean isInfiniteRows;
 
