@@ -25,6 +25,7 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
@@ -40,6 +41,7 @@ import com.hazelcast.version.Version;
 
 import javax.annotation.Nullable;
 import javax.security.auth.Subject;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
@@ -50,18 +52,22 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.createExecutionPlans;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 
 public final class LightMasterContext {
 
@@ -163,28 +169,41 @@ public final class LightMasterContext {
         return jobId;
     }
 
-    private void finalizeJob(@Nullable Throwable failure) {
+    private void finalizeJob(@Nullable final Throwable failure) {
+        ExecutorService offloadExecutor = nodeEngine.getExecutionService().getExecutor(JOB_OFFLOADABLE_EXECUTOR);
+         List<CompletableFuture<Void>> futures = new ArrayList<>();
         // close ProcessorMetaSuppliers
         for (Vertex vertex : vertices) {
-            try {
-                vertex.getMetaSupplier().close(failure);
-            } catch (Throwable e) {
-                logger.severe(jobIdString
-                        + " encountered an exception in ProcessorMetaSupplier.complete(), ignoring it", e);
-            }
+                ProcessorMetaSupplier metaSupplier = vertex.getMetaSupplier();
+            Executor executor  = metaSupplier.closeIsCooperative() ? CALLER_RUNS : offloadExecutor;
+            futures.add(CompletableFuture.runAsync(() -> invokeClose(failure, metaSupplier), executor));
         }
 
-        if (failure == null) {
-            jobCompletionFuture.complete(null);
-        } else {
-            // translate JobTerminateRequestedException(CANCEL_FORCEFUL) to CancellationException
-            if (failure instanceof JobTerminateRequestedException
-                    && ((JobTerminateRequestedException) failure).mode() == CANCEL_FORCEFUL) {
-                CancellationException newFailure = new CancellationException();
-                newFailure.initCause(failure);
-                failure = newFailure;
+        CompletableFuture<Void> combined = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+
+        combined.whenComplete((ignored, e) -> {
+            Throwable fail = failure;
+            if (fail == null) {
+                jobCompletionFuture.complete(null);
+            } else {
+                // translate JobTerminateRequestedException(CANCEL_FORCEFUL) to CancellationException
+                if (fail instanceof JobTerminateRequestedException
+                        && ((JobTerminateRequestedException) fail).mode() == CANCEL_FORCEFUL) {
+                    CancellationException newFailure = new CancellationException();
+                    newFailure.initCause(failure);
+                    fail = newFailure;
+                }
+                jobCompletionFuture.completeExceptionally(fail);
             }
-            jobCompletionFuture.completeExceptionally(failure);
+        });
+    }
+
+    private void invokeClose(@org.jetbrains.annotations.Nullable Throwable failure, ProcessorMetaSupplier metaSupplier) {
+        try {
+            metaSupplier.close(failure);
+        } catch (Throwable e) {
+            logger.severe(jobIdString
+                    + " encountered an exception in ProcessorMetaSupplier.complete(), ignoring it", e);
         }
     }
 
