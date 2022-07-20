@@ -171,7 +171,7 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
     protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         final long timestamp = timestampFns.get(ordinal).applyAsLong(item);
         if (timestamp < currentWatermark) {
-            logLateEvent(getLogger(), currentWatermark, item);
+            logLateEvent(getLogger(), (byte) 0, currentWatermark, item);
             lateEventsDropped.inc();
             return true;
         }
@@ -184,6 +184,7 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark wm) {
+        keyedWatermarkCheck(wm);
         currentWatermark = wm.timestamp();
         assert totalWindows.get() == deadlineToKeys.values().stream().mapToInt(Set::size).sum()
                 : "unexpected totalWindows. Expected=" + deadlineToKeys.values().stream().mapToInt(Set::size).sum()

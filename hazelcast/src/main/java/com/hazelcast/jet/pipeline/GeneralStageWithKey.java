@@ -73,6 +73,11 @@ public interface GeneralStageWithKey<T, K> {
      * situations in which the result of {@code mapFn} is modified
      * after being emitted or where the state is modified by downstream processors.
      * <p>
+     * If you want to return the state variable from {@code mapFn}, then the
+     * return value must be a copy of state variable to avoid situations in
+     * which the result of {@code mapFn} is modified after being emitted or
+     * where the state is modified by downstream processors.
+     * <p>
      * This sample takes a stream of pairs {@code (serverId, latency)}
      * representing the latencies of serving individual requests and outputs
      * the cumulative latency of all handled requests so far, for each
@@ -161,6 +166,11 @@ public interface GeneralStageWithKey<T, K> {
      * then the return value must be a copy of state variable to avoid
      * situations in which the result of {@code mapFn} is modified
      * after being emitted or where the state is modified by downstream processors.
+     * <p>
+     * If you want to return the state variable from {@code flatMapFn}, then the
+     * return value must be a copy of state variable to avoid situations in
+     * which the result of {@code mapFn} is modified after being emitted or
+     * where the state is modified by downstream processors.
      * <p>
      * This sample groups a stream of strings by length and inserts punctuation
      * (a special string) after every 10th string in each group:
