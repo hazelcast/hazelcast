@@ -24,7 +24,6 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -60,7 +59,6 @@ public class SqlKafkaAggregateTest extends SqlTestSupport {
     }
 
     @Test
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/21784")
     public void test_tumble() {
         String name = createRandomTopic();
         sqlService.execute("CREATE MAPPING " + name + ' '
@@ -95,7 +93,6 @@ public class SqlKafkaAggregateTest extends SqlTestSupport {
     }
 
     @Test
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/21784")
     public void test_hop() {
         String name = createRandomTopic();
         sqlService.execute("CREATE MAPPING " + name + ' '

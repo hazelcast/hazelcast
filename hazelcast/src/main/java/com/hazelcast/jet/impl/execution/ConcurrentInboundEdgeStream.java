@@ -174,11 +174,12 @@ public final class ConcurrentInboundEdgeStream {
             }
 
             tracker.reset();
-            itemDetector.normalItemObserved = false;
+            boolean normalItemWasObservedOnAnyQueue = false;
             // We iterate all the queues and add the items to the destination. In each queue we stop at any
             // special item, process those and add the result to specialItemStash, that is added to the destination
             // in the next call to this method (or in this call, if no normal item was added).
             for (int queueIndex = 0; queueIndex < conveyor.queueCount(); queueIndex++) {
+                itemDetector.normalItemObserved = false;
                 final QueuedPipe<Object> q = conveyor.queue(queueIndex);
                 if (q == null) {
                     continue;
@@ -191,6 +192,8 @@ public final class ConcurrentInboundEdgeStream {
 
                 ProgressState result = drainQueue(q, dest);
                 tracker.mergeWith(result);
+
+                normalItemWasObservedOnAnyQueue |= itemDetector.normalItemObserved;
 
                 if (itemDetector.item != null) {
                     if (itemDetector.item == DONE_ITEM) {
@@ -221,12 +224,13 @@ public final class ConcurrentInboundEdgeStream {
                 }
             }
 
-            if (conveyor.liveQueueCount() > 0) {
-                tracker.notDone();
-            }
-            if (!itemDetector.normalItemObserved) {
+            if (!normalItemWasObservedOnAnyQueue) {
                 specialItemsStash.forEach(dest);
                 specialItemsStash.clear();
+            }
+
+            if (conveyor.liveQueueCount() > 0) {
+                tracker.notDone();
             }
             return tracker.toProgressState();
         }

@@ -284,9 +284,8 @@ public abstract class WatermarkCoalescer {
                     lastEmittedWm.set(topObservedWmLocal);
                     return topObservedWmLocal;
                 }
-                return notDoneInputCount != 0
-                        ? IDLE_MESSAGE_TIME
-                        : NO_NEW_WM;
+
+                return notDoneInputCount != 0 ? IDLE_MESSAGE_TIME : NO_NEW_WM;
             }
 
             // if the new lowest observed wm is larger than already emitted, emit it
