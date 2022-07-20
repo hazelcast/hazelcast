@@ -95,6 +95,9 @@ public class SqlServiceImpl implements SqlService {
     }
 
     public void start() {
+        if (!nodeEngine.getConfig().getJetConfig().isEnabled()) {
+            return;
+        }
         QueryResultRegistry resultRegistry = new QueryResultRegistry();
         optimizer = createOptimizer(nodeEngine, resultRegistry);
 
@@ -115,10 +118,16 @@ public class SqlServiceImpl implements SqlService {
     }
 
     public void reset() {
+        if (!nodeEngine.getConfig().getJetConfig().isEnabled()) {
+            return;
+        }
         planCache.clear();
     }
 
     public void shutdown() {
+        if (!nodeEngine.getConfig().getJetConfig().isEnabled()) {
+            return;
+        }
         planCache.clear();
         if (internalService != null) {
             internalService.shutdown();
