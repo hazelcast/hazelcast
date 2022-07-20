@@ -239,11 +239,7 @@ public final class CustomTypeFactory {
     }
 
     public static Schema createSchema(String typeName, List<FieldDescriptor> fields) {
-        TreeMap<String, FieldDescriptor> map = new TreeMap<>(Comparator.naturalOrder());
-        for (FieldDescriptor field : fields) {
-            map.put(field.getFieldName(), field);
-        }
-        return new Schema(typeName, map);
+        return new Schema(typeName, fields);
     }
 
     public static HazelcastJsonValue createHazelcastJsonValue(String value) {
