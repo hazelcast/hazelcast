@@ -61,6 +61,10 @@ public class SplitBrainMergeValidationOp extends AbstractJoinOperation {
         }
 
         if (!masterCheck()) {
+            getLogger().info("A split-brain merge validation request was received, but the current member is not a master. "
+                    + "The master address will be send to the to the requst source (" + getConnection().getRemoteAddress()
+                    + ")");
+            node.getClusterService().getClusterJoinManager().answerWhoisMasterQuestion(request, getConnection());
             return;
         }
 
