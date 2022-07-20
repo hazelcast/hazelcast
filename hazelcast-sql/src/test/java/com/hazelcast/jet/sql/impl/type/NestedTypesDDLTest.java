@@ -18,7 +18,7 @@ package com.hazelcast.jet.sql.impl.type;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.jet.sql.SqlJsonTestSupport;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -29,7 +29,7 @@ import java.io.Serializable;
 import static java.lang.String.format;
 
 @RunWith(HazelcastSerialClassRunner.class)
-public class NestedTypesDDLTest extends SqlJsonTestSupport {
+public class NestedTypesDDLTest extends SqlTestSupport {
     @BeforeClass
     public static void beforeClass() {
         Config config = new Config();

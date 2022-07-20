@@ -19,7 +19,7 @@ package com.hazelcast.jet.sql.impl.type;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecordBuilder;
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.jet.sql.SqlJsonTestSupport;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.GenericRecord;
@@ -30,7 +30,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
-public class PortableNestedFieldsTest extends SqlJsonTestSupport {
+public class PortableNestedFieldsTest extends SqlTestSupport {
 
     private static InternalSerializationService serializationService;
     private static ClassDefinition userType;

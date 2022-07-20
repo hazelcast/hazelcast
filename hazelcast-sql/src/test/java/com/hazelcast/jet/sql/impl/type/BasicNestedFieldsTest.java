@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.type;
 
-import com.hazelcast.jet.sql.SqlJsonTestSupport;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.AllTypesValue;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -42,7 +42,7 @@ import static java.time.ZoneId.systemDefault;
 import static java.time.ZoneOffset.UTC;
 
 @RunWith(HazelcastSerialClassRunner.class)
-public class BasicNestedFieldsTest extends SqlJsonTestSupport {
+public class BasicNestedFieldsTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {

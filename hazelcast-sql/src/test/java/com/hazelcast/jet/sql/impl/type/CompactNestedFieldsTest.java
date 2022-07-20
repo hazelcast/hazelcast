@@ -17,14 +17,14 @@
 package com.hazelcast.jet.sql.impl.type;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.jet.sql.SqlJsonTestSupport;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 @RunWith(HazelcastSerialClassRunner.class)
-public class CompactNestedFieldsTest extends SqlJsonTestSupport {
+public class CompactNestedFieldsTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {

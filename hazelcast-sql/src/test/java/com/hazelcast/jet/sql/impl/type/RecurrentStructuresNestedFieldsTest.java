@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.type;
 
 import com.hazelcast.instance.impl.HazelcastInstanceProxy;
-import com.hazelcast.jet.sql.SqlJsonTestSupport;
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
@@ -27,7 +27,7 @@ import org.junit.runner.RunWith;
 import java.io.Serializable;
 
 @RunWith(HazelcastSerialClassRunner.class)
-public class RecurrentStructuresNestedFieldsTest extends SqlJsonTestSupport {
+public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
