@@ -95,7 +95,7 @@ public class SqlServiceImpl implements SqlService {
     }
 
     public void start() {
-        if (!nodeEngine.getConfig().getJetConfig().isEnabled()) {
+        if (!Util.isJetEnabled(nodeEngine)) {
             return;
         }
         QueryResultRegistry resultRegistry = new QueryResultRegistry();
@@ -118,14 +118,14 @@ public class SqlServiceImpl implements SqlService {
     }
 
     public void reset() {
-        if (!nodeEngine.getConfig().getJetConfig().isEnabled()) {
+        if (!Util.isJetEnabled(nodeEngine)) {
             return;
         }
         planCache.clear();
     }
 
     public void shutdown() {
-        if (!nodeEngine.getConfig().getJetConfig().isEnabled()) {
+        if (!Util.isJetEnabled(nodeEngine)) {
             return;
         }
         planCache.clear();
@@ -343,5 +343,12 @@ public class SqlServiceImpl implements SqlService {
         } catch (ReflectiveOperationException e) {
             throw new HazelcastException("Failed to instantiate the optimizer class " + className + ": " + e.getMessage(), e);
         }
+    }
+
+    public void closeOnError(QueryId queryId) {
+        if (!Util.isJetEnabled(nodeEngine)) {
+            return;
+        }
+        getInternalService().getClientStateRegistry().closeOnError(queryId);
     }
 }
