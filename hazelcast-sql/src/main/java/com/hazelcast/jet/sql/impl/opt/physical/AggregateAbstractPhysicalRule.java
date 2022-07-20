@@ -140,7 +140,8 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
                 .withCreate(new AggregateCreateSupplier(aggregationProviders))
                 .andAccumulate(new AggregateAccumulateFunction(valueProviders))
                 .andCombine(AggregateCombineFunction.INSTANCE)
-                .andExportFinish(AggregateExportFinishFunction.INSTANCE);
+                .andExport(AggregateExportFunction.INSTANCE)
+                .andFinish(AggregateFinishFunction.INSTANCE);
     }
 
     public static class AggregateAvgSupplier implements IdentifiedDataSerializable,
@@ -460,11 +461,11 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         }
     }
 
-    public static final class AggregateExportFinishFunction implements IdentifiedDataSerializable,
+    public static final class AggregateFinishFunction implements IdentifiedDataSerializable,
             FunctionEx<List<SqlAggregation>, JetSqlRow> {
-        public static final AggregateExportFinishFunction INSTANCE = new AggregateExportFinishFunction();
+        public static final AggregateFinishFunction INSTANCE = new AggregateFinishFunction();
 
-        private AggregateExportFinishFunction() {
+        private AggregateFinishFunction() {
         }
 
         @Override
@@ -491,7 +492,38 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
 
         @Override
         public int getClassId() {
-            return JetSqlSerializerHook.AGGREGATE_EXPORT_FINISH_FUNCTION;
+            return JetSqlSerializerHook.AGGREGATE_FINISH_FUNCTION;
+        }
+    }
+
+    public static final class AggregateExportFunction implements IdentifiedDataSerializable,
+            FunctionEx<List<SqlAggregation>, JetSqlRow> {
+        public static final AggregateExportFunction INSTANCE = new AggregateExportFunction();
+
+        private AggregateExportFunction() {
+        }
+
+        @Override
+        public JetSqlRow applyEx(List<SqlAggregation> aggregations) {
+           throw new UnsupportedOperationException("Export function should not be called");
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetSqlSerializerHook.F_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetSqlSerializerHook.AGGREGATE_EXPORT_FUNCTION;
         }
     }
 

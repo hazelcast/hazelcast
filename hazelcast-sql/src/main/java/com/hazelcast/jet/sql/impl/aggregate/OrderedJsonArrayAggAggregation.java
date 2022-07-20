@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.aggregate;
 
-import com.google.common.collect.TreeMultiset;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.expression.json.JsonCreationUtil;
@@ -25,17 +24,18 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import javax.annotation.concurrent.NotThreadSafe;
+import java.util.PriorityQueue;
 
 @NotThreadSafe
 public final class OrderedJsonArrayAggAggregation implements SqlAggregation {
-    private final TreeMultiset<JetSqlRow> objects;
+    private final PriorityQueue<JetSqlRow> objects;
     private final boolean isAbsentOnNull;
     private final int aggIndex;
 
     private OrderedJsonArrayAggAggregation(ExpressionUtil.SqlRowComparator comparator, boolean isAbsentOnNull, int aggIndex) {
         this.isAbsentOnNull = isAbsentOnNull;
         this.aggIndex = aggIndex;
-        this.objects = TreeMultiset.create(comparator);
+        this.objects = new PriorityQueue<>(comparator);
     }
 
     public static OrderedJsonArrayAggAggregation create(
@@ -62,7 +62,8 @@ public final class OrderedJsonArrayAggAggregation implements SqlAggregation {
         StringBuilder sb = new StringBuilder();
         boolean firstValue = true;
         sb.append("[");
-        for (JetSqlRow row : objects) {
+        while (!objects.isEmpty()) {
+            JetSqlRow row = objects.poll();
             Object value = row.get(aggIndex);
             if (value == null) {
                 if (!isAbsentOnNull) {
