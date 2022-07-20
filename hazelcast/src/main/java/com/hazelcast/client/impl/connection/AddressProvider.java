@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.connection;
 
 
 import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRunner;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 
@@ -30,18 +31,25 @@ import java.util.List;
 public interface AddressProvider {
 
     /**
-     * @param listener the listener's {@link ClientConnectionProcessListener#possibleAddressesCollected(List)} method will be
-     *                 invoked once the possible member addresses are all collected by the implementation. Prior to that, during
-     *                 address collection, the {@link ClientConnectionProcessListener#hostNotFound(String)} method can be invoked,
-     *                 eg. in cases when the address provider tries to access an address that doesn't exist.
+     * @param listenerRunner that runs the listeners'
+     *                       {@link
+     *                       ClientConnectionProcessListener#possibleAddressesCollected(List)}
+     *                       method once the possible member addresses are all
+     *                       collected by the implementation. Prior to that,
+     *                       during address collection, the
+     *                       {@link
+     *                       ClientConnectionProcessListener#hostNotFound(String)}
+     *                       method can be invoked, e.g. in cases when the
+     *                       address provider tries to access an address that
+     *                       doesn't exist.
      * @return The possible member addresses to connect to.
      * @throws Exception when a remote service can not provide addressee
      */
-    Addresses loadAddresses(ClientConnectionProcessListener listener) throws Exception;
+    Addresses loadAddresses(ClientConnectionProcessListenerRunner listenerRunner) throws Exception;
 
     /**
-     * Translates the given address to another address specific to
-     * network or service
+     * Translates the given address to another address specific to network or
+     * service
      *
      * @param address to be translated
      * @return new address if given address is known, otherwise return null
@@ -49,9 +57,11 @@ public interface AddressProvider {
      */
     Address translate(Address address) throws Exception;
 
-    /*
-     * Implementations of this will handle returning the public address of the member if necessary.
-     * See {@link com.hazelcast.client.impl.spi.impl.DefaultAddressProvider#addressOf(Member)}
+    /**
+     * Implementations of this will handle returning the public address of the
+     * member if necessary. See
+     * {@link
+     * com.hazelcast.client.impl.spi.impl.DefaultAddressProvider#translate(Member)}
      */
     Address translate(Member member) throws Exception;
 }

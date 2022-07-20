@@ -379,10 +379,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             clusterService.start(configuredListeners);
             clientClusterViewListenerService.start();
 
-            configuredListeners.stream().filter(ClientConnectionProcessListener.class::isInstance)
-                    // private API for Management Center (cluster connection diagnostics)
-                    .map(ClientConnectionProcessListener.class::cast)
-                    .forEach(connectionManager::addClientConnectionProcessListener);
+            // Add connection process listeners before starting the connection
+            // manager, so that they are invoked for all connection attempts
+            addConnectionProcessListeners(configuredListeners);
             connectionManager.start();
             startHeartbeat();
             startIcmpPing();
@@ -937,6 +936,14 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
         configuredListeners.stream().filter(listener -> listener instanceof CPGroupAvailabilityListener)
                 .forEach(listener -> getCPSubsystem().addGroupAvailabilityListener((CPGroupAvailabilityListener) listener));
+    }
+
+    private void addConnectionProcessListeners(Collection<EventListener> configuredListeners) {
+        configuredListeners.stream()
+                .filter(ClientConnectionProcessListener.class::isInstance)
+                // private API for Management Center (cluster connection diagnostics)
+                .map(ClientConnectionProcessListener.class::cast)
+                .forEach(connectionManager::addClientConnectionProcessListener);
     }
 
     public SchemaService getSchemaService() {
