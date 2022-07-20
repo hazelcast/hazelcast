@@ -97,9 +97,9 @@ public final class GenericRecordQueryReader implements ValueReader {
         if (fieldPath.endsWith(".")) {
             throw new IllegalArgumentException("Malformed path " + fieldPath);
         }
-
-        if (rootRecord.hasField(fieldPath)) {
-            return readLeaf(rootRecord, fieldPath);
+        boolean hasField = rootRecord.hasField(fieldPath);
+        if (hasField) {
+            return readLeaf(rootRecord, fieldPath, true);
         }
 
         LinkedList<Object> results = new LinkedList<>();
@@ -192,7 +192,7 @@ public final class GenericRecordQueryReader implements ValueReader {
             // ex: attribute
             while (iterator.hasNext()) {
                 InternalGenericRecord record = (InternalGenericRecord) iterator.next();
-                Object leaf = readLeaf(record, fieldName);
+                Object leaf = readLeaf(record, fieldName, rootRecord.hasField(fieldName));
                 iterator.set(leaf);
             }
         } else if (path.endsWith("[any]")) {
@@ -200,7 +200,7 @@ public final class GenericRecordQueryReader implements ValueReader {
             while (iterator.hasNext()) {
                 InternalGenericRecord record = (InternalGenericRecord) iterator.next();
                 iterator.remove();
-                Object leaves = readLeaf(record, fieldName);
+                Object leaves = readLeaf(record, fieldName, rootRecord.hasField(fieldName));
                 if (leaves == null) {
                     multiResult.setNullOrEmptyTarget(true);
                 } else if (leaves instanceof Object[]) {
@@ -245,8 +245,8 @@ public final class GenericRecordQueryReader implements ValueReader {
         return fieldOperations(kind).readIndexed(record, path, index);
     }
 
-    private Object readLeaf(InternalGenericRecord record, String path) {
-        if (!record.hasField(path)) {
+    private Object readLeaf(InternalGenericRecord record, String path, boolean hasField) {
+        if (!hasField) {
             return null;
         }
         FieldKind kind = record.getFieldKind(path);
