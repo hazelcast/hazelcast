@@ -40,7 +40,7 @@ public class HazelcastJsonArrayAggFunction extends HazelcastAggFunction {
         super(
                 "JSON_ARRAYAGG_" + nullClause.name(),
                 SqlKind.JSON_ARRAYAGG,
-                opBinding -> HazelcastJsonType.create(false),
+                opBinding -> HazelcastJsonType.create(true),
                 new ReplaceUnknownOperandTypeInference(SqlTypeName.ANY),
                 null,
                 SqlFunctionCategory.SYSTEM,
