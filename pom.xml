@@ -270,7 +270,7 @@
                 <version>${maven.checkstyle.plugin.version}</version>
                 <executions>
                     <execution>
-                        <phase>process-sources</phase>
+                        <phase>validate</phase>
                         <goals>
                             <goal>checkstyle</goal>
                         </goals>
