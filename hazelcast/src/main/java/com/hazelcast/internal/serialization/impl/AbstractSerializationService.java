@@ -707,7 +707,6 @@ public abstract class AbstractSerializationService implements InternalSerializat
             return;
         }
 
-
         for (Class clazz : compactStreamSerializer.getCompactSerializableClasses()) {
             if (!constantTypesMap.containsKey(clazz)) {
                 continue;
