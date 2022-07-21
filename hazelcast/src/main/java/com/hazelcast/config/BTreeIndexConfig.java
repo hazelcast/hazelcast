@@ -28,10 +28,11 @@ import java.util.Objects;
 
 /**
  * Configuration options specific for B-Tree indexes.
+ *
+ * @since 5.2
  */
 public class BTreeIndexConfig implements IdentifiedDataSerializable {
 
-    // todo HZ-1272 think of correct values
     /**
      * Default value of page size for B-Trees.
      */
