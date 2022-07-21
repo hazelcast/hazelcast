@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.processors;
 
-import com.google.common.collect.Streams;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.collection.Object2LongHashMap;
@@ -40,11 +39,9 @@ import java.util.Map.Entry;
 import java.util.Queue;
 import java.util.Set;
 
+import static com.hazelcast.internal.util.CollectionUtil.hasNonEmptyIntersection;
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
 import static java.lang.Long.MAX_VALUE;
-import static org.apache.calcite.rel.core.JoinRelType.INNER;
-import static org.apache.calcite.rel.core.JoinRelType.LEFT;
-import static org.apache.calcite.rel.core.JoinRelType.RIGHT;
 
 public class StreamToStreamJoinP extends AbstractProcessor {
     // package-visible for tests
@@ -59,6 +56,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     @SuppressWarnings("unchecked") final List<JetSqlRow>[] buffer = new List[]{new LinkedList<>(), new LinkedList<>()};
 
     private final JetJoinInfo joinInfo;
+    private final int outerJoinSide;
     private final Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors;
     private final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors;
     private final Map<Byte, Map<Byte, Long>> postponeTimeMap;
@@ -68,7 +66,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private Iterator<JetSqlRow> iterator;
     private JetSqlRow currItem;
 
-    @SuppressWarnings("unchecked")
     private final Set<JetSqlRow> unusedEventsTracker = new HashSet<>();
 
     private final Queue<Object> pendingOutput = new ArrayDeque<>();
@@ -88,8 +85,18 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         this.postponeTimeMap = postponeTimeMap;
         this.columnCounts = columnCounts;
 
-        if (joinInfo.getJoinType() != INNER && joinInfo.getJoinType() != LEFT && joinInfo.getJoinType() != RIGHT) {
-            throw new IllegalArgumentException("Unsupported join type: " + joinInfo.getJoinType());
+        switch (joinInfo.getJoinType()) {
+            case INNER:
+                outerJoinSide = -1;
+                break;
+            case LEFT:
+                outerJoinSide = 0;
+                break;
+            case RIGHT:
+                outerJoinSide = 1;
+                break;
+            default:
+                throw new IllegalArgumentException("Unsupported join type: " + joinInfo.getJoinType());
         }
 
         for (Byte wmKey : postponeTimeMap.keySet()) {
@@ -98,8 +105,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         }
 
         // no key must be on both sides
-        if (Streams.concat(leftTimeExtractors.keySet().stream(), rightTimeExtractors.keySet().stream()).distinct().count()
-                != leftTimeExtractors.size() + rightTimeExtractors.size()) {
+        if (hasNonEmptyIntersection(leftTimeExtractors.keySet(), rightTimeExtractors.keySet())) {
             throw new IllegalArgumentException("Some watermark key is found on both inputs. Left="
                     + leftTimeExtractors.keySet() + ", right=" + rightTimeExtractors.keySet());
         }
@@ -167,7 +173,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             currItem = (JetSqlRow) item;
             buffer[ordinal].add(currItem);
             iterator = buffer[1 - ordinal].iterator();
-            if (joinInfo.isLeftOuter() && ordinal == 0 || joinInfo.isRightOuter() && ordinal == 1) {
+            if (ordinal == outerJoinSide) {
                 unusedEventsTracker.add(currItem);
             }
         }
@@ -177,12 +183,17 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             JetSqlRow preparedOutput = ExpressionUtil.join(
                     ordinal == 0 ? currItem : oppositeBufferItem,
                     ordinal == 0 ? oppositeBufferItem : currItem,
-                    joinInfo.nonEquiCondition(),
+                    joinInfo.condition(),
                     evalContext);
-            // it is used already once
-            unusedEventsTracker.remove(oppositeBufferItem);
 
-            if (preparedOutput != null && !tryEmit(preparedOutput)) {
+            if (preparedOutput == null) {
+                continue;
+            }
+            if (ordinal == 1 - outerJoinSide) {
+                // mark opposite-side item as used
+                unusedEventsTracker.remove(oppositeBufferItem);
+            }
+            if (!tryEmit(preparedOutput)) {
                 pendingOutput.add(preparedOutput);
                 return false;
             }

@@ -86,11 +86,11 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
                         in(0, jetRow(1L)),
                         in(1, jetRow(1L)),
                         out(jetRow(1L, 1L)),
-                        in(wm((byte) 0, 1L)),
-                        out(wm((byte) 0, 0L)),
-                        in(wm((byte) 1, 2L)),
-                        out(wm((byte) 0, 1L)),
-                        out(wm((byte) 1, 1L))
+                        in(wm(1L, (byte) 0)),
+                        out(wm(0L, (byte) 0)),
+                        in(wm(2L, (byte) 1)),
+                        out(wm(1L, (byte) 0)),
+                        out(wm(1L, (byte) 1))
                 );
     }
 
@@ -123,25 +123,25 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
                             assertEquals(asList(jetRow(12L, 9L), jetRow(12L, 13L)), p.buffer[0]);
                             assertEquals(singletonList(jetRow(9L)), p.buffer[1]);
                         }),
-                        in(1, wm((byte) 2, 15L)),
-                        out(wm((byte) 2, 9L)),
+                        in(1, wm(15L, (byte) 2)),
+                        out(wm(9L, (byte) 2)),
                         processorAssertion((StreamToStreamJoinP p) -> {
                             assertEquals(singletonList(jetRow(12L, 13L)), p.buffer[0]);
                             assertEquals(singletonList(jetRow(9L)), p.buffer[1]);
                         }),
-                        in(0, wm((byte) 1, 12L)),
-                        out(wm((byte) 1, 12L)),
-                        out(wm((byte) 2, 15L)),
+                        in(0, wm(12L, (byte) 1)),
+                        out(wm(12L, (byte) 1)),
+                        out(wm(15L, (byte) 2)),
                         processorAssertion((StreamToStreamJoinP p) -> {
                             assertEquals(singletonList(jetRow(12L, 13L)), p.buffer[0]);
                             assertEquals(emptyList(), p.buffer[1]);
                         }),
-                        in(0, wm((byte) 0, 13L)),
-                        out(wm((byte) 0, 12L)),
+                        in(0, wm(13L, (byte) 0)),
+                        out(wm(12L, (byte) 0)),
                         in(1, jetRow(16L)),
                         // out(jetRow(12L, 13L, 16L)), // doesn't satisfy the join condition
-                        in(0, wm((byte) 1, 13L)),
-                        out(wm((byte) 1, 13L)),
+                        in(0, wm(13L, (byte) 1)),
+                        out(wm(13L, (byte) 1)),
                         in(1, jetRow(16L))
                 );
     }
@@ -183,19 +183,19 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
                         out(jetRow(12L, 13L, 12L, 13L)),
                         // leftBuffer: [{12, 10}, {12, 13}]
                         // rightBuffer: [{12, 10}, {12, 13}]
-                        in(0, wm((byte) 0, 15L)),
+                        in(0, wm(15L, (byte) 0)),
                         // wmState: [{0:min, 1:min, 2:13, 3:11]
                         // leftBuffer: [{12, 10}, {12, 13}]
                         // rightBuffer: []
-                        out(wm((byte) 0, 12L)),
-                        in(1, wm((byte) 2, 15L)),
+                        out(wm(12L, (byte) 0)),
+                        in(1, wm(15L, (byte) 2)),
                         // wmState: [{0:14, 1:min, 2:13, 3:11]
                         // leftBuffer: []
                         // rightBuffer: []
-                        out(wm((byte) 0, 15L)),
-                        out(wm((byte) 2, 15L)),
-                        in(0, wm((byte) 1, 16L)),
-                        out(wm((byte) 1, 16L))
+                        out(wm(15L, (byte) 0)),
+                        out(wm(15L, (byte) 2)),
+                        in(0, wm(16L, (byte) 1)),
+                        out(wm(16L, (byte) 1))
                 );
     }
 
@@ -250,8 +250,8 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
                 .expectExactOutput(
-                        in(0, wm((byte) 0, 10)),
-                        out(wm((byte) 0, 10)),
+                        in(0, wm(10, (byte) 0)),
+                        out(wm(10, (byte) 0)),
                         processorAssertion((StreamToStreamJoinP p) ->
                                 assertEquals(ImmutableMap.of((byte) 0, Long.MIN_VALUE + 1, (byte) 1, 9L), p.wmState)),
                         // This item is not late according to the WM for key=1, but is off the join limit according
@@ -278,8 +278,8 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
                 .outputChecker(SAME_ITEMS_ANY_ORDER)
                 .disableSnapshots()
                 .expectExactOutput(
-                        in(0, wm((byte) 0, 10)),
-                        out(wm((byte) 0, 10)),
+                        in(0, wm(10, (byte) 0)),
+                        out(wm(10, (byte) 0)),
                         in(0, jetRow(8L)),
                         processorAssertion((StreamToStreamJoinP p) -> {
                             assertEquals(0, p.buffer[0].size());
