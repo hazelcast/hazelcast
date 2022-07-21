@@ -169,8 +169,8 @@ public class ProcessorTaskletTest_Watermarks {
     @Test
     public void when_multipleKeyedWms_then_processed() {
         // Given
-        MockInboundStream instream1 = new MockInboundStream(0, singletonList(wm((byte) 42, 100)), 1000);
-        MockInboundStream instream2 = new MockInboundStream(0, singletonList(wm((byte) 43, 100)), 1000);
+        MockInboundStream instream1 = new MockInboundStream(0, singletonList(wm(100, (byte) 42)), 1000);
+        MockInboundStream instream2 = new MockInboundStream(0, singletonList(wm(100, (byte) 43)), 1000);
         MockOutboundStream outstream1 = new MockOutboundStream(0, 128);
         instreams.addAll(asList(instream1, instream2));
         outstreams.add(outstream1);

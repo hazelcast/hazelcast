@@ -348,7 +348,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         return new Watermark(timestamp);
     }
 
-    public static Watermark wm(byte key, long timestamp) {
+    public static Watermark wm(long timestamp, byte key) {
         return new Watermark(timestamp, key);
     }
 
