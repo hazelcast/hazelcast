@@ -259,8 +259,8 @@ public class OutboxImpl implements OutboxInternal {
     }
 
     @Override
-    public long lastForwardedWm(byte key) {
-        Counter counter = lastForwardedWm.get(key);
+    public long lastForwardedWm(byte wmKey) {
+        Counter counter = lastForwardedWm.get(wmKey);
         if (counter == null) {
             return Long.MIN_VALUE;
         }
