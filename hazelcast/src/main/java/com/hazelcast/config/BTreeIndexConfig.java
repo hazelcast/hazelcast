@@ -128,9 +128,9 @@ public class BTreeIndexConfig implements IdentifiedDataSerializable {
 
     @Override
     public String toString() {
-        return "BTreeIndexConfig{" +
-                "pageSize=" + pageSize +
-                ", memoryTierConfig=" + memoryTierConfig +
-                '}';
+        return "BTreeIndexConfig{"
+                + "pageSize=" + pageSize
+                + ", memoryTierConfig=" + memoryTierConfig
+                + '}';
     }
 }
