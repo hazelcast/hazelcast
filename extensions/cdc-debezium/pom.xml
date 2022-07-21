@@ -33,8 +33,6 @@
     </parent>
 
     <properties>
-        <debezium.version>1.2.5.Final</debezium.version>
-
         <!-- needed for CheckStyle -->
         <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeaderApache.txt</checkstyle.headerLocation>
     </properties>

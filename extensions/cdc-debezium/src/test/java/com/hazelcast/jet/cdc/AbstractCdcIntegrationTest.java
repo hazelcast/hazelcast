@@ -67,13 +67,12 @@ public class AbstractCdcIntegrationTest extends JetTestSupport {
                 .sorted().collect(Collectors.toList());
     }
 
-    @Nonnull
     protected static void assertMatch(List<String> expectedPatterns, List<String> actualValues) {
         assertEquals(expectedPatterns.size(), actualValues.size());
         for (int i = 0; i < expectedPatterns.size(); i++) {
             String pattern = expectedPatterns.get(i);
             String value = actualValues.get(i);
-            assertTrue(value.matches(pattern));
+            assertTrue("\n" + value + " \nmust match \n" + pattern, value.matches(pattern));
         }
     }
 
