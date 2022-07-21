@@ -106,7 +106,7 @@ public final class LightMasterContext {
     @SuppressWarnings("checkstyle:ExecutableStatementCount")
     public static CompletableFuture<LightMasterContext> createContext(
             NodeEngineImpl nodeEngine, JobCoordinationService coordinationService, DAG dag, long jobId,
-            JobConfig  jobConfig, Subject subject
+            JobConfig jobConfig, Subject subject
     ) {
 
         ILogger logger = nodeEngine.getLogger(LightMasterContext.class);
@@ -157,8 +157,8 @@ public final class LightMasterContext {
                     };
 
                     mc.invokeOnParticipants(operationCtor,
-                            responses ->  mc.finalizeJob(mc.findError(responses)),
-                            error ->  mc.cancelInvocations()
+                            responses -> mc.finalizeJob(mc.findError(responses)),
+                            error -> mc.cancelInvocations()
                     );
 
                     return mc;
@@ -171,10 +171,10 @@ public final class LightMasterContext {
 
     private void finalizeJob(@Nullable final Throwable failure) {
         ExecutorService offloadExecutor = nodeEngine.getExecutionService().getExecutor(JOB_OFFLOADABLE_EXECUTOR);
-         List<CompletableFuture<Void>> futures = new ArrayList<>();
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
         // close ProcessorMetaSuppliers
         for (Vertex vertex : vertices) {
-                ProcessorMetaSupplier metaSupplier = vertex.getMetaSupplier();
+            ProcessorMetaSupplier metaSupplier = vertex.getMetaSupplier();
             Executor executor  = metaSupplier.closeIsCooperative() ? CALLER_RUNS : offloadExecutor;
             futures.add(CompletableFuture.runAsync(() -> invokeClose(failure, metaSupplier), executor));
         }
