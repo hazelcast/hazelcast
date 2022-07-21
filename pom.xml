@@ -92,7 +92,7 @@
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.0</avro.version>
-        <aws.sdk.version>1.12.150</aws.sdk.version>
+        <aws.sdk.version>1.12.263</aws.sdk.version>
         <classgraph.version>4.8.139</classgraph.version>
         <debezium.version>1.9.3.Final</debezium.version>
         <grpc.version>1.43.0</grpc.version>
@@ -270,7 +270,7 @@
                 <version>${maven.checkstyle.plugin.version}</version>
                 <executions>
                     <execution>
-                        <phase>process-sources</phase>
+                        <phase>validate</phase>
                         <goals>
                             <goal>checkstyle</goal>
                         </goals>
@@ -633,6 +633,11 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven.surefire.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${maven.jacoco.plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
