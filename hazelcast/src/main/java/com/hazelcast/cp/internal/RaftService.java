@@ -619,8 +619,8 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     }
 
     void updateMissingMembers() {
-        if (config.getMissingCPMemberAutoRemovalSeconds() == 0 || !metadataGroupManager.isDiscoveryCompleted()
-                || (!isStartCompleted() && getCPPersistenceService().getCPMetadataStore().containsLocalMemberFile())) {
+        if (config.getMissingCPMemberAutoRemovalSeconds() == 0 || config.isPersistenceEnabled()
+                || !metadataGroupManager.isDiscoveryCompleted() || (!isStartCompleted())) {
             return;
         }
 
