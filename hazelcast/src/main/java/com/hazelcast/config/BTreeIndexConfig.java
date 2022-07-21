@@ -16,7 +16,8 @@
 package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
-import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.memory.Capacity;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -29,11 +30,13 @@ import java.io.IOException;
  */
 public class BTreeIndexConfig implements IdentifiedDataSerializable {
 
-    public static final int DEFAULT_PAGE_SIZE = 1024; // todo HZ-1272 think of correct values
-    public static final int DEFAULT_IN_MEMORY_REGION_SIZE = 1024; // todo HZ-1272 think of correct values
+    // todo HZ-1272 think of correct values
+    /**
+     * Default value of page size for B-Trees.
+     */
+    public static final Capacity DEFAULT_PAGE_SIZE = Capacity.of(1024, MemoryUnit.BYTES);
 
-    private int pageSize = DEFAULT_PAGE_SIZE;
-    private int inMemoryRegionSize = DEFAULT_IN_MEMORY_REGION_SIZE;
+    private Capacity pageSize = DEFAULT_PAGE_SIZE;
 
     private MemoryTierConfig memoryTierConfig;
 
@@ -43,7 +46,6 @@ public class BTreeIndexConfig implements IdentifiedDataSerializable {
 
     public BTreeIndexConfig(BTreeIndexConfig other) {
         this.pageSize = other.pageSize;
-        this.inMemoryRegionSize = other.inMemoryRegionSize;
         this.memoryTierConfig = other.memoryTierConfig == null ? null : new MemoryTierConfig(other.memoryTierConfig);
     }
 
@@ -51,7 +53,7 @@ public class BTreeIndexConfig implements IdentifiedDataSerializable {
      * Returns the page size of B-Tree index.
      * @return index page size.
      */
-    public int getPageSize() {
+    public Capacity getPageSize() {
         return pageSize;
     }
 
@@ -59,21 +61,8 @@ public class BTreeIndexConfig implements IdentifiedDataSerializable {
      * Sets index page size to given non-negative value.
      * @param pageSize page size of the index
      */
-    public void setPageSize(int pageSize) {
-        Preconditions.checkNotNegative(pageSize, "page size cannot be negative, but is: " + pageSize);
+    public void setPageSize(Capacity pageSize) {
         this.pageSize = pageSize;
-    }
-
-    /**
-     * Returns in-memory region size of this B-Tree index.
-     * @return in-memory region size.
-     */
-    public int getInMemoryRegionSize() {
-        return inMemoryRegionSize;
-    }
-
-    public void setInMemoryRegionSize(int inMemoryRegionSize) {
-        this.inMemoryRegionSize = inMemoryRegionSize;
     }
 
     /**
@@ -98,15 +87,13 @@ public class BTreeIndexConfig implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(pageSize);
-        out.writeInt(inMemoryRegionSize);
+        out.writeObject(pageSize);
         out.writeObject(memoryTierConfig);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        pageSize = in.readInt();
-        inMemoryRegionSize = in.readInt();
+        pageSize = in.readObject();
         memoryTierConfig = in.readObject();
     }
 
