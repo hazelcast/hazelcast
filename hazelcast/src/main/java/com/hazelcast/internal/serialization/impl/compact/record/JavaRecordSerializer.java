@@ -16,17 +16,14 @@
 
 package com.hazelcast.internal.serialization.impl.compact.record;
 
+import com.hazelcast.internal.serialization.impl.compact.CompactUtil;
 import com.hazelcast.internal.serialization.impl.compact.DefaultCompactReader;
-import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
-import com.hazelcast.internal.serialization.impl.compact.Schema;
-import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
 
 import javax.annotation.Nonnull;
-import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
@@ -37,7 +34,49 @@ import java.time.OffsetDateTime;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-
+import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.isFieldExist;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEAN;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_COMPACT;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DATE;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DECIMAL;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_FLOAT32;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_FLOAT64;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT16;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT32;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT64;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT8;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_BOOLEAN;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_FLOAT32;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_FLOAT64;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INT16;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INT32;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INT64;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_NULLABLE_INT8;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_STRING;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIME;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMP;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONE;
+import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN;
+import static com.hazelcast.nio.serialization.FieldKind.COMPACT;
+import static com.hazelcast.nio.serialization.FieldKind.DATE;
+import static com.hazelcast.nio.serialization.FieldKind.DECIMAL;
+import static com.hazelcast.nio.serialization.FieldKind.FLOAT32;
+import static com.hazelcast.nio.serialization.FieldKind.FLOAT64;
+import static com.hazelcast.nio.serialization.FieldKind.INT16;
+import static com.hazelcast.nio.serialization.FieldKind.INT32;
+import static com.hazelcast.nio.serialization.FieldKind.INT64;
+import static com.hazelcast.nio.serialization.FieldKind.INT8;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_BOOLEAN;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_FLOAT32;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_FLOAT64;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT16;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT32;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT64;
+import static com.hazelcast.nio.serialization.FieldKind.NULLABLE_INT8;
+import static com.hazelcast.nio.serialization.FieldKind.STRING;
+import static com.hazelcast.nio.serialization.FieldKind.TIME;
+import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP;
+import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE;
 import static java.util.Objects.requireNonNull;
 
 public class JavaRecordSerializer implements CompactSerializer<Object> {
@@ -143,7 +182,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                 // frictionless for reflectively serialized record objects.
                 if (Byte.TYPE.equals(type)) {
                     componentReaders[i] = (compactReader, schema) -> {
-                        if (!isFieldExist(schema, name, FieldKind.INT8, FieldKind.NULLABLE_INT8)) {
+                        if (!isFieldExist(schema, name, INT8, NULLABLE_INT8)) {
                             return (byte) 0;
                         }
                         return compactReader.readInt8(name);
@@ -152,7 +191,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                             -> compactWriter.writeInt8(name, (byte) componentGetter.invoke(object));
                 } else if (Byte.class.equals(type)) {
                     componentReaders[i] = (compactReader, schema) -> {
-                        if (!isFieldExist(schema, name, FieldKind.NULLABLE_INT8, FieldKind.INT8)) {
+                        if (!isFieldExist(schema, name, NULLABLE_INT8, INT8)) {
                             return null;
                         }
                         return compactReader.readNullableInt8(name);
@@ -160,12 +199,29 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                     componentWriters[i] = (compactWriter, object)
                             -> compactWriter.writeNullableInt8(name, (Byte) componentGetter.invoke(object));
                 } else if (Character.TYPE.equals(type)) {
-                    throwUnsupportedFieldTypeException("char");
+                    componentReaders[i] = (compactReader, schema) -> {
+                        if (!isFieldExist(schema, name, INT16, NULLABLE_INT16)) {
+                            return '\u0000';
+                        }
+                        return (char) compactReader.readInt16(name);
+                    };
+                    componentWriters[i] = (compactWriter, object)
+                            -> compactWriter.writeInt16(name, (short) ((char) componentGetter.invoke(object)));
                 } else if (Character.class.equals(type)) {
-                    throwUnsupportedFieldTypeException("Character");
+                    componentReaders[i] = (compactReader, schema) -> {
+                        if (!isFieldExist(schema, name, NULLABLE_INT16, INT16)) {
+                            return null;
+                        }
+                        Short value = compactReader.readNullableInt16(name);
+                        return CompactUtil.characterFromShort(value);
+                    };
+                    componentWriters[i] = (compactWriter, object) -> {
+                        Character value = (Character) componentGetter.invoke(object);
+                        compactWriter.writeNullableInt16(name, CompactUtil.characterAsShort(value));
+                    };
                 } else if (Short.TYPE.equals(type)) {
                     componentReaders[i] = (compactReader, schema) -> {
-                        if (!isFieldExist(schema, name, FieldKind.INT16, FieldKind.NULLABLE_INT16)) {
+                        if (!isFieldExist(schema, name, INT16, NULLABLE_INT16)) {
                             return (short) 0;
                         }
                         return compactReader.readInt16(name);
@@ -174,7 +230,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                             -> compactWriter.writeInt16(name, (short) componentGetter.invoke(object));
                 } else if (Short.class.equals(type)) {
                     componentReaders[i] = (compactReader, schema) -> {
-                        if (!isFieldExist(schema, name, FieldKind.NULLABLE_INT16, FieldKind.INT16)) {
+                        if (!isFieldExist(schema, name, NULLABLE_INT16, INT16)) {
                             return null;
                         }
                         return compactReader.readNullableInt16(name);
@@ -183,7 +239,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                             -> compactWriter.writeNullableInt16(name, (Short) componentGetter.invoke(object));
                 } else if (Integer.TYPE.equals(type)) {
                     componentReaders[i] = (compactReader, schema) -> {
-                        if (!isFieldExist(schema, name, FieldKind.INT32, FieldKind.NULLABLE_INT32)) {
+                        if (!isFieldExist(schema, name, INT32, NULLABLE_INT32)) {
                             return 0;
                         }
                         return compactReader.readInt32(name);
@@ -192,7 +248,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                             -> compactWriter.writeInt32(name, (int) componentGetter.invoke(object));
                 } else if (Integer.class.equals(type)) {
                     componentReaders[i] = (compactReader, schema) -> {
-                        if (!isFieldExist(schema, name, FieldKind.NULLABLE_INT32, FieldKind.INT32)) {
+                        if (!isFieldExist(schema, name, NULLABLE_INT32, INT32)) {
                             return null;
                         }
                         return compactReader.readNullableInt32(name);
@@ -201,7 +257,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                             -> compactWriter.writeNullableInt32(name, (Integer) componentGetter.invoke(object));
                 } else if (Long.TYPE.equals(type)) {
                     componentReaders[i] = (compactReader, schema) -> {
-                        if (!isFieldExist(schema, name, FieldKind.INT64, FieldKind.NULLABLE_INT64)) {
+                        if (!isFieldExist(schema, name, INT64, NULLABLE_INT64)) {
                             return 0L;
                         }
                         return compactReader.readInt64(name);
@@ -210,7 +266,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                             -> compactWriter.writeInt64(name, (long) componentGetter.invoke(object));
                 } else if (Long.class.equals(type)) {
                     componentReaders[i] = (compactReader, schema) -> {
-                        if (!isFieldExist(schema, name, FieldKind.NULLABLE_INT64, FieldKind.INT64)) {
+                        if (!isFieldExist(schema, name, NULLABLE_INT64, INT64)) {
                             return null;
                         }
                         return compactReader.readNullableInt64(name);
@@ -219,7 +275,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                             -> compactWriter.writeNullableInt64(name, (Long) componentGetter.invoke(object));
                 } else if (Float.TYPE.equals(type)) {
                     componentReaders[i] = (compactReader, schema) -> {
-                        if (!isFieldExist(schema, name, FieldKind.FLOAT32, FieldKind.NULLABLE_FLOAT32)) {
+                        if (!isFieldExist(schema, name, FLOAT32, NULLABLE_FLOAT32)) {
                             return 0F;
                         }
                         return compactReader.readFloat32(name);
@@ -228,7 +284,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                             -> compactWriter.writeFloat32(name, (float) componentGetter.invoke(object));
                 } else if (Float.class.equals(type)) {
                     componentReaders[i] = (compactReader, schema) -> {
-                        if (!isFieldExist(schema, name, FieldKind.NULLABLE_FLOAT32, FieldKind.FLOAT32)) {
+                        if (!isFieldExist(schema, name, NULLABLE_FLOAT32, FLOAT32)) {
                             return null;
                         }
                         return compactReader.readNullableFloat32(name);
@@ -237,7 +293,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                             -> compactWriter.writeNullableFloat32(name, (Float) componentGetter.invoke(object));
                 } else if (Double.TYPE.equals(type)) {
                     componentReaders[i] = (compactReader, schema) -> {
-                        if (!isFieldExist(schema, name, FieldKind.FLOAT64, FieldKind.NULLABLE_FLOAT64)) {
+                        if (!isFieldExist(schema, name, FLOAT64, NULLABLE_FLOAT64)) {
                             return 0D;
                         }
                         return compactReader.readFloat64(name);
@@ -246,7 +302,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                             -> compactWriter.writeFloat64(name, (double) componentGetter.invoke(object));
                 } else if (Double.class.equals(type)) {
                     componentReaders[i] = (compactReader, schema) -> {
-                        if (!isFieldExist(schema, name, FieldKind.NULLABLE_FLOAT64, FieldKind.FLOAT64)) {
+                        if (!isFieldExist(schema, name, NULLABLE_FLOAT64, FLOAT64)) {
                             return null;
                         }
                         return compactReader.readNullableFloat64(name);
@@ -255,7 +311,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                             -> compactWriter.writeNullableFloat64(name, (Double) componentGetter.invoke(object));
                 } else if (Boolean.TYPE.equals(type)) {
                     componentReaders[i] = (compactReader, schema) -> {
-                        if (!isFieldExist(schema, name, FieldKind.BOOLEAN, FieldKind.NULLABLE_BOOLEAN)) {
+                        if (!isFieldExist(schema, name, BOOLEAN, NULLABLE_BOOLEAN)) {
                             return false;
                         }
                         return compactReader.readBoolean(name);
@@ -264,7 +320,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                             -> compactWriter.writeBoolean(name, (boolean) componentGetter.invoke(object));
                 } else if (Boolean.class.equals(type)) {
                     componentReaders[i] = (compactReader, schema) -> {
-                        if (!isFieldExist(schema, name, FieldKind.NULLABLE_BOOLEAN, FieldKind.BOOLEAN)) {
+                        if (!isFieldExist(schema, name, NULLABLE_BOOLEAN, BOOLEAN)) {
                             return null;
                         }
                         return compactReader.readNullableBoolean(name);
@@ -273,7 +329,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                             -> compactWriter.writeNullableBoolean(name, (Boolean) componentGetter.invoke(object));
                 } else if (String.class.equals(type)) {
                     componentReaders[i] = (compactReader, schema) -> {
-                        if (!isFieldExist(schema, name, FieldKind.STRING)) {
+                        if (!isFieldExist(schema, name, STRING)) {
                             return null;
                         }
                         return compactReader.readString(name);
@@ -282,7 +338,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                             -> compactWriter.writeString(name, (String) componentGetter.invoke(object));
                 } else if (BigDecimal.class.equals(type)) {
                     componentReaders[i] = (compactReader, schema) -> {
-                        if (!isFieldExist(schema, name, FieldKind.DECIMAL)) {
+                        if (!isFieldExist(schema, name, DECIMAL)) {
                             return null;
                         }
                         return compactReader.readDecimal(name);
@@ -291,7 +347,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                             -> compactWriter.writeDecimal(name, (BigDecimal) componentGetter.invoke(object));
                 } else if (LocalTime.class.equals(type)) {
                     componentReaders[i] = (compactReader, schema) -> {
-                        if (!isFieldExist(schema, name, FieldKind.TIME)) {
+                        if (!isFieldExist(schema, name, TIME)) {
                             return null;
                         }
                         return compactReader.readTime(name);
@@ -300,7 +356,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                             -> compactWriter.writeTime(name, (LocalTime) componentGetter.invoke(object));
                 } else if (LocalDate.class.equals(type)) {
                     componentReaders[i] = (compactReader, schema) -> {
-                        if (!isFieldExist(schema, name, FieldKind.DATE)) {
+                        if (!isFieldExist(schema, name, DATE)) {
                             return null;
                         }
                         return compactReader.readDate(name);
@@ -309,7 +365,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                             -> compactWriter.writeDate(name, (LocalDate) componentGetter.invoke(object));
                 } else if (LocalDateTime.class.equals(type)) {
                     componentReaders[i] = (compactReader, schema) -> {
-                        if (!isFieldExist(schema, name, FieldKind.TIMESTAMP)) {
+                        if (!isFieldExist(schema, name, TIMESTAMP)) {
                             return null;
                         }
                         return compactReader.readTimestamp(name);
@@ -318,7 +374,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                             -> compactWriter.writeTimestamp(name, (LocalDateTime) componentGetter.invoke(object));
                 } else if (OffsetDateTime.class.equals(type)) {
                     componentReaders[i] = (compactReader, schema) -> {
-                        if (!isFieldExist(schema, name, FieldKind.TIMESTAMP_WITH_TIMEZONE)) {
+                        if (!isFieldExist(schema, name, TIMESTAMP_WITH_TIMEZONE)) {
                             return null;
                         }
                         return compactReader.readTimestampWithTimezone(name);
@@ -327,22 +383,21 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                             -> compactWriter.writeTimestampWithTimezone(name, (OffsetDateTime) componentGetter.invoke(object));
                 } else if (type.isEnum()) {
                     componentReaders[i] = (compactReader, schema) -> {
-                        if (!isFieldExist(schema, name, FieldKind.STRING)) {
+                        if (!isFieldExist(schema, name, STRING)) {
                             return null;
                         }
-                        String enumName = compactReader.readString(name, null);
-                        return enumName == null ? null : Enum.valueOf((Class<? extends Enum>) type, enumName);
+                        String value = compactReader.readString(name);
+                        return CompactUtil.enumFromStringName((Class<? extends Enum>) type, value);
                     };
                     componentWriters[i] = (compactWriter, object) -> {
-                        Object rawValue = componentGetter.invoke(object);
-                        String value = rawValue == null ? null : ((Enum) rawValue).name();
-                        compactWriter.writeString(name, value);
+                        Enum value = (Enum) componentGetter.invoke(object);
+                        compactWriter.writeString(name, CompactUtil.enumAsStringName(value));
                     };
                 } else if (type.isArray()) {
                     Class<?> componentType = type.getComponentType();
                     if (Byte.TYPE.equals(componentType)) {
                         componentReaders[i] = (compactReader, schema) -> {
-                            if (!isFieldExist(schema, name, FieldKind.ARRAY_OF_INT8, FieldKind.ARRAY_OF_NULLABLE_INT8)) {
+                            if (!isFieldExist(schema, name, ARRAY_OF_INT8, ARRAY_OF_NULLABLE_INT8)) {
                                 return null;
                             }
                             return compactReader.readArrayOfInt8(name);
@@ -351,7 +406,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                                 -> compactWriter.writeArrayOfInt8(name, (byte[]) componentGetter.invoke(object));
                     } else if (Byte.class.equals(componentType)) {
                         componentReaders[i] = (compactReader, schema) -> {
-                            if (!isFieldExist(schema, name, FieldKind.ARRAY_OF_NULLABLE_INT8, FieldKind.ARRAY_OF_INT8)) {
+                            if (!isFieldExist(schema, name, ARRAY_OF_NULLABLE_INT8, ARRAY_OF_INT8)) {
                                 return null;
                             }
                             return compactReader.readArrayOfNullableInt8(name);
@@ -359,12 +414,32 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                         componentWriters[i] = (compactWriter, object)
                                 -> compactWriter.writeArrayOfNullableInt8(name, (Byte[]) componentGetter.invoke(object));
                     } else if (Character.TYPE.equals(componentType)) {
-                        throwUnsupportedFieldTypeException("char[]");
+                        componentReaders[i] = (compactReader, schema) -> {
+                            if (!isFieldExist(schema, name, ARRAY_OF_INT16, ARRAY_OF_NULLABLE_INT16)) {
+                                return null;
+                            }
+                            short[] values = compactReader.readArrayOfInt16(name);
+                            return CompactUtil.charArrayFromShortArray(values);
+                        };
+                        componentWriters[i] = (compactWriter, object) -> {
+                            char[] values = (char[]) componentGetter.invoke(object);
+                            compactWriter.writeArrayOfInt16(name, CompactUtil.charArrayAsShortArray(values));
+                        };
                     } else if (Character.class.equals(componentType)) {
-                        throwUnsupportedFieldTypeException("Character[]");
+                        componentReaders[i] = (compactReader, schema) -> {
+                            if (!isFieldExist(schema, name, ARRAY_OF_NULLABLE_INT16, ARRAY_OF_INT16)) {
+                                return null;
+                            }
+                            Short[] values = compactReader.readArrayOfNullableInt16(name);
+                            return CompactUtil.characterArrayFromShortArray(values);
+                        };
+                        componentWriters[i] = (compactWriter, object) -> {
+                            Character[] values = (Character[]) componentGetter.invoke(object);
+                            compactWriter.writeArrayOfNullableInt16(name, CompactUtil.characterArrayAsShortArray(values));
+                        };
                     } else if (Short.TYPE.equals(componentType)) {
                         componentReaders[i] = (compactReader, schema) -> {
-                            if (!isFieldExist(schema, name, FieldKind.ARRAY_OF_INT16, FieldKind.ARRAY_OF_NULLABLE_INT16)) {
+                            if (!isFieldExist(schema, name, ARRAY_OF_INT16, ARRAY_OF_NULLABLE_INT16)) {
                                 return null;
                             }
                             return compactReader.readArrayOfInt16(name);
@@ -373,7 +448,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                                 -> compactWriter.writeArrayOfInt16(name, (short[]) componentGetter.invoke(object));
                     } else if (Short.class.equals(componentType)) {
                         componentReaders[i] = (compactReader, schema) -> {
-                            if (!isFieldExist(schema, name, FieldKind.ARRAY_OF_NULLABLE_INT16, FieldKind.ARRAY_OF_INT16)) {
+                            if (!isFieldExist(schema, name, ARRAY_OF_NULLABLE_INT16, ARRAY_OF_INT16)) {
                                 return null;
                             }
                             return compactReader.readArrayOfNullableInt16(name);
@@ -382,7 +457,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                                 -> compactWriter.writeArrayOfNullableInt16(name, (Short[]) componentGetter.invoke(object));
                     } else if (Integer.TYPE.equals(componentType)) {
                         componentReaders[i] = (compactReader, schema) -> {
-                            if (!isFieldExist(schema, name, FieldKind.ARRAY_OF_INT32, FieldKind.ARRAY_OF_NULLABLE_INT32)) {
+                            if (!isFieldExist(schema, name, ARRAY_OF_INT32, ARRAY_OF_NULLABLE_INT32)) {
                                 return null;
                             }
                             return compactReader.readArrayOfInt32(name);
@@ -391,7 +466,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                                 -> compactWriter.writeArrayOfInt32(name, (int[]) componentGetter.invoke(object));
                     } else if (Integer.class.equals(componentType)) {
                         componentReaders[i] = (compactReader, schema) -> {
-                            if (!isFieldExist(schema, name, FieldKind.ARRAY_OF_NULLABLE_INT32, FieldKind.ARRAY_OF_INT32)) {
+                            if (!isFieldExist(schema, name, ARRAY_OF_NULLABLE_INT32, ARRAY_OF_INT32)) {
                                 return null;
                             }
                             return compactReader.readArrayOfNullableInt32(name);
@@ -400,7 +475,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                                 -> compactWriter.writeArrayOfNullableInt32(name, (Integer[]) componentGetter.invoke(object));
                     } else if (Long.TYPE.equals(componentType)) {
                         componentReaders[i] = (compactReader, schema) -> {
-                            if (!isFieldExist(schema, name, FieldKind.ARRAY_OF_INT64, FieldKind.ARRAY_OF_NULLABLE_INT64)) {
+                            if (!isFieldExist(schema, name, ARRAY_OF_INT64, ARRAY_OF_NULLABLE_INT64)) {
                                 return null;
                             }
                             return compactReader.readArrayOfInt64(name);
@@ -409,7 +484,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                                 -> compactWriter.writeArrayOfInt64(name, (long[]) componentGetter.invoke(object));
                     } else if (Long.class.equals(componentType)) {
                         componentReaders[i] = (compactReader, schema) -> {
-                            if (!isFieldExist(schema, name, FieldKind.ARRAY_OF_NULLABLE_INT64, FieldKind.ARRAY_OF_INT64)) {
+                            if (!isFieldExist(schema, name, ARRAY_OF_NULLABLE_INT64, ARRAY_OF_INT64)) {
                                 return null;
                             }
                             return compactReader.readArrayOfNullableInt64(name);
@@ -418,7 +493,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                                 -> compactWriter.writeArrayOfNullableInt64(name, (Long[]) componentGetter.invoke(object));
                     } else if (Float.TYPE.equals(componentType)) {
                         componentReaders[i] = (compactReader, schema) -> {
-                            if (!isFieldExist(schema, name, FieldKind.ARRAY_OF_FLOAT32, FieldKind.ARRAY_OF_NULLABLE_FLOAT32)) {
+                            if (!isFieldExist(schema, name, ARRAY_OF_FLOAT32, ARRAY_OF_NULLABLE_FLOAT32)) {
                                 return null;
                             }
                             return compactReader.readArrayOfFloat32(name);
@@ -427,7 +502,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                                 -> compactWriter.writeArrayOfFloat32(name, (float[]) componentGetter.invoke(object));
                     } else if (Float.class.equals(componentType)) {
                         componentReaders[i] = (compactReader, schema) -> {
-                            if (!isFieldExist(schema, name, FieldKind.ARRAY_OF_NULLABLE_FLOAT32, FieldKind.ARRAY_OF_FLOAT32)) {
+                            if (!isFieldExist(schema, name, ARRAY_OF_NULLABLE_FLOAT32, ARRAY_OF_FLOAT32)) {
                                 return null;
                             }
                             return compactReader.readArrayOfNullableFloat32(name);
@@ -436,7 +511,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                                 -> compactWriter.writeArrayOfNullableFloat32(name, (Float[]) componentGetter.invoke(object));
                     } else if (Double.TYPE.equals(componentType)) {
                         componentReaders[i] = (compactReader, schema) -> {
-                            if (!isFieldExist(schema, name, FieldKind.ARRAY_OF_FLOAT64, FieldKind.ARRAY_OF_NULLABLE_FLOAT64)) {
+                            if (!isFieldExist(schema, name, ARRAY_OF_FLOAT64, ARRAY_OF_NULLABLE_FLOAT64)) {
                                 return null;
                             }
                             return compactReader.readArrayOfFloat64(name);
@@ -445,7 +520,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                                 -> compactWriter.writeArrayOfFloat64(name, (double[]) componentGetter.invoke(object));
                     } else if (Double.class.equals(componentType)) {
                         componentReaders[i] = (compactReader, schema) -> {
-                            if (!isFieldExist(schema, name, FieldKind.ARRAY_OF_NULLABLE_FLOAT64, FieldKind.ARRAY_OF_FLOAT64)) {
+                            if (!isFieldExist(schema, name, ARRAY_OF_NULLABLE_FLOAT64, ARRAY_OF_FLOAT64)) {
                                 return null;
                             }
                             return compactReader.readArrayOfNullableFloat64(name);
@@ -454,7 +529,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                                 -> compactWriter.writeArrayOfNullableFloat64(name, (Double[]) componentGetter.invoke(object));
                     } else if (Boolean.TYPE.equals(componentType)) {
                         componentReaders[i] = (compactReader, schema) -> {
-                            if (!isFieldExist(schema, name, FieldKind.ARRAY_OF_BOOLEAN, FieldKind.ARRAY_OF_NULLABLE_BOOLEAN)) {
+                            if (!isFieldExist(schema, name, ARRAY_OF_BOOLEAN, ARRAY_OF_NULLABLE_BOOLEAN)) {
                                 return null;
                             }
                             return compactReader.readArrayOfBoolean(name);
@@ -463,7 +538,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                                 -> compactWriter.writeArrayOfBoolean(name, (boolean[]) componentGetter.invoke(object));
                     } else if (Boolean.class.equals(componentType)) {
                         componentReaders[i] = (compactReader, schema) -> {
-                            if (!isFieldExist(schema, name, FieldKind.ARRAY_OF_NULLABLE_BOOLEAN, FieldKind.ARRAY_OF_BOOLEAN)) {
+                            if (!isFieldExist(schema, name, ARRAY_OF_NULLABLE_BOOLEAN, ARRAY_OF_BOOLEAN)) {
                                 return null;
                             }
                             return compactReader.readArrayOfNullableBoolean(name);
@@ -472,7 +547,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                                 -> compactWriter.writeArrayOfNullableBoolean(name, (Boolean[]) componentGetter.invoke(object));
                     } else if (String.class.equals(componentType)) {
                         componentReaders[i] = (compactReader, schema) -> {
-                            if (!isFieldExist(schema, name, FieldKind.ARRAY_OF_STRING)) {
+                            if (!isFieldExist(schema, name, ARRAY_OF_STRING)) {
                                 return null;
                             }
                             return compactReader.readArrayOfString(name);
@@ -481,7 +556,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                                 -> compactWriter.writeArrayOfString(name, (String[]) componentGetter.invoke(object));
                     } else if (BigDecimal.class.equals(componentType)) {
                         componentReaders[i] = (compactReader, schema) -> {
-                            if (!isFieldExist(schema, name, FieldKind.ARRAY_OF_DECIMAL)) {
+                            if (!isFieldExist(schema, name, ARRAY_OF_DECIMAL)) {
                                 return null;
                             }
                             return compactReader.readArrayOfDecimal(name);
@@ -490,7 +565,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                                 -> compactWriter.writeArrayOfDecimal(name, (BigDecimal[]) componentGetter.invoke(object));
                     } else if (LocalTime.class.equals(componentType)) {
                         componentReaders[i] = (compactReader, schema) -> {
-                            if (!isFieldExist(schema, name, FieldKind.ARRAY_OF_TIME)) {
+                            if (!isFieldExist(schema, name, ARRAY_OF_TIME)) {
                                 return null;
                             }
                             return compactReader.readArrayOfTime(name);
@@ -499,7 +574,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                                 -> compactWriter.writeArrayOfTime(name, (LocalTime[]) componentGetter.invoke(object));
                     } else if (LocalDate.class.equals(componentType)) {
                         componentReaders[i] = (compactReader, schema) -> {
-                            if (!isFieldExist(schema, name, FieldKind.ARRAY_OF_DATE)) {
+                            if (!isFieldExist(schema, name, ARRAY_OF_DATE)) {
                                 return null;
                             }
                             return compactReader.readArrayOfDate(name);
@@ -508,7 +583,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                                 -> compactWriter.writeArrayOfDate(name, (LocalDate[]) componentGetter.invoke(object));
                     } else if (LocalDateTime.class.equals(componentType)) {
                         componentReaders[i] = (compactReader, schema) -> {
-                            if (!isFieldExist(schema, name, FieldKind.ARRAY_OF_TIMESTAMP)) {
+                            if (!isFieldExist(schema, name, ARRAY_OF_TIMESTAMP)) {
                                 return null;
                             }
                             return compactReader.readArrayOfTimestamp(name);
@@ -517,49 +592,30 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                                 -> compactWriter.writeArrayOfTimestamp(name, (LocalDateTime[]) componentGetter.invoke(object));
                     } else if (OffsetDateTime.class.equals(componentType)) {
                         componentReaders[i] = (compactReader, schema) -> {
-                            if (!isFieldExist(schema, name, FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONE)) {
+                            if (!isFieldExist(schema, name, ARRAY_OF_TIMESTAMP_WITH_TIMEZONE)) {
                                 return null;
                             }
                             return compactReader.readArrayOfTimestampWithTimezone(name);
                         };
                         componentWriters[i] = (compactWriter, object)
                                 -> compactWriter.writeArrayOfTimestampWithTimezone(
-                                        name, (OffsetDateTime[]) componentGetter.invoke(object));
+                                name, (OffsetDateTime[]) componentGetter.invoke(object));
                     } else if (componentType.isEnum()) {
                         componentReaders[i] = (compactReader, schema) -> {
-                            if (!isFieldExist(schema, name, FieldKind.ARRAY_OF_STRING)) {
+                            if (!isFieldExist(schema, name, ARRAY_OF_STRING)) {
                                 return null;
                             }
-                            String[] enumNames = compactReader.readArrayOfString(name);
-                            if (enumNames == null) {
-                                return null;
-                            }
-
-                            Class<? extends Enum> enumType = (Class<? extends Enum>) componentType;
-                            Enum[] enums = (Enum[]) Array.newInstance(enumType, enumNames.length);
-                            for (int j = 0; j < enumNames.length; j++) {
-                                String enumName = enumNames[j];
-                                enums[j] = enumName == null ? null : Enum.valueOf(enumType, enumName);
-                            }
-                            return enums;
+                            String[] values = compactReader.readArrayOfString(name);
+                            Class<? extends Enum> enumClass = (Class<? extends Enum>) componentType;
+                            return CompactUtil.enumArrayFromStringNameArray(enumClass, values);
                         };
                         componentWriters[i] = (compactWriter, object) -> {
-                            Enum[] enums = (Enum[]) componentGetter.invoke(object);
-                            String[] enumNames = null;
-
-                            if (enums != null) {
-                                enumNames = new String[enums.length];
-                                for (int j = 0; j < enums.length; j++) {
-                                    Enum e = enums[j];
-                                    enumNames[j] = e == null ? null : e.name();
-                                }
-                            }
-
-                            compactWriter.writeArrayOfString(name, enumNames);
+                            Enum[] values = (Enum[]) componentGetter.invoke(object);
+                            compactWriter.writeArrayOfString(name, CompactUtil.enumArrayAsStringNameArray(values));
                         };
                     } else {
                         componentReaders[i] = (compactReader, schema) -> {
-                            if (!isFieldExist(schema, name, FieldKind.ARRAY_OF_COMPACT)) {
+                            if (!isFieldExist(schema, name, ARRAY_OF_COMPACT)) {
                                 return null;
                             }
                             return compactReader.readArrayOfCompact(name, componentType);
@@ -569,7 +625,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                     }
                 } else {
                     componentReaders[i] = (compactReader, schema) -> {
-                        if (!isFieldExist(schema, name, FieldKind.COMPACT)) {
+                        if (!isFieldExist(schema, name, COMPACT)) {
                             return null;
                         }
                         return compactReader.readCompact(name);
@@ -588,29 +644,5 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
         } catch (Exception e) {
             throw new HazelcastSerializationException("Failed to construct the readers/writers for the Java record", e);
         }
-    }
-
-    private boolean isFieldExist(Schema schema, String fieldName, FieldKind expectedFieldKind) {
-        FieldDescriptor field = schema.getField(fieldName);
-        if (field == null) {
-            return false;
-        }
-
-        return field.getKind() == expectedFieldKind;
-    }
-
-    private boolean isFieldExist(Schema schema, String fieldName, FieldKind expectedFieldKind, FieldKind compatibleFieldKind) {
-        FieldDescriptor field = schema.getField(fieldName);
-        if (field == null) {
-            return false;
-        }
-
-        return field.getKind() == expectedFieldKind || field.getKind() == compatibleFieldKind;
-    }
-
-    private void throwUnsupportedFieldTypeException(String typeName) {
-        throw new HazelcastSerializationException("Compact serialization format does not support "
-                + "fields of type '" + typeName + "'. If you want to use such fields with the compact"
-                + " serialization format, consider adding an explicit serializer for it.");
     }
 }
