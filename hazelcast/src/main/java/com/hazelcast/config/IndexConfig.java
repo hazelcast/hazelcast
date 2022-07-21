@@ -292,6 +292,10 @@ public class IndexConfig implements IdentifiedDataSerializable {
             return false;
         }
 
+        if (!getBTreeIndexConfig().equals(that.getBTreeIndexConfig())) {
+            return false;
+        }
+
         return getAttributes().equals(that.getAttributes());
     }
 
@@ -302,6 +306,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
         result = 31 * result + (type != null ? type.hashCode() : 0);
         result = 31 * result + getAttributes().hashCode();
         result = 31 * result + getBitmapIndexOptions().hashCode();
+        result = 31 * result + getBTreeIndexConfig().hashCode();
 
         return result;
     }
@@ -311,6 +316,9 @@ public class IndexConfig implements IdentifiedDataSerializable {
         String string = "IndexConfig{name=" + name + ", type=" + type + ", attributes=" + getAttributes();
         if (bitmapIndexOptions != null && !bitmapIndexOptions.areDefault()) {
             string += ", bitmapIndexOptions=" + bitmapIndexOptions;
+        }
+        if (bTreeIndexConfig != null) {
+            string += ", bTreeIndexConfig=" + bTreeIndexConfig;
         }
         return string + '}';
     }

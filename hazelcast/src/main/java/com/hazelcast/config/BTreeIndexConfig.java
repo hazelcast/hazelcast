@@ -24,6 +24,7 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * Configuration options specific for B-Tree indexes.
@@ -105,5 +106,30 @@ public class BTreeIndexConfig implements IdentifiedDataSerializable {
     @Override
     public int getClassId() {
         return ConfigDataSerializerHook.BTREE_INDEX_CONFIG;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        BTreeIndexConfig that = (BTreeIndexConfig) o;
+        return Objects.equals(pageSize, that.pageSize) && Objects.equals(memoryTierConfig, that.memoryTierConfig);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(pageSize, memoryTierConfig);
+    }
+
+    @Override
+    public String toString() {
+        return "BTreeIndexConfig{" +
+                "pageSize=" + pageSize +
+                ", memoryTierConfig=" + memoryTierConfig +
+                '}';
     }
 }

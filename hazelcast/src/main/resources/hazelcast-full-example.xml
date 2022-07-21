@@ -1406,7 +1406,7 @@
             </index>
             <index type="SORTED">
                 <attributes>
-                    <attribute>name</attribute>
+                    <attribute>age</attribute>
                 </attributes>
                 <btree-index>
                     <memory-tier>

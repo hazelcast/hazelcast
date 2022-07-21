@@ -369,7 +369,7 @@
     <xs:complexType name="btree-index">
         <xs:sequence>
             <xs:element name="page-size" type="memory-size" minOccurs="0" maxOccurs="1" />
-            <xs:element name="memory-tier" type="memory-tier" default="1024" minOccurs="0" maxOccurs="1" />
+            <xs:element name="memory-tier" type="memory-tier" minOccurs="0" maxOccurs="1" />
         </xs:sequence>
     </xs:complexType>
 

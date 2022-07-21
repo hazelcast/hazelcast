@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl;
 
+import com.hazelcast.config.BTreeIndexConfig;
 import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
 import com.hazelcast.config.ConfigXmlGenerator;
@@ -285,6 +286,20 @@ public final class IndexUtils {
                 gen.open("bitmap-index-options");
                 gen.node("unique-key", bitmapIndexOptions.getUniqueKey());
                 gen.node("unique-key-transformation", bitmapIndexOptions.getUniqueKeyTransformation());
+                gen.close();
+            } else if (indexCfg.getType() == IndexType.SORTED) {
+                BTreeIndexConfig btreeIndexConf = indexCfg.getBTreeIndexConfig();
+
+                gen.open("btree-index");
+                gen.node("page-size", null,
+                        "value", btreeIndexConf.getPageSize().getValue(),
+                        "unit", btreeIndexConf.getPageSize().getUnit().name());
+
+                gen.open("memory-tier");
+                gen.node("capacity", null,
+                        "value", btreeIndexConf.getMemoryTierConfig().getCapacity().getValue(),
+                        "unit", btreeIndexConf.getMemoryTierConfig().getCapacity().getUnit().name());
+                gen.close();
                 gen.close();
             }
 

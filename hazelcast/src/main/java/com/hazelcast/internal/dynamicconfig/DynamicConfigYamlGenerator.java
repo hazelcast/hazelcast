@@ -18,6 +18,7 @@ package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AttributeConfig;
+import com.hazelcast.config.BTreeIndexConfig;
 import com.hazelcast.config.CacheSimpleConfig;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
@@ -965,6 +966,15 @@ public class DynamicConfigYamlGenerator {
                         indexConfig.getBitmapIndexOptions().getUniqueKeyTransformation().name());
 
                 indexConfigAsMap.put("bitmap-index-options", bitmapIndexOptionsAsMap);
+            } else if (indexConfig.getType() == IndexType.SORTED) {
+                BTreeIndexConfig bTreeConf = indexConfig.getBTreeIndexConfig();
+                Map<String, Object> btreeOptionsAsMap = new LinkedHashMap<>();
+                addNonNullToMap(btreeOptionsAsMap, "page-size", getCapacityAsMap(bTreeConf.getPageSize()));
+
+                Map<String, Object> capacityAsMap = new LinkedHashMap<>();
+                addNonNullToMap(capacityAsMap, "capacity", getCapacityAsMap(bTreeConf.getMemoryTierConfig().getCapacity()));
+
+                addNonNullToMap(btreeOptionsAsMap, "memory-tier", capacityAsMap);
             }
 
             addNonNullToList(indexConfigsAsList, indexConfigAsMap);
