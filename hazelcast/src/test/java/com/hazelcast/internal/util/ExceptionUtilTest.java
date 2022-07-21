@@ -94,13 +94,28 @@ public class ExceptionUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testCloneExceptionWithFixedAsyncStackTrace_whenCannotConstructSource_then_returnWithoutCloning() {
+    public void testCloneExceptionWithFixedAsyncStackTrace_whenNonStandardConstructor_then_cloneReflectively() {
         IOException expectedException = new IOException();
         Throwable result = ExceptionUtil.cloneExceptionWithFixedAsyncStackTrace(
                 new NonStandardException(1337, expectedException));
 
         assertEquals(NonStandardException.class, result.getClass());
         assertEquals(expectedException, result.getCause());
+        assertNoAsyncTrace(result);
+    }
+
+    @Test
+    public void testCloneExceptionWithFixedAsyncStackTrace_whenCannotConstructSource_then_returnWithoutCloning() {
+        IOException expectedException = new IOException();
+        NoPublicConstructorException result = ExceptionUtil.cloneExceptionWithFixedAsyncStackTrace(
+                new NoPublicConstructorException(expectedException));
+
+        assertEquals(NoPublicConstructorException.class, result.getClass());
+        assertEquals(expectedException, result.getCause());
+        assertNoAsyncTrace(result);
+    }
+
+    private void assertNoAsyncTrace(Throwable result) {
         for (StackTraceElement stackTraceElement : result.getStackTrace()) {
             if (stackTraceElement.getClassName().equals(ExceptionUtil.EXCEPTION_SEPARATOR)) {
                 fail("if exception cannot be cloned to append async stack trace, then nothing should be modified");
@@ -108,17 +123,7 @@ public class ExceptionUtilTest extends HazelcastTestSupport {
         }
     }
 
-    @Test
-    public void testCloneExceptionWithFixedAsyncStackTrace_whenNonStandardConstructor_then_cloneReflectively() {
-        IOException expectedException = new IOException();
-        NoPublicConstructorException result = ExceptionUtil.cloneExceptionWithFixedAsyncStackTrace(
-                new NoPublicConstructorException(expectedException));
-
-        assertEquals(NoPublicConstructorException.class, result.getClass());
-        assertEquals(expectedException, result.getCause());
-    }
-
-    public static class NoPublicConstructorException extends RuntimeException {
+    private static class NoPublicConstructorException extends RuntimeException {
         private NoPublicConstructorException(Throwable cause) {
             super(cause);
         }
