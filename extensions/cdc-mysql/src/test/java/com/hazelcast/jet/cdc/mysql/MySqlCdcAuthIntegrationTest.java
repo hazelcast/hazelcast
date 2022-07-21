@@ -36,7 +36,7 @@ public class MySqlCdcAuthIntegrationTest extends AbstractMySqlCdcIntegrationTest
     @Test
     public void wrongPassword() {
         StreamSource<ChangeRecord> source = MySqlCdcSources.mysql("name")
-                .setDatabaseAddress(mysql.getHost())
+                .setDatabaseAddress(mysql.getContainerIpAddress())
                 .setDatabasePort(mysql.getMappedPort(MYSQL_PORT))
                 .setDatabaseUser("debezium")
                 .setDatabasePassword("wrongPassword")
@@ -51,7 +51,7 @@ public class MySqlCdcAuthIntegrationTest extends AbstractMySqlCdcIntegrationTest
 
         // then
         assertThatThrownBy(job::join)
-                .hasCauseInstanceOf(JetException.class)
+                .hasRootCauseInstanceOf(JetException.class)
                 .hasStackTraceContaining("Access denied for user");
     }
 
