@@ -2534,10 +2534,9 @@
         </xs:simpleContent>
     </xs:complexType>
     <xs:complexType name="index">
-        <xs:all>
-            <xs:element name="attributes" type="index-attributes"/>
-            <xs:element name="bitmap-index-options" type="bitmap-index-options" minOccurs="0"/>
-        </xs:all>
+        <xs:element name="attributes" type="index-attributes"/>
+        <xs:element name="bitmap-index-options" type="bitmap-index-options" minOccurs="0"/>
+        <xs:element name="btree-index" type="btree-index" minOccurs="0"/>
         <xs:attribute name="name"/>
         <xs:attribute name="type" type="index-type" default="SORTED"/>
     </xs:complexType>
@@ -2567,6 +2566,12 @@
             <xs:enumeration value="RAW"/>
         </xs:restriction>
     </xs:simpleType>
+    <xs:complexType name="btree-index">
+        <xs:all>
+            <xs:element name="memory-tier" type="memory-tier" minOccurs="0" />
+            <xs:element name="page-size" type="memory-size" minOccurs="0" />
+        </xs:all>
+    </xs:complexType>
     <xs:complexType name="map-attribute">
         <xs:simpleContent>
             <xs:extension base="xs:string">

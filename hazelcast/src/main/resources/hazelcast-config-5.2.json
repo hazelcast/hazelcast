@@ -1091,6 +1091,35 @@
               "description": "Defines an assortment of transformations which can be applied to unique-key values. OBJECT: Extracted unique key value is interpreted as an object value. Non-negative unique ID is assigned to every distinct object value. LONG: Extracted unique key value is interpreted as a whole integer value of byte, short, int or long type. The extracted value is upcasted to long (if necessary) and unique non-negative ID is assigned to every distinct value. RAW: Extracted unique key value is interpreted as a whole integer value of byte, short, int or long type. The extracted value is upcasted to long (if necessary) and the resulting value is used directly as an ID."
             }
           }
+        },
+        "btree-index": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "page-size": {
+              "type": "object",
+              "description": "Page size.",
+              "additionalProperties": false,
+              "properties": {
+                "capacity": {
+                  "$ref": "#/definitions/MemorySize",
+                  "description": "Memory tier capacity, i.e., how much main memory should this tier consume at most. The default is 256 megabytes."
+                }
+              }
+            },
+
+            "memory-tier": {
+              "type": "object",
+              "description": "Memory tier.",
+              "additionalProperties": false,
+              "properties": {
+                "capacity": {
+                  "$ref": "#/definitions/MemorySize",
+                  "description": "Memory tier capacity, i.e., how much main memory should this tier consume at most. The default is 256 megabytes."
+                }
+              }
+            }
+          }
         }
       },
       "required": [
