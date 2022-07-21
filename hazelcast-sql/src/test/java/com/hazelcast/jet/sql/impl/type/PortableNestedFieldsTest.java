@@ -39,7 +39,7 @@ public class PortableNestedFieldsTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(1, null);
+        initialize(2, null);
         serializationService = Util.getSerializationService(instance());
         officeType = new ClassDefinitionBuilder(1, 3)
                 .addLongField("id")

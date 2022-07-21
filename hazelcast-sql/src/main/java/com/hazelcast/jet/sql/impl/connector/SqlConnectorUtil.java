@@ -19,8 +19,14 @@ package com.hazelcast.jet.sql.impl.connector;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.util.Map;
 
 public final class SqlConnectorUtil {
 
@@ -38,5 +44,24 @@ public final class SqlConnectorUtil {
             throw new JetException("Unknown table type: " + table.getClass());
         }
         return (T) connector;
+    }
+
+    public static int asInt(
+            @Nonnull Map<String, String> options,
+            @Nonnull String propertyName,
+            @Nullable Integer defaultValue
+    ) {
+        String value = options.get(propertyName);
+        if (value == null) {
+            if (defaultValue == null) {
+                throw QueryException.error(SqlErrorCode.GENERIC, "Missing property: " + propertyName);
+            }
+            return defaultValue;
+        }
+        try {
+            return Integer.parseInt(value);
+        } catch (NumberFormatException e) {
+            throw QueryException.error("Cannot parse option '" + propertyName + "' as integer: '" + value + '\'');
+        }
     }
 }

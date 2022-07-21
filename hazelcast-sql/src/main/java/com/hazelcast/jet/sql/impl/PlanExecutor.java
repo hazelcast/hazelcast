@@ -41,6 +41,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropSnapshotPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropTypePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropViewPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ExplainStatementPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapDeletePlan;
@@ -106,6 +107,7 @@ import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_QUERY_TEXT;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.impl.util.Util.getSerializationService;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.asInt;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFORMATION;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
@@ -290,6 +292,11 @@ public class PlanExecutor {
 
     SqlResult execute(DropViewPlan plan) {
         catalog.removeView(plan.viewName(), plan.isIfExists());
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
+    }
+
+    SqlResult execute(DropTypePlan plan) {
+        catalog.removeType(plan.typeName(), plan.isIfExists());
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
@@ -529,8 +536,7 @@ public class PlanExecutor {
             type.setFields(typeFields);
 
             final TreeMap<String, FieldDescriptor> schemaFieldDescriptors = new TreeMap<>();
-            for (int i = 0; i < typeFields.size(); i++) {
-                final Type.TypeField field = typeFields.get(i);
+            for (final Type.TypeField field : typeFields) {
                 schemaFieldDescriptors.put(field.getName(), new FieldDescriptor(
                         field.getName(),
                         QueryDataTypeUtils.resolveCompactType(field.getQueryDataType())
@@ -555,7 +561,7 @@ public class PlanExecutor {
                 typeClass = ReflectionUtils.loadClass(plan.options().get(SqlConnector.OPTION_TYPE_JAVA_CLASS));
             } catch (Exception e) {
                 throw QueryException.error("Unable to load class: '"
-                        + String.valueOf(plan.options().get(SqlConnector.OPTION_TYPE_JAVA_CLASS)) + "'", e);
+                        + plan.options().get(SqlConnector.OPTION_TYPE_JAVA_CLASS) + "'", e);
             }
 
             // TODO: refactor to register()

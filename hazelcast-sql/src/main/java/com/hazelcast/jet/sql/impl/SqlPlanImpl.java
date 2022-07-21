@@ -53,8 +53,10 @@ import java.util.Set;
 import java.util.function.Function;
 
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE_TYPE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE_VIEW;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_DESTROY;
+import static com.hazelcast.security.permission.ActionConstants.ACTION_DROP_TYPE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_DROP_VIEW;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_INDEX;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_PUT;
@@ -695,6 +697,55 @@ abstract class SqlPlanImpl extends SqlPlan {
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             SqlPlanImpl.ensureNoArguments("DROP VIEW", arguments);
             SqlPlanImpl.ensureNoTimeout("DROP VIEW", timeout);
+            return planExecutor.execute(this);
+        }
+    }
+
+    static class DropTypePlan extends SqlPlanImpl {
+        private final String typeName;
+        private final boolean ifExists;
+        private final PlanExecutor planExecutor;
+
+        DropTypePlan(
+                PlanKey planKey,
+                String typeName,
+                boolean ifExists,
+                PlanExecutor planExecutor
+        ) {
+            super(planKey);
+
+            this.typeName = typeName;
+            this.ifExists = ifExists;
+            this.planExecutor = planExecutor;
+        }
+
+        String typeName() {
+            return typeName;
+        }
+
+        boolean isIfExists() {
+            return ifExists;
+        }
+
+        @Override
+        public boolean isCacheable() {
+            return false;
+        }
+
+        @Override
+        public boolean producesRows() {
+            return false;
+        }
+
+        @Override
+        public void checkPermissions(SqlSecurityContext context) {
+            context.checkPermission(new SqlPermission(typeName, ACTION_DROP_TYPE));
+        }
+
+        @Override
+        public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
+            SqlPlanImpl.ensureNoArguments("DROP TYPE", arguments);
+            SqlPlanImpl.ensureNoTimeout("DROP TYPE", timeout);
             return planExecutor.execute(this);
         }
     }
@@ -1341,7 +1392,7 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         @Override
         public void checkPermissions(SqlSecurityContext context) {
-            context.checkPermission(new SqlPermission(name, ACTION_CREATE));
+            context.checkPermission(new SqlPermission(name, ACTION_CREATE_TYPE  ));
         }
 
         @Override

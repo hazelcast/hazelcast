@@ -182,6 +182,12 @@ public class TableResolverImpl implements TableResolver {
         }
     }
 
+    public void removeType(String name, boolean ifExists) {
+        if (tableStorage.removeType(name) == null && !ifExists) {
+            throw QueryException.error("Type does not exist: " + name);
+        }
+    }
+
     @Nonnull
     public Collection<String> getViewNames() {
         return tableStorage.viewNames();

@@ -31,7 +31,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initializeWithClient(1, null, null);
+        initializeWithClient(2, null, null);
     }
 
     @Test

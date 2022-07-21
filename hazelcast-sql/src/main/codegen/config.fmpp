@@ -27,13 +27,14 @@ data: {
       "com.hazelcast.jet.sql.impl.parse.SqlCreateJob"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateMapping"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateSnapshot"
+      "com.hazelcast.jet.sql.impl.parse.SqlCreateType"
       "com.hazelcast.jet.sql.impl.parse.SqlCreateView"
       "com.hazelcast.jet.sql.impl.parse.SqlDataType"
       "com.hazelcast.jet.sql.impl.parse.SqlDropIndex"
       "com.hazelcast.jet.sql.impl.parse.SqlDropJob"
       "com.hazelcast.jet.sql.impl.parse.SqlDropMapping"
-      "com.hazelcast.jet.sql.impl.parse.SqlDropMapping"
       "com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot"
+      "com.hazelcast.jet.sql.impl.parse.SqlDropType"
       "com.hazelcast.jet.sql.impl.parse.SqlDropView"
       "com.hazelcast.jet.sql.impl.parse.SqlExplainStatement"
       "com.hazelcast.jet.sql.impl.parse.SqlExtendedInsert"
@@ -41,7 +42,6 @@ data: {
       "com.hazelcast.jet.sql.impl.parse.SqlOption"
       "com.hazelcast.jet.sql.impl.parse.SqlShowStatement"
       "com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget"
-      "com.hazelcast.jet.sql.impl.parse.SqlCreateType"
       "com.hazelcast.jet.sql.impl.parse.SqlTypeColumn"
       "com.hazelcast.sql.impl.QueryException"
       "com.hazelcast.sql.impl.type.QueryDataType"
@@ -459,22 +459,23 @@ data: {
     # Each must accept arguments "(SqlParserPos pos, boolean replace)".
     # Example: "SqlCreateForeignSchema".
     createStatementParserMethods: [
-      "SqlCreateMapping"
       "SqlCreateIndex"
       "SqlCreateJob"
+      "SqlCreateMapping"
       "SqlCreateSnapshot"
-      "SqlCreateView"
       "SqlCreateType"
+      "SqlCreateView"
     ]
 
     # List of methods for parsing extensions to "DROP" calls.
     # Each must accept arguments "(SqlParserPos pos)".
     # Example: "SqlDropSchema".
     dropStatementParserMethods: [
-      "SqlDropMapping"
       "SqlDropIndex"
       "SqlDropJob"
+      "SqlDropMapping"
       "SqlDropSnapshot"
+      "SqlDropType"
       "SqlDropView"
     ]
 

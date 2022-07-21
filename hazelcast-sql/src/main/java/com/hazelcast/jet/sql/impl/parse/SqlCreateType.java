@@ -68,7 +68,6 @@ public class SqlCreateType extends SqlCreate {
 
     @Override
     public void validate(final SqlValidator validator, final SqlValidatorScope scope) {
-
     }
 
     public String getName() {

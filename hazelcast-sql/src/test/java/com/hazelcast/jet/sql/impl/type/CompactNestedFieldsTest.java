@@ -31,7 +31,7 @@ public class CompactNestedFieldsTest extends SqlTestSupport {
         final Config config = new Config();
         config.getJetConfig().setEnabled(true);
         config.getSerializationConfig().getCompactSerializationConfig().setEnabled(true);
-        initialize(1, config);
+        initialize(2, config);
     }
 
     @Test

@@ -73,7 +73,7 @@ public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.Re
         if (!(throwable instanceof Exception)) {
             return super.encodeException(throwable);
         }
-
+        logger.fine("Client SQL error: " + throwable, throwable);
         SqlError error = SqlClientUtils.exceptionToClientError((Exception) throwable, nodeEngine.getLocalMember().getUuid());
 
         return SqlFetchCodec.encodeResponse(

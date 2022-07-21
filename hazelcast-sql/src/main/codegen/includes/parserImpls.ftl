@@ -276,8 +276,10 @@ QueryDataType ObjectTypes() :
 }
 {
     (
+        LOOKAHEAD(2)
         <OBJECT> { type = QueryDataType.OBJECT; }
     |
+        LOOKAHEAD(2)
         <JSON> { type = QueryDataType.JSON; }
     |
         type = CustomObjectType()
@@ -316,6 +318,27 @@ SqlDrop SqlDropMapping(Span span, boolean replace) :
     name = CompoundIdentifier()
     {
         return new SqlDropMapping(name, ifExists, pos.plus(getPos()));
+    }
+}
+
+/**
+ * Parses DROP TYPE statement.
+ */
+SqlDrop SqlDropType(Span span, boolean replace) :
+{
+    SqlParserPos pos = span.pos();
+
+    SqlIdentifier name;
+    boolean ifExists = false;
+}
+{
+    <TYPE>
+    [
+        <IF> <EXISTS> { ifExists = true; }
+    ]
+    name = SimpleIdentifier()
+    {
+        return new SqlDropType(name, ifExists, pos.plus(getPos()));
     }
 }
 
@@ -397,7 +420,7 @@ SqlNodeList IndexAttributes():
 /**
  * Parses DROP INDEX statement.
  */
-SqlDrop SqlDropIndex(Span span, boolean required) :
+SqlDrop SqlDropIndex(Span span, boolean replace) :
 {
     SqlParserPos pos = span.pos();
 

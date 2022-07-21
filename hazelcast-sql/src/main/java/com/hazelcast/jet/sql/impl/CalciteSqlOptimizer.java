@@ -27,6 +27,7 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropSnapshotPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropTypePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropViewPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapDeletePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapInsertPlan;
@@ -64,6 +65,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlDropIndex;
 import com.hazelcast.jet.sql.impl.parse.SqlDropJob;
 import com.hazelcast.jet.sql.impl.parse.SqlDropMapping;
 import com.hazelcast.jet.sql.impl.parse.SqlDropSnapshot;
+import com.hazelcast.jet.sql.impl.parse.SqlDropType;
 import com.hazelcast.jet.sql.impl.parse.SqlDropView;
 import com.hazelcast.jet.sql.impl.parse.SqlExplainStatement;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
@@ -277,6 +279,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             return toCreateViewPlan(planKey, context, (SqlCreateView) node);
         } else if (node instanceof SqlDropView) {
             return toDropViewPlan(planKey, (SqlDropView) node);
+        } else if (node instanceof SqlDropType) {
+            return toDropTypePlan(planKey, (SqlDropType) node);
         } else if (node instanceof SqlShowStatement) {
             return toShowStatementPlan(planKey, (SqlShowStatement) node);
         } else if (node instanceof SqlExplainStatement) {
@@ -407,6 +411,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private SqlPlan toDropViewPlan(PlanKey planKey, SqlDropView sqlNode) {
         return new DropViewPlan(planKey, sqlNode.viewName(), sqlNode.ifExists(), planExecutor);
+    }
+
+    private SqlPlan toDropTypePlan(PlanKey planKey, SqlDropType sqlNode) {
+        return new DropTypePlan(planKey, sqlNode.typeName(), sqlNode.ifExists(), planExecutor);
     }
 
     private SqlPlan toShowStatementPlan(PlanKey planKey, SqlShowStatement sqlNode) {

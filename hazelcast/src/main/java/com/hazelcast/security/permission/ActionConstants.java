@@ -81,6 +81,8 @@ public final class ActionConstants {
     // SQL-specific actions
     public static final String ACTION_CREATE_VIEW = "create-view";
     public static final String ACTION_DROP_VIEW = "drop-view";
+    public static final String ACTION_CREATE_TYPE = "create-type";
+    public static final String ACTION_DROP_TYPE = "drop-type";
 
     private static final Map<String, PermissionFactory> PERMISSION_FACTORY_MAP = new HashMap<>();
 

@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.type;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -27,33 +27,43 @@ import org.junit.runner.RunWith;
 import java.io.Serializable;
 
 import static java.lang.String.format;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class NestedTypesDDLTest extends SqlTestSupport {
+    private static TypesStorage storage;
+
     @BeforeClass
     public static void beforeClass() {
-        Config config = new Config();
-        config.getJetConfig().setEnabled(true);
-        initialize(1, config);
+        initialize(2, null);
+        storage = new TypesStorage(getNodeEngineImpl(instance()));
     }
 
     @Test
     public void test_createTypeIsNotDuplicatedByDefault() {
-        instance().getSql().execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName()));
-        assertThrows(HazelcastException.class, () -> instance().getSql()
-                .execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", SecondType.class.getName())));
+        execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName()));
+        assertThatThrownBy(() -> instance().getSql()
+                .execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", SecondType.class.getName())))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessage("Type already exists: FirstType");
+        assertEquals(FirstType.class.getName(), storage.getType("FirstType").getJavaClassName());
     }
 
     @Test
     public void test_replaceType() {
         execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName()));
         execute(format("CREATE OR REPLACE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", SecondType.class.getName()));
+
+        assertEquals(SecondType.class.getName(), storage.getType("FirstType").getJavaClassName());
     }
 
     @Test
     public void test_createIfNotExists() {
         execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName()));
         execute(format("CREATE TYPE IF NOT EXISTS FirstType OPTIONS ('format'='java','javaClass'='%s')", SecondType.class.getName()));
+
+        assertEquals(FirstType.class.getName(), storage.getType("FirstType").getJavaClassName());
     }
 
     @Test
@@ -65,9 +75,21 @@ public class NestedTypesDDLTest extends SqlTestSupport {
 
     @Test
     public void test_duplicateClass() {
-        instance().getSql().execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName()));
-        assertThrows(HazelcastException.class, () -> instance().getSql()
-                .execute(format("CREATE TYPE SecondType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName())));
+        execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName()));
+        assertThatThrownBy(() ->
+                execute(format("CREATE TYPE SecondType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName())))
+                .isInstanceOf(HazelcastException.class)
+                // TODO wrong error message
+                .hasMessage("Type already exists: SecondType");
+    }
+
+    @Test
+    public void test_dropNonexistentType() {
+        assertThatThrownBy(() -> execute("DROP TYPE Foo"))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessage("Type 'Foo' doesn't exist");
+
+        execute("DROP TYPE IF EXISTS Foo");
     }
 
     void execute(String sql) {
