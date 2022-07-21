@@ -72,6 +72,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private JetSqlRow emptyLeftRow;
     private JetSqlRow emptyRightRow;
 
+    @SuppressWarnings("checkstyle:ExecutableStatementCount")
     public StreamToStreamJoinP(
             final JetJoinInfo joinInfo,
             final Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors,
