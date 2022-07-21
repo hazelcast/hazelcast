@@ -22,6 +22,8 @@ import com.hazelcast.config.ConfigXmlGenerator;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.memory.Capacity;
+import com.hazelcast.memory.MemoryUnit;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 
@@ -32,6 +34,7 @@ import java.util.regex.Pattern;
 import static com.hazelcast.internal.config.DomConfigHelper.childElementWithName;
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
+import static com.hazelcast.internal.config.DomConfigHelper.getAttribute;
 import static com.hazelcast.internal.config.DomConfigHelper.getTextContent;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
@@ -333,9 +336,29 @@ public final class IndexUtils {
                 res.getBitmapIndexOptions().setUniqueKey(uniqueKey);
                 res.getBitmapIndexOptions().setUniqueKeyTransformation(uniqueKeyTransformation);
             }
+        } else if (type == IndexType.SORTED) {
+            Node optionsNode = childElementWithName(indexNode, "btree-index", strict);
+            if (optionsNode != null) {
+                Node pageSizeNode = childElementWithName(optionsNode, "page-size", strict);
+                Node memoryTierNode = childElementWithName(optionsNode, "memory-tier", strict);
+                Node memoryTierCapacityNode = childElementWithName(memoryTierNode, "capacity", strict);
+
+                res.getBTreeIndexConfig().setPageSize(getCapacity(pageSizeNode, domLevel3));
+                res.getBTreeIndexConfig().getMemoryTierConfig().setCapacity(getCapacity(memoryTierCapacityNode, domLevel3));
+            }
         }
 
         return res;
+    }
+
+    private static Capacity getCapacity(Node node, boolean domLevel3) {
+        if (node == null) {
+            return null;
+        }
+        String valueString = getAttribute(node, "value", domLevel3);
+        String unitString = getAttribute(node, "unit", domLevel3);
+
+        return Capacity.parse(valueString, MemoryUnit.valueOf(unitString));
     }
 
     public static IndexType getIndexTypeFromXmlName(String typeStr) {
@@ -364,13 +387,11 @@ public final class IndexUtils {
         }
 
         String typeStr = getTextContent(attrs.getNamedItem("type"), domLevel3);
-
         if (typeStr.isEmpty()) {
             typeStr = IndexConfig.DEFAULT_TYPE.name();
         }
 
         IndexType type = getIndexTypeFromXmlName(typeStr);
-
         IndexConfig res = new IndexConfig().setName(name).setType(type);
 
         Node attributesNode = attrs.getNamedItem("attributes");
@@ -396,6 +417,16 @@ public final class IndexUtils {
 
                 res.getBitmapIndexOptions().setUniqueKey(uniqueKey);
                 res.getBitmapIndexOptions().setUniqueKeyTransformation(uniqueKeyTransformation);
+            }
+        } else if (type == IndexType.SORTED) {
+            Node optionsNode = childElementWithName(indexNode, "btree-index", strict);
+            if (optionsNode != null) {
+                Node pageSizeNode = childElementWithName(optionsNode, "page-size", strict);
+                Node memoryTierNode = childElementWithName(optionsNode, "memory-tier", strict);
+                Node memoryTierCapacityNode = childElementWithName(memoryTierNode, "capacity", strict);
+
+                res.getBTreeIndexConfig().setPageSize(getCapacity(pageSizeNode, domLevel3));
+                res.getBTreeIndexConfig().getMemoryTierConfig().setCapacity(getCapacity(memoryTierCapacityNode, domLevel3));
             }
         }
 
