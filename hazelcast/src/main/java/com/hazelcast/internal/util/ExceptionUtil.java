@@ -332,7 +332,8 @@ public final class ExceptionUtil {
      * stack-trace the cloned exception has the same
      * cause and the message as the original exception
      */
-    public static <T extends Throwable> T cloneExceptionWithFixedAsyncStackTrace(T original) {
+    @Nonnull
+    public static <T extends Throwable> T cloneExceptionWithFixedAsyncStackTrace(@Nonnull T original) {
         StackTraceElement[] fixedStackTrace = getFixedStackTrace(original, Thread.currentThread().getStackTrace());
 
         Class<? extends Throwable> exceptionClass = original.getClass();
