@@ -757,7 +757,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         return node;
     }
 
-    boolean isStartCompleted() {
+    public boolean isStartCompleted() {
         return nodeEngine.getNode().getNodeExtension().isStartCompleted();
     }
 
