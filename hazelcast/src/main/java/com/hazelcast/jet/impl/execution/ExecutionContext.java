@@ -63,6 +63,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_COMPLETION_TIME;
 import static com.hazelcast.jet.core.metrics.MetricNames.EXECUTION_START_TIME;
@@ -72,6 +73,7 @@ import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLO
 import static java.util.Collections.emptyList;
 import static java.util.Collections.unmodifiableMap;
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static java.util.concurrent.CompletableFuture.runAsync;
 
 /**
  * Data pertaining to single job execution on all cluster members. There's one
@@ -146,8 +148,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
     public CompletableFuture<Void> initialize(
             @Nonnull Address coordinator,
             @Nonnull Set<Address> participants,
-            @Nonnull ExecutionPlan plan,
-            @Nullable JobClassLoaderService jobClassLoaderService) {
+            @Nonnull ExecutionPlan plan) {
         this.coordinator = coordinator;
         this.participants = participants;
 
@@ -162,30 +163,11 @@ public class ExecutionContext implements DynamicMetricsProvider {
 
         JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
 
-        serializationService = createSerializationService(jobClassLoaderService,
-                jetServiceBackend);
+        serializationService = jetServiceBackend.createSerializationService(jobConfig.getSerializerConfigs());
 
         metricsEnabled = jobConfig.isMetricsEnabled() && nodeEngine.getConfig().getMetricsConfig().isEnabled();
         return plan.initialize(nodeEngine, jobId, executionId, snapshotContext, tempDirectories, serializationService)
                 .thenAccept(ignored -> initWithPlan(plan));
-    }
-
-    private InternalSerializationService createSerializationService(JobClassLoaderService jobClassLoaderService,
-                                                                    JetServiceBackend jetServiceBackend) {
-        if (isLightJob) {
-            return jetServiceBackend.createSerializationService(jobConfig.getSerializerConfigs());
-        }
-        InternalSerializationService internalSerializationService;
-        try {
-            jobClassLoaderService.prepareProcessorClassLoaders(jobId);
-            ClassLoader jobCl = jobClassLoaderService.getClassLoader(jobId);
-            internalSerializationService =
-                    doWithClassLoader(jobCl, () ->
-                        jetServiceBackend.createSerializationService(jobConfig.getSerializerConfigs()));
-        } finally {
-            jobClassLoaderService.clearProcessorClassLoaders();
-        }
-        return internalSerializationService;
     }
 
     private void initWithPlan(@Nonnull ExecutionPlan plan) {
@@ -303,10 +285,9 @@ public class ExecutionContext implements DynamicMetricsProvider {
                     }
                 };
                 if (processorSupplier.closeIsCooperative()) {
-                    closeAction.run();
-                    futures.add(completedFuture(null));
+                    futures.add(runAsync(closeAction, CALLER_RUNS));
                 } else {
-                    futures.add(CompletableFuture.runAsync(closeAction, offloadExecutor));
+                    futures.add(runAsync(closeAction, offloadExecutor));
                 }
             }
         });

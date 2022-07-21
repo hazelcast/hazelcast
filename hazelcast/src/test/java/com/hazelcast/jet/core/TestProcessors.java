@@ -20,13 +20,20 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.processor.Processors;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.test.HazelcastTestSupport;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
@@ -47,13 +54,16 @@ import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.core.ProcessorMetaSupplier.preferLocalParallelismOne;
 import static com.hazelcast.jet.impl.JetEvent.jetEvent;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
-import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.stream.Collectors.toList;
-import static org.apache.commons.lang3.StringUtils.substringAfter;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 public final class TestProcessors {
+
+    private static final ILogger LOGGER = Logger.getLogger(HazelcastTestSupport.class);
+    private static final Random RANDOM = new Random();
+    private static final Set<String> errors = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
     private TestProcessors() { }
 
@@ -62,11 +72,13 @@ public final class TestProcessors {
      * test that uses them.
      */
     public static void reset(int totalParallelism) {
+        errors.clear();
         MockPMS.initCount.set(0);
         MockPMS.closeCount.set(0);
         MockPMS.receivedCloseError.set(null);
         MockPMS.blockingSemaphore = new Semaphore(0, true);
 
+        MockPS.nodeCount = -1;
         MockPS.closeCount.set(0);
         MockPS.initCount.set(0);
         MockPS.receivedCloseErrors.clear();
@@ -89,6 +101,19 @@ public final class TestProcessors {
         CollectPerProcessorSink.lists = null;
     }
 
+    /**
+     * Asserts that no errors were raised in processor's init and close methods.
+     * Such errors normally are being "eaten" by the framework, so won't cause typical assertion error.
+     *
+     * It checks also how many times init and close was called.
+     */
+    public static void assertNoErrorsInProcessors() {
+        String errorString = String.join("\n", errors);
+        assertTrue("There should be no errors in processors, but were: \n" + errorString, errors.isEmpty());
+        MockPS.assertInitCloseCounts();
+        MockPMS.assertInitCloseCounts();
+    }
+
     public static DAG batchDag() {
         DAG dag = new DAG();
         dag.newVertex("v", MockP::new);
@@ -99,6 +124,16 @@ public final class TestProcessors {
         DAG dag = new DAG();
         dag.newVertex("v", () -> new MockP().streaming());
         return dag;
+    }
+
+    /**
+     * If expression is false, given message will be added to set of errors and will cause
+     * {@link TestProcessors#assertNoErrorsInProcessors()} to fail.
+     */
+    private static void assertTrueInProcessor(String message, boolean expression) {
+        if (!expression) {
+            errors.add(message);
+        }
     }
 
     public static class Identity extends AbstractProcessor {
@@ -207,7 +242,7 @@ public final class TestProcessors {
 
         @Override
         public void init(@Nonnull Context context) throws InterruptedException {
-            System.out.println("MockPMS.init called on " + Thread.currentThread().getName());
+            LOGGER.info("MockPMS.init called on " + Thread.currentThread().getName());
             initCount.incrementAndGet();
             if (initError != null) {
                 throw sneakyThrow(initError);
@@ -215,6 +250,7 @@ public final class TestProcessors {
 
             if (initBlocks) {
                 blockingSemaphore.acquire();
+                Thread.sleep(RANDOM.nextInt(500));
             }
         }
 
@@ -233,22 +269,29 @@ public final class TestProcessors {
 
         @Override
         public void close(Throwable error) throws InterruptedException {
-            System.out.println("MockPMS.close called on " + Thread.currentThread().getName());
+            LOGGER.info("MockPMS.close called on " + Thread.currentThread().getName());
             if (closeBlocks) {
                 blockingSemaphore.acquire();
+                Thread.sleep(RANDOM.nextInt(500));
             }
             closeCount.incrementAndGet();
-
-            assertEquals("Close called more times than init was called. Init count: "
-                    + initCount.get() + " close count: " + closeCount, initCount.get(), closeCount.get());
-
-            assertTrue("PMS.close() already called once",
+            assertTrueInProcessor("Close called without calling init()", initCount.get() != 0);
+            assertTrueInProcessor("PMS#close() already called once",
                     receivedCloseError.compareAndSet(null, error)
             );
 
             if (closeError != null) {
                 throw sneakyThrow(closeError);
             }
+        }
+
+        static void assertInitCloseCounts() {
+            assertEquals("PMS#close called different number of times than init. Init count: "
+                    + initCount.get() + " close count: " + closeCount, initCount.get(), closeCount.get());
+        }
+
+        static void assertsWhenOneJob() {
+            assertEquals("PMS#close() should be called exactly once", 1, closeCount.get());
         }
 
         static void verifyCloseCount() {
@@ -261,6 +304,8 @@ public final class TestProcessors {
 
         static AtomicInteger initCount = new AtomicInteger();
         static AtomicInteger closeCount = new AtomicInteger();
+        static volatile int nodeCount;
+
         static List<Throwable> receivedCloseErrors = new CopyOnWriteArrayList<>();
         static Semaphore blockingSemaphore = new Semaphore(0, true);
 
@@ -272,13 +317,11 @@ public final class TestProcessors {
         private volatile boolean closeBlocks;
 
         private final SupplierEx<Processor> supplier;
-        private final int nodeCount;
-
         private boolean initCalled;
 
         public MockPS(SupplierEx<Processor> supplier, int nodeCount) {
             this.supplier = supplier;
-            this.nodeCount = nodeCount;
+            MockPS.nodeCount = nodeCount;
         }
 
         public MockPS setInitError(Throwable initError) {
@@ -317,7 +360,7 @@ public final class TestProcessors {
 
         @Override
         public void init(@Nonnull Context context) throws InterruptedException {
-            System.out.println("MockPS.init called on " + Thread.currentThread().getName());
+            LOGGER.info("MockPS.init called on " + Thread.currentThread().getName());
             initCalled = true;
             initCount.incrementAndGet();
 
@@ -327,6 +370,7 @@ public final class TestProcessors {
 
             if (initBlocks) {
                 blockingSemaphore.acquire();
+                Thread.sleep(RANDOM.nextInt(500));
             }
         }
 
@@ -345,25 +389,32 @@ public final class TestProcessors {
 
         @Override
         public void close(Throwable error) throws InterruptedException {
-            System.out.println("MockPS.close called on " + Thread.currentThread().getName());
+            String threadName = Thread.currentThread().getName();
+            LOGGER.info("MockPS.close called on " + threadName);
             if (closeBlocks) {
                 blockingSemaphore.acquire();
-                String withoutPrefix = substringAfter(JOB_OFFLOADABLE_EXECUTOR, "hz:");
-                assertTrue("executed not on offload thread", Thread.currentThread().getName().contains(withoutPrefix));
+                Thread.sleep(RANDOM.nextInt(500));
+                assertTrueInProcessor("executed not on offload thread, but: " + threadName, threadName.contains("cached.thread"));
             }
             if (error != null) {
                 receivedCloseErrors.add(error);
             }
             closeCount.incrementAndGet();
 
-            assertTrue("Close called without calling init()", initCalled);
-            assertTrue("Close called without init being called on all the nodes. Init count: "
-                    + initCount.get() + " node count: " + nodeCount, initCount.get() >= nodeCount);
-            assertTrue("Close called " + closeCount.get() + " times, but init called "
-                    + initCount.get() + " times!", closeCount.get() <= initCount.get());
+            assertTrueInProcessor("PS#close called without calling PS#init()", initCalled);
 
             if (closeError != null) {
                 throw sneakyThrow(closeError);
+            }
+        }
+
+        public static void assertInitCloseCounts() {
+            assertEquals("PS#close called " + closeCount.get() + " times, but PS#init called "
+                    + initCount.get() + " times!", closeCount.get(), initCount.get());
+
+            if (nodeCount != -1) {
+                assertFalse("Close called without init being called on all the nodes. Init count: "
+                        + initCount.get() + " node count: " + nodeCount, initCount.get() < nodeCount);
             }
         }
     }
@@ -443,7 +494,7 @@ public final class TestProcessors {
 
         @Override
         protected void init(@Nonnull Context context) throws InterruptedException {
-            System.out.println("MockP.init called on " + Thread.currentThread().getName());
+            LOGGER.info("MockP.init called on " + Thread.currentThread().getName());
             initCount.incrementAndGet();
             if (initError != null) {
                 throw sneakyThrow(initError);
@@ -451,6 +502,7 @@ public final class TestProcessors {
 
             if (initBlocks) {
                 blockingSemaphore.acquire();
+                Thread.sleep(RANDOM.nextInt(500));
             }
         }
 
@@ -490,7 +542,7 @@ public final class TestProcessors {
 
         @Override
         public void close() {
-            System.out.println("MockP.close called on " + Thread.currentThread().getName());
+            LOGGER.info("MockP.close called on " + Thread.currentThread().getName());
             closeCount.incrementAndGet();
             if (closeError != null) {
                 throw sneakyThrow(closeError);

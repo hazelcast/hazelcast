@@ -80,6 +80,7 @@ import java.util.function.Function;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.core.TestProcessors.MockPMS.assertsWhenOneJob;
 import static com.hazelcast.jet.core.TestUtil.assertExceptionInCauses;
 import static com.hazelcast.jet.core.TestUtil.executeAndPeel;
 import static com.hazelcast.jet.core.processor.Processors.noopP;
@@ -150,6 +151,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertPsClosedWithoutError();
         assertPmsClosedWithoutError();
         assertJobSucceeded(job);
+        assertsWhenOneJob();
     }
 
     @Test
@@ -211,6 +213,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         // Then
         assertPmsClosedWithError();
         assertJobFailed(job, MOCK_ERROR);
+        assertsWhenOneJob();
     }
 
     @Test
@@ -228,6 +231,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertPsClosedWithoutError();
         assertPmsClosedWithoutError();
         assertJobSucceeded(job);
+        assertsWhenOneJob();
     }
 
     @Test
@@ -258,6 +262,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertPsClosedWithError();
         assertPmsClosedWithError();
         assertJobFailed(job, MOCK_ERROR);
+        assertsWhenOneJob();
     }
 
     @Test
@@ -297,6 +302,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertPsClosedWithoutError();
         assertPmsClosedWithoutError();
         assertJobSucceeded(job);
+        assertsWhenOneJob();
     }
 
     @Test
@@ -314,6 +320,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertPsClosedWithError();
         assertPmsClosedWithError();
         assertJobFailed(job, MOCK_ERROR);
+        assertsWhenOneJob();
     }
 
     @Test
@@ -350,6 +357,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertPsClosedWithError();
         assertPmsClosedWithError();
         assertJobFailed(job, MOCK_ERROR);
+        assertsWhenOneJob();
     }
 
     @Test
@@ -385,6 +393,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertPsClosedWithError();
         assertPmsClosedWithError();
         assertJobFailed(job, MOCK_ERROR);
+        assertsWhenOneJob();
     }
 
     @Test
@@ -495,7 +504,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         Job job = instance().getJet().newJob(dag);
         assertJobStatusEventually(job, RUNNING); // RUNNING status is set on master before sending the StartOp
         job.cancel();
-        assertThatThrownBy(() -> job.join())
+        assertThatThrownBy(job::join)
                 .isInstanceOf(CancellationException.class);
     }
 
@@ -581,7 +590,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         Job job = newJob(dag);
 
         // Then
-        assertThatThrownBy(() -> job.join())
+        assertThatThrownBy(job::join)
                 .hasMessageContaining(useLightJob
                         // `checkSerializable` isn't used for light jobs
                         ? "Failed to serialize 'com.hazelcast.jet.impl.execution.init.ExecutionPlan'"
@@ -699,7 +708,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertJobRunningEventually(inst1, job, null);
         inst2.getLifecycleService().terminate();
 
-        assertThatThrownBy(() -> job.join())
+        assertThatThrownBy(job::join)
                 .hasRootCauseInstanceOf(MemberLeftException.class);
     }
 
@@ -732,6 +741,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             f.get().join();
         }
         MockPMS.verifyCloseCount();
+        TestProcessors.assertNoErrorsInProcessors();
     }
 
     @Test(timeout = 2000L)
@@ -767,6 +777,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         }
         assertTrueEventually(() -> assertThat(MockPMS.closeCount.get()).isEqualTo(numJobs + 2), 4);
         MockPMS.verifyCloseCount();
+        TestProcessors.assertNoErrorsInProcessors();
     }
 
     @Test
@@ -797,6 +808,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         for (Future<Job> f : submitFutures) {
             f.get().join();
         }
+        TestProcessors.assertNoErrorsInProcessors();
     }
 
     @Test(timeout = 20_000L)
@@ -831,6 +843,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             f.get();
         }
         assertTrueEventually(() -> assertThat(MockPMS.closeCount.get()).isEqualTo(numJobs + 2), 4);
+        TestProcessors.assertNoErrorsInProcessors();
     }
 
     @Test
@@ -861,6 +874,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         for (Future<Job> f : submitFutures) {
             f.get().join();
         }
+        TestProcessors.assertNoErrorsInProcessors();
     }
 
     public static class NotSerializable_DataSerializable_ProcessorSupplier implements ProcessorSupplier, DataSerializable {

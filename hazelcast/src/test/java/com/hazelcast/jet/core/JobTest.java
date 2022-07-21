@@ -97,6 +97,10 @@ public class JobTest extends SimpleTestInClusterSupport {
     public void setup() {
         TestProcessors.reset(TOTAL_PARALLELISM);
     }
+    @Before
+    public void after() {
+        TestProcessors.assertNoErrorsInProcessors();
+    }
 
     @Test
     public void when_jobSubmitted_then_jobStatusIsStarting_member() {

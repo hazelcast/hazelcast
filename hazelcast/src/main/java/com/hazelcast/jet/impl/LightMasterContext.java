@@ -198,7 +198,7 @@ public final class LightMasterContext {
         });
     }
 
-    private void invokeClose(@org.jetbrains.annotations.Nullable Throwable failure, ProcessorMetaSupplier metaSupplier) {
+    private void invokeClose(@Nullable Throwable failure, ProcessorMetaSupplier metaSupplier) {
         try {
             metaSupplier.close(failure);
         } catch (Throwable e) {
