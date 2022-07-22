@@ -118,19 +118,19 @@ public class BTreeIndexConfig implements IdentifiedDataSerializable {
             return false;
         }
         BTreeIndexConfig that = (BTreeIndexConfig) o;
-        return Objects.equals(pageSize, that.pageSize) && Objects.equals(memoryTierConfig, that.memoryTierConfig);
+        return Objects.equals(getPageSize(), that.getPageSize()) && Objects.equals(getMemoryTierConfig(), that.getMemoryTierConfig());
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(pageSize, memoryTierConfig);
+        return Objects.hash(getPageSize(), getMemoryTierConfig());
     }
 
     @Override
     public String toString() {
         return "BTreeIndexConfig{"
-                + "pageSize=" + pageSize
-                + ", memoryTierConfig=" + memoryTierConfig
+                + "pageSize=" + getPageSize()
+                + ", memoryTierConfig=" + getMemoryTierConfig()
                 + '}';
     }
 }

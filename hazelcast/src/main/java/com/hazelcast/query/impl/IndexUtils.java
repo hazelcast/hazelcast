@@ -19,7 +19,7 @@ package com.hazelcast.query.impl;
 import com.hazelcast.config.BTreeIndexConfig;
 import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
-import com.hazelcast.config.ConfigXmlGenerator;
+import com.hazelcast.config.ConfigXmlGenerator.XmlGenerator;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.internal.util.UuidUtil;
@@ -261,7 +261,7 @@ public final class IndexUtils {
         return validateAndNormalize(UuidUtil.newUnsecureUUID().toString(), res);
     }
 
-    public static void generateXml(ConfigXmlGenerator.XmlGenerator gen, List<IndexConfig> indexConfigs) {
+    public static void generateXml(XmlGenerator gen, List<IndexConfig> indexConfigs, boolean supportsTiered) {
         if (indexConfigs.isEmpty()) {
             return;
         }
@@ -287,7 +287,7 @@ public final class IndexUtils {
                 gen.node("unique-key", bitmapIndexOptions.getUniqueKey());
                 gen.node("unique-key-transformation", bitmapIndexOptions.getUniqueKeyTransformation());
                 gen.close();
-            } else if (indexCfg.getType() == IndexType.SORTED) {
+            } else if (supportsTiered && indexCfg.getType() == IndexType.SORTED) {
                 BTreeIndexConfig btreeIndexConf = indexCfg.getBTreeIndexConfig();
 
                 gen.open("btree-index");
