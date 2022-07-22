@@ -247,7 +247,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark wm) {
-        keyedWatermarkCheck(wm);
+        // keyedWatermarkCheck(wm);
         return wmFlatMapper.tryProcess(wm);
     }
 

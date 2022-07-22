@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.test;
 
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
@@ -28,7 +29,6 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlService;
@@ -36,6 +36,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
@@ -185,8 +186,8 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
             @Nonnull Table table_,
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection,
-            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
-    ) {
+            @Nullable BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
+            byte watermarkKey) {
         TestTable table = (TestTable) table_;
         List<Object[]> rows = table.rows;
         boolean streaming = table.streaming;
@@ -195,7 +196,7 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
             ExpressionEvalContext evalContext = ExpressionEvalContext.from(ctx);
             EventTimePolicy<JetSqlRow> eventTimePolicy = eventTimePolicyProvider == null
                     ? EventTimePolicy.noEventTime()
-                    : eventTimePolicyProvider.apply(evalContext);
+                    : eventTimePolicyProvider.apply(evalContext, watermarkKey);
             return new TestDataGenerator(rows, predicate, projection, evalContext, eventTimePolicy, streaming);
         };
 

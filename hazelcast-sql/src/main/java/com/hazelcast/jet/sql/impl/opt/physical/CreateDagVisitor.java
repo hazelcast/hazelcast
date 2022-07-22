@@ -45,6 +45,7 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
+import com.hazelcast.jet.sql.impl.opt.WatermarkKeysAssigner;
 import com.hazelcast.jet.sql.impl.processors.LateItemsDropP;
 import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
@@ -62,8 +63,11 @@ import org.apache.calcite.rel.SingleRel;
 import org.apache.calcite.rex.RexProgram;
 
 import javax.annotation.Nullable;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -96,11 +100,16 @@ public class CreateDagVisitor {
     private final NodeEngine nodeEngine;
     private final Address localMemberAddress;
     private final QueryParameterMetadata parameterMetadata;
+    private final WatermarkKeysAssigner watermarkKeysAssigner;
 
-    public CreateDagVisitor(NodeEngine nodeEngine, QueryParameterMetadata parameterMetadata) {
+    public CreateDagVisitor(
+            NodeEngine nodeEngine,
+            QueryParameterMetadata parameterMetadata,
+            WatermarkKeysAssigner watermarkKeysAssigner) {
         this.nodeEngine = nodeEngine;
         this.localMemberAddress = nodeEngine.getThisAddress();
         this.parameterMetadata = parameterMetadata;
+        this.watermarkKeysAssigner = watermarkKeysAssigner;
     }
 
     public Vertex onValues(ValuesPhysicalRel rel) {
@@ -166,7 +175,8 @@ public class CreateDagVisitor {
                 table,
                 rel.filter(parameterMetadata),
                 rel.projection(parameterMetadata),
-                rel.eventTimePolicyProvider()
+                rel.eventTimePolicyProvider(),
+                rel.getWatermarkKey()
         );
     }
 
@@ -380,9 +390,13 @@ public class CreateDagVisitor {
     }
 
     public Vertex onDropLateItems(DropLateItemsPhysicalRel rel) {
-        Expression<?> timestampExpression = rel.timestampExpression();
+        Map<Integer, Expression<?>> expressionMap = rel.timestampExpression();
+        Map<Byte, Expression<?>> keyedTimestampExpressionMap = new HashMap<>();
+        for (Entry<Integer, Byte> entry : watermarkKeysAssigner.getWatermarkedFieldsKey(rel).entrySet()) {
+            keyedTimestampExpressionMap.put(entry.getValue(), expressionMap.get(entry.getKey()));
+        }
 
-        SupplierEx<Processor> lateItemsDropPSupplier = () -> new LateItemsDropP(timestampExpression);
+        SupplierEx<Processor> lateItemsDropPSupplier = () -> new LateItemsDropP(keyedTimestampExpressionMap);
         Vertex vertex = dag.newUniqueVertex("Drop-Late-Items", lateItemsDropPSupplier);
 
         connectInput(rel.getInput(), vertex, null);

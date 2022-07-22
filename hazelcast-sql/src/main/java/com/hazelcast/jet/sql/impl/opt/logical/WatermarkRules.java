@@ -16,8 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
-import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.WatermarkPolicy;
 import com.hazelcast.jet.impl.util.Util;
@@ -90,17 +91,17 @@ final class WatermarkRules {
                     scan.getCluster(),
                     OptUtils.toLogicalConvention(scan.getTraitSet()),
                     wmRel,
-                    watermarkedField
+                    ImmutableList.of(watermarkedField)
             );
             call.transformTo(dropLateItemsRel);
         }
 
-        private FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> toEventTimePolicyProvider(
+        private BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> toEventTimePolicyProvider(
                 LogicalTableFunctionScan function
         ) {
             int orderingColumnFieldIndex = orderingColumnFieldIndex(function);
             Expression<?> lagExpression = lagExpression(function);
-            return context -> {
+            return (context, watermarkKey) -> {
                 // todo [viliam] move this to CreateDagVisitor
                 long lagMs = WindowUtils.extractMillis(lagExpression, context);
                 return EventTimePolicy.eventTimePolicy(
@@ -110,7 +111,7 @@ final class WatermarkRules {
                         lagMs,
                         0,
                         EventTimePolicy.DEFAULT_IDLE_TIMEOUT,
-                        (byte) 0);
+                        watermarkKey);
             };
         }
 

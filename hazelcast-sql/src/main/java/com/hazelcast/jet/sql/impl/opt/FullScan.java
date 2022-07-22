@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt;
 
-import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
@@ -32,25 +32,23 @@ import static java.util.Collections.emptyList;
 
 public abstract class FullScan extends TableScan {
 
-    private final FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
-    private final int watermarkedColumnIndex;
+    protected final BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
+    protected final int watermarkedColumnIndex;
 
     protected FullScan(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
-            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
+            @Nullable BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
             int watermarkedColumnIndex
     ) {
         super(cluster, traitSet, emptyList(), table);
-        assert watermarkedColumnIndex < 0 ^ eventTimePolicyProvider != null;
-
         this.eventTimePolicyProvider = eventTimePolicyProvider;
         this.watermarkedColumnIndex = watermarkedColumnIndex;
     }
 
     @Nullable
-    public FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider() {
+    public BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider() {
         return eventTimePolicyProvider;
     }
 
@@ -60,8 +58,9 @@ public abstract class FullScan extends TableScan {
 
     @Override
     public RelWriter explainTerms(RelWriter pw) {
+        String eventPolicyPresence = eventTimePolicyProvider != null ? "Present" : "Absent";
         return super.explainTerms(pw)
-                .itemIf("eventTimePolicyProvider", eventTimePolicyProvider, eventTimePolicyProvider != null)
+                .itemIf("eventTimePolicyProvider", eventPolicyPresence, eventTimePolicyProvider != null)
                 .itemIf("watermarkedColumnIndex", watermarkedColumnIndex, watermarkedColumnIndex >= 0);
     }
 }

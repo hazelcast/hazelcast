@@ -184,7 +184,7 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark wm) {
-        keyedWatermarkCheck(wm);
+        // keyedWatermarkCheck(wm);
         currentWatermark = wm.timestamp();
         assert totalWindows.get() == deadlineToKeys.values().stream().mapToInt(Set::size).sum()
                 : "unexpected totalWindows. Expected=" + deadlineToKeys.values().stream().mapToInt(Set::size).sum()

@@ -16,13 +16,12 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
-import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.kafka.impl.StreamKafkaP;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
-import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -31,6 +30,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -51,8 +51,9 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
 
     private Properties properties;
     private String topic;
-    private FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
+    private BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
     private KvRowProjector.Supplier projectorSupplier;
+    private byte watermarkKey;
 
     private transient ExpressionEvalContext evalContext;
     private transient EventTimePolicy<JetSqlRow> eventTimePolicy;
@@ -65,17 +66,19 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
     RowProjectorProcessorSupplier(
             Properties properties,
             String topic,
-            FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
+            BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
             QueryPath[] paths,
             QueryDataType[] types,
             QueryTargetDescriptor keyDescriptor,
             QueryTargetDescriptor valueDescriptor,
             Expression<Boolean> predicate,
-            List<Expression<?>> projection
+            List<Expression<?>> projection,
+            byte watermarkKey
     ) {
         this.properties = properties;
         this.topic = topic;
         this.eventTimePolicyProvider = eventTimePolicyProvider;
+        this.watermarkKey = watermarkKey;
         this.projectorSupplier = KvRowProjector.supplier(
                 paths,
                 types,
@@ -91,7 +94,7 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
         evalContext = ExpressionEvalContext.from(context);
         eventTimePolicy = eventTimePolicyProvider == null
                 ? EventTimePolicy.noEventTime()
-                : eventTimePolicyProvider.apply(evalContext);
+                : eventTimePolicyProvider.apply(evalContext, watermarkKey);
         extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
     }
 

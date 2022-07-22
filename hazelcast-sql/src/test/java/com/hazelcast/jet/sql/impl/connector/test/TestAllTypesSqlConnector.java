@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.test;
 
 import com.google.common.collect.ImmutableMap;
-import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -28,7 +28,6 @@ import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.SqlService;
@@ -36,6 +35,7 @@ import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
@@ -149,8 +149,8 @@ public class TestAllTypesSqlConnector implements SqlConnector {
             @Nonnull Table table,
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection,
-            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
-    ) {
+            @Nullable BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
+            byte watermarkKey) {
         if (eventTimePolicyProvider != null) {
             throw QueryException.error("Ordering function are not supported for " + TYPE_NAME + " mappings");
         }

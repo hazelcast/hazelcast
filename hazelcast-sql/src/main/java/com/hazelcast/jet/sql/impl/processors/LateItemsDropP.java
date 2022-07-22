@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.processors;
 
 import com.hazelcast.internal.metrics.Probe;
+import com.hazelcast.internal.util.collection.Object2LongHashMap;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.jet.core.AbstractProcessor;
@@ -28,6 +29,7 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.row.Row;
 
 import javax.annotation.Nonnull;
+import java.util.Map;
 
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
 
@@ -44,13 +46,16 @@ public class LateItemsDropP extends AbstractProcessor {
     @Probe(name = "lateEventsDropped")
     private final Counter lateEventsDropped = SwCounter.newSwCounter();
 
-    private final Expression<?> timestampExpression;
+    private final Map<Byte, Expression<?>> timestampExpression;
+    private final Object2LongHashMap<Byte> currentWm = new Object2LongHashMap<>(Long.MAX_VALUE);
 
     private ExpressionEvalContext evalContext;
-    private long currentWm = Long.MIN_VALUE;
 
-    public LateItemsDropP(Expression<?> timestampExpression) {
+    public LateItemsDropP(Map<Byte, Expression<?>> timestampExpression) {
         this.timestampExpression = timestampExpression;
+        for (Byte wmKey : timestampExpression.keySet()) {
+            currentWm.put(wmKey, Long.MIN_VALUE);
+        }
     }
 
     @Override
@@ -62,20 +67,21 @@ public class LateItemsDropP extends AbstractProcessor {
     @Override
     protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         Row row = ((JetSqlRow) item).getRow();
-        long timestamp = WindowUtils.extractMillis(timestampExpression.eval(row, evalContext));
-        if (timestamp < currentWm) {
-            logLateEvent(getLogger(), (byte) 0, currentWm, item);
-            lateEventsDropped.inc();
-            return true;
-        } else {
-            return tryEmit(item);
+        for (Map.Entry<Byte, Expression<?>> entry: timestampExpression.entrySet()) {
+            long timestamp = WindowUtils.extractMillis(entry.getValue().eval(row, evalContext));
+            long lastWmTimestamp = currentWm.getValue(entry.getKey());
+            if (timestamp < lastWmTimestamp) {
+                logLateEvent(getLogger(), entry.getKey(), lastWmTimestamp, item);
+                lateEventsDropped.inc();
+                return true;
+            }
         }
+        return tryEmit(item);
     }
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
-        keyedWatermarkCheck(watermark);
-        currentWm = watermark.timestamp();
+        currentWm.replace((Byte) watermark.key(), watermark.timestamp());
         return super.tryProcessWatermark(watermark);
     }
 }

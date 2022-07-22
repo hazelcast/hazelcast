@@ -39,6 +39,7 @@ import com.hazelcast.jet.sql.impl.connector.map.MetadataResolver;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.WatermarkKeysAssigner;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
@@ -436,6 +437,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             String query
     ) {
         PhysicalRel physicalRel = optimize(parameterMetadata, rel, context, isCreateJob);
+        WatermarkKeysAssigner watermarkKeysAssigner = new WatermarkKeysAssigner(physicalRel);
 
         List<Permission> permissions = extractPermissions(physicalRel);
 
@@ -509,7 +511,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         } else if (physicalRel instanceof TableModify) {
             checkDmlOperationWithView(physicalRel);
             Operation operation = ((TableModify) physicalRel).getOperation();
-            CreateDagVisitor visitor = traverseRel(physicalRel, parameterMetadata);
+            CreateDagVisitor visitor = traverseRel(physicalRel, parameterMetadata, watermarkKeysAssigner);
             return new DmlPlan(
                     operation,
                     planKey,
@@ -522,7 +524,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     permissions
             );
         } else {
-            CreateDagVisitor visitor = traverseRel(new RootRel(physicalRel), parameterMetadata);
+            CreateDagVisitor visitor = traverseRel(new RootRel(physicalRel), parameterMetadata, watermarkKeysAssigner);
             SqlRowMetadata rowMetadata = createRowMetadata(
                     fieldNames,
                     physicalRel.schema(parameterMetadata).getTypes(),
@@ -649,9 +651,12 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private CreateDagVisitor traverseRel(
             PhysicalRel physicalRel,
-            QueryParameterMetadata parameterMetadata
+            QueryParameterMetadata parameterMetadata,
+            WatermarkKeysAssigner watermarkKeysAssigner
     ) {
-        CreateDagVisitor visitor = new CreateDagVisitor(this.nodeEngine, parameterMetadata);
+        watermarkKeysAssigner.assignWatermarkKeys();
+
+        CreateDagVisitor visitor = new CreateDagVisitor(nodeEngine, parameterMetadata, watermarkKeysAssigner);
         physicalRel.accept(visitor);
         visitor.optimizeFinishedDag();
         return visitor;
