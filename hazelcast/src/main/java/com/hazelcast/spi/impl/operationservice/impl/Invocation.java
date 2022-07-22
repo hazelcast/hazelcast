@@ -688,6 +688,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         context.invocationRegistry.retire(this);
     }
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     private void handleRetry(Object cause) {
         context.retryCount.inc();
 

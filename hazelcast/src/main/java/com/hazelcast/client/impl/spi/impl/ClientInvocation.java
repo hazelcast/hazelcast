@@ -358,6 +358,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
         }
     }
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     private void execute() {
         invocationService.deRegisterInvocation(clientMessage.getCorrelationId());
         if (invokeCount < MAX_FAST_INVOCATION_COUNT) {

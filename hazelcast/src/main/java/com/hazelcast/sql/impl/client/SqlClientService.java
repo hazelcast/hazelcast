@@ -157,7 +157,7 @@ public class SqlClientService implements SqlService {
         return resubmissionResult;
     }
 
-    @SuppressWarnings({"BusyWait", "checkstyle:cyclomaticcomplexity"})
+    @SuppressWarnings({"BusyWait", "checkstyle:cyclomaticcomplexity", "checkstyle:MagicNumber"})
     private SqlResubmissionResult resubmitIfPossible0(SqlClientResult result, RuntimeException error) {
         long resubmissionStartTime = System.nanoTime();
         int invokeCount = 0;
