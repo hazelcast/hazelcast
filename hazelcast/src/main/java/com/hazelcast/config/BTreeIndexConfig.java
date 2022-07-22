@@ -118,7 +118,8 @@ public class BTreeIndexConfig implements IdentifiedDataSerializable {
             return false;
         }
         BTreeIndexConfig that = (BTreeIndexConfig) o;
-        return Objects.equals(getPageSize(), that.getPageSize()) && Objects.equals(getMemoryTierConfig(), that.getMemoryTierConfig());
+        return Objects.equals(getPageSize(), that.getPageSize())
+                && Objects.equals(getMemoryTierConfig(), that.getMemoryTierConfig());
     }
 
     @Override
