@@ -91,6 +91,7 @@ import static org.springframework.util.Assert.isTrue;
  *   </hz:client>
  * }</pre>
  */
+@SuppressWarnings("checkstyle:methodcount")
 public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDefinitionParser {
 
     @Override
