@@ -63,8 +63,9 @@ public class BTreeIndexConfig implements IdentifiedDataSerializable {
      * Sets index page size to given non-negative value.
      * @param pageSize page size of the index
      */
-    public void setPageSize(Capacity pageSize) {
+    public BTreeIndexConfig setPageSize(Capacity pageSize) {
         this.pageSize = pageSize;
+        return this;
     }
 
     /**
@@ -83,8 +84,9 @@ public class BTreeIndexConfig implements IdentifiedDataSerializable {
      * Sets memory tier configuration for this index to given configuration.
      * @param memoryTierConfig new memory tier configuration to be set.
      */
-    public void setMemoryTierConfig(MemoryTierConfig memoryTierConfig) {
+    public BTreeIndexConfig setMemoryTierConfig(MemoryTierConfig memoryTierConfig) {
         this.memoryTierConfig = memoryTierConfig;
+        return this;
     }
 
     @Override

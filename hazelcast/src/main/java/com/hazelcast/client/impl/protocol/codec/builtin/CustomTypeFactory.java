@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.impl.CacheEventDataImpl;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.config.BTreeIndexConfig;
 import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
@@ -188,19 +189,25 @@ public final class CustomTypeFactory {
     }
 
     public static IndexConfig createIndexConfig(String name, int type, List<String> attributes,
-                                                BitmapIndexOptions bitmapIndexOptions) {
+                                                BitmapIndexOptions bitmapIndexOptions,
+                                                BTreeIndexConfig bTreeIndexConfig) {
         IndexType type0 = IndexType.getById(type);
 
         return new IndexConfig()
                 .setName(name)
                 .setType(type0)
                 .setAttributes(attributes)
-                .setBitmapIndexOptions(bitmapIndexOptions);
+                .setBitmapIndexOptions(bitmapIndexOptions)
+                .setBTreeIndexConfig(bTreeIndexConfig);
     }
 
     public static BitmapIndexOptions createBitmapIndexOptions(String uniqueKey, int uniqueKeyTransformation) {
         UniqueKeyTransformation resolvedUniqueKeyTransformation = UniqueKeyTransformation.fromId(uniqueKeyTransformation);
         return new BitmapIndexOptions().setUniqueKey(uniqueKey).setUniqueKeyTransformation(resolvedUniqueKeyTransformation);
+    }
+
+    public static BTreeIndexConfig createBTreeIndexConfig(Capacity pageSize, MemoryTierConfig memoryTierConfig) {
+        return new BTreeIndexConfig().setPageSize(pageSize).setMemoryTierConfig(memoryTierConfig);
     }
 
     public static ClientBwListEntryDTO createClientBwListEntry(int type, String value) {
