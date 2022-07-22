@@ -365,7 +365,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
             executionService.execute(this);
         } else {
             // progressive retry delay
-            long delayMillis = Math.min(1L << (invokeCount - MAX_FAST_INVOCATION_COUNT), retryPauseMillis);
+            long delayMillis = Math.min(1L << Math.min(62, invokeCount - MAX_FAST_INVOCATION_COUNT), retryPauseMillis);
             executionService.schedule(this, delayMillis, TimeUnit.MILLISECONDS);
         }
     }

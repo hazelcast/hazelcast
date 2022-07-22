@@ -28,6 +28,8 @@ import com.hazelcast.client.impl.protocol.codec.SqlMappingDdlCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.Data;
@@ -190,19 +192,36 @@ public class SqlClientService implements SqlService {
             // and then later some fetch of the same query fails, we'll try to resubmit again, and we'll not include
             // the number and time spent in the previous resubmission.
             if (invokeCount++ >= MAX_FAST_INVOCATION_COUNT) {
-                long delayMillis = Math.min(1L << (invokeCount - MAX_FAST_INVOCATION_COUNT), resubmissionRetryPauseMillis);
+                long delayMillis =
+                        Math.min(1L << Math.min(62, invokeCount - MAX_FAST_INVOCATION_COUNT), resubmissionRetryPauseMillis);
                 try {
                     Thread.sleep(delayMillis);
                 } catch (InterruptedException e) {
                     Thread.currentThread().interrupt();
-                    return resubmissionResult;
+                    return returnNonNullOrThrow(resubmissionResult, error, true);
                 }
             }
         } while (System.nanoTime() - resubmissionStartTime <= resubmissionTimeoutNano);
 
         logger.finest("Resubmitting query timed out");
 
-        return resubmissionResult;
+        return returnNonNullOrThrow(resubmissionResult, error, false);
+    }
+
+    private SqlResubmissionResult returnNonNullOrThrow(
+            SqlResubmissionResult result,
+            RuntimeException originalError,
+            boolean wasInterrupted
+    ) {
+        if (result == null) {
+            // We have nothing to return to the caller, no valid result and no new exception, so we throw the original error
+            // packed in proper exception so the caller has valid information what happened.
+            if (wasInterrupted) {
+                throw new HazelcastException("Query resubmission was interrupted", originalError);
+            }
+            throw new OperationTimeoutException("Query resubmission timed out", originalError);
+        }
+        return result;
     }
 
     private boolean shouldResubmit(Exception error) {

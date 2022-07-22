@@ -708,7 +708,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
                     context.invocationMonitor.execute(retryTask);
                 } else {
                     // progressive retry delay
-                    long delayMillis = Math.min(1 << (invokeCount - MAX_FAST_INVOCATION_COUNT), tryPauseMillis);
+                    long delayMillis = Math.min(1L << Math.min(62, invokeCount - MAX_FAST_INVOCATION_COUNT), tryPauseMillis);
                     context.invocationMonitor.schedule(retryTask, delayMillis);
                 }
             } catch (RejectedExecutionException e) {
