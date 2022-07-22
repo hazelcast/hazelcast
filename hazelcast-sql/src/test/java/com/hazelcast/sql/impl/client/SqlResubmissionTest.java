@@ -89,7 +89,7 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
         createMap(clusterFailure.getNotFailingInstance(), COMMON_MAP_NAME, COMMON_MAP_SIZE, IntHolder::new,
                 IntHolder.class);
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getSqlConfig().setSqlResubmissionMode(resubmissionMode);
+        clientConfig.getSqlConfig().setResubmissionMode(resubmissionMode);
 
         client = clusterFailure.createClient(clientConfig);
         state = State.BEFORE_EXECUTE;

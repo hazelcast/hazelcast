@@ -22,7 +22,7 @@
        xsi:schemaLocation="http://www.springframework.org/schema/beans
         http://www.springframework.org/schema/beans/spring-beans.xsd
         http://www.hazelcast.com/schema/spring
-        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.1.xsd">
+        http://www.hazelcast.com/schema/spring/hazelcast-spring-5.2.xsd">
 
     <bean class="org.springframework.beans.factory.config.PropertyPlaceholderConfigurer"
           p:systemPropertiesModeName="SYSTEM_PROPERTIES_MODE_OVERRIDE">
@@ -688,4 +688,24 @@
         <constructor-arg index="0" value="${cluster.name}-node-client"/>
         <constructor-arg index="1" value=""/>
     </bean>
+
+    <hz:client id="client24-with-sql">
+        <hz:cluster-name>${cluster.name}-node-client</hz:cluster-name>
+        <hz:network>
+            <hz:member>127.0.0.1:6150</hz:member>
+            <hz:member>127.0.0.1:6151</hz:member>
+            <hz:member>127.0.0.1:6152</hz:member>
+            <hz:member>127.0.0.1:6153</hz:member>
+            <hz:member>127.0.0.1:6154</hz:member>
+            <hz:member>127.0.0.1:6155</hz:member>
+            <hz:member>127.0.0.1:6156</hz:member>
+            <hz:member>127.0.0.1:6157</hz:member>
+            <hz:member>127.0.0.1:6158</hz:member>
+            <hz:member>127.0.0.1:6159</hz:member>
+        </hz:network>
+
+        <hz:sql>
+            <hz:resubmission-mode>RETRY_SELECTS</hz:resubmission-mode>
+        </hz:sql>
+    </hz:client>
 </beans>

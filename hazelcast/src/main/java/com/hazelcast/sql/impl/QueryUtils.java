@@ -61,7 +61,6 @@ public final class QueryUtils {
             return (HazelcastSqlException) e;
         }
 
-        Throwable copy = e;
         if (e instanceof QueryException) {
             QueryException e0 = (QueryException) e;
 
@@ -73,6 +72,7 @@ public final class QueryUtils {
 
             return new HazelcastSqlException(originatingMemberId, e0.getCode(), e0.getMessage(), e, e0.getSuggestion());
         } else {
+            Throwable copy = e;
             while (copy != null) {
                 if (ExceptionUtil.isTopologyException(copy)) {
                     return new HazelcastSqlException(localMemberId, SqlErrorCode.TOPOLOGY_CHANGE, e.getMessage(), e, null);

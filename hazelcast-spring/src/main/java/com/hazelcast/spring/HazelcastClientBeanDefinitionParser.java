@@ -25,6 +25,7 @@ import com.hazelcast.client.config.ClientMetricsConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientReliableTopicConfig;
 import com.hazelcast.client.config.ClientSecurityConfig;
+import com.hazelcast.client.config.ClientSqlConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
@@ -196,6 +197,8 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
                     handleInstanceTracking(node);
                 } else if ("native-memory".equals(nodeName)) {
                     handleNativeMemory(node);
+                } else if ("sql".equals(nodeName)) {
+                    handleSql(node);
                 }
             }
             return configBuilder.getBeanDefinition();
@@ -648,6 +651,11 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             }
             list.add(beanDefinition);
         }
-    }
 
+        private void handleSql(Node node) {
+            BeanDefinitionBuilder sqlConfigBuilder = createBeanBuilder(ClientSqlConfig.class);
+            fillValues(node, sqlConfigBuilder);
+            this.configBuilder.addPropertyValue("sqlConfig", sqlConfigBuilder.getBeanDefinition());
+        }
+    }
 }

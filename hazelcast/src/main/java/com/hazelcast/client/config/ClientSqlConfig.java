@@ -49,7 +49,7 @@ public class ClientSqlConfig {
      * @since 5.2
      */
     @Nonnull
-    public ClientSqlConfig setSqlResubmissionMode(@Nonnull ClientSqlResubmissionMode resubmissionMode) {
+    public ClientSqlConfig setResubmissionMode(@Nonnull ClientSqlResubmissionMode resubmissionMode) {
         isNotNull(resubmissionMode, "resubmissionMode");
         this.resubmissionMode = resubmissionMode;
         return this;

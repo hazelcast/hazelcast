@@ -16,8 +16,6 @@
 
 package com.hazelcast.internal.config;
 
-import com.hazelcast.client.config.ClientSqlConfig;
-import com.hazelcast.client.config.ClientSqlResubmissionMode;
 import com.hazelcast.config.AbstractFactoryWithPropertiesConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.CompactSerializationConfig;
@@ -471,15 +469,6 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
                 trackingConfig.setFileName(getTextContent(n));
             } else if (matches("format-pattern", name)) {
                 trackingConfig.setFormatPattern(getTextContent(n));
-            }
-        }
-    }
-
-    protected void handleSql(Node node, ClientSqlConfig sqlConfig) {
-        for (Node n : childElements(node)) {
-            final String name = cleanNodeName(n);
-            if (matches("resubmission-mode", name)) {
-                sqlConfig.setSqlResubmissionMode(ClientSqlResubmissionMode.valueOf(getTextContent(n)));
             }
         }
     }

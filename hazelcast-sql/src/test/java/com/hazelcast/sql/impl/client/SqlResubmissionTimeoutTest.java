@@ -50,7 +50,7 @@ public class SqlResubmissionTimeoutTest extends SqlResubmissionTestSupport {
         createMap(clusterFailure.getFailingInstance(), COMMON_MAP_NAME, COMMON_MAP_SIZE, IntHolder::new, IntHolder.class);
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.setProperty("hazelcast.client.invocation.timeout.seconds", "1");
-        clientConfig.getSqlConfig().setSqlResubmissionMode(resubmissionMode);
+        clientConfig.getSqlConfig().setResubmissionMode(resubmissionMode);
         HazelcastInstance client = clusterFailure.createClient(clientConfig);
         SqlStatement statement = new SqlStatement("update " + SLOW_MAP_NAME + " set field = field + 1");
 

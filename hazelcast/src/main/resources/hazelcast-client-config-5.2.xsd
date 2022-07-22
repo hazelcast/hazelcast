@@ -1172,7 +1172,7 @@
     <xs:complexType name="sql">
         <xs:annotation>
             <xs:documentation>
-                Configures sql client.
+                Configures the sql client.
             </xs:documentation>
         </xs:annotation>
         <xs:all>

@@ -27,6 +27,8 @@ import com.hazelcast.client.config.ClientIcmpPingConfig;
 import com.hazelcast.client.config.ClientMetricsConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.config.ClientReliableTopicConfig;
+import com.hazelcast.client.config.ClientSqlConfig;
+import com.hazelcast.client.config.ClientSqlResubmissionMode;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.client.config.ConnectionRetryConfig;
 import com.hazelcast.client.config.ProxyFactoryConfig;
@@ -169,6 +171,9 @@ public class TestClientApplicationContext {
 
     @Resource(name = "client23-with-compact-serialization")
     private HazelcastClientProxy clientWithCompactSerialization;
+
+    @Resource(name = "client24-with-sql")
+    private HazelcastClientProxy clientWithSql;
 
     @Resource(name = "instance")
     private HazelcastInstance instance;
@@ -630,5 +635,11 @@ public class TestClientApplicationContext {
         PersistentMemoryConfig pmemConfig = nativeMemoryConfig.getPersistentMemoryConfig();
         assertTrue(pmemConfig.isEnabled());
         assertEquals(SYSTEM_MEMORY, pmemConfig.getMode());
+    }
+
+    @Test
+    public void testSql() {
+        ClientSqlConfig sqlConfig = clientWithSql.getClientConfig().getSqlConfig();
+        assertEquals(ClientSqlResubmissionMode.RETRY_SELECTS, sqlConfig.getResubmissionMode());
     }
 }

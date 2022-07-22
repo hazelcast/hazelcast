@@ -776,9 +776,10 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
 
     @Test
     public void testSqlConfig() {
-        clientConfig.setSqlConfig(new ClientSqlConfig().setSqlResubmissionMode(RETRY_SELECTS));
-        ClientConfig actual = newConfigViaGenerator();
-        assertEquals(clientConfig.getSqlConfig(), actual.getSqlConfig());
+        ClientSqlConfig originalConfig = new ClientSqlConfig().setResubmissionMode(RETRY_SELECTS);
+        clientConfig.setSqlConfig(originalConfig);
+        ClientSqlConfig generatedConfig = newConfigViaGenerator().getSqlConfig();
+        assertEquals(originalConfig.getResubmissionMode(), generatedConfig.getResubmissionMode());
     }
 
     private ClientConfig newConfigViaGenerator() {

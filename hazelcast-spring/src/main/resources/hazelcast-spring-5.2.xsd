@@ -1692,6 +1692,7 @@
                     <xs:element name="metrics" type="client-metrics" minOccurs="0"/>
                     <xs:element name="instance-tracking" type="instance-tracking" minOccurs="0"/>
                     <xs:element name="native-memory" type="native-memory" minOccurs="0"/>
+                    <xs:element name="sql" type="clientSql" minOccurs="0"/>
                 </xs:choice>
             </xs:extension>
         </xs:complexContent>
@@ -5600,6 +5601,33 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
+
+    <xs:complexType name="clientSql">
+        <xs:annotation>
+            <xs:documentation>
+                Configures the sql client.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="resubmission-mode" type="resubmission-mode" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The configuration when to retry query that fails with reasons:
+                        CONNECTION_PROBLEM, PARTITION_DISTRIBUTION, TOPOLOGY_CHANGE.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:simpleType name="resubmission-mode">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="NEVER"/>
+            <xs:enumeration value="RETRY_SELECTS"/>
+            <xs:enumeration value="RETRY_SELECTS_ALLOW_DUPLICATES"/>
+            <xs:enumeration value="RETRY_ALL"/>
+        </xs:restriction>
+    </xs:simpleType>
 
     <xs:complexType name="metrics">
         <xs:all>
