@@ -19,6 +19,7 @@ package com.hazelcast.internal.config;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.AzureConfig;
+import com.hazelcast.config.BTreeIndexConfig;
 import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -163,7 +164,7 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
     public static final int DISK_TIER_CONFIG = 66;
     public static final int BTREE_INDEX_CONFIG = 67;
 
-    private static final int LEN = DISK_TIER_CONFIG + 1;
+    private static final int LEN = BTREE_INDEX_CONFIG + 1;
 
     @Override
     public int getFactoryId() {
@@ -240,6 +241,7 @@ public final class ConfigDataSerializerHook implements DataSerializerHook {
         constructors[TIERED_STORE_CONFIG] = arg -> new TieredStoreConfig();
         constructors[MEMORY_TIER_CONFIG] = arg -> new MemoryTierConfig();
         constructors[DISK_TIER_CONFIG] = arg -> new DiskTierConfig();
+        constructors[BTREE_INDEX_CONFIG] = arg -> new BTreeIndexConfig();
 
         return new ArrayDataSerializableFactory(constructors);
     }
