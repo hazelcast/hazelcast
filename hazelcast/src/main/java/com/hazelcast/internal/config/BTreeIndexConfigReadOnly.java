@@ -29,12 +29,12 @@ public class BTreeIndexConfigReadOnly extends BTreeIndexConfig {
     }
 
     @Override
-    public void setMemoryTierConfig(MemoryTierConfig memoryTierConfig) {
+    public BTreeIndexConfigReadOnly setMemoryTierConfig(MemoryTierConfig memoryTierConfig) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 
     @Override
-    public void setPageSize(Capacity pageSize) {
+    public BTreeIndexConfigReadOnly setPageSize(Capacity pageSize) {
         throw new UnsupportedOperationException("This config is read-only");
     }
 }
