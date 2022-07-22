@@ -107,6 +107,7 @@ public class IndexTest {
         when(clusterService.getClusterVersion()).thenReturn(Versions.CURRENT_CLUSTER_VERSION);
         when(mapContainer.getMapConfig()).thenReturn(new MapConfig());
         when(mapContainer.getMapServiceContext()).thenReturn(mapServiceContext);
+        when(mapContainer.getName()).thenReturn("testMap");
     }
 
     final DataRecordFactory recordFactory = new DataRecordFactory(mapContainer, ss);
@@ -125,8 +126,9 @@ public class IndexTest {
     public void testRemoveEnumIndex() {
         IndexConfig config = IndexUtils.createTestIndexConfig(IndexType.HASH, "favoriteCity");
 
-        Indexes is = Indexes.newBuilder(ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
-        is.addOrGetIndex(config);
+        String mapName = mapContainer.getName();
+        Indexes is = Indexes.newBuilder(null, mapName, ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
+        is.addOrGetIndex(mapName, config);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
         is.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
@@ -140,8 +142,9 @@ public class IndexTest {
     public void testUpdateEnumIndex() {
         IndexConfig config = IndexUtils.createTestIndexConfig(IndexType.HASH, "favoriteCity");
 
-        Indexes is = Indexes.newBuilder(ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
-        is.addOrGetIndex(config);
+        String mapName = mapContainer.getName();
+        Indexes is = Indexes.newBuilder(null, mapName, ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
+        is.addOrGetIndex(mapName, config);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
         is.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
@@ -159,10 +162,11 @@ public class IndexTest {
 
     @Test
     public void testIndex() throws QueryException {
-        Indexes indexes = Indexes.newBuilder(ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
-        Index dIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "d"));
-        Index boolIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "bool"));
-        Index strIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "str"));
+        String mapName = mapContainer.getName();
+        Indexes indexes = Indexes.newBuilder(null, mapName, ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
+        Index dIndex = indexes.addOrGetIndex(mapName, IndexUtils.createTestIndexConfig(IndexType.HASH, "d"));
+        Index boolIndex = indexes.addOrGetIndex(mapName, IndexUtils.createTestIndexConfig(IndexType.HASH, "bool"));
+        Index strIndex = indexes.addOrGetIndex(mapName, IndexUtils.createTestIndexConfig(IndexType.HASH, "str"));
         for (int i = 0; i < 1000; i++) {
             Data key = ss.toData(i);
             Data value = ss.toData(new MainPortable(i % 2 == 0, -10.34d, "joe" + i));
@@ -222,8 +226,10 @@ public class IndexTest {
 
     @Test
     public void testIndexWithNull() throws QueryException {
-        Indexes is = Indexes.newBuilder(ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
-        Index strIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "str"));
+        String mapName = mapContainer.getName();
+
+        Indexes is = Indexes.newBuilder(null, mapName, ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
+        Index strIndex = is.addOrGetIndex(mapName, IndexUtils.createTestIndexConfig(IndexType.SORTED, "str"));
 
         Data value = ss.toData(new MainPortable(false, 1, null));
         Data key1 = ss.toData(0);
@@ -430,12 +436,14 @@ public class IndexTest {
         IndexConfig config = IndexUtils.createTestIndexConfig(type, QueryConstants.THIS_ATTRIBUTE_NAME.value());
 
         IndexImpl index = new IndexImpl(
+                null,
                 config,
                 ss,
                 newExtractor(),
                 copyBehavior,
                 PerIndexStats.EMPTY,
-                MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT
+                MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT,
+                "test"
         );
 
         assertEquals(0, index.getRecords(0L).size());

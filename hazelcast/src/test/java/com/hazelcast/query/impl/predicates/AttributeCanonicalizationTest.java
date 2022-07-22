@@ -65,7 +65,7 @@ public class AttributeCanonicalizationTest {
 
     @Test
     public void testIndexes() {
-        Indexes indexes = Indexes.newBuilder(
+        Indexes indexes = Indexes.newBuilder(null, "test",
                 new DefaultSerializationServiceBuilder().build(), IndexCopyBehavior.NEVER, DEFAULT_IN_MEMORY_FORMAT).build();
 
         checkIndex(indexes, "foo", "foo");
@@ -80,7 +80,7 @@ public class AttributeCanonicalizationTest {
 
     @Test
     public void testCompositeIndexes() {
-        Indexes indexes = Indexes.newBuilder(
+        Indexes indexes = Indexes.newBuilder(null, "test2",
                 new DefaultSerializationServiceBuilder().build(), IndexCopyBehavior.NEVER, DEFAULT_IN_MEMORY_FORMAT).build();
 
         checkIndex(indexes, new String[]{"foo", "bar"}, new String[]{"foo", "bar"});
@@ -129,7 +129,7 @@ public class AttributeCanonicalizationTest {
 
         assertEquals(expName.toString(), normalizedConfig.getName());
 
-        InternalIndex index = indexes.addOrGetIndex(normalizedConfig);
+        InternalIndex index = indexes.addOrGetIndex("test", normalizedConfig);
         assertEquals(normalizedConfig.getName(), index.getName());
 
         assertNotNull(indexes.getIndex(normalizedConfig.getName()));

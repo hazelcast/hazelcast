@@ -116,7 +116,7 @@ class MapSplitBrainHandlerService extends AbstractSplitBrainHandlerService<Recor
         // create new map-container here.
         MapContainer newMapContainer = mapServiceContext.getMapContainer(mapName);
         for (IndexConfig indexConfig : indexConfigs) {
-            newMapContainer.getIndexes(partitionId).addOrGetIndex(indexConfig);
+            newMapContainer.getIndexes(partitionId).addOrGetIndex(mapName, indexConfig);
         }
     }
 

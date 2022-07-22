@@ -86,7 +86,8 @@ public class AddIndexOperation extends MapOperation
         int partitionId = getPartitionId();
 
         Indexes indexes = mapContainer.getIndexes(partitionId);
-        InternalIndex index = indexes.addOrGetIndex(config);
+        String mapName = mapContainer.getName();
+        InternalIndex index = indexes.addOrGetIndex(mapName, config);
         if (index.hasPartitionIndexed(partitionId)) {
             return;
         }

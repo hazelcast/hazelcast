@@ -55,7 +55,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.config.IndexType.HASH;
 import static com.hazelcast.config.IndexType.SORTED;
@@ -78,6 +82,7 @@ import static com.hazelcast.jet.sql.SqlBasicTest.serializationConfig;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
@@ -117,9 +122,9 @@ public class SqlOrderByTest extends SqlTestSupport {
             for (SerializationMode serializationMode : Arrays.asList(SERIALIZABLE, IDENTIFIED_DATA_SERIALIZABLE)) {
                 for (InMemoryFormat format : new InMemoryFormat[]{InMemoryFormat.OBJECT, InMemoryFormat.BINARY}) {
                     res.add(new Object[]{
-                            serializationMode,
-                            format,
-                            membersCount
+                        serializationMode,
+                        format,
+                        membersCount
                     });
                 }
             }
@@ -204,8 +209,8 @@ public class SqlOrderByTest extends SqlTestSupport {
         config.getJetConfig().setEnabled(true);
 
         config
-                .addMapConfig(new MapConfig(MAP_OBJECT).setInMemoryFormat(InMemoryFormat.OBJECT))
-                .addMapConfig(new MapConfig(MAP_BINARY).setInMemoryFormat(InMemoryFormat.BINARY));
+            .addMapConfig(new MapConfig(MAP_OBJECT).setInMemoryFormat(InMemoryFormat.OBJECT))
+            .addMapConfig(new MapConfig(MAP_BINARY).setInMemoryFormat(InMemoryFormat.BINARY));
 
         return config;
     }
@@ -222,35 +227,35 @@ public class SqlOrderByTest extends SqlTestSupport {
     @Test
     public void testSelectWithOrderByDesc() {
         checkSelectWithOrderBy(singletonList("intVal"),
-                singletonList("intVal"), singletonList(true));
+            singletonList("intVal"), singletonList(true));
     }
 
     @Test
     public void testSelectWithOrderByAsc() {
         checkSelectWithOrderBy(singletonList("intVal"),
-                singletonList("intVal"), singletonList(false));
+            singletonList("intVal"), singletonList(false));
     }
 
     @Test
     public void testSelectWithOrderByDefault() {
         checkSelectWithOrderBy(singletonList("intVal"),
-                singletonList("intVal"), singletonList(null));
+            singletonList("intVal"), singletonList(null));
     }
 
     @Test
     public void testSelectWithOrderByDefaultAllTypes() {
         List<String> fields = Arrays.asList(
-                "booleanVal",
-                "tinyIntVal",
-                "smallIntVal",
-                "intVal",
-                "bigIntVal",
-                "realVal",
-                "doubleVal",
-                "decimalBigIntegerVal",
-                "decimalVal",
-                "charVal",
-                "varcharVal");
+            "booleanVal",
+            "tinyIntVal",
+            "smallIntVal",
+            "intVal",
+            "bigIntVal",
+            "realVal",
+            "doubleVal",
+            "decimalBigIntegerVal",
+            "decimalVal",
+            "charVal",
+            "varcharVal");
 
         List<Boolean> orderDirections = new ArrayList<>(fields.size());
         fields.forEach(entry -> orderDirections.add(true));
@@ -261,10 +266,10 @@ public class SqlOrderByTest extends SqlTestSupport {
     @Test
     public void testSelectWithOrderByDefaultTemporalTypes() {
         List<String> fields = Arrays.asList(
-                "dateVal",
-                "timeVal",
-                "timestampVal",
-                "tsTzOffsetDateTimeVal"
+            "dateVal",
+            "timeVal",
+            "timestampVal",
+            "tsTzOffsetDateTimeVal"
         );
 
         List<Boolean> orderDirections = new ArrayList<>(fields.size());
@@ -276,29 +281,29 @@ public class SqlOrderByTest extends SqlTestSupport {
     @Test
     public void testSelectWithOrderByDescDesc() {
         checkSelectWithOrderBy(Arrays.asList("intVal", "varcharVal"),
-                Arrays.asList("intVal", "varcharVal"),
-                Arrays.asList(true, true));
+            Arrays.asList("intVal", "varcharVal"),
+            Arrays.asList(true, true));
     }
 
     @Test
     public void testSelectWithOrderByAscDesc() {
         checkSelectWithOrderBy(Arrays.asList("intVal", "varcharVal"),
-                Arrays.asList("intVal", "varcharVal"),
-                Arrays.asList(false, true));
+            Arrays.asList("intVal", "varcharVal"),
+            Arrays.asList(false, true));
     }
 
     @Test
     public void testSelectWithOrderByDescDescDesc() {
         checkSelectWithOrderBy(Arrays.asList("intVal", "varcharVal", "bigIntVal"),
-                Arrays.asList("intVal", "varcharVal", "bigIntVal"),
-                Arrays.asList(true, true, true));
+            Arrays.asList("intVal", "varcharVal", "bigIntVal"),
+            Arrays.asList(true, true, true));
     }
 
     @Test
     public void testSelectWithOrderByDescDescAsc() {
         checkSelectWithOrderBy(Arrays.asList("intVal", "varcharVal", "bigIntVal"),
-                Arrays.asList("intVal", "varcharVal", "bigIntVal"),
-                Arrays.asList(true, true, false));
+            Arrays.asList("intVal", "varcharVal", "bigIntVal"),
+            Arrays.asList(true, true, false));
     }
 
     @Test
@@ -306,12 +311,12 @@ public class SqlOrderByTest extends SqlTestSupport {
         // SELECT intVal, intVal + bigIntVal FROM t ORDER BY intVal, bigIntVal
         String sql = sqlWithOrderBy(Arrays.asList("intVal",
                 "intVal + bigIntVal"),
-                Arrays.asList("intVal", "bigIntVal"), Arrays.asList(true, true));
+            Arrays.asList("intVal", "bigIntVal"), Arrays.asList(true, true));
 
         checkSelectWithOrderBy(Arrays.asList("intVal", "bigIntVal"),
-                sql,
-                singletonList("intVal"),
-                singletonList(true));
+            sql,
+            singletonList("intVal"),
+            singletonList(true));
     }
 
     @Test
@@ -319,10 +324,10 @@ public class SqlOrderByTest extends SqlTestSupport {
         // SELECT a, b FROM (SELECT intVal+bigIntVal a, intVal-bigIntVal b FROM p) ORDER BY a, b"
         String sql = String.format("SELECT a, b FROM (SELECT intVal+bigIntVal a, intVal-bigIntVal b FROM %s) ORDER BY a, b", mapName());
         checkSelectWithOrderBy(
-                Arrays.asList("intVal", "bigIntVal"),
-                sql,
-                Collections.emptyList(),
-                Collections.emptyList()
+            Arrays.asList("intVal", "bigIntVal"),
+            sql,
+            Collections.emptyList(),
+            Collections.emptyList()
         );
     }
 
@@ -335,7 +340,7 @@ public class SqlOrderByTest extends SqlTestSupport {
         addIndex(singletonList(realValField), SORTED);
 
         String sql = "SELECT " + intValField + ", " + realValField + " FROM " + mapName()
-                + " WHERE " + intValField + " = 1 ORDER BY " + realValField;
+            + " WHERE " + intValField + " = 1 ORDER BY " + realValField;
 
         assertSqlResultOrdered(sql, singletonList(realValField), singletonList(false), 1);
     }
@@ -348,7 +353,7 @@ public class SqlOrderByTest extends SqlTestSupport {
         addIndex(singletonList(realValField), SORTED);
 
         String sql = "SELECT " + intValField + ", " + realValField + " FROM " + mapName()
-                + " WHERE " + intValField + " = 1 ORDER BY " + realValField;
+            + " WHERE " + intValField + " = 1 ORDER BY " + realValField;
 
         assertSqlResultOrdered(sql, singletonList(realValField), singletonList(false), 1);
     }
@@ -361,7 +366,7 @@ public class SqlOrderByTest extends SqlTestSupport {
         addIndex(Arrays.asList(intValField, realValField), SORTED);
 
         String sql = "SELECT " + intValField + ", " + realValField + " FROM " + mapName()
-                + " WHERE " + intValField + " = 1 AND " + realValField + " = 1 ORDER BY " + intValField;
+            + " WHERE " + intValField + " = 1 AND " + realValField + " = 1 ORDER BY " + intValField;
 
         assertSqlResultOrdered(sql, singletonList(realValField), singletonList(false), 1);
     }
@@ -375,7 +380,7 @@ public class SqlOrderByTest extends SqlTestSupport {
         addIndex(singletonList(intValField), SORTED);
 
         String sql = "SELECT " + intValField + ", " + realValField + " FROM " + mapName()
-                + " WHERE " + intValField + " = 1 AND " + realValField + " = 1 ORDER BY " + intValField;
+            + " WHERE " + intValField + " = 1 AND " + realValField + " = 1 ORDER BY " + intValField;
 
         assertSqlResultOrdered(sql, singletonList(realValField), singletonList(false), 1);
     }
@@ -386,12 +391,12 @@ public class SqlOrderByTest extends SqlTestSupport {
         addIndex(singletonList(intValField), SORTED, stableMapName());
 
         String sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " ORDER BY " + intValField + " OFFSET 5 ROWS FETCH FIRST 10 ROWS ONLY";
+            + " ORDER BY " + intValField + " OFFSET 5 ROWS FETCH FIRST 10 ROWS ONLY";
 
         assertSqlResultOrdered(sql, singletonList(intValField), singletonList(false), 10, 5, 14);
 
         String sqlLimit = "SELECT " + intValField + " FROM " + stableMapName()
-                + " ORDER BY " + intValField + " LIMIT 10 OFFSET 5 ROWS";
+            + " ORDER BY " + intValField + " LIMIT 10 OFFSET 5 ROWS";
 
         assertSqlResultOrdered(sqlLimit, singletonList(intValField), singletonList(false), 10, 5, 14);
     }
@@ -402,12 +407,12 @@ public class SqlOrderByTest extends SqlTestSupport {
         addIndex(singletonList(intValField), SORTED, stableMapName());
 
         String sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " ORDER BY " + intValField + " OFFSET 4096 ROWS FETCH FIRST 10 ROWS ONLY";
+            + " ORDER BY " + intValField + " OFFSET 4096 ROWS FETCH FIRST 10 ROWS ONLY";
 
         assertSqlResultOrdered(sql, singletonList(intValField), singletonList(false), 0, 0, 0);
 
         String sqlLimit = "SELECT " + intValField + " FROM " + stableMapName()
-                + " ORDER BY " + intValField + " LIMIT 10 OFFSET 4096 ROWS";
+            + " ORDER BY " + intValField + " LIMIT 10 OFFSET 4096 ROWS";
 
         assertSqlResultOrdered(sqlLimit, singletonList(intValField), singletonList(false), 0, 0, 0);
     }
@@ -418,10 +423,10 @@ public class SqlOrderByTest extends SqlTestSupport {
         addIndex(singletonList(intValField), SORTED, stableMapName());
 
         String sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " ORDER BY " + intValField + " OFFSET 4090 ROWS FETCH FIRST 10 ROWS ONLY";
+            + " ORDER BY " + intValField + " OFFSET 4090 ROWS FETCH FIRST 10 ROWS ONLY";
 
         String sqlLimit = "SELECT " + intValField + " FROM " + stableMapName()
-                + " ORDER BY " + intValField + " LIMIT 10 OFFSET 4090 ROWS";
+            + " ORDER BY " + intValField + " LIMIT 10 OFFSET 4090 ROWS";
 
         assertSqlResultOrdered(sql, singletonList(intValField), singletonList(false), 6, 4090, 4095);
         assertSqlResultOrdered(sqlLimit, singletonList(intValField), singletonList(false), 6, 4090, 4095);
@@ -433,82 +438,82 @@ public class SqlOrderByTest extends SqlTestSupport {
         addIndex(singletonList(intValField), SORTED, stableMapName());
 
         String sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " OFFSET 4090 ROWS FETCH FIRST 10 ROWS ONLY";
+            + " OFFSET 4090 ROWS FETCH FIRST 10 ROWS ONLY";
 
         assertSqlResultCount(sql, 6);
 
         sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " LIMIT 10 OFFSET 4090 ROWS";
+            + " LIMIT 10 OFFSET 4090 ROWS";
 
         assertSqlResultCount(sql, 6);
 
         sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " OFFSET 10 ROWS FETCH FIRST 10 ROWS ONLY";
+            + " OFFSET 10 ROWS FETCH FIRST 10 ROWS ONLY";
 
         assertSqlResultCount(sql, 10);
 
         sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " LIMIT 10 OFFSET 10 ROWS";
+            + " LIMIT 10 OFFSET 10 ROWS";
 
         assertSqlResultCount(sql, 10);
 
         sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " OFFSET 10 ROWS";
+            + " OFFSET 10 ROWS";
 
         assertSqlResultCount(sql, 4086);
 
         sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " OFFSET 4096 ROWS";
+            + " OFFSET 4096 ROWS";
 
         assertSqlResultCount(sql, 0);
 
         sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " FETCH FIRST 0 ROWS ONLY";
+            + " FETCH FIRST 0 ROWS ONLY";
 
         assertSqlResultCount(sql, 0);
 
         sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " LIMIT 0";
+            + " LIMIT 0";
 
         assertSqlResultCount(sql, 0);
 
         sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " FETCH FIRST 100 ROWS ONLY";
+            + " FETCH FIRST 100 ROWS ONLY";
 
         assertSqlResultCount(sql, 100);
 
         sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " LIMIT 100";
+            + " LIMIT 100";
 
         assertSqlResultCount(sql, 100);
 
         sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " FETCH FIRST 2.9 ROWS ONLY";
+            + " FETCH FIRST 2.9 ROWS ONLY";
 
         assertSqlResultCount(sql, 2);
 
         sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " LIMIT 2.9";
+            + " LIMIT 2.9";
 
         assertSqlResultCount(sql, 2);
 
         sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " FETCH FIRST 1.2E2 ROWS ONLY";
+            + " FETCH FIRST 1.2E2 ROWS ONLY";
 
         assertSqlResultCount(sql, 120);
 
         sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " LIMIT 1.2E2";
+            + " LIMIT 1.2E2";
 
         assertSqlResultCount(sql, 120);
 
         sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " FETCH FIRST 1.2E-2 ROWS ONLY";
+            + " FETCH FIRST 1.2E-2 ROWS ONLY";
 
         assertSqlResultCount(sql, 0);
 
         sql = "SELECT " + intValField + " FROM " + stableMapName()
-                + " LIMIT 1.2E-2";
+            + " LIMIT 1.2E-2";
 
         assertSqlResultCount(sql, 0);
     }
@@ -519,72 +524,72 @@ public class SqlOrderByTest extends SqlTestSupport {
         addIndex(singletonList(intValField), SORTED, stableMapName());
 
         String sql1 = "SELECT " + intValField + " FROM " + stableMapName()
-                + " OFFSET -5 ROWS FETCH FIRST 10 ROWS ONLY";
+            + " OFFSET -5 ROWS FETCH FIRST 10 ROWS ONLY";
 
         assertThrows(HazelcastSqlException.class, () -> query(sql1));
 
         String sqlLimit1 = "SELECT " + intValField + " FROM " + stableMapName()
-                + " LIMIT 10 OFFSET -5 ROWS";
+            + " LIMIT 10 OFFSET -5 ROWS";
 
         assertThrows(HazelcastSqlException.class, () -> query(sqlLimit1));
 
         String sql2 = "SELECT " + intValField + " FROM " + stableMapName()
-                + " OFFSET 5 ROWS FETCH FIRST -10 ROWS ONLY";
+            + " OFFSET 5 ROWS FETCH FIRST -10 ROWS ONLY";
 
         assertThrows(HazelcastSqlException.class, () -> query(sql2));
 
         String sqlLimit2 = "SELECT " + intValField + " FROM " + stableMapName()
-                + " LIMIT -10 OFFSET 5 ROWS";
+            + " LIMIT -10 OFFSET 5 ROWS";
 
         assertThrows(HazelcastSqlException.class, () -> query(sqlLimit2));
 
         String sql3 = "SELECT " + intValField + " FROM " + stableMapName()
-                + " OFFSET \"\" ROWS";
+            + " OFFSET \"\" ROWS";
 
         assertThrows(HazelcastSqlException.class, () -> query(sql3));
 
         String sql4 = "SELECT " + intValField + " FROM " + stableMapName()
-                + " OFFSET intVal ROWS";
+            + " OFFSET intVal ROWS";
 
         assertThrows(HazelcastSqlException.class, () -> query(sql4));
 
         String sql5 = "SELECT " + intValField + " FROM " + stableMapName()
-                + " FETCH FIRST \"\" ROWS ONLY";
+            + " FETCH FIRST \"\" ROWS ONLY";
 
         assertThrows(HazelcastSqlException.class, () -> query(sql5));
 
         String sqlLimit5 = "SELECT " + intValField + " FROM " + stableMapName()
-                + " LIMIT \"\"";
+            + " LIMIT \"\"";
 
         assertThrows(HazelcastSqlException.class, () -> query(sqlLimit5));
 
         String sql6 = "SELECT " + intValField + " FROM " + stableMapName()
-                + " FETCH FIRST null ROWS ONLY";
+            + " FETCH FIRST null ROWS ONLY";
 
         assertThrows(HazelcastSqlException.class, () -> query(sql6));
 
         String sqlLimit6 = "SELECT " + intValField + " FROM " + stableMapName()
-                + " LIMIT null";
+            + " LIMIT null";
 
         assertThrows(HazelcastSqlException.class, () -> query(sqlLimit6));
 
         String sql7 = "SELECT " + intValField + " FROM " + stableMapName()
-                + " FETCH FIRST \"abc\" ROWS ONLY";
+            + " FETCH FIRST \"abc\" ROWS ONLY";
 
         assertThrows(HazelcastSqlException.class, () -> query(sql7));
 
         String sqlLimit7 = "SELECT " + intValField + " FROM " + stableMapName()
-                + " LIMIT \"abc\"";
+            + " LIMIT \"abc\"";
 
         assertThrows(HazelcastSqlException.class, () -> query(sqlLimit7));
 
         String sql8 = "SELECT " + intValField + " FROM " + stableMapName()
-                + " FETCH FIRST 1 + ? ROWS ONLY";
+            + " FETCH FIRST 1 + ? ROWS ONLY";
 
         assertThrows(HazelcastSqlException.class, () -> query(sql8));
 
         String sqlLimit8 = "SELECT " + intValField + " FROM " + stableMapName()
-                + " LIMIT 1 + ?";
+            + " LIMIT 1 + ?";
 
         assertThrows(HazelcastSqlException.class, () -> query(sqlLimit8));
     }
@@ -592,17 +597,131 @@ public class SqlOrderByTest extends SqlTestSupport {
     @Test
     public void testNestedFetchOffsetNotSupported() {
         String sql = "SELECT intVal FROM ( SELECT intVal FROM " + stableMapName()
-                + " FETCH FIRST 5 ROWS ONLY)";
+            + " FETCH FIRST 5 ROWS ONLY)";
 
         assertThatThrownBy(() -> query(sql))
-                .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("FETCH/OFFSET is only supported for the top-level SELECT");
+            .isInstanceOf(HazelcastSqlException.class)
+            .hasMessageContaining("FETCH/OFFSET is only supported for the top-level SELECT");
 
         String sqlLimit = "SELECT intVal FROM ( SELECT intVal FROM " + stableMapName() + " LIMIT 1)";
 
         assertThatThrownBy(() -> query(sqlLimit))
-                .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("FETCH/OFFSET is only supported for the top-level SELECT");
+            .isInstanceOf(HazelcastSqlException.class)
+            .hasMessageContaining("FETCH/OFFSET is only supported for the top-level SELECT");
+    }
+
+    @Test(timeout = 500000000)
+    public void testConcurrentPutAndOrderbyQueries() {
+        IMap<Object, AbstractPojo> map = getTarget().getMap(stableMapName());
+
+        IndexConfig indexConfig = new IndexConfig()
+            .setName("Index_" + randomName())
+            .setType(SORTED);
+
+        indexConfig.addAttribute("intVal");
+        map.addIndex(indexConfig);
+
+        ExecutorService executor = Executors.newFixedThreadPool(10);
+
+        int threadsCount = 10;
+        int keysPerThread = 1000;
+        CountDownLatch latch = new CountDownLatch(threadsCount);
+        AtomicReference<Throwable> exception = new AtomicReference<>();
+
+        for (int i = 0; i < threadsCount; ++i) {
+            int index = i;
+            executor.submit(() -> {
+
+                try {
+                    if (index < threadsCount / 2) {
+
+                        int startingIndex = index * keysPerThread;
+                        // Put thread
+                        for (int n = 0; n < keysPerThread; ++n) {
+                            long keyIndex = startingIndex + n;
+                            getTarget().getMap(stableMapName()).put(key(keyIndex), value(keyIndex));
+                        }
+
+                    } else {
+                        for (int n = 0; n < 10; ++n) {
+                            // order by queries
+                            String sql = String.format("SELECT intVal, varcharVal FROM %s ORDER BY intVal", stableMapName());
+                            assertSqlResultOrdered(sql, singletonList("intVal"), singletonList(false), -1);
+                        }
+                    }
+                } catch (Throwable t) {
+                    t.printStackTrace(System.err);
+                    exception.compareAndSet(null, t);
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        assertOpenEventually(latch);
+        assertNull(exception.get());
+        executor.shutdown();
+    }
+
+    @Test
+    public void testConcurrentUpdateAndOrderbyQueries() {
+        IMap<Object, AbstractPojo> map = getTarget().getMap(stableMapName());
+
+        IndexConfig indexConfig = new IndexConfig()
+            .setName("Index_" + randomName())
+            .setType(SORTED);
+
+        indexConfig.addAttribute("intVal");
+        map.addIndex(indexConfig);
+
+        ExecutorService executor = Executors.newFixedThreadPool(10);
+
+        int threadsCount = 10;
+        int keysPerThread = 1000;
+        CountDownLatch latch = new CountDownLatch(threadsCount);
+        AtomicReference<Throwable> exception = new AtomicReference<>();
+
+        // Pre load data
+        for (long i = 0; i < threadsCount * keysPerThread; ++i) {
+            getTarget().getMap(stableMapName()).put(key(i), value(i));
+        }
+
+        for (int i = 0; i < threadsCount; ++i) {
+            int index = i;
+            executor.submit(() -> {
+
+                try {
+                    if (index < threadsCount / 2) {
+
+                        int startingIndex = index * keysPerThread;
+                        // updater thread
+                        for (int n = 0; n < keysPerThread; ++n) {
+                            int diff = ThreadLocalRandom.current().nextInt(10);
+                            diff = ThreadLocalRandom.current().nextBoolean() ? diff : -diff;
+                            long keyIndex = startingIndex + n;
+                            long valueIndex = keyIndex + diff;
+                            getTarget().getMap(stableMapName()).put(key(keyIndex), value(valueIndex));
+                        }
+
+                    } else {
+                        for (int n = 0; n < 10; ++n) {
+                            // order by queries
+                            String sql = String.format("SELECT intVal, varcharVal FROM %s ORDER BY intVal", stableMapName());
+                            assertSqlResultOrdered(sql, singletonList("intVal"), singletonList(false), -1);
+                        }
+                    }
+                } catch (Throwable t) {
+                    t.printStackTrace(System.err);
+                    exception.compareAndSet(null, t);
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        assertOpenEventually(latch);
+        assertNull(exception.get());
+        executor.shutdown();
     }
 
     private void addIndex(List<String> fieldNames, IndexType type) {
@@ -613,8 +732,8 @@ public class SqlOrderByTest extends SqlTestSupport {
         IMap<Object, AbstractPojo> map = getTarget().getMap(mapName);
 
         IndexConfig indexConfig = new IndexConfig()
-                .setName("Index_" + randomName())
-                .setType(type);
+            .setName("Index_" + randomName())
+            .setType(type);
 
         for (String fieldName : fieldNames) {
             indexConfig.addAttribute(fieldName);
@@ -627,8 +746,8 @@ public class SqlOrderByTest extends SqlTestSupport {
         IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
 
         IndexConfig indexConfig = new IndexConfig()
-                .setName("Index_" + randomName())
-                .setType(SORTED);
+            .setName("Index_" + randomName())
+            .setType(SORTED);
 
         for (String indexAttr : indexAttrs) {
             indexConfig.addAttribute(indexAttr);
@@ -687,7 +806,9 @@ public class SqlOrderByTest extends SqlTestSupport {
                     highRow = row;
                 }
             }
-            assertEquals(expectedCount, count);
+            if (expectedCount != -1) {
+                assertEquals(expectedCount, count);
+            }
             if (lowRow != null && low != null) {
                 String fieldName = orderFields.get(0);
                 Object fieldValue = lowRow.getObject(rowMetadata.findColumn(fieldName));
@@ -726,13 +847,13 @@ public class SqlOrderByTest extends SqlTestSupport {
     }
 
     private void checkSelectWithOrderBy(List<String> indexAttrs, String
-            sql, List<String> checkOrderFields, List<Boolean> orderDirections
+        sql, List<String> checkOrderFields, List<Boolean> orderDirections
     ) {
         IMap<Object, AbstractPojo> map = getTarget().getMap(mapName());
 
         IndexConfig indexConfig = new IndexConfig()
-                .setName("Index_" + randomName())
-                .setType(SORTED);
+            .setName("Index_" + randomName())
+            .setType(SORTED);
 
         for (String indexAttr : indexAttrs) {
             indexConfig.addAttribute(indexAttr);
@@ -820,48 +941,48 @@ public class SqlOrderByTest extends SqlTestSupport {
     private List<String> fields() {
         if (serializationMode == SerializationMode.PORTABLE) {
             return Arrays.asList(
-                    "key",
-                    "booleanVal",
-                    "tinyIntVal",
-                    "smallIntVal",
-                    "intVal",
-                    "bigIntVal",
-                    "realVal",
-                    "doubleVal",
-                    "decimalVal",
-                    "charVal",
-                    "varcharVal",
-                    "dateVal",
-                    "timeVal",
-                    "timestampVal",
-                    "tsTzOffsetDateTimeVal",
-                    "portableVal",
-                    "nullVal"
+                "key",
+                "booleanVal",
+                "tinyIntVal",
+                "smallIntVal",
+                "intVal",
+                "bigIntVal",
+                "realVal",
+                "doubleVal",
+                "decimalVal",
+                "charVal",
+                "varcharVal",
+                "dateVal",
+                "timeVal",
+                "timestampVal",
+                "tsTzOffsetDateTimeVal",
+                "portableVal",
+                "nullVal"
             );
         } else {
             return Arrays.asList(
-                    "key",
-                    "booleanVal",
-                    "tinyIntVal",
-                    "smallIntVal",
-                    "intVal",
-                    "bigIntVal",
-                    "realVal",
-                    "doubleVal",
-                    "decimalBigIntegerVal",
-                    "decimalVal",
-                    "charVal",
-                    "varcharVal",
-                    "dateVal",
-                    "timeVal",
-                    "timestampVal",
-                    "tsTzDateVal",
-                    "tsTzCalendarVal",
-                    "tsTzInstantVal",
-                    "tsTzOffsetDateTimeVal",
-                    "tsTzZonedDateTimeVal",
-                    "objectVal",
-                    "nullVal"
+                "key",
+                "booleanVal",
+                "tinyIntVal",
+                "smallIntVal",
+                "intVal",
+                "bigIntVal",
+                "realVal",
+                "doubleVal",
+                "decimalBigIntegerVal",
+                "decimalVal",
+                "charVal",
+                "varcharVal",
+                "dateVal",
+                "timeVal",
+                "timestampVal",
+                "tsTzDateVal",
+                "tsTzCalendarVal",
+                "tsTzInstantVal",
+                "tsTzOffsetDateTimeVal",
+                "tsTzZonedDateTimeVal",
+                "objectVal",
+                "nullVal"
             );
         }
     }

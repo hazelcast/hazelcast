@@ -49,7 +49,7 @@ public class ConverterResolutionTest {
     public void before() {
         serializationService = new DefaultSerializationServiceBuilder().build();
         extractors = Extractors.newBuilder(serializationService).build();
-        indexes = Indexes.newBuilder(serializationService,
+        indexes = Indexes.newBuilder(null, "test", serializationService,
                 IndexCopyBehavior.COPY_ON_READ, DEFAULT_IN_MEMORY_FORMAT).extractors(extractors).build();
     }
 
@@ -58,7 +58,7 @@ public class ConverterResolutionTest {
         assertNull(indexes.getConverter("value"));
         assertNull(indexes.getConverter("unknown"));
 
-        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "value"));
+        indexes.addOrGetIndex("test", IndexUtils.createTestIndexConfig(IndexType.HASH, "value"));
         assertNull(indexes.getConverter("value"));
         assertNull(indexes.getConverter("unknown"));
 
@@ -79,7 +79,7 @@ public class ConverterResolutionTest {
         assertNull(indexes.getConverter("value"));
         assertNull(indexes.getConverter("unknown"));
 
-        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "value"));
+        indexes.addOrGetIndex("test", IndexUtils.createTestIndexConfig(IndexType.HASH, "value"));
         assertNull(indexes.getConverter("unknown"));
 
         indexes.putEntry(new Entry(0, 1L), null, Index.OperationSource.USER);
@@ -95,12 +95,12 @@ public class ConverterResolutionTest {
         assertNull(indexes.getConverter("value"));
         assertNull(indexes.getConverter("unknown"));
 
-        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "__key", "value"));
+        indexes.addOrGetIndex("test", IndexUtils.createTestIndexConfig(IndexType.HASH, "__key", "value"));
         assertNull(indexes.getConverter("__key"));
         assertNull(indexes.getConverter("value"));
         assertNull(indexes.getConverter("unknown"));
 
-        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "value", "__key"));
+        indexes.addOrGetIndex("test", IndexUtils.createTestIndexConfig(IndexType.SORTED, "value", "__key"));
         assertNull(indexes.getConverter("__key"));
         assertNull(indexes.getConverter("value"));
         // just to make sure double-invocation doesn't change anything
@@ -126,7 +126,7 @@ public class ConverterResolutionTest {
         assertNull(indexes.getConverter("value"));
         assertNull(indexes.getConverter("unknown"));
 
-        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "__key", "value"));
+        indexes.addOrGetIndex("test", IndexUtils.createTestIndexConfig(IndexType.HASH, "__key", "value"));
         assertNull(indexes.getConverter("unknown"));
 
         indexes.putEntry(new Entry(0, null), null, Index.OperationSource.USER);
@@ -148,12 +148,12 @@ public class ConverterResolutionTest {
         assertNull(indexes.getConverter("value"));
         assertNull(indexes.getConverter("unknown"));
 
-        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "value"));
+        indexes.addOrGetIndex("test", IndexUtils.createTestIndexConfig(IndexType.SORTED, "value"));
         assertNull(indexes.getConverter("__key"));
         assertNull(indexes.getConverter("value"));
         assertNull(indexes.getConverter("unknown"));
 
-        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "__key", "value"));
+        indexes.addOrGetIndex("test", IndexUtils.createTestIndexConfig(IndexType.HASH, "__key", "value"));
         assertNull(indexes.getConverter("__key"));
         assertNull(indexes.getConverter("value"));
         assertNull(indexes.getConverter("unknown"));
