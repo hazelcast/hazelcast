@@ -96,6 +96,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
 import static com.hazelcast.config.ConfigXmlGenerator.endpointConfigElementName;
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
@@ -742,12 +743,7 @@ public class DynamicConfigYamlGenerator {
     }
 
     public static void tcpIpConfigYamlGenerator(Map<String, Object> parent, Config config) {
-        TcpIpConfig tcpIpConfig;
-        if (config.getAdvancedNetworkConfig().isEnabled()) {
-            tcpIpConfig = config.getAdvancedNetworkConfig().getJoin().getTcpIpConfig();
-        } else {
-            tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
-        }
+        TcpIpConfig tcpIpConfig = getActiveMemberNetworkConfig(config).getJoin().getTcpIpConfig();
         Map<String, Object> child = new LinkedHashMap<>();
         child.put("enabled", tcpIpConfig.isEnabled());
         child.put("connection-timeout-seconds", tcpIpConfig.getConnectionTimeoutSeconds());

@@ -151,10 +151,10 @@ cluster members.
 Request to update the member list
 ```
 Request:
-curl -X POST -H "Content-Type: text/plain" --data-urlencode "<cluster-name>" --data-urlencode "<cluster-password>" --data-urlencode "member1-address,member2-address,member3-address" http://<member IP address>:<port>/hazelcast/rest/config/tcp-ip/member-list
+curl -X POST -H "Content-Type: text/plain" --data-urlencode "<cluster-name>" --data-urlencode "<cluster-password>" --data-urlencode "<member1-address>,<member2-address>,<member3-address>" http://<member IP address>:<port>/hazelcast/rest/config/tcp-ip/member-list
 
 Response:
-{"status":"success","message":"The member list of TCP-IP join config is updated at run time. ","member-list":["member1-address","member2-address","member3-address"]
+{"status":"success","message":"The member list of TCP-IP join config is updated at run time. ","member-list":["<member1-address>","<member2-address>","<member3-address>"]
 ```
 To perform this POST request, the endpoint-group "CLUSTER_WRITE" must be enabled in
 the cluster members. 

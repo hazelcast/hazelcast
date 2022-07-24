@@ -24,6 +24,7 @@ import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.CollectionConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ConfigXmlGenerator;
 import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.DiscoveryConfig;
@@ -56,7 +57,6 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
-import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WanBatchPublisherConfig;
@@ -805,23 +805,7 @@ public final class DynamicConfigXmlGenerator {
     }
 
     public static void tcpIpConfigXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, Config config) {
-        TcpIpConfig tcpIpConfig;
-        if (config.getAdvancedNetworkConfig().isEnabled()) {
-            tcpIpConfig = config.getAdvancedNetworkConfig().getJoin().getTcpIpConfig();
-        } else {
-            tcpIpConfig = config.getNetworkConfig().getJoin().getTcpIpConfig();
-        }
-        gen.open("tcp-ip", "enabled", tcpIpConfig.isEnabled(),
-                        "connection-timeout-seconds", tcpIpConfig.getConnectionTimeoutSeconds());
-        gen.open("member-list");
-        for (String m : tcpIpConfig.getMembers()) {
-            gen.node("member", m);
-        }
-        // </member-list>
-        gen.close();
-        gen.node("required-member", tcpIpConfig.getRequiredMember());
-        // </tcp-ip>
-        gen.close();
+        ConfigXmlGenerator.tcpIpConfigXmlGenerator(gen, ConfigAccessor.getActiveMemberNetworkConfig(config).getJoin());
     }
 
     public static String classNameOrImplClass(String className, Object impl) {
