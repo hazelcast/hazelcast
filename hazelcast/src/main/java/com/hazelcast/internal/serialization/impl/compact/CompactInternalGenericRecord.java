@@ -24,7 +24,6 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;

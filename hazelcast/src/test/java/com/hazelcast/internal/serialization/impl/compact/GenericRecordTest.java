@@ -253,9 +253,9 @@ public class GenericRecordTest {
     @Test
     public void testGetFieldThrowsExceptionWhenFieldDoesNotExist() throws IOException {
         GenericRecord record = compact("test").build();
-        assertThatThrownBy(() -> {record.getInt32("doesNotExist");})
-                .isInstanceOf(HazelcastSerializationException.class)
-                .hasMessageContaining("Unknown field name");
+        assertThatThrownBy(() -> {
+            record.getInt32("doesNotExist");
+        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Unknown field name");
 
 
         InternalSerializationService serializationService = (InternalSerializationService) createSerializationService();
@@ -263,8 +263,8 @@ public class GenericRecordTest {
 
         InternalGenericRecord internalGenericRecord = serializationService.readAsInternalGenericRecord(data);
 
-        assertThatThrownBy(() -> {internalGenericRecord.getInt32("doesNotExist");})
-                .isInstanceOf(HazelcastSerializationException.class)
-                .hasMessageContaining("Unknown field name");
+        assertThatThrownBy(() -> {
+            internalGenericRecord.getInt32("doesNotExist");
+        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Unknown field name");
     }
 }

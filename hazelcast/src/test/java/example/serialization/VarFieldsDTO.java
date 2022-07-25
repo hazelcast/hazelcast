@@ -115,30 +115,34 @@ public class VarFieldsDTO {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         VarFieldsDTO that = (VarFieldsDTO) o;
-        return Arrays.equals(arrayOfBoolean, that.arrayOfBoolean) && Arrays.equals(arrayOfInt8, that.arrayOfInt8) &&
-                Arrays.equals(arrayOfInt16, that.arrayOfInt16) && Arrays.equals(arrayOfInt32, that.arrayOfInt32) &&
-                Arrays.equals(arrayOfInt64, that.arrayOfInt64) && Arrays.equals(arrayOfFloat32, that.arrayOfFloat32) &&
-                Arrays.equals(arrayOfFloat64, that.arrayOfFloat64) && Objects.equals(str, that.str) &&
-                Arrays.equals(arrayOfString, that.arrayOfString) && Objects.equals(bigDecimal, that.bigDecimal) &&
-                Arrays.equals(arrayOfBigDecimal, that.arrayOfBigDecimal) &&
-                Objects.equals(localTime, that.localTime) && Arrays.equals(arrayOfLocalTime, that.arrayOfLocalTime) &&
-                Objects.equals(localDate, that.localDate) && Arrays.equals(arrayOfLocalDate, that.arrayOfLocalDate) &&
-                Objects.equals(localDateTime, that.localDateTime) &&
-                Arrays.equals(arrayOfLocalDateTime, that.arrayOfLocalDateTime) &&
-                Objects.equals(offsetDateTime, that.offsetDateTime) &&
-                Arrays.equals(arrayOfOffsetDateTime, that.arrayOfOffsetDateTime) &&
-                Objects.equals(compact, that.compact) && Arrays.equals(arrayOfCompact, that.arrayOfCompact) &&
-                Objects.equals(nullableBool, that.nullableBool) &&
-                Arrays.equals(arrayOfNullableBool, that.arrayOfNullableBool) &&
-                Objects.equals(nullableB, that.nullableB) && Arrays.equals(arrayOfNullableB, that.arrayOfNullableB) &&
-                Objects.equals(nullableS, that.nullableS) && Arrays.equals(arrayOfNullableS, that.arrayOfNullableS) &&
-                Objects.equals(nullableI, that.nullableI) && Arrays.equals(arrayOfNullableI, that.arrayOfNullableI) &&
-                Objects.equals(nullableL, that.nullableL) && Arrays.equals(arrayOfNullableL, that.arrayOfNullableL) &&
-                Objects.equals(nullableF, that.nullableF) && Arrays.equals(arrayOfNullableF, that.arrayOfNullableF) &&
-                Objects.equals(nullableD, that.nullableD) && Arrays.equals(arrayOfNullableD, that.arrayOfNullableD);
+        return Arrays.equals(arrayOfBoolean, that.arrayOfBoolean) && Arrays.equals(arrayOfInt8, that.arrayOfInt8)
+                && Arrays.equals(arrayOfInt16, that.arrayOfInt16) && Arrays.equals(arrayOfInt32, that.arrayOfInt32)
+                && Arrays.equals(arrayOfInt64, that.arrayOfInt64) && Arrays.equals(arrayOfFloat32, that.arrayOfFloat32)
+                && Arrays.equals(arrayOfFloat64, that.arrayOfFloat64) && Objects.equals(str, that.str)
+                && Arrays.equals(arrayOfString, that.arrayOfString) && Objects.equals(bigDecimal, that.bigDecimal)
+                && Arrays.equals(arrayOfBigDecimal, that.arrayOfBigDecimal)
+                && Objects.equals(localTime, that.localTime) && Arrays.equals(arrayOfLocalTime, that.arrayOfLocalTime)
+                && Objects.equals(localDate, that.localDate) && Arrays.equals(arrayOfLocalDate, that.arrayOfLocalDate)
+                && Objects.equals(localDateTime, that.localDateTime)
+                && Arrays.equals(arrayOfLocalDateTime, that.arrayOfLocalDateTime)
+                && Objects.equals(offsetDateTime, that.offsetDateTime)
+                && Arrays.equals(arrayOfOffsetDateTime, that.arrayOfOffsetDateTime)
+                && Objects.equals(compact, that.compact) && Arrays.equals(arrayOfCompact, that.arrayOfCompact)
+                && Objects.equals(nullableBool, that.nullableBool)
+                && Arrays.equals(arrayOfNullableBool, that.arrayOfNullableBool)
+                && Objects.equals(nullableB, that.nullableB) && Arrays.equals(arrayOfNullableB, that.arrayOfNullableB)
+                && Objects.equals(nullableS, that.nullableS) && Arrays.equals(arrayOfNullableS, that.arrayOfNullableS)
+                && Objects.equals(nullableI, that.nullableI) && Arrays.equals(arrayOfNullableI, that.arrayOfNullableI)
+                && Objects.equals(nullableL, that.nullableL) && Arrays.equals(arrayOfNullableL, that.arrayOfNullableL)
+                && Objects.equals(nullableF, that.nullableF) && Arrays.equals(arrayOfNullableF, that.arrayOfNullableF)
+                && Objects.equals(nullableD, that.nullableD) && Arrays.equals(arrayOfNullableD, that.arrayOfNullableD);
     }
 
     @Override
@@ -171,42 +175,41 @@ public class VarFieldsDTO {
 
     @Override
     public String toString() {
-        return "VarFieldsDTO{" +
-                "arrayOfBoolean=" + Arrays.toString(arrayOfBoolean) +
-                ", arrayOfInt8=" + Arrays.toString(arrayOfInt8) +
-                ", arrayOfInt16=" + Arrays.toString(arrayOfInt16) +
-                ", arrayOfInt32=" + Arrays.toString(arrayOfInt32) +
-                ", arrayOfInt64=" + Arrays.toString(arrayOfInt64) +
-                ", arrayOfFloat32=" + Arrays.toString(arrayOfFloat32) +
-                ", arrayOfFloat64=" + Arrays.toString(arrayOfFloat64) +
-                ", str='" + str + '\'' +
-                ", arrayOfString=" + Arrays.toString(arrayOfString) +
-                ", bigDecimal=" + bigDecimal +
-                ", arrayOfBigDecimal=" + Arrays.toString(arrayOfBigDecimal) +
-                ", localTime=" + localTime +
-                ", arrayOfLocalTime=" + Arrays.toString(arrayOfLocalTime) +
-                ", localDate=" + localDate +
-                ", arrayOfLocalDate=" + Arrays.toString(arrayOfLocalDate) +
-                ", localDateTime=" + localDateTime +
-                ", arrayOfLocalDateTime=" + Arrays.toString(arrayOfLocalDateTime) +
-                ", offsetDateTime=" + offsetDateTime +
-                ", arrayOfOffsetDateTime=" + Arrays.toString(arrayOfOffsetDateTime) +
-                ", compact=" + compact +
-                ", arrayOfCompact=" + Arrays.toString(arrayOfCompact) +
-                ", nullableBool=" + nullableBool +
-                ", arrayOfNullableBool=" + Arrays.toString(arrayOfNullableBool) +
-                ", nullableB=" + nullableB +
-                ", arrayOfNullableB=" + Arrays.toString(arrayOfNullableB) +
-                ", nullableS=" + nullableS +
-                ", arrayOfNullableS=" + Arrays.toString(arrayOfNullableS) +
-                ", nullableI=" + nullableI +
-                ", arrayOfNullableI=" + Arrays.toString(arrayOfNullableI) +
-                ", nullableL=" + nullableL +
-                ", arrayOfNullableL=" + Arrays.toString(arrayOfNullableL) +
-                ", nullableF=" + nullableF +
-                ", arrayOfNullableF=" + Arrays.toString(arrayOfNullableF) +
-                ", nullableD=" + nullableD +
-                ", arrayOfNullableD=" + Arrays.toString(arrayOfNullableD) +
-                '}';
+        return "VarFieldsDTO{" + "arrayOfBoolean=" + Arrays.toString(arrayOfBoolean)
+                + ", arrayOfInt8=" + Arrays.toString(arrayOfInt8)
+                + ", arrayOfInt16=" + Arrays.toString(arrayOfInt16)
+                + ", arrayOfInt32=" + Arrays.toString(arrayOfInt32)
+                + ", arrayOfInt64=" + Arrays.toString(arrayOfInt64)
+                + ", arrayOfFloat32=" + Arrays.toString(arrayOfFloat32)
+                + ", arrayOfFloat64=" + Arrays.toString(arrayOfFloat64)
+                + ", str='" + str + '\''
+                + ", arrayOfString=" + Arrays.toString(arrayOfString)
+                + ", bigDecimal=" + bigDecimal
+                + ", arrayOfBigDecimal=" + Arrays.toString(arrayOfBigDecimal)
+                + ", localTime=" + localTime
+                + ", arrayOfLocalTime=" + Arrays.toString(arrayOfLocalTime)
+                + ", localDate=" + localDate
+                + ", arrayOfLocalDate=" + Arrays.toString(arrayOfLocalDate)
+                + ", localDateTime=" + localDateTime
+                + ", arrayOfLocalDateTime=" + Arrays.toString(arrayOfLocalDateTime)
+                + ", offsetDateTime=" + offsetDateTime
+                + ", arrayOfOffsetDateTime=" + Arrays.toString(arrayOfOffsetDateTime)
+                + ", compact=" + compact
+                + ", arrayOfCompact=" + Arrays.toString(arrayOfCompact)
+                + ", nullableBool=" + nullableBool
+                + ", arrayOfNullableBool=" + Arrays.toString(arrayOfNullableBool)
+                + ", nullableB=" + nullableB
+                + ", arrayOfNullableB=" + Arrays.toString(arrayOfNullableB)
+                + ", nullableS=" + nullableS
+                + ", arrayOfNullableS=" + Arrays.toString(arrayOfNullableS)
+                + ", nullableI=" + nullableI
+                + ", arrayOfNullableI=" + Arrays.toString(arrayOfNullableI)
+                + ", nullableL=" + nullableL
+                + ", arrayOfNullableL=" + Arrays.toString(arrayOfNullableL)
+                + ", nullableF=" + nullableF
+                + ", arrayOfNullableF=" + Arrays.toString(arrayOfNullableF)
+                + ", nullableD=" + nullableD
+                + ", arrayOfNullableD=" + Arrays.toString(arrayOfNullableD)
+                + '}';
     }
 }

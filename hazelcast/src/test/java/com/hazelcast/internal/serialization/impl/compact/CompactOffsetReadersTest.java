@@ -21,9 +21,6 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.serialization.compact.CompactReader;
-import com.hazelcast.nio.serialization.compact.CompactSerializer;
-import com.hazelcast.nio.serialization.compact.CompactWriter;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -31,58 +28,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import javax.annotation.Nonnull;
-import java.util.Arrays;
 import java.util.Collections;
-import java.util.Objects;
 
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createSerializationService;
 import static org.junit.Assert.assertEquals;
-
-class OffsetReaderTestDTO {
-    public String[] arrayOfStr;
-    public int i;
-    public String str;
-
-    public OffsetReaderTestDTO(String[] arrayOfStr, int i, String str) {
-        this.arrayOfStr = arrayOfStr;
-        this.i = i;
-        this.str = str;
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        OffsetReaderTestDTO a = (OffsetReaderTestDTO) o;
-        return i == a.i && Arrays.equals(arrayOfStr, a.arrayOfStr) && Objects.equals(str, a.str);
-    }
-
-    @Override
-    public int hashCode() {
-        int result = Objects.hash(i, str);
-        result = 31 * result + Arrays.hashCode(arrayOfStr);
-        return result;
-    }
-}
-
-class OffsetReaderTestDTOSerializer implements CompactSerializer<OffsetReaderTestDTO> {
-    @Nonnull
-    @Override
-    public OffsetReaderTestDTO read(@Nonnull CompactReader in) {
-        String[] arrayOfStr = in.readArrayOfString("arrayOfStr");
-        int i = in.readInt32("i");
-        String str = in.readString("str");
-        return new OffsetReaderTestDTO(arrayOfStr, i, str);
-    }
-
-    @Override
-    public void write(@Nonnull CompactWriter out, @Nonnull OffsetReaderTestDTO object) {
-        out.writeArrayOfString("arrayOfStr", object.arrayOfStr);
-        out.writeInt32("i", object.i);
-        out.writeString("str", object.str);
-    }
-}
 
 @RunWith(HazelcastParametrizedRunner.class)
 @Category({QuickTest.class})

@@ -43,11 +43,15 @@ public class FixedFieldsDTO {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         FixedFieldsDTO that = (FixedFieldsDTO) o;
-        return b == that.b && bool == that.bool && s == that.s && i == that.i && l == that.l &&
-                Float.compare(that.f, f) == 0 && Double.compare(that.d, d) == 0;
+        return b == that.b && bool == that.bool && s == that.s && i == that.i && l == that.l
+                && Float.compare(that.f, f) == 0 && Double.compare(that.d, d) == 0;
     }
 
     @Override
@@ -57,14 +61,14 @@ public class FixedFieldsDTO {
 
     @Override
     public String toString() {
-        return "FixedFieldsDTO{" +
-                "b=" + b +
-                ", bool=" + bool +
-                ", s=" + s +
-                ", i=" + i +
-                ", l=" + l +
-                ", f=" + f +
-                ", d=" + d +
-                '}';
+        return "FixedFieldsDTO{"
+                + "b=" + b
+                + ", bool=" + bool
+                + ", s=" + s
+                + ", i=" + i
+                + ", l=" + l
+                + ", f=" + f
+                + ", d=" + d
+                + '}';
     }
 }
