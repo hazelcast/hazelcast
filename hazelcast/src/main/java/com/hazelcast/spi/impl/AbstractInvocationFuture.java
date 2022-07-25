@@ -911,7 +911,7 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         try {
             executor.execute(() -> {
                 try {
-                    biConsumer.accept((V) value, throwable);
+                    biConsumer.accept(value, throwable);
                 } catch (Throwable t) {
                     completeDependentExceptionally(future, throwable, t);
                     return;
@@ -1966,12 +1966,10 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
         if (cause instanceof WrappableException) {
             return ((WrappableException) cause).wrap();
         }
-        RuntimeException wrapped = cloneExceptionWithFixedAsyncStackTrace(cause);
-        return wrapped == null ? new HazelcastException(cause) : wrapped;
+        return cloneExceptionWithFixedAsyncStackTrace(cause);
     }
 
     private static Error wrapError(Error cause) {
-        Error result = cloneExceptionWithFixedAsyncStackTrace(cause);
-        return result == null ? cause : result;
+        return cloneExceptionWithFixedAsyncStackTrace(cause);
     }
 }
