@@ -64,7 +64,7 @@ public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.Re
             return super.encodeException(throwable);
         }
 
-        nodeEngine.getSqlService().getInternalService().getClientStateRegistry().closeOnError(parameters.queryId);
+        nodeEngine.getSqlService().closeOnError(parameters.queryId);
 
         if (throwable instanceof AccessControlException) {
             return super.encodeException(throwable);

@@ -130,7 +130,8 @@ public abstract class ComputeStageImplBase<T> extends AbstractStage {
                 timestampFn,
                 (item, ts) -> jetEvent(ts, item),
                 limitingLag(allowedLag),
-                0, 0, DEFAULT_IDLE_TIMEOUT
+                0, 0, DEFAULT_IDLE_TIMEOUT,
+                (byte) 0
         ));
         pipelineImpl.connect(this, tsTransform);
         return new StreamStageImpl<>(tsTransform, ADAPT_TO_JET_EVENT, pipelineImpl);

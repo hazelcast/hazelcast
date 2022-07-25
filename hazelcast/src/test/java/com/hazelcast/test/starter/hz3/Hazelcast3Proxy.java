@@ -36,7 +36,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
-import static com.hazelcast.test.starter.HazelcastVersionLocator.HAZELCAST_JAR_INDEX;
+import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.OS_JAR;
 import static com.hazelcast.test.starter.HazelcastVersionLocator.locateVersion;
 
 /**
@@ -58,7 +58,7 @@ public class Hazelcast3Proxy {
 
     public HazelcastInstance newHazelcastInstance(String xmlConfig) {
         try {
-            File hazelcastJar = locateVersion("3.12.12", new File("target"), false)[HAZELCAST_JAR_INDEX];
+            File hazelcastJar = locateVersion("3.12.12", new File("target"), false).get(OS_JAR);
             URLClassLoader classLoader = new ChildFirstClassLoader(
                     new URL[]{hazelcastJar.toURI().toURL()},
                     Hazelcast3Proxy.class.getClassLoader()

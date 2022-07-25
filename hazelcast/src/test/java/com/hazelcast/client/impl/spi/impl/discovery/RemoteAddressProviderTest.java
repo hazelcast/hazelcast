@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.client.impl.management.ClientConnectionProcessListener.NOOP;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -51,7 +52,7 @@ public class RemoteAddressProviderTest {
     @Test
     public void testLoadAddresses() throws Exception {
         RemoteAddressProvider provider = new RemoteAddressProvider(() -> expectedAddresses, true);
-        Collection<Address> addresses = provider.loadAddresses().primary();
+        Collection<Address> addresses = provider.loadAddresses(NOOP).primary();
 
         assertEquals(3, addresses.size());
         for (Address address : expectedAddresses.keySet()) {
@@ -66,7 +67,7 @@ public class RemoteAddressProviderTest {
             throw new IllegalStateException("Expected exception");
         }, true);
 
-        provider.loadAddresses();
+        provider.loadAddresses(NOOP);
     }
 
     @Test
