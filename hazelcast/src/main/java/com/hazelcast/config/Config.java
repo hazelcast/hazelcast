@@ -3122,11 +3122,22 @@ public class Config {
     }
 
     /**
+     * Adds an external data store configurations.
+     *
+     * @since 5.2
+     */
+    @Beta
+    public Config addExternalDataStoreConfig(ExternalDataStoreConfig externalDataStoreConfig) {
+        externalDataStoreConfigs.put(externalDataStoreConfig.getName(), externalDataStoreConfig);
+        return this;
+    }
+
+
+    /**
      * Returns the external data store configuration, mapped by config name.
      *
      * @param name data store name
      * @return external data store configuration or {@code null} if absent
-     *
      * @since 5.2
      */
     @Nullable
