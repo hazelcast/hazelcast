@@ -839,7 +839,7 @@ public class ReferenceObjects {
         aBTreeIndexConfig.getMemoryTierConfig().setCapacity(aCapacity);
     }
 
-    public static IndexConfig anIndexConfig = CustomTypeFactory.createIndexConfig(aString, anEnum, aListOfStrings, aBitmapIndexOptions, aBTreeIndexConfig);
+    public static IndexConfig anIndexConfig = CustomTypeFactory.createIndexConfig(aString, anEnum, aListOfStrings, aBitmapIndexOptions, true, aBTreeIndexConfig);
     public static MapStoreConfigHolder aMapStoreConfigHolder = new MapStoreConfigHolder(aBoolean, aBoolean, anInt, anInt, aString, aData, aString, aData, aMapOfStringToString, aString);
 
     public static NearCachePreloaderConfig aNearCachePreloaderConfig = new NearCachePreloaderConfig(aBoolean, aString);

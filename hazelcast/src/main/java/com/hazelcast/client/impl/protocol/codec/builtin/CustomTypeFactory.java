@@ -190,6 +190,7 @@ public final class CustomTypeFactory {
 
     public static IndexConfig createIndexConfig(String name, int type, List<String> attributes,
                                                 BitmapIndexOptions bitmapIndexOptions,
+                                                boolean bTreeConfigExists,
                                                 BTreeIndexConfig bTreeIndexConfig) {
         IndexType type0 = IndexType.getById(type);
 
@@ -198,7 +199,7 @@ public final class CustomTypeFactory {
                 .setType(type0)
                 .setAttributes(attributes)
                 .setBitmapIndexOptions(bitmapIndexOptions)
-                .setBTreeIndexConfig(bTreeIndexConfig);
+                .setBTreeIndexConfig(bTreeConfigExists ? bTreeIndexConfig : new BTreeIndexConfig());
     }
 
     public static BitmapIndexOptions createBitmapIndexOptions(String uniqueKey, int uniqueKeyTransformation) {

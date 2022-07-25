@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("c25448fb54c8c1068fec76cea0bfc1f6")
+@Generated("1cf2b7207b127edf4b299ae426369119")
 public final class IndexConfigCodec {
     private static final int TYPE_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = TYPE_FIELD_OFFSET + INT_SIZE_IN_BYTES;
@@ -57,10 +57,15 @@ public final class IndexConfigCodec {
         java.lang.String name = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         java.util.List<java.lang.String> attributes = ListMultiFrameCodec.decode(iterator, StringCodec::decode);
         com.hazelcast.config.BitmapIndexOptions bitmapIndexOptions = CodecUtil.decodeNullable(iterator, BitmapIndexOptionsCodec::decode);
-        com.hazelcast.config.BTreeIndexConfig bTreeIndexConfig = CodecUtil.decodeNullable(iterator, BTreeIndexConfigCodec::decode);
+        boolean isBTreeIndexConfigExists = false;
+        com.hazelcast.config.BTreeIndexConfig bTreeIndexConfig = null;
+        if (!iterator.peekNext().isEndFrame()) {
+            bTreeIndexConfig = CodecUtil.decodeNullable(iterator, BTreeIndexConfigCodec::decode);
+            isBTreeIndexConfigExists = true;
+        }
 
         fastForwardToEndFrame(iterator);
 
-        return CustomTypeFactory.createIndexConfig(name, type, attributes, bitmapIndexOptions, bTreeIndexConfig);
+        return CustomTypeFactory.createIndexConfig(name, type, attributes, bitmapIndexOptions, isBTreeIndexConfigExists, bTreeIndexConfig);
     }
 }
