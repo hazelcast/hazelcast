@@ -22,10 +22,11 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.datastore.ExternalDataStoreFactory;
 import com.hazelcast.datastore.ExternalDataStoreService;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.util.ExceptionUtil;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 public class ExternalDataStoreServiceImpl implements ExternalDataStoreService {
     private final Map<String, ExternalDataStoreFactory<?>> dataStoreFactories = new ConcurrentHashMap<>();
@@ -43,7 +44,7 @@ public class ExternalDataStoreServiceImpl implements ExternalDataStoreService {
             externalDataStoreFactory.init(config);
             return externalDataStoreFactory;
         } catch (Exception e) {
-            throw ExceptionUtil.rethrow(e);
+            throw rethrow(e);
         }
     }
 
