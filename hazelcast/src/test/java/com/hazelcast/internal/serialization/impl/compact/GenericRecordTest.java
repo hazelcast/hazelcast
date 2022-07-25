@@ -129,7 +129,7 @@ public class GenericRecordTest {
         cloneBuilder.setInt32("foo", 2);
         assertTrue(trySetAndGetMessage("foo", 5, cloneBuilder).startsWith("Field can only be written once"));
 
-        assertTrue(trySetAndGetMessage("notExisting", 3, cloneBuilder).startsWith("Unknown field name"));
+        assertTrue(trySetAndGetMessage("notExisting", 3, cloneBuilder).startsWith("Invalid field name"));
 
         GenericRecord clone = cloneBuilder.build();
 
@@ -169,7 +169,7 @@ public class GenericRecordTest {
         recordBuilder.setInt32("foo", 2);
         assertTrue(trySetAndGetMessage("foo", 5, recordBuilder).startsWith("Field can only be written once"));
 
-        assertTrue(trySetAndGetMessage("notExisting", 3, recordBuilder).startsWith("Unknown field name"));
+        assertTrue(trySetAndGetMessage("notExisting", 3, recordBuilder).startsWith("Invalid field name"));
         assertTrue(tryBuildAndGetMessage(recordBuilder).startsWith("Found an unset field"));
 
         recordBuilder.setInt64("bar", 100);
@@ -255,7 +255,7 @@ public class GenericRecordTest {
         GenericRecord record = compact("test").build();
         assertThatThrownBy(() -> {
             record.getInt32("doesNotExist");
-        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Unknown field name");
+        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Invalid field name");
 
 
         InternalSerializationService serializationService = (InternalSerializationService) createSerializationService();

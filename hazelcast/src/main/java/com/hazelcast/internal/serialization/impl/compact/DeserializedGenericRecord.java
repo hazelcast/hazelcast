@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -32,10 +33,8 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeMap;
 
-import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.exceptionForUnexpectedFieldKind;
 import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.exceptionForUnexpectedNullValue;
 import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.exceptionForUnexpectedNullValueInArray;
-import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.exceptionForUnknownField;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_COMPACT;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DATE;
@@ -545,7 +544,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     private FieldKind check(@Nonnull String fieldName, @Nonnull FieldKind... kinds) {
         FieldDescriptor fd = schema.getField(fieldName);
         if (fd == null) {
-            throw exceptionForUnknownField(fieldName, schema);
+            throw new HazelcastSerializationException("Invalid field name: '" + fieldName + " for " + schema);
         }
         boolean valid = false;
         FieldKind fieldKind = fd.getKind();
@@ -553,7 +552,8 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             valid |= fieldKind == kind;
         }
         if (!valid) {
-            throw exceptionForUnexpectedFieldKind(fieldKind, fieldName);
+            throw new HazelcastSerializationException("Invalid field kind: '" + fieldName + " for " + schema
+                    + ", valid field kinds : " + Arrays.toString(kinds) + ", found : " + fieldKind);
         }
         return fieldKind;
     }
@@ -766,3 +766,4 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         return array[index];
     }
 }
+
