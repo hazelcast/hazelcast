@@ -610,7 +610,7 @@ public class SqlOrderByTest extends SqlTestSupport {
             .hasMessageContaining("FETCH/OFFSET is only supported for the top-level SELECT");
     }
 
-    @Test(timeout = 500000000)
+    @Test
     public void testConcurrentPutAndOrderbyQueries() {
         IMap<Object, AbstractPojo> map = getTarget().getMap(stableMapName());
 
@@ -624,7 +624,7 @@ public class SqlOrderByTest extends SqlTestSupport {
         ExecutorService executor = Executors.newFixedThreadPool(10);
 
         int threadsCount = 10;
-        int keysPerThread = 1000;
+        int keysPerThread = 5000;
         CountDownLatch latch = new CountDownLatch(threadsCount);
         AtomicReference<Throwable> exception = new AtomicReference<>();
 
@@ -677,7 +677,7 @@ public class SqlOrderByTest extends SqlTestSupport {
         ExecutorService executor = Executors.newFixedThreadPool(10);
 
         int threadsCount = 10;
-        int keysPerThread = 1000;
+        int keysPerThread = 5000;
         CountDownLatch latch = new CountDownLatch(threadsCount);
         AtomicReference<Throwable> exception = new AtomicReference<>();
 
