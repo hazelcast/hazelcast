@@ -45,6 +45,7 @@ import java.util.LinkedList;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
@@ -55,10 +56,17 @@ import static com.hazelcast.internal.util.AddressUtil.AddressHolder;
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.FutureUtil.RETHROW_EVERYTHING;
 import static com.hazelcast.internal.util.FutureUtil.returnWithDeadline;
-import static java.util.Collections.newSetFromMap;
 
 public class TcpIpJoiner extends AbstractJoiner {
 
+    /**
+     * Specifies how long the address of a member that has previously joined the cluster
+     * will be retained in the knownMemberAddresses after the member leaves the cluster.
+     */
+    public static final String PREVIOUSLY_JOINED_MEMBER_ADDRESS_RETENTION_DURATION_PROP =
+            "hazelcast.previously.joined.member.address.retention.duration.seconds";
+    // Selected this default value same as default value of missing-cp-member-auto-removal-seconds
+    private static final int DEFAULT_PREVIOUSLY_JOINED_MEMBER_ADDRESS_RETENTION_DURATION_IN_SECS = 14400;
     private static final long JOIN_RETRY_WAIT_TIME = 1000L;
     private static final int MASTERSHIP_CLAIM_TIMEOUT = 10;
 
@@ -66,11 +74,13 @@ public class TcpIpJoiner extends AbstractJoiner {
     private volatile boolean claimingMastership;
     private final JoinConfig joinConfig;
 
+    private final long previouslyJoinedMemberAddressRetentionDuration;
+
     /**
      * We register the member addresses to this map which are known with the
-     * member list update
+     * member list update/when a new member joins the cluster
      */
-    private final Set<Address> knownMemberAddresses = newSetFromMap(new ConcurrentHashMap<>());
+    private final ConcurrentMap<Address, Long> knownMemberAddresses = new ConcurrentHashMap<>();
 
     public TcpIpJoiner(Node node) {
         super(node);
@@ -81,6 +91,9 @@ public class TcpIpJoiner extends AbstractJoiner {
         }
         maxPortTryCount = tryCount;
         joinConfig = getActiveMemberNetworkConfig(config).getJoin();
+        previouslyJoinedMemberAddressRetentionDuration = TimeUnit.SECONDS.toMillis(
+                Integer.getInteger(PREVIOUSLY_JOINED_MEMBER_ADDRESS_RETENTION_DURATION_PROP,
+                        DEFAULT_PREVIOUSLY_JOINED_MEMBER_ADDRESS_RETENTION_DURATION_IN_SECS));
     }
 
     public boolean isClaimingMastership() {
@@ -401,7 +414,8 @@ public class TcpIpJoiner extends AbstractJoiner {
                 }
             }
         }
-        possibleAddresses.addAll(knownMemberAddresses);
+        cleanupKnownMemberAddresses();
+        possibleAddresses.addAll(knownMemberAddresses.keySet());
         possibleAddresses.remove(node.getThisAddress());
         return possibleAddresses;
     }
@@ -451,7 +465,13 @@ public class TcpIpJoiner extends AbstractJoiner {
 
     public void onMemberAdded(Member member) {
         if (!member.localMember()) {
-            knownMemberAddresses.add(member.getAddress());
+            knownMemberAddresses.put(member.getAddress(), Long.MAX_VALUE);
+        }
+    }
+
+    public void onMemberRemoved(Member member) {
+        if (!member.localMember()) {
+            knownMemberAddresses.put(member.getAddress(), Clock.currentTimeMillis());
         }
     }
 
@@ -493,6 +513,17 @@ public class TcpIpJoiner extends AbstractJoiner {
                 return;
             }
         }
+    }
+
+    private void cleanupKnownMemberAddresses() {
+        long currentTime = Clock.currentTimeMillis();
+        knownMemberAddresses.values().removeIf(memberLeftTime ->
+                (currentTime - memberLeftTime) >= previouslyJoinedMemberAddressRetentionDuration);
+    }
+
+    // only used in tests
+    public ConcurrentMap<Address, Long> getKnownMemberAddresses() {
+        return knownMemberAddresses;
     }
 
     @Override
