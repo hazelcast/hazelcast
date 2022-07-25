@@ -175,8 +175,7 @@ public class SlidingWindowP_twoStageSnapshotTest {
                         outboxFrame(5, 10),
                         outboxFrame(6, 9),
                         outboxFrame(7, 7),
-                        outboxFrame(8, 4),
-                        wm(10)
+                        outboxFrame(8, 4)
                 )),
                 collectionToString(stage2Outbox.queue(0)));
     }

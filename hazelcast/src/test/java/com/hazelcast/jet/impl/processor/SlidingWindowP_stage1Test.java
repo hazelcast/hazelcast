@@ -22,7 +22,6 @@ import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.TimestampKind;
-import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.datamodel.KeyedWindowResult;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -45,6 +44,7 @@ import static com.hazelcast.jet.core.JetTestSupport.wm;
 import static com.hazelcast.jet.core.SlidingWindowPolicy.slidingWinPolicy;
 import static com.hazelcast.jet.core.test.TestSupport.verifyProcessor;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertTrue;
 
@@ -106,14 +106,9 @@ public class SlidingWindowP_stage1Test {
                 ))
                 .expectOutput(asList(
                         frame(4, 2),
-                        wm(4),
                         frame(8, 2),
-                        wm(8),
-                        frame(12, 3),
-                        wm(12),
-                        wm(16),
-                        wm(20)
-                ));
+                        frame(12, 3)
+                        ));
     }
 
     @Test
@@ -126,25 +121,9 @@ public class SlidingWindowP_stage1Test {
                         entry(1L, 1L), // to frame 4
                         wm(12) // closes frame
                 ))
-                .expectOutput(asList(
-                        frame(4, 2),
-                        wm(12)
+                .expectOutput(singletonList(
+                        frame(4, 2)
                 ));
-    }
-
-    @Test
-    public void when_noEvents_then_wmsEmitted() {
-        List<Watermark> someWms = asList(
-                wm(4),
-                wm(8),
-                wm(12)
-        );
-
-        verifyProcessor(supplier)
-                .disableSnapshots()
-                .disableCompleteCall()
-                .input(someWms)
-                .expectOutput(someWms);
     }
 
     @Test
@@ -161,7 +140,6 @@ public class SlidingWindowP_stage1Test {
                 ))
                 .expectOutput(asList(
                         frame(4, 1),
-                        wm(4),
                         frame(8, 1),
                         frame(12, 1)
                 ));
@@ -190,7 +168,7 @@ public class SlidingWindowP_stage1Test {
                 .input(asList(wm(16),
                         entry(7, 1)
                 ))
-                .expectOutput(singletonList(wm(16)));
+                .expectOutput(emptyList());
     }
 
     private static <V> KeyedWindowResult<Long, LongAccumulator> frame(long ts, long value) {

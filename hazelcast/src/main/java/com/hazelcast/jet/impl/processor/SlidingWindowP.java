@@ -159,7 +159,6 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
         this.isLastStage = isLastStage;
         this.wmFlatMapper = flatMapper(
                 wm -> windowTraverserAndEvictor(wm.timestamp())
-                        .append(wm)
                         .onFirstNull(() -> nextWinToEmit = winPolicy.higherFrameTs(wm.timestamp()))
         );
         this.emptyAcc = aggrOp.createFn().get();
@@ -203,7 +202,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
                 rangeStart,
                 topTs + winPolicy.windowSize() - winPolicy.frameSize(),
                 winPolicy.frameSize())
-            .boxed();
+                .boxed();
         earlyWinTraverser = traverseStream(earlyWinRange)
                 .flatMap(winEnd -> traverseIterable(computeWindow(winEnd).entrySet())
                         .map(e -> mapToOutputFn.apply(
@@ -247,7 +246,6 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark wm) {
-        // keyedWatermarkCheck(wm);
         return wmFlatMapper.tryProcess(wm);
     }
 
@@ -288,7 +286,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
                     || minRestoredNextWinToEmit == Long.MAX_VALUE
                     || minRestoredNextWinToEmit == newNextWinToEmit
                     : "different values for nextWinToEmit restored, before=" + minRestoredNextWinToEmit
-                            + ", new=" + newNextWinToEmit;
+                    + ", new=" + newNextWinToEmit;
             minRestoredNextWinToEmit = Math.min(newNextWinToEmit, minRestoredNextWinToEmit);
             return;
         }
@@ -338,7 +336,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
             // has smaller window size
             if (nextWinToEmit > Long.MIN_VALUE + winPolicy.windowSize()) {
                 for (long ts = minRestoredFrameTs; ts <= nextWinToEmit - winPolicy.windowSize();
-                        ts += winPolicy.frameSize()) {
+                     ts += winPolicy.frameSize()) {
                     Map<K, A> removed = tsToKeyToAcc.remove(ts);
                     if (removed != null) {
                         totalFrames.inc(-1);
