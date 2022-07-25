@@ -430,7 +430,7 @@ public final class SinkProcessors {
         NodeEngineImpl nodeEngine = Util.getNodeEngine(context.hazelcastInstance());
         ExternalDataStoreFactory<?> dataStoreFactory = nodeEngine.getExternalDataStoreService().getExternalDataStoreFactory(name);
         if (!(dataStoreFactory instanceof JdbcDataStoreFactory)) {
-            String className = JdbcDataStoreFactory.class.getSimpleName();
+            String className = JdbcDataStoreFactory.class.getName();
             throw new HazelcastException("Data store factory '" + name + "' must be an instance of " + className);
         }
         return (JdbcDataStoreFactory) dataStoreFactory;
