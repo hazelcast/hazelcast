@@ -184,7 +184,7 @@ public class GenericRecordTest {
         builder.setInt32("foo", 1);
         assertTrue(trySetAndGetMessage("foo", 5, builder).startsWith("Field can only be written once"));
         builder.setInt64("bar", 1231L);
-        GenericRecord genericRecord = builder.build();
+        DeserializedGenericRecord genericRecord = (DeserializedGenericRecord) builder.build();
 
         verifyNewBuilder(genericRecord);
     }
