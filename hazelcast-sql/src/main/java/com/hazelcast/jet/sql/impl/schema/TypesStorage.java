@@ -20,8 +20,6 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.nio.serialization.FieldDefinition;
-import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.FieldsUtil;
@@ -30,11 +28,11 @@ import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
+// TODO: Merge into TablesStorage
 public class TypesStorage extends TablesStorage {
     final InternalSerializationService iss;
 
@@ -53,12 +51,9 @@ public class TypesStorage extends TablesStorage {
     public Type getTypeByPortableClass(final int factoryId, final int classId, final int versionId) {
         return super.getAllTypes().stream()
                 .filter(type -> type.getKind().equals(TypeKind.PORTABLE))
-                .filter(type -> {
-                    final ClassDefinition classDef = type.getPortableClassDef();
-                    return classDef.getFactoryId() == factoryId
-                            && classDef.getClassId() == classId
-                            && classDef.getVersion() == versionId;
-                })
+                .filter(type -> type.getPortableFactoryId() == factoryId
+                        && type.getPortableClassId() == classId
+                        && type.getPortableVersion() == versionId)
                 .findFirst()
                 .orElse(null);
     }
@@ -91,51 +86,28 @@ public class TypesStorage extends TablesStorage {
     }
 
     public boolean registerType(String name, ClassDefinition classDef) {
-        final Type type = new Type();
-        type.setName(name);
-        type.setKind(TypeKind.PORTABLE);
-        type.setPortableClassDef(classDef);
-        final List<Type.TypeField> fields = new ArrayList<>();
-        for (int i = 0; i < classDef.getFieldCount(); i++) {
-            final FieldDefinition portableField = classDef.getField(i);
-            final Type.TypeField typeField = new Type.TypeField();
-            typeField.setName(portableField.getName());
-
-            final QueryDataType queryDataType;
-            if (portableField.getType().equals(FieldType.PORTABLE)) {
-                queryDataType = getTypeByPortableClass(
-                        portableField.getFactoryId(),
-                        portableField.getClassId(),
-                        portableField.getVersion()
-                ).toQueryDataTypeRef();
-            } else {
-                queryDataType = resolvePortableFieldType(portableField.getType());
-            }
-
-            typeField.setQueryDataType(queryDataType);
-            fields.add(typeField);
-        }
-        type.setFields(fields);
-
+        Type type = TypesUtils.convertPortableClassToType(name, classDef, this);
         put(name, type);
 
-        return false;
-    }
-
-    public boolean registerType(String name, Schema schema) {
-        final Type type = new Type();
-        type.setName(name);
-        type.setKind(TypeKind.COMPACT);
-        type.setCompactFingerprint(schema.getSchemaId());
-
-        final List<Type.TypeField> fields = new ArrayList<>();
-
-        return false;
+        return true;
     }
 
     public boolean register(String name, Type type) {
         put(name, type);
         return true;
+    }
+
+    public boolean register(final String name, final Type type, final boolean onlyIfAbsent) {
+        boolean result = true;
+        if (onlyIfAbsent) {
+            result = putIfAbsent(name, type);
+        } else {
+            put(name, type);
+        }
+
+        fixTypeReferences(type);
+
+        return result;
     }
 
     public Schema getTypeCompactSchema(String typeName, Long fingerprint) {
@@ -156,8 +128,14 @@ public class TypesStorage extends TablesStorage {
     }
 
     private void fixTypeReferences(final Type addedType) {
-        // TODO: type system consistency.
+        if (!TypeKind.JAVA.equals(addedType.getKind())) {
+            return;
+        }
         for (final Type type : getAllTypes()) {
+            if (!TypeKind.JAVA.equals(type.getKind())) {
+                continue;
+            }
+
             boolean changed = false;
             for (final Type.TypeField field : type.getFields()) {
                 if (field.getQueryDataType() == null && !field.getQueryDataTypeMetadata().isEmpty()) {
@@ -207,42 +185,5 @@ public class TypesStorage extends TablesStorage {
 
     private boolean isJavaClass(Class<?> clazz) {
         return !clazz.isPrimitive() && !clazz.getPackage().getName().startsWith("java.");
-    }
-
-    @SuppressWarnings("checkstyle:ReturnCount")
-    private QueryDataType resolvePortableFieldType(FieldType fieldType) {
-        switch (fieldType) {
-            case BOOLEAN:
-                return QueryDataType.BOOLEAN;
-            case BYTE:
-                return QueryDataType.TINYINT;
-            case SHORT:
-                return QueryDataType.SMALLINT;
-            case INT:
-                return QueryDataType.INT;
-            case LONG:
-                return QueryDataType.BIGINT;
-            case FLOAT:
-                return QueryDataType.REAL;
-            case DOUBLE:
-                return QueryDataType.DOUBLE;
-            case DECIMAL:
-                return QueryDataType.DECIMAL;
-            case CHAR:
-                return QueryDataType.VARCHAR_CHARACTER;
-            case UTF:
-                return QueryDataType.VARCHAR;
-            case TIME:
-                return QueryDataType.TIME;
-            case DATE:
-                return QueryDataType.DATE;
-            case TIMESTAMP:
-                return QueryDataType.TIMESTAMP;
-            case TIMESTAMP_WITH_TIMEZONE:
-                return QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
-            case PORTABLE:
-            default:
-                return QueryDataType.OBJECT;
-        }
     }
 }

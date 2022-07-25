@@ -25,6 +25,7 @@ import com.hazelcast.jet.sql.impl.connector.map.UpdatingEntryProcessor;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob.AlterJobOperation;
 import com.hazelcast.jet.sql.impl.parse.SqlShowStatement.ShowStatementTarget;
+import com.hazelcast.jet.sql.impl.schema.TypeDefinitionColumn;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.security.permission.SqlPermission;
 import com.hazelcast.sql.SqlResult;
@@ -40,7 +41,6 @@ import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.security.SqlSecurityContext;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
 
@@ -1288,7 +1288,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final String name;
         private final boolean replace;
         private final boolean ifNotExists;
-        private final List<TypeColumn> columns;
+        private final List<TypeDefinitionColumn> columns;
         private final Map<String, String> options;
         private final PlanExecutor planExecutor;
 
@@ -1297,7 +1297,7 @@ abstract class SqlPlanImpl extends SqlPlan {
                 final String name,
                 final boolean replace,
                 final boolean ifNotExists,
-                final List<TypeColumn> columns,
+                final List<TypeDefinitionColumn> columns,
                 final Map<String, String> options,
                 final PlanExecutor planExecutor
         ) {
@@ -1318,6 +1318,10 @@ abstract class SqlPlanImpl extends SqlPlan {
             return options;
         }
 
+        public String option(String name) {
+            return options.get(name);
+        }
+
         public boolean replace() {
             return replace;
         }
@@ -1326,7 +1330,7 @@ abstract class SqlPlanImpl extends SqlPlan {
             return ifNotExists;
         }
 
-        public List<TypeColumn> columns() {
+        public List<TypeDefinitionColumn> columns() {
             return columns;
         }
 
@@ -1350,24 +1354,6 @@ abstract class SqlPlanImpl extends SqlPlan {
             SqlPlanImpl.ensureNoArguments("CREATE TYPE", arguments);
             SqlPlanImpl.ensureNoTimeout("CREATE TYPE", timeout);
             return planExecutor.execute(this);
-        }
-
-        static class TypeColumn {
-            private final String name;
-            private final QueryDataType dataType;
-
-            TypeColumn(String name, QueryDataType dataType) {
-                this.name = name;
-                this.dataType = dataType;
-            }
-
-            public String name() {
-                return name;
-            }
-
-            public QueryDataType dataType() {
-                return dataType;
-            }
         }
     }
 

@@ -23,7 +23,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
-import com.hazelcast.internal.serialization.impl.portable.PortableContext;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
@@ -53,7 +52,9 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
+import com.hazelcast.jet.sql.impl.schema.TypeDefinitionColumn;
 import com.hazelcast.jet.sql.impl.schema.TypesStorage;
+import com.hazelcast.jet.sql.impl.schema.TypesUtils;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.EntryRemovingProcessor;
 import com.hazelcast.map.impl.MapContainer;
@@ -90,6 +91,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.TreeMap;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -467,20 +469,57 @@ public class PlanExecutor {
 
     SqlResult execute(CreateTypePlan plan) {
         final TypesStorage typesStorage = new TypesStorage(getNodeEngine(hazelcastInstance));
+        final String format = plan.options().get(SqlConnector.OPTION_FORMAT);
+        if (SqlConnector.PORTABLE_FORMAT.equals(format)) {
+            final Integer factoryId = Optional.ofNullable(plan.option(SqlConnector.OPTION_TYPE_PORTABLE_FACTORY_ID))
+                    .map(Integer::parseInt)
+                    .orElse(null);
+            final Integer classId = Optional.ofNullable(plan.option(SqlConnector.OPTION_TYPE_PORTABLE_CLASS_ID))
+                    .map(Integer::parseInt)
+                    .orElse(null);
+            final Integer version = Optional.ofNullable(plan.option(SqlConnector.OPTION_TYPE_PORTABLE_CLASS_VERSION))
+                    .map(Integer::parseInt)
+                    .orElse(0);
 
-        if (SqlConnector.PORTABLE_FORMAT.equals(plan.options().get(SqlConnector.OPTION_FORMAT))) {
-            final PortableContext portableContext = getSerializationService(hazelcastInstance).getPortableContext();
-            final ClassDefinition classDef = portableContext.lookupClassDefinition(
-                    Integer.parseInt(plan.options().get(SqlConnector.OPTION_TYPE_PORTABLE_FACTORY_ID)),
-                    Integer.parseInt(plan.options().get(SqlConnector.OPTION_TYPE_PORTABLE_CLASS_ID)),
-                    Integer.parseInt(plan.options().get(SqlConnector.OPTION_TYPE_PORTABLE_CLASS_VERSION))
-            );
+            if (factoryId == null || classId == null) {
+                throw QueryException.error("FactoryID and ClassID are required for Portable Types");
+            }
 
-            typesStorage.registerType(plan.name(), classDef);
+            final ClassDefinition existingClassDef = getSerializationService(hazelcastInstance).getPortableContext()
+                    .lookupClassDefinition(factoryId, classId, version);
+
+            final Type type;
+            if (existingClassDef != null) {
+                type = TypesUtils.convertPortableClassToType(plan.name(), existingClassDef, typesStorage);
+            } else {
+                if (plan.columns().isEmpty()) {
+                    throw QueryException.error("Column list can not be empty for non-registered Portable Type");
+                }
+
+                type = new Type();
+                type.setName(plan.name());
+                type.setKind(TypeKind.PORTABLE);
+                type.setPortableFactoryId(factoryId);
+                type.setPortableClassId(classId);
+                type.setPortableVersion(version);
+                type.setFields(new ArrayList<>());
+
+                for (int i = 0; i < plan.columns().size(); i++) {
+                    final TypeDefinitionColumn planColumn = plan.columns().get(i);
+                    type.getFields().add(new Type.TypeField(planColumn.name(), planColumn.dataType()));
+                }
+            }
+
+            if (plan.ifNotExists()) {
+                typesStorage.register(plan.name(), type, true);
+            } else if (plan.replace()) {
+                typesStorage.register(plan.name(), type, false);
+            } else if (!typesStorage.register(plan.name(), type, true)) {
+                throw QueryException.error("Type already exists: " + plan.name());
+            }
 
             return UpdateSqlResultImpl.createUpdateCountResult(0);
-        }
-        if (SqlConnector.COMPACT_FORMAT.equals(plan.options().get(SqlConnector.OPTION_FORMAT))) {
+        } else if (SqlConnector.COMPACT_FORMAT.equals(format)) {
             final Type type = new Type();
             type.setKind(TypeKind.COMPACT);
             type.setName(plan.name());
@@ -500,28 +539,37 @@ public class PlanExecutor {
             final Schema schema = new Schema(type.getName(), schemaFieldDescriptors);
             type.setCompactFingerprint(schema.getSchemaId());
 
-            typesStorage.register(type.getName(), type);
+            if (plan.ifNotExists()) {
+                typesStorage.register(plan.name(), type, true);
+            } else if (plan.replace()) {
+                typesStorage.register(plan.name(), type, false);
+            } else if (!typesStorage.register(plan.name(), type, true)) {
+                throw QueryException.error("Type already exists: " + plan.name());
+            }
 
             return UpdateSqlResultImpl.createUpdateCountResult(0);
-        }
+        } else if (SqlConnector.JAVA_FORMAT.equals(format)) {
 
-        final Class<?> typeClass;
-        try {
-            typeClass = ReflectionUtils.loadClass(plan.options().get(SqlConnector.OPTION_TYPE_JAVA_CLASS));
-        } catch (Exception e) {
-            throw QueryException.error("Unable to load class: '"
-                    + String.valueOf(plan.options().get(SqlConnector.OPTION_TYPE_JAVA_CLASS)) + "'", e);
-        }
+            final Class<?> typeClass;
+            try {
+                typeClass = ReflectionUtils.loadClass(plan.options().get(SqlConnector.OPTION_TYPE_JAVA_CLASS));
+            } catch (Exception e) {
+                throw QueryException.error("Unable to load class: '"
+                        + String.valueOf(plan.options().get(SqlConnector.OPTION_TYPE_JAVA_CLASS)) + "'", e);
+            }
 
-        if (plan.ifNotExists()) {
-            typesStorage.registerType(plan.name(), typeClass, true);
-        } else if (plan.replace()) {
-            typesStorage.registerType(plan.name(), typeClass, false);
-        } else if (!typesStorage.registerType(plan.name(), typeClass, true)) {
-            throw QueryException.error("Type already exists: " + plan.name());
+            // TODO: refactor to register()
+            if (plan.ifNotExists()) {
+                typesStorage.registerType(plan.name(), typeClass, true);
+            } else if (plan.replace()) {
+                typesStorage.registerType(plan.name(), typeClass, false);
+            } else if (!typesStorage.registerType(plan.name(), typeClass, true)) {
+                throw QueryException.error("Type already exists: " + plan.name());
+            }
+            return UpdateSqlResultImpl.createUpdateCountResult(0);
+        } else {
+            throw QueryException.error("Unsupported type format: " + format);
         }
-
-        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
     private List<Object> prepareArguments(QueryParameterMetadata parameterMetadata, List<Object> arguments) {

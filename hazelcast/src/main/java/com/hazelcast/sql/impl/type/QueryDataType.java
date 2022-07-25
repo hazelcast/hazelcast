@@ -105,6 +105,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     public static final QueryDataType ROW = new QueryDataType(RowConverter.INSTANCE);
 
     private Converter converter;
+    // never empty for custom OBJECT types / nested types
     private String objectTypeName = "";
     private Integer objectTypeKind = OBJECT_TYPE_KIND_NONE;
     private List<QueryDataTypeField> objectFields = new ArrayList<>();

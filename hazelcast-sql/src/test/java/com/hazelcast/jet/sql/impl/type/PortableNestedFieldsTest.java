@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -87,6 +88,39 @@ public class PortableNestedFieldsTest extends SqlJsonTestSupport {
                 .setGenericRecord("office", office)
                 .build();
         instance().getSql().execute("INSERT INTO test (__key, id, name, organization) VALUES (1, 1, 'user1', ?)", organization);
+
+        assertRowsAnyOrder("SELECT (organization).name FROM test", rows(1, "organization1"));
+        assertRowsAnyOrder("SELECT (organization).office.name FROM test", rows(1, "office1"));
+    }
+
+    // TODO: modified mapping support
+    @Test
+    @Ignore
+    public void test_newTypeCreation() {
+        instance().getSql().execute("CREATE TYPE Office (id BIGINT, name VARCHAR) OPTIONS "
+                + "('format'='portable', 'portableFactoryId'='2', 'portableClassId'='3', 'portableClassVersion'='0')");
+        instance().getSql().execute("CREATE TYPE Organization (id BIGINT, name VARCHAR, office Office) OPTIONS "
+                + "('format'='portable', 'portableFactoryId'='2', 'portableClassId'='2', 'portableClassVersion'='0')");
+        instance().getSql().execute("CREATE TYPE \"User\" (id BIGINT, name VARCHAR, organization Organization) OPTIONS "
+                + "('format'='portable', 'portableFactoryId'='2', 'portableClassId'='1', 'portableClassVersion'='0')");
+
+        instance().getSql().execute("CREATE MAPPING test (__key BIGINT, this \"User\") TYPE IMap "
+                + "OPTIONS ("
+                + "'keyFormat'='bigint', "
+                + "'valueFormat'='portable', "
+                + "'valuePortableFactoryId'='2', "
+                + "'valuePortableClassId'='1')");
+
+        final GenericRecord office = new PortableGenericRecordBuilder(officeType)
+                .setInt64("id", 1)
+                .setString("name", "office1")
+                .build();
+        final GenericRecord organization = new PortableGenericRecordBuilder(organizationType)
+                .setInt64("id", 1)
+                .setString("name", "organization1")
+                .setGenericRecord("office", office)
+                .build();
+        instance().getSql().execute("INSERT INTO test VALUES (1, (1, 'user1', ?))", organization);
 
         assertRowsAnyOrder("SELECT (organization).name FROM test", rows(1, "organization1"));
         assertRowsAnyOrder("SELECT (organization).office.name FROM test", rows(1, "office1"));

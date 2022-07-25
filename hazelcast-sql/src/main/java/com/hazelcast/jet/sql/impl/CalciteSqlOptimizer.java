@@ -70,6 +70,7 @@ import com.hazelcast.jet.sql.impl.parse.SqlShowStatement;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.TablesStorage;
+import com.hazelcast.jet.sql.impl.schema.TypeDefinitionColumn;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
@@ -431,8 +432,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     private SqlPlan toCreateTypePlan(PlanKey planKey, SqlCreateType sqlNode) {
-        final List<SqlPlanImpl.CreateTypePlan.TypeColumn> columns = sqlNode.columns()
-                .map(column -> new SqlPlanImpl.CreateTypePlan.TypeColumn(column.name(), column.type()))
+        final List<TypeDefinitionColumn> columns = sqlNode.columns()
+                .map(column -> new TypeDefinitionColumn(column.name(), column.type()))
                 .collect(toList());
         return new CreateTypePlan(
                 planKey,

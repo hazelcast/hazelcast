@@ -17,12 +17,12 @@
 package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.inject.PortableUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.schema.TypesStorage;
+import com.hazelcast.jet.sql.impl.schema.TypesUtils;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.FieldDefinition;
@@ -106,7 +106,7 @@ final class MetadataPortableResolver implements KvMetadataResolver {
                     if (portableFieldType.equals(FieldType.PORTABLE)) {
                         type = resolveNestedPortableFieldType(clazz.getField(name), typesStorage);
                     } else {
-                        type = resolvePortableType(portableFieldType);
+                        type = TypesUtils.resolvePortableFieldType(portableFieldType);
                     }
 
                     return new MappingField(name, type, path.toString());
@@ -124,27 +124,7 @@ final class MetadataPortableResolver implements KvMetadataResolver {
             return QueryDataType.OBJECT;
         }
 
-        final ClassDefinition classDef = portableType.getPortableClassDef();
-
-        final QueryDataType type = new QueryDataType(portableType.getName(), QueryDataType.OBJECT_TYPE_KIND_PORTABLE);
-        final List<QueryDataType.QueryDataTypeField> fields = new ArrayList<>();
-
-        for (int i = 0; i < classDef.getFieldCount(); i++) {
-            final FieldDefinition fieldDef = classDef.getField(i);
-
-            final QueryDataType.QueryDataTypeField field = new QueryDataType.QueryDataTypeField();
-            field.setName(fieldDef.getName());
-            if (fieldDef.getType().equals(FieldType.PORTABLE)) {
-                field.setDataType(resolveNestedPortableFieldType(fieldDef, typesStorage));
-            } else {
-                field.setDataType(resolvePortableType(fieldDef.getType()));
-            }
-            fields.add(field);
-        }
-        type.setObjectFields(fields);
-        type.setObjectTypeClassName(PortableGenericRecord.class.getName());
-
-        return type;
+        return TypesUtils.convertTypeToQueryDataType(portableType, typesStorage);
     }
 
     private static Stream<MappingField> resolveAndValidateFields(
@@ -152,6 +132,7 @@ final class MetadataPortableResolver implements KvMetadataResolver {
             Map<QueryPath, MappingField> userFieldsByPath,
             @Nullable ClassDefinition clazz
     ) {
+        // TODO: implement user fields
         if (clazz == null) {
             // CLassDefinition does not exist, make sure there are no OBJECT fields
             return userFieldsByPath.values().stream()
@@ -164,8 +145,8 @@ final class MetadataPortableResolver implements KvMetadataResolver {
         }
 
         for (String name : clazz.getFieldNames()) {
-            QueryPath path = new QueryPath(name, isKey);
-            QueryDataType type = resolvePortableType(clazz.getFieldType(name));
+            final QueryPath path = new QueryPath(name, isKey);
+            final QueryDataType type = TypesUtils.resolvePortableFieldType(clazz.getFieldType(name));
 
             MappingField userField = userFieldsByPath.get(path);
             if (userField != null && !type.getTypeFamily().equals(userField.type().getTypeFamily())) {

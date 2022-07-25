@@ -16,10 +16,8 @@
 
 package com.hazelcast.sql.impl.schema.type;
 
-import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -37,9 +35,11 @@ public class Type implements IdentifiedDataSerializable, Serializable {
     private String name;
     private TypeKind kind = TypeKind.JAVA;
     private String javaClassName;
-    private ClassDefinition portableClassDef;
+    private String compactTypeName;
     private Long compactFingerprint;
-    private Schema compactSchema;
+    private Integer portableFactoryId;
+    private Integer portableClassId;
+    private Integer portableVersion;
     private List<TypeField> fields;
 
     public Type() { }
@@ -89,20 +89,36 @@ public class Type implements IdentifiedDataSerializable, Serializable {
         }
     }
 
-    public ClassDefinition getPortableClassDef() {
-        return portableClassDef;
+    public Integer getPortableFactoryId() {
+        return portableFactoryId;
     }
 
-    public void setPortableClassDef(final ClassDefinition portableClassDef) {
-        this.portableClassDef = portableClassDef;
+    public void setPortableFactoryId(final Integer portableFactoryId) {
+        this.portableFactoryId = portableFactoryId;
     }
 
-    public Schema getCompactSchema() {
-        return compactSchema;
+    public Integer getPortableClassId() {
+        return portableClassId;
     }
 
-    public void setCompactSchema(final Schema compactSchema) {
-        this.compactSchema = compactSchema;
+    public void setPortableClassId(final Integer portableClassId) {
+        this.portableClassId = portableClassId;
+    }
+
+    public Integer getPortableVersion() {
+        return portableVersion;
+    }
+
+    public void setPortableVersion(final Integer portableVersion) {
+        this.portableVersion = portableVersion;
+    }
+
+    public String getCompactTypeName() {
+        return compactTypeName;
+    }
+
+    public void setCompactTypeName(final String compactTypeName) {
+        this.compactTypeName = compactTypeName;
     }
 
     public Long getCompactFingerprint() {
@@ -122,9 +138,12 @@ public class Type implements IdentifiedDataSerializable, Serializable {
                 out.writeString(javaClassName);
                 break;
             case PORTABLE:
-                out.writeObject(portableClassDef);
+                out.writeInt(portableFactoryId);
+                out.writeInt(portableClassId);
+                out.writeInt(portableVersion);
                 break;
             case COMPACT:
+                out.writeString(compactTypeName);
                 out.writeLong(compactFingerprint);
                 break;
             default:
@@ -146,9 +165,12 @@ public class Type implements IdentifiedDataSerializable, Serializable {
                 this.javaClassName = in.readString();
                 break;
             case PORTABLE:
-                this.portableClassDef = in.readObject();
+                this.portableFactoryId = in.readInt();
+                this.portableClassId = in.readInt();
+                this.portableVersion = in.readInt();
                 break;
             case COMPACT:
+                this.compactTypeName = in.readString();
                 this.compactFingerprint = in.readLong();
                 break;
             default:
@@ -175,6 +197,8 @@ public class Type implements IdentifiedDataSerializable, Serializable {
     public static class TypeField implements IdentifiedDataSerializable, Serializable {
         private String name;
         private QueryDataType queryDataType;
+        // Java-type specific class name, used for the 2-phase initialization algorithm
+        // (part of class-level-cycles support)
         private String queryDataTypeMetadata = "";
 
         public TypeField() { }
