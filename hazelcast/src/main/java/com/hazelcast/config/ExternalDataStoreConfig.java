@@ -42,6 +42,7 @@ public class ExternalDataStoreConfig implements NamedConfig {
 
     private String name;
     private String className;
+    //TODO change default value to true when sharing will be implemented
     private boolean shared;
     private Properties properties = new Properties();
 
