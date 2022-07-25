@@ -16,6 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.jet.pipeline.BatchSource;
+import com.hazelcast.jet.pipeline.Sink;
+import com.hazelcast.map.MapLoader;
+import com.hazelcast.map.MapStore;
+import com.hazelcast.spi.annotation.Beta;
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Objects;
@@ -25,8 +31,13 @@ import static com.hazelcast.internal.util.Preconditions.checkHasText;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
- * Contains configuration for external data store
+ * Contains configuration of an external data store that can be used as a
+ * <ul>
+ * <li>{@link BatchSource} and {@link Sink} in Jet JDBC connector.</li>
+ * <li>Datastore for {@link MapStore} and {@link MapLoader} </li>
+ * </ul>
  */
+@Beta
 public class ExternalDataStoreConfig implements NamedConfig {
 
     private String name;
@@ -137,5 +148,15 @@ public class ExternalDataStoreConfig implements NamedConfig {
     @Override
     public int hashCode() {
         return Objects.hash(name, className, shared, properties);
+    }
+
+    @Override
+    public String toString() {
+        return "ExternalDataStoreConfig{" +
+                "name='" + name + '\'' +
+                ", className='" + className + '\'' +
+                ", shared=" + shared +
+                ", properties=" + properties +
+                '}';
     }
 }

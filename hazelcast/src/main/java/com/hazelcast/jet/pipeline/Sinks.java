@@ -36,6 +36,7 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ReliableTopicPermission;
+import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.topic.ITopic;
 
 import javax.annotation.Nonnull;
@@ -1279,8 +1280,11 @@ public final class Sinks {
      * }</pre>
      * <p>
      * See {@link #jdbcBuilder()} for more information.
+     *
+     * @since 5.2
      */
     @Nonnull
+    @Beta
     public static <T> Sink<T> jdbc(
             @Nonnull String updateQuery,
             @Nonnull ExternalDataStoreRef externalDataStoreRef,

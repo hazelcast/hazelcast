@@ -40,6 +40,7 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.security.impl.function.SecuredFunctions;
 import com.hazelcast.security.permission.ConnectorPermission;
+import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
@@ -399,7 +400,13 @@ public final class SinkProcessors {
         return WriteJdbcP.metaSupplier(jdbcUrl, updateQuery, ctx -> dataSourceSupplier.get(), bindFn, exactlyOnce, batchLimit);
     }
 
+    /**
+     * Returns a supplier of processors for {@link Sinks#jdbcBuilder()}.
+     *
+     * @since 5.2
+     */
     @Nonnull
+    @Beta
     public static <T> ProcessorMetaSupplier writeJdbcP(
             @Nonnull String updateQuery,
             @Nonnull ExternalDataStoreRef externalDataStoreRef,

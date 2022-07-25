@@ -16,9 +16,22 @@
 
 package com.hazelcast.datastore;
 
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.spi.annotation.Beta;
+
 /**
  * Service for accessing external data store factories
+ *
+ * @since 5.2
  */
+@Beta
 public interface ExternalDataStoreService {
+    /**
+     * Returns external data store factory with given name.
+     *
+     * @param name name of the data store factory
+     * @return instance of the factory
+     * @throws HazelcastException if the factory with given name is not found
+     */
     ExternalDataStoreFactory<?> getExternalDataStoreFactory(String name);
 }

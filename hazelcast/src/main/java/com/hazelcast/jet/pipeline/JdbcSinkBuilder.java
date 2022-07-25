@@ -20,6 +20,7 @@ import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.processor.SinkProcessors;
 import com.hazelcast.jet.impl.connector.DataSourceFromConnectionSupplier;
+import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import javax.sql.CommonDataSource;
@@ -213,8 +214,10 @@ public class JdbcSinkBuilder<T> {
      *
      * @param externalDataStoreRef the reference to the configured external dataStore
      * @return this instance for fluent API
+     * @since 5.2
      */
     @Nonnull
+    @Beta
     public JdbcSinkBuilder<T> externalDataStoreRef(ExternalDataStoreRef externalDataStoreRef) {
         this.dataSourceSupplier = null;
         this.jdbcUrl = null;

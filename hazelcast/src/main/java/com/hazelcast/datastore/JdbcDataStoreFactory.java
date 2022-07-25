@@ -18,9 +18,16 @@ package com.hazelcast.datastore;
 
 import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.jet.impl.connector.DataSourceFromConnectionSupplier;
+import com.hazelcast.spi.annotation.Beta;
 
 import javax.sql.DataSource;
 
+/**
+ * Creates a JDBC data store as a {@link DataSource}
+ *
+ * @since 5.2
+ */
+@Beta
 public class JdbcDataStoreFactory implements ExternalDataStoreFactory<DataSource> {
     private static final String JDBC_URL = "jdbc.url";
     private static final String JDBC_USERNAME = "jdbc.username";

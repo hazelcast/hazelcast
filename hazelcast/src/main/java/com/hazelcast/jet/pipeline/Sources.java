@@ -46,6 +46,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.security.impl.function.SecuredFunctions;
+import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import javax.jms.ConnectionFactory;
@@ -1352,6 +1353,7 @@ public final class Sources {
      *
      * @since 5.2
      */
+    @Beta
     public static <T> BatchSource<T> jdbc(
             @Nonnull ExternalDataStoreRef externalDataStoreRef,
             @Nonnull ToResultSetFunction resultSetFn,

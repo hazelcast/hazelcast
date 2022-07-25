@@ -56,6 +56,7 @@ import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.partition.strategy.StringPartitioningStrategy;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.security.jsm.HazelcastRuntimePermission;
+import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.topic.ITopic;
 
@@ -3100,6 +3101,7 @@ public class Config {
      *
      * @since 5.2
      */
+    @Beta
     public Map<String, ExternalDataStoreConfig> getExternalDataStoreConfigs() {
         return externalDataStoreConfigs;
     }
@@ -3109,6 +3111,7 @@ public class Config {
      *
      * @since 5.2
      */
+    @Beta
     public Config setExternalDataStoreConfigs(Map<String, ExternalDataStoreConfig> externalDataStoreConfigs) {
         this.externalDataStoreConfigs.clear();
         this.externalDataStoreConfigs.putAll(externalDataStoreConfigs);
@@ -3127,6 +3130,7 @@ public class Config {
      * @since 5.2
      */
     @Nullable
+    @Beta
     public ExternalDataStoreConfig getExternalDataStoreConfig(String name) {
         return externalDataStoreConfigs.get(name);
     }

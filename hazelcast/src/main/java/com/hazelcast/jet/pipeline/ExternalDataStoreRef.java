@@ -16,15 +16,20 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.function.ToResultSetFunction;
+import com.hazelcast.spi.annotation.Beta;
 
 import java.io.Serializable;
 
 /**
- * Represents a reference to the external datastore, used with {@link Sources#jdbc(
- *ExternalDataStoreRef, ToResultSetFunction, FunctionEx)}.
+ * Represents a reference to the external datastore, used with
+ * {@link Sources#jdbc(ExternalDataStoreRef, ToResultSetFunction, FunctionEx)}.
+ *
+ * @since 5.2
  */
+@Beta
 public class ExternalDataStoreRef implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -35,11 +40,24 @@ public class ExternalDataStoreRef implements Serializable {
         this.name = name;
     }
 
+    /**
+     * Creates a reference to the configured external datastore
+     *
+     * @param name name of the external datastore configured in {@link ExternalDataStoreConfig}
+     * @return the reference to the external datastore
+     */
     public static ExternalDataStoreRef externalDataStoreRef(String name) {
         return new ExternalDataStoreRef(name);
     }
 
     public String getName() {
         return name;
+    }
+
+    @Override
+    public String toString() {
+        return "ExternalDataStoreRef{" +
+                "name='" + name + '\'' +
+                '}';
     }
 }

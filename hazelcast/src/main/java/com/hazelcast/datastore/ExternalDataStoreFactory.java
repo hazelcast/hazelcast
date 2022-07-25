@@ -17,12 +17,15 @@
 package com.hazelcast.datastore;
 
 import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.spi.annotation.Beta;
 
 /**
  * Creates external datastore
  *
  * @param <DS> - type of the data store
+ * @since 5.2
  */
+@Beta
 public interface ExternalDataStoreFactory<DS> {
     DS createDataStore();
 
