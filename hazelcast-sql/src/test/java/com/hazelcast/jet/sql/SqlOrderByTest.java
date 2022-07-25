@@ -34,6 +34,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -610,6 +611,7 @@ public class SqlOrderByTest extends SqlTestSupport {
                 .hasMessageContaining("FETCH/OFFSET is only supported for the top-level SELECT");
     }
 
+    @Ignore
     @Test
     public void testConcurrentPutAndOrderbyQueries() {
         IMap<Object, AbstractPojo> map = getTarget().getMap(stableMapName());
@@ -663,6 +665,7 @@ public class SqlOrderByTest extends SqlTestSupport {
         executor.shutdown();
     }
 
+    @Ignore
     @Test
     public void testConcurrentUpdateAndOrderbyQueries() {
         IMap<Object, AbstractPojo> map = getTarget().getMap(stableMapName());
