@@ -92,8 +92,8 @@
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.0</avro.version>
-        <aws.sdk.version>1.12.263</aws.sdk.version>
-        <classgraph.version>4.8.139</classgraph.version>
+        <aws.sdk.version>1.12.267</aws.sdk.version>
+        <classgraph.version>4.8.149</classgraph.version>
         <debezium.version>1.9.3.Final</debezium.version>
         <grpc.version>1.43.0</grpc.version>
         <guava.version>30.1.1-jre</guava.version>
@@ -108,7 +108,7 @@
         <kafka.version>2.8.1</kafka.version>
         <kotlin.version>1.5.32</kotlin.version>
         <log4j.version>1.2.17.redhat-00008</log4j.version>
-        <log4j2.version>2.17.1</log4j2.version>
+        <log4j2.version>2.18.0</log4j2.version>
         <mysql.connector.version>8.0.29</mysql.connector.version>
         <netty.version>4.1.74.Final</netty.version>
         <objenesis.version>3.2</objenesis.version>
@@ -142,7 +142,7 @@
         <mockito.version>3.6.0</mockito.version>
         <powermock.version>2.0.9</powermock.version>
         <reflections.version>0.9.10</reflections.version>
-        <testcontainers.version>1.17.1</testcontainers.version>
+        <testcontainers.version>1.17.3</testcontainers.version>
         <archunit.version>0.22.0</archunit.version>
         <errorprone.version>2.11.0</errorprone.version>
         <awaitility.version>4.1.1</awaitility.version>

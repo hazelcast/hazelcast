@@ -19,8 +19,13 @@ package com.hazelcast.jet.impl.util;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.util.Collection;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
@@ -29,15 +34,16 @@ import static com.hazelcast.jet.impl.util.Util.toList;
  * A {@link ProcessorSupplier} which wraps another {@code ProcessorSupplier}
  * with one that will wrap its processors using {@code wrapperSupplier}.
  */
-public final class WrappingProcessorSupplier implements ProcessorSupplier {
-
-    private static final long serialVersionUID = 1L;
+public final class WrappingProcessorSupplier implements ProcessorSupplier, IdentifiedDataSerializable {
 
     private final ProcessorSupplier wrapped;
     private final FunctionEx<Processor, Processor> wrapperSupplier;
 
-    public WrappingProcessorSupplier(ProcessorSupplier wrapped,
-                                     FunctionEx<Processor, Processor> wrapperSupplier
+    public WrappingProcessorSupplier() { }
+
+    public WrappingProcessorSupplier(
+            ProcessorSupplier wrapped,
+            FunctionEx<Processor, Processor> wrapperSupplier
     ) {
         this.wrapped = wrapped;
         this.wrapperSupplier = wrapperSupplier;
@@ -68,5 +74,27 @@ public final class WrappingProcessorSupplier implements ProcessorSupplier {
     @Override
     public void close(Throwable error) throws Exception {
         wrapped.close(error);
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeObject(wrapped);
+        out.writeObject(wrapperSupplier);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        wrapped = in.readObject();
+        wrapperSupplier = in.readObject();
+    }
+
+    @Override
+    public int getFactoryId() {
+        return JetInitDataSerializerHook.FACTORY_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return JetInitDataSerializerHook.WRAPPING_PROCESSOR_SUPPLIER;
     }
 }
