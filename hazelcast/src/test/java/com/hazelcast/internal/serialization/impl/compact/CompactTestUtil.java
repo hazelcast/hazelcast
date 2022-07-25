@@ -24,9 +24,11 @@ import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import example.serialization.EmployeeDTO;
 import example.serialization.ExternalizableEmployeeDTO;
+import example.serialization.FixedFieldsDTO;
 import example.serialization.InnerDTO;
 import example.serialization.MainDTO;
 import example.serialization.NamedDTO;
+import example.serialization.VarFieldsDTO;
 
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
@@ -100,11 +102,11 @@ public final class CompactTestUtil {
     }
 
     @Nonnull
-    static MainDTO createMainDTO() {
+    private static InnerDTO createInnerDTO() {
         NamedDTO[] nn = new NamedDTO[2];
         nn[0] = new NamedDTO("name", 123);
         nn[1] = new NamedDTO("name", 123);
-        InnerDTO inner = new InnerDTO(new boolean[]{true, false}, new byte[]{0, 1, 2}, new char[]{'0', 'a', 'b'},
+        return new InnerDTO(new boolean[]{true, false}, new byte[]{0, 1, 2}, new char[]{'0', 'a', 'b'},
                 new short[]{3, 4, 5}, new int[]{9, 8, 7, 6}, new long[]{0, 1, 5, 7, 9, 11},
                 new float[]{0.6543f, -3.56f, 45.67f}, new double[]{456.456, 789.789, 321.321},
                 new String[]{"test", null}, nn,
@@ -117,12 +119,41 @@ public final class CompactTestUtil {
                 new Byte[]{0, 1, 2, null}, new Character[]{'i', null, '9'},
                 new Short[]{3, 4, 5, null}, new Integer[]{9, 8, 7, 6, null}, new Long[]{0L, 1L, 5L, 7L, 9L, 11L},
                 new Float[]{0.6543f, -3.56f, 45.67f}, new Double[]{456.456, 789.789, 321.321});
+    }
 
+    @Nonnull
+    static MainDTO createMainDTO() {
+        InnerDTO inner = createInnerDTO();
         return new MainDTO((byte) 113, true, '\u1256', (short) -500, 56789, -50992225L, 900.5678f,
                 -897543.3678909d, "this is main object created for testing!", inner,
                 new BigDecimal("12312313"), LocalTime.now(), LocalDate.now(), LocalDateTime.now(), OffsetDateTime.now(),
                 (byte) 113, true, '\u4567', (short) -500, 56789, -50992225L, 900.5678f,
                 -897543.3678909d);
+    }
+
+    @Nonnull
+    static VarFieldsDTO createVarFieldsDTO() {
+        InnerDTO inner = createInnerDTO();
+        return new VarFieldsDTO(new boolean[]{true, false}, new byte[]{0, 1, 2},
+                new short[]{3, 4, 5}, new int[]{9, 8, 7, 6}, new long[]{0, 1, 5, 7, 9, 11},
+                new float[]{0.6543f, -3.56f, 45.67f}, new double[]{456.456, 789.789, 321.321}, "test",
+                new String[]{"test", null}, new BigDecimal("12345"),
+                new BigDecimal[]{new BigDecimal("12345.123123123"), null},
+                null, new LocalTime[]{LocalTime.now(), null, LocalTime.now()},
+                LocalDate.now(),  new LocalDate[]{LocalDate.now(), null, LocalDate.now()},
+                LocalDateTime.now(), new LocalDateTime[]{LocalDateTime.now(), null},
+                OffsetDateTime.now(), null, inner, new InnerDTO[]{createInnerDTO(), null},
+                null, new Boolean[]{true, false, null}, (byte) 123, new Byte[]{0, 1, 2, null},
+                (short) 1232, new Short[]{3, 4, 5, null}, null, new Integer[]{9, 8, 7, 6, null},
+                12323121331L, new Long[]{0L, 1L, 5L, 7L, 9L, 12323121331L}, 0.6543f,
+                new Float[]{0.6543f, -3.56f, 45.67f}, 456.4123156,
+                new Double[]{456.4123156, 789.789, 321.321});
+    }
+
+    @Nonnull
+    static FixedFieldsDTO createFixedFieldsDTO() {
+        return new FixedFieldsDTO((byte) 1, true, (short) 1231, 123123123, 123123123123L, 12312.123f,
+                1111.1111111123123);
     }
 
     public static SchemaService createInMemorySchemaService() {

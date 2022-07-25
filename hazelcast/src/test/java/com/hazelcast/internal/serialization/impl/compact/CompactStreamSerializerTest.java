@@ -35,7 +35,11 @@ import example.serialization.BitsDTO;
 import example.serialization.EmployeeDTO;
 import example.serialization.EmployeeDTOSerializer;
 import example.serialization.EmployerDTO;
+import example.serialization.EmptyDTO;
+import example.serialization.EmptyDTOSerializer;
 import example.serialization.ExternalizableEmployeeDTO;
+import example.serialization.FixedFieldsDTO;
+import example.serialization.FixedFieldsDTOSerializer;
 import example.serialization.HiringStatus;
 import example.serialization.InnerDTO;
 import example.serialization.InnerDTOSerializer;
@@ -43,6 +47,8 @@ import example.serialization.MainDTO;
 import example.serialization.MainDTOSerializer;
 import example.serialization.NamedDTO;
 import example.serialization.NodeDTO;
+import example.serialization.VarFieldsDTO;
+import example.serialization.VarFieldsDTOSerializer;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -58,7 +64,9 @@ import java.time.ZoneOffset;
 import java.util.ArrayList;
 
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createCompactGenericRecord;
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createFixedFieldsDTO;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createMainDTO;
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createVarFieldsDTO;
 import static com.hazelcast.nio.serialization.GenericRecordBuilder.compact;
 import static example.serialization.HiringStatus.HIRING;
 import static org.junit.Assert.assertArrayEquals;
@@ -97,6 +105,92 @@ public class CompactStreamSerializerTest {
 
         Data data = serializationService.toData(expected);
         MainDTO actual = serializationService.toObject(data);
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testNoFieldsWithReflectiveSerializer() {
+        SerializationService serializationService = createSerializationService();
+        EmptyDTO expected = new EmptyDTO();
+
+        Data data = serializationService.toData(expected);
+        EmptyDTO actual = serializationService.toObject(data);
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testNoFieldsWithCustomSerializer() {
+        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
+        compactSerializationConfig.register(EmptyDTO.class, "empty", new EmptyDTOSerializer());
+        compactSerializationConfig.setEnabled(true);
+        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .setSchemaService(schemaService)
+                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                .build();
+        EmptyDTO expected = new EmptyDTO();
+
+        Data data = serializationService.toData(expected);
+        EmptyDTO actual = serializationService.toObject(data);
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testVarSizedFieldsWithReflectiveSerializer() {
+        SerializationService serializationService = createSerializationService();
+        VarFieldsDTO expected = createVarFieldsDTO();
+
+        Data data = serializationService.toData(expected);
+        VarFieldsDTO actual = serializationService.toObject(data);
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testVarSizedFieldsWithCustomSerializer() {
+        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
+        compactSerializationConfig.register(VarFieldsDTO.class, "varFields", new VarFieldsDTOSerializer());
+        compactSerializationConfig.register(InnerDTO.class, "inner", new InnerDTOSerializer());
+        compactSerializationConfig.setEnabled(true);
+        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .setSchemaService(schemaService)
+                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                .build();
+        VarFieldsDTO expected = createVarFieldsDTO();
+
+        Data data = serializationService.toData(expected);
+        VarFieldsDTO actual = serializationService.toObject(data);
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testFixedSizedFieldsWithReflectiveSerializer() {
+        SerializationService serializationService = createSerializationService();
+        FixedFieldsDTO expected = createFixedFieldsDTO();
+
+        Data data = serializationService.toData(expected);
+        FixedFieldsDTO actual = serializationService.toObject(data);
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testFixedSizedFieldsWithCustomSerializer() {
+        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
+        compactSerializationConfig.register(FixedFieldsDTO.class, "fixedFields", new FixedFieldsDTOSerializer());
+        compactSerializationConfig.register(InnerDTO.class, "inner", new InnerDTOSerializer());
+        compactSerializationConfig.setEnabled(true);
+        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .setSchemaService(schemaService)
+                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                .build();
+        FixedFieldsDTO expected = createFixedFieldsDTO();
+
+        Data data = serializationService.toData(expected);
+        FixedFieldsDTO actual = serializationService.toObject(data);
 
         assertEquals(expected, actual);
     }
