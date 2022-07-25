@@ -36,8 +36,8 @@ import static com.hazelcast.jet.impl.util.Util.toList;
  */
 public final class WrappingProcessorSupplier implements ProcessorSupplier, IdentifiedDataSerializable {
 
-    private final ProcessorSupplier wrapped;
-    private final FunctionEx<Processor, Processor> wrapperSupplier;
+    private ProcessorSupplier wrapped;
+    private FunctionEx<Processor, Processor> wrapperSupplier;
 
     public WrappingProcessorSupplier() { }
 
