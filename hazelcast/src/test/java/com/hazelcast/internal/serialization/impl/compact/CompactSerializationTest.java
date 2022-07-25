@@ -88,6 +88,22 @@ public class CompactSerializationTest {
                 .hasRootCauseMessage("Field with the name 'bar' already exists");
     }
 
+    @Test
+    public void testReadWhenFieldDoesNotExist() {
+        SerializationConfig config = new SerializationConfig();
+        config.getCompactSerializationConfig()
+                .register(Foo.class, "foo", new NonExistingFieldReadingSerializer());
+
+        SerializationService service = createSerializationService(config);
+
+        Foo foo = new Foo(42);
+        Data data = service.toData(foo);
+
+        assertThatThrownBy(() -> service.toObject(data))
+                .isInstanceOf(HazelcastSerializationException.class)
+                .hasMessageContaining("Unknown field name");
+    }
+
     private SerializationService createSerializationService(SerializationConfig config) {
         config.getCompactSerializationConfig().setEnabled(true);
         return new DefaultSerializationServiceBuilder()
@@ -127,6 +143,19 @@ public class CompactSerializationTest {
         @Override
         public void write(@Nonnull CompactWriter out, @Nonnull Foo object) {
             out.writeInt32("bar", object.bar);
+            out.writeInt32("bar", object.bar);
+        }
+    }
+
+    private static class NonExistingFieldReadingSerializer implements CompactSerializer<Foo> {
+        @Nonnull
+        @Override
+        public Foo read(@Nonnull CompactReader in) {
+            return new Foo(in.readInt32("nonExistingField"));
+        }
+
+        @Override
+        public void write(@Nonnull CompactWriter out, @Nonnull Foo object) {
             out.writeInt32("bar", object.bar);
         }
     }

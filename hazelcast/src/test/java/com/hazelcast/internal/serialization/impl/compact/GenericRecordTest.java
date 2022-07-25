@@ -43,6 +43,7 @@ import java.util.List;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createCompactGenericRecord;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createMainDTO;
 import static com.hazelcast.nio.serialization.GenericRecordBuilder.compact;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -128,7 +129,7 @@ public class GenericRecordTest {
         cloneBuilder.setInt32("foo", 2);
         assertTrue(trySetAndGetMessage("foo", 5, cloneBuilder).startsWith("Field can only be written once"));
 
-        assertTrue(trySetAndGetMessage("notExisting", 3, cloneBuilder).startsWith("Invalid field name"));
+        assertTrue(trySetAndGetMessage("notExisting", 3, cloneBuilder).startsWith("Unknown field name"));
 
         GenericRecord clone = cloneBuilder.build();
 
@@ -168,7 +169,7 @@ public class GenericRecordTest {
         recordBuilder.setInt32("foo", 2);
         assertTrue(trySetAndGetMessage("foo", 5, recordBuilder).startsWith("Field can only be written once"));
 
-        assertTrue(trySetAndGetMessage("notExisting", 3, recordBuilder).startsWith("Invalid field name"));
+        assertTrue(trySetAndGetMessage("notExisting", 3, recordBuilder).startsWith("Unknown field name"));
         assertTrue(tryBuildAndGetMessage(recordBuilder).startsWith("Found an unset field"));
 
         recordBuilder.setInt64("bar", 100);
@@ -247,5 +248,23 @@ public class GenericRecordTest {
         assertThrows(IllegalArgumentException.class, () -> {
             internalGenericRecord.getFieldKind("doesNotExist");
         });
+    }
+
+    @Test
+    public void testGetFieldThrowsExceptionWhenFieldDoesNotExist() throws IOException {
+        GenericRecord record = compact("test").build();
+        assertThatThrownBy(() -> {record.getInt32("doesNotExist");})
+                .isInstanceOf(HazelcastSerializationException.class)
+                .hasMessageContaining("Unknown field name");
+
+
+        InternalSerializationService serializationService = (InternalSerializationService) createSerializationService();
+        Data data = serializationService.toData(record);
+
+        InternalGenericRecord internalGenericRecord = serializationService.readAsInternalGenericRecord(data);
+
+        assertThatThrownBy(() -> {internalGenericRecord.getInt32("doesNotExist");})
+                .isInstanceOf(HazelcastSerializationException.class)
+                .hasMessageContaining("Unknown field name");
     }
 }

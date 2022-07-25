@@ -42,8 +42,10 @@ import java.util.function.Function;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
+import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.exceptionForUnexpectedFieldKind;
 import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.exceptionForUnexpectedNullValue;
 import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.exceptionForUnexpectedNullValueInArray;
+import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.exceptionForUnknownField;
 import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.BYTE_OFFSET_READER;
 import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.BYTE_OFFSET_READER_RANGE;
 import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.INT_OFFSET_READER;
@@ -205,7 +207,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             case NULLABLE_BOOLEAN:
                 return getVariableSizeAsNonNull(fd, ObjectDataInput::readBoolean, "Boolean");
             default:
-                throw unexpectedFieldKind(BOOLEAN, fieldName);
+                throw exceptionForUnexpectedFieldKind(BOOLEAN, fieldName);
         }
     }
 
@@ -235,7 +237,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             case NULLABLE_INT8:
                 return getVariableSizeAsNonNull(fd, ObjectDataInput::readByte, "Int8");
             default:
-                throw unexpectedFieldKind(fieldKind, fieldName);
+                throw exceptionForUnexpectedFieldKind(fieldKind, fieldName);
         }
     }
 
@@ -253,7 +255,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             case NULLABLE_INT16:
                 return getVariableSizeAsNonNull(fd, ObjectDataInput::readShort, "Int16");
             default:
-                throw unexpectedFieldKind(fieldKind, fieldName);
+                throw exceptionForUnexpectedFieldKind(fieldKind, fieldName);
         }
     }
 
@@ -271,7 +273,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             case NULLABLE_INT32:
                 return getVariableSizeAsNonNull(fd, ObjectDataInput::readInt, "Int32");
             default:
-                throw unexpectedFieldKind(fieldKind, fieldName);
+                throw exceptionForUnexpectedFieldKind(fieldKind, fieldName);
         }
     }
 
@@ -289,7 +291,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             case NULLABLE_INT64:
                 return getVariableSizeAsNonNull(fd, ObjectDataInput::readLong, "Int64");
             default:
-                throw unexpectedFieldKind(fieldKind, fieldName);
+                throw exceptionForUnexpectedFieldKind(fieldKind, fieldName);
         }
     }
 
@@ -307,7 +309,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             case NULLABLE_FLOAT32:
                 return getVariableSizeAsNonNull(fd, ObjectDataInput::readFloat, "Float32");
             default:
-                throw unexpectedFieldKind(fieldKind, fieldName);
+                throw exceptionForUnexpectedFieldKind(fieldKind, fieldName);
         }
     }
 
@@ -325,7 +327,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             case NULLABLE_FLOAT64:
                 return getVariableSizeAsNonNull(fd, ObjectDataInput::readDouble, "Float64");
             default:
-                throw unexpectedFieldKind(fieldKind, fieldName);
+                throw exceptionForUnexpectedFieldKind(fieldKind, fieldName);
         }
     }
 
@@ -431,7 +433,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             case ARRAY_OF_NULLABLE_BOOLEAN:
                 return getNullableArrayAsPrimitiveArray(fd, ObjectDataInput::readBooleanArray, "Boolean");
             default:
-                throw unexpectedFieldKind(fieldKind, fieldName);
+                throw exceptionForUnexpectedFieldKind(fieldKind, fieldName);
         }
     }
 
@@ -543,7 +545,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         } else if (fieldKind == nullableKind) {
             return getNullableArrayAsPrimitiveArray(fd, reader, methodSuffix);
         }
-        throw unexpectedFieldKind(fieldKind, fieldName);
+        throw exceptionForUnexpectedFieldKind(fieldKind, fieldName);
     }
 
     private <T> T getNullableArrayAsPrimitiveArray(FieldDescriptor fd, Reader<T> reader, String methodSuffix) {
@@ -587,7 +589,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             case NULLABLE_BOOLEAN:
                 return getVariableSize(fd, ObjectDataInput::readBoolean);
             default:
-                throw unexpectedFieldKind(fieldKind, fieldName);
+                throw exceptionForUnexpectedFieldKind(fieldKind, fieldName);
         }
     }
 
@@ -606,7 +608,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             case NULLABLE_INT8:
                 return getVariableSize(fd, ObjectDataInput::readByte);
             default:
-                throw unexpectedFieldKind(fieldKind, fieldName);
+                throw exceptionForUnexpectedFieldKind(fieldKind, fieldName);
         }
     }
 
@@ -625,7 +627,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             case NULLABLE_INT16:
                 return getVariableSize(fd, ObjectDataInput::readShort);
             default:
-                throw unexpectedFieldKind(fieldKind, fieldName);
+                throw exceptionForUnexpectedFieldKind(fieldKind, fieldName);
         }
     }
 
@@ -644,7 +646,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             case NULLABLE_INT32:
                 return getVariableSize(fd, ObjectDataInput::readInt);
             default:
-                throw unexpectedFieldKind(fieldKind, fieldName);
+                throw exceptionForUnexpectedFieldKind(fieldKind, fieldName);
         }
     }
 
@@ -663,7 +665,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             case NULLABLE_INT64:
                 return getVariableSize(fd, ObjectDataInput::readLong);
             default:
-                throw unexpectedFieldKind(fieldKind, fieldName);
+                throw exceptionForUnexpectedFieldKind(fieldKind, fieldName);
         }
     }
 
@@ -682,7 +684,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             case NULLABLE_FLOAT32:
                 return getVariableSize(fd, ObjectDataInput::readFloat);
             default:
-                throw unexpectedFieldKind(fieldKind, fieldName);
+                throw exceptionForUnexpectedFieldKind(fieldKind, fieldName);
         }
     }
 
@@ -701,7 +703,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             case NULLABLE_FLOAT64:
                 return getVariableSize(fd, ObjectDataInput::readDouble);
             default:
-                throw unexpectedFieldKind(fieldKind, fieldName);
+                throw exceptionForUnexpectedFieldKind(fieldKind, fieldName);
         }
     }
 
@@ -717,7 +719,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                 return getArrayOfVariableSize(fieldName, ARRAY_OF_NULLABLE_BOOLEAN,
                         Boolean[]::new, ObjectDataInput::readBoolean);
             default:
-                throw unexpectedFieldKind(fieldKind, fieldName);
+                throw exceptionForUnexpectedFieldKind(fieldKind, fieldName);
         }
     }
 
@@ -772,7 +774,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         } else if (fieldKind == nullableKind) {
             return getArrayOfVariableSize(fd, constructor, reader);
         }
-        throw unexpectedFieldKind(fieldKind, fieldName);
+        throw exceptionForUnexpectedFieldKind(fieldKind, fieldName);
     }
 
     @Override
@@ -869,7 +871,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     private FieldDescriptor getFieldDescriptor(@Nonnull String fieldName) {
         FieldDescriptor fd = schema.getField(fieldName);
         if (fd == null) {
-            throw throwUnknownFieldException(fieldName);
+            throw exceptionForUnknownField(fieldName, schema);
         }
         return fd;
     }
@@ -878,7 +880,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     private FieldDescriptor getFieldDescriptor(@Nonnull String fieldName, FieldKind fieldKind) {
         FieldDescriptor fd = getFieldDescriptor(fieldName);
         if (fd.getKind() != fieldKind) {
-            throw unexpectedFieldKind(fd.getKind(), fieldName);
+            throw exceptionForUnexpectedFieldKind(fd.getKind(), fieldName);
         }
         return fd;
     }
@@ -891,11 +893,6 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         } catch (IOException e) {
             throw illegalStateException(e);
         }
-    }
-
-    private HazelcastSerializationException throwUnknownFieldException(@Nonnull String fieldName) {
-        return new HazelcastSerializationException("Unknown field name: '" + fieldName
-                + "' for " + schema);
     }
 
     //indexed methods//
@@ -1118,12 +1115,6 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     protected IllegalStateException illegalStateException(IOException e) {
         return new IllegalStateException("IOException is not expected since we get from a well known format and position", e);
     }
-
-    private HazelcastSerializationException unexpectedFieldKind(FieldKind actualFieldKind,
-                                                                String fieldName) {
-        throw new HazelcastSerializationException("Unexpected field kind '" + actualFieldKind + "' for the field: " + fieldName);
-    }
-
 
     private static boolean[] readBooleanBits(BufferObjectDataInput input) throws IOException {
         int len = input.readInt();

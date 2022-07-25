@@ -33,8 +33,10 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeMap;
 
+import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.exceptionForUnexpectedFieldKind;
 import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.exceptionForUnexpectedNullValue;
 import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.exceptionForUnexpectedNullValueInArray;
+import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.exceptionForUnknownField;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_COMPACT;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DATE;
@@ -544,7 +546,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     private FieldKind check(@Nonnull String fieldName, @Nonnull FieldKind... kinds) {
         FieldDescriptor fd = schema.getField(fieldName);
         if (fd == null) {
-            throw new HazelcastSerializationException("Invalid field name: '" + fieldName + " for " + schema);
+            throw exceptionForUnknownField(fieldName, schema);
         }
         boolean valid = false;
         FieldKind fieldKind = fd.getKind();
@@ -552,8 +554,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
             valid |= fieldKind == kind;
         }
         if (!valid) {
-            throw new HazelcastSerializationException("Invalid field kind: '" + fieldName + " for " + schema
-                    + ", valid field kinds : " + Arrays.toString(kinds) + ", found : " + fieldKind);
+            throw exceptionForUnexpectedFieldKind(fieldKind, fieldName);
         }
         return fieldKind;
     }

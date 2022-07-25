@@ -66,6 +66,7 @@ import java.util.ArrayList;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createCompactGenericRecord;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createFixedFieldsDTO;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createMainDTO;
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createSerializationService;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createVarFieldsDTO;
 import static com.hazelcast.nio.serialization.GenericRecordBuilder.compact;
 import static example.serialization.HiringStatus.HIRING;
@@ -82,7 +83,7 @@ public class CompactStreamSerializerTest {
 
     @Test
     public void testAllTypesWithReflectiveSerializer() {
-        SerializationService serializationService = createSerializationService();
+        SerializationService serializationService = createSerializationService(schemaService);
         MainDTO expected = createMainDTO();
 
         Data data = serializationService.toData(expected);
@@ -111,7 +112,7 @@ public class CompactStreamSerializerTest {
 
     @Test
     public void testNoFieldsWithReflectiveSerializer() {
-        SerializationService serializationService = createSerializationService();
+        SerializationService serializationService = createSerializationService(schemaService);
         EmptyDTO expected = new EmptyDTO();
 
         Data data = serializationService.toData(expected);
@@ -139,7 +140,7 @@ public class CompactStreamSerializerTest {
 
     @Test
     public void testVarSizedFieldsWithReflectiveSerializer() {
-        SerializationService serializationService = createSerializationService();
+        SerializationService serializationService = createSerializationService(schemaService);
         VarFieldsDTO expected = createVarFieldsDTO();
 
         Data data = serializationService.toData(expected);
@@ -168,7 +169,7 @@ public class CompactStreamSerializerTest {
 
     @Test
     public void testFixedSizedFieldsWithReflectiveSerializer() {
-        SerializationService serializationService = createSerializationService();
+        SerializationService serializationService = createSerializationService(schemaService);
         FixedFieldsDTO expected = createFixedFieldsDTO();
 
         Data data = serializationService.toData(expected);
@@ -258,7 +259,7 @@ public class CompactStreamSerializerTest {
 
     @Test
     public void testDefaultsReflection_insideCollection() {
-        SerializationService serializationService = createSerializationService();
+        SerializationService serializationService = createSerializationService(schemaService);
 
         NodeDTO node = new NodeDTO(new NodeDTO(new NodeDTO(2), 1), 0);
 
@@ -283,18 +284,9 @@ public class CompactStreamSerializerTest {
         assertEquals(employerDTO, arrayList.get(2));
     }
 
-    private InternalSerializationService createSerializationService() {
-        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.setEnabled(true);
-        return new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
-                .build();
-    }
-
     @Test
     public void testDefaultsReflection_recursive() {
-        SerializationService serializationService = createSerializationService();
+        SerializationService serializationService = createSerializationService(schemaService);
 
         NodeDTO node = new NodeDTO(new NodeDTO(new NodeDTO(2), 1), 0);
 
@@ -309,7 +301,7 @@ public class CompactStreamSerializerTest {
 
     @Test
     public void testDefaultsReflection_nested() {
-        SerializationService serializationService = createSerializationService();
+        SerializationService serializationService = createSerializationService(schemaService);
 
         EmployeeDTO employeeDTO = new EmployeeDTO(30, 102310312);
         long[] ids = new long[2];
@@ -331,8 +323,8 @@ public class CompactStreamSerializerTest {
 
     @Test
     public void testBits() throws IOException {
-        InternalSerializationService ss1 = createSerializationService();
-        InternalSerializationService ss2 = createSerializationService();
+        InternalSerializationService ss1 = createSerializationService(schemaService);
+        InternalSerializationService ss2 = createSerializationService(schemaService);
 
         BitsDTO bitsDTO = new BitsDTO();
         bitsDTO.a = true;
@@ -442,7 +434,7 @@ public class CompactStreamSerializerTest {
 
     @Test
     public void testDefaultsReflection() {
-        SerializationService serializationService = createSerializationService();
+        SerializationService serializationService = createSerializationService(schemaService);
         EmployeeDTO employeeDTO = new EmployeeDTO(30, 102310312);
         Data data = serializationService.toData(employeeDTO);
         EmployeeDTO object = serializationService.toObject(data);
@@ -469,7 +461,7 @@ public class CompactStreamSerializerTest {
 
     @Test
     public void testGenericRecordHashcode_Equals() {
-        SerializationService serializationService = createSerializationService();
+        SerializationService serializationService = createSerializationService(schemaService);
 
         MainDTO expectedDTO = createMainDTO();
         GenericRecord expectedGenericRecord = createCompactGenericRecord(expectedDTO);
@@ -600,7 +592,7 @@ public class CompactStreamSerializerTest {
 
     @Test
     public void testSchemaEvolution_GenericRecord() {
-        SerializationService serializationService = createSerializationService();
+        SerializationService serializationService = createSerializationService(schemaService);
 
         GenericRecordBuilder builder = compact("fooBarTypeName");
         builder.setInt32("foo", 1);
@@ -609,7 +601,7 @@ public class CompactStreamSerializerTest {
 
         Data data = serializationService.toData(expectedGenericRecord);
 
-        SerializationService serializationService2 = createSerializationService();
+        SerializationService serializationService2 = createSerializationService(schemaService);
 
         GenericRecordBuilder builder2 = compact("fooBarTypeName");
         builder2.setInt32("foo", 1);
@@ -694,7 +686,7 @@ public class CompactStreamSerializerTest {
         EmployeeDTO expected = new EmployeeDTO(20, 102310312);
         Data data = serializationService.toData(expected);
 
-        SerializationService serializationService2 = createSerializationService();
+        SerializationService serializationService2 = createSerializationService(schemaService);
 
         EmployeeDTO actual = serializationService2.toObject(data);
 

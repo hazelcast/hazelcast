@@ -16,8 +16,10 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
+import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.GenericRecord;
@@ -154,6 +156,15 @@ public final class CompactTestUtil {
     static FixedFieldsDTO createFixedFieldsDTO() {
         return new FixedFieldsDTO((byte) 1, true, (short) 1231, 123123123, 123123123123L, 12312.123f,
                 1111.1111111123123);
+    }
+
+    public static InternalSerializationService createSerializationService(SchemaService schemaService) {
+        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
+        compactSerializationConfig.setEnabled(true);
+        return new DefaultSerializationServiceBuilder()
+                .setSchemaService(schemaService)
+                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                .build();
     }
 
     public static SchemaService createInMemorySchemaService() {

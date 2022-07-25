@@ -48,6 +48,16 @@ public final class CompactUtil {
                 + "Use " + methodPrefix + "ArrayOfNullable" + methodSuffix + " instead.");
     }
 
+    public static HazelcastSerializationException exceptionForUnknownField(@Nonnull String fieldName,
+                                                                           @Nonnull Schema schema) {
+        return new HazelcastSerializationException("Unknown field name: '" + fieldName + "' for " + schema);
+    }
+
+    public static HazelcastSerializationException exceptionForUnexpectedFieldKind(@Nonnull FieldKind actualFieldKind,
+                                                                @Nonnull String fieldName) {
+        return new HazelcastSerializationException("Unexpected field kind '" + actualFieldKind + "' for the field: " + fieldName);
+    }
+
     public static boolean isFieldExist(Schema schema, String fieldName, FieldKind fieldKind) {
         FieldDescriptor field = schema.getField(fieldName);
         if (field == null) {
