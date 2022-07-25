@@ -184,6 +184,15 @@ negligible problems with this approach:
 - It does not solve the situations where there are members who have not yet
   joined each other. See: https://github.com/hazelcast/hazelcast/issues/18661
 
+In the implementation of this solution, we added a time based expiration
+mechanism to the remembered addresses and we clean up the old member addresses
+after a specific amount of time passed after the members left the cluster. The
+default value for this retention period is selected as 4 hours which I wanted
+to choose it same with the default missing CP member auto removal period. Also,
+we added an internal property for configuring this period namely
+`hazelcast.previously.joined.member.address.retention.duration.seconds` which
+can be exposed to public API later.
+
 #### Proposed Solution 2
 
 Provide ways to users to dynamically update the member list of the tcp-ip join
