@@ -74,16 +74,6 @@ public class NestedTypesDDLTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_duplicateClass() {
-        execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName()));
-        assertThatThrownBy(() ->
-                execute(format("CREATE TYPE SecondType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName())))
-                .isInstanceOf(HazelcastSqlException.class)
-                // TODO wrong error message
-                .hasMessage("Type already exists: SecondType");
-    }
-
-    @Test
     public void test_dropNonexistentType() {
         assertThatThrownBy(() -> execute("DROP TYPE Foo"))
                 .isInstanceOf(HazelcastSqlException.class)

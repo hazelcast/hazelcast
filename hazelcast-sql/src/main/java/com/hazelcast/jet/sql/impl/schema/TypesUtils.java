@@ -19,9 +19,11 @@ package com.hazelcast.jet.sql.impl.schema;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
+import com.hazelcast.sql.impl.FieldsUtil;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -29,6 +31,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public final class TypesUtils {
     private TypesUtils() { }
@@ -111,6 +114,45 @@ public final class TypesUtils {
         }
     }
 
+    public static Type convertJavaClassToType(
+            final String name,
+            final Class<?> typeClass,
+            final TypesStorage typesStorage
+    ) {
+        final Type type = new Type();
+        type.setName(name);
+        type.setKind(TypeKind.JAVA);
+        type.setJavaClassName(typeClass.getName());
+        final List<Type.TypeField> fields = FieldsUtil.resolveClass(typeClass).entrySet().stream()
+                .map(entry -> {
+                    final QueryDataType queryDataType;
+                    if (isUserClass(entry.getValue())) {
+                        if (entry.getValue().getName().equals(type.getJavaClassName())) {
+                            queryDataType = type.toQueryDataTypeRef();
+                        } else {
+                            final Type existingType = typesStorage.getTypeByClass(entry.getValue());
+                            if (existingType != null) {
+                                queryDataType = existingType.toQueryDataTypeRef();
+                            } else {
+                                queryDataType = null;
+                            }
+                        }
+
+                        if (queryDataType == null) {
+                            return new Type.TypeField(entry.getKey(), entry.getValue().getName());
+                        }
+                    } else {
+                        queryDataType = QueryDataTypeUtils.resolveTypeForClass(entry.getValue());
+                    }
+
+                    return new Type.TypeField(entry.getKey(), queryDataType);
+                })
+                .collect(Collectors.toList());
+        type.setFields(fields);
+
+        return type;
+    }
+
     /**
      * If `type` is null, `typeName` will be used to look it up from the storage.
      */
@@ -148,5 +190,9 @@ public final class TypesUtils {
         }
 
         return convertedType;
+    }
+
+    private static boolean isUserClass(Class<?> clazz) {
+        return !clazz.isPrimitive() && !clazz.getPackage().getName().startsWith("java.");
     }
 }

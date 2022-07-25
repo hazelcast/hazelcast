@@ -476,6 +476,8 @@ public class PlanExecutor {
     SqlResult execute(CreateTypePlan plan) {
         final TypesStorage typesStorage = new TypesStorage(getNodeEngine(hazelcastInstance));
         final String format = plan.options().get(SqlConnector.OPTION_FORMAT);
+        final Type type;
+
         if (SqlConnector.PORTABLE_FORMAT.equals(format)) {
             final Integer factoryId = Optional.ofNullable(plan.option(SqlConnector.OPTION_TYPE_PORTABLE_FACTORY_ID))
                     .map(Integer::parseInt)
@@ -494,7 +496,6 @@ public class PlanExecutor {
             final ClassDefinition existingClassDef = getSerializationService(hazelcastInstance).getPortableContext()
                     .lookupClassDefinition(factoryId, classId, version);
 
-            final Type type;
             if (existingClassDef != null) {
                 type = TypesUtils.convertPortableClassToType(plan.name(), existingClassDef, typesStorage);
             } else {
@@ -516,24 +517,20 @@ public class PlanExecutor {
                     type.getFields().add(new Type.TypeField(planColumn.name(), planColumn.dataType()));
                 }
             }
-
-            if (plan.ifNotExists()) {
-                typesStorage.register(plan.name(), type, true);
-            } else if (plan.replace()) {
-                typesStorage.register(plan.name(), type, false);
-            } else if (!typesStorage.register(plan.name(), type, true)) {
-                throw QueryException.error("Type already exists: " + plan.name());
-            }
-
-            return UpdateSqlResultImpl.createUpdateCountResult(0);
         } else if (SqlConnector.COMPACT_FORMAT.equals(format)) {
-            final Type type = new Type();
+            type = new Type();
             type.setKind(TypeKind.COMPACT);
             type.setName(plan.name());
             final List<Type.TypeField> typeFields = plan.columns().stream()
                     .map(typeColumn -> new Type.TypeField(typeColumn.name(), typeColumn.dataType()))
                     .collect(Collectors.toList());
             type.setFields(typeFields);
+
+            final String compactTypeName = plan.option(SqlConnector.OPTION_TYPE_COMPACT_TYPE_NAME);
+            if (compactTypeName == null || compactTypeName.isEmpty()) {
+                throw QueryException.error("Compact Type Name must not be empty for Compact-based Types.");
+            }
+            type.setCompactTypeName(compactTypeName);
 
             final TreeMap<String, FieldDescriptor> schemaFieldDescriptors = new TreeMap<>();
             for (final Type.TypeField field : typeFields) {
@@ -544,18 +541,7 @@ public class PlanExecutor {
             }
             final Schema schema = new Schema(type.getName(), schemaFieldDescriptors);
             type.setCompactFingerprint(schema.getSchemaId());
-
-            if (plan.ifNotExists()) {
-                typesStorage.register(plan.name(), type, true);
-            } else if (plan.replace()) {
-                typesStorage.register(plan.name(), type, false);
-            } else if (!typesStorage.register(plan.name(), type, true)) {
-                throw QueryException.error("Type already exists: " + plan.name());
-            }
-
-            return UpdateSqlResultImpl.createUpdateCountResult(0);
         } else if (SqlConnector.JAVA_FORMAT.equals(format)) {
-
             final Class<?> typeClass;
             try {
                 typeClass = ReflectionUtils.loadClass(plan.options().get(SqlConnector.OPTION_TYPE_JAVA_CLASS));
@@ -564,18 +550,20 @@ public class PlanExecutor {
                         + plan.options().get(SqlConnector.OPTION_TYPE_JAVA_CLASS) + "'", e);
             }
 
-            // TODO: refactor to register()
-            if (plan.ifNotExists()) {
-                typesStorage.registerType(plan.name(), typeClass, true);
-            } else if (plan.replace()) {
-                typesStorage.registerType(plan.name(), typeClass, false);
-            } else if (!typesStorage.registerType(plan.name(), typeClass, true)) {
-                throw QueryException.error("Type already exists: " + plan.name());
-            }
-            return UpdateSqlResultImpl.createUpdateCountResult(0);
+            type = TypesUtils.convertJavaClassToType(plan.name(), typeClass, typesStorage);
         } else {
             throw QueryException.error("Unsupported type format: " + format);
         }
+
+        if (plan.ifNotExists()) {
+            typesStorage.register(plan.name(), type, true);
+        } else if (plan.replace()) {
+            typesStorage.register(plan.name(), type, false);
+        } else if (!typesStorage.register(plan.name(), type, true)) {
+            throw QueryException.error("Type already exists: " + plan.name());
+        }
+
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
     private List<Object> prepareArguments(QueryParameterMetadata parameterMetadata, List<Object> arguments) {
