@@ -766,4 +766,3 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         return array[index];
     }
 }
-
