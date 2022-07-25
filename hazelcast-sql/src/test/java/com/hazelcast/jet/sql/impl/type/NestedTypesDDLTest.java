@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.type;
 
-import com.hazelcast.core.HazelcastException;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.schema.TypesStorage;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -45,7 +45,7 @@ public class NestedTypesDDLTest extends SqlTestSupport {
         execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName()));
         assertThatThrownBy(() -> instance().getSql()
                 .execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", SecondType.class.getName())))
-                .isInstanceOf(HazelcastException.class)
+                .isInstanceOf(HazelcastSqlException.class)
                 .hasMessage("Type already exists: FirstType");
         assertEquals(FirstType.class.getName(), storage.getType("FirstType").getJavaClassName());
     }
@@ -78,7 +78,7 @@ public class NestedTypesDDLTest extends SqlTestSupport {
         execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName()));
         assertThatThrownBy(() ->
                 execute(format("CREATE TYPE SecondType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName())))
-                .isInstanceOf(HazelcastException.class)
+                .isInstanceOf(HazelcastSqlException.class)
                 // TODO wrong error message
                 .hasMessage("Type already exists: SecondType");
     }
@@ -86,8 +86,8 @@ public class NestedTypesDDLTest extends SqlTestSupport {
     @Test
     public void test_dropNonexistentType() {
         assertThatThrownBy(() -> execute("DROP TYPE Foo"))
-                .isInstanceOf(HazelcastException.class)
-                .hasMessage("Type 'Foo' doesn't exist");
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessage("Type does not exist: Foo");
 
         execute("DROP TYPE IF EXISTS Foo");
     }

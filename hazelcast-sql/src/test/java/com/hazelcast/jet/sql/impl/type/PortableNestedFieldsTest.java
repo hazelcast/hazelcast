@@ -23,11 +23,14 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class PortableNestedFieldsTest extends SqlTestSupport {
@@ -124,5 +127,21 @@ public class PortableNestedFieldsTest extends SqlTestSupport {
 
         assertRowsAnyOrder("SELECT (organization).name FROM test", rows(1, "organization1"));
         assertRowsAnyOrder("SELECT (organization).office.name FROM test", rows(1, "office1"));
+    }
+
+    @Test
+    public void test_portable_unknownClassDef_noColumns() {
+        assertThatThrownBy(() -> instance().getSql().execute("CREATE TYPE Foo " +
+                        "OPTIONS('format'='portable', 'portableFactoryId'='42', 'portableClassId'='43')"))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessage("The given FactoryID/ClassID/Version combination not known to the member. You need" +
+                        " to provide column list for this type");
+    }
+
+    @Test
+    public void test_portable_unknownClassDef_givenColumns() {
+        instance().getSql().execute("CREATE TYPE Foo (column1 INT, column2 VARCHAR) " +
+                "OPTIONS('format'='portable', 'portableFactoryId'='44', 'portableClassId'='45')");
+        // we test that the above command doesn't fail.
     }
 }

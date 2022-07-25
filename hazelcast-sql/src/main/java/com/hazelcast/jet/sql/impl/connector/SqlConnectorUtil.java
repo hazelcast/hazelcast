@@ -20,7 +20,6 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 
@@ -54,7 +53,7 @@ public final class SqlConnectorUtil {
         String value = options.get(propertyName);
         if (value == null) {
             if (defaultValue == null) {
-                throw QueryException.error(SqlErrorCode.GENERIC, "Missing property: " + propertyName);
+                throw QueryException.error("Missing property: " + propertyName);
             }
             return defaultValue;
         }

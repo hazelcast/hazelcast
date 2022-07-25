@@ -107,7 +107,6 @@ import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_QUERY_TEXT;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.jet.impl.util.Util.getSerializationService;
-import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.asInt;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFORMATION;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
@@ -500,7 +499,8 @@ public class PlanExecutor {
                 type = TypesUtils.convertPortableClassToType(plan.name(), existingClassDef, typesStorage);
             } else {
                 if (plan.columns().isEmpty()) {
-                    throw QueryException.error("Column list can not be empty for non-registered Portable Type");
+                    throw QueryException.error("The given FactoryID/ClassID/Version combination not known to the member. " +
+                            "You need to provide column list for this type");
                 }
 
                 type = new Type();
