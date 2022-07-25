@@ -44,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ExternalDataStoreServiceImplTest extends HazelcastTestSupport {
 
-    private final Config config = new Config();
+    private final Config config = smallInstanceConfig();
 
     @Before
     public void configure() {
@@ -54,7 +54,7 @@ public class ExternalDataStoreServiceImplTest extends HazelcastTestSupport {
                 .setName("test-data-store")
                 .setClassName("com.hazelcast.datastore.JdbcDataStoreFactory")
                 .setProperties(properties);
-        config.getExternalDataStoreConfigs().put("test-data-store", externalDataStoreConfig);
+        config.addExternalDataStoreConfig(externalDataStoreConfig);
     }
 
     @Test
@@ -79,7 +79,37 @@ public class ExternalDataStoreServiceImplTest extends HazelcastTestSupport {
         ExternalDataStoreService externalDataStoreService = Util.getNodeEngine(instance).getExternalDataStoreService();
         assertThatThrownBy(() -> externalDataStoreService.getExternalDataStoreFactory("non-existing-data-store"))
                 .isInstanceOf(HazelcastException.class)
-                .hasMessage("External data store 'non-existing-data-store' not found");
+                .hasMessage("External data store factory 'non-existing-data-store' not found");
+    }
+
+    @Test
+    public void should_fail_when_datastore_class_DOES_NOT_implements_ExternalDataStoreFactory() throws Exception {
+        Config wrongConfig = smallInstanceConfig();
+
+        ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
+                .setName("wrong-class-name")
+                .setClassName("java.lang.Object");
+        wrongConfig.addExternalDataStoreConfig(externalDataStoreConfig);
+
+        assertThatThrownBy(() -> createHazelcastInstance(wrongConfig))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessage("External data store 'wrong-class-name' misconfigured: 'java.lang.Object'"
+                        + " must implement 'com.hazelcast.datastore.ExternalDataStoreFactory'");
+    }
+
+    @Test
+    public void should_fail_when_datastore_class_NON_existing() throws Exception {
+        Config wrongConfig = smallInstanceConfig();
+
+        ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
+                .setName("non-existing-class")
+                .setClassName("com.example.NonExistingClass");
+        wrongConfig.addExternalDataStoreConfig(externalDataStoreConfig);
+
+        assertThatThrownBy(() -> createHazelcastInstance(wrongConfig))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessage("External data store 'non-existing-class' misconfigured: "
+                        + "class 'com.example.NonExistingClass' not found");
     }
 }
 

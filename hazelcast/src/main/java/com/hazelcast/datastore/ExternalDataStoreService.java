@@ -31,7 +31,7 @@ public interface ExternalDataStoreService {
      *
      * @param name name of the data store factory
      * @return instance of the factory
-     * @throws HazelcastException if the factory with given name is not found
+     * @throws HazelcastException if the factory with given name is not found or misconfigured
      */
     ExternalDataStoreFactory<?> getExternalDataStoreFactory(String name);
 }

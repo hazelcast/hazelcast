@@ -43,6 +43,14 @@ public class ExternalDataStoreServiceImpl implements ExternalDataStoreService {
             ExternalDataStoreFactory<?> externalDataStoreFactory = ClassLoaderUtil.newInstance(classLoader, className);
             externalDataStoreFactory.init(config);
             return externalDataStoreFactory;
+        } catch (ClassCastException e) {
+            throw new HazelcastException("External data store '" + config.getName() + "' misconfigured: "
+                    + "'" + className + "' must implement '"
+                    + ExternalDataStoreFactory.class.getName() + "'", e);
+
+        } catch (ClassNotFoundException e) {
+            throw new HazelcastException("External data store '" + config.getName() + "' misconfigured: "
+                    + "class '" + className + "' not found", e);
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -52,7 +60,7 @@ public class ExternalDataStoreServiceImpl implements ExternalDataStoreService {
     public ExternalDataStoreFactory<?> getExternalDataStoreFactory(String name) {
         ExternalDataStoreFactory<?> externalDataStoreFactory = dataStoreFactories.get(name);
         if (externalDataStoreFactory == null) {
-            throw new HazelcastException("External data store '" + name + "' not found");
+            throw new HazelcastException("External data store factory '" + name + "' not found");
         }
         return externalDataStoreFactory;
     }
