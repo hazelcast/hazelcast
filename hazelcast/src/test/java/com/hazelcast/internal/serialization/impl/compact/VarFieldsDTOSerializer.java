@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package example.serialization;
+package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
+import example.serialization.InnerDTO;
 
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;

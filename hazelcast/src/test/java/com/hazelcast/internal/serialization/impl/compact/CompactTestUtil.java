@@ -26,11 +26,9 @@ import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import example.serialization.EmployeeDTO;
 import example.serialization.ExternalizableEmployeeDTO;
-import example.serialization.FixedFieldsDTO;
 import example.serialization.InnerDTO;
 import example.serialization.MainDTO;
 import example.serialization.NamedDTO;
-import example.serialization.VarFieldsDTO;
 
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
