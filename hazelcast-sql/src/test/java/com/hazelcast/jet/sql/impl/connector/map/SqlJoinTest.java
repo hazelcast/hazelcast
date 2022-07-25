@@ -33,6 +33,7 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
+import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 
@@ -700,6 +701,27 @@ public class SqlJoinTest {
                             new Row(2, "value-2")
                     )
             );
+        }
+
+        @Test
+        public void test_whenNaturalJoin_noErrorShouldHappen() {
+            createMapping(instance(), "Hzl_Transaction", Long.class, Transaction.class);
+            createMapping(instance(), "Hzl_Account", Long.class, Account.class);
+
+            sqlService.execute("SELECT * FROM Hzl_Transaction JOIN Hzl_Account USING(bankId, accountNumber)");
+            sqlService.execute("SELECT * FROM Hzl_Transaction JOIN Hzl_Account USING(bankId, accountNumber)");
+        }
+
+        public static class Transaction implements Serializable {
+            public String bankId;
+            public String accountNumber;
+            public int amount;
+        }
+
+        public static class Account implements Serializable {
+            public String bankId;
+            public String accountNumber;
+            public int balance;
         }
 
         @Test

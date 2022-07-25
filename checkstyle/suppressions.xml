@@ -428,4 +428,7 @@
     <suppress checks="Javadoc|Name|MagicNumber|VisibilityModifier" files="[\\/]src[\\/]test[\\/]java[\\/]com[\\/]hazelcast[\\/]jet"/>
 
     <suppress checks="" files="target[\\/]generated-sources"/>
+
+    <!-- Suppress checks for modified Calcite file -->
+    <suppress checks="" files="org[\\/]apache[\\/]calcite[\\/]sql[\\/]validate[\\/]SqlValidatorImpl.java"/>
 </suppressions>
