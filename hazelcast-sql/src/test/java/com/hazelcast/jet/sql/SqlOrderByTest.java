@@ -610,7 +610,121 @@ public class SqlOrderByTest extends SqlTestSupport {
                 .hasMessageContaining("FETCH/OFFSET is only supported for the top-level SELECT");
     }
 
-    private void addIndex(List<String> fieldNames, IndexType type) {
+    @Test
+    public void testConcurrentPutAndOrderbyQueries() {
+        IMap<Object, AbstractPojo> map = getTarget().getMap(stableMapName());
+
+        IndexConfig indexConfig = new IndexConfig()
+            .setName("Index_" + randomName())
+            .setType(SORTED);
+
+        indexConfig.addAttribute("intVal");
+        map.addIndex(indexConfig);
+
+        ExecutorService executor = Executors.newFixedThreadPool(10);
+
+        int threadsCount = 10;
+        int keysPerThread = 5000;
+        CountDownLatch latch = new CountDownLatch(threadsCount);
+        AtomicReference<Throwable> exception = new AtomicReference<>();
+
+        for (int i = 0; i < threadsCount; ++i) {
+            int index = i;
+            executor.submit(() -> {
+
+                try {
+                    if (index < threadsCount / 2) {
+
+                        int startingIndex = index * keysPerThread;
+                        // Put thread
+                        for (int n = 0; n < keysPerThread; ++n) {
+                            long keyIndex = startingIndex + n;
+                            getTarget().getMap(stableMapName()).put(key(keyIndex), value(keyIndex));
+                        }
+
+                    } else {
+                        for (int n = 0; n < 10; ++n) {
+                            // order by queries
+                            String sql = String.format("SELECT intVal, varcharVal FROM %s ORDER BY intVal", stableMapName());
+                            assertSqlResultOrdered(sql, singletonList("intVal"), singletonList(false), -1);
+                        }
+                    }
+                } catch (Throwable t) {
+                    t.printStackTrace(System.err);
+                    exception.compareAndSet(null, t);
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        assertOpenEventually(latch);
+        assertNull(exception.get());
+        executor.shutdown();
+    }
+
+    @Test
+    public void testConcurrentUpdateAndOrderbyQueries() {
+        IMap<Object, AbstractPojo> map = getTarget().getMap(stableMapName());
+
+        IndexConfig indexConfig = new IndexConfig()
+            .setName("Index_" + randomName())
+            .setType(SORTED);
+
+        indexConfig.addAttribute("intVal");
+        map.addIndex(indexConfig);
+
+        ExecutorService executor = Executors.newFixedThreadPool(10);
+
+        int threadsCount = 10;
+        int keysPerThread = 5000;
+        CountDownLatch latch = new CountDownLatch(threadsCount);
+        AtomicReference<Throwable> exception = new AtomicReference<>();
+
+        // Pre load data
+        for (long i = 0; i < threadsCount * keysPerThread; ++i) {
+            getTarget().getMap(stableMapName()).put(key(i), value(i));
+        }
+
+        for (int i = 0; i < threadsCount; ++i) {
+            int index = i;
+            executor.submit(() -> {
+
+                try {
+                    if (index < threadsCount / 2) {
+
+                        int startingIndex = index * keysPerThread;
+                        // updater thread
+                        for (int n = 0; n < keysPerThread; ++n) {
+                            int diff = ThreadLocalRandom.current().nextInt(10);
+                            diff = ThreadLocalRandom.current().nextBoolean() ? diff : -diff;
+                            long keyIndex = startingIndex + n;
+                            long valueIndex = keyIndex + diff;
+                            getTarget().getMap(stableMapName()).put(key(keyIndex), value(valueIndex));
+                        }
+
+                    } else {
+                        for (int n = 0; n < 10; ++n) {
+                            // order by queries
+                            String sql = String.format("SELECT intVal, varcharVal FROM %s ORDER BY intVal", stableMapName());
+                            assertSqlResultOrdered(sql, singletonList("intVal"), singletonList(false), -1);
+                        }
+                    }
+                } catch (Throwable t) {
+                    t.printStackTrace(System.err);
+                    exception.compareAndSet(null, t);
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        assertOpenEventually(latch);
+        assertNull(exception.get());
+        executor.shutdown();
+    }
+
+        private void addIndex(List<String> fieldNames, IndexType type) {
         addIndex(fieldNames, type, mapName());
     }
 
