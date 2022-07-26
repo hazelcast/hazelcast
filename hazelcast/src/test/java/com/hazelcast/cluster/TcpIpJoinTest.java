@@ -16,6 +16,7 @@
 
 package com.hazelcast.cluster;
 
+import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InterfacesConfig;
 import com.hazelcast.config.JoinConfig;
@@ -25,7 +26,10 @@ import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.HazelcastInstanceFactory;
+import com.hazelcast.instance.TestUtil;
+import com.hazelcast.nio.Address;
 import com.hazelcast.spi.properties.GroupProperty;
+import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -35,6 +39,10 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -223,5 +231,104 @@ public class TcpIpJoinTest extends AbstractJoinTest {
                 .setEnabled(true).addMember("127.0.0.1");
 
         assertIncompatible(config1, config2);
+    }
+
+    @Test
+    public void test_tcpIpJoinerRemembersJoinedMemberAddresses() {
+        Config config1 = smallInstanceConfig()
+                .setProperty("hazelcast.merge.first.run.delay.seconds", "10")
+                .setProperty("hazelcast.merge.next.run.delay.seconds", "10");
+        JoinConfig join1 = config1.getNetworkConfig().getJoin();
+        join1.getMulticastConfig().setEnabled(false);
+        TcpIpConfig tcpIpConfig1 = join1.getTcpIpConfig();
+        tcpIpConfig1.setEnabled(true);
+
+        Config config2 = smallInstanceConfig();
+        JoinConfig join2 = config2.getNetworkConfig().setPort(8899).getJoin();
+        join2.getMulticastConfig().setEnabled(false);
+        TcpIpConfig tcpIpConfig2 = join2.getTcpIpConfig();
+        tcpIpConfig2.setEnabled(true).addMember("127.0.0.1:5701");
+
+        Config config3 = smallInstanceConfig();
+        JoinConfig join3 = config3.getNetworkConfig().setPort(9099).getJoin();
+        join3.getMulticastConfig().setEnabled(false);
+        TcpIpConfig tcpIpConfig3 = join3.getTcpIpConfig();
+        tcpIpConfig3.setEnabled(true).addMember("127.0.0.1:5701");
+
+        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config1);
+        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config2);
+        HazelcastInstance hz3 = Hazelcast.newHazelcastInstance(config3);
+        Address hz2Address = hz2.getCluster().getLocalMember().getAddress();
+        Address hz3Address = hz3.getCluster().getLocalMember().getAddress();
+        TcpIpJoiner tcpJoiner1 = (TcpIpJoiner) TestUtil.getNode(hz1).getJoiner();
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertContainsAll(tcpJoiner1.getKnownMemberAddresses().keySet(), Arrays.asList(hz2Address, hz3Address));
+            }
+        });
+
+        hz2.shutdown();
+        hz3.shutdown();
+        assertTrueAllTheTime(new AssertTask() {
+            @Override
+            public void run() {
+                assertContainsAll(tcpJoiner1.getKnownMemberAddresses().keySet(), Arrays.asList(hz2Address, hz3Address));
+            }
+        }, 15);
+    }
+
+    @Test
+    public void test_tcpIpJoinerCleanupAddressesAfterAddressRetentionPeriodIsPassed() throws Exception {
+        Config config1 = smallInstanceConfig()
+                .setProperty("hazelcast.merge.first.run.delay.seconds", "10")
+                .setProperty("hazelcast.merge.next.run.delay.seconds", "10");
+        JoinConfig join1 = config1.getNetworkConfig().getJoin();
+        join1.getMulticastConfig().setEnabled(false);
+        TcpIpConfig tcpIpConfig1 = join1.getTcpIpConfig();
+        tcpIpConfig1.setEnabled(true);
+
+        Config config2 = smallInstanceConfig();
+        JoinConfig join2 = config2.getNetworkConfig().setPort(8899).getJoin();
+        join2.getMulticastConfig().setEnabled(false);
+        TcpIpConfig tcpIpConfig2 = join2.getTcpIpConfig();
+        tcpIpConfig2.setEnabled(true).addMember("127.0.0.1:5701");
+
+        Config config3 = smallInstanceConfig();
+        JoinConfig join3 = config3.getNetworkConfig().setPort(9099).getJoin();
+        join3.getMulticastConfig().setEnabled(false);
+        TcpIpConfig tcpIpConfig3 = join3.getTcpIpConfig();
+        tcpIpConfig3.setEnabled(true).addMember("127.0.0.1:5701");
+
+        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config1);
+        TcpIpJoiner tcpJoiner1 = (TcpIpJoiner) TestUtil.getNode(hz1).getJoiner();
+        overrideAddressRetentionDuration(tcpJoiner1, TimeUnit.SECONDS.toMillis(10));
+
+        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config2);
+        HazelcastInstance hz3 = Hazelcast.newHazelcastInstance(config3);
+        Address hz2Address = hz2.getCluster().getLocalMember().getAddress();
+        Address hz3Address = hz3.getCluster().getLocalMember().getAddress();
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                assertContainsAll(tcpJoiner1.getKnownMemberAddresses().keySet(), Arrays.asList(hz2Address, hz3Address));
+            }
+        });
+        hz3.shutdown();
+        // Timeout below must be greater than both hazelcast.merge.next.run.delay.seconds and previouslyJoinedMemberAddressRetentionDuration
+        assertTrueEventually(new AssertTask() {
+            @Override
+            public void run() {
+                Set<Address> rememberedAddresses = tcpJoiner1.getKnownMemberAddresses().keySet();
+                assertContains(rememberedAddresses, hz2Address);
+                assertNotContains(rememberedAddresses, hz3Address);
+            }
+        }, 20);
+    }
+
+    private static void overrideAddressRetentionDuration(TcpIpJoiner tcpIpJoiner, long addressRetentionDuration) throws Exception {
+        Field privateField = TcpIpJoiner.class.getDeclaredField("previouslyJoinedMemberAddressRetentionDuration");
+        privateField.setAccessible(true);
+        privateField.set(tcpIpJoiner, addressRetentionDuration);
     }
 }
