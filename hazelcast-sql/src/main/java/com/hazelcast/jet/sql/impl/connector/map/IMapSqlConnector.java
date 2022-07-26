@@ -172,7 +172,8 @@ public class IMapSqlConnector implements SqlConnector {
             @Nullable Expression<Boolean> filter,
             @Nonnull List<Expression<?>> projection,
             @Nullable BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
-            byte watermarkKey) { // Note: watermarkKey is unused, IMap is not a streaming source
+            byte watermarkKey // Note: watermarkKey is unused, IMap is not a streaming source
+    ) {
         if (eventTimePolicyProvider != null) {
             throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
         }

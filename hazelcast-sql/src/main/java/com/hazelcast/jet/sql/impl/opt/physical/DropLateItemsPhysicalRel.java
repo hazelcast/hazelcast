@@ -41,20 +41,20 @@ import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHaz
 import static com.hazelcast.sql.impl.expression.ColumnExpression.create;
 
 public class DropLateItemsPhysicalRel extends SingleRel implements PhysicalRel {
-    private final List<Integer> wmField;
+    private final List<Integer> wmFields;
 
     protected DropLateItemsPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelNode input,
-            List<Integer> wmField
+            List<Integer> wmFields
     ) {
         super(cluster, traitSet, input);
-        this.wmField = wmField;
+        this.wmFields = wmFields;
     }
 
     public Map<Integer, Expression<?>> timestampExpression() {
-        return wmField.stream()
+        return wmFields.stream()
                 .map(i -> tuple2(i, create(i, toHazelcastType(getRowType().getFieldList().get(i).getType()))))
                 .collect(Collectors.toMap(Tuple2::f0, Tuple2::f1));
     }
@@ -71,7 +71,7 @@ public class DropLateItemsPhysicalRel extends SingleRel implements PhysicalRel {
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new DropLateItemsPhysicalRel(getCluster(), traitSet, sole(inputs), wmField);
+        return new DropLateItemsPhysicalRel(getCluster(), traitSet, sole(inputs), wmFields);
     }
 
     @Override

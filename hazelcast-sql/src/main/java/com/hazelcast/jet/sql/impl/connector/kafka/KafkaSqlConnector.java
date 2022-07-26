@@ -124,7 +124,8 @@ public class KafkaSqlConnector implements SqlConnector {
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projections,
             @Nullable BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
-            byte watermarkKey) {
+            byte watermarkKey
+    ) {
         KafkaTable table = (KafkaTable) table0;
 
         return dag.newUniqueVertex(

@@ -36,8 +36,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Traverse optimized physical relational tree
- * and manually assign watermark keys.
+ * Traverse a relational tree and assign watermark keys.
  */
 public class WatermarkKeysAssigner {
     private final PhysicalRel root;
@@ -56,7 +55,7 @@ public class WatermarkKeysAssigner {
     }
 
     public Map<Integer, Byte> getWatermarkedFieldsKey(RelNode node) {
-        return visitor.getRefToWmKeyMapping().get(node);
+        return visitor.getRelToWmKeyMapping().get(node);
     }
 
     /**
@@ -64,26 +63,26 @@ public class WatermarkKeysAssigner {
      * from bottom to top over whole rel tree.
      */
     private class BottomUpWatermarkKeyAssignerVisitor extends RelVisitor {
-        private final Map<RelNode, Map<Integer, Byte>> refToWmKeyMapping = new HashMap<>();
+        private final Map<RelNode, Map<Integer, Byte>> relToWmKeyMapping = new HashMap<>();
 
         BottomUpWatermarkKeyAssignerVisitor() {
         }
 
-        public Map<RelNode, Map<Integer, Byte>> getRefToWmKeyMapping() {
-            return refToWmKeyMapping;
+        public Map<RelNode, Map<Integer, Byte>> getRelToWmKeyMapping() {
+            return relToWmKeyMapping;
         }
 
         @Override
         public void visit(RelNode node, int ordinal, @Nullable RelNode parent) {
             // front wave of recursion
 
-            // FullScan rel is always a leaf node in rel tree.
             if (node instanceof FullScanPhysicalRel) {
+                assert node.getInputs().isEmpty() : "FullScan is not a leaf";
                 FullScanPhysicalRel scan = (FullScanPhysicalRel) node;
                 int idx = scan.watermarkedColumnIndex();
                 if (idx >= 0) {
                     scan.setWatermarkKey(WatermarkKeysAssigner.this.keyCounter);
-                    refToWmKeyMapping.put(scan, Collections.singletonMap(idx, keyCounter));
+                    relToWmKeyMapping.put(scan, Collections.singletonMap(idx, keyCounter));
                 }
                 return;
             }
@@ -94,7 +93,7 @@ public class WatermarkKeysAssigner {
             if (node instanceof CalcPhysicalRel) {
                 CalcPhysicalRel calc = (CalcPhysicalRel) node;
                 List<RexNode> projects = calc.getProgram().expandList(calc.getProgram().getProjectList());
-                Map<Integer, Byte> refByteMap = refToWmKeyMapping.get(calc.getInput());
+                Map<Integer, Byte> refByteMap = relToWmKeyMapping.get(calc.getInput());
                 if (refByteMap == null) {
                     return;
                 }
@@ -107,12 +106,12 @@ public class WatermarkKeysAssigner {
                     }
                 }
 
-                refToWmKeyMapping.put(calc, calcRefByteMap);
+                relToWmKeyMapping.put(calc, calcRefByteMap);
             } else if (node instanceof UnionPhysicalRel) {
                 UnionPhysicalRel union = (UnionPhysicalRel) node;
                 Set<Integer> usedColumns = new HashSet<>();
                 for (RelNode input : union.getInputs()) {
-                    usedColumns.addAll(refToWmKeyMapping.getOrDefault(input, Collections.emptyMap()).keySet());
+                    usedColumns.addAll(relToWmKeyMapping.getOrDefault(input, Collections.emptyMap()).keySet());
                 }
 
                 // in that case we cannot use any watermarks.
@@ -121,14 +120,14 @@ public class WatermarkKeysAssigner {
                 }
 
                 int idx = 0;
-                Map<Integer, Byte> refByteMap = refToWmKeyMapping.get(union.getInput(idx++));
+                Map<Integer, Byte> refByteMap = relToWmKeyMapping.get(union.getInput(idx++));
                 for (int i = idx; i < union.getInputs().size(); ++i) {
-                    refToWmKeyMapping.put(union.getInput(i), refByteMap);
+                    relToWmKeyMapping.put(union.getInput(i), refByteMap);
                 }
 
                 RelVisitor topDownWmKeysAssigner = new TopDownUnionWatermarkKeyAssignerVisitor(
                         union,
-                        refToWmKeyMapping
+                        relToWmKeyMapping
                 );
 
                 topDownWmKeysAssigner.go(union);
@@ -165,13 +164,13 @@ public class WatermarkKeysAssigner {
             } else if (node instanceof Join) {
                 // Hash Join and Nested Loop Join just forward watermarks from left input.
                 Join join = (Join) node;
-                Map<Integer, Byte> refByteMap = refToWmKeyMapping.get(join.getLeft());
-                refToWmKeyMapping.put(node, refByteMap);
+                Map<Integer, Byte> refByteMap = relToWmKeyMapping.get(join.getLeft());
+                relToWmKeyMapping.put(node, refByteMap);
             } else {
                 // anything else -- just forward without any changes.
                 if (!node.getInputs().isEmpty()) {
-                    Map<Integer, Byte> refByteMap = refToWmKeyMapping.get(node.getInputs().iterator().next());
-                    refToWmKeyMapping.put(node, refByteMap);
+                    Map<Integer, Byte> refByteMap = relToWmKeyMapping.get(node.getInputs().iterator().next());
+                    relToWmKeyMapping.put(node, refByteMap);
                 }
             }
         }

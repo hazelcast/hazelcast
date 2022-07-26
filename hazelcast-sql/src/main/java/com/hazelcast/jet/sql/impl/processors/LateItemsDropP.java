@@ -46,14 +46,14 @@ public class LateItemsDropP extends AbstractProcessor {
     @Probe(name = "lateEventsDropped")
     private final Counter lateEventsDropped = SwCounter.newSwCounter();
 
-    private final Map<Byte, Expression<?>> timestampExpression;
+    private final Map<Byte, Expression<?>> timestampExpressions;
     private final Object2LongHashMap<Byte> currentWm = new Object2LongHashMap<>(Long.MAX_VALUE);
 
     private ExpressionEvalContext evalContext;
 
-    public LateItemsDropP(Map<Byte, Expression<?>> timestampExpression) {
-        this.timestampExpression = timestampExpression;
-        for (Byte wmKey : timestampExpression.keySet()) {
+    public LateItemsDropP(Map<Byte, Expression<?>> timestampExpressions) {
+        this.timestampExpressions = timestampExpressions;
+        for (Byte wmKey : timestampExpressions.keySet()) {
             currentWm.put(wmKey, Long.MIN_VALUE);
         }
     }
@@ -67,7 +67,7 @@ public class LateItemsDropP extends AbstractProcessor {
     @Override
     protected boolean tryProcess(int ordinal, @Nonnull Object item) {
         Row row = ((JetSqlRow) item).getRow();
-        for (Map.Entry<Byte, Expression<?>> entry: timestampExpression.entrySet()) {
+        for (Map.Entry<Byte, Expression<?>> entry: timestampExpressions.entrySet()) {
             long timestamp = WindowUtils.extractMillis(entry.getValue().eval(row, evalContext));
             long lastWmTimestamp = currentWm.getValue(entry.getKey());
             if (timestamp < lastWmTimestamp) {

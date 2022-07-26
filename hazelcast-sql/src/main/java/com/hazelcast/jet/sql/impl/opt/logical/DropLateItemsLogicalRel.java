@@ -34,20 +34,20 @@ import java.util.List;
  * the last watermark.
  */
 public class DropLateItemsLogicalRel extends SingleRel implements LogicalRel {
-    private final List<Integer> wmField;
+    private final List<Integer> wmFields;
 
     protected DropLateItemsLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelNode input,
-            List<Integer> wmField
+            List<Integer> wmFields
     ) {
         super(cluster, traitSet, input);
-        this.wmField = wmField;
+        this.wmFields = wmFields;
     }
 
     public List<Integer> wmField() {
-        return wmField;
+        return wmFields;
     }
 
     @Override
@@ -57,7 +57,7 @@ public class DropLateItemsLogicalRel extends SingleRel implements LogicalRel {
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
-        return new DropLateItemsLogicalRel(getCluster(), traitSet, sole(inputs), wmField);
+        return new DropLateItemsLogicalRel(getCluster(), traitSet, sole(inputs), wmFields);
     }
 
     @Override
