@@ -66,12 +66,12 @@ public enum JobStatus {
      */
     COMPLETED(7);
 
+    private static final JobStatus[] VALUES = values();
+    private final int id;
+
     JobStatus(int id) {
         this.id = id;
     }
-
-    private final int id;
-    private static final JobStatus[] VALUES = values();
 
     /**
      * Returns {@code true} if this state is terminal - a job in this state

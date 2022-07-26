@@ -160,6 +160,7 @@ public class JobAndSqlSummary {
 
     @Override
     public int hashCode() {
-        return Objects.hash(isLightJob, jobId, executionId, nameOrId, status, submissionTime, completionTime, failureText, sqlSummary);
+        return Objects.hash(isLightJob, jobId, executionId, nameOrId, status, submissionTime, completionTime, failureText,
+                sqlSummary);
     }
 }
