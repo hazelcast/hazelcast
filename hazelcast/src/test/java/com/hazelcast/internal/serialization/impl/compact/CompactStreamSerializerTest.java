@@ -688,4 +688,33 @@ public class CompactStreamSerializerTest {
         assertEquals(0, actual.getId());
     }
 
+    private static class EmptyDTO {
+        EmptyDTO() {
+        }
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            return o != null && getClass() == o.getClass();
+        }
+
+        @Override
+        public String toString() {
+            return "EmptyDTO{}";
+        }
+    }
+
+    private static class EmptyDTOSerializer implements CompactSerializer<EmptyDTO> {
+        @Nonnull
+        @Override
+        public EmptyDTO read(@Nonnull CompactReader in) {
+            return new EmptyDTO();
+        }
+
+        @Override
+        public void write(@Nonnull CompactWriter out, @Nonnull EmptyDTO object) {
+            // no-op
+        }
+    }
 }

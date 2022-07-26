@@ -21,6 +21,9 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.nio.serialization.compact.CompactReader;
+import com.hazelcast.nio.serialization.compact.CompactSerializer;
+import com.hazelcast.nio.serialization.compact.CompactWriter;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
@@ -28,6 +31,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
+import javax.annotation.Nonnull;
+import java.util.Arrays;
 import java.util.Random;
 
 import static org.junit.Assert.assertEquals;
@@ -102,5 +107,76 @@ public class CompactBooleanFieldTest {
         BoolArrayDTO actual = serializationService.toObject(data);
 
         assertEquals(expected, actual);
+    }
+
+    private static class BoolArrayDTO {
+        private final boolean[] bools;
+
+        BoolArrayDTO(boolean[] bools) {
+            this.bools = bools;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            BoolArrayDTO b = (BoolArrayDTO) o;
+            return Arrays.equals(bools, b.bools);
+        }
+
+        @Override
+        public int hashCode() {
+            return Arrays.hashCode(bools);
+        }
+
+        @Override
+        public String toString() {
+            return "Bools{"
+                    + "bools=" + Arrays.toString(bools)
+                    + '}';
+        }
+    }
+
+    private static class BoolArrayDTOSerializer implements CompactSerializer<BoolArrayDTO> {
+        @Nonnull
+        @Override
+        public BoolArrayDTO read(@Nonnull CompactReader in) {
+            boolean[] bools = in.readArrayOfBoolean("bools");
+            return new BoolArrayDTO(bools);
+        }
+
+        @Override
+        public void write(@Nonnull CompactWriter out, @Nonnull BoolArrayDTO object) {
+            out.writeArrayOfBoolean("bools", object.bools);
+        }
+    }
+
+    private static class BoolArrayDTOSerializer2 implements CompactSerializer<BoolArrayDTO> {
+        private final int itemCount;
+
+        BoolArrayDTOSerializer2(int itemCount) {
+            this.itemCount = itemCount;
+        }
+
+        @Nonnull
+        @Override
+        public BoolArrayDTO read(@Nonnull CompactReader in) {
+            boolean[] bools = new boolean[itemCount];
+            for (int i = 0; i < itemCount; i++) {
+                bools[i] = in.readBoolean(Integer.toString(i));
+            }
+            return new BoolArrayDTO(bools);
+        }
+
+        @Override
+        public void write(@Nonnull CompactWriter out, @Nonnull BoolArrayDTO object) {
+            for (int i = 0; i < itemCount; i++) {
+                out.writeBoolean(Integer.toString(i), object.bools[i]);
+            }
+        }
     }
 }

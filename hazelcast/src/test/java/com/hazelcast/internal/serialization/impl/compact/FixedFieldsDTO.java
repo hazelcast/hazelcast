@@ -17,7 +17,6 @@ package com.hazelcast.internal.serialization.impl.compact;
 
 import java.util.Objects;
 
-@SuppressWarnings({"checkstyle:ParameterNumber"})
 public class FixedFieldsDTO {
 
     public byte b;
