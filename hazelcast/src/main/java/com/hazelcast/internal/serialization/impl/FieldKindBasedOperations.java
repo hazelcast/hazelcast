@@ -17,10 +17,12 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.serialization.impl.compact.DefaultCompactWriter;
+import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
 import com.hazelcast.nio.serialization.AbstractGenericRecord;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 
+import javax.annotation.Nullable;
 import java.util.Objects;
 
 /**
@@ -30,7 +32,7 @@ public interface FieldKindBasedOperations {
 
     int VARIABLE_SIZE = -1;
 
-    default Object readAsLeafObjectOnQuery(InternalGenericRecord genericRecord, String fieldName) {
+    default Object readAsLeafObjectOnQuery(InternalGenericRecord genericRecord, String fieldName, @Nullable FieldDescriptor fd) {
         return readGenericRecordOrPrimitive(genericRecord, fieldName);
     }
 

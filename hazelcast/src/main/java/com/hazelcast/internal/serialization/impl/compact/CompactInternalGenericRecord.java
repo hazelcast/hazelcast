@@ -420,6 +420,38 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return (T) getVariableSize(fieldName, COMPACT, in -> serializer.read(in, schemaIncludedInBinary));
     }
 
+    /**
+     * {@link CompactInternalGenericRecord#getObject(String)} with known field descriptor. Introduced not to call
+     * {@link com.hazelcast.internal.serialization.impl.compact.Schema#getField(String)} twice if the field
+     * descriptor is known.
+     *
+     * @param fd Field descriptor of the field. This field descriptor have to be retrieved via
+     * {@link CompactInternalGenericRecord#getField(String)} method of this {@link CompactInternalGenericRecord}.
+     * @return a nested field as a concrete deserialized object rather than generic record
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
+     */
+    @Nullable
+    public <T> T getObject(@Nonnull FieldDescriptor fd) {
+        return (T) getVariableSize(fd, in -> serializer.read(in, schemaIncludedInBinary));
+    }
+
+    /**
+     * Used in {@link com.hazelcast.internal.serialization.impl.GenericRecordQueryReader} to get rid of multiple calls
+     * to {@link com.hazelcast.internal.serialization.impl.compact.Schema#getField(String)}.
+     * @param fieldName the name of the field
+     * @return field descriptor of the field named fieldName
+     * @throws IllegalArgumentException if the field name does not exist in the class definition
+     */
+    @Nonnull
+    public FieldDescriptor getField(@Nonnull String fieldName) {
+        FieldDescriptor field = schema.getField(fieldName);
+        if (field == null) {
+            throw new IllegalArgumentException("Field name " + fieldName + " does not exist in the schema");
+        }
+        return field;
+    }
+
     @Override
     @Nullable
     public boolean[] getArrayOfBoolean(@Nonnull String fieldName) {
@@ -779,6 +811,22 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     public <T> T[] getArrayOfObject(@Nonnull String fieldName, Class<T> componentType) {
         return (T[]) getArrayOfVariableSize(fieldName, ARRAY_OF_COMPACT,
                 length -> (T[]) Array.newInstance(componentType, length),
+                in -> serializer.read(in, schemaIncludedInBinary));
+    }
+
+    /**
+     * {@link CompactInternalGenericRecord#getArrayOfObject} with known field descriptor. Introduced not to call
+     * {@link com.hazelcast.internal.serialization.impl.compact.Schema#getField(String)} twice if the field
+     * descriptor is known.
+     *
+     * @param fd Field descriptor of the field. This field descriptor have to be retrieved via
+     * {@link CompactInternalGenericRecord#getField(String)} method of this {@link CompactInternalGenericRecord}.
+     * @return a nested field as array of deserialized objects rather than array of the  generic records
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
+     */
+    public <T> T[] getArrayOfObject(@Nonnull FieldDescriptor fd, Class<T> componentType) {
+        return (T[]) getArrayOfVariableSize(fd, length -> (T[]) Array.newInstance(componentType, length),
                 in -> serializer.read(in, schemaIncludedInBinary));
     }
 

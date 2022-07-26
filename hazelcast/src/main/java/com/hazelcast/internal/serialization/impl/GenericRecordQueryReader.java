@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.serialization.impl;
 
+import com.hazelcast.internal.serialization.impl.compact.CompactInternalGenericRecord;
+import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
 import com.hazelcast.internal.serialization.impl.portable.PortableInternalGenericRecord;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.nio.serialization.FieldKind;
@@ -97,9 +99,10 @@ public final class GenericRecordQueryReader implements ValueReader {
         if (fieldPath.endsWith(".")) {
             throw new IllegalArgumentException("Malformed path " + fieldPath);
         }
+
         boolean hasField = rootRecord.hasField(fieldPath);
         if (hasField) {
-            return readLeaf(rootRecord, fieldPath, true);
+            return readLeaf(rootRecord, fieldPath);
         }
 
         LinkedList<Object> results = new LinkedList<>();
@@ -192,7 +195,7 @@ public final class GenericRecordQueryReader implements ValueReader {
             // ex: attribute
             while (iterator.hasNext()) {
                 InternalGenericRecord record = (InternalGenericRecord) iterator.next();
-                Object leaf = readLeaf(record, fieldName, rootRecord.hasField(fieldName));
+                Object leaf = record.hasField(fieldName) ? readLeaf(record, fieldName) : null;
                 iterator.set(leaf);
             }
         } else if (path.endsWith("[any]")) {
@@ -200,7 +203,7 @@ public final class GenericRecordQueryReader implements ValueReader {
             while (iterator.hasNext()) {
                 InternalGenericRecord record = (InternalGenericRecord) iterator.next();
                 iterator.remove();
-                Object leaves = readLeaf(record, fieldName, rootRecord.hasField(fieldName));
+                Object leaves = record.hasField(fieldName) ? readLeaf(record, fieldName) : null;
                 if (leaves == null) {
                     multiResult.setNullOrEmptyTarget(true);
                 } else if (leaves instanceof Object[]) {
@@ -245,12 +248,15 @@ public final class GenericRecordQueryReader implements ValueReader {
         return fieldOperations(kind).readIndexed(record, path, index);
     }
 
-    private Object readLeaf(InternalGenericRecord record, String path, boolean hasField) {
-        if (!hasField) {
-            return null;
+    private Object readLeaf(InternalGenericRecord record, String path) {
+        if (record instanceof CompactInternalGenericRecord) {
+            FieldDescriptor fd = ((CompactInternalGenericRecord) record).getField(path);
+            return fieldOperations(fd.getKind()).readAsLeafObjectOnQuery(record, path, fd);
+        } else {
+            // Getting field descriptor is not possible in portable.
+            FieldKind kind = record.getFieldKind(path);
+            return fieldOperations(kind).readAsLeafObjectOnQuery(record, path, null);
         }
-        FieldKind kind = record.getFieldKind(path);
-        return fieldOperations(kind).readAsLeafObjectOnQuery(record, path);
     }
 
 }

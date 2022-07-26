@@ -17,7 +17,9 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.json.JsonEscape;
+import com.hazelcast.internal.serialization.impl.compact.CompactInternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.compact.DefaultCompactWriter;
+import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
 import com.hazelcast.nio.serialization.AbstractGenericRecord;
 import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.GenericRecord;
@@ -722,8 +724,8 @@ public final class FieldOperations {
         };
         ALL[FieldKind.COMPACT.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readAsLeafObjectOnQuery(InternalGenericRecord genericRecord, String fieldName) {
-                return genericRecord.getObject(fieldName);
+            public Object readAsLeafObjectOnQuery(InternalGenericRecord genericRecord, String fieldName, FieldDescriptor fd) {
+                return ((CompactInternalGenericRecord) genericRecord).getObject(fd);
             }
 
             @Override
@@ -743,8 +745,8 @@ public final class FieldOperations {
         };
         ALL[FieldKind.ARRAY_OF_COMPACT.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readAsLeafObjectOnQuery(InternalGenericRecord genericRecord, String fieldName) {
-                return genericRecord.getArrayOfObject(fieldName, Object.class);
+            public Object readAsLeafObjectOnQuery(InternalGenericRecord genericRecord, String fieldName, FieldDescriptor fd) {
+                return ((CompactInternalGenericRecord) genericRecord).getArrayOfObject(fd, Object.class);
             }
 
             @Override
@@ -775,7 +777,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.PORTABLE.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readAsLeafObjectOnQuery(InternalGenericRecord genericRecord, String fieldName) {
+            public Object readAsLeafObjectOnQuery(InternalGenericRecord genericRecord, String fieldName, FieldDescriptor fd) {
                 return genericRecord.getObject(fieldName);
             }
 
@@ -796,7 +798,7 @@ public final class FieldOperations {
         };
         ALL[FieldKind.ARRAY_OF_PORTABLE.getId()] = new FieldKindBasedOperations() {
             @Override
-            public Object readAsLeafObjectOnQuery(InternalGenericRecord genericRecord, String fieldName) {
+            public Object readAsLeafObjectOnQuery(InternalGenericRecord genericRecord, String fieldName, FieldDescriptor fd) {
                 return genericRecord.getArrayOfObject(fieldName, Object.class);
             }
 
