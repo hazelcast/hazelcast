@@ -77,7 +77,7 @@ public class WatermarkKeysAssigner {
             // front wave of recursion
 
             if (node instanceof FullScanPhysicalRel) {
-                assert node.getInputs().isEmpty() : "FullScan is not a leaf";
+                assert node.getInputs().isEmpty() : "FullScan not a leaf";
                 FullScanPhysicalRel scan = (FullScanPhysicalRel) node;
                 int idx = scan.watermarkedColumnIndex();
                 if (idx >= 0) {
@@ -98,12 +98,15 @@ public class WatermarkKeysAssigner {
                     return;
                 }
 
-                int calcIndex = 0;
+                int projectIndex = 0;
                 Map<Integer, Byte> calcRefByteMap = new HashMap<>();
                 for (RexNode rexNode : projects) {
                     if (rexNode instanceof RexInputRef) {
                         int idx = ((RexInputRef) rexNode).getIndex();
-                        calcRefByteMap.put(calcIndex++, refByteMap.get(idx));
+                        Byte wmKey = refByteMap.get(idx);
+                        if (wmKey != null) {
+                            calcRefByteMap.put(projectIndex++, wmKey);
+                        }
                     }
                 }
 
@@ -180,7 +183,7 @@ public class WatermarkKeysAssigner {
 
     /**
      * Helper watermark key assigner used to propagate keys
-     * from current node to the leafs of the rel tree
+     * from current node to the leaves of the rel tree.
      * if {@link Union} rel was found by {@link BottomUpWatermarkKeyAssignerVisitor}.
      */
     private class TopDownUnionWatermarkKeyAssignerVisitor extends RelVisitor {
