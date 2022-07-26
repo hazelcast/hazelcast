@@ -144,10 +144,18 @@ public class TablesStorage {
                 .collect(Collectors.toList());
     }
 
-    void registerListener(EntryListener<String, Object> listener) {
+    void initializeWithListeners(EntryListener<String, Object> listener) {
+        boolean useOldStorage = useOldStorage();
+
+        if (!useOldStorage) {
+            storageMovedToNew = true;
+        }
+
         if (!nodeEngine.getLocalMember().isLiteMember()) {
             newStorage().addEntryListener(listener, false);
-            oldStorage().addEntryListener(listener);
+            if (useOldStorage) {
+                oldStorage().addEntryListener(listener);
+            }
         }
     }
 
