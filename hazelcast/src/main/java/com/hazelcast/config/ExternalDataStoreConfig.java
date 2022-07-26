@@ -153,11 +153,11 @@ public class ExternalDataStoreConfig implements NamedConfig {
 
     @Override
     public String toString() {
-        return "ExternalDataStoreConfig{" +
-                "name='" + name + '\'' +
-                ", className='" + className + '\'' +
-                ", shared=" + shared +
-                ", properties=" + properties +
-                '}';
+        return "ExternalDataStoreConfig{"
+                + "name='" + name + '\''
+                + ", className='" + className + '\''
+                + ", shared=" + shared
+                + ", properties=" + properties
+                + '}';
     }
 }
