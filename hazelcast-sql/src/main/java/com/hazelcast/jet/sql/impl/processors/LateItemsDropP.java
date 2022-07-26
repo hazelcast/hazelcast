@@ -64,7 +64,7 @@ public class LateItemsDropP extends AbstractProcessor {
         Row row = ((JetSqlRow) item).getRow();
         long timestamp = WindowUtils.extractMillis(timestampExpression.eval(row, evalContext));
         if (timestamp < currentWm) {
-            logLateEvent(getLogger(), currentWm, item);
+            logLateEvent(getLogger(), (byte) 0, currentWm, item);
             lateEventsDropped.inc();
             return true;
         } else {
@@ -74,6 +74,7 @@ public class LateItemsDropP extends AbstractProcessor {
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
+        keyedWatermarkCheck(watermark);
         currentWm = watermark.timestamp();
         return super.tryProcessWatermark(watermark);
     }

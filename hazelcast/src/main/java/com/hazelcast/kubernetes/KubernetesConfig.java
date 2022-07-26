@@ -53,6 +53,7 @@ import static com.hazelcast.kubernetes.KubernetesProperties.USE_NODE_NAME_AS_EXT
 @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity", "checkstyle:methodcount"})
 final class KubernetesConfig {
     private static final String DEFAULT_MASTER_URL = "https://kubernetes.default.svc";
+    private static final String DEFAULT_TOKEN_PATH = "/var/run/secrets/kubernetes.io/serviceaccount/token";
     private static final int DEFAULT_SERVICE_DNS_TIMEOUT_SECONDS = 5;
     private static final int DEFAULT_KUBERNETES_API_RETRIES = 3;
 
@@ -74,12 +75,13 @@ final class KubernetesConfig {
     private final String servicePerPodLabelValue;
     private final int kubernetesApiRetries;
     private final String kubernetesMasterUrl;
-    private final String kubernetesApiToken;
     private final String kubernetesCaCertificate;
 
     // Parameters for both DNS Lookup and Kubernetes API modes
     private final int servicePort;
     private final FileContentsReader fileContentsReader;
+
+    private final KubernetesTokenProvider tokenProvider;
 
     KubernetesConfig(Map<String, Comparable> properties) {
         this(properties, new DefaultFileContentsReader());
@@ -107,7 +109,7 @@ final class KubernetesConfig {
         this.kubernetesApiRetries
                 = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_API_RETIRES, DEFAULT_KUBERNETES_API_RETRIES);
         this.kubernetesMasterUrl = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_MASTER_URL, DEFAULT_MASTER_URL);
-        this.kubernetesApiToken = getApiToken(properties);
+        this.tokenProvider = buildTokenProvider(properties);
         this.kubernetesCaCertificate = caCertificate(properties);
         this.servicePort = getOrDefault(properties, KUBERNETES_SYSTEM_PREFIX, SERVICE_PORT, 0);
         this.namespace = getNamespaceWithFallbacks(properties, KUBERNETES_SYSTEM_PREFIX, NAMESPACE);
@@ -146,12 +148,15 @@ final class KubernetesConfig {
         return namespace;
     }
 
-    private String getApiToken(Map<String, Comparable> properties) {
+    private KubernetesTokenProvider buildTokenProvider(Map<String, Comparable> properties) {
         String apiToken = getOrNull(properties, KUBERNETES_SYSTEM_PREFIX, KUBERNETES_API_TOKEN);
+        KubernetesTokenProvider apiTokenProvider;
         if (apiToken == null && getMode() == DiscoveryMode.KUBERNETES_API) {
-            apiToken = readAccountToken();
+            apiTokenProvider = new FileReaderTokenProvider(DEFAULT_TOKEN_PATH);
+        } else {
+            apiTokenProvider = new StaticTokenProvider(apiToken);
         }
-        return apiToken;
+        return apiTokenProvider;
     }
 
     private String caCertificate(Map<String, Comparable> properties) {
@@ -160,11 +165,6 @@ final class KubernetesConfig {
             caCertificate = readCaCertificate();
         }
         return caCertificate;
-    }
-
-    @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
-    private String readAccountToken() {
-        return fileContentsReader.readFileContents("/var/run/secrets/kubernetes.io/serviceaccount/token");
     }
 
     @SuppressFBWarnings("DMI_HARDCODED_ABSOLUTE_FILENAME")
@@ -351,16 +351,16 @@ final class KubernetesConfig {
         return kubernetesMasterUrl;
     }
 
-    String getKubernetesApiToken() {
-        return kubernetesApiToken;
-    }
-
     String getKubernetesCaCertificate() {
         return kubernetesCaCertificate;
     }
 
     int getServicePort() {
         return servicePort;
+    }
+
+    KubernetesTokenProvider getTokenProvider() {
+        return tokenProvider;
     }
 
     @Override

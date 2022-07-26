@@ -49,7 +49,7 @@ public class SetTtlOperation extends LockAwareOperation
 
     @Override
     protected void runInternal() {
-        response = recordStore.setTtl(dataKey, ttl, false);
+        response = recordStore.setTtl(dataKey, ttl);
     }
 
     @Override

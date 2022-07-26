@@ -36,6 +36,8 @@ import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.internal.serialization.impl.defaultserializers.ConstantSerializers;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
 import com.hazelcast.internal.usercodedeployment.impl.ClassLocator;
+import com.hazelcast.internal.util.ConcurrentReferenceHashMap;
+import com.hazelcast.internal.util.ConcurrentReferenceHashMap.ReferenceType;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.nio.ObjectDataInput;
@@ -86,7 +88,8 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     private final IdentityHashMap<Class, SerializerAdapter> constantTypesMap;
     private final SerializerAdapter[] constantTypeIds;
-    private final ConcurrentMap<Class, SerializerAdapter> typeMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Class, SerializerAdapter> typeMap =
+            new ConcurrentReferenceHashMap<>(ReferenceType.WEAK, ReferenceType.STRONG);
     private final ConcurrentMap<Integer, SerializerAdapter> idMap = new ConcurrentHashMap<>();
     private final AtomicReference<SerializerAdapter> global = new AtomicReference<SerializerAdapter>();
 
@@ -687,6 +690,39 @@ public abstract class AbstractSerializationService implements InternalSerializat
         return null;
     }
 
+    /**
+     * Makes sure that the classes registered as Compact serializable are not
+     * overriding the default serializers, if the
+     * {@link #allowOverrideDefaultSerializers} configuration option is set to
+     * {@code false}.
+     * <p>
+     * Must be called in the constructor of the child classes after they
+     * complete registering default serializers.
+     */
+    protected void verifyDefaultSerializersNotOverriddenWithCompact() {
+        // If the user explicitly set to override default serializers, we should
+        // respect that and allow it to register Compact serializers for such
+        // types. No need to perform further checks.
+        if (allowOverrideDefaultSerializers) {
+            return;
+        }
+
+        for (Class clazz : compactStreamSerializer.getCompactSerializableClasses()) {
+            if (!constantTypesMap.containsKey(clazz)) {
+                continue;
+            }
+
+            throw new IllegalArgumentException("Compact serializer for the "
+                    + "class '" + clazz + " can not be registered as it "
+                    + "overrides the default serializer for that class "
+                    + "provided by Hazelcast. If you want to override the "
+                    + "default serializer, set the "
+                    + "'allowOverrideDefaultSerializers' to 'true' in the "
+                    + "serialization configuration."
+            );
+        }
+    }
+
     public abstract static class Builder<T extends Builder<T>> {
         private InputOutputFactory inputOutputFactory;
         private byte version;
@@ -754,8 +790,9 @@ public abstract class AbstractSerializationService implements InternalSerializat
          * Sets whether the serialization service should (de)serialize in the
          * compatibility (3.x) format.
          *
-         * @param isCompatibility {@code true} if the serialized format should conform to the
-         *                        3.x serialization format, {@code false} otherwise
+         * @param isCompatibility {@code true} if the serialized format should
+         *                        conform to the 3.x serialization format,
+         *                        {@code false} otherwise
          * @return this builder
          */
         public final T withCompatibility(boolean isCompatibility) {
@@ -764,8 +801,9 @@ public abstract class AbstractSerializationService implements InternalSerializat
         }
 
         /**
-         * @return {@code true} if the serialized format of the serialization service should
-         * conform to the 3.x serialization format, {@code false} otherwise.
+         * @return {@code true} if the serialized format of the serialization
+         * service should conform to the 3.x serialization format, {@code false}
+         * otherwise.
          */
         public boolean isCompatibility() {
             return isCompatibility;

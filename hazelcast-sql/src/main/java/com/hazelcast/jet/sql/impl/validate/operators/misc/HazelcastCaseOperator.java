@@ -49,6 +49,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static com.hazelcast.jet.sql.impl.validate.operators.typeinference.HazelcastReturnTypeInference.wrap;
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.isNullOrUnknown;
 import static org.apache.calcite.util.Static.RESOURCE;
 
 public final class HazelcastCaseOperator extends SqlOperator {
@@ -168,7 +169,7 @@ public final class HazelcastCaseOperator extends SqlOperator {
     private boolean typeCheckWhen(SqlValidatorScope scope, HazelcastSqlValidator validator, SqlNodeList whenList) {
         for (SqlNode node : whenList) {
             RelDataType type = validator.deriveType(scope, node);
-            if (type.getSqlTypeName() == SqlTypeName.NULL) {
+            if (isNullOrUnknown(type.getSqlTypeName())) {
                 type = validator.getTypeFactory().createSqlType(SqlTypeName.BOOLEAN);
                 validator.setValidatedNodeType(node, type);
             }

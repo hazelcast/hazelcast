@@ -38,15 +38,13 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.AggregateCall;
-import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexVisitor;
 import org.apache.calcite.util.ImmutableBitSet;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hazelcast.jet.sql.impl.aggregate.WindowUtils.insertWindowBound;
@@ -144,13 +142,8 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
     }
 
     public WatermarkedFields watermarkedFields() {
-        Map<Integer, RexNode> propertiesByIndex = new HashMap<>();
-        RexBuilder rexBuilder = getCluster().getRexBuilder();
-        for (Integer index : windowEndIndexes) {
-            propertiesByIndex.put(index, rexBuilder.makeInputRef(getInput(), index));
-        }
-        // Backlog: also support windowStartIndexes by adding windowSize to windowStart
-        return new WatermarkedFields(propertiesByIndex);
+        // Backlog: also support windowStartIndexes
+        return new WatermarkedFields(new HashSet<>(windowEndIndexes));
     }
 
     @Override

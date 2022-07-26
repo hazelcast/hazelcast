@@ -611,7 +611,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         if (connection != null) {
             write = context.outboundOperationHandler.send(op, connection);
         } else {
-            write = context.outboundOperationHandler.send(op, targetAddress);
+            write = context.outboundOperationHandler.send(op, targetAddress, connectionManager);
         }
 
         if (!write) {
