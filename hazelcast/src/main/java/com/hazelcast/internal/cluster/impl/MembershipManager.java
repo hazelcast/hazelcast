@@ -786,6 +786,7 @@ public class MembershipManager {
         for (MemberImpl deadMember : deadMembers) {
             nodeEngine.onMemberLeft(deadMember);
         }
+        node.getNodeExtension().onMemberListChange();
         Joiner joiner = node.getJoiner();
         if (joiner != null && joiner.getClass() == TcpIpJoiner.class) {
             for (MemberImpl deadMember : deadMembers) {
