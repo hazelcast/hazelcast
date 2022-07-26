@@ -421,6 +421,9 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     /**
+     * WARNING: This method should only be used if `fd` is known to be a valid field descriptor in this generic record
+     * and its kind is {@link FieldKind#COMPACT}.
+     *
      * {@link CompactInternalGenericRecord#getObject(String)} with known field descriptor. Introduced not to call
      * {@link com.hazelcast.internal.serialization.impl.compact.Schema#getField(String)} twice if the field
      * descriptor is known.
@@ -815,6 +818,9 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     /**
+     * WARNING: This method should only be used if `fd` is known to be a valid field descriptor in this generic record
+     * and its kind is {@link FieldKind#ARRAY_OF_COMPACT}.
+     *
      * {@link CompactInternalGenericRecord#getArrayOfObject} with known field descriptor. Introduced not to call
      * {@link com.hazelcast.internal.serialization.impl.compact.Schema#getField(String)} twice if the field
      * descriptor is known.
