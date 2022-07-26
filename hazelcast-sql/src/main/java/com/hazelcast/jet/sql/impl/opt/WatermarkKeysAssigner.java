@@ -35,6 +35,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static java.util.Collections.emptyMap;
+
 /**
  * Traverse a relational tree and assign watermark keys.
  */
@@ -115,7 +117,7 @@ public class WatermarkKeysAssigner {
                 UnionPhysicalRel union = (UnionPhysicalRel) node;
                 Set<Integer> usedColumns = new HashSet<>();
                 for (RelNode input : union.getInputs()) {
-                    usedColumns.addAll(relToWmKeyMapping.getOrDefault(input, Collections.emptyMap()).keySet());
+                    usedColumns.addAll(relToWmKeyMapping.getOrDefault(input, emptyMap()).keySet());
                 }
 
                 // in that case we cannot use any watermarks.
@@ -129,10 +131,7 @@ public class WatermarkKeysAssigner {
                     relToWmKeyMapping.put(union.getInput(i), refByteMap);
                 }
 
-                RelVisitor topDownWmKeysAssigner = new TopDownUnionWatermarkKeyAssignerVisitor(
-                        union,
-                        relToWmKeyMapping
-                );
+                RelVisitor topDownWmKeysAssigner = new TopDownUnionWatermarkKeyAssignerVisitor(relToWmKeyMapping);
 
                 topDownWmKeysAssigner.go(union);
 //            } else if (node instanceof StreamToStreamJoinPhysicalRel) {
@@ -167,6 +166,7 @@ public class WatermarkKeysAssigner {
 //                refToWmKeyMapping.put(join, jointRefByteMap);
             } else if (node instanceof Join) {
                 // Hash Join and Nested Loop Join just forward watermarks from left input.
+                // TODO the above not true for s2s join - see TODO in HazelcastRelMdWatermarkedFields
                 Join join = (Join) node;
                 Map<Integer, Byte> refByteMap = relToWmKeyMapping.get(join.getLeft());
                 relToWmKeyMapping.put(node, refByteMap);
@@ -177,8 +177,11 @@ public class WatermarkKeysAssigner {
                     relToWmKeyMapping.put(node, refByteMap);
                 }
             }
-        }
 
+            assert relToWmKeyMapping.getOrDefault(node, emptyMap()).keySet().equals(
+                    OptUtils.metadataQuery(node).extractWatermarkedFields(node).getFieldIndexes())
+                    : "mismatch between WM fields in metadata query and in WmKeyAssigner";
+        }
     }
 
     /**
@@ -189,9 +192,7 @@ public class WatermarkKeysAssigner {
     private class TopDownUnionWatermarkKeyAssignerVisitor extends RelVisitor {
         private final Map<RelNode, Map<Integer, Byte>> refToWmKeyMapping;
 
-        TopDownUnionWatermarkKeyAssignerVisitor(
-                UnionPhysicalRel root,
-                Map<RelNode, Map<Integer, Byte>> refToWmKeyMapping) {
+        TopDownUnionWatermarkKeyAssignerVisitor(Map<RelNode, Map<Integer, Byte>> refToWmKeyMapping) {
             this.refToWmKeyMapping = refToWmKeyMapping;
         }
 
