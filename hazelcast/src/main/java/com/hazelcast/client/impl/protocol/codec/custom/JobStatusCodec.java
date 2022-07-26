@@ -18,12 +18,11 @@ package com.hazelcast.client.impl.protocol.codec.custom;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
-import com.hazelcast.client.impl.protocol.codec.builtin.CustomTypeFactory;
-import com.hazelcast.client.impl.protocol.codec.builtin.StringCodec;
+import com.hazelcast.client.impl.protocol.codec.builtin.*;
 
-import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
-import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
+import static com.hazelcast.client.impl.protocol.ClientMessage.*;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
 @Generated("bb65a1d5c19f505fd39d0023b5ca1d3d")
 public final class JobStatusCodec {
