@@ -63,11 +63,8 @@ import org.apache.calcite.rel.SingleRel;
 import org.apache.calcite.rex.RexProgram;
 
 import javax.annotation.Nullable;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -390,13 +387,9 @@ public class CreateDagVisitor {
     }
 
     public Vertex onDropLateItems(DropLateItemsPhysicalRel rel) {
-        Map<Integer, Expression<?>> expressionMap = rel.timestampExpression();
-        Map<Byte, Expression<?>> keyedTimestampExpressionMap = new HashMap<>();
-        for (Entry<Integer, Byte> entry : watermarkKeysAssigner.getWatermarkedFieldsKey(rel).entrySet()) {
-            keyedTimestampExpressionMap.put(entry.getValue(), expressionMap.get(entry.getKey()));
-        }
+        Expression<?> timestampExpression = rel.timestampExpression();
 
-        SupplierEx<Processor> lateItemsDropPSupplier = () -> new LateItemsDropP(keyedTimestampExpressionMap);
+        SupplierEx<Processor> lateItemsDropPSupplier = () -> new LateItemsDropP(timestampExpression);
         Vertex vertex = dag.newUniqueVertex("Drop-Late-Items", lateItemsDropPSupplier);
 
         connectInput(rel.getInput(), vertex, null);

@@ -619,4 +619,16 @@ public abstract class AbstractProcessor implements Processor {
             inbox.remove();
         }
     }
+
+    /**
+     * Throws {@link UnsupportedOperationException} if watermark has non-zero key.
+     * <p>
+     * Supposed to be used by processors that don't work with keyed watermarks.
+     */
+    protected void keyedWatermarkCheck(Watermark watermark) {
+        if (watermark.key() != 0) {
+            throw new UnsupportedOperationException("Keyed watermarks are not supported for "
+                    + this.getClass().getName());
+        }
+    }
 }

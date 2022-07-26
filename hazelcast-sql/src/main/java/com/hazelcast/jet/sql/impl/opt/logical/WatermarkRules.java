@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Iterables;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
@@ -91,7 +90,7 @@ final class WatermarkRules {
                     scan.getCluster(),
                     OptUtils.toLogicalConvention(scan.getTraitSet()),
                     wmRel,
-                    ImmutableList.of(watermarkedField)
+                    watermarkedField
             );
             call.transformTo(dropLateItemsRel);
         }

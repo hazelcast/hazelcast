@@ -17,11 +17,13 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.core.Vertex;
-import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
@@ -33,30 +35,23 @@ import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.List;
-import java.util.Map;
-import java.util.stream.Collectors;
-
-import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
-import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
-import static com.hazelcast.sql.impl.expression.ColumnExpression.create;
 
 public class DropLateItemsPhysicalRel extends SingleRel implements PhysicalRel {
-    private final List<Integer> wmField;
+    private final int wmField;
 
     protected DropLateItemsPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelNode input,
-            List<Integer> wmField
+            int wmField
     ) {
         super(cluster, traitSet, input);
         this.wmField = wmField;
     }
 
-    public Map<Integer, Expression<?>> timestampExpression() {
-        return wmField.stream()
-                .map(i -> tuple2(i, create(i, toHazelcastType(getRowType().getFieldList().get(i).getType()))))
-                .collect(Collectors.toMap(Tuple2::f0, Tuple2::f1));
+    public Expression<?> timestampExpression() {
+        QueryDataType type = HazelcastTypeUtils.toHazelcastType(getRowType().getFieldList().get(wmField).getType());
+        return ColumnExpression.create(wmField, type);
     }
 
     @Override
