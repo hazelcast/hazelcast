@@ -232,14 +232,12 @@ public class GenericRecordTest {
         return null;
     }
 
-
     @Test
     public void testGetFieldKindThrowsExceptionWhenFieldDoesNotExist() throws IOException {
         GenericRecord record = compact("test").build();
         assertThrows(IllegalArgumentException.class, () -> {
             record.getFieldKind("doesNotExist");
         });
-
 
         InternalSerializationService serializationService = (InternalSerializationService) createSerializationService();
         Data data = serializationService.toData(record);
@@ -257,7 +255,6 @@ public class GenericRecordTest {
             record.getInt32("doesNotExist");
         }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Invalid field name");
 
-
         InternalSerializationService serializationService = (InternalSerializationService) createSerializationService();
         Data data = serializationService.toData(record);
 
@@ -266,5 +263,22 @@ public class GenericRecordTest {
         assertThatThrownBy(() -> {
             internalGenericRecord.getInt32("doesNotExist");
         }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Unknown field name");
+    }
+
+    @Test
+    public void testGetFieldThrowsExceptionWhenFieldTypeDoesNotMatch() throws IOException {
+        GenericRecord record = compact("test").setInt32("foo", 123).build();
+        assertThatThrownBy(() -> {
+            record.getInt64("foo");
+        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Invalid field kind");
+
+        InternalSerializationService serializationService = (InternalSerializationService) createSerializationService();
+        Data data = serializationService.toData(record);
+
+        InternalGenericRecord internalGenericRecord = serializationService.readAsInternalGenericRecord(data);
+
+        assertThatThrownBy(() -> {
+            internalGenericRecord.getInt64("foo");
+        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Unexpected field kind");
     }
 }
