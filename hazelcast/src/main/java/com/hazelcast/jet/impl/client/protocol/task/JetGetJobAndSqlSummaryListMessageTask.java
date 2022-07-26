@@ -20,18 +20,15 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobAndSqlSummaryListCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.JobAndSqlSummary;
 import com.hazelcast.jet.impl.operation.GetJobAndSqlSummaryListOperation;
-import com.hazelcast.jet.json.JsonUtil;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.JobPermission;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
-import java.io.IOException;
 import java.security.Permission;
 import java.util.Collection;
 import java.util.List;
@@ -80,11 +77,7 @@ public class JetGetJobAndSqlSummaryListMessageTask extends AbstractMultiTargetMe
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        try {
-            return JetGetJobAndSqlSummaryListCodec.encodeResponse(new HazelcastJsonValue(JsonUtil.toJson(response)));
-        } catch (IOException e) {
-            throw new RuntimeException("Cannot generate JSON", e);
-        }
+        return JetGetJobAndSqlSummaryListCodec.encodeResponse((List<JobAndSqlSummary>) response);
     }
 
     @Override

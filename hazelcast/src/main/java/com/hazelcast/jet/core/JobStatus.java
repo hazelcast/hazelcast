@@ -74,4 +74,11 @@ public enum JobStatus {
     public boolean isTerminal() {
         return this == COMPLETED || this == FAILED;
     }
+
+    /**
+     * Returns name of the status.
+     */
+    public String getName() {
+        return name();
+    }
 }
