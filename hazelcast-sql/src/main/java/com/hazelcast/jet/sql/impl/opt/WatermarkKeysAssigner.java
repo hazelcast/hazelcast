@@ -98,11 +98,12 @@ public class WatermarkKeysAssigner {
                     return;
                 }
 
+                int calcIndex = 0;
                 Map<Integer, Byte> calcRefByteMap = new HashMap<>();
                 for (RexNode rexNode : projects) {
                     if (rexNode instanceof RexInputRef) {
                         int idx = ((RexInputRef) rexNode).getIndex();
-                        calcRefByteMap.put(idx, refByteMap.get(idx));
+                        calcRefByteMap.put(calcIndex++, refByteMap.get(idx));
                     }
                 }
 
