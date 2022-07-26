@@ -25,6 +25,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
@@ -56,6 +57,7 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Objects;
 
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createCompactGenericRecord;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createFixedFieldsDTO;
@@ -64,6 +66,7 @@ import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createVarFieldsDTO;
 import static com.hazelcast.nio.serialization.GenericRecordBuilder.compact;
 import static example.serialization.HiringStatus.HIRING;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -188,6 +191,24 @@ public class CompactStreamSerializerTest {
         FixedFieldsDTO actual = serializationService.toObject(data);
 
         assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testTypeMismatchThrowsException() {
+        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
+        compactSerializationConfig.register(TypeMismatchDTO.class, "t", new TypeMismatchDTOSerializer());
+        compactSerializationConfig.setEnabled(true);
+        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .setSchemaService(schemaService)
+                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                .build();
+        TypeMismatchDTO expected = new TypeMismatchDTO(12L);
+
+        Data data = serializationService.toData(expected);
+
+        assertThatThrownBy(() -> serializationService.toObject(data))
+                .isInstanceOf(HazelcastSerializationException.class)
+                .hasMessageContaining("Unexpected field kind");
     }
 
     @Test
@@ -686,6 +707,52 @@ public class CompactStreamSerializerTest {
 
         assertEquals(expected.getAge(), actual.getAge());
         assertEquals(0, actual.getId());
+    }
+
+    private static class TypeMismatchDTO {
+        private final long age;
+
+        TypeMismatchDTO(long age) {
+            this.age = age;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            TypeMismatchDTO that = (TypeMismatchDTO) o;
+            return age == that.age;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(age);
+        }
+
+        @Override
+        public String toString() {
+            return "TypeMismatchDTO{"
+                    + "age=" + age
+                    + '}';
+        }
+    }
+
+    private static class TypeMismatchDTOSerializer implements CompactSerializer<TypeMismatchDTO> {
+        @Nonnull
+        @Override
+        public TypeMismatchDTO read(@Nonnull CompactReader in) {
+            int age = in.readInt32("age");
+            return new TypeMismatchDTO(age);
+        }
+
+        @Override
+        public void write(@Nonnull CompactWriter out, @Nonnull TypeMismatchDTO object) {
+            out.writeInt64("age", object.age);
+        }
     }
 
     private static class EmptyDTO {
