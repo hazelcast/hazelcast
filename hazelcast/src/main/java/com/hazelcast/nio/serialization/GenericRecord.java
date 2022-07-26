@@ -164,7 +164,7 @@ public interface GenericRecord {
      * @throws HazelcastSerializationException if the field name does not exist in the class definition or
      *                                         the type of the field does not match the one in the class definition.
      */
-    short  getInt16(@Nonnull String fieldName);
+    short getInt16(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field
