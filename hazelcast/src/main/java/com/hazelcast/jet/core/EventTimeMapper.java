@@ -167,7 +167,7 @@ public class EventTimeMapper<T> {
         this.wrapFn = eventTimePolicy.wrapFn();
         this.newWmPolicyFn = eventTimePolicy.newWmPolicyFn();
         if (eventTimePolicy.watermarkThrottlingFrameSize() != 0) {
-            this.watermarkThrottlingFrame = tumblingWinPolicy(eventTimePolicy.watermarkThrottlingFrameSize())
+            this.watermarkThrottlingFrame = tumblingWinPolicy(eventTimePolicy.watermarkThrottlingFrameSize(), wmKey)
                     .withOffset(eventTimePolicy.watermarkThrottlingFrameOffset());
         } else {
             this.watermarkThrottlingFrame = null;
