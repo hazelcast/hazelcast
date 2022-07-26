@@ -15,7 +15,9 @@
  */
 package com.hazelcast.jet.impl;
 
-public class SqlSummary  {
+import java.util.Objects;
+
+public class SqlSummary {
     private String query;
     private boolean unbounded;
 
@@ -49,5 +51,22 @@ public class SqlSummary  {
                 "query='" + query + '\'' +
                 ", unbounded=" + unbounded +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        SqlSummary that = (SqlSummary) o;
+        return unbounded == that.unbounded && Objects.equals(query, that.query);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(query, unbounded);
     }
 }

@@ -18,14 +18,19 @@ package com.hazelcast.client.impl.protocol.codec.custom;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
-import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.builtin.CustomTypeFactory;
 
+import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
+import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
-import static com.hazelcast.client.impl.protocol.ClientMessage.*;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.INT_SIZE_IN_BYTES;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeInt;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInt;
 
-@Generated("bb65a1d5c19f505fd39d0023b5ca1d3d")
+@Generated("bd89fa7ea4a7072f0ebc736fecae0553")
 public final class JobStatusCodec {
+    private static final int ID_FIELD_OFFSET = 0;
+    private static final int INITIAL_FRAME_SIZE = ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
 
     private JobStatusCodec() {
     }
@@ -33,7 +38,9 @@ public final class JobStatusCodec {
     public static void encode(ClientMessage clientMessage, com.hazelcast.jet.core.JobStatus jobStatus) {
         clientMessage.add(BEGIN_FRAME.copy());
 
-        StringCodec.encode(clientMessage, jobStatus.getName());
+        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[INITIAL_FRAME_SIZE]);
+        encodeInt(initialFrame.content, ID_FIELD_OFFSET, jobStatus.getId());
+        clientMessage.add(initialFrame);
 
         clientMessage.add(END_FRAME.copy());
     }
@@ -42,10 +49,11 @@ public final class JobStatusCodec {
         // begin frame
         iterator.next();
 
-        java.lang.String name = StringCodec.decode(iterator);
+        ClientMessage.Frame initialFrame = iterator.next();
+        int id = decodeInt(initialFrame.content, ID_FIELD_OFFSET);
 
         fastForwardToEndFrame(iterator);
 
-        return CustomTypeFactory.createJobStatus(name);
+        return CustomTypeFactory.createJobStatus(id);
     }
 }

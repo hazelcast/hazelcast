@@ -287,8 +287,8 @@ public final class CustomTypeFactory {
         return new SqlSummary(query, unbounded);
     }
 
-    public static JobStatus createJobStatus(String name) {
-        return JobStatus.valueOf(name);
+    public static JobStatus createJobStatus(int id) {
+        return JobStatus.getById(id);
     }
 
     public static JobAndSqlSummary createJobAndSqlSummary(

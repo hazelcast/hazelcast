@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.jet.core.JobStatus;
 
 import javax.annotation.Nonnull;
+import java.util.Objects;
 
 public class JobAndSqlSummary {
     private boolean isLightJob;
@@ -140,5 +141,25 @@ public class JobAndSqlSummary {
                 ", failureText='" + failureText + '\'' +
                 ", sqlSummary=" + sqlSummary +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        JobAndSqlSummary that = (JobAndSqlSummary) o;
+        return isLightJob == that.isLightJob && jobId == that.jobId && executionId == that.executionId
+                && submissionTime == that.submissionTime && completionTime == that.completionTime
+                && Objects.equals(nameOrId, that.nameOrId) && status == that.status
+                && Objects.equals(failureText, that.failureText) && Objects.equals(sqlSummary, that.sqlSummary);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(isLightJob, jobId, executionId, nameOrId, status, submissionTime, completionTime, failureText, sqlSummary);
     }
 }

@@ -904,9 +904,9 @@ public class ReferenceObjects {
     public static QueryId anSqlQueryId = new QueryId(aLong, aLong, aLong, aLong);
     public static SqlColumnMetadata anSqlColumnMetadata = CustomTypeFactory.createSqlColumnMetadata(aString, SqlColumnType.BOOLEAN.getId(), aBoolean, aBoolean);
     public static List<SqlColumnMetadata> aListOfSqlColumnMetadata = Collections.singletonList(anSqlColumnMetadata);
-    public static SqlSummary anSqlSummary = new SqlSummary("query", false);
+    public static SqlSummary anSqlSummary = CustomTypeFactory.createSqlSummary(aString, aBoolean);
     public static JobStatus anJobStatus = JobStatus.RUNNING;
-    public static JobAndSqlSummary anJobAndSqlSummary = new JobAndSqlSummary(true, 1L, 1L, "name", anJobStatus, 1L, 1L, null, anSqlSummary);
+    public static JobAndSqlSummary anJobAndSqlSummary = CustomTypeFactory.createJobAndSqlSummary(aBoolean, aLong, aLong, aString, anJobStatus, aLong, aLong, aString, anSqlSummary);
     public static List<JobAndSqlSummary> aListJobAndSqlSummary = Collections.singletonList(anJobAndSqlSummary);
     public static SqlError anSqlError = new SqlError(anInt, aString, aUUID, aBoolean, aString);
     public static SqlPage aSqlPage = SqlPage.fromColumns(Collections.singletonList(SqlColumnType.INTEGER), Collections.singletonList(Arrays.asList(1, 2, 3, 4)), true);
