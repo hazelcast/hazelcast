@@ -103,7 +103,7 @@ public class GenericRecordTest {
         builder.setInt64("bar", 1231L);
         DeserializedGenericRecord genericRecord = (DeserializedGenericRecord) builder.build();
 
-        verifyCloneWithBuilder(genericRecord);
+        verifyNewBuilderWithClone(genericRecord);
     }
 
     @Test
@@ -120,10 +120,10 @@ public class GenericRecordTest {
         CompactInternalGenericRecord genericRecord = (CompactInternalGenericRecord)
                 serializationService.readAsInternalGenericRecord(data);
 
-        verifyCloneWithBuilder(genericRecord);
+        verifyNewBuilderWithClone(genericRecord);
     }
 
-    private void verifyCloneWithBuilder(GenericRecord genericRecord) {
+    private void verifyNewBuilderWithClone(GenericRecord genericRecord) {
         GenericRecordBuilder cloneBuilder = genericRecord.newBuilderWithClone();
         cloneBuilder.setInt32("foo", 2);
 

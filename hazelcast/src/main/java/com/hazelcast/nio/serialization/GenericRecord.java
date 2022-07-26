@@ -83,7 +83,8 @@ public interface GenericRecord {
      * Creates a {@link GenericRecordBuilder} allows to create a new object.
      * This method is a convenience method to get a builder, without creating
      * the schema/class definition for this type. Here you can see a new object
-     * is constructed from an existing GenericRecord with its schema:
+     * is constructed from an existing GenericRecord with its schema/class
+     * definition:
      *
      * <pre>{@code
      * GenericRecord newGenericRecord = genericRecord.newBuilder()

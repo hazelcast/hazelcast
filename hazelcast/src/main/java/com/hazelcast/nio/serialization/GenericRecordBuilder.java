@@ -274,8 +274,7 @@ public interface GenericRecordBuilder {
      * {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not
      * applicable to {@link Portable}.
      *
-     * @param fieldName name of the field as it is defined in its class
-     *                  definition.
+     * @param fieldName name of the field as it is defined in its schema.
      * @param value     to set to GenericRecord
      * @return itself for chaining
      * @throws HazelcastSerializationException if the field name does not exist
@@ -298,8 +297,7 @@ public interface GenericRecordBuilder {
      * {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not
      * applicable to {@link Portable}.
      *
-     * @param fieldName name of the field as it is defined in its class
-     *                  definition.
+     * @param fieldName name of the field as it is defined in its schema.
      * @param value     to set to GenericRecord
      * @return itself for chaining
      * @throws HazelcastSerializationException if the field name does not exist
@@ -323,8 +321,7 @@ public interface GenericRecordBuilder {
      * {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not
      * applicable to {@link Portable}.
      *
-     * @param fieldName name of the field as it is defined in its class
-     *                  definition.
+     * @param fieldName name of the field as it is defined in its schema.
      * @param value     to set to GenericRecord
      * @return itself for chaining
      * @throws HazelcastSerializationException if the field name does not exist
@@ -347,8 +344,7 @@ public interface GenericRecordBuilder {
      * {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not
      * applicable to {@link Portable}.
      *
-     * @param fieldName name of the field as it is defined in its class
-     *                  definition.
+     * @param fieldName name of the field as it is defined in its schema.
      * @param value     to set to GenericRecord
      * @return itself for chaining
      * @throws HazelcastSerializationException if the field name does not exist
@@ -371,8 +367,7 @@ public interface GenericRecordBuilder {
      * {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not
      * applicable to {@link Portable}.
      *
-     * @param fieldName name of the field as it is defined in its class
-     *                  definition.
+     * @param fieldName name of the field as it is defined in its schema.
      * @param value     to set to GenericRecord
      * @return itself for chaining
      * @throws HazelcastSerializationException if the field name does not exist
@@ -395,8 +390,7 @@ public interface GenericRecordBuilder {
      * {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not
      * applicable to {@link Portable}.
      *
-     * @param fieldName name of the field as it is defined in its class
-     *                  definition.
+     * @param fieldName name of the field as it is defined in its schema.
      * @param value     to set to GenericRecord
      * @return itself for chaining
      * @throws HazelcastSerializationException if the field name does not exist
@@ -419,8 +413,7 @@ public interface GenericRecordBuilder {
      * {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not
      * applicable to {@link Portable}.
      *
-     * @param fieldName name of the field as it is defined in its class
-     *                  definition.
+     * @param fieldName name of the field as it is defined in its schema.
      * @param value     to set to GenericRecord
      * @return itself for chaining
      * @throws HazelcastSerializationException if the field name does not exist
@@ -481,9 +474,11 @@ public interface GenericRecordBuilder {
 
     /**
      * Sets a decimal which is arbitrary precision and scale floating-point
-     * number It is legal to set the field again only when Builder is created
-     * with {@link GenericRecord#newBuilderWithClone()}. Otherwise, it is
-     * illegal to set to the same field twice.
+     * number.
+     * <p>
+     * It is legal to set the field again only when Builder is created with
+     * {@link GenericRecord#newBuilderWithClone()}. Otherwise, it is illegal to
+     * set to the same field twice.
      *
      * @param fieldName name of the field as it is defined in its schema/class
      *                  definition. It should be composed of only alphanumeric
@@ -503,8 +498,9 @@ public interface GenericRecordBuilder {
     GenericRecordBuilder setDecimal(@Nonnull String fieldName, @Nullable BigDecimal value);
 
     /**
-     * Sets a time field consisting of hour, minute, seconds and nanos parts It
-     * is legal to set the field again only when Builder is created with
+     * Sets a time field consisting of hour, minute, seconds, and nanos parts.
+     * <p>
+     * It is legal to set the field again only when Builder is created with
      * {@link GenericRecord#newBuilderWithClone()}. Otherwise, it is illegal to
      * set to the same field twice.
      *
@@ -526,10 +522,12 @@ public interface GenericRecordBuilder {
     GenericRecordBuilder setTime(@Nonnull String fieldName, @Nullable LocalTime value);
 
     /**
-     * Sets a date field consisting of year , month of the year and day of the
-     * month It is legal to set the field again only when Builder is created
-     * with {@link GenericRecord#newBuilderWithClone()}. Otherwise, it is
-     * illegal to set to the same field twice.
+     * Sets a date field consisting of year, month of the year, and day of the
+     * month.
+     * <p>
+     * It is legal to set the field again only when Builder is created with
+     * {@link GenericRecord#newBuilderWithClone()}. Otherwise, it is illegal to
+     * set to the same field twice.
      *
      * @param fieldName name of the field as it is defined in its schema/class
      *                  definition. It should be composed of only alphanumeric
@@ -549,9 +547,10 @@ public interface GenericRecordBuilder {
     GenericRecordBuilder setDate(@Nonnull String fieldName, @Nullable LocalDate value);
 
     /**
-     * Sets a timestamp field consisting of year , month of the year and day of
-     * the month, hour, minute, seconds, nanos parts It is legal to set the
-     * field again only when Builder is created with
+     * Sets a timestamp field consisting of year, month of the year, and day of
+     * the month, hour, minute, seconds, nanos parts.
+     * <p>
+     * It is legal to set the field again only when Builder is created with
      * {@link GenericRecord#newBuilderWithClone()}. Otherwise, it is illegal to
      * set to the same field twice.
      *
@@ -573,11 +572,13 @@ public interface GenericRecordBuilder {
     GenericRecordBuilder setTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime value);
 
     /**
-     * Sets a timestamp with timezone field consisting of year , month of the
-     * year and day of the month, offset seconds , hour, minute, seconds, nanos
-     * parts It is legal to set the field again only when Builder is created
-     * with {@link GenericRecord#newBuilderWithClone()}. Otherwise, it is
-     * illegal to set to the same field twice.
+     * Sets a timestamp with timezone field consisting of year, month of the
+     * year and day of the month, offset seconds, hour, minute, seconds, nanos
+     * parts.
+     * <p>
+     * It is legal to set the field again only when Builder is created with
+     * {@link GenericRecord#newBuilderWithClone()}. Otherwise, it is illegal to
+     * set to the same field twice.
      *
      * @param fieldName name of the field as it is defined in its schema/class
      *                  definition. It should be composed of only alphanumeric
@@ -641,12 +642,12 @@ public interface GenericRecordBuilder {
     GenericRecordBuilder setArrayOfInt8(@Nonnull String fieldName, @Nullable byte[] value);
 
     /**
-     * Supported only for {@link Portable}. Not applicable for
-     * {@link com.hazelcast.config.CompactSerializationConfig Compact}
-     * <p>
      * It is legal to set the field again only when Builder is created with
      * {@link GenericRecord#newBuilderWithClone()}. Otherwise, it is illegal to
      * set to the same field twice.
+     * <p>
+     * Supported only for {@link Portable}. Not applicable for
+     * {@link com.hazelcast.config.CompactSerializationConfig Compact}
      *
      * @param fieldName name of the field as it is defined in its class
      *                  definition. It should be composed of only alphanumeric
@@ -959,10 +960,9 @@ public interface GenericRecordBuilder {
     GenericRecordBuilder setArrayOfString(@Nonnull String fieldName, @Nullable String[] value);
 
     /**
-     * Sets an array of Decimals It is legal to set the field again only when
-     * Builder is created with {@link GenericRecord#newBuilderWithClone()}.
-     * Otherwise, it is illegal to set to the same field twice. Array items can
-     * not be null.
+     * It is legal to set the field again only when Builder is created with
+     * {@link GenericRecord#newBuilderWithClone()}. Otherwise, it is illegal to
+     * set to the same field twice. Array items can not be null.
      *
      * @param fieldName name of the field as it is defined in its schema/class
      *                  definition. It should be composed of only alphanumeric
@@ -983,10 +983,9 @@ public interface GenericRecordBuilder {
     GenericRecordBuilder setArrayOfDecimal(@Nonnull String fieldName, @Nullable BigDecimal[] value);
 
     /**
-     * Sets an array of Time's It is legal to set the field again only when
-     * Builder is created with {@link GenericRecord#newBuilderWithClone()}.
-     * Otherwise, it is illegal to set to the same field twice. Array items can
-     * not be null.
+     * It is legal to set the field again only when Builder is created with
+     * {@link GenericRecord#newBuilderWithClone()}. Otherwise, it is illegal to
+     * set to the same field twice. Array items can not be null.
      *
      * @param fieldName name of the field as it is defined in its schema/class
      *                  definition. It should be composed of only alphanumeric
@@ -1007,10 +1006,9 @@ public interface GenericRecordBuilder {
     GenericRecordBuilder setArrayOfTime(@Nonnull String fieldName, @Nullable LocalTime[] value);
 
     /**
-     * Sets an array of Date's It is legal to set the field again only when
-     * Builder is created with {@link GenericRecord#newBuilderWithClone()}.
-     * Otherwise, it is illegal to set to the same field twice. Array items can
-     * not be null.
+     * It is legal to set the field again only when Builder is created with
+     * {@link GenericRecord#newBuilderWithClone()}. Otherwise, it is illegal to
+     * set to the same field twice. Array items can not be null.
      *
      * @param fieldName name of the field as it is defined in its schema/class
      *                  definition. It should be composed of only alphanumeric
@@ -1031,10 +1029,9 @@ public interface GenericRecordBuilder {
     GenericRecordBuilder setArrayOfDate(@Nonnull String fieldName, @Nullable LocalDate[] value);
 
     /**
-     * Sets an array of Timestamp's It is legal to set the field again only when
-     * Builder is created with {@link GenericRecord#newBuilderWithClone()}.
-     * Otherwise, it is illegal to set to the same field twice. Array items can
-     * not be null.
+     * It is legal to set the field again only when Builder is created with
+     * {@link GenericRecord#newBuilderWithClone()}. Otherwise, it is illegal to
+     * set to the same field twice. Array items can not be null.
      *
      * @param fieldName name of the field as it is defined in its schema/class
      *                  definition. It should be composed of only alphanumeric
@@ -1055,8 +1052,7 @@ public interface GenericRecordBuilder {
     GenericRecordBuilder setArrayOfTimestamp(@Nonnull String fieldName, @Nullable LocalDateTime[] value);
 
     /**
-     * Sets an array of TimestampWithTimezone's It is legal to set the field
-     * again only when Builder is created with
+     * It is legal to set the field again only when Builder is created with
      * {@link GenericRecord#newBuilderWithClone()}. Otherwise, it is illegal to
      * set to the same field twice. Array items can not be null.
      *
