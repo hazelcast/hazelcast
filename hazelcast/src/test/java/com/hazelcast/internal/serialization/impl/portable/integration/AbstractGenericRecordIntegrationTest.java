@@ -201,7 +201,7 @@ public abstract class AbstractGenericRecordIntegrationTest extends HazelcastTest
             Object value = entry.getValue();
             GenericRecord genericRecord = (GenericRecord) value;
 
-            GenericRecord modifiedGenericRecord = genericRecord.cloneWithBuilder()
+            GenericRecord modifiedGenericRecord = genericRecord.newBuilderWithClone()
                     .setInt32("myint", 4).build();
 
             entry.setValue(modifiedGenericRecord);

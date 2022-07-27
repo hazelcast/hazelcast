@@ -239,12 +239,9 @@ public class MasterJobContext {
                     MembersView membersView = Util.getMembersView(mc.nodeEngine());
                     JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
 
-                    ClassLoader classLoader = mc.getJetServiceBackend().getJobClassLoaderService()
-                                                .getClassLoader(mc.jobId());
-                    return Util.doWithClassLoader(classLoader, () ->
-                                       createExecutionPlans(mc.nodeEngine(), membersView.getMembers(),
+                    return createExecutionPlans(mc.nodeEngine(), membersView.getMembers(),
                                                dag, mc.jobId(), mc.executionId(), mc.jobConfig(), jobExecRec.ongoingSnapshotId(),
-                                               false, mc.jobRecord().getSubject()))
+                                               false, mc.jobRecord().getSubject())
                                .thenApply(executionPlan -> new StartJobInitExecutionParams(executionPlan, membersView));
                 }, coordinationExecutor)
                 .thenCompose(tuple -> coordinationService.submitToCoordinatorThread(() -> {

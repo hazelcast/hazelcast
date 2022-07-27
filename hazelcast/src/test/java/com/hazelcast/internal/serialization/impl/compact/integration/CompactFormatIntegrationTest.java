@@ -183,7 +183,7 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
         @Override
         public Object process(Map.Entry<Integer, GenericRecord> entry) {
             GenericRecord value = entry.getValue();
-            GenericRecord newValue = value.cloneWithBuilder()
+            GenericRecord newValue = value.newBuilderWithClone()
                     .setInt32("age", value.getInt32("age") + 1000)
                     .build();
             entry.setValue(newValue);
