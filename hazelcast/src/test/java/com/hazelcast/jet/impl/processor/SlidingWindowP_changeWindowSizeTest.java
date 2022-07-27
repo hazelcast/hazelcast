@@ -142,7 +142,8 @@ public class SlidingWindowP_changeWindowSizeTest {
                 0L,
                 summingLong((Integer t) -> t),
                 (start, end, key, result, isEarly) -> result(end, key, result),
-                true);
+                true,
+                (byte) 0);
     }
 
     private static String result(long winEnd, String key, long result) {
