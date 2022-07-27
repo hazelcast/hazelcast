@@ -30,7 +30,6 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
-import javax.annotation.concurrent.GuardedBy;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
