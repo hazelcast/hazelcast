@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.kinesis;
 
 import com.amazonaws.SDKGlobalConfiguration;
@@ -133,18 +134,19 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
             Pipeline pipeline = Pipeline.create();
             pipeline.readFrom(kinesisSource().build())
                     .withNativeTimestamps(0)
-                    .window(WindowDefinition.sliding(500, 100))
+                    .window(WindowDefinition.sliding(500, 50))
                     .aggregate(counting())
                     .apply(assertCollectedEventually(ASSERT_TRUE_EVENTUALLY_TIMEOUT, windowResults -> {
-                        assertTrue(windowResults.size() > 1); //multiple windows, so watermark works
+                        // multiple windows, so watermark works
+                        assertGreaterOrEquals("Windows count", windowResults.size(), 1);
                     }));
 
             hz().getJet().newJob(pipeline).join();
             fail("Expected exception not thrown");
         } catch (CompletionException ce) {
             Throwable cause = peel(ce);
-            assertTrue(cause instanceof JetException);
-            assertTrue(cause.getCause() instanceof AssertionCompletedException);
+            assertInstanceOf(JetException.class, cause);
+            assertInstanceOf(AssertionCompletedException.class, cause.getCause());
         }
     }
 

@@ -35,7 +35,6 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.internal.nio.Bits.NULL_ARRAY_LENGTH;
 import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.BYTE_OFFSET_READER_RANGE;
 import static com.hazelcast.internal.serialization.impl.compact.OffsetReader.SHORT_OFFSET_READER_RANGE;
 import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN;
@@ -82,8 +81,8 @@ import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMP_WITH_
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIME;
 
 /**
- * Default implementation of the {@link CompactWriter} that writes
- * the serialized fields into a {@link BufferObjectDataOutput}.
+ * Default implementation of the {@link CompactWriter} that writes the
+ * serialized fields into a {@link BufferObjectDataOutput}.
  * <p>
  * The writer can also handle compact serializable classes that we want to
  * include schema in it.
@@ -125,9 +124,9 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     /**
-     * Ends the serialization of the compact objects by writing
-     * the offsets of the variable-size fields as well as the
-     * data length, if there are some variable-size fields.
+     * Ends the serialization of the compact objects by writing the offsets of
+     * the variable-size fields as well as the data length, if there are some
+     * variable-size fields.
      */
     public void end() {
         try {
@@ -338,7 +337,7 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     protected <T> void writeArrayOfVariableSize(@Nonnull String fieldName, @Nonnull FieldKind fieldKind,
-                                                 @Nullable T[] values, @Nonnull Writer<T> writer) {
+                                                @Nullable T[] values, @Nonnull Writer<T> writer) {
         if (values == null) {
             setPositionAsNull(fieldName, fieldKind);
             return;
@@ -504,22 +503,24 @@ public class DefaultCompactWriter implements CompactWriter {
         writeArrayOfVariableSize(fieldName, ARRAY_OF_NULLABLE_FLOAT64, value, DataOutput::writeDouble);
     }
 
-    static void writeBooleanBits(BufferObjectDataOutput out, @Nullable boolean[] booleans) throws IOException {
-        int len = (booleans != null) ? booleans.length : NULL_ARRAY_LENGTH;
+    static void writeBooleanBits(BufferObjectDataOutput out, @Nonnull boolean[] booleans) throws IOException {
+        int len = booleans.length;
         out.writeInt(len);
+        if (len == 0) {
+            return;
+        }
+
         int position = out.position();
-        if (len > 0) {
-            int index = 0;
-            out.writeZeroBytes(1);
-            for (boolean v : booleans) {
-                if (index == Byte.SIZE) {
-                    index = 0;
-                    out.writeZeroBytes(1);
-                    position++;
-                }
-                out.writeBooleanBit(position, index, v);
-                index++;
+        int index = 0;
+        out.writeZeroBytes(1);
+        for (boolean v : booleans) {
+            if (index == Byte.SIZE) {
+                index = 0;
+                out.writeZeroBytes(1);
+                position++;
             }
+            out.writeBooleanBit(position, index, v);
+            index++;
         }
     }
 }

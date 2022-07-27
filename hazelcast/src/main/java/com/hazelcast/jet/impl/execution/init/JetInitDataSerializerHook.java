@@ -56,6 +56,8 @@ import com.hazelcast.jet.impl.processor.ProcessorSupplierFromSimpleSupplier;
 import com.hazelcast.jet.impl.processor.SessionWindowP;
 import com.hazelcast.jet.impl.processor.SlidingWindowP.SnapshotKey;
 import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl;
+import com.hazelcast.jet.impl.util.WrappingProcessorMetaSupplier;
+import com.hazelcast.jet.impl.util.WrappingProcessorSupplier;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
@@ -108,6 +110,9 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int NOOP_PROCESSOR_SUPPLIER = 46;
     public static final int CHECK_LIGHT_JOBS_OP = 47;
     public static final int GET_JOB_AND_SQL_SUMMARY_LIST_OP = 48;
+    public static final int SQL_SUMMARY = 48;
+    public static final int WRAPPING_PROCESSOR_META_SUPPLIER = 49;
+    public static final int WRAPPING_PROCESSOR_SUPPLIER = 50;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 
@@ -210,6 +215,10 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new CheckLightJobsOperation();
                 case GET_JOB_AND_SQL_SUMMARY_LIST_OP:
                     return new GetJobAndSqlSummaryListOperation();
+                case WRAPPING_PROCESSOR_META_SUPPLIER:
+                    return new WrappingProcessorMetaSupplier();
+                case WRAPPING_PROCESSOR_SUPPLIER:
+                    return new WrappingProcessorSupplier();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

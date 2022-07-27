@@ -27,6 +27,8 @@ import java.util.Objects;
 public record AllTypesRecord(
         byte primitiveInt8,
         Byte objectInt8,
+        char primitiveChar,
+        Character objectCharacter,
         short primitiveInt16,
         Short objectInt16,
         int primitiveInt32,
@@ -49,6 +51,8 @@ public record AllTypesRecord(
         NestedRecord nestedRecord,
         byte[] primitiveInt8Array,
         Byte[] objectInt8Array,
+        char[] primitiveCharArray,
+        Character[] objectCharacterArray,
         short[] primitiveInt16Array,
         Short[] objectInt16Array,
         int[] primitiveInt32Array,
@@ -86,6 +90,8 @@ public record AllTypesRecord(
         return new AllTypesRecord(
                 (byte) 42,
                 (byte) -23,
+                '\uabcd',
+                '\ua0b0',
                 (short) 12345,
                 (short) -12345,
                 0,
@@ -108,6 +114,8 @@ public record AllTypesRecord(
                 NestedRecord.create(),
                 new byte[]{1, 2, -3},
                 new Byte[]{42, Byte.MAX_VALUE, Byte.MIN_VALUE, null},
+                new char[]{'0'},
+                new Character[]{Character.MAX_VALUE, '0', null, Character.MIN_VALUE, '\uf9ac'},
                 new short[]{0},
                 new Short[]{Short.MIN_VALUE, 0, null, Short.MIN_VALUE, Short.MAX_VALUE},
                 new int[]{123, 456, 789, Integer.MIN_VALUE},
@@ -135,6 +143,8 @@ public record AllTypesRecord(
         return new AllTypesRecord(
                 (byte) 0,
                 null,
+                '\u0000',
+                null,
                 (short) 0,
                 null,
                 0,
@@ -146,6 +156,8 @@ public record AllTypesRecord(
                 0,
                 null,
                 false,
+                null,
+                null,
                 null,
                 null,
                 null,
@@ -190,6 +202,7 @@ public record AllTypesRecord(
         }
         AllTypesRecord that = (AllTypesRecord) o;
         return primitiveInt8 == that.primitiveInt8
+                && primitiveChar == that.primitiveChar
                 && primitiveInt16 == that.primitiveInt16
                 && primitiveInt32 == that.primitiveInt32
                 && primitiveInt64 == that.primitiveInt64
@@ -197,6 +210,7 @@ public record AllTypesRecord(
                 && Double.compare(that.primitiveFloat64, primitiveFloat64) == 0
                 && primitiveBoolean == that.primitiveBoolean
                 && Objects.equals(objectInt8, that.objectInt8)
+                && Objects.equals(objectCharacter, that.objectCharacter)
                 && Objects.equals(objectInt16, that.objectInt16)
                 && Objects.equals(objectInt32, that.objectInt32)
                 && Objects.equals(objectInt64, that.objectInt64)
@@ -213,6 +227,8 @@ public record AllTypesRecord(
                 && Objects.equals(nestedRecord, that.nestedRecord)
                 && Arrays.equals(primitiveInt8Array, that.primitiveInt8Array)
                 && Arrays.equals(objectInt8Array, that.objectInt8Array)
+                && Arrays.equals(primitiveCharArray, that.primitiveCharArray)
+                && Arrays.equals(objectCharacterArray, that.objectCharacterArray)
                 && Arrays.equals(primitiveInt16Array, that.primitiveInt16Array)
                 && Arrays.equals(objectInt16Array, that.objectInt16Array)
                 && Arrays.equals(primitiveInt32Array, that.primitiveInt32Array)
