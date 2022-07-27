@@ -28,8 +28,11 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -146,8 +149,8 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_clusterVersionIs5dot2_then_listenerIsAppliedOnNewCatalogOnly() {
-        int[] listenerCount = new int[1];
+    public void when_clusterVersionIs5dot2_then_listenerIsAppliedOnNewCatalogOnly() throws InterruptedException {
+        AtomicInteger listenerCount = new AtomicInteger();
         storage.initializeWithListener(new TablesStorage.EntryListenerAdapter() {
             @Override
             public void entryUpdated(EntryEvent<String, Object> event) {
@@ -155,7 +158,7 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
 
             @Override
             public void entryRemoved(EntryEvent<String, Object> event) {
-                listenerCount[0]++;
+                listenerCount.incrementAndGet();
             }
         });
 
@@ -165,7 +168,9 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         storage.oldStorage().clear();
         storage.newStorage().clear();
 
-        assertTrueEventually(() -> assertThat(listenerCount[0] == 1));
+        assertTrueEventually(() -> assertThat(listenerCount.get() == 1));
+        MILLISECONDS.sleep(100);
+        assertThat(listenerCount.get() == 1);
     }
 
     private static Mapping mapping(String name, String type) {
