@@ -82,7 +82,7 @@ public abstract class AbstractGenericRecord implements InternalGenericRecord {
 
     public final <T> T readAny(@Nonnull String fieldName) {
         FieldKind kind = getFieldKind(fieldName);
-        return (T) fieldOperations(kind).readGenericRecordOrPrimitive(this, fieldName);
+        return (T) fieldOperations(kind).readGenericRecordOrPrimitive(this, fieldName, null);
     }
 
     /**

@@ -33,21 +33,21 @@ public interface FieldKindBasedOperations {
     int VARIABLE_SIZE = -1;
 
     default Object readAsLeafObjectOnQuery(InternalGenericRecord genericRecord, String fieldName, @Nullable FieldDescriptor fd) {
-        return readGenericRecordOrPrimitive(genericRecord, fieldName);
+        return readGenericRecordOrPrimitive(genericRecord, fieldName, fd);
     }
 
     /**
      * For primitives this will return boxed object.
      * This method will be overridden for Portable and Compact and will return GenericRecord representation of objects
      */
-    Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName);
+    Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName, @Nullable FieldDescriptor fd);
 
     default Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
         throw new UnsupportedOperationException("\"" + fieldName + "\" is not an array kind. It does not support indexed reads.");
     }
 
     default int hashCode(GenericRecord record, String fieldName) {
-        return Objects.hashCode(readGenericRecordOrPrimitive(record, fieldName));
+        return Objects.hashCode(readGenericRecordOrPrimitive(record, fieldName, null));
     }
 
     void writeFieldFromRecordToWriter(DefaultCompactWriter defaultCompactWriter, GenericRecord genericRecord, String fieldName);
