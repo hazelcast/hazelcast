@@ -7580,7 +7580,7 @@ public class MemberCompatibilityNullTest_2_5 {
     @Test
     public void test_SqlExecuteCodec_encodeResponse() {
         int fileClientMessageIndex = 854;
-        ClientMessage encoded = SqlExecuteCodec.encodeResponse(null, null, aLong, null);
+        ClientMessage encoded = SqlExecuteCodec.encodeResponse(null, null, aLong, null, aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -7909,6 +7909,19 @@ public class MemberCompatibilityNullTest_2_5 {
     public void test_JetGetJobSuspensionCauseCodec_encodeResponse() {
         int fileClientMessageIndex = 894;
         ClientMessage encoded = JetGetJobSuspensionCauseCodec.encodeResponse(aData);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetGetJobAndSqlSummaryListCodec_decodeRequest() {
+        int fileClientMessageIndex = 895;
+    }
+
+    @Test
+    public void test_JetGetJobAndSqlSummaryListCodec_encodeResponse() {
+        int fileClientMessageIndex = 896;
+        ClientMessage encoded = JetGetJobAndSqlSummaryListCodec.encodeResponse(aListJobAndSqlSummary);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

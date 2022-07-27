@@ -11,7 +11,7 @@ if "x%JAVA_HOME%" == "x" (
 
 "%RUN_JAVA%" -version 1>nul 2>nul || (
     echo JAVA could not be found in your system.
-    echo Please install Java 1.8 or higher!!!
+    echo Please install Java 1.8 or higher
     exit /b 2
 )
 set HAZELCAST_HOME=%~dp0..
@@ -36,7 +36,17 @@ if NOT "%MAX_HEAP_SIZE%" == "" (
 FOR /F "tokens=* USEBACKQ" %%F IN (`CALL "%RUN_JAVA%" -cp "%HAZELCAST_HOME%\lib\*" com.hazelcast.internal.util.JavaVersion`) DO SET JAVA_VERSION=%%F
 
 IF NOT "%JAVA_VERSION%" == "8" (
-	set JAVA_OPTS=%JAVA_OPTS% --add-modules java.se --add-exports java.base/jdk.internal.ref=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.management/sun.management=ALL-UNNAMED --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED --add-exports jdk.management/com.ibm.lang.management.internal=ALL-UNNAMED
+	set JAVA_OPTS=%JAVA_OPTS% --add-modules java.se --add-exports java.base/jdk.internal.ref=ALL-UNNAMED --add-opens java.base/java.lang=ALL-UNNAMED --add-opens java.base/sun.nio.ch=ALL-UNNAMED --add-opens java.management/sun.management=ALL-UNNAMED --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED
+
+    for /f "tokens=2 delims== usebackq" %%a in (`java -XshowSettings:properties -version 2^>^&1 ^| findstr /c:"java.vm.name"`) do (
+    		set VM_NAME=%%a
+    )
+
+    echo "!VM_NAME!" | find /I "OpenJ9" && (
+    	REM OpenJ9 detected, adding additional exports
+    	set JAVA_OPTS=%JAVA_OPTS% --add-exports jdk.management/com.ibm.lang.management.internal=ALL-UNNAMED
+    )
+
 )
 
 REM HAZELCAST_CONFIG holds path to the configuration file. The path is relative to the Hazelcast installation (HAZELCAST_HOME).

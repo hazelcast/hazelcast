@@ -404,7 +404,7 @@ public final class Util {
     /**
      * Logs a late event that was dropped.
      */
-    public static void logLateEvent(ILogger logger, long currentWm, @Nonnull Object item) {
+    public static void logLateEvent(ILogger logger, byte key, long currentWm, @Nonnull Object item) {
         if (!logger.isInfoEnabled()) {
             return;
         }
@@ -417,7 +417,7 @@ public final class Util {
                     ));
         } else {
             logger.info(format(
-                    "Late event dropped. currentWatermark=%s, event=%s", new Watermark(currentWm), item
+                    "Late event dropped. currentWatermark=%s, event=%s", new Watermark(currentWm, key), item
             ));
         }
     }
@@ -789,9 +789,13 @@ public final class Util {
     }
 
     public static void checkJetIsEnabled(NodeEngine nodeEngine) {
-        if (!nodeEngine.getConfig().getJetConfig().isEnabled()) {
+        if (!isJetEnabled(nodeEngine)) {
             throw new JetDisabledException(JET_IS_DISABLED_MESSAGE);
         }
+    }
+
+    public static boolean isJetEnabled(NodeEngine nodeEngine) {
+        return nodeEngine.getConfig().getJetConfig().isEnabled();
     }
 
     public static class Identity<T> implements IdentifiedDataSerializable, FunctionEx<T, T> {

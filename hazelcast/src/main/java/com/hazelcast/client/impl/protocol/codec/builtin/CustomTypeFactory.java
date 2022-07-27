@@ -41,6 +41,9 @@ import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
+import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.impl.JobAndSqlSummary;
+import com.hazelcast.jet.impl.SqlSummary;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
 import com.hazelcast.memory.Capacity;
@@ -247,11 +250,7 @@ public final class CustomTypeFactory {
     }
 
     public static Schema createSchema(String typeName, List<FieldDescriptor> fields) {
-        TreeMap<String, FieldDescriptor> map = new TreeMap<>(Comparator.naturalOrder());
-        for (FieldDescriptor field : fields) {
-            map.put(field.getFieldName(), field);
-        }
-        return new Schema(typeName, map);
+        return new Schema(typeName, fields);
     }
 
     public static HazelcastJsonValue createHazelcastJsonValue(String value) {
@@ -286,5 +285,24 @@ public final class CustomTypeFactory {
         config.setMemoryTierConfig(memoryTierConfig);
         config.setDiskTierConfig(diskTierConfig);
         return config;
+    }
+
+    public static SqlSummary createSqlSummary(String query, boolean unbounded) {
+        return new SqlSummary(query, unbounded);
+    }
+
+    public static JobAndSqlSummary createJobAndSqlSummary(
+            boolean lightJob,
+            long jobId,
+            long executionId,
+            String nameOrId,
+            int jobStatus,
+            long submissionTime,
+            long completionTime,
+            String failureText,
+            SqlSummary sqlSummary
+    ) {
+        return new JobAndSqlSummary(lightJob, jobId, executionId, nameOrId, JobStatus.getById(jobStatus), submissionTime,
+                completionTime, failureText, sqlSummary);
     }
 }

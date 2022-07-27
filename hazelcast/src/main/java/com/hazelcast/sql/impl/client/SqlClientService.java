@@ -138,7 +138,8 @@ public class SqlClientService implements SqlService {
             res.onExecuteResponse(
                     response.rowMetadata != null ? new SqlRowMetadata(response.rowMetadata) : null,
                     response.rowPage,
-                    response.updateCount
+                    response.updateCount,
+                    response.isIsInfiniteRowsExists ? response.isInfiniteRows : null
             );
         }
     }

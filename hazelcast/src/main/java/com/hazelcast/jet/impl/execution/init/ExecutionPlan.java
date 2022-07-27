@@ -597,9 +597,9 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 throw new JetException("An edge distributing to a specific member must be partitioned: " + edge);
             }
             if (!ptionArrgmt.getRemotePartitionAssignment().containsKey(edge.getDistributedTo())
-                && !edge.getDistributedTo().equals(nodeEngine.getThisAddress())) {
+                    && !edge.getDistributedTo().equals(nodeEngine.getThisAddress())) {
                 throw new JetException("The target member of an edge is not present in the cluster or is a lite member: "
-                                       + edge);
+                        + edge);
             }
         }
 
@@ -655,7 +655,9 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             ConcurrentConveyor<Object> conveyor = createConveyorArray(
                     1, edge.sourceVertex().localParallelism(), edge.getConfig().getQueueSize())[0];
 
-            InboundEdgeStream inboundEdgeStream = newEdgeStream(edge, conveyor,
+            InboundEdgeStream inboundEdgeStream = newEdgeStream(
+                    edge,
+                    conveyor,
                     jobPrefix + "/toVertex:" + edge.destVertex().name() + "-toMember:" + destAddr,
                     adaptedComparator);
             SenderTasklet t = new SenderTasklet(inboundEdgeStream, nodeEngine, destAddr,

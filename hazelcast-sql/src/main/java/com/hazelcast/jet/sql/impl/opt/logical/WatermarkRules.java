@@ -109,7 +109,8 @@ final class WatermarkRules {
                         WatermarkPolicy.limitingLag(lagMs),
                         lagMs,
                         0,
-                        EventTimePolicy.DEFAULT_IDLE_TIMEOUT);
+                        EventTimePolicy.DEFAULT_IDLE_TIMEOUT,
+                        (byte) 0);
             };
         }
 

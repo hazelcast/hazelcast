@@ -137,6 +137,11 @@ public interface GeneralStage<T> extends Stage {
      * situations in which the result of {@code mapFn} is modified
      * after being emitted or where the state is modified by downstream processors.
      * <p>
+     * If you want to return the state variable from {@code mapFn}, then the
+     * return value must be a copy of state variable to avoid situations in
+     * which the result of {@code mapFn} is modified after being emitted or
+     * where the state is modified by downstream processors.
+     * <p>
      * This sample takes a stream of {@code long} numbers representing request
      * latencies, computes the cumulative latency of all requests so far, and
      * starts emitting alarm messages when the cumulative latency crosses a
@@ -213,6 +218,11 @@ public interface GeneralStage<T> extends Stage {
      * then the return value must be a copy of state variable to avoid
      * situations in which the result of {@code mapFn} is modified
      * after being emitted or where the state is modified by downstream processors.
+     * <p>
+     * If you want to return the state variable from {@code flatMapFn}, then the
+     * return value must be a copy of state variable to avoid situations in
+     * which the result of {@code mapFn} is modified after being emitted or
+     * where the state is modified by downstream processors.
      * <p>
      * This sample inserts a punctuation mark (a special string) after every
      * 10th input string:
