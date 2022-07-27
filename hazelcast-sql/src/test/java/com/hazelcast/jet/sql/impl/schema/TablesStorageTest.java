@@ -147,8 +147,8 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_clusterVersionIs5dot2_then_listenerIsAppliedOnNewCatalogOnly() throws InterruptedException {
-        AtomicInteger listenerCount = new AtomicInteger();
-        storage.initializeWithListener(getCountingOnClearEntryListener(listenerCount));
+        AtomicInteger clearCounter = new AtomicInteger();
+        storage.initializeWithListener(getCountingOnClearEntryListener(clearCounter));
 
         String name = randomName();
         storage.newStorage().put(name, mapping(name, "type"));
@@ -157,10 +157,10 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         storage.newStorage().clear();
 
         assertTrueEventually(() -> {
-            assert listenerCount.get() == 1;
+            assert clearCounter.get() == 1;
         });
         MILLISECONDS.sleep(100);
-        assert listenerCount.get() == 1;
+        assert clearCounter.get() == 1;
     }
 
     private static Mapping mapping(String name, String type) {
@@ -171,11 +171,11 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         return new View(name, query, emptyList(), emptyList());
     }
 
-    private EntryListener<String, Object> getCountingOnClearEntryListener(AtomicInteger listenerCount) {
+    private EntryListener<String, Object> getCountingOnClearEntryListener(AtomicInteger clearCounter) {
         return new EntryListener<String, Object>() {
             @Override
             public void mapCleared(MapEvent event) {
-                listenerCount.incrementAndGet();
+                clearCounter.incrementAndGet();
             }
 
             @Override
