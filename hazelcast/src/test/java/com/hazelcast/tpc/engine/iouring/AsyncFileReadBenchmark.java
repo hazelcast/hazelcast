@@ -2,7 +2,6 @@ package com.hazelcast.tpc.engine.iouring;
 
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.tpc.engine.AsyncFile;
-import com.hazelcast.tpc.engine.Promise;
 import com.hazelcast.tpc.engine.iouring.IOUringEventloop.IOUringConfiguration;
 import io.netty.channel.unix.Buffer;
 
@@ -15,7 +14,6 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.tpc.engine.AsyncFile.pageSize;

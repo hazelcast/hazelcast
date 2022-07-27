@@ -44,7 +44,7 @@ public abstract class AsyncFile {
      */
     public abstract int fd();
 
-    public abstract Promise nop();
+    public abstract Fut nop();
 
     /**
      * Returns the path to the file.
@@ -62,15 +62,15 @@ public abstract class AsyncFile {
         return pageSize;
     }
 
-    public abstract Promise fsync();
+    public abstract Fut fsync();
 
-    public abstract Promise fallocate(int mode, long offset, long len);
+    public abstract Fut fallocate(int mode, long offset, long len);
 
-    public abstract Promise delete();
+    public abstract Fut delete();
 
-    public abstract Promise open(int flags);
+    public abstract Fut open(int flags);
 
-    public abstract Promise close();
+    public abstract Fut close();
 
     /**
      * Reads data from a file from some offset.
@@ -87,7 +87,7 @@ public abstract class AsyncFile {
      * @param length the number of bytes to read.
      * @return
      */
-    public abstract Promise pread(long offset, int length, long bufferAddress);
+    public abstract Fut pread(long offset, int length, long bufferAddress);
 
     /**
      * todo: use an IOBuffer instead of an bufferAddress/length. This way can integrate with
@@ -98,5 +98,5 @@ public abstract class AsyncFile {
      * @param bufferAddress
      * @return
      */
-    public abstract Promise pwrite(long offset, int length, long bufferAddress);
+    public abstract Fut pwrite(long offset, int length, long bufferAddress);
 }

@@ -18,7 +18,7 @@ package com.hazelcast.tpc.engine.iouring;
 
 import com.hazelcast.internal.util.collection.Int2ObjectHashMap;
 import com.hazelcast.tpc.engine.AsyncFile;
-import com.hazelcast.tpc.engine.Promise;
+import com.hazelcast.tpc.engine.Fut;
 import com.hazelcast.tpc.engine.iouring.IOUringEventloop.IOUringUnsafe;
 import com.hazelcast.tpc.util.CircularQueue;
 import com.hazelcast.tpc.util.SlabAllocator;
@@ -127,13 +127,13 @@ public class IORequestScheduler {
         }
     }
 
-    Promise issue(IOUringAsyncFile file,
-                  byte op,
-                  int flags,
-                  int rwFlags,
-                  long bufferAddress,
-                  int length,
-                  long offset) {
+    Fut issue(IOUringAsyncFile file,
+              byte op,
+              int flags,
+              int rwFlags,
+              long bufferAddress,
+              int length,
+              long offset) {
 
         IoRequest req = ioRequestAllocator.allocate();
         req.file = file;
@@ -144,8 +144,8 @@ public class IORequestScheduler {
         req.length = length;
         req.offset = offset;
 
-        Promise promise = unsafe.newPromise();
-        req.promise = promise;
+        Fut fut = unsafe.newFut();
+        req.fut = fut;
 
         StorageDevice dev = file.dev;
         if (dev.concurrent < dev.maxConcurrent) {
@@ -153,10 +153,10 @@ public class IORequestScheduler {
         } else if (!dev.pending.offer(req)) {
             ioRequestAllocator.free(req);
             // todo: better approach needed
-            promise.completeExceptionally(new IOException("Overload "));
+            fut.completeExceptionally(new IOException("Overload "));
         }
 
-        return promise;
+        return fut;
     }
 
     private void enqueueSq(IoRequest req) {
@@ -199,11 +199,11 @@ public class IORequestScheduler {
             }
             req.file.dev.concurrent--;
             if (res < 0) {
-                req.promise.completeExceptionally(
+                req.fut.completeExceptionally(
                         new IOException(file.path() + " res=" + -res + " op=" + op + " for info see: " +
                                 "https://www.thegeekstuff.com/2010/10/linux-error-codes/"));
             } else {
-                req.promise.complete(true);
+                req.fut.complete(true);
             }
 
             submitNext(req.file.dev);
@@ -233,13 +233,13 @@ public class IORequestScheduler {
         private int flags;
         private int rwFlags;
         private long bufferAddress;
-        private Promise promise;
+        private Fut fut;
 
         private void clear() {
             flags = 0;
             rwFlags = 0;
             length = 0;
-            promise = null;
+            fut = null;
             bufferAddress = 0;
             file = null;
         }

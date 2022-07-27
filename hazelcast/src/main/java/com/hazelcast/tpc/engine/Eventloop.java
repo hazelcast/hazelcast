@@ -86,7 +86,7 @@ public abstract class Eventloop {
 
     private final CountDownLatch terminationLatch = new CountDownLatch(1);
 
-    private final PromiseAllocator promiseAllocator;
+    private final FutAllocator futAllocator;
 
     protected Unsafe unsafe;
 
@@ -115,7 +115,7 @@ public abstract class Eventloop {
         }
 
         this.allowedCpus = config.threadAffinity == null ? null : config.threadAffinity.nextAllowedCpus();
-        this.promiseAllocator = new PromiseAllocator(this, 1024);
+        this.futAllocator = new FutAllocator(this, 1024);
     }
 
     /**
@@ -449,12 +449,12 @@ public abstract class Eventloop {
 
     protected static final class ScheduledTask implements Runnable, Comparable<ScheduledTask> {
 
-        private Promise promise;
+        private Fut fut;
         private long deadlineEpochNanos;
 
         @Override
         public void run() {
-            promise.complete(null);
+            fut.complete(null);
         }
 
         @Override
@@ -517,31 +517,31 @@ public abstract class Eventloop {
 
         public abstract AsyncFile newAsyncFile(String path);
 
-        public <E> Promise<E> newCompletedPromise(E value) {
-            Promise<E> promise = promiseAllocator.allocate();
-            promise.complete(value);
-            return promise;
+        public <E> Fut<E> newCompletedFuture(E value) {
+            Fut<E> fut = futAllocator.allocate();
+            fut.complete(value);
+            return fut;
         }
 
-        public <E> Promise<E> newPromise() {
-            return promiseAllocator.allocate();
+        public <E> Fut<E> newFut() {
+            return futAllocator.allocate();
         }
 
         public boolean execute(Runnable task) {
             return localRunQueue.offer(task);
         }
 
-        public Promise sleep(long delay, TimeUnit unit) {
-            Promise promise = newPromise();
+        public Fut sleep(long delay, TimeUnit unit) {
+            Fut fut = newFut();
             ScheduledTask scheduledTask = new ScheduledTask();
-            scheduledTask.promise = promise;
+            scheduledTask.fut = fut;
             scheduledTask.deadlineEpochNanos = epochNanos() + unit.toNanos(delay);
             scheduledTaskQueue.add(scheduledTask);
-            return promise;
+            return fut;
         }
 
-        public <I, O> Promise<List<O>> map(List<I> input, List<O> output, Function<I, O> function) {
-            Promise promise = newPromise();
+        public <I, O> Fut<List<O>> map(List<I> input, List<O> output, Function<I, O> function) {
+            Fut fut = newFut();
 
             //todo: task can be pooled
             Runnable task = new Runnable() {
@@ -558,13 +558,13 @@ public abstract class Eventloop {
                     if (it.hasNext()) {
                         unsafe.execute(this);
                     } else {
-                        promise.complete(output);
+                        fut.complete(output);
                     }
                 }
             };
 
             execute(task);
-            return promise;
+            return fut;
         }
 
         /**
@@ -573,8 +573,8 @@ public abstract class Eventloop {
          * @param loopFunction the function that is called in a loop.
          * @return the future that is completed as soon as the loop finishes.
          */
-        public Promise loop(Function<Eventloop, Boolean> loopFunction) {
-            Promise promise = newPromise();
+        public Fut loop(Function<Eventloop, Boolean> loopFunction) {
+            Fut fut = newFut();
 
             //todo: task can be pooled
             Runnable task = new Runnable() {
@@ -583,12 +583,12 @@ public abstract class Eventloop {
                     if (loopFunction.apply(Eventloop.this)) {
                         unsafe.execute(this);
                     } else {
-                        promise.complete(null);
+                        fut.complete(null);
                     }
                 }
             };
             execute(task);
-            return promise;
+            return fut;
         }
     }
 

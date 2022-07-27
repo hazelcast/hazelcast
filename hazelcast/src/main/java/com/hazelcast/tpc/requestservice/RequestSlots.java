@@ -27,9 +27,18 @@ import static com.hazelcast.tpc.requestservice.FrameCodec.OFFSET_REQ_CALL_ID;
  * an increasing counter that is used to find a free slot.
  *
  * TODO:
+ *
  * - Backpressure is needed when no free slot can be found.
+ *
  * - If there are no free slots, the counter will be increased
- *   at a very high rate.
+ *   at a very high rate because the threads will spin on that
+ *
+ * - Two Concurrent threads will increase the counter and then access the array.
+ *   So they will run into contention twice. If the callId would be reversed bitwise
+ *   for lookup purposes, they will still content on the counter, but not on the array.
+ *
+ * - Perhaps not use a shared
+ *
  */
 class RequestSlots {
 

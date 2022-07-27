@@ -26,17 +26,17 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * This an object similar in nature to the {@link java.util.concurrent.CompletableFuture} that
  * is designed to work with the {@link Eventloop}.
  *
- * The reason this class is called promise instead of future, it that it is annoying to have multiple
- * future classes on classpath with respect to code completion. Hence the name promise.
+ * The reason this class is called Fut instead of future, it that it is annoying to have multiple
+ * future classes on classpath with respect to code completion.
  *
  * This class is not thread-safe and should only be used inside the {@link Eventloop}.
  *
- * The Promise supports pooling. So when you get a promise, make sure you call {@link #release()}
+ * The Fut supports pooling. So when you get a promise, make sure you call {@link #release()}
  * when you are done with it.
  *
  * @param <E>
  */
-public class Promise<E> {
+public class Fut<E> {
 
     private final static Object EMPTY = new Object();
 
@@ -46,14 +46,14 @@ public class Promise<E> {
     private List<BiConsumer<E, Throwable>> consumers = new ArrayList<>();
     private boolean releaseOnComplete = false;
     int refCount = 1;
-    PromiseAllocator allocator;
+    FutAllocator allocator;
 
-    protected Promise(Eventloop eventloop) {
+    protected Fut(Eventloop eventloop) {
         this.eventloop = checkNotNull(eventloop);
     }
 
     /**
-     * Checks if the Promise has been completed.
+     * Checks if the Fut has been completed.
      *
      * @return <code>true</code> if it has been completed, <code>false</code> otherwise.
      */
@@ -62,7 +62,7 @@ public class Promise<E> {
     }
 
     /**
-     * Checks if the Promise has been completed exceptionally.
+     * Checks if the Fut has been completed exceptionally.
      *
      * @return <code>true</code> if completed exceptionally, <code>false</code> otherwise.
      */
@@ -79,17 +79,17 @@ public class Promise<E> {
     }
 
     /**
-     * Completes this Promise with the provided exceptional value.
+     * Completes this Fut with the provided exceptional value.
      *
      * @param value the exceptional value.
      * @throws NullPointerException  if value is <code>null</code>.
-     * @throws IllegalStateException if the Promise is already completed.
+     * @throws IllegalStateException if the Fut is already completed.
      */
     public void completeExceptionally(Throwable value) {
         checkNotNull(value);
 
         if (this.value != EMPTY) {
-            throw new IllegalStateException("Promise is already completed");
+            throw new IllegalStateException("Fut is already completed");
         }
         this.value = value;
         this.exceptional = true;
@@ -110,14 +110,14 @@ public class Promise<E> {
     }
 
     /**
-     * Completes this Promise with the provided value.
+     * Completes this Fut with the provided value.
      *
      * @param value the value
-     * @throws IllegalStateException if the Promise has already been completed.
+     * @throws IllegalStateException if the Fut has already been completed.
      */
     public void complete(E value) {
         if (this.value != EMPTY) {
-            throw new IllegalStateException("Promise is already completed");
+            throw new IllegalStateException("Fut is already completed");
         }
         this.value = value;
         this.exceptional = false;
@@ -137,7 +137,7 @@ public class Promise<E> {
         }
     }
 
-    public <T extends Throwable> Promise then(BiConsumer<E, T> consumer) {
+    public <T extends Throwable> Fut then(BiConsumer<E, T> consumer) {
         checkNotNull(consumer, "consumer can't be null");
 
         if (value == EMPTY) {

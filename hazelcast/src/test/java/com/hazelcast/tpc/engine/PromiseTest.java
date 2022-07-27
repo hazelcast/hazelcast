@@ -27,14 +27,14 @@ import static org.junit.Assert.assertTrue;
 public class PromiseTest {
 
     private NioEventloop eventloop;
-    private PromiseAllocator promiseAllocator;
+    private FutAllocator futAllocator;
 
     @Before
     public void before() {
         eventloop = new NioEventloop();
         eventloop.start();
 
-        promiseAllocator = new PromiseAllocator(eventloop, 1024);
+        futAllocator = new FutAllocator(eventloop, 1024);
     }
 
     @After
@@ -47,38 +47,38 @@ public class PromiseTest {
 
     @Test
     public void test_pooling(){
-        Promise promise = new Promise(eventloop);
+        Fut fut = new Fut(eventloop);
 
-        promise.allocator = promiseAllocator;
+        fut.allocator = futAllocator;
 
-        assertEquals(1, promise.refCount);
-        assertEquals(0, promiseAllocator.size());
+        assertEquals(1, fut.refCount);
+        assertEquals(0, futAllocator.size());
 
-        promise.acquire();
-        assertEquals(2, promise.refCount);
-        assertEquals(0, promiseAllocator.size());
+        fut.acquire();
+        assertEquals(2, fut.refCount);
+        assertEquals(0, futAllocator.size());
 
-        promise.release();
-        assertEquals(1, promise.refCount);
-        assertEquals(0, promiseAllocator.size());
+        fut.release();
+        assertEquals(1, fut.refCount);
+        assertEquals(0, futAllocator.size());
 
-        promise.release();
-        assertFalse(promise.isDone());
-        assertEquals(1, promiseAllocator.size());
+        fut.release();
+        assertFalse(fut.isDone());
+        assertEquals(1, futAllocator.size());
     }
 
     @Test
     public void test_thenOnCompletedFuture(){
-        Promise promise = new Promise(eventloop);
+        Fut fut = new Fut(eventloop);
 
         String result = "foobar";
-        promise.complete(result);
+        fut.complete(result);
 
         CountDownLatch executed = new CountDownLatch(1);
         AtomicReference valueRef = new AtomicReference();
         AtomicReference throwableRef = new AtomicReference();
 
-        promise.then((BiConsumer<Object, Throwable>) (o, throwable) -> {
+        fut.then((BiConsumer<Object, Throwable>) (o, throwable) -> {
             valueRef.set(o);
             throwableRef.set(throwable);
             executed.countDown();
@@ -91,26 +91,26 @@ public class PromiseTest {
 
     @Test(expected = NullPointerException.class)
     public void test_completeExceptionallyWhenNull(){
-        Promise future = new Promise(eventloop);
+        Fut future = new Fut(eventloop);
 
         future.completeExceptionally(null);
     }
 
     @Test
     public void test_completeExceptionally(){
-        Promise promise = new Promise(eventloop);
+        Fut fut = new Fut(eventloop);
 
         CountDownLatch executed = new CountDownLatch(1);
         AtomicReference valueRef = new AtomicReference();
         AtomicReference throwableRef = new AtomicReference();
-        promise.then((BiConsumer<Object, Throwable>) (o, throwable) -> {
+        fut.then((BiConsumer<Object, Throwable>) (o, throwable) -> {
             valueRef.set(o);
             throwableRef.set(throwable);
             executed.countDown();
         });
 
         Exception exception = new Exception();
-        promise.completeExceptionally(exception);
+        fut.completeExceptionally(exception);
 
         assertOpenEventually(executed);
         assertNull(valueRef.get());
@@ -120,27 +120,27 @@ public class PromiseTest {
 
     @Test(expected = IllegalStateException.class)
     public void test_completeExceptionally_whenAlreadyCompleted(){
-        Promise promise = new Promise(eventloop);
+        Fut fut = new Fut(eventloop);
 
-        promise.completeExceptionally(new Throwable());
-        promise.completeExceptionally(new Throwable());
+        fut.completeExceptionally(new Throwable());
+        fut.completeExceptionally(new Throwable());
     }
 
     @Test
     public void test_complete(){
-        Promise promise = new Promise(eventloop);
+        Fut fut = new Fut(eventloop);
 
         CountDownLatch executed = new CountDownLatch(1);
         AtomicReference valueRef = new AtomicReference();
         AtomicReference throwableRef = new AtomicReference();
-        promise.then((BiConsumer<Object, Throwable>) (o, throwable) -> {
+        fut.then((BiConsumer<Object, Throwable>) (o, throwable) -> {
             valueRef.set(o);
             throwableRef.set(throwable);
             executed.countDown();
         });
 
         String result = "foobar";
-        promise.complete(result);
+        fut.complete(result);
 
         assertOpenEventually(executed);
         assertSame(result, valueRef.get());
@@ -149,9 +149,9 @@ public class PromiseTest {
 
     @Test(expected = IllegalStateException.class)
     public void test_complete_whenAlreadyCompleted(){
-        Promise promise = new Promise(eventloop);
+        Fut fut = new Fut(eventloop);
 
-        promise.complete("first");
-        promise.complete("second");
+        fut.complete("first");
+        fut.complete("second");
     }
 }
