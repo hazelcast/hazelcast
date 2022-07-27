@@ -113,7 +113,7 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         String name = randomName();
         storage.put(name, mapping(name, "type"));
 
-        assert storage.newStorage().size() > 0;
+        assert storage.newStorage().size() == 1;
         assert storage.oldStorage().size() == 0;
     }
 
@@ -121,9 +121,9 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
     public void when_clusterVersionIs5dot2_then_oldCatalogIsMigratedOnFirstReadBeforeInitialization() {
         String name = randomName();
         storage.oldStorage().put(name, mapping(name, "type"));
-        storage.allObjects();
 
-        assert storage.newStorage().size() > 0;
+        assert storage.allObjects().size() == 1;
+        assert storage.newStorage().size() == 1;
         assert storage.oldStorage().size() == 0;
     }
 
@@ -140,8 +140,8 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         });
         String name = randomName();
         storage.oldStorage().put(name, mapping(name, "type"));
-        storage.allObjects();
 
+        assert storage.allObjects().size() == 0;
         assert storage.oldStorage().size() == 1;
     }
 
