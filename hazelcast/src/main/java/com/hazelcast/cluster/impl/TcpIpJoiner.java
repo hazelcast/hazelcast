@@ -41,6 +41,7 @@ import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -482,8 +483,13 @@ public class TcpIpJoiner extends AbstractJoiner {
 
     private void cleanupKnownMemberAddresses() {
         long currentTime = Clock.currentTimeMillis();
-        knownMemberAddresses.values().removeIf(memberLeftTime ->
-                (currentTime - memberLeftTime) >= previouslyJoinedMemberAddressRetentionDuration);
+        Iterator<Long> iterator = knownMemberAddresses.values().iterator();
+        while (iterator.hasNext()) {
+            Long memberLeftTime = iterator.next();
+            if (currentTime - memberLeftTime >= previouslyJoinedMemberAddressRetentionDuration) {
+                iterator.remove();
+            }
+        }
     }
 
     // only used in tests
