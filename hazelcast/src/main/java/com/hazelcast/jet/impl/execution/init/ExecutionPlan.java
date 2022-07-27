@@ -446,7 +446,6 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                     jobClassLoaderService.getProcessorClassLoader(jobId, vertex.name());
             ProcessorSupplier supplier = vertex.processorSupplier();
 
-            boolean isCooperativeInit = supplier.initIsCooperative();
             RunnableEx action = () -> {
                 String prefix = prefix(jobConfig.getName(), jobId, vertex.name(), "#PS");
                 ILogger logger = prefixedLogger(nodeEngine.getLogger(supplier.getClass()), prefix);
@@ -470,7 +469,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                                 processorClassLoader
                         )));
             };
-            if (isCooperativeInit) {
+            if (supplier.initIsCooperative()) {
                 action.run();
                 futures[index++] = CompletableFuture.completedFuture(null);
             } else {

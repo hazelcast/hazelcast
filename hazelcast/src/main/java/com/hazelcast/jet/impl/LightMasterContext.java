@@ -108,7 +108,6 @@ public final class LightMasterContext {
             NodeEngineImpl nodeEngine, JobCoordinationService coordinationService, DAG dag, long jobId,
             JobConfig jobConfig, Subject subject
     ) {
-
         ILogger logger = nodeEngine.getLogger(LightMasterContext.class);
         String jobIdString = idToString(jobId);
 
