@@ -285,7 +285,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
             };
             Executor executor = processorSupplier.closeIsCooperative() ? CALLER_RUNS : offloadExecutor;
             futures.add(runAsync(closeAction, executor));
-            }
+        }
 
         tempDirectories.forEach((k, dir) -> {
             try {

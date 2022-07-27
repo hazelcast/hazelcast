@@ -20,7 +20,6 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MembersView;
-import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.DAG;
@@ -41,6 +40,7 @@ import com.hazelcast.jet.impl.exception.JetDisabledException;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
+import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.jet.impl.operation.GetLocalJobMetricsOperation;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
@@ -104,7 +104,6 @@ import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_GRACEFUL;
 import static com.hazelcast.jet.impl.TerminationMode.RESTART_GRACEFUL;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
-import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.createExecutionPlans;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
@@ -205,7 +204,8 @@ public class MasterJobContext {
 
     void tryStartJob(Supplier<Long> executionIdSupplier) {
         JobCoordinationService coordinationService = mc.coordinationService();
-        ManagedExecutorService coordinationExecutor = coordinationService.coordinationExecutor();
+        MembersView membersView = Util.getMembersView(mc.nodeEngine());
+
         coordinationService
                 .submitToCoordinatorThread(() -> {
                     executionStartTime = System.currentTimeMillis();
@@ -234,23 +234,8 @@ public class MasterJobContext {
                     logger.fine("Building execution plan for " + mc.jobIdString());
                     return dag;
                 })
-                .thenComposeAsync(dag -> {
-                    if (dag == null) {
-                        return completedFuture(null);
-                    }
-                    MembersView membersView = Util.getMembersView(mc.nodeEngine());
-                    JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
-
-                    return createExecutionPlans(mc.nodeEngine(), membersView.getMembers(),
-                                               dag, mc.jobId(), mc.executionId(), mc.jobConfig(), jobExecRec.ongoingSnapshotId(),
-                                               false, mc.jobRecord().getSubject())
-                               .thenApply(executionPlan -> new StartJobInitExecutionParams(executionPlan, membersView));
-                }, coordinationExecutor)
-                .thenCompose(tuple -> coordinationService.submitToCoordinatorThread(() -> {
-                    if (tuple != null) {
-                        initExecution(tuple.membersView, tuple.plans);
-                    }
-                }))
+                .thenCompose(dag -> createExecutionPlans(dag, membersView))
+                .thenCompose(onCoordinator(plans -> initExecution(membersView, plans)))
                 .whenComplete((r, e) -> {
                     if (e != null) {
                         finalizeJob(peel(e));
@@ -258,14 +243,23 @@ public class MasterJobContext {
                 });
     }
 
-    private static final class StartJobInitExecutionParams {
-        final Map<MemberInfo, ExecutionPlan> plans;
-        final MembersView membersView;
+    private CompletableFuture<Map<MemberInfo, ExecutionPlan>> createExecutionPlans(
+            DAG dag,
+            MembersView membersView) {
+        return ExecutionPlanBuilder.createExecutionPlans(mc.nodeEngine(), membersView.getMembers(),
+                dag, mc.jobId(), mc.executionId(), mc.jobConfig(), mc.jobExecutionRecord().ongoingSnapshotId(),
+                false, mc.jobRecord().getSubject());
+    }
 
-        private StartJobInitExecutionParams(Map<MemberInfo, ExecutionPlan> plans, MembersView membersView) {
-            this.plans = plans;
-            this.membersView = membersView;
-        }
+    private <I> Function<I, CompletableFuture<Void>> onCoordinator(Consumer<I> actionFactory) {
+        JobCoordinationService coordinationService = mc.coordinationService();
+        return input -> {
+            if (input == null) {
+                return completedFuture(null);
+            }
+            Runnable action = () -> actionFactory.accept(input);
+            return coordinationService.submitToCoordinatorThread(action);
+        };
     }
 
     private void initExecution(MembersView membersView, Map<MemberInfo, ExecutionPlan> executionPlanMap) {

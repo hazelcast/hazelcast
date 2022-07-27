@@ -898,10 +898,6 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     private Job newJob(DAG dag) {
         return newJob(instance(), dag, null);
     }
-    private Job newJob(String name, DAG dag) {
-        JobConfig config = new JobConfig().setStoreMetricsAfterJobCompletion(false).setName(name);
-        return newJob(instance(), dag, useLightJob ? null : config);
-    }
 
     private Job newJob(HazelcastInstance instance, DAG dag, JobConfig config) {
         if (config != null) {

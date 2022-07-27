@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.function.Function;
 
@@ -136,11 +137,8 @@ public final class ExecutionPlanBuilder {
                     e.getValue().setVertex(entry.requiredPosition, vertexDef);
                 }
             };
-            if (metaSupplier.initIsCooperative()) {
-                futures[entry.requiredPosition] = runAsync(action, CALLER_RUNS);
-            } else {
-                futures[entry.requiredPosition] = CompletableFuture.runAsync(action, initOffloadExecutor);
-            }
+            Executor executor = metaSupplier.initIsCooperative() ? CALLER_RUNS : initOffloadExecutor;
+            futures[entry.requiredPosition] = runAsync(action, executor);
         }
         return CompletableFuture.allOf(futures)
                                 .thenCompose(r -> completedFuture(plans));
