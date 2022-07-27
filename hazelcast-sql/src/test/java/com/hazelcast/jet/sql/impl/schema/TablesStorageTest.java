@@ -17,7 +17,9 @@
 package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
+import com.hazelcast.map.MapEvent;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.test.Accessors;
@@ -67,8 +69,8 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         storage.put(name, originalMapping);
         storage.put(name, updatedMapping);
 
-        assertThat(storage.allObjects().stream().noneMatch(m -> m.equals(originalMapping)));
-        assertThat(storage.allObjects().stream().anyMatch(m -> m.equals(updatedMapping)));
+        assert storage.allObjects().stream().noneMatch(m -> m.equals(originalMapping));
+        assert storage.allObjects().stream().anyMatch(m -> m.equals(updatedMapping));
     }
 
     @Test
@@ -77,8 +79,8 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
 
         assertThat(storage.putIfAbsent(name, mapping(name, "type-1"))).isTrue();
         assertThat(storage.putIfAbsent(name, mapping(name, "type-2"))).isFalse();
-        assertThat(storage.allObjects().stream().anyMatch(m -> m instanceof Mapping && ((Mapping) m).type().equals("type-1")));
-        assertThat(storage.allObjects().stream().noneMatch(m -> m instanceof Mapping && ((Mapping) m).type().equals("type-2")));
+        assert storage.allObjects().stream().anyMatch(m -> m instanceof Mapping && ((Mapping) m).type().equals("type-1"));
+        assert storage.allObjects().stream().noneMatch(m -> m instanceof Mapping && ((Mapping) m).type().equals("type-2"));
     }
 
     @Test
@@ -88,7 +90,7 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         storage.put(name, mapping(name, "type"));
 
         assertThat(storage.removeMapping(name)).isNotNull();
-        assertThat(storage.mappingNames().stream().noneMatch(m -> m.equals(name)));
+        assert storage.mappingNames().stream().noneMatch(m -> m.equals(name));
     }
 
     @Test
@@ -98,7 +100,7 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         storage.put(name, view(name, "type"));
 
         assertThat(storage.removeView(name)).isNotNull();
-        assertThat(storage.allObjects().stream().noneMatch(o -> o instanceof View && ((View) o).name().equals(name)));
+        assert storage.allObjects().stream().noneMatch(o -> o instanceof View && ((View) o).name().equals(name));
     }
 
     @Test
@@ -111,25 +113,22 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         String name = randomName();
         storage.put(name, mapping(name, "type"));
 
-        assertThat(storage.newStorage().size() > 0);
-        assertThat(storage.oldStorage().size() == 0);
+        assert storage.newStorage().size() > 0;
+        assert storage.oldStorage().size() == 0;
     }
 
     @Test
     public void when_clusterVersionIs5dot2_then_oldCatalogIsMigratedOnFirstReadBeforeInitialization() {
         String name = randomName();
-        storage.put(name, mapping(name, "type"));
-        storage.oldStorage().putAll(storage.newStorage());
-        storage.newStorage().clear();
+        storage.oldStorage().put(name, mapping(name, "type"));
         storage.allObjects();
 
-        assertThat(storage.newStorage().size() > 0);
-        assertThat(storage.oldStorage().size() == 0);
+        assert storage.newStorage().size() > 0;
+        assert storage.oldStorage().size() == 0;
     }
 
     @Test
     public void when_clusterVersionIs5dot2_then_oldCatalogIsNotMigratedOnFirstReadAfterInitialization() {
-        String name = randomName();
         storage.initializeWithListener(new TablesStorage.EntryListenerAdapter() {
             @Override
             public void entryUpdated(EntryEvent<String, Object> event) {
@@ -139,38 +138,29 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
             public void entryRemoved(EntryEvent<String, Object> event) {
             }
         });
-        storage.put(name, mapping(name, "type"));
-        storage.oldStorage().putAll(storage.newStorage());
-        storage.newStorage().clear();
+        String name = randomName();
+        storage.oldStorage().put(name, mapping(name, "type"));
         storage.allObjects();
 
-        assertThat(storage.newStorage().size() == 0);
-        assertThat(storage.oldStorage().size() == 0);
+        assert storage.oldStorage().size() == 1;
     }
 
     @Test
     public void when_clusterVersionIs5dot2_then_listenerIsAppliedOnNewCatalogOnly() throws InterruptedException {
         AtomicInteger listenerCount = new AtomicInteger();
-        storage.initializeWithListener(new TablesStorage.EntryListenerAdapter() {
-            @Override
-            public void entryUpdated(EntryEvent<String, Object> event) {
-            }
-
-            @Override
-            public void entryRemoved(EntryEvent<String, Object> event) {
-                listenerCount.incrementAndGet();
-            }
-        });
+        storage.initializeWithListener(getCountingOnClearEntryListener(listenerCount));
 
         String name = randomName();
-        storage.put(name, mapping(name, "type"));
-        storage.oldStorage().putAll(storage.newStorage());
+        storage.newStorage().put(name, mapping(name, "type"));
+        storage.oldStorage().put(name, mapping(name, "type"));
         storage.oldStorage().clear();
         storage.newStorage().clear();
 
-        assertTrueEventually(() -> assertThat(listenerCount.get() == 1));
+        assertTrueEventually(() -> {
+            assert listenerCount.get() == 1;
+        });
         MILLISECONDS.sleep(100);
-        assertThat(listenerCount.get() == 1);
+        assert listenerCount.get() == 1;
     }
 
     private static Mapping mapping(String name, String type) {
@@ -179,5 +169,32 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
 
     private static View view(String name, String query) {
         return new View(name, query, emptyList(), emptyList());
+    }
+
+    private EntryListener<String, Object> getCountingOnClearEntryListener(AtomicInteger listenerCount) {
+        return new EntryListener<String, Object>() {
+            @Override
+            public void mapCleared(MapEvent event) {
+                listenerCount.incrementAndGet();
+            }
+
+            @Override
+            public void entryAdded(EntryEvent<String, Object> event) { }
+
+            @Override
+            public void entryEvicted(EntryEvent<String, Object> event) { }
+
+            @Override
+            public void entryExpired(EntryEvent<String, Object> event) { }
+
+            @Override
+            public void entryRemoved(EntryEvent<String, Object> event) { }
+
+            @Override
+            public void entryUpdated(EntryEvent<String, Object> event) { }
+
+            @Override
+            public void mapEvicted(MapEvent event) { }
+        };
     }
 }
