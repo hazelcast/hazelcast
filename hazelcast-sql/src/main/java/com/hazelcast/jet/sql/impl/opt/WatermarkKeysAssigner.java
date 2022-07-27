@@ -203,6 +203,13 @@ public class WatermarkKeysAssigner {
                 relToWmKeyMapping.put(swAgg, refByteMap);
             } else if (node instanceof SlidingWindow) {
                 SlidingWindow sw = (SlidingWindow) node;
+
+                // if the field used to calculate window bounds isn't watermarked,
+                // the window bounds aren't watermarked either -- just forward input's map.
+                if (!relToWmKeyMapping.get(sw.getInput()).containsKey(sw.orderingFieldIndex())) {
+                    relToWmKeyMapping.put(sw, relToWmKeyMapping.get(sw.getInput()));
+                }
+
                 Map<Integer, MutableByte> byteMap = new HashMap<>(relToWmKeyMapping.get(sw.getInput()));
                 MutableByte newWmKey = new MutableByte(keyCounter);
 //                we should use new wm key for window start and end bounds
