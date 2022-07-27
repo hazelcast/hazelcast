@@ -76,6 +76,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * @param <A> type of the frame accumulator object
  * @param <R> type of the finished result
  */
+@SuppressWarnings("checkstyle:ExecutableStatementCount")
 public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
 
     // package-visible for testing
