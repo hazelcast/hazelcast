@@ -171,7 +171,7 @@ public class JobClassLoaderService {
     /**
      * Returns classloader within which the initialization, execution and closing of
      * given processor should be done.
-     *
+     * <p>
      * It returns processor classloader for a vertex with given name, in a job specified by the id;
      * however if there is no specific processor classloader, this method will return
      * {@link #getClassLoader(long) general job classloader}.
@@ -182,7 +182,7 @@ public class JobClassLoaderService {
      *
      * @param jobId      job id
      * @param vertexName vertex name
-     * @return processor classloader, null if the classloader is not defined for the vertex nor the job
+     * @return processor classloader, null if the classloader is defined neither for the vertex, nor the job
      */
     public ClassLoader getProcessorClassLoader(long jobId, String vertexName) {
         JobClassLoaders jobClassLoaders = classLoaders.get(jobId);
