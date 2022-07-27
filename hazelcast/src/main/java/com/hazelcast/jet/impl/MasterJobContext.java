@@ -36,7 +36,6 @@ import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate;
-import com.hazelcast.jet.impl.deployment.JetDelegatingClassLoader;
 import com.hazelcast.jet.impl.exception.ExecutionNotFoundException;
 import com.hazelcast.jet.impl.exception.JetDisabledException;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
@@ -72,6 +71,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
@@ -81,6 +81,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.function.Functions.entryKey;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
@@ -116,6 +117,7 @@ import static com.hazelcast.jet.impl.util.Util.toList;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.Collections.emptyList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static java.util.concurrent.CompletableFuture.runAsync;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toMap;
@@ -816,30 +818,23 @@ public class MasterJobContext {
                     mc.nodeEngine().getExecutionService().getExecutor(JOB_OFFLOADABLE_EXECUTOR);
             List<CompletableFuture<Void>> futures = new ArrayList<>(vertices.size());
             JobClassLoaderService classLoaderService = mc.getJetServiceBackend().getJobClassLoaderService();
-            JetDelegatingClassLoader jobCl = classLoaderService.getClassLoader(mc.jobId());
-            doWithClassLoader(jobCl, () -> {
-                for (Vertex v : vertices) {
-                    ProcessorMetaSupplier processorMetaSupplier = v.getMetaSupplier();
-                    RunnableEx closeAction = () -> {
-                        try {
-                            ClassLoader processorCl = classLoaderService.getProcessorClassLoader(mc.jobId(), v.getName());
-                            doWithClassLoader(
-                                    processorCl,
-                                    () -> processorMetaSupplier.close(failure)
-                            );
-                        } catch (Throwable e) {
-                            logger.severe(mc.jobIdString()
-                                    + " encountered an exception in ProcessorMetaSupplier.close(), ignoring it", e);
-                        }
-                    };
-                    if (processorMetaSupplier.closeIsCooperative()) {
-                        closeAction.run();
-                        futures.add(completedFuture(null));
-                    } else {
-                        futures.add(CompletableFuture.runAsync(closeAction, offloadExecutor));
+            for (Vertex v : vertices) {
+                ProcessorMetaSupplier processorMetaSupplier = v.getMetaSupplier();
+                RunnableEx closeAction = () -> {
+                    try {
+                        ClassLoader processorCl = classLoaderService.getProcessorClassLoader(mc.jobId(), v.getName());
+                        doWithClassLoader(
+                                processorCl,
+                                () -> processorMetaSupplier.close(failure)
+                        );
+                    } catch (Throwable e) {
+                        logger.severe(mc.jobIdString()
+                                + " encountered an exception in ProcessorMetaSupplier.close(), ignoring it", e);
                     }
-                }
-            });
+                };
+                Executor executor = processorMetaSupplier.closeIsCooperative() ? CALLER_RUNS : offloadExecutor;
+                futures.add(runAsync(closeAction, executor));
+            }
             return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
         }
         return completedFuture(null);

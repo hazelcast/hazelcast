@@ -59,6 +59,7 @@ import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
@@ -267,30 +268,24 @@ public class ExecutionContext implements DynamicMetricsProvider {
         }
 
         JobClassLoaderService jobClassloaderService = jetServiceBackend.getJobClassLoaderService();
-        ClassLoader classLoader = jobClassloaderService.getClassLoader(jobId);
         List<CompletableFuture<Void>> futures = new ArrayList<>(vertices.size());
 
         ExecutorService offloadExecutor = nodeEngine.getExecutionService().getExecutor(JOB_OFFLOADABLE_EXECUTOR);
-        doWithClassLoader(classLoader, () -> {
-            for (VertexDef vertex : vertices) {
-                ProcessorSupplier processorSupplier = vertex.processorSupplier();
-                RunnableEx closeAction = () -> {
-                    try {
-                        ClassLoader processorCl = isLightJob ?
-                                null : jobClassloaderService.getProcessorClassLoader(jobId, vertex.name());
-                        doWithClassLoader(processorCl, () ->  processorSupplier.close(error));
-                    } catch (Throwable e) {
-                        logger.severe(jobNameAndExecutionId()
-                                + " encountered an exception in ProcessorSupplier.close(), ignoring it", e);
-                    }
-                };
-                if (processorSupplier.closeIsCooperative()) {
-                    futures.add(runAsync(closeAction, CALLER_RUNS));
-                } else {
-                    futures.add(runAsync(closeAction, offloadExecutor));
+        for (VertexDef vertex : vertices) {
+            ProcessorSupplier processorSupplier = vertex.processorSupplier();
+            RunnableEx closeAction = () -> {
+                try {
+                    ClassLoader processorCl = isLightJob ?
+                            null : jobClassloaderService.getProcessorClassLoader(jobId, vertex.name());
+                    doWithClassLoader(processorCl, () ->  processorSupplier.close(error));
+                } catch (Throwable e) {
+                    logger.severe(jobNameAndExecutionId()
+                            + " encountered an exception in ProcessorSupplier.close(), ignoring it", e);
                 }
+            };
+            Executor executor = processorSupplier.closeIsCooperative() ? CALLER_RUNS : offloadExecutor;
+            futures.add(runAsync(closeAction, executor));
             }
-        });
 
         tempDirectories.forEach((k, dir) -> {
             try {

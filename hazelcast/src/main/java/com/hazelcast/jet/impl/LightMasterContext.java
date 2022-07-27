@@ -22,6 +22,7 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
@@ -67,7 +68,9 @@ import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.createExecutionPlans;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
+import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
+import static java.util.concurrent.CompletableFuture.runAsync;
 
 public final class LightMasterContext {
 
@@ -90,6 +93,7 @@ public final class LightMasterContext {
     private final AtomicBoolean invocationsCancelled = new AtomicBoolean();
     private final CompletableFuture<Void> jobCompletionFuture = new CompletableFuture<>();
     private final Set<Vertex> vertices;
+    private final JobClassLoaderService jobClassLoaderService;
 
     private LightMasterContext(NodeEngine nodeEngine, long jobId, ILogger logger, String jobIdString,
                               JobConfig jobConfig, Map<MemberInfo, ExecutionPlan> executionPlanMap,
@@ -101,6 +105,8 @@ public final class LightMasterContext {
         this.jobConfig = jobConfig;
         this.executionPlanMap = executionPlanMap;
         this.vertices = vertices;
+        this.jobClassLoaderService = ((JetServiceBackend) nodeEngine.getService(JetServiceBackend.SERVICE_NAME))
+                .getJobClassLoaderService();
     }
 
     @SuppressWarnings("checkstyle:ExecutableStatementCount")
@@ -176,7 +182,7 @@ public final class LightMasterContext {
         for (Vertex vertex : vertices) {
             ProcessorMetaSupplier metaSupplier = vertex.getMetaSupplier();
             Executor executor  = metaSupplier.closeIsCooperative() ? CALLER_RUNS : offloadExecutor;
-            futures.add(CompletableFuture.runAsync(() -> invokeClose(failure, metaSupplier), executor));
+            futures.add(runAsync(() -> invokeClose(failure, metaSupplier), executor));
         }
 
         CompletableFuture<Void> combined = CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
@@ -200,7 +206,8 @@ public final class LightMasterContext {
 
     private void invokeClose(@Nullable Throwable failure, ProcessorMetaSupplier metaSupplier) {
         try {
-            metaSupplier.close(failure);
+            ClassLoader classLoader = jobClassLoaderService.getClassLoader(jobId);
+            doWithClassLoader(classLoader, () -> metaSupplier.close(failure));
         } catch (Throwable e) {
             logger.severe(jobIdString
                     + " encountered an exception in ProcessorMetaSupplier.complete(), ignoring it", e);

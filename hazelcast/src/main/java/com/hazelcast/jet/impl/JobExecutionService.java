@@ -130,7 +130,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
      * cancellation-heavy scenarios a significant amount of memory could
      * be held for time defined in {@link
      * #UNINITIALIZED_CONTEXT_MAX_AGE_NS}, see
-     * https://github.com/hazelcast/hazelcast/issues/19897.
+     * <a href="https://github.com/hazelcast/hazelcast/issues/19897">issue #19897</a>.
      */
     private final ConcurrentMap<Long, Long> failedJobs = new ConcurrentHashMap<>();
 
@@ -510,7 +510,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
             JetDelegatingClassLoader jobClassLoader = jobClassloaderService.getClassLoader(executionContext.jobId());
 
             return doWithClassLoader(jobClassLoader, () -> executionContext.completeExecution(error))
-                    .thenAccept(ignored -> {
+                    .whenComplete((ignored, t) -> {
                         if (!executionContext.isLightJob()) {
                             jobClassloaderService.tryRemoveClassloadersForJob(executionContext.jobId(), EXECUTION);
                         }
@@ -547,7 +547,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         return execCtx.beginExecution(taskletExecutionService)
                       .handle((r, e) -> {
                           RawJobMetrics terminalMetrics;
-                          if (collectMetrics) {
+                          if (collectMetrics && e == null) {
                               JobMetricsCollector metricsRenderer =
                                       new JobMetricsCollector(execCtx.executionId(), nodeEngine.getLocalMember(), logger);
                               nodeEngine.getMetricsRegistry().collect(metricsRenderer);
