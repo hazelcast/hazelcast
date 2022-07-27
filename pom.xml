@@ -1516,7 +1516,7 @@
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-bom</artifactId>
-                <version>9.4.44.v20210927</version>
+                <version>9.4.48.v20220622</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
