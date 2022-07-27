@@ -485,36 +485,10 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     /**
      * WARNING: This method should only be used if `fd` is known to be a valid field descriptor in this generic record
      * and its kind is {@link FieldKind#COMPACT}.
-     *
-     * {@link CompactInternalGenericRecord#getObject(String)} with known field descriptor. Introduced not to call
-     * {@link com.hazelcast.internal.serialization.impl.compact.Schema#getField(String)} twice if the field
-     * descriptor is known.
-     *
-     * @param fd Field descriptor of the field. This field descriptor have to be retrieved via
-     * {@link CompactInternalGenericRecord#getField(String)} method of this {@link CompactInternalGenericRecord}.
-     * @return a nested field as a concrete deserialized object rather than generic record
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
-     *                                         the type of the field does not match the one in the class definition/schema.
      */
     @Nullable
     public <T> T getObject(@Nonnull FieldDescriptor fd) {
         return (T) getVariableSize(fd, in -> serializer.read(in, schemaIncludedInBinary));
-    }
-
-    /**
-     * Used in {@link com.hazelcast.internal.serialization.impl.GenericRecordQueryReader} to get rid of multiple calls
-     * to {@link com.hazelcast.internal.serialization.impl.compact.Schema#getField(String)}.
-     * @param fieldName the name of the field
-     * @return field descriptor of the field named fieldName
-     * @throws IllegalArgumentException if the field name does not exist in the class definition
-     */
-    @Nonnull
-    public FieldDescriptor getField(@Nonnull String fieldName) {
-        FieldDescriptor field = schema.getField(fieldName);
-        if (field == null) {
-            throw throwUnknownFieldException(fieldName);
-        }
-        return field;
     }
 
     @Override
@@ -1136,7 +1110,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     @Nonnull
-    private FieldDescriptor getFieldDescriptor(@Nonnull String fieldName) {
+    public FieldDescriptor getFieldDescriptor(@Nonnull String fieldName) {
         FieldDescriptor fd = schema.getField(fieldName);
         if (fd == null) {
             throw throwUnknownFieldException(fieldName);

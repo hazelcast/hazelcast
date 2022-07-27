@@ -250,7 +250,7 @@ public final class GenericRecordQueryReader implements ValueReader {
 
     private Object readLeaf(InternalGenericRecord record, String path) {
         if (record instanceof CompactInternalGenericRecord) {
-            FieldDescriptor fd = ((CompactInternalGenericRecord) record).getField(path);
+            FieldDescriptor fd = ((CompactInternalGenericRecord) record).getFieldDescriptor(path);
             return fieldOperations(fd.getKind()).readAsLeafObjectOnQuery(record, path, fd);
         } else {
             // Getting field descriptor is not possible in portable.
