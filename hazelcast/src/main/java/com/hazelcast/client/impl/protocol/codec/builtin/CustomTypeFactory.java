@@ -296,13 +296,13 @@ public final class CustomTypeFactory {
             long jobId,
             long executionId,
             String nameOrId,
-            JobStatus jobStatus,
+            int jobStatus,
             long submissionTime,
             long completionTime,
             String failureText,
             SqlSummary sqlSummary
     ) {
-        return new JobAndSqlSummary(lightJob, jobId, executionId, nameOrId, jobStatus, submissionTime, completionTime,
-                failureText, sqlSummary);
+        return new JobAndSqlSummary(lightJob, jobId, executionId, nameOrId, JobStatus.getById(jobStatus), submissionTime,
+                completionTime, failureText, sqlSummary);
     }
 }

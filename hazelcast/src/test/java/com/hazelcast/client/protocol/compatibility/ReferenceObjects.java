@@ -63,7 +63,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
-import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.JobAndSqlSummary;
 import com.hazelcast.jet.impl.SqlSummary;
 import com.hazelcast.map.impl.SimpleEntryView;
@@ -905,8 +904,7 @@ public class ReferenceObjects {
     public static SqlColumnMetadata anSqlColumnMetadata = CustomTypeFactory.createSqlColumnMetadata(aString, SqlColumnType.BOOLEAN.getId(), aBoolean, aBoolean);
     public static List<SqlColumnMetadata> aListOfSqlColumnMetadata = Collections.singletonList(anSqlColumnMetadata);
     public static SqlSummary anSqlSummary = CustomTypeFactory.createSqlSummary(aString, aBoolean);
-    public static JobStatus anJobStatus = JobStatus.RUNNING;
-    public static JobAndSqlSummary anJobAndSqlSummary = CustomTypeFactory.createJobAndSqlSummary(aBoolean, aLong, aLong, aString, anJobStatus, aLong, aLong, aString, anSqlSummary);
+    public static JobAndSqlSummary anJobAndSqlSummary = CustomTypeFactory.createJobAndSqlSummary(aBoolean, aLong, aLong, aString, 2, aLong, aLong, aString, anSqlSummary);
     public static List<JobAndSqlSummary> aListJobAndSqlSummary = Collections.singletonList(anJobAndSqlSummary);
     public static SqlError anSqlError = new SqlError(anInt, aString, aUUID, aBoolean, aString);
     public static SqlPage aSqlPage = SqlPage.fromColumns(Collections.singletonList(SqlColumnType.INTEGER), Collections.singletonList(Arrays.asList(1, 2, 3, 4)), true);

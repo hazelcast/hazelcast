@@ -18,18 +18,30 @@ package com.hazelcast.client.impl.protocol.codec.custom;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
-import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil;
+import com.hazelcast.client.impl.protocol.codec.builtin.CustomTypeFactory;
+import com.hazelcast.client.impl.protocol.codec.builtin.StringCodec;
 
+import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
+import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
-import static com.hazelcast.client.impl.protocol.ClientMessage.*;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.BOOLEAN_SIZE_IN_BYTES;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.INT_SIZE_IN_BYTES;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeBoolean;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeInt;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeLong;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeBoolean;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInt;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeLong;
 
-@Generated("db839997473838de8f00d99fb8160fb3")
+@Generated("f72f9519f4421f68df71aac788a94253")
 public final class JobAndSqlSummaryCodec {
     private static final int LIGHT_JOB_FIELD_OFFSET = 0;
     private static final int JOB_ID_FIELD_OFFSET = LIGHT_JOB_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int EXECUTION_ID_FIELD_OFFSET = JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
-    private static final int SUBMISSION_TIME_FIELD_OFFSET = EXECUTION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int STATUS_FIELD_OFFSET = EXECUTION_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int SUBMISSION_TIME_FIELD_OFFSET = STATUS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int COMPLETION_TIME_FIELD_OFFSET = SUBMISSION_TIME_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int INITIAL_FRAME_SIZE = COMPLETION_TIME_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
 
@@ -43,12 +55,12 @@ public final class JobAndSqlSummaryCodec {
         encodeBoolean(initialFrame.content, LIGHT_JOB_FIELD_OFFSET, jobAndSqlSummary.isLightJob());
         encodeLong(initialFrame.content, JOB_ID_FIELD_OFFSET, jobAndSqlSummary.getJobId());
         encodeLong(initialFrame.content, EXECUTION_ID_FIELD_OFFSET, jobAndSqlSummary.getExecutionId());
+        encodeInt(initialFrame.content, STATUS_FIELD_OFFSET, jobAndSqlSummary.getStatus());
         encodeLong(initialFrame.content, SUBMISSION_TIME_FIELD_OFFSET, jobAndSqlSummary.getSubmissionTime());
         encodeLong(initialFrame.content, COMPLETION_TIME_FIELD_OFFSET, jobAndSqlSummary.getCompletionTime());
         clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, jobAndSqlSummary.getNameOrId());
-        JobStatusCodec.encode(clientMessage, jobAndSqlSummary.getStatus());
         CodecUtil.encodeNullable(clientMessage, jobAndSqlSummary.getFailureText(), StringCodec::encode);
         CodecUtil.encodeNullable(clientMessage, jobAndSqlSummary.getSqlSummary(), SqlSummaryCodec::encode);
 
@@ -63,11 +75,11 @@ public final class JobAndSqlSummaryCodec {
         boolean lightJob = decodeBoolean(initialFrame.content, LIGHT_JOB_FIELD_OFFSET);
         long jobId = decodeLong(initialFrame.content, JOB_ID_FIELD_OFFSET);
         long executionId = decodeLong(initialFrame.content, EXECUTION_ID_FIELD_OFFSET);
+        int status = decodeInt(initialFrame.content, STATUS_FIELD_OFFSET);
         long submissionTime = decodeLong(initialFrame.content, SUBMISSION_TIME_FIELD_OFFSET);
         long completionTime = decodeLong(initialFrame.content, COMPLETION_TIME_FIELD_OFFSET);
 
         java.lang.String nameOrId = StringCodec.decode(iterator);
-        com.hazelcast.jet.core.JobStatus status = JobStatusCodec.decode(iterator);
         java.lang.String failureText = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         com.hazelcast.jet.impl.SqlSummary sqlSummary = CodecUtil.decodeNullable(iterator, SqlSummaryCodec::decode);
 
