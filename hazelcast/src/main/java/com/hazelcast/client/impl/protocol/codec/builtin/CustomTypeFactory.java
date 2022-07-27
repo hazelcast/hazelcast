@@ -283,10 +283,6 @@ public final class CustomTypeFactory {
         return new SqlSummary(query, unbounded);
     }
 
-    public static JobStatus createJobStatus(int id) {
-        return JobStatus.getById(id);
-    }
-
     public static JobAndSqlSummary createJobAndSqlSummary(
             boolean lightJob,
             long jobId,

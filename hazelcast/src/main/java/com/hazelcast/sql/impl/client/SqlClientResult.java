@@ -59,8 +59,7 @@ public class SqlClientResult implements SqlResult {
     private boolean closed;
 
     /** Whether the result set is unbounded. */
-    @GuardedBy("mux")
-    private Boolean isInfiniteRows;
+    private volatile Boolean isInfiniteRows;
 
     /** Fetch descriptor. Available when the fetch operation is in progress. */
     private SqlFetchResult fetch;
@@ -388,8 +387,6 @@ public class SqlClientResult implements SqlResult {
     }
 
     public Boolean isInfiniteRows() {
-        synchronized (mux) {
-            return isInfiniteRows;
-        }
+        return isInfiniteRows;
     }
 }

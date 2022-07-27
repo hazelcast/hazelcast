@@ -18,11 +18,8 @@ package com.hazelcast.jet.impl;
 import java.util.Objects;
 
 public class SqlSummary {
-    private String query;
-    private boolean unbounded;
-
-    public SqlSummary() {
-    }
+    private final String query;
+    private final boolean unbounded;
 
     public SqlSummary(String query, boolean unbounded) {
         this.query = query;
@@ -33,16 +30,8 @@ public class SqlSummary {
         return query;
     }
 
-    public void setQuery(String query) {
-        this.query = query;
-    }
-
     public boolean isUnbounded() {
         return unbounded;
-    }
-
-    public void setUnbounded(boolean unbounded) {
-        this.unbounded = unbounded;
     }
 
     @Override

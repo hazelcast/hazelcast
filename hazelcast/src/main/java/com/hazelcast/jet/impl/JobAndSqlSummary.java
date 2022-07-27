@@ -22,18 +22,15 @@ import javax.annotation.Nonnull;
 import java.util.Objects;
 
 public class JobAndSqlSummary {
-    private boolean isLightJob;
-    private long jobId;
-    private long executionId;
-    private String nameOrId;
-    private JobStatus status;
-    private long submissionTime;
-    private long completionTime;
-    private String failureText;
-    private SqlSummary sqlSummary;
-
-    public JobAndSqlSummary() {
-    }
+    private final boolean isLightJob;
+    private final long jobId;
+    private final long executionId;
+    private final String nameOrId;
+    private final JobStatus status;
+    private final long submissionTime;
+    private final long completionTime;
+    private final String failureText;
+    private final SqlSummary sqlSummary;
 
     public JobAndSqlSummary(
             boolean isLightJob,
@@ -60,72 +57,36 @@ public class JobAndSqlSummary {
         return isLightJob;
     }
 
-    public void setLightJob(boolean lightJob) {
-        isLightJob = lightJob;
-    }
-
     public long getJobId() {
         return jobId;
-    }
-
-    public void setJobId(long jobId) {
-        this.jobId = jobId;
     }
 
     public long getExecutionId() {
         return executionId;
     }
 
-    public void setExecutionId(long executionId) {
-        this.executionId = executionId;
-    }
-
     public String getNameOrId() {
         return nameOrId;
-    }
-
-    public void setNameOrId(String nameOrId) {
-        this.nameOrId = nameOrId;
     }
 
     public JobStatus getStatus() {
         return status;
     }
 
-    public void setStatus(JobStatus status) {
-        this.status = status;
-    }
-
     public long getSubmissionTime() {
         return submissionTime;
-    }
-
-    public void setSubmissionTime(long submissionTime) {
-        this.submissionTime = submissionTime;
     }
 
     public long getCompletionTime() {
         return completionTime;
     }
 
-    public void setCompletionTime(long completionTime) {
-        this.completionTime = completionTime;
-    }
-
     public String getFailureText() {
         return failureText;
     }
 
-    public void setFailureText(String failureText) {
-        this.failureText = failureText;
-    }
-
     public SqlSummary getSqlSummary() {
         return sqlSummary;
-    }
-
-    public void setSqlSummary(SqlSummary sqlSummary) {
-        this.sqlSummary = sqlSummary;
     }
 
     @Override
