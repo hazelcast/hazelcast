@@ -95,7 +95,7 @@ public class TableResolverImpl implements TableResolver {
         // we skip events originating from local member to avoid double processing
         nodeEngine.getHazelcastInstance().getLifecycleService().addLifecycleListener(event -> {
             if (event.getState() == LifecycleEvent.LifecycleState.STARTED) {
-                this.tableStorage.initializeWithListeners(new TablesStorage.EntryListenerAdapter() {
+                this.tableStorage.initializeWithListener(new TablesStorage.EntryListenerAdapter() {
                     @Override
                     public void entryUpdated(EntryEvent<String, Object> event) {
                         if (!event.getMember().localMember()) {

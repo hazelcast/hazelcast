@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
+import com.hazelcast.core.EntryEvent;
+import com.hazelcast.core.EntryListener;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.view.View;
@@ -112,7 +114,7 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_clusterVersionIs5dot2_then_oldCatalogIsMigratedOnFirstRead() {
+    public void when_clusterVersionIs5dot2_then_oldCatalogIsMigratedOnFirstReadBeforeInitialization() {
         String name = randomName();
         storage.put(name, mapping(name, "type"));
         storage.oldStorage().putAll(storage.newStorage());
@@ -121,6 +123,50 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
 
         assertThat(storage.newStorage().size() > 0);
         assertThat(storage.oldStorage().size() == 0);
+    }
+
+    @Test
+    public void when_clusterVersionIs5dot2_then_oldCatalogIsNotMigratedOnFirstReadAfterInitialization() {
+        String name = randomName();
+        storage.initializeWithListener(new TablesStorage.EntryListenerAdapter() {
+            @Override
+            public void entryUpdated(EntryEvent<String, Object> event) {
+            }
+
+            @Override
+            public void entryRemoved(EntryEvent<String, Object> event) {
+            }
+        });
+        storage.put(name, mapping(name, "type"));
+        storage.oldStorage().putAll(storage.newStorage());
+        storage.newStorage().clear();
+        storage.allObjects();
+
+        assertThat(storage.newStorage().size() == 0);
+        assertThat(storage.oldStorage().size() == 0);
+    }
+
+    @Test
+    public void when_clusterVersionIs5dot2_then_listenerIsAppliedOnNewCatalogOnly() {
+        int[] listenerCount = new int[1];
+        storage.initializeWithListener(new TablesStorage.EntryListenerAdapter() {
+            @Override
+            public void entryUpdated(EntryEvent<String, Object> event) {
+            }
+
+            @Override
+            public void entryRemoved(EntryEvent<String, Object> event) {
+                listenerCount[0]++;
+            }
+        });
+
+        String name = randomName();
+        storage.put(name, mapping(name, "type"));
+        storage.oldStorage().putAll(storage.newStorage());
+        storage.oldStorage().clear();
+        storage.newStorage().clear();
+
+        assertTrueEventually(() -> assertThat(listenerCount[0] == 1));
     }
 
     private static Mapping mapping(String name, String type) {
