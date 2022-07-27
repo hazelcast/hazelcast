@@ -19,7 +19,7 @@ to a large cluster of cloud instances.
 
 A cluster of Hazelcast nodes share both the data storage and computational load
 which can dynamically scale up and down. When you add new nodes to the cluster,
-the data is automatically rebalanced across the cluster. Currently running
+the data is automatically rebalanced across the cluster, and currently running
 computational tasks (known as jobs) snapshot their state and scale with
 processing guarantees.
 
