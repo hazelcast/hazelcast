@@ -30,6 +30,23 @@ import static com.hazelcast.internal.nio.Bits.CHAR_SIZE_IN_BYTES;
 import static com.hazelcast.internal.util.QuickMath.nextPowerOfTwo;
 
 
+/**
+ * The IOBuffer is used to read/write bytes from I/O devices like a socket or a file.
+ *
+ * Currently, the IOBuffer has one ByteBuffer underneath. The problem is that if you have very large
+ * payloads, a single chunk of memory is needed for those bytes. This can lead to allocation problems
+ * due to fragmentation (perhaps it can't be allocated because of fragmentation), but it can also
+ * lead to fragmentation because buffers can have different sizes.
+ *
+ * So instead of having a ByteBuffer underneath, allow for a list of ByteBuffer all with some semi
+ * fixed size, e.g. up to 16 KB. So if a 1MB chunk of data is received, just 64 byte-arrays of 16KB.
+ * This will prevent the above fragmentation problems although it could lead to some increased
+ * internal fragmentation because more memory is allocated than used. I believe this isn't such a
+ * big problem because IOBuffer are short lived.
+ *
+ * So if an IOBuffer should contain a list of ByteBuffers, then regular reading/writing to the IOBuffer
+ * should be agnostic of the composition.
+ */
 public class IOBuffer {
 
     public IOBuffer next;
