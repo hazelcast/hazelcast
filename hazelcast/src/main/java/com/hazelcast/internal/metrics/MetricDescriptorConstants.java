@@ -606,6 +606,12 @@ public final class MetricDescriptorConstants {
     public static final String TSTORE_HLOG_PAGING_FREQUENCY_AVG = "tstore.hlog.paging.frequency.avg";
     public static final String TSTORE_HLOG_PAGING_FREQUENCY_MIN = "tstore.hlog.paging.frequency.min";
     public static final String TSTORE_HLOG_PAGING_FREQUENCY_MAX = "tstore.hlog.paging.frequency.max";
+    public static final String TSTORE_HLOG_USED_MEMORY = "tstore.hlog.usedMemory";
+    public static final String TSTORE_HLOG_USED_DISK = "tstore.hlog.usedDisk";
+    public static final String TSTORE_HLOG_PRIMARY_USED_MEMORY = "tstore.hlog.primary.usedMemory";
+    public static final String TSTORE_HLOG_PRIMARY_USED_DISK = "tstore.hlog.primary.usedDisk";
+    public static final String TSTORE_HLOG_BACKUP_USED_MEMORY = "tstore.hlog.backup.usedMemory";
+    public static final String TSTORE_HLOG_BACKUP_USED_DISK = "tstore.hlog.backup.usedDisk";
     // ===[/TSTORE]=====================================================
 
     // ===[WAN]=========================================================
