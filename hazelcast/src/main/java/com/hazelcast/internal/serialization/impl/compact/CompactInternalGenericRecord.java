@@ -374,6 +374,10 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return getVariableSize(fieldName, STRING, BufferObjectDataInput::readString);
     }
 
+    /**
+     * WARNING: This method should only be used if `fd` is known to be a valid field descriptor in this generic record
+     * and its kind is {@link FieldKind#STRING}.
+     */
     public String getString(@Nonnull FieldDescriptor fd) {
         return getVariableSize(fd, BufferObjectDataInput::readString);
     }
@@ -412,10 +416,16 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     @Override
+    @Nullable
     public BigDecimal getDecimal(@Nonnull String fieldName) {
         return getVariableSize(fieldName, DECIMAL, IOUtil::readBigDecimal);
     }
 
+    /**
+     * WARNING: This method should only be used if `fd` is known to be a valid field descriptor in this generic record
+     * and its kind is {@link FieldKind#DECIMAL}.
+     */
+    @Nullable
     public BigDecimal getDecimal(@Nonnull FieldDescriptor fd) {
         return getVariableSize(fd, IOUtil::readBigDecimal);
     }
@@ -426,6 +436,10 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return getVariableSize(fieldName, TIME, IOUtil::readLocalTime);
     }
 
+    /**
+     * WARNING: This method should only be used if `fd` is known to be a valid field descriptor in this generic record
+     * and its kind is {@link FieldKind#TIME}.
+     */
     @Nullable
     public LocalTime getTime(@Nonnull FieldDescriptor fd) {
         return getVariableSize(fd, IOUtil::readLocalTime);
@@ -437,6 +451,10 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return getVariableSize(fieldName, DATE, IOUtil::readLocalDate);
     }
 
+    /**
+     * WARNING: This method should only be used if `fd` is known to be a valid field descriptor in this generic record
+     * and its kind is {@link FieldKind#DATE}.
+     */
     @Nullable
     public LocalDate getDate(@Nonnull FieldDescriptor fd) {
         return getVariableSize(fd, IOUtil::readLocalDate);
@@ -448,6 +466,10 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return getVariableSize(fieldName, TIMESTAMP, IOUtil::readLocalDateTime);
     }
 
+    /**
+     * WARNING: This method should only be used if `fd` is known to be a valid field descriptor in this generic record
+     * and its kind is {@link FieldKind#TIMESTAMP}.
+     */
     @Nullable
     public LocalDateTime getTimestamp(@Nonnull FieldDescriptor fd) {
         return getVariableSize(fd, IOUtil::readLocalDateTime);
@@ -459,6 +481,10 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return getVariableSize(fieldName, TIMESTAMP_WITH_TIMEZONE, IOUtil::readOffsetDateTime);
     }
 
+    /**
+     * WARNING: This method should only be used if `fd` is known to be a valid field descriptor in this generic record
+     * and its kind is {@link FieldKind#TIMESTAMP_WITH_TIMEZONE}.
+     */
     @Nullable
     public OffsetDateTime getTimestampWithTimezone(@Nonnull FieldDescriptor fd) {
         return getVariableSize(fd, IOUtil::readOffsetDateTime);
@@ -540,7 +566,6 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Nullable
     public short[] getArrayOfInt16(@Nonnull FieldDescriptor fd) {
-        String fieldName = fd.getFieldName();
         return getArrayOfPrimitive(fd, ObjectDataInput::readShortArray, ARRAY_OF_INT16,
                 ARRAY_OF_NULLABLE_INT16, "Int16");
     }
@@ -600,10 +625,13 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Override
     @Nullable
     public String[] getArrayOfString(@Nonnull String fieldName) {
-        FieldDescriptor fd = getFieldDescriptor(fieldName);
-        return getArrayOfString(fd);
+        return getArrayOfVariableSize(fieldName, ARRAY_OF_STRING, String[]::new, ObjectDataInput::readString);
     }
 
+    /**
+     * WARNING: This method should only be used if `fd` is known to be a valid field descriptor in this generic record
+     * and its kind is {@link FieldKind#ARRAY_OF_STRING}.
+     */
     @Nullable
     public String[] getArrayOfString(@Nonnull FieldDescriptor fd) {
         return getArrayOfVariableSize(fd, String[]::new, ObjectDataInput::readString);
@@ -615,6 +643,10 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return getArrayOfVariableSize(fieldName, ARRAY_OF_DECIMAL, BigDecimal[]::new, IOUtil::readBigDecimal);
     }
 
+    /**
+     * WARNING: This method should only be used if `fd` is known to be a valid field descriptor in this generic record
+     * and its kind is {@link FieldKind#ARRAY_OF_DECIMAL}.
+     */
     @Nullable
     public BigDecimal[] getArrayOfDecimal(@Nonnull FieldDescriptor fd) {
         return getArrayOfVariableSize(fd, BigDecimal[]::new, IOUtil::readBigDecimal);
@@ -626,6 +658,10 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return getArrayOfVariableSize(fieldName, ARRAY_OF_TIME, LocalTime[]::new, IOUtil::readLocalTime);
     }
 
+    /**
+     * WARNING: This method should only be used if `fd` is known to be a valid field descriptor in this generic record
+     * and its kind is {@link FieldKind#ARRAY_OF_TIME}.
+     */
     @Nullable
     public LocalTime[] getArrayOfTime(@Nonnull FieldDescriptor fd) {
         return getArrayOfVariableSize(fd, LocalTime[]::new, IOUtil::readLocalTime);
@@ -637,6 +673,10 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return getArrayOfVariableSize(fieldName, ARRAY_OF_DATE, LocalDate[]::new, IOUtil::readLocalDate);
     }
 
+    /**
+     * WARNING: This method should only be used if `fd` is known to be a valid field descriptor in this generic record
+     * and its kind is {@link FieldKind#ARRAY_OF_DATE}.
+     */
     @Nullable
     public LocalDate[] getArrayOfDate(@Nonnull FieldDescriptor fd) {
         return getArrayOfVariableSize(fd, LocalDate[]::new, IOUtil::readLocalDate);
@@ -648,6 +688,10 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return getArrayOfVariableSize(fieldName, ARRAY_OF_TIMESTAMP, LocalDateTime[]::new, IOUtil::readLocalDateTime);
     }
 
+    /**
+     * WARNING: This method should only be used if `fd` is known to be a valid field descriptor in this generic record
+     * and its kind is {@link FieldKind#ARRAY_OF_TIMESTAMP}.
+     */
     @Nullable
     public LocalDateTime[] getArrayOfTimestamp(@Nonnull FieldDescriptor fd) {
         return getArrayOfVariableSize(fd, LocalDateTime[]::new, IOUtil::readLocalDateTime);
@@ -660,6 +704,10 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                 OffsetDateTime[]::new, IOUtil::readOffsetDateTime);
     }
 
+    /**
+     * WARNING: This method should only be used if `fd` is known to be a valid field descriptor in this generic record
+     * and its kind is {@link FieldKind#ARRAY_OF_TIMESTAMP_WITH_TIMEZONE}.
+     */
     @Nullable
     public OffsetDateTime[] getArrayOfTimestampWithTimezone(@Nonnull FieldDescriptor fd) {
         return getArrayOfVariableSize(fd, OffsetDateTime[]::new, IOUtil::readOffsetDateTime);
@@ -971,8 +1019,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Nullable
     public Float[] getArrayOfNullableFloat32(@Nonnull FieldDescriptor fd) {
-        return getArrayOfNullable(fd, ObjectDataInput::readFloat, Float[]::new, ARRAY_OF_FLOAT32,
-                ARRAY_OF_NULLABLE_FLOAT32);
+        return getArrayOfNullable(fd, ObjectDataInput::readFloat, Float[]::new, ARRAY_OF_FLOAT32, ARRAY_OF_NULLABLE_FLOAT32);
     }
 
     @Nullable
@@ -1010,16 +1057,6 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     /**
      * WARNING: This method should only be used if `fd` is known to be a valid field descriptor in this generic record
      * and its kind is {@link FieldKind#ARRAY_OF_COMPACT}.
-     *
-     * {@link CompactInternalGenericRecord#getArrayOfObject} with known field descriptor. Introduced not to call
-     * {@link com.hazelcast.internal.serialization.impl.compact.Schema#getField(String)} twice if the field
-     * descriptor is known.
-     *
-     * @param fd Field descriptor of the field. This field descriptor have to be retrieved via
-     * {@link CompactInternalGenericRecord#getField(String)} method of this {@link CompactInternalGenericRecord}.
-     * @return a nested field as array of deserialized objects rather than array of the  generic records
-     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
-     *                                         the type of the field does not match the one in the class definition/schema.
      */
     public <T> T[] getArrayOfObject(@Nonnull FieldDescriptor fd, Class<T> componentType) {
         return (T[]) getArrayOfVariableSize(fd, length -> (T[]) Array.newInstance(componentType, length),
