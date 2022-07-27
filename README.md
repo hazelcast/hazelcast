@@ -19,7 +19,7 @@ to a large cluster of cloud instances.
 
 A cluster of Hazelcast nodes share both the data storage and computational load
 which can dynamically scale up and down. When you add new nodes to the cluster,
-the data is automatically rebalanced across the cluster and currently running
+the data is automatically rebalanced across the cluster. Currently running
 computational tasks (known as jobs) snapshot their state and scale with
 processing guarantees.
 
@@ -71,7 +71,7 @@ Hazelcast provides distributed in-memory data structures which are partitioned,
 replicated and queryable. One of the main use cases for Hazelcast is for storing
 a _working set_ of data for fast querying and access. 
 
-The main data structure underlying Hazelcast, called `IMap` is a key-value store
+The main data structure underlying Hazelcast, called `IMap`, is a key-value store
 which has a rich set of features, including:
 
 * Integration with [data
@@ -305,7 +305,7 @@ marked as good first issue for some guidance.
 
 ### Building From Source
 
-Building Hazelcast requires minimum JDK 1.8. Pull the latest source from the
+Building Hazelcast requires at minimum JDK 1.8. Pull the latest source from the
 repository and use Maven install (or package) to build:
 
 ```bash
