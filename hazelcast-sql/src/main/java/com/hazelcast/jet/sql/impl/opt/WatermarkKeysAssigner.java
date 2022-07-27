@@ -16,9 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.opt;
 
+import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import com.hazelcast.jet.sql.impl.opt.physical.CalcPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowAggregatePhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.UnionPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.utils.MutableByte;
 import org.apache.calcite.rel.RelNode;
@@ -37,6 +39,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
 
 /**
  * Traverse a relational tree and assign watermark keys.
@@ -93,6 +96,12 @@ public class WatermarkKeysAssigner {
             super.visit(node, ordinal, parent);
 
             // back wave of recursion
+
+            // don't add anything if all traversed FullScan's aren't watermarked.
+            if (relToWmKeyMapping.isEmpty()) {
+                return;
+            }
+
             if (node instanceof CalcPhysicalRel) {
                 CalcPhysicalRel calc = (CalcPhysicalRel) node;
                 List<RexNode> projects = calc.getProgram().expandList(calc.getProgram().getProjectList());
@@ -101,14 +110,14 @@ public class WatermarkKeysAssigner {
                     return;
                 }
 
-                int projectIndex = 0;
                 Map<Integer, MutableByte> calcRefByteMap = new HashMap<>();
-                for (RexNode rexNode : projects) {
-                    if (rexNode instanceof RexInputRef) {
-                        int idx = ((RexInputRef) rexNode).getIndex();
+                for (int projectIndex = 0; projectIndex < projects.size(); ++projectIndex) {
+                    if (projects.get(projectIndex) instanceof RexInputRef) {
+                        RexInputRef ref = (RexInputRef) projects.get(projectIndex);
+                        int idx = ref.getIndex();
                         MutableByte wmKey = refByteMap.get(idx);
                         if (wmKey != null) {
-                            calcRefByteMap.put(projectIndex++, wmKey);
+                            calcRefByteMap.put(projectIndex, wmKey);
                         }
                     }
                 }
@@ -129,18 +138,21 @@ public class WatermarkKeysAssigner {
                 }
 
                 // Get a reference keyed wm map from first input
-                Map<Integer, MutableByte> byteMap = relToWmKeyMapping.getOrDefault(union.getInputs().iterator().next(), emptyMap());
-                if (byteMap.isEmpty()) {
+                if (commonWmIdx.isEmpty()) {
                     return;
                 }
+                it = union.getInputs().iterator();
+                Map<Integer, MutableByte> byteMap = relToWmKeyMapping.get(it.next());
 
                 // Assign a new byte value for all referenced bytes
                 it = union.getInputs().iterator();
                 while (it.hasNext()) {
-                    for (Integer idx: commonWmIdx) {
+                    for (Integer idx : commonWmIdx) {
                         relToWmKeyMapping.get(it.next()).get(idx).setValue(byteMap.get(idx).getValue());
                     }
                 }
+                it = union.getInputs().iterator();
+                relToWmKeyMapping.put(union, relToWmKeyMapping.get(it.next()));
 //            } else if (node instanceof StreamToStreamJoinPhysicalRel) {
 //                StreamToStreamJoinPhysicalRel join = (StreamToStreamJoinPhysicalRel) node;
 //                Map<RexInputRef, MutableByte> leftRefByteMap = refToWmKeyMapping.get(join.getLeft());
@@ -177,6 +189,27 @@ public class WatermarkKeysAssigner {
                 Join join = (Join) node;
                 Map<Integer, MutableByte> refByteMap = relToWmKeyMapping.get(join.getLeft());
                 relToWmKeyMapping.put(node, refByteMap);
+            } else if (node instanceof SlidingWindowAggregatePhysicalRel) {
+                SlidingWindowAggregatePhysicalRel swAgg = (SlidingWindowAggregatePhysicalRel) node;
+
+                WatermarkedFields watermarkedFields = swAgg.watermarkedFields();
+                Map<Integer, MutableByte> refByteMap = new HashMap<>();
+                MutableByte newWmKey = new MutableByte(keyCounter);
+//                MutableByte newWmKey = new MutableByte(keyCounter[0]++); // we should use new wm key for window end bound
+                for (Integer fieldIndex : watermarkedFields.getFieldIndexes()) {
+                    refByteMap.put(fieldIndex, newWmKey);
+                }
+
+                relToWmKeyMapping.put(swAgg, refByteMap);
+            } else if (node instanceof SlidingWindow) {
+                SlidingWindow sw = (SlidingWindow) node;
+                Map<Integer, MutableByte> byteMap = new HashMap<>(relToWmKeyMapping.get(sw.getInput()));
+                MutableByte newWmKey = new MutableByte(keyCounter);
+//                we should use new wm key for window start and end bounds
+//                MutableByte newWmKey = new MutableByte(keyCounter[0]++);
+                byteMap.put(sw.windowStartIndex(), newWmKey);
+                byteMap.put(sw.windowEndIndex(), newWmKey);
+                relToWmKeyMapping.put(sw, byteMap);
             } else {
                 // anything else -- just forward without any changes.
                 if (!node.getInputs().isEmpty()) {
@@ -186,8 +219,10 @@ public class WatermarkKeysAssigner {
             }
 
             assert relToWmKeyMapping.getOrDefault(node, emptyMap()).keySet().equals(
-                    OptUtils.metadataQuery(node).extractWatermarkedFields(node).getFieldIndexes())
-                    : "mismatch between WM fields in metadata query and in WmKeyAssigner";
+                    OptUtils.metadataQuery(node).extractWatermarkedFields(node) != null
+                            ? OptUtils.metadataQuery(node).extractWatermarkedFields(node).getFieldIndexes()
+                            : emptySet()
+            ) : "mismatch between WM fields in metadata query and in WmKeyAssigner";
         }
     }
 }

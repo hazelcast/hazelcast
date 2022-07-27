@@ -437,7 +437,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             String query
     ) {
         PhysicalRel physicalRel = optimize(parameterMetadata, rel, context, isCreateJob);
-        WatermarkKeysAssigner watermarkKeysAssigner = new WatermarkKeysAssigner(physicalRel);
+        boolean isQueryUnbounded = OptUtils.isUnbounded(physicalRel);
 
         List<Permission> permissions = extractPermissions(physicalRel);
 
@@ -511,7 +511,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         } else if (physicalRel instanceof TableModify) {
             checkDmlOperationWithView(physicalRel);
             Operation operation = ((TableModify) physicalRel).getOperation();
-            CreateDagVisitor visitor = traverseRel(physicalRel, parameterMetadata, watermarkKeysAssigner);
+            CreateDagVisitor visitor = traverseRel(
+                    physicalRel,
+                    parameterMetadata,
+                    isQueryUnbounded ? new WatermarkKeysAssigner(physicalRel) : null);
             return new DmlPlan(
                     operation,
                     planKey,
@@ -519,12 +522,15 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     visitor.getObjectKeys(),
                     visitor.getDag(),
                     query,
-                    OptUtils.isUnbounded(physicalRel),
+                    isQueryUnbounded,
                     planExecutor,
                     permissions
             );
         } else {
-            CreateDagVisitor visitor = traverseRel(new RootRel(physicalRel), parameterMetadata, watermarkKeysAssigner);
+            CreateDagVisitor visitor = traverseRel(
+                    new RootRel(physicalRel),
+                    parameterMetadata,
+                    isQueryUnbounded ? new WatermarkKeysAssigner(physicalRel) : null);
             SqlRowMetadata rowMetadata = createRowMetadata(
                     fieldNames,
                     physicalRel.schema(parameterMetadata).getTypes(),
@@ -536,7 +542,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     visitor.getObjectKeys(),
                     visitor.getDag(),
                     query,
-                    OptUtils.isUnbounded(physicalRel),
+                    isQueryUnbounded,
                     rowMetadata,
                     planExecutor,
                     permissions
@@ -652,9 +658,14 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     private CreateDagVisitor traverseRel(
             PhysicalRel physicalRel,
             QueryParameterMetadata parameterMetadata,
-            WatermarkKeysAssigner watermarkKeysAssigner
+            @Nullable WatermarkKeysAssigner watermarkKeysAssigner
     ) {
-        watermarkKeysAssigner.assignWatermarkKeys();
+        if (watermarkKeysAssigner != null) {
+            watermarkKeysAssigner.assignWatermarkKeys();
+            if (logger.isFineEnabled()) {
+                logger.fine("Watermark keys were assigned.");
+            }
+        }
 
         CreateDagVisitor visitor = new CreateDagVisitor(nodeEngine, parameterMetadata, watermarkKeysAssigner);
         physicalRel.accept(visitor);

@@ -174,6 +174,7 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
                 timestampExpression,
                 windowPolicyProvider,
                 numStages,
-                windowStartIndexes, windowEndIndexes);
+                windowStartIndexes,
+                windowEndIndexes);
     }
 }
