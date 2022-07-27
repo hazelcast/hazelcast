@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.core.EntryEvent;
-import com.hazelcast.core.EntryListener;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.view.View;
