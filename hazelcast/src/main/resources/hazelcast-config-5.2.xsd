@@ -3164,7 +3164,8 @@
                         </xs:documentation>
                     </xs:annotation>
                     <xs:sequence>
-                        <xs:element name="registered-classes" type="registered-classes" minOccurs="0"/>
+                        <xs:element name="serializers" type="compact-serializers" minOccurs="0"/>
+                        <xs:element name="classes" type="compact-serializable-classes" minOccurs="0"/>
                     </xs:sequence>
                     <xs:attribute name="enabled" type="xs:boolean" default="false">
                         <xs:annotation>
@@ -3268,10 +3269,34 @@
             </xs:element>
         </xs:choice>
     </xs:complexType>
-    <xs:complexType name="registered-classes">
+
+    <xs:complexType name="compact-serializers">
         <xs:annotation>
             <xs:documentation>
-                Contains classes registered to be serialized with compact serialization.
+                Contains the Compact serializers to be registered.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:sequence maxOccurs="unbounded">
+            <xs:element name="serializer">
+                <xs:complexType>
+                    <xs:annotation>
+                        <xs:documentation>
+                            Fully qualified class name of the Compact serializer.
+                        </xs:documentation>
+                    </xs:annotation>
+                    <xs:simpleContent>
+                        <xs:extension base="xs:string"/>
+                    </xs:simpleContent>
+                </xs:complexType>
+            </xs:element>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="compact-serializable-classes">
+        <xs:annotation>
+            <xs:documentation>
+                Contains the classes to be serialized with Compact serialization,
+                which will override any other serialization mechanisms.
             </xs:documentation>
         </xs:annotation>
         <xs:sequence maxOccurs="unbounded">
@@ -3279,42 +3304,16 @@
                 <xs:complexType>
                     <xs:annotation>
                         <xs:documentation>
-                            Fully qualified class name of the class to be serialized with
-                            compact serialization.
-
-                            If the class has an explicit serializer, it must be specified
-                            with type-name and serializer attributes.
-
-                            Those attributes must not be present if the class is to be
-                            serialized with reflective compact serializer.
-
-                            Either both or none of the attributes must be present.
+                            Fully qualified name of the class.
                         </xs:documentation>
                     </xs:annotation>
                     <xs:simpleContent>
-                        <xs:extension base="xs:string">
-                            <xs:attribute name="type-name" type="xs:string">
-                                <xs:annotation>
-                                    <xs:documentation>
-                                        Type name of the class.
-                                    </xs:documentation>
-                                </xs:annotation>
-                            </xs:attribute>
-                            <xs:attribute name="serializer" type="xs:string">
-                                <xs:annotation>
-                                    <xs:documentation>
-                                        Fully qualified class name of the compact serializer to be
-                                        used to serialize the class.
-                                    </xs:documentation>
-                                </xs:annotation>
-                            </xs:attribute>
-                        </xs:extension>
+                        <xs:extension base="xs:string"/>
                     </xs:simpleContent>
                 </xs:complexType>
             </xs:element>
         </xs:sequence>
     </xs:complexType>
-
     <xs:complexType name="socket-interceptor">
         <xs:all>
             <xs:element name="class-name" type="xs:string" minOccurs="0"/>

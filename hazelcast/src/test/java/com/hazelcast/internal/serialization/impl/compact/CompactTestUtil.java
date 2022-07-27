@@ -178,4 +178,11 @@ public final class CompactTestUtil {
         EmployeeDTO deserializedObject = serializationService.toObject(data);
         assertEquals(object, deserializedObject);
     }
+
+    public static void verifySerializationServiceBuilds(SerializationConfig serializationConfig) {
+        new DefaultSerializationServiceBuilder()
+                .setSchemaService(CompactTestUtil.createInMemorySchemaService())
+                .setConfig(serializationConfig)
+                .build();
+    }
 }

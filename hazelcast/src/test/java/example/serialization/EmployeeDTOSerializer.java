@@ -34,4 +34,16 @@ public class EmployeeDTOSerializer implements CompactSerializer<EmployeeDTO> {
         out.writeInt32("age", object.getAge());
         out.writeInt64("id", object.getId());
     }
+
+    @Nonnull
+    @Override
+    public String getTypeName() {
+        return "employee";
+    }
+
+    @Nonnull
+    @Override
+    public Class<EmployeeDTO> getClazz() {
+        return EmployeeDTO.class;
+    }
 }

@@ -18,6 +18,7 @@ package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.CompactSerializationConfigAccessor;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
@@ -36,6 +37,7 @@ import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Collection;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -71,8 +73,9 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         this.schemaService = schemaService;
         this.classLoader = classLoader;
         this.isEnabled = compactSerializationConfig.isEnabled();
-        registerConfiguredSerializers(compactSerializationConfig);
-        registerConfiguredNamedSerializers(compactSerializationConfig);
+        registerSerializers(compactSerializationConfig);
+        registerDeclarativeConfigSerializers(compactSerializationConfig);
+        registerDeclarativeConfigClasses(compactSerializationConfig);
     }
 
     /**
@@ -266,7 +269,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         return isEnabled;
     }
 
-    private void registerConfiguredSerializers(CompactSerializationConfig compactSerializationConfig) {
+    private void registerSerializers(CompactSerializationConfig compactSerializationConfig) {
         Map<String, TriTuple<Class, String, CompactSerializer>> registrations
                 = CompactSerializationConfigAccessor.getRegistrations(compactSerializationConfig);
         for (TriTuple<Class, String, CompactSerializer> registration : registrations.values()) {
@@ -282,44 +285,79 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             }
             CompactSerializableRegistration serializableRegistration
                     = new CompactSerializableRegistration(clazz, typeName, serializer);
-            classToRegistrationMap.put(clazz, serializableRegistration);
-            typeNameToRegistrationMap.put(typeName, serializableRegistration);
+            saveRegistration(serializableRegistration);
         }
     }
 
-    private void registerConfiguredNamedSerializers(CompactSerializationConfig compactSerializationConfig) {
-        Map<String, TriTuple<String, String, String>> namedRegistries
-                = CompactSerializationConfigAccessor.getNamedRegistrations(compactSerializationConfig);
-        for (TriTuple<String, String, String> registry : namedRegistries.values()) {
-            String className = registry.element1;
-            String typeName = registry.element2;
-            String serializerClassName = registry.element3;
+    private void saveRegistration(CompactSerializableRegistration registration) {
+        Class clazz = registration.getClazz();
+        CompactSerializableRegistration existing = classToRegistrationMap.putIfAbsent(clazz, registration);
+        if (existing != null) {
+            throw new InvalidConfigurationException("Duplicate serializer registrations "
+                    + "are found for the class '" + clazz + "'. Make sure only one "
+                    + "Compact serializer is registered for the same class. "
+                    + "Existing serializer: " + existing.getSerializer() + ", "
+                    + "new serializer: " + registration.getSerializer());
+        }
 
+        String typeName = registration.getTypeName();
+        existing = typeNameToRegistrationMap.putIfAbsent(typeName, registration);
+        if (existing != null) {
+            throw new InvalidConfigurationException("Duplicate serializer registrations "
+                    + "are found for the type name '" + typeName + "'. Make sure only one "
+                    + "Compact serializer is registered for the same type name. "
+                    + "Existing serializer: " + existing.getSerializer() + ", "
+                    + "new serializer: " + registration.getSerializer());
+        }
+    }
+
+    private void registerDeclarativeConfigSerializers(CompactSerializationConfig config) {
+        List<String> serializerClassNames = CompactSerializationConfigAccessor.getSerializerClassNames(config);
+        for (String className : serializerClassNames) {
+            CompactSerializer serializer;
+            try {
+                serializer = ClassLoaderUtil.newInstance(classLoader, className);
+            } catch (Exception e) {
+                throw new InvalidConfigurationException("Cannot create an instance "
+                        + "of the Compact serializer '" + className + "'.");
+            }
+
+            CompactSerializableRegistration registration = new CompactSerializableRegistration(
+                    serializer.getClazz(),
+                    serializer.getTypeName(),
+                    serializer
+            );
+
+            saveRegistration(registration);
+        }
+    }
+
+    private void registerDeclarativeConfigClasses(CompactSerializationConfig config) {
+        List<String> compactSerializableClassNames
+                = CompactSerializationConfigAccessor.getCompactSerializableClassNames(config);
+        for (String className : compactSerializableClassNames) {
             Class clazz;
             try {
                 clazz = ClassLoaderUtil.loadClass(classLoader, className);
             } catch (ClassNotFoundException e) {
-                throw new IllegalArgumentException("Cannot load the class " + className);
+                throw new InvalidConfigurationException("Cannot load the Compact "
+                        + "serializable class '" + className + "'.");
             }
 
             CompactSerializer serializer;
-            if (serializerClassName != null) {
-                try {
-                    serializer = ClassLoaderUtil.newInstance(classLoader, serializerClassName);
-                } catch (Exception e) {
-                    throw new IllegalArgumentException("Cannot create an instance of " + serializerClassName);
-                }
+            if (javaRecordSerializer.isRecord(clazz)) {
+                serializer = javaRecordSerializer;
             } else {
-                if (javaRecordSerializer.isRecord(clazz)) {
-                    serializer = javaRecordSerializer;
-                } else {
-                    serializer = reflectiveSerializer;
-                }
+                serializer = reflectiveSerializer;
             }
 
-            CompactSerializableRegistration registration = new CompactSerializableRegistration(clazz, typeName, serializer);
-            classToRegistrationMap.put(clazz, registration);
-            typeNameToRegistrationMap.put(typeName, registration);
+            CompactSerializableRegistration registration = new CompactSerializableRegistration(
+                    clazz,
+                    className,
+                    serializer
+            );
+
+            saveRegistration(registration);
         }
     }
 

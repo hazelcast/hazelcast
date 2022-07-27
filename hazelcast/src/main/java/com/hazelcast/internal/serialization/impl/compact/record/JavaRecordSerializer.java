@@ -160,6 +160,18 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
         }
     }
 
+    @Nonnull
+    @Override
+    public String getTypeName() {
+        throw new IllegalStateException("getTypeName should not be called for the record serializer");
+    }
+
+    @Nonnull
+    @Override
+    public Class<Object> getClazz() {
+        throw new IllegalStateException("getClazz should not be called for the record serializer");
+    }
+
     private void populateReadersWriters(Class<?> clazz) {
         try {
             Object[] recordComponents = (Object[]) getRecordComponentsMethod.invoke(clazz);

@@ -83,6 +83,7 @@ import static java.io.File.createTempFile;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -108,8 +109,7 @@ import static org.junit.Assert.fail;
  */
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class YamlConfigBuilderTest
-        extends AbstractConfigBuilderTest {
+public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
@@ -3062,29 +3062,27 @@ public class YamlConfigBuilderTest
     }
 
     @Override
-    public void testCompactSerialization_explicitSerializationRegistration() {
+    public void testCompactSerialization_serializerRegistration() {
         String yaml = ""
                 + "hazelcast:\n"
                 + "    serialization:\n"
                 + "        compact-serialization:\n"
                 + "            enabled: true\n"
-                + "            registered-classes:\n"
-                + "                - class: example.serialization.EmployeeDTO\n"
-                + "                  type-name: obj\n"
-                + "                  serializer: example.serialization.EmployeeDTOSerializer\n";
+                + "            serializers:\n"
+                + "                - serializer: example.serialization.EmployeeDTOSerializer\n";
 
         Config config = buildConfig(yaml);
         CompactTestUtil.verifyExplicitSerializerIsUsed(config.getSerializationConfig());
     }
 
     @Override
-    public void testCompactSerialization_reflectiveSerializerRegistration() {
+    public void testCompactSerialization_classRegistration() {
         String yaml = ""
                 + "hazelcast:\n"
                 + "    serialization:\n"
                 + "        compact-serialization:\n"
                 + "            enabled: true\n"
-                + "            registered-classes:\n"
+                + "            classes:\n"
                 + "                - class: example.serialization.ExternalizableEmployeeDTO\n";
 
         Config config = buildConfig(yaml);
@@ -3092,31 +3090,122 @@ public class YamlConfigBuilderTest
     }
 
     @Override
-    public void testCompactSerialization_registrationWithJustTypeName() {
+    public void testCompactSerialization_serializerAndClassRegistration() {
         String yaml = ""
                 + "hazelcast:\n"
                 + "    serialization:\n"
                 + "        compact-serialization:\n"
                 + "            enabled: true\n"
-                + "            registered-classes:\n"
-                + "                - class: example.serialization.EmployeeDTO\n"
-                + "                  type-name: employee\n";
+                + "            serializers:\n"
+                + "                - serializer: example.serialization.EmployeeDTOSerializer\n"
+                + "            classes:\n"
+                + "                - class: example.serialization.ExternalizableEmployeeDTO\n";
 
-        buildConfig(yaml);
+        SerializationConfig config = buildConfig(yaml).getSerializationConfig();
+        CompactTestUtil.verifyExplicitSerializerIsUsed(config);
+        CompactTestUtil.verifyReflectiveSerializerIsUsed(config);
     }
 
     @Override
-    public void testCompactSerialization_registrationWithJustSerializer() {
+    public void testCompactSerialization_duplicateSerializerRegistration() {
         String yaml = ""
                 + "hazelcast:\n"
                 + "    serialization:\n"
                 + "        compact-serialization:\n"
                 + "            enabled: true\n"
-                + "            registered-classes:\n"
-                + "                - class: example.serialization.EmployeeDTO\n"
-                + "                  serializer: example.serialization.EmployeeDTOSerializer\n";
+                + "            serializers:\n"
+                + "                - serializer: example.serialization.EmployeeDTOSerializer\n"
+                + "                - serializer: example.serialization.EmployeeDTOSerializer\n";
 
-        buildConfig(yaml);
+        SerializationConfig config = buildConfig(yaml).getSerializationConfig();
+        assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Duplicate");
+    }
+
+    @Override
+    public void testCompactSerialization_duplicateClassRegistration() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "    serialization:\n"
+                + "        compact-serialization:\n"
+                + "            enabled: true\n"
+                + "            classes:\n"
+                + "                - class: example.serialization.ExternalizableEmployeeDTO\n"
+                + "                - class: example.serialization.ExternalizableEmployeeDTO\n";
+
+        SerializationConfig config = buildConfig(yaml).getSerializationConfig();
+        assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Duplicate");
+    }
+
+    @Override
+    public void testCompactSerialization_registrationsWithDuplicateClasses() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "    serialization:\n"
+                + "        compact-serialization:\n"
+                + "            enabled: true\n"
+                + "            serializers:\n"
+                + "                - serializer: example.serialization.EmployeeDTOSerializer\n"
+                + "                - serializer: example.serialization.SameClassEmployeeDTOSerializer\n";
+
+        SerializationConfig config = buildConfig(yaml).getSerializationConfig();
+        assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Duplicate")
+                .hasMessageContaining("class");
+    }
+
+    @Override
+    public void testCompactSerialization_registrationsWithDuplicateTypeNames() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "    serialization:\n"
+                + "        compact-serialization:\n"
+                + "            enabled: true\n"
+                + "            serializers:\n"
+                + "                - serializer: example.serialization.EmployeeDTOSerializer\n"
+                + "                - serializer: example.serialization.SameTypeNameEmployeeDTOSerializer\n";
+
+        SerializationConfig config = buildConfig(yaml).getSerializationConfig();
+        assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Duplicate")
+                .hasMessageContaining("type name");
+    }
+
+    @Override
+    public void testCompactSerialization_withInvalidSerializer() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "    serialization:\n"
+                + "        compact-serialization:\n"
+                + "            enabled: true\n"
+                + "            serializers:\n"
+                + "                - serializer: does.not.exist.FooSerializer\n";
+
+        SerializationConfig config = buildConfig(yaml).getSerializationConfig();
+        assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Cannot create an instance");
+    }
+
+    @Override
+    public void testCompactSerialization_withInvalidCompactSerializableClass() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "    serialization:\n"
+                + "        compact-serialization:\n"
+                + "            enabled: true\n"
+                + "            classes:\n"
+                + "                - class: does.not.exist.Foo\n";
+
+        SerializationConfig config = buildConfig(yaml).getSerializationConfig();
+        assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Cannot load");
     }
 
     @Override

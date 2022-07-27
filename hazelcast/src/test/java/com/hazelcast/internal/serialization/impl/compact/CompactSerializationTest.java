@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -27,6 +28,9 @@ import com.hazelcast.nio.serialization.compact.CompactWriter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import example.serialization.EmployeeDTOSerializer;
+import example.serialization.SameClassEmployeeDTOSerializer;
+import example.serialization.SameTypeNameEmployeeDTOSerializer;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -47,7 +51,7 @@ public class CompactSerializationTest {
     public void testOverridingDefaultSerializers() {
         SerializationConfig config = new SerializationConfig();
         config.getCompactSerializationConfig()
-                .register(Integer.class, "int", new IntegerSerializer());
+                .addSerializer(new IntegerSerializer());
 
         assertThatThrownBy(() -> createSerializationService(config))
                 .isInstanceOf(IllegalArgumentException.class)
@@ -59,7 +63,7 @@ public class CompactSerializationTest {
         SerializationConfig config = new SerializationConfig();
         config.setAllowOverrideDefaultSerializers(true);
         config.getCompactSerializationConfig()
-                .register(Integer.class, "int", new IntegerSerializer());
+                .addSerializer(new IntegerSerializer());
 
         SerializationService service = createSerializationService(config);
         Data data = service.toData(42);
@@ -75,7 +79,7 @@ public class CompactSerializationTest {
     public void testSerializer_withDuplicateFieldNames() {
         SerializationConfig config = new SerializationConfig();
         config.getCompactSerializationConfig()
-                .register(Foo.class, "foo", new DuplicateWritingSerializer());
+                .addSerializer(new DuplicateWritingSerializer());
 
         SerializationService service = createSerializationService(config);
 
@@ -86,6 +90,31 @@ public class CompactSerializationTest {
                 .hasMessageContaining("Failed to serialize")
                 .hasRootCauseInstanceOf(HazelcastSerializationException.class)
                 .hasRootCauseMessage("Field with the name 'bar' already exists");
+    }
+
+    @Test
+    public void testSerializerRegistration_withDuplicateClasses() {
+        SerializationConfig config = new SerializationConfig();
+        assertThatThrownBy(() -> {
+            config.getCompactSerializationConfig()
+                    .addSerializer(new EmployeeDTOSerializer())
+                    .addSerializer(new SameClassEmployeeDTOSerializer());
+        }).isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Duplicate")
+                .hasMessageContaining("class");
+    }
+
+    @Test
+    public void testSerializerRegistration_withDuplicateTypeNames() {
+        SerializationConfig config = new SerializationConfig();
+
+        assertThatThrownBy(() -> {
+            config.getCompactSerializationConfig()
+                    .addSerializer(new EmployeeDTOSerializer())
+                    .addSerializer(new SameTypeNameEmployeeDTOSerializer());
+        }).isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Duplicate")
+                .hasMessageContaining("type name");
     }
 
     private SerializationService createSerializationService(SerializationConfig config) {
@@ -106,6 +135,18 @@ public class CompactSerializationTest {
         @Override
         public void write(@Nonnull CompactWriter out, @Nonnull Integer object) {
             out.writeInt32("field", object);
+        }
+
+        @Nonnull
+        @Override
+        public String getTypeName() {
+            return "int";
+        }
+
+        @Nonnull
+        @Override
+        public Class<Integer> getClazz() {
+            return Integer.class;
         }
     }
 
@@ -128,6 +169,18 @@ public class CompactSerializationTest {
         public void write(@Nonnull CompactWriter out, @Nonnull Foo object) {
             out.writeInt32("bar", object.bar);
             out.writeInt32("bar", object.bar);
+        }
+
+        @Nonnull
+        @Override
+        public String getTypeName() {
+            return "foo";
+        }
+
+        @Nonnull
+        @Override
+        public Class<Foo> getClazz() {
+            return Foo.class;
         }
     }
 }

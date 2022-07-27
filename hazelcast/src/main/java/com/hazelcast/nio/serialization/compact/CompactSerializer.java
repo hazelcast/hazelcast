@@ -16,19 +16,20 @@
 
 package com.hazelcast.nio.serialization.compact;
 
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 
 /**
- * Defines the contract of the serializers used for Compact
- * serialization.
+ * Defines the contract of the serializers used for Compact serialization.
  * <p>
- * After defining a serializer for the objects of the class {@code T},
- * it can be registered using the {@link com.hazelcast.config.CompactSerializationConfig}.
+ * After defining a serializer for the objects of the class {@code T}, it can be
+ * registered using the
+ * {@link com.hazelcast.config.CompactSerializationConfig}.
  * <p>
- * {@link #write(CompactWriter, Object)} and {@link #read(CompactReader)} methods
- * must be consistent with each other.
+ * {@link #write(CompactWriter, Object)} and {@link #read(CompactReader)}
+ * methods must be consistent with each other.
  *
  * @param <T> Type of the serialized/deserialized class
  * @since Hazelcast 5.0 as BETA
@@ -38,7 +39,7 @@ public interface CompactSerializer<T> {
     /**
      * @param in reader to read fields of an object
      * @return the object created as a result of read method
-     * @throws com.hazelcast.nio.serialization.HazelcastSerializationException in case of failure to read
+     * @throws HazelcastSerializationException in case of failure to read
      */
     @Nonnull
     T read(@Nonnull CompactReader in);
@@ -46,7 +47,25 @@ public interface CompactSerializer<T> {
     /**
      * @param out    CompactWriter to serialize the fields onto
      * @param object to be serialized.
-     * @throws com.hazelcast.nio.serialization.HazelcastSerializationException in case of failure to write
+     * @throws HazelcastSerializationException in case of failure to write
      */
     void write(@Nonnull CompactWriter out, @Nonnull T object);
+
+    /**
+     * Returns the unique type name for the class {@link T}.
+     * <p>
+     * If the class {@link T} is ever evolved by adding or removing fields, the
+     * type name for the evolved serializers must be the same with the initial
+     * version.
+     *
+     * @return the type name
+     */
+    @Nonnull
+    String getTypeName();
+
+    /**
+     * @return the class to be serialized with this serializer.
+     */
+    @Nonnull
+    Class<T> getClazz();
 }

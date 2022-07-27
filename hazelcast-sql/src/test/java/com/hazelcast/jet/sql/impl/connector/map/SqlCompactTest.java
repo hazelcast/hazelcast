@@ -94,7 +94,7 @@ public class SqlCompactTest extends SqlTestSupport {
         compactSerializationConfig.setEnabled(true);
         // registering this class to the member to see it does not affect any of the tests.
         // It has a different schema than all the tests
-        compactSerializationConfig.register(Person.class, PERSON_TYPE_NAME, new CompactSerializer<Person>() {
+        compactSerializationConfig.addSerializer(new CompactSerializer<Person>() {
             @Nonnull
             @Override
             public Person read(@Nonnull CompactReader in) {
@@ -106,6 +106,18 @@ public class SqlCompactTest extends SqlTestSupport {
             @Override
             public void write(@Nonnull CompactWriter out, @Nonnull Person person) {
                 out.writeString("surname", person.surname);
+            }
+
+            @Nonnull
+            @Override
+            public String getTypeName() {
+                return PERSON_TYPE_NAME;
+            }
+
+            @Nonnull
+            @Override
+            public Class<Person> getClazz() {
+                return Person.class;
             }
         });
 

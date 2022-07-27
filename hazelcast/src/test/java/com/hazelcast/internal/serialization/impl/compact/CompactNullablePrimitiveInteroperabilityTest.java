@@ -45,7 +45,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CompactNullablePrimitiveInteroperabilityTest {
 
-    class A {
+    private static class A {
         public Integer[] ids;
         public Integer age;
 
@@ -55,7 +55,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         }
     }
 
-    class ASerializer implements CompactSerializer<A> {
+    private static class ASerializer implements CompactSerializer<A> {
         @Nonnull
         @Override
         public A read(@Nonnull CompactReader in) {
@@ -73,13 +73,25 @@ public class CompactNullablePrimitiveInteroperabilityTest {
             out.writeNullableInt32("age", object.age);
             out.writeArrayOfNullableInt32("ids", object.ids);
         }
+
+        @Nonnull
+        @Override
+        public String getTypeName() {
+            return "A";
+        }
+
+        @Nonnull
+        @Override
+        public Class<A> getClazz() {
+            return A.class;
+        }
     }
 
     SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
 
     private SerializationService createSerializationServiceWithASerializer() {
         CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.register(A.class, "A", new ASerializer());
+        compactSerializationConfig.addSerializer(new ASerializer());
         compactSerializationConfig.setEnabled(true);
         return new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
@@ -175,7 +187,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
     }
 
     void assertReadAsPrimitive(GenericRecord record) {
-        assertEquals(true, record.getBoolean("boolean"));
+        assertTrue(record.getBoolean("boolean"));
         assertEquals((byte) 4, record.getInt8("byte"));
         assertEquals((short) 6, record.getInt16("short"));
         assertEquals(8, record.getInt32("int"));
@@ -326,7 +338,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         Data data = serializationService.toData(record);
         PrimitiveObject primitiveObject = serializationService.toObject(data);
 
-        assertEquals(true, primitiveObject.boolean_);
+        assertTrue(primitiveObject.boolean_);
         assertEquals((byte) 2, primitiveObject.byte_);
         assertEquals('\u4242', primitiveObject.char_);
         assertEquals((short) 4, primitiveObject.short_);

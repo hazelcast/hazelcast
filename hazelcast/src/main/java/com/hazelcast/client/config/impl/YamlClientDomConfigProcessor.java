@@ -22,6 +22,7 @@ import com.hazelcast.client.config.ClientSecurityConfig;
 import com.hazelcast.client.config.ClientUserCodeDeploymentConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.CompactSerializationConfig;
+import com.hazelcast.config.CompactSerializationConfigAccessor;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -128,19 +129,27 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
             if (matches("enabled", name)) {
                 boolean enabled = getBooleanValue(getTextContent(child));
                 compactSerializationConfig.setEnabled(enabled);
-            } else if (matches("registered-classes", name)) {
+            } else if (matches("serializers", name)) {
+                fillCompactSerializers(child, compactSerializationConfig);
+            } else if (matches("classes", name)) {
                 fillCompactSerializableClasses(child, compactSerializationConfig);
             }
         }
     }
 
     @Override
+    protected void fillCompactSerializers(Node node, CompactSerializationConfig compactSerializationConfig) {
+        for (Node child : childElements(node)) {
+            String serializerClassName = getAttribute(child, "serializer");
+            CompactSerializationConfigAccessor.registerSerializer(compactSerializationConfig, serializerClassName);
+        }
+    }
+
+    @Override
     protected void fillCompactSerializableClasses(Node node, CompactSerializationConfig compactSerializationConfig) {
         for (Node child : childElements(node)) {
-            String className = getAttribute(child, "class");
-            String typeName = getAttribute(child, "type-name");
-            String serializerClassName = getAttribute(child, "serializer");
-            registerCompactSerializableClass(compactSerializationConfig, className, typeName, serializerClassName);
+            String compactSerializableClassName = getAttribute(child, "class");
+            CompactSerializationConfigAccessor.registerClass(compactSerializationConfig, compactSerializableClassName);
         }
     }
 
