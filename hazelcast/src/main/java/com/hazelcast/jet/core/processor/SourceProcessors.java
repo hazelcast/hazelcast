@@ -36,6 +36,7 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.function.ToResultSetFunction;
 import com.hazelcast.jet.impl.connector.ConvenientSourceP;
 import com.hazelcast.jet.impl.connector.ConvenientSourceP.SourceBufferConsumerSide;
+import com.hazelcast.jet.impl.connector.DataSourceFromConnectionSupplier;
 import com.hazelcast.jet.impl.connector.HazelcastReaders;
 import com.hazelcast.jet.impl.connector.ReadFilesP;
 import com.hazelcast.jet.impl.connector.ReadJdbcP;
@@ -442,7 +443,7 @@ public final class SourceProcessors {
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return ReadJdbcP.supplier(context -> newConnectionFn.get(), resultSetFn, mapOutputFn);
+        return ReadJdbcP.supplier(context -> new DataSourceFromConnectionSupplier(newConnectionFn), resultSetFn, mapOutputFn);
     }
 
     /**
@@ -456,13 +457,12 @@ public final class SourceProcessors {
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return ReadJdbcP.supplier(context ->
-                        getDataStoreFactory(context, externalDataStoreRef.getName()).createDataStore().getConnection(),
+        return ReadJdbcP.supplier(context -> getDataStoreFactory(context, externalDataStoreRef.getName()).getDataStore(),
                 resultSetFn,
                 mapOutputFn);
     }
 
-    private static JdbcDataStoreFactory getDataStoreFactory(Context context, String name) {
+    private static JdbcDataStoreFactory getDataStoreFactory(ProcessorSupplier.Context context, String name) {
         NodeEngineImpl nodeEngine = Util.getNodeEngine(context.hazelcastInstance());
         ExternalDataStoreFactory<?> dataStoreFactory = nodeEngine.getExternalDataStoreService().getExternalDataStoreFactory(name);
         if (!(dataStoreFactory instanceof JdbcDataStoreFactory)) {

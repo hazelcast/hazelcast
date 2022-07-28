@@ -64,7 +64,7 @@ public class ExternalDataStoreServiceImplTest extends HazelcastTestSupport {
         ExternalDataStoreFactory<?> dataStoreFactory = externalDataStoreService.getExternalDataStoreFactory("test-data-store");
         assertInstanceOf(JdbcDataStoreFactory.class, dataStoreFactory);
 
-        DataSource dataSource = ((JdbcDataStoreFactory) dataStoreFactory).createDataStore();
+        DataSource dataSource = ((JdbcDataStoreFactory) dataStoreFactory).getDataStore();
 
         ResultSet resultSet = dataSource.getConnection().prepareStatement("select 'some-name' as name").executeQuery();
         resultSet.next();

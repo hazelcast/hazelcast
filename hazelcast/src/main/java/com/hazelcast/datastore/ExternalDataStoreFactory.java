@@ -27,7 +27,7 @@ import com.hazelcast.spi.annotation.Beta;
  */
 @Beta
 public interface ExternalDataStoreFactory<DS> {
-    DS createDataStore();
+    DS getDataStore();
 
     void init(ExternalDataStoreConfig config);
 }

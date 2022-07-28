@@ -19,7 +19,7 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.processor.SinkProcessors;
-import com.hazelcast.jet.impl.connector.DataSourceFromConnectionSupplier;
+import com.hazelcast.jet.impl.connector.DataSourceFromJdbcUrl;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
@@ -194,7 +194,7 @@ public class JdbcSinkBuilder<T> {
         }
         if (jdbcUrl != null) {
             String connectionUrl = jdbcUrl;
-            dataSourceSupplier = () -> new DataSourceFromConnectionSupplier(connectionUrl);
+            dataSourceSupplier = () -> new DataSourceFromJdbcUrl(connectionUrl);
         }
         if (dataSourceSupplier != null) {
             return Sinks.fromProcessor("jdbcSink",

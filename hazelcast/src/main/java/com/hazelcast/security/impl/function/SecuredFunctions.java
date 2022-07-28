@@ -23,6 +23,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.journal.EventJournalReader;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier.Context;
 import com.hazelcast.jet.function.ToResultSetFunction;
 import com.hazelcast.jet.impl.connector.ReadIListP;
@@ -45,6 +46,8 @@ import com.hazelcast.security.permission.ReliableTopicPermission;
 import com.hazelcast.security.permission.ReplicatedMapPermission;
 import com.hazelcast.topic.ITopic;
 
+import javax.annotation.Nonnull;
+import javax.sql.DataSource;
 import java.io.BufferedWriter;
 import java.io.OutputStreamWriter;
 import java.net.Socket;
@@ -52,11 +55,13 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.Permission;
-import java.sql.Connection;
 import java.sql.ResultSet;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.function.LongSupplier;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
 import static com.hazelcast.security.PermissionsUtil.mapUpdatePermission;
@@ -267,16 +272,27 @@ public final class SecuredFunctions {
         };
     }
 
-    public static <T> SupplierEx<Processor> readJdbcProcessorFn(
+    public static <T> ProcessorSupplier readJdbcProcessorFn(
             String connectionUrl,
-            FunctionEx<Processor.Context, ? extends Connection> newConnectionFn,
+            FunctionEx<ProcessorSupplier.Context, ? extends DataSource> newDataSourceFn,
             ToResultSetFunction resultSetFn,
             FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return new SupplierEx<Processor>() {
+        return new ProcessorSupplier() {
+
+            private DataSource dataSource;
+
             @Override
-            public Processor getEx() {
-                return new ReadJdbcP<>(newConnectionFn, resultSetFn, mapOutputFn);
+            public void init(@Nonnull ProcessorSupplier.Context context) {
+                dataSource = newDataSourceFn.apply(context);
+            }
+
+            @Nonnull
+            @Override
+            public Collection<? extends Processor> get(int count) {
+                return IntStream.range(0, count)
+                        .mapToObj(i -> new ReadJdbcP<T>(dataSource::getConnection, resultSetFn, mapOutputFn))
+                        .collect(Collectors.toList());
             }
 
             @Override

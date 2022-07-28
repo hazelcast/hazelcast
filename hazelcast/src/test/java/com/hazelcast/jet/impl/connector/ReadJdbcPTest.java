@@ -132,7 +132,7 @@ public class ReadJdbcPTest extends SimpleTestInClusterSupport {
                 .writeTo(assertAnyOrder(tableContents));
 
         assertThatThrownBy(() -> instance().getJet().newJob(p).join())
-                .hasMessageContaining("External data store 'non-existing-data-store' not found");
+                .hasMessageContaining("External data store factory 'non-existing-data-store' not found");
     }
 
     @Test

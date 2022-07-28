@@ -20,30 +20,41 @@ import javax.annotation.Nonnull;
 import javax.sql.DataSource;
 import java.io.PrintWriter;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.SQLFeatureNotSupportedException;
-import java.util.function.Supplier;
 import java.util.logging.Logger;
 
 /**
  * An adapter to adapt {@code Supplier<Connection>} to a {@link
- * DataSource}.
+ * javax.sql.DataSource}.
  */
-public class DataSourceFromConnectionSupplier implements DataSource {
-    private final Supplier<? extends Connection> newConnectionFn;
+public class DataSourceFromJdbcUrl implements DataSource {
+    private final String jdbcUrl;
+    private final String username;
+    private final String password;
 
-    public DataSourceFromConnectionSupplier(@Nonnull Supplier<? extends Connection> newConnectionFn) {
-        this.newConnectionFn = newConnectionFn;
+    public DataSourceFromJdbcUrl(@Nonnull String jdbcUrl) {
+        this(jdbcUrl, null, null);
+    }
+
+    public DataSourceFromJdbcUrl(@Nonnull String jdbcUrl, String username, String password) {
+        this.jdbcUrl = jdbcUrl;
+        this.password = password;
+        this.username = username;
     }
 
     @Override
     public Connection getConnection() throws SQLException {
-        return newConnectionFn.get();
+        if (username != null || password != null) {
+            return getConnection(username, password);
+        }
+        return DriverManager.getConnection(jdbcUrl);
     }
 
     @Override
     public Connection getConnection(String username, String password) throws SQLException {
-        throw new UnsupportedOperationException();
+        return DriverManager.getConnection(jdbcUrl, username, password);
     }
 
     @Override
@@ -81,4 +92,7 @@ public class DataSourceFromConnectionSupplier implements DataSource {
         throw new UnsupportedOperationException();
     }
 
+    public String getJdbcUrl() {
+        return jdbcUrl;
+    }
 }

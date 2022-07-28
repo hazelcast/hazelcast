@@ -423,7 +423,7 @@ public final class SinkProcessors {
     }
 
     private static FunctionEx<ProcessorMetaSupplier.Context, CommonDataSource> dataSourceSupplier(String externalDataStoreName) {
-        return context -> getDataStoreFactory(context, externalDataStoreName).createDataStore();
+        return context -> getDataStoreFactory(context, externalDataStoreName).getDataStore();
     }
 
     private static JdbcDataStoreFactory getDataStoreFactory(ProcessorMetaSupplier.Context context, String name) {
