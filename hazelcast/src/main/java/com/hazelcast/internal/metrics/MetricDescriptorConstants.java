@@ -608,10 +608,14 @@ public final class MetricDescriptorConstants {
     public static final String TSTORE_HLOG_PAGING_FREQUENCY_MAX = "tstore.hlog.paging.frequency.max";
     public static final String TSTORE_HLOG_AGGREGATED_USED_MEMORY = "tstore.hlog.aggregated.usedMemory";
     public static final String TSTORE_HLOG_AGGREGATED_USED_DISK = "tstore.hlog.aggregated.usedDisk";
+    public static final String TSTORE_HLOG_AGGREGATED_GARBAGE = "tstore.hlog.aggregated.garbage";
     public static final String TSTORE_HLOG_AGGREGATED_PRIMARY_USED_MEMORY = "tstore.hlog.aggregated.primary.usedMemory";
     public static final String TSTORE_HLOG_AGGREGATED_PRIMARY_USED_DISK = "tstore.hlog.aggregated.primary.usedDisk";
+    public static final String TSTORE_HLOG_AGGREGATED_PRIMARY_GARBAGE = "tstore.hlog.aggregated.primary.garbage";
     public static final String TSTORE_HLOG_AGGREGATED_BACKUP_USED_MEMORY = "tstore.hlog.aggregated.backup.usedMemory";
     public static final String TSTORE_HLOG_AGGREGATED_BACKUP_USED_DISK = "tstore.hlog.aggregated.backup.usedDisk";
+    public static final String TSTORE_HLOG_AGGREGATED_BACKUP_GARBAGE = "tstore.hlog.aggregated.backup.garbage";
+
     // ===[/TSTORE]=====================================================
 
     // ===[WAN]=========================================================
