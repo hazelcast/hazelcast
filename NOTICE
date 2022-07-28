@@ -33,6 +33,7 @@ originating from The JGraphT Project (https://github.com/jgrapht/jgrapht).
 The packages:
 com.hazelcast.sql
 com.hazelcast.jet.sql
+org.apache.calcite.sql.validate
 
 contain code originating from the Apache Calcite (https://github.com/apache/calcite)
 

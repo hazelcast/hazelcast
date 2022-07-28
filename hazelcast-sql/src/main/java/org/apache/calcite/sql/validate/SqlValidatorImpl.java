@@ -156,6 +156,20 @@ import static java.util.Objects.requireNonNull;
 
 /**
  * Default implementation of {@link SqlValidator}.
+ *
+ * This class is slightly modified form of the same class in
+ * the Apache Calcite Project. The modification is mainly
+ * the removal of the code part under the
+ * {@link org.apache.calcite.sql.validate.SqlValidatorImpl#expandStar}:
+ * <pre>
+ * {@code
+ *     if (!hasDynamicStruct || Bug.CALCITE_2400_FIXED) {
+ *         SqlNode from = requireNonNull(scope.getNode().getFrom(),
+ *             () -> "getFrom for " + scope.getNode());
+ *         new Permute(from, 0).permute(selectItems, fields);
+ *       }
+ * }
+ * </pre>
  */
 public class SqlValidatorImpl implements SqlValidatorWithHints {
     //~ Static fields/initializers ---------------------------------------------
