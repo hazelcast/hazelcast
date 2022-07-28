@@ -34,7 +34,7 @@ public class HazelcastJsonObjectAggFunction extends HazelcastAggFunction {
     public static final HazelcastJsonObjectAggFunction NULL_ON_NULL_INSTANCE
             = new HazelcastJsonObjectAggFunction(SqlJsonConstructorNullClause.NULL_ON_NULL);
 
-    private SqlJsonConstructorNullClause nullClause;
+    private final SqlJsonConstructorNullClause nullClause;
 
 
     protected HazelcastJsonObjectAggFunction(SqlJsonConstructorNullClause nullClause) {
