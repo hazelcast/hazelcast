@@ -17,7 +17,6 @@ package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.memory.Capacity;
-import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -25,6 +24,8 @@ import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Objects;
+
+import static com.hazelcast.memory.MemoryUnit.KILOBYTES;
 
 /**
  * Configuration options specific for B-Tree indexes.
@@ -36,7 +37,7 @@ public class BTreeIndexConfig implements IdentifiedDataSerializable {
     /**
      * Default value of page size for B-Trees.
      */
-    public static final Capacity DEFAULT_PAGE_SIZE = Capacity.of(1024, MemoryUnit.BYTES);
+    public static final Capacity DEFAULT_PAGE_SIZE = Capacity.of(16, KILOBYTES);
 
     private Capacity pageSize = DEFAULT_PAGE_SIZE;
 
