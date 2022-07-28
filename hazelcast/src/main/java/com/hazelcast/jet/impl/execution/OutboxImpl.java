@@ -32,6 +32,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicLongArray;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
@@ -39,6 +40,8 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.impl.util.Util.lazyIncrement;
 
 public class OutboxImpl implements OutboxInternal {
+
+    private static final Function<Byte, Counter> CREATE_COUNTER_FUNCTION = x -> SwCounter.newSwCounter(Long.MIN_VALUE);
 
     private final OutboundCollector[] outstreams;
     private final ProgressTracker progTracker;
@@ -123,9 +126,6 @@ public class OutboxImpl implements OutboxInternal {
                 : "Offered to different ordinals after previous call returned false: expected="
                 + Arrays.toString(unfinishedItemOrdinals) + ", got=" + Arrays.toString(ordinals);
 
-        assert numRemainingInBatch != -1 : "Outbox.offer() called again after it returned false, without a " +
-                "call to reset(). You probably didn't return from Processor method after Outbox.offer() " +
-                "or AbstractProcessor.tryEmit() returned false";
         numRemainingInBatch--;
         boolean done = true;
         if (numRemainingInBatch == -1) {
@@ -166,13 +166,9 @@ public class OutboxImpl implements OutboxInternal {
                     // But we don't track WMs per ordinal and the same WM can be offered to different
                     // ordinals in different calls. Theoretically a completely different WM could be
                     // emitted to each ordinal, but we don't do that currently.
-                    if (lastForwardedWm.get(wm.key()) == null) {
-                        lastForwardedWm.put(wm.key(), SwCounter.newSwCounter(Long.MIN_VALUE));
-                        return true;
-                    }
-                    assert lastForwardedWm.get(wm.key()).get() <= wmTimestamp
-                            : "current=" + lastForwardedWm.get(wm.key()).get() + ", new=" + wmTimestamp;
-                    lastForwardedWm.get(wm.key()).set(wmTimestamp);
+                    Counter counter = lastForwardedWm.computeIfAbsent(wm.key(), CREATE_COUNTER_FUNCTION);
+                    assert counter.get() <= wmTimestamp : "current=" + counter.get() + ", new=" + wmTimestamp;
+                    counter.set(wmTimestamp);
                 }
             }
         } else {
@@ -264,11 +260,10 @@ public class OutboxImpl implements OutboxInternal {
     }
 
     @Override
-    public long lastForwardedWm(byte key) {
-        Counter counter = lastForwardedWm.get(key);
+    public long lastForwardedWm(byte wmKey) {
+        Counter counter = lastForwardedWm.get(wmKey);
         if (counter == null) {
-            counter = SwCounter.newSwCounter(Long.MIN_VALUE);
-            lastForwardedWm.put(key, counter);
+            return Long.MIN_VALUE;
         }
         return counter.get();
     }

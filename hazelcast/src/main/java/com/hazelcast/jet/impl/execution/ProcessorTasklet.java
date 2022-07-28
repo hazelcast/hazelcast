@@ -586,8 +586,7 @@ public class ProcessorTasklet implements Tasklet {
                     if (wm.timestamp() != IDLE_MESSAGE_TIME) {
                         pendingEdgeWatermark.add(wm);
                     }
-                    pendingGlobalWatermarks.addAll(
-                            coalescers.observeWm(wm.key(), currInstream.ordinal(), wm.timestamp()));
+                    pendingGlobalWatermarks.addAll(coalescers.observeWm(currInstream.ordinal(), wm));
                 } else if (item instanceof SnapshotBarrier) {
                     observeBarrier(currInstream.ordinal(), (SnapshotBarrier) item);
                 } else {
@@ -667,8 +666,8 @@ public class ProcessorTasklet implements Tasklet {
         return currInstream != null && currInstream.priority() == Integer.MIN_VALUE;
     }
 
-    private long lastForwardedWmLatency(byte key) {
-        long wm = outbox.lastForwardedWm(key);
+    private long lastForwardedWmLatency(byte wmKey) {
+        long wm = outbox.lastForwardedWm(wmKey);
         if (wm == IDLE_MESSAGE_TIME) {
             return Long.MIN_VALUE; // idle
         }
@@ -725,9 +724,10 @@ public class ProcessorTasklet implements Tasklet {
             MetricDescriptor keyedDesc = descriptor.copy().withDiscriminator("key", Byte.toString(key));
             mContext.collect(keyedDesc, TOP_OBSERVED_WM, ProbeLevel.INFO, ProbeUnit.MS, coalescers.topObservedWm(key));
             mContext.collect(keyedDesc, COALESCED_WM, ProbeLevel.INFO, ProbeUnit.MS, coalescers.coalescedWm(key));
-            mContext.collect(keyedDesc, LAST_FORWARDED_WM, ProbeLevel.INFO, ProbeUnit.MS, outbox.lastForwardedWm(key));
-            mContext.collect(keyedDesc, LAST_FORWARDED_WM_LATENCY, ProbeLevel.INFO, ProbeUnit.MS, lastForwardedWmLatency(key));
+            mContext.collect(descriptor, LAST_FORWARDED_WM, ProbeLevel.INFO, ProbeUnit.MS, outbox.lastForwardedWm(key));
+            mContext.collect(descriptor, LAST_FORWARDED_WM_LATENCY, ProbeLevel.INFO, ProbeUnit.MS, lastForwardedWmLatency(key));
         }
+
         mContext.collect(descriptor, this);
 
         //collect static metrics from processor

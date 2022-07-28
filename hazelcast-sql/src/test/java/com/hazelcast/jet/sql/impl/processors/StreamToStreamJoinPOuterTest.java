@@ -95,16 +95,16 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
                 .expectExactOutput(
-                        in(0, wm((byte) 0, 1L)),
-                        out(wm((byte) 0, 1L)),
-                        in(1, wm((byte) 1, 1L)),
-                        out(wm((byte) 1, 1L)),
+                        in(0, wm(1L, (byte) 0)),
+                        out(wm(1L, (byte) 0)),
+                        in(1, wm(1L, (byte) 1)),
+                        out(wm(1L, (byte) 1)),
                         in(ordinal0, jetRow(3L)),
                         in(ordinal0, jetRow(4L)),
-                        in(ordinal1, wm(ordinal1, 6L)),
+                        in(ordinal1, wm(6L, ordinal1)),
                         out(isLeft ? jetRow(3L, null) : jetRow(null, 3L)),
                         out(isLeft ? jetRow(4L, null) : jetRow(null, 4L)),
-                        out(wm(ordinal1, 6L)),
+                        out(wm(6L, ordinal1)),
                         processorAssertion((StreamToStreamJoinP p) ->
                                 assertEquals(0, p.buffer[0].size() + p.buffer[1].size()))
                 );
@@ -118,16 +118,16 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
         TestSupport.verifyProcessor(isLeft ? createProcessor(1, 2) : createProcessor(2, 1))
                 .disableSnapshots()
                 .expectExactOutput(
-                        in(0, wm((byte) 0, 1L)),
-                        out(wm((byte) 0, 1L)),
-                        in(1, wm((byte) 1, 2L)),
-                        out(wm((byte) 1, 2L)),
+                        in(0, wm(1L, (byte) 0)),
+                        out(wm(1L, (byte) 0)),
+                        in(1, wm(2L, (byte) 1)),
+                        out(wm(2L, (byte) 1)),
                         in(ordinal0, jetRow(3L)),
                         in(ordinal0, jetRow(4L)),
-                        in(ordinal1, wm(ordinal1, 6L)),
+                        in(ordinal1, wm(6L, ordinal1)),
                         out(isLeft ? jetRow(3L, null, null) : jetRow(null, null, 3L)),
                         out(isLeft ? jetRow(4L, null, null) : jetRow(null, null, 4L)),
-                        out(wm(ordinal1, 6L)),
+                        out(wm(6L, ordinal1)),
                         processorAssertion((StreamToStreamJoinP p) ->
                                 assertEquals(0, p.buffer[0].size() + p.buffer[1].size()))
                 );
@@ -145,8 +145,8 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
                 .expectExactOutput(
-                        in(ordinal1, wm(ordinal1, 10)),
-                        out(wm(ordinal1, 10)),
+                        in(ordinal1, wm(10, ordinal1)),
+                        out(wm(10, ordinal1)),
                         processorAssertion((StreamToStreamJoinP p) ->
                                 assertEquals(ImmutableMap.of(ordinal0, 9L, ordinal1, Long.MIN_VALUE + 1), p.wmState)),
                         // This item is not late according to the WM for key=1, but is off the join limit according
@@ -177,10 +177,10 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
                 .expectExactOutput(
-                        in(1, wm((byte) 2, 10)),
-                        out(wm((byte) 2, 10)),
-                        in(0, wm((byte) 1, 10)),
-                        out(wm((byte) 1, 10)),
+                        in(1, wm(10, (byte) 2)),
+                        out(wm(10, (byte) 2)),
+                        in(0, wm(10, (byte) 1)),
+                        out(wm(10, (byte) 1)),
                         in(0, jetRow(0L, 0L))
                 );
     }

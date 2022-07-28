@@ -46,5 +46,4 @@ public interface OutboxInternal extends Outbox {
      * be called from a concurrent thread.
      */
     long lastForwardedWm(byte key);
-
 }
