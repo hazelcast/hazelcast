@@ -246,6 +246,9 @@ public class MasterJobContext {
     private CompletableFuture<Map<MemberInfo, ExecutionPlan>> createExecutionPlans(
             DAG dag,
             MembersView membersView) {
+        if (dag == null) {
+            return completedFuture(null);
+        }
         return ExecutionPlanBuilder.createExecutionPlans(mc.nodeEngine(), membersView.getMembers(),
                 dag, mc.jobId(), mc.executionId(), mc.jobConfig(), mc.jobExecutionRecord().ongoingSnapshotId(),
                 false, mc.jobRecord().getSubject());
