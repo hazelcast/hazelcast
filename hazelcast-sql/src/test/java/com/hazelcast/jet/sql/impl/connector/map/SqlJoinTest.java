@@ -709,7 +709,7 @@ public class SqlJoinTest {
             createMapping(instance(), "Hzl_Account", Long.class, Account.class);
 
             sqlService.execute("SELECT * FROM Hzl_Transaction JOIN Hzl_Account USING(bankId, accountNumber)");
-            sqlService.execute("SELECT * FROM Hzl_Transaction JOIN Hzl_Account USING(bankId, accountNumber)");
+            sqlService.execute("SELECT * FROM Hzl_Transaction NATURAL JOIN Hzl_Account");
         }
 
         public static class Transaction implements Serializable {
