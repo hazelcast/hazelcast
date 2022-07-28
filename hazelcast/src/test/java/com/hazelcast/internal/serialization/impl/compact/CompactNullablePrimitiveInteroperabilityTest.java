@@ -34,6 +34,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createArrayOfFixedFieldsDTO;
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createFixedFieldsDTO;
 import static com.hazelcast.nio.serialization.GenericRecordBuilder.compact;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -77,16 +79,6 @@ public class CompactNullablePrimitiveInteroperabilityTest {
 
     SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
 
-    private SerializationService createSerializationServiceWithASerializer() {
-        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.register(A.class, "A", new ASerializer());
-        compactSerializationConfig.setEnabled(true);
-        return new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
-                .build();
-    }
-
     private SerializationService createSerializationService() {
         CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
         compactSerializationConfig.setEnabled(true);
@@ -124,6 +116,54 @@ public class CompactNullablePrimitiveInteroperabilityTest {
 
         assertTrue(serializedRecord instanceof DeserializedGenericRecord);
         assertReadAsNullable(serializedRecord);
+    }
+
+    @Test
+    public void testWritePrimitiveReadNullableCustomSerializer() {
+        FixedFieldsDTO fixedFieldsDTO = createFixedFieldsDTO();
+        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
+        compactSerializationConfig.register(FixedFieldsDTO.class, "fixedFieldsDTO", new FixedFieldsDTOSerializerReadingNullable());
+        compactSerializationConfig.setEnabled(true);
+        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .setSchemaService(schemaService)
+                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                .build();
+
+        Data data = serializationService.toData(fixedFieldsDTO);
+        FixedFieldsDTO obj = serializationService.toObject(data);
+
+        assertEquals(obj, fixedFieldsDTO);
+
+        ArrayOfFixedFieldsDTO arrayOfFixedFieldsDTO = createArrayOfFixedFieldsDTO();
+        CompactSerializationConfig compactSerializationConfig2 = new CompactSerializationConfig();
+        compactSerializationConfig2.register(ArrayOfFixedFieldsDTO.class, "arrayOfFixedFieldsDTO", new ArrayOfFixedFieldsDTOSerializerReadingNullable());
+        compactSerializationConfig2.setEnabled(true);
+        SerializationService serializationService2 = new DefaultSerializationServiceBuilder()
+                .setSchemaService(schemaService)
+                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig2))
+                .build();
+
+        Data data2 = serializationService2.toData(arrayOfFixedFieldsDTO);
+        ArrayOfFixedFieldsDTO obj2 = serializationService2.toObject(data2);
+
+        assertEquals(obj2, arrayOfFixedFieldsDTO);
+    }
+
+    @Test
+    public void testWriteNullableReadPrimitiveCustomSerializer() {
+        FixedFieldsDTO fixedFieldsDTO = createFixedFieldsDTO();
+        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
+        compactSerializationConfig.register(FixedFieldsDTO.class, "fixedFieldsDTO", new FixedFieldsDTOSerializerWritingNullable());
+        compactSerializationConfig.setEnabled(true);
+        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .setSchemaService(schemaService)
+                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                .build();
+
+        Data data = serializationService.toData(fixedFieldsDTO);
+        FixedFieldsDTO obj = serializationService.toObject(data);
+
+        assertEquals(obj, fixedFieldsDTO);
     }
 
     void assertReadAsNullable(GenericRecord record) {
@@ -222,7 +262,13 @@ public class CompactNullablePrimitiveInteroperabilityTest {
 
     @Test
     public void testWriteNullReadPrimitiveThrowsExceptionWithCorrectMethodPrefixCompactReader() {
-        SerializationService serializationService = createSerializationServiceWithASerializer();
+        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
+        compactSerializationConfig.register(A.class, "A", new ASerializer());
+        compactSerializationConfig.setEnabled(true);
+        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .setSchemaService(schemaService)
+                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                .build();
         // Reading null value with non-nullable reader method
         A a1 = new A(null, new Integer[]{1, 2, 3});
         Data data = serializationService.toData(a1);

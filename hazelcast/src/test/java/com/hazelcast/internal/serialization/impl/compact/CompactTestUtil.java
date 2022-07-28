@@ -156,6 +156,13 @@ public final class CompactTestUtil {
                 1111.1111111123123);
     }
 
+    @Nonnull
+    static ArrayOfFixedFieldsDTO createArrayOfFixedFieldsDTO() {
+        return new ArrayOfFixedFieldsDTO(new byte[]{1, 2, 3}, new boolean[]{true, false},
+                new short[]{1231, 1232}, new int[]{123123123, 123123123}, new long[]{123123123123L, 123123123123L},
+                new float[]{12312.123f, 12312.123f}, new double[]{1111.1111111123123, 1111.1111111123123});
+    }
+
     public static InternalSerializationService createSerializationService(SchemaService schemaService) {
         CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
         compactSerializationConfig.setEnabled(true);
