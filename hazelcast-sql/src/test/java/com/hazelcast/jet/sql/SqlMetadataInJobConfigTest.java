@@ -31,9 +31,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.util.List;
-import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_QUERY_TEXT;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
@@ -106,6 +104,7 @@ public class SqlMetadataInJobConfigTest extends SqlTestSupport {
     }
 
     @Test
+    @SuppressWarnings("resource")
     public void test_createJobMetadata() {
         TestBatchSqlConnector.create(instance().getSql(), "src", 3);
         createMapping("dest", Integer.class, String.class);
@@ -127,8 +126,7 @@ public class SqlMetadataInJobConfigTest extends SqlTestSupport {
         TestBatchSqlConnector.create(instance().getSql(), "src", 1, true);
 
         String sql = "INSERT INTO dest SELECT v, v FROM src";
-        Future<SqlResult> f = spawn(() ->
-                instance().getSql().execute(sql));
+        spawn(() -> instance().getSql().execute(sql));
         awaitSingleRunningJob(instance());
 
         List<Job> runningJobs = getJobsByStatus(RUNNING);
