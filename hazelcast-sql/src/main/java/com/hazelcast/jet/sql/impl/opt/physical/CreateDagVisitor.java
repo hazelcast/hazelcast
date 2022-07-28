@@ -46,6 +46,7 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.jet.sql.impl.opt.WatermarkKeysAssigner;
+import com.hazelcast.jet.sql.impl.opt.utils.MutableByte;
 import com.hazelcast.jet.sql.impl.processors.LateItemsDropP;
 import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
 import com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP;
@@ -62,7 +63,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.SingleRel;
 import org.apache.calcite.rel.type.RelDataTypeField;
-import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexProgram;
 
 import javax.annotation.Nullable;
@@ -444,33 +444,33 @@ public class CreateDagVisitor {
         List<RelDataTypeField> fieldList = rel.getRowType().getFieldList();
 
         // map watermarked timestamps extractors to enumerated wm keys
-        for (Map.Entry<RexInputRef, ToLongFunctionEx<JetSqlRow>> e : rel.leftTimeExtractors().entrySet()) {
-            Map<RexInputRef, Byte> refByteMap = watermarkKeysAssigner.getWatermarkedFieldsKey(rel.getLeft());
-            Byte wmKey = refByteMap.get(e.getKey());
+        for (Map.Entry<Integer, ToLongFunctionEx<JetSqlRow>> e : rel.leftTimeExtractors().entrySet()) {
+            Map<Integer, MutableByte> refByteMap = watermarkKeysAssigner.getWatermarkedFieldsKey(rel.getLeft());
+            Byte wmKey = refByteMap.get(e.getKey()).getValue();
             leftExtractors.put(wmKey, e.getValue());
         }
 
-        for (Map.Entry<RexInputRef, ToLongFunctionEx<JetSqlRow>> e : rel.rightTimeExtractors().entrySet()) {
-            Map<RexInputRef, Byte> refByteMap = watermarkKeysAssigner.getWatermarkedFieldsKey(rel.getRight());
-            Byte wmKey = refByteMap.get(e.getKey());
+        for (Map.Entry<Integer, ToLongFunctionEx<JetSqlRow>> e : rel.rightTimeExtractors().entrySet()) {
+            Map<Integer, MutableByte> refByteMap = watermarkKeysAssigner.getWatermarkedFieldsKey(rel.getRight());
+            Byte wmKey = refByteMap.get(e.getKey()).getValue();
             rightExtractors.put(wmKey, e.getValue());
         }
 
         // map field descriptors to enumerated watermark keys
-        Map<RexInputRef, Byte> refByteMap = watermarkKeysAssigner.getWatermarkedFieldsKey(rel);
+        Map<Integer, MutableByte> refByteMap = watermarkKeysAssigner.getWatermarkedFieldsKey(rel);
         Map<Byte, Map<Byte, Long>> postponeTimeMap = new HashMap<>();
-        for (Entry<RexInputRef, Map<RexInputRef, Long>> entry : rel.postponeTimeMap().entrySet()) {
+        for (Entry<Integer, Map<Integer, Long>> entry : rel.postponeTimeMap().entrySet()) {
             Map<Byte, Long> map = new HashMap<>();
-            for (Entry<RexInputRef, Long> innerEntry : entry.getValue().entrySet()) {
-                map.put(refByteMap.get(innerEntry.getKey()), innerEntry.getValue());
+            for (Entry<Integer, Long> innerEntry : entry.getValue().entrySet()) {
+                map.put(refByteMap.get(innerEntry.getKey()).getValue(), innerEntry.getValue());
             }
-            postponeTimeMap.put(refByteMap.get(entry.getKey()), map);
+            postponeTimeMap.put(refByteMap.get(entry.getKey()).getValue(), map);
         }
 
         // fill `postponeTimeMap` with empty inner maps for unused
         // watermarks keys to be counted by the processor as present.
-        for (Byte key : refByteMap.values()) {
-            postponeTimeMap.putIfAbsent(key, emptyMap());
+        for (MutableByte key : refByteMap.values()) {
+            postponeTimeMap.putIfAbsent(key.getValue(), emptyMap());
         }
 
         Vertex joinVertex = dag.newUniqueVertex(

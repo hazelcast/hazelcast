@@ -77,16 +77,11 @@ public class CalcDropLateItemsTransposeRule extends RelRule<RelRule.Config> impl
         Calc calc = call.rel(0);
         DropLateItemsLogicalRel dropRel = call.rel(1);
 
-        if (!(dropRel.wmField() instanceof RexInputRef)) {
-            return false;
-        }
-        RexInputRef wmField = (RexInputRef) dropRel.wmField();
-
         List<RexNode> rexNodes = calc.getProgram().expandList(calc.getProgram().getProjectList());
         return rexNodes.stream()
                 .filter(r -> r instanceof RexInputRef)
                 .map(r -> (RexInputRef) r)
-                .anyMatch(r -> r.getIndex() == wmField.getIndex());
+                .anyMatch(r -> r.getIndex() == dropRel.wmField());
     }
 
     @Override

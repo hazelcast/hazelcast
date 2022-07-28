@@ -136,7 +136,6 @@ public class KafkaSqlConnector implements SqlConnector {
                                 table.kafkaConsumerProperties(),
                                 table.topicName(),
                                 eventTimePolicyProvider,
-                                watermarkKey,
                                 table.paths(),
                                 table.types(),
                                 table.keyQueryDescriptor(),

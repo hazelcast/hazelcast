@@ -41,7 +41,6 @@ import org.apache.calcite.rel.metadata.MetadataHandler;
 import org.apache.calcite.rel.metadata.ReflectiveRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
-import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
@@ -52,6 +51,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.unwrapAsOperatorOperand;
 
@@ -187,13 +187,13 @@ public final class HazelcastRelMdWatermarkedFields
             WatermarkedFields leftWmFields = query.extractWatermarkedFields(left);
             WatermarkedFields rightWmFields = query.extractWatermarkedFields(right);
 
-            Map<Integer, RexInputRef> leftPropsByIndex = leftWmFields.getPropertiesByIndex();
-            Map<Integer, RexInputRef> rightPropsByIndex = rightWmFields.getPropertiesByIndex();
+            final int offset = rel.getLeft().getRowType().getFieldList().size();
+            Set<Integer> shiftedRightProps = rightWmFields.getFieldIndexes()
+                    .stream()
+                    .map(idx -> idx + offset)
+                    .collect(Collectors.toSet());
 
-            Map<Integer, RexInputRef> leftInputToJoinRefMap = joinInputToJoinMapping(rel, left, leftPropsByIndex);
-            Map<Integer, RexInputRef> rightInputToJoinRefMap = joinInputToJoinMapping(rel, right, rightPropsByIndex);
-
-            return WatermarkedFields.join(leftInputToJoinRefMap, rightInputToJoinRefMap);
+            return leftWmFields.union(new WatermarkedFields(shiftedRightProps));
         }
     }
 
@@ -243,24 +243,6 @@ public final class HazelcastRelMdWatermarkedFields
     @SuppressWarnings("unused")
     public WatermarkedFields extractWatermarkedFields(RelNode rel, RelMetadataQuery mq) {
         return null;
-    }
-
-    private Map<Integer, RexInputRef> joinInputToJoinMapping(
-            Join join,
-            RelNode child,
-            Map<Integer, RexInputRef> childPropsByIndex) {
-        Map<Integer, RexInputRef> childResultRefMap = new HashMap<>();
-
-        for (Integer key : childPropsByIndex.keySet()) {
-            RelDataTypeField leftField = child.getRowType().getFieldList().get(key);
-            for (RelDataTypeField field : join.getRowType().getFieldList()) {
-                if (field.getType().equals(leftField.getType()) && field.getName().equals(leftField.getName())) {
-                    childResultRefMap.put(field.getIndex(),
-                            join.getCluster().getRexBuilder().makeInputRef(leftField.getType(), field.getIndex()));
-                }
-            }
-        }
-        return childResultRefMap;
     }
 
     public interface WatermarkedFieldsMetadata extends Metadata {

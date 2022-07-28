@@ -54,7 +54,7 @@ public class DropLateItemsPhysicalRel extends SingleRel implements PhysicalRel {
         return ColumnExpression.create(wmField, type);
     }
 
-    public RexNode wmField() {
+    public int wmField() {
         return wmField;
     }
 
