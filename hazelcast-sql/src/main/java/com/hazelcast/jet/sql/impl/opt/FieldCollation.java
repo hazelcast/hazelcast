@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt;
 
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -26,6 +27,7 @@ import org.apache.calcite.rel.RelFieldCollation.NullDirection;
 
 import java.io.IOException;
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * Serializable equivalent of {@link RelFieldCollation}.
@@ -42,6 +44,10 @@ public class FieldCollation implements Serializable, IdentifiedDataSerializable 
         index = coll.getFieldIndex();
         direction = coll.getDirection();
         nullDirection = coll.nullDirection;
+    }
+
+    public static List<FieldCollation> convertCollation(List<RelFieldCollation> colls) {
+        return Util.toList(colls, FieldCollation::new);
     }
 
     public int getIndex() {
