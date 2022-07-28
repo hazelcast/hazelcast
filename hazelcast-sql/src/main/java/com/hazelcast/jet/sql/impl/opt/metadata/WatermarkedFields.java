@@ -16,57 +16,46 @@
 
 package com.hazelcast.jet.sql.impl.opt.metadata;
 
-import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.util.ImmutableBitSet;
 
 import javax.annotation.Nullable;
 import java.io.Serializable;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 public final class WatermarkedFields implements Serializable {
 
-    private final Map<Integer, RexInputRef> propertiesByIndex;
+    private final Set<Integer> fieldIndexes;
 
-    public WatermarkedFields(Map<Integer, RexInputRef> propertiesByIndex) {
-        this.propertiesByIndex = Collections.unmodifiableMap(propertiesByIndex);
+    public WatermarkedFields(Set<Integer> fieldIndexes) {
+        this.fieldIndexes = Collections.unmodifiableSet(fieldIndexes);
     }
 
     /**
-     * Should be used only for JOIN relation.
+     * Returns an instance that will have all the fields of {@code this} and
+     * {@code other} instance watermarked.
      */
-    public static WatermarkedFields join(Map<Integer, RexInputRef> leftMap, Map<Integer, RexInputRef> rightMap) {
-        assert !leftMap.isEmpty() && !rightMap.isEmpty();
-
-        Map<Integer, RexInputRef> newPropertiesByIndex = new HashMap<>();
-        newPropertiesByIndex.putAll(leftMap);
-        newPropertiesByIndex.putAll(rightMap);
-        return new WatermarkedFields(newPropertiesByIndex);
-    }
-
-    public WatermarkedFields merge(WatermarkedFields other) {
-        if (other == null || other.propertiesByIndex.isEmpty()) {
+    public WatermarkedFields union(WatermarkedFields other) {
+        if (other == null || other.fieldIndexes.isEmpty()) {
             return this;
         }
 
-        Map<Integer, RexInputRef> newPropertiesByIndex = new HashMap<>(this.propertiesByIndex);
-        newPropertiesByIndex.putAll(other.propertiesByIndex);
-        assert this.propertiesByIndex.size() + other.propertiesByIndex.size() == newPropertiesByIndex.size();
-        return new WatermarkedFields(newPropertiesByIndex);
+        Set<Integer> newWatermarkedFields = new HashSet<>(this.fieldIndexes);
+        newWatermarkedFields.addAll(other.fieldIndexes);
+        assert this.fieldIndexes.size() + other.fieldIndexes.size() == newWatermarkedFields.size();
+        return new WatermarkedFields(newWatermarkedFields);
+    }
+
+    public int findFirst() {
+        return fieldIndexes.iterator().next();
     }
 
     @Nullable
-    public Map.Entry<Integer, RexInputRef> findFirst() {
-        return propertiesByIndex.entrySet().iterator().next();
-    }
-
-    @Nullable
-    public Map.Entry<Integer, RexInputRef> findFirst(ImmutableBitSet indices) {
-        for (Entry<Integer, RexInputRef> entry : propertiesByIndex.entrySet()) {
-            if (indices.get(entry.getKey())) {
+    public Integer findFirst(ImmutableBitSet indices) {
+        for (Integer entry : fieldIndexes) {
+            if (indices.get(entry)) {
                 return entry;
             }
         }
@@ -82,19 +71,19 @@ public final class WatermarkedFields implements Serializable {
             return false;
         }
         WatermarkedFields that = (WatermarkedFields) o;
-        return Objects.equals(propertiesByIndex, that.propertiesByIndex);
+        return Objects.equals(fieldIndexes, that.fieldIndexes);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(propertiesByIndex);
+        return Objects.hash(fieldIndexes);
     }
 
     public boolean isEmpty() {
-        return propertiesByIndex.isEmpty();
+        return fieldIndexes.isEmpty();
     }
 
-    public Map<Integer, RexInputRef> getPropertiesByIndex() {
-        return propertiesByIndex;
+    public Set<Integer> getFieldIndexes() {
+        return fieldIndexes;
     }
 }

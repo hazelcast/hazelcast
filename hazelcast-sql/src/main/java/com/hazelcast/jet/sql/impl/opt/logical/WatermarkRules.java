@@ -39,8 +39,6 @@ import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 
-import java.util.Map;
-
 import static com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdWatermarkedFields.watermarkedFieldByIndex;
 import static com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER;
 import static org.apache.calcite.plan.RelOptRule.none;
@@ -80,23 +78,19 @@ final class WatermarkRules {
                 call.transformTo(wmRel);
                 return;
             }
-            WatermarkedFields watermarkedFields = watermarkedFieldByIndex(wmRel, wmIndex);
+            WatermarkedFields watermarkedFields = watermarkedFieldByIndex(wmIndex);
             if (watermarkedFields == null || watermarkedFields.isEmpty()) {
                 call.transformTo(wmRel);
                 return;
             }
 
-            Map.Entry<Integer, RexInputRef> watermarkedField = watermarkedFields.findFirst();
-            if (watermarkedField == null) {
-                call.transformTo(wmRel);
-                return;
-            }
+            int watermarkedField = watermarkedFields.findFirst();
 
             DropLateItemsLogicalRel dropLateItemsRel = new DropLateItemsLogicalRel(
                     scan.getCluster(),
                     OptUtils.toLogicalConvention(scan.getTraitSet()),
                     wmRel,
-                    watermarkedField.getValue()
+                    watermarkedField
             );
             call.transformTo(dropLateItemsRel);
         }
@@ -106,7 +100,7 @@ final class WatermarkRules {
         ) {
             int orderingColumnFieldIndex = orderingColumnFieldIndex(function);
             Expression<?> lagExpression = lagExpression(function);
-            return (context, key) -> {
+            return (context, watermarkKey) -> {
                 // todo [viliam] move this to CreateDagVisitor
                 long lagMs = WindowUtils.extractMillis(lagExpression, context);
                 return EventTimePolicy.eventTimePolicy(
@@ -116,7 +110,7 @@ final class WatermarkRules {
                         lagMs,
                         0,
                         EventTimePolicy.DEFAULT_IDLE_TIMEOUT,
-                        key);
+                        watermarkKey);
             };
         }
 

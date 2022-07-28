@@ -187,8 +187,7 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection,
             @Nullable BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
-            byte watermarkKey
-    ) {
+            byte watermarkKey) {
         TestTable table = (TestTable) table_;
         List<Object[]> rows = table.rows;
         boolean streaming = table.streaming;
@@ -207,7 +206,8 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
 
     protected abstract ProcessorMetaSupplier createProcessorSupplier(FunctionEx<Context, TestDataGenerator> createContextFn);
 
-    public static final class TestTable extends JetTable {
+    private static final class TestTable extends JetTable {
+
         private final List<Object[]> rows;
         private final boolean streaming;
 
@@ -227,10 +227,6 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
         @Override
         public PlanObjectKey getObjectKey() {
             return new TestTablePlanObjectKey(getSchemaName(), getSqlName(), rows);
-        }
-
-        private long rowCount() {
-            return rows.size();
         }
     }
 

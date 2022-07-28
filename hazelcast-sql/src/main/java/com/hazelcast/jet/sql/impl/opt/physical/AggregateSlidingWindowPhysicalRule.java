@@ -43,7 +43,6 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map.Entry;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.hasInputRef;
@@ -237,7 +236,6 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
         if (watermarkedFields == null) {
             return null;
         }
-        Entry<Integer, RexInputRef> watermarkedField = watermarkedFields.findFirst(logicalAggregate.getGroupSet());
-        return watermarkedField != null ? watermarkedField.getKey() : null;
+        return watermarkedFields.findFirst(logicalAggregate.getGroupSet());
     }
 }

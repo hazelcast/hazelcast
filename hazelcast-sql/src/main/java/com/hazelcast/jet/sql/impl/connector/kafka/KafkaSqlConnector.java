@@ -142,7 +142,8 @@ public class KafkaSqlConnector implements SqlConnector {
                                 table.keyQueryDescriptor(),
                                 table.valueQueryDescriptor(),
                                 predicate,
-                                projections
+                                projections,
+                                watermarkKey
                         )
                 )
         );

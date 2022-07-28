@@ -149,9 +149,8 @@ public class TestAllTypesSqlConnector implements SqlConnector {
             @Nonnull Table table,
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection,
-            BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
-            byte watermarkKey
-    ) {
+            @Nullable BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
+            byte watermarkKey) {
         if (eventTimePolicyProvider != null) {
             throw QueryException.error("Ordering function are not supported for " + TYPE_NAME + " mappings");
         }

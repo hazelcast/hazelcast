@@ -52,8 +52,8 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
     private Properties properties;
     private String topic;
     private BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
-    private byte key;
     private KvRowProjector.Supplier projectorSupplier;
+    private byte watermarkKey;
 
     private transient ExpressionEvalContext evalContext;
     private transient EventTimePolicy<JetSqlRow> eventTimePolicy;
@@ -67,18 +67,18 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
             Properties properties,
             String topic,
             BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
-            byte key,
             QueryPath[] paths,
             QueryDataType[] types,
             QueryTargetDescriptor keyDescriptor,
             QueryTargetDescriptor valueDescriptor,
             Expression<Boolean> predicate,
-            List<Expression<?>> projection
+            List<Expression<?>> projection,
+            byte watermarkKey
     ) {
         this.properties = properties;
         this.topic = topic;
         this.eventTimePolicyProvider = eventTimePolicyProvider;
-        this.key = key;
+        this.watermarkKey = watermarkKey;
         this.projectorSupplier = KvRowProjector.supplier(
                 paths,
                 types,
@@ -94,7 +94,7 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
         evalContext = ExpressionEvalContext.from(context);
         eventTimePolicy = eventTimePolicyProvider == null
                 ? EventTimePolicy.noEventTime()
-                : eventTimePolicyProvider.apply(evalContext, key);
+                : eventTimePolicyProvider.apply(evalContext, watermarkKey);
         extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
     }
 

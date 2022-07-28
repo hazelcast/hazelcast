@@ -99,8 +99,7 @@ public class TestFailingSqlConnector implements SqlConnector {
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection,
             @Nullable BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
-            byte watermarkKey
-    ) {
+            byte watermarkKey) {
         if (eventTimePolicyProvider != null) {
             throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
         }

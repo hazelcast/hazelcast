@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.hazelcast.jet.core.JetTestSupport.IDLE_MESSAGE;
 import static com.hazelcast.jet.core.JetTestSupport.wm;
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.util.ProgressState.DONE;
@@ -91,6 +92,16 @@ public class ConcurrentInboundEdgeStreamTest {
         q2.add(DONE_ITEM);
         drainAndAssert(DONE);
         drainAndAssert(WAS_ALREADY_DONE);
+    }
+
+    @Test
+    public void when_oneQueueIsIdle_then_otherHasProgress() {
+        add(q2, IDLE_MESSAGE);
+        drainAndAssert(MADE_PROGRESS);
+        add(q1, 1);
+        drainAndAssert(MADE_PROGRESS, 1);
+        add(q1, wm(2));
+        drainAndAssert(MADE_PROGRESS, wm(2));
     }
 
     @Test

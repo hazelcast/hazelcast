@@ -76,6 +76,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * @param <A> type of the frame accumulator object
  * @param <R> type of the finished result
  */
+@SuppressWarnings("checkstyle:ExecutableStatementCount")
 public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
 
     // package-visible for testing
@@ -104,6 +105,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
     @Nonnull
     private final FlatMapper<Watermark, ?> wmFlatMapper;
     private ProcessingGuarantee processingGuarantee;
+    private final byte windowWatermarkKey;
 
     // extracted lambdas to reduce GC litter
     private final LongFunction<Map<K, A>> createMapPerTsFunction;
@@ -141,7 +143,8 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
             long earlyResultsPeriod,
             @Nonnull AggregateOperation<A, ? extends R> aggrOp,
             @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn,
-            boolean isLastStage
+            boolean isLastStage,
+            byte windowWatermarkKey
     ) {
         checkTrue(keyFns.size() == aggrOp.arity(), keyFns.size() + " key functions " +
                 "provided for " + aggrOp.arity() + "-arity aggregate operation");
@@ -171,6 +174,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
             totalKeysInFrames.inc();
             return aggrOp.createFn().get();
         };
+        this.windowWatermarkKey = windowWatermarkKey;
     }
 
     @Override
@@ -247,7 +251,9 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark wm) {
-        keyedWatermarkCheck(wm);
+        if (shouldIgnoreMismatchedWatermark(wm, windowWatermarkKey)) {
+            return true;
+        }
         return wmFlatMapper.tryProcess(wm);
     }
 

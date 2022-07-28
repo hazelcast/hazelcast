@@ -139,6 +139,11 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         }
     }
 
+    @Nonnull
+    protected String getMethodPrefixForErrorMessages() {
+        return "get";
+    }
+
     @Nullable
     public Class getAssociatedClass() {
         return associatedClass;
@@ -192,7 +197,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Override
     public boolean getBoolean(@Nonnull String fieldName) {
-        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldDescriptor fd = getFieldDescriptor(fieldName);
         FieldKind fieldKind = fd.getKind();
         switch (fieldKind) {
             case BOOLEAN:
@@ -218,7 +223,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Override
     public byte getInt8(@Nonnull String fieldName) {
-        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldDescriptor fd = getFieldDescriptor(fieldName);
         FieldKind fieldKind = fd.getKind();
         switch (fieldKind) {
             case INT8:
@@ -236,7 +241,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Override
     public short getInt16(@Nonnull String fieldName) {
-        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldDescriptor fd = getFieldDescriptor(fieldName);
         FieldKind fieldKind = fd.getKind();
         switch (fieldKind) {
             case INT16:
@@ -254,7 +259,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Override
     public int getInt32(@Nonnull String fieldName) {
-        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldDescriptor fd = getFieldDescriptor(fieldName);
         FieldKind fieldKind = fd.getKind();
         switch (fieldKind) {
             case INT32:
@@ -272,7 +277,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Override
     public long getInt64(@Nonnull String fieldName) {
-        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldDescriptor fd = getFieldDescriptor(fieldName);
         FieldKind fieldKind = fd.getKind();
         switch (fieldKind) {
             case INT64:
@@ -290,7 +295,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Override
     public float getFloat32(@Nonnull String fieldName) {
-        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldDescriptor fd = getFieldDescriptor(fieldName);
         FieldKind fieldKind = fd.getKind();
         switch (fieldKind) {
             case FLOAT32:
@@ -308,7 +313,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Override
     public double getFloat64(@Nonnull String fieldName) {
-        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldDescriptor fd = getFieldDescriptor(fieldName);
         FieldKind fieldKind = fd.getKind();
         switch (fieldKind) {
             case FLOAT64:
@@ -355,14 +360,15 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                                            Reader<T> reader, String methodSuffix) {
         T value = getVariableSize(fieldDescriptor, reader);
         if (value == null) {
-            throw exceptionForUnexpectedNullValue(fieldDescriptor.getFieldName(), methodSuffix);
+            throw exceptionForUnexpectedNullValue(fieldDescriptor.getFieldName(), getMethodPrefixForErrorMessages(),
+                    methodSuffix);
         }
         return value;
     }
 
     private <T> T getVariableSize(@Nonnull String fieldName, FieldKind fieldKind,
                                   Reader<T> reader) {
-        FieldDescriptor fd = getFieldDefinition(fieldName, fieldKind);
+        FieldDescriptor fd = getFieldDescriptor(fieldName, fieldKind);
         return getVariableSize(fd, reader);
     }
 
@@ -417,7 +423,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Override
     @Nullable
     public boolean[] getArrayOfBoolean(@Nonnull String fieldName) {
-        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldDescriptor fd = getFieldDescriptor(fieldName);
         FieldKind fieldKind = fd.getKind();
         switch (fieldKind) {
             case ARRAY_OF_BOOLEAN:
@@ -530,7 +536,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     private <T> T getArrayOfPrimitive(@Nonnull String fieldName, Reader<T> reader, FieldKind primitiveKind,
                                       FieldKind nullableKind, String methodSuffix) {
-        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldDescriptor fd = getFieldDescriptor(fieldName);
         FieldKind fieldKind = fd.getKind();
         if (fieldKind == primitiveKind) {
             return getVariableSize(fd, reader);
@@ -557,7 +563,8 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             for (int i = 0; i < itemCount; i++) {
                 int offset = offsetReader.getOffset(in, offsetsPosition, i);
                 if (offset == NULL_ARRAY_LENGTH) {
-                    throw exceptionForUnexpectedNullValueInArray(fd.getFieldName(), methodSuffix);
+                    throw exceptionForUnexpectedNullValueInArray(fd.getFieldName(), getMethodPrefixForErrorMessages(),
+                            methodSuffix);
                 }
             }
             in.position(dataStartPosition - INT_SIZE_IN_BYTES);
@@ -572,7 +579,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Nullable
     @Override
     public Boolean getNullableBoolean(@Nonnull String fieldName) {
-        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldDescriptor fd = getFieldDescriptor(fieldName);
         FieldKind fieldKind = fd.getKind();
         switch (fieldKind) {
             case BOOLEAN:
@@ -587,7 +594,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Nullable
     @Override
     public Byte getNullableInt8(@Nonnull String fieldName) {
-        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldDescriptor fd = getFieldDescriptor(fieldName);
         FieldKind fieldKind = fd.getKind();
         switch (fieldKind) {
             case INT8:
@@ -606,7 +613,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Nullable
     @Override
     public Short getNullableInt16(@Nonnull String fieldName) {
-        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldDescriptor fd = getFieldDescriptor(fieldName);
         FieldKind fieldKind = fd.getKind();
         switch (fieldKind) {
             case INT16:
@@ -625,7 +632,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Nullable
     @Override
     public Integer getNullableInt32(@Nonnull String fieldName) {
-        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldDescriptor fd = getFieldDescriptor(fieldName);
         FieldKind fieldKind = fd.getKind();
         switch (fieldKind) {
             case INT32:
@@ -644,7 +651,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Nullable
     @Override
     public Long getNullableInt64(@Nonnull String fieldName) {
-        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldDescriptor fd = getFieldDescriptor(fieldName);
         FieldKind fieldKind = fd.getKind();
         switch (fieldKind) {
             case INT64:
@@ -663,7 +670,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Nullable
     @Override
     public Float getNullableFloat32(@Nonnull String fieldName) {
-        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldDescriptor fd = getFieldDescriptor(fieldName);
         FieldKind fieldKind = fd.getKind();
         switch (fieldKind) {
             case FLOAT32:
@@ -682,7 +689,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Nullable
     @Override
     public Double getNullableFloat64(@Nonnull String fieldName) {
-        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldDescriptor fd = getFieldDescriptor(fieldName);
         FieldKind fieldKind = fd.getKind();
         switch (fieldKind) {
             case FLOAT64:
@@ -701,7 +708,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Nullable
     @Override
     public Boolean[] getArrayOfNullableBoolean(@Nonnull String fieldName) {
-        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldDescriptor fd = getFieldDescriptor(fieldName);
         FieldKind fieldKind = fd.getKind();
         switch (fieldKind) {
             case ARRAY_OF_BOOLEAN:
@@ -758,7 +765,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     private <T> T[] getArrayOfNullable(@Nonnull String fieldName, Reader<T> reader,
                                        Function<Integer, T[]> constructor, FieldKind primitiveKind,
                                        FieldKind nullableKind) {
-        FieldDescriptor fd = getFieldDefinition(fieldName);
+        FieldDescriptor fd = getFieldDescriptor(fieldName);
         FieldKind fieldKind = fd.getKind();
         if (fieldKind == primitiveKind) {
             return getPrimitiveArrayAsNullableArray(fd, constructor, reader);
@@ -839,7 +846,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     private <T> T[] getArrayOfVariableSize(@Nonnull String fieldName, FieldKind fieldKind,
                                            Function<Integer, T[]> constructor,
                                            Reader<T> reader) {
-        FieldDescriptor fieldDefinition = getFieldDefinition(fieldName, fieldKind);
+        FieldDescriptor fieldDefinition = getFieldDescriptor(fieldName, fieldKind);
         return getArrayOfVariableSize(fieldDefinition, constructor, reader);
     }
 
@@ -859,7 +866,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     @Nonnull
-    private FieldDescriptor getFieldDefinition(@Nonnull String fieldName) {
+    private FieldDescriptor getFieldDescriptor(@Nonnull String fieldName) {
         FieldDescriptor fd = schema.getField(fieldName);
         if (fd == null) {
             throw throwUnknownFieldException(fieldName);
@@ -868,8 +875,8 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     @Nonnull
-    private FieldDescriptor getFieldDefinition(@Nonnull String fieldName, FieldKind fieldKind) {
-        FieldDescriptor fd = getFieldDefinition(fieldName);
+    private FieldDescriptor getFieldDescriptor(@Nonnull String fieldName, FieldKind fieldKind) {
+        FieldDescriptor fd = getFieldDescriptor(fieldName);
         if (fd.getKind() != fieldKind) {
             throw unexpectedFieldKind(fd.getKind(), fieldName);
         }
@@ -906,7 +913,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     public Boolean getBooleanFromArray(@Nonnull String fieldName, int index) {
-        FieldDescriptor fd = getFieldDefinition(fieldName, ARRAY_OF_BOOLEAN);
+        FieldDescriptor fd = getFieldDescriptor(fieldName, ARRAY_OF_BOOLEAN);
         int position = readVariableSizeFieldPosition(fd);
         if (position == NULL_OFFSET) {
             return null;
@@ -954,7 +961,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     private <T> T getFixedSizeFieldFromArray(@Nonnull String fieldName, FieldKind fieldKind,
                                              Reader<T> reader, int index) {
         checkNotNegative(index, "Array indexes can not be negative");
-        FieldDescriptor fd = getFieldDefinition(fieldName, fieldKind);
+        FieldDescriptor fd = getFieldDescriptor(fieldName, fieldKind);
         int position = readVariableSizeFieldPosition(fd);
         if (position == NULL_OFFSET) {
             return null;
@@ -1075,7 +1082,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                                            Reader<T> reader, int index) {
         int currentPos = in.position();
         try {
-            FieldDescriptor fd = getFieldDefinition(fieldName, fieldKind);
+            FieldDescriptor fd = getFieldDescriptor(fieldName, fieldKind);
             int pos = readVariableSizeFieldPosition(fd);
 
             if (pos == NULL_OFFSET) {
@@ -1114,15 +1121,12 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     private HazelcastSerializationException unexpectedFieldKind(FieldKind actualFieldKind,
                                                                 String fieldName) {
-        throw new HazelcastSerializationException("Unexpected fieldKind '" + actualFieldKind + "' for field: " + fieldName);
+        throw new HazelcastSerializationException("Unexpected field kind '" + actualFieldKind + "' for the field: " + fieldName);
     }
 
 
     private static boolean[] readBooleanBits(BufferObjectDataInput input) throws IOException {
         int len = input.readInt();
-        if (len == NULL_ARRAY_LENGTH) {
-            return null;
-        }
         if (len == 0) {
             return new boolean[0];
         }
@@ -1143,9 +1147,6 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     private static Boolean[] readBooleanBitsAsNullables(BufferObjectDataInput input) throws IOException {
         int len = input.readInt();
-        if (len == NULL_ARRAY_LENGTH) {
-            return null;
-        }
         if (len == 0) {
             return new Boolean[0];
         }

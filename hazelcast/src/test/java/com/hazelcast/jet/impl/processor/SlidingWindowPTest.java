@@ -136,6 +136,15 @@ public class SlidingWindowPTest {
     }
 
     @Test
+    public void when_multiKeyWatermarkReceived_then_emitOnlySupportedWm() {
+        List<Watermark> wmList = asList(wm(1), wm(1, (byte) 1), wm(1, (byte) 2));
+        verifyProcessor(supplier)
+                .disableCompleteCall()
+                .input(wmList)
+                .expectOutput(singletonList(wm(1)));
+    }
+
+    @Test
     public void simple_smokeTest() {
         verifyProcessor(supplier)
                 .disableCompleteCall()

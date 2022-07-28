@@ -24,7 +24,6 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.SingleRel;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
-import org.apache.calcite.rex.RexNode;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.List;
@@ -35,19 +34,19 @@ import java.util.List;
  * the last watermark.
  */
 public class DropLateItemsLogicalRel extends SingleRel implements LogicalRel {
-    private final RexNode wmField;
+    private final int wmField;
 
     public DropLateItemsLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelNode input,
-            RexNode wmField
+            int wmField
     ) {
         super(cluster, traitSet, input);
         this.wmField = wmField;
     }
 
-    public RexNode wmField() {
+    public int wmField() {
         return wmField;
     }
 

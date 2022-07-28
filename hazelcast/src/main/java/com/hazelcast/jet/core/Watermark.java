@@ -38,6 +38,10 @@ import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 public final class Watermark implements SpecialBroadcastItem {
 
     private final long timestamp;
+
+    /**
+     * The watermark identifier distinguishes watermarks obtained from different sources.
+     */
     private final byte key;
 
     /**
@@ -86,7 +90,7 @@ public final class Watermark implements SpecialBroadcastItem {
     public String toString() {
         return timestamp ==
                 WatermarkCoalescer.IDLE_MESSAGE_TIME
-                        ? "Watermark{IDLE_MESSAGE"
+                        ? "Watermark{IDLE_MESSAGE}"
                         : "Watermark{ts=" + toLocalTime(timestamp)
                 + ", key=" + key + "}";
     }

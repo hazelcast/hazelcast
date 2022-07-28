@@ -108,7 +108,9 @@ public class CreateDagVisitor {
 
     public CreateDagVisitor(
             NodeEngine nodeEngine,
-            QueryParameterMetadata parameterMetadata, WatermarkKeysAssigner watermarkKeysAssigner) {
+            QueryParameterMetadata parameterMetadata,
+            WatermarkKeysAssigner watermarkKeysAssigner
+    ) {
         this.nodeEngine = nodeEngine;
         this.localMemberAddress = nodeEngine.getThisAddress();
         this.parameterMetadata = parameterMetadata;

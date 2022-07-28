@@ -69,7 +69,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
  * Session window processor. See {@link
- *      com.hazelcast.jet.core.processor.Processors#aggregateToSessionWindowP
+ * com.hazelcast.jet.core.processor.Processors#aggregateToSessionWindowP
  * Processors.aggregateToSessionWindowP()} for documentation.
  *
  * @param <K> type of the extracted grouping key
@@ -98,6 +98,7 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
     @Nonnull
     private final FlatMapper<Watermark, Object> closedWindowFlatmapper;
     private ProcessingGuarantee processingGuarantee;
+    private final byte windowWatermarkKey;
 
     @Probe(name = "lateEventsDropped")
     private final Counter lateEventsDropped = SwCounter.newSwCounter();
@@ -140,6 +141,29 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
         this.mapToOutputFn = mapToOutputFn;
         this.sessionTimeout = sessionTimeout;
         this.closedWindowFlatmapper = flatMapper(this::traverseClosedWindows);
+        this.windowWatermarkKey = 0;
+    }
+
+    public SessionWindowP(
+            long sessionTimeout,
+            long earlyResultsPeriod,
+            @Nonnull List<? extends ToLongFunction<?>> timestampFns,
+            @Nonnull List<? extends Function<?, ? extends K>> keyFns,
+            @Nonnull AggregateOperation<A, ? extends R> aggrOp,
+            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn,
+            byte windowWatermarkKey
+    ) {
+        checkTrue(keyFns.size() == aggrOp.arity(), keyFns.size() + " key functions " +
+                "provided for " + aggrOp.arity() + "-arity aggregate operation");
+        this.timestampFns = (List<ToLongFunction<Object>>) timestampFns;
+        this.keyFns = (List<Function<Object, K>>) keyFns;
+        this.earlyResultsPeriod = earlyResultsPeriod;
+        this.aggrOp = aggrOp;
+        this.combineFn = requireNonNull(aggrOp.combineFn());
+        this.mapToOutputFn = mapToOutputFn;
+        this.sessionTimeout = sessionTimeout;
+        this.closedWindowFlatmapper = flatMapper(this::traverseClosedWindows);
+        this.windowWatermarkKey = windowWatermarkKey;
     }
 
     @Override
@@ -184,7 +208,9 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark wm) {
-        keyedWatermarkCheck(wm);
+        if (shouldIgnoreMismatchedWatermark(wm, windowWatermarkKey)) {
+            return true;
+        }
         currentWatermark = wm.timestamp();
         assert totalWindows.get() == deadlineToKeys.values().stream().mapToInt(Set::size).sum()
                 : "unexpected totalWindows. Expected=" + deadlineToKeys.values().stream().mapToInt(Set::size).sum()
