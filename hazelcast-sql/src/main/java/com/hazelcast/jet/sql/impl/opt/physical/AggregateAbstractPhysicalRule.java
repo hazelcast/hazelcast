@@ -25,6 +25,7 @@ import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.jet.sql.impl.aggregate.AvgSqlAggregations;
 import com.hazelcast.jet.sql.impl.aggregate.CountSqlAggregations;
+import com.hazelcast.jet.sql.impl.aggregate.JsonObjectAggAggregation;
 import com.hazelcast.jet.sql.impl.aggregate.MaxSqlAggregation;
 import com.hazelcast.jet.sql.impl.aggregate.MinSqlAggregation;
 import com.hazelcast.jet.sql.impl.aggregate.OrderedJsonArrayAggAggregation;
@@ -33,6 +34,7 @@ import com.hazelcast.jet.sql.impl.aggregate.SumSqlAggregations;
 import com.hazelcast.jet.sql.impl.aggregate.UnorderedJsonArrayAggAggregation;
 import com.hazelcast.jet.sql.impl.aggregate.ValueSqlAggregation;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastJsonArrayAggFunction;
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastJsonObjectAggFunction;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -130,6 +132,13 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
                         aggregationProviders.add(new AggregateArrayAggSupplier(agg.isAbsentOnNull()));
                         valueProviders.add(new RowGetFn(arrayAggIndex));
                     }
+                    break;
+                case JSON_OBJECTAGG:
+                    int keyIndex = aggregateCallArguments.get(0);
+                    int valueIndex = aggregateCallArguments.get(1);
+                    HazelcastJsonObjectAggFunction objAgg = (HazelcastJsonObjectAggFunction) aggregateCall.getAggregation();
+                    aggregationProviders.add(new AggregateObjectAggSupplier(keyIndex, valueIndex, objAgg.isAbsentOnNull()));
+                    valueProviders.add(new RowIdentityFn());
                     break;
                 default:
                     throw QueryException.error("Unsupported aggregation function: " + kind);
@@ -279,6 +288,50 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
             } else {
                isAbsentOnNull = in.readBoolean();
             }
+        }
+
+        @Override
+        public int getFactoryId() {
+            return JetSqlSerializerHook.F_ID;
+        }
+
+        @Override
+        public int getClassId() {
+            return JetSqlSerializerHook.AGGREGATE_JSON_ARRAY_AGG_SUPPLIER;
+        }
+    }
+
+    public static final class AggregateObjectAggSupplier implements IdentifiedDataSerializable, SupplierEx<SqlAggregation> {
+        private int keyIndex;
+        private int valueIndex;
+        private boolean isAbsentOnNull;
+
+        public AggregateObjectAggSupplier() {
+        }
+
+        public AggregateObjectAggSupplier(int keyIndex, int valueIndex, boolean isAbsentOnNull) {
+            this.keyIndex = keyIndex;
+            this.valueIndex = valueIndex;
+            this.isAbsentOnNull = isAbsentOnNull;
+        }
+
+        @Override
+        public SqlAggregation getEx() throws Exception {
+            return JsonObjectAggAggregation.create(keyIndex, valueIndex, isAbsentOnNull);
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(keyIndex);
+            out.writeInt(valueIndex);
+            out.writeBoolean(isAbsentOnNull);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            keyIndex = in.readInt();
+            valueIndex = in.readInt();
+            isAbsentOnNull = in.readBoolean();
         }
 
         @Override

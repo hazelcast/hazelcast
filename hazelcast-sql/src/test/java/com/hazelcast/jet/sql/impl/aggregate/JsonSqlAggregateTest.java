@@ -16,13 +16,22 @@
 
 package com.hazelcast.jet.sql.impl.aggregate;
 
+import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.jet.sql.SqlJsonTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import junitparams.JUnitParamsRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
@@ -169,6 +178,41 @@ public class JsonSqlAggregateTest extends SqlJsonTestSupport {
         );
     }
 
+    @Test
+    public void test_jsonObjectAgg() {
+        String name = createTable2();
+
+        assertRowsWithJsonValues(
+                "SELECT name, JSON_OBJECTAGG(k VALUE v ABSENT ON NULL) FROM " + name + " GROUP BY name",
+                asList(
+                        new Row("Alice", json("{ \"department\" : \"dep1\", \"job\" : \"job1\", \"description\" : \"desc1\" }")),
+                        new Row("Bob", json("{ \"department\" : \"dep2\", \"job\" : \"job2\" }")),
+                        new Row(null, json("{ \"department\" : \"dep2\", \"job\" : \"job1\" }"))
+
+                )
+        );
+
+        assertRowsWithJsonValues(
+                "SELECT name, JSON_OBJECTAGG(k VALUE v NULL ON NULL) FROM " + name + " GROUP BY name",
+                asList(
+                        new Row("Alice", json("{ \"department\" : \"dep1\", \"job\" : \"job1\", \"description\" : \"desc1\" }")),
+                        new Row("Bob", json("{ \"department\" : \"dep2\", \"job\" : \"job2\", \"description\" : null }")),
+                        new Row(null, json("{ \"department\" : \"dep2\", \"job\" : \"job1\" }"))
+
+                )
+        );
+    }
+
+    @Test
+    public void test_jsonObjectAgg_whenReturnsNull() {
+        String name = createTable2();
+
+        assertRowsAnyOrder(
+                "SELECT name, JSON_OBJECTAGG(k VALUE v ABSENT ON NULL) FROM " + name + " WHERE name = 'Bob' AND k = 'description' GROUP BY name",
+                asList(new Row("Bob", null))
+        );
+    }
+
     private static String createTable() {
         String name = randomName();
         TestBatchSqlConnector.create(
@@ -184,5 +228,72 @@ public class JsonSqlAggregateTest extends SqlJsonTestSupport {
                         new String[]{null, "8"})
         );
         return name;
+    }
+
+    private static String createTable2() {
+        String name = randomName();
+        TestBatchSqlConnector.create(
+                sqlService,
+                name,
+                asList("name", "k", "v"),
+                asList(VARCHAR, VARCHAR, VARCHAR),
+                asList(new String[]{"Alice", "department", "dep1"},
+                        new String[]{"Bob", "department", "dep2"},
+                        new String[]{"Alice", "job", "job1"},
+                        new String[]{null, "department", "dep2"},
+                        new String[]{"Bob", "job", "job2"},
+                        new String[]{null, "job", "job1"},
+                        new String[]{null, null, "desc2"},
+                        new String[]{"Bob", "description", null},
+                        new String[]{"Alice", "description", "desc1"})
+        );
+        return name;
+    }
+
+    private void assertRowsWithJsonValues(String sql, Collection<Row> rows) {
+        Map<Object, JsonValue> rowsInMap = new HashMap<>();
+        for (Row row : rows) {
+            Object[] rowObj = row.getValues();
+            if (rowObj.length != 2) {
+                throw new AssertionError("Row length must be 2");
+            }
+            if (!(rowObj[1] instanceof HazelcastJsonValue)) {
+                throw new AssertionError("Second element in the row must be HazelcastJsonValue");
+            }
+            JsonValue value = Json.parse(((HazelcastJsonValue) rowObj[1]).getValue());
+            rowsInMap.put(rowObj[0], value);
+        }
+
+        SqlResult result = sqlService.execute(sql);
+        Map<String, JsonValue> actualRowsInMap = new HashMap<>();
+        result.iterator().forEachRemaining(r -> {
+            if (r.getMetadata().getColumnCount() != 2) {
+                throw new AssertionError("The length of the result row is not 2");
+            }
+            JsonValue value = Json.parse(((HazelcastJsonValue) r.getObject(1)).getValue());
+            actualRowsInMap.put(r.getObject(0), value);
+        });
+
+        if (rowsInMap.size() != actualRowsInMap.size()) {
+            throw new AssertionError("Number of expected rows is different than actual");
+        }
+        for (Map.Entry<Object, JsonValue> kv : rowsInMap.entrySet()) {
+            JsonValue value = actualRowsInMap.get(kv.getKey());
+            JsonObject object = value.asObject();
+            JsonObject object2 = kv.getValue().asObject();
+            if (!(jsonObjectEquals(object, object2))) {
+                throw new AssertionError("Object: " + object + " is not equal to Object: " + object2);
+            }
+        }
+    }
+
+    private boolean jsonObjectEquals(JsonObject obj, JsonObject obj2) {
+        Map<String, JsonValue> fields = new HashMap<>();
+        obj.iterator().forEachRemaining(m -> fields.put(m.getName(), m.getValue()));
+
+        Map<String, JsonValue> fields2 = new HashMap<>();
+        obj2.iterator().forEachRemaining(m -> fields2.put(m.getName(), m.getValue()));
+
+        return fields.equals(fields2);
     }
 }
