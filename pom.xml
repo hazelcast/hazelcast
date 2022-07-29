@@ -146,6 +146,7 @@
         <archunit.version>0.22.0</archunit.version>
         <errorprone.version>2.11.0</errorprone.version>
         <awaitility.version>4.1.1</awaitility.version>
+        <hikari.version>4.0.3</hikari.version>
 
         <sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar>
         <!--<sonar.phase>post-integration-test</sonar.phase>-->

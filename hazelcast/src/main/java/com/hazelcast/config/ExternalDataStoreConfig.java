@@ -44,8 +44,7 @@ public class ExternalDataStoreConfig implements NamedConfig {
 
     private String name;
     private String className;
-    //TODO change default value to true when sharing will be implemented
-    private boolean shared;
+    private boolean shared = true;
     private Properties properties = new Properties();
 
     public ExternalDataStoreConfig() {
@@ -83,7 +82,7 @@ public class ExternalDataStoreConfig implements NamedConfig {
 
     /**
      * {@code true} if an instance of the external data store will be reused. {@code false} when on each usage
-     * the data store instance should be created
+     * the data store instance should be created. The default it {@code true}
      *
      * @return if the data store instance should be reused
      */

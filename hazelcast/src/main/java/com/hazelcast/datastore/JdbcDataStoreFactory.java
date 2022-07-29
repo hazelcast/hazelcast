@@ -17,8 +17,9 @@
 package com.hazelcast.datastore;
 
 import com.hazelcast.config.ExternalDataStoreConfig;
-import com.hazelcast.jet.impl.connector.DataSourceFromJdbcUrl;
 import com.hazelcast.spi.annotation.Beta;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 import javax.sql.DataSource;
 
@@ -33,23 +34,26 @@ public class JdbcDataStoreFactory implements ExternalDataStoreFactory<DataSource
     private static final String JDBC_USERNAME = "jdbc.username";
     private static final String JDBC_PASSWORD = "jdbc.password";
     private ExternalDataStoreConfig config;
+    private DataSource shareDataSource;
 
     public void init(ExternalDataStoreConfig config) {
         this.config = config;
+        if (config.isShared()) {
+            shareDataSource = createDataSource();
+        }
     }
 
     @Override
     public DataSource getDataStore() {
+        return config.isShared() ? shareDataSource : createDataSource();
+    }
+
+    private DataSource createDataSource() {
         String jdbcUrl = config.getProperty(JDBC_URL);
-        if (config.isShared()) {
-            throw new UnsupportedOperationException("shared flag is not yet supported");
-        }
-        if (config.getProperties().containsKey(JDBC_USERNAME) || config.getProperties().containsKey(JDBC_PASSWORD)) {
-            String username = config.getProperty(JDBC_USERNAME);
-            String password = config.getProperty(JDBC_PASSWORD);
-            return new DataSourceFromJdbcUrl(jdbcUrl, username, password);
-        }
-        //TODO Use HikariDataSource for pooling or similar
-        return new DataSourceFromJdbcUrl(jdbcUrl);
+        HikariConfig dataSourceConfig = new HikariConfig();
+        dataSourceConfig.setJdbcUrl(jdbcUrl);
+        dataSourceConfig.setUsername(config.getProperty(JDBC_USERNAME));
+        dataSourceConfig.setPassword(config.getProperty(JDBC_PASSWORD));
+        return new HikariDataSource(dataSourceConfig);
     }
 }

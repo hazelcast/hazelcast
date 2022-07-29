@@ -196,6 +196,10 @@
                                     <pattern>org.objenesis</pattern>
                                     <shadedPattern>${relocation.root}.org.objenesis</shadedPattern>
                                 </relocation>
+                                <relocation>
+                                    <pattern>com.zaxxer.hikari</pattern>
+                                    <shadedPattern>${relocation.root}.com.zaxxer.hikari</shadedPattern>
+                                </relocation>
                             </relocations>
                             <transformers>
                                 <transformer
@@ -747,6 +751,12 @@
             <artifactId>hazelcast-archunit-rules</artifactId>
             <version>${project.parent.version}</version>
             <scope>test</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>com.zaxxer</groupId>
+            <artifactId>HikariCP</artifactId>
+            <version>${hikari.version}</version>
         </dependency>
     </dependencies>
 </project>
