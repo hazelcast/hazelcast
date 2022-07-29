@@ -545,9 +545,9 @@ public class JobExecutionService implements DynamicMetricsProvider {
     public CompletableFuture<RawJobMetrics> beginExecution0(ExecutionContext execCtx, boolean collectMetrics) {
         executionStarted.inc();
         return execCtx.beginExecution(taskletExecutionService)
-                      .handle((r, e) -> {
+                      .thenApply(r -> {
                           RawJobMetrics terminalMetrics;
-                          if (collectMetrics && e == null) {
+                          if (collectMetrics) {
                               JobMetricsCollector metricsRenderer =
                                       new JobMetricsCollector(execCtx.executionId(), nodeEngine.getLocalMember(), logger);
                               nodeEngine.getMetricsRegistry().collect(metricsRenderer);
@@ -555,22 +555,22 @@ public class JobExecutionService implements DynamicMetricsProvider {
                           } else {
                               terminalMetrics = null;
                           }
+                          return terminalMetrics;
+                      })
+                      .handleAsync((metrics, e) -> {
                           if (e instanceof CancellationException) {
                               logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " was cancelled");
+                              throw rethrow(e);
                           } else if (e != null) {
                               logger.fine("Execution of " + execCtx.jobNameAndExecutionId()
                                       + " completed with failure", e);
+                              throw rethrow(e);
                           } else {
                               logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " completed");
+                              return metrics;
                           }
-                          return completeExecution(execCtx, peel(e))
-                                  .thenApply(s -> {
-                                      if (e != null) {
-                                          throw rethrow(e);
-                                      }
-                                      return terminalMetrics;
-                                  });
                       })
+                      .handleAsync((metrics, e) -> completeExecution(execCtx, peel(e)).thenApplyAsync(ignored -> metrics))
                       .thenCompose(stage -> stage);
     }
 
