@@ -282,8 +282,7 @@ public class IMapSqlConnector implements SqlConnector {
     @Override
     public VertexWithInputConfig insertProcessor(
             @Nonnull DAG dag,
-            @Nonnull Table table0
-    ) {
+            @Nonnull Table table0) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
 
         Vertex vertex = dag.newUniqueVertex(

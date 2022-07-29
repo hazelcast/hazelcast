@@ -134,6 +134,36 @@ public class SqlPojoTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_fieldsMapping_filter() {
+        String name = randomName();
+        sqlService.execute("CREATE MAPPING " + name + " ("
+                + "key_id INT EXTERNAL NAME \"__key.id\""
+                + ", value_id INT EXTERNAL NAME \"this.id\""
+                + ", fullName VARCHAR EXTERNAL NAME name "
+                + ") TYPE " + IMapSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + PersonId.class.getName() + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_VALUE_CLASS + "'='" + Person.class.getName() + '\''
+                + ")"
+        );
+
+        assertMapEventually(
+                name,
+                "SINK INTO " + name + " (value_id, key_id, fullName) VALUES (2, 1, 'Alice')",
+                createMap(new PersonId(1), new Person(2, "Alice"))
+        );
+
+        sqlService.execute("UPDATE " + name + " SET fullName = fullName||'-updated' WHERE fullName = 'Alice'");
+
+        assertRowsAnyOrder(
+                "SELECT key_id, value_id, fullName FROM " + name + " WHERE fullName = 'Alice-updated'",
+                singletonList(new Row(1, 2, "Alice-updated"))
+        );
+    }
+
+    @Test
     public void test_schemaEvolution() {
         String name = randomName();
         createMapping(name, PersonId.class, Person.class);

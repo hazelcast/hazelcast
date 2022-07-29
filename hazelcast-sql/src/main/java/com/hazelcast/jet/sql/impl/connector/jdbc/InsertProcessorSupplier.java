@@ -1,0 +1,119 @@
+/*
+ * Copyright 2021 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package com.hazelcast.jet.sql.impl.connector.jdbc;
+
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.impl.connector.DataSourceFromConnectionSupplier;
+import com.hazelcast.jet.impl.connector.WriteJdbcP;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.security.impl.function.SecuredFunction;
+import com.hazelcast.security.permission.ConnectorPermission;
+import com.hazelcast.sql.impl.row.JetSqlRow;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import javax.sql.CommonDataSource;
+import java.io.IOException;
+import java.security.Permission;
+import java.sql.PreparedStatement;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
+import static java.util.Collections.singletonList;
+
+public class InsertProcessorSupplier implements ProcessorSupplier, DataSerializable, SecuredFunction {
+
+    // TODO change to SQL connector parameter
+    public static final int BATCH_LIMIT = 100;
+
+    private String jdbcUrl;
+    private String tableName;
+    private int fieldCount;
+
+    @SuppressWarnings("unused")
+    public InsertProcessorSupplier() {
+    }
+
+    public InsertProcessorSupplier(String jdbcUrl, String tableName, int fieldCount) {
+        this.jdbcUrl = jdbcUrl;
+        this.tableName = tableName;
+        this.fieldCount = fieldCount;
+    }
+
+    @Nonnull
+    @Override
+    public Collection<? extends Processor> get(int count) {
+        List<Processor> processors = new ArrayList<>(count);
+        CommonDataSource ds = new DataSourceFromConnectionSupplier(jdbcUrl);
+        for (int i = 0; i < count; i++) {
+            Processor processor = new WriteJdbcP<>(
+                    buildQuery(),
+                    ds,
+                    (PreparedStatement ps, JetSqlRow row) -> {
+                        for (int j = 0; j < row.getFieldCount(); j++) {
+                            // JDBC parameterIndex is 1-based, so j + 1
+                            ps.setObject(j + 1, row.get(j));
+                        }
+                    },
+                    false,
+                    BATCH_LIMIT
+            );
+            processors.add(processor);
+        }
+        return processors;
+    }
+
+    private String buildQuery() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("INSERT INTO ")
+          .append(tableName)
+          .append(" VALUES (");
+        for (int i = 0; i < fieldCount; i++) {
+            sb.append('?');
+            if (i < (fieldCount - 1)) {
+                sb.append(", ");
+            }
+        }
+        sb.append(')');
+        return sb.toString();
+    }
+
+    @Nullable
+    @Override
+    public List<Permission> permissions() {
+        return singletonList(ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE));
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeString(jdbcUrl);
+        out.writeString(tableName);
+        out.writeInt(fieldCount);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        jdbcUrl = in.readString();
+        tableName = in.readString();
+        fieldCount = in.readInt();
+    }
+}

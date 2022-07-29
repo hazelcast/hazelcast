@@ -1,0 +1,11 @@
+
+Changes
+- added external name to SqlConnector#resolveAndValidateFields to be able to read the table metadata
+- exposed fields in Comparison predicate to convert the predicate to SQL where part
+
+TODO
+- publish compact generic record instead of row ? is this possible?
+- different parallelism if possible - for sink - insert, update and delete
+
+- fix throws new RuntimeException
+- create PR with description

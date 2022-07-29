@@ -79,7 +79,7 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
     private boolean supportsBatch;
     private int batchCount;
 
-    private WriteJdbcP(
+    public WriteJdbcP(
             @Nonnull String updateQuery,
             @Nonnull CommonDataSource dataSource,
             @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
