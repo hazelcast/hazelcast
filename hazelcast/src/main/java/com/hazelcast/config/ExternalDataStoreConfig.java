@@ -36,6 +36,8 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * <li>{@link BatchSource} and {@link Sink} in Jet JDBC connector.</li>
  * <li>Datastore for {@link MapStore} and {@link MapLoader} </li>
  * </ul>
+ *
+ * @since 5.2
  */
 @Beta
 public class ExternalDataStoreConfig implements NamedConfig {

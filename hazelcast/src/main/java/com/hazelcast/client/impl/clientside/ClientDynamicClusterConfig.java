@@ -1124,6 +1124,11 @@ public class ClientDynamicClusterConfig extends Config {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
+    @Override
+    public Config addExternalDataStoreConfig(ExternalDataStoreConfig externalDataStoreConfig) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
     @Nullable
     @Override
     public ExternalDataStoreConfig getExternalDataStoreConfig(String name) {
