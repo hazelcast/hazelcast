@@ -203,66 +203,58 @@ public class MasterJobContext {
      */
 
     void tryStartJob(Supplier<Long> executionIdSupplier) {
-        JobCoordinationService coordinationService = mc.coordinationService();
+        JobCoordinationService coordinator = mc.coordinationService();
         MembersView membersView = Util.getMembersView(mc.nodeEngine());
 
-        coordinationService
-                .submitToCoordinatorThread(() -> {
-                    executionStartTime = System.currentTimeMillis();
-                    JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
-                    jobExecRec.markExecuted();
-                    DAG dag = resolveDag(executionIdSupplier);
-                    if (dag == null) {
-                        return null;
-                    }
-                    // must call this before rewriteDagWithSnapshotRestore()
-                    String dotRepresentation = dag.toDotString(defaultParallelism, defaultQueueSize);
-                    long snapshotId = jobExecRec.snapshotId();
-                    String snapshotName = mc.jobConfig().getInitialSnapshotName();
-                    String mapName =
-                            snapshotId >= 0 ? jobExecRec.successfulSnapshotDataMapName(mc.jobId())
-                                    : snapshotName != null ? EXPORTED_SNAPSHOTS_PREFIX + snapshotName
-                                    : null;
-                    if (mapName != null) {
-                        rewriteDagWithSnapshotRestore(dag, snapshotId, mapName, snapshotName);
-                    } else {
-                        logger.info("Didn't find any snapshot to restore for " + mc.jobIdString());
-                    }
-                    logger.info("Start executing " + mc.jobIdString()
-                            + ", execution graph in DOT format:\n" + dotRepresentation
-                            + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.");
-                    logger.fine("Building execution plan for " + mc.jobIdString());
-                    return dag;
-                })
-                .thenCompose(dag -> createExecutionPlans(dag, membersView))
-                .thenCompose(onCoordinator(plans -> initExecution(membersView, plans)))
-                .whenComplete((r, e) -> {
-                    if (e != null) {
-                        finalizeJob(peel(e));
-                    }
-                });
+        mc.coordinationService()
+          .submitToCoordinatorThread(() -> {
+              try {
+                  executionStartTime = System.currentTimeMillis();
+                  JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
+                  jobExecRec.markExecuted();
+                  DAG dag = resolveDag(executionIdSupplier);
+                  if (dag == null) {
+                      return;
+                  }
+                  // must call this before rewriteDagWithSnapshotRestore()
+                  String dotRepresentation = dag.toDotString(defaultParallelism, defaultQueueSize);
+                  long snapshotId = jobExecRec.snapshotId();
+                  String snapshotName = mc.jobConfig().getInitialSnapshotName();
+                  String mapName =
+                          snapshotId >= 0 ? jobExecRec.successfulSnapshotDataMapName(mc.jobId())
+                                  : snapshotName != null ? EXPORTED_SNAPSHOTS_PREFIX + snapshotName
+                                  : null;
+                  if (mapName != null) {
+                      rewriteDagWithSnapshotRestore(dag, snapshotId, mapName, snapshotName);
+                  } else {
+                      logger.info("Didn't find any snapshot to restore for " + mc.jobIdString());
+                  }
+                  logger.info("Start executing " + mc.jobIdString()
+                          + ", execution graph in DOT format:\n" + dotRepresentation
+                          + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.");
+                  logger.fine("Building execution plan for " + mc.jobIdString());
+
+                  createExecutionPlans(dag, membersView)
+                          .thenCompose(plans -> coordinator.submitToCoordinatorThread(
+                                  () -> initExecution(membersView, plans)
+                          ))
+                          .whenComplete((r, e) -> {
+                              if (e != null) {
+                                  finalizeJob(peel(e));
+                              }
+                          });
+              } catch (Throwable e) {
+                  finalizeJob(e);
+              }
+          });
     }
 
     private CompletableFuture<Map<MemberInfo, ExecutionPlan>> createExecutionPlans(
             DAG dag,
             MembersView membersView) {
-        if (dag == null) {
-            return completedFuture(null);
-        }
         return ExecutionPlanBuilder.createExecutionPlans(mc.nodeEngine(), membersView.getMembers(),
                 dag, mc.jobId(), mc.executionId(), mc.jobConfig(), mc.jobExecutionRecord().ongoingSnapshotId(),
                 false, mc.jobRecord().getSubject());
-    }
-
-    private <I> Function<I, CompletableFuture<Void>> onCoordinator(Consumer<I> actionFactory) {
-        JobCoordinationService coordinationService = mc.coordinationService();
-        return input -> {
-            if (input == null) {
-                return completedFuture(null);
-            }
-            Runnable action = () -> actionFactory.accept(input);
-            return coordinationService.submitToCoordinatorThread(action);
-        };
     }
 
     private void initExecution(MembersView membersView, Map<MemberInfo, ExecutionPlan> executionPlanMap) {
