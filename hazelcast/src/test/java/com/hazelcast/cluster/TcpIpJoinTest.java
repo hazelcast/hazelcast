@@ -221,23 +221,9 @@ public class TcpIpJoinTest extends AbstractJoinTest {
 
     @Test
     public void test_tcpIpJoinerRemembersJoinedMemberAddresses() {
-        Config config1 = smallInstanceConfig()
-                .setProperty("hazelcast.merge.first.run.delay.seconds", "10")
-                .setProperty("hazelcast.merge.next.run.delay.seconds", "10");
-        TcpIpConfig tcpIpConfig = config1.getNetworkConfig().getJoin().getTcpIpConfig();
-        tcpIpConfig.setEnabled(true);
-
-        Config config2 = smallInstanceConfig();
-        TcpIpConfig tcpIpConfig2 = config2.getNetworkConfig().setPort(8899).getJoin().getTcpIpConfig();
-        tcpIpConfig2.setEnabled(true).addMember("127.0.0.1:5701");
-
-        Config config3 = smallInstanceConfig();
-        TcpIpConfig tcpIpConfig3 = config3.getNetworkConfig().setPort(9099).getJoin().getTcpIpConfig();
-        tcpIpConfig3.setEnabled(true).addMember("127.0.0.1:5701");
-
-        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config1);
-        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config2);
-        HazelcastInstance hz3 = Hazelcast.newHazelcastInstance(config3);
+        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(prepareConfigWithTcpIpConfigEnabled(5701));
+        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(prepareConfigWithTcpIpConfigEnabled(8899, 5701));
+        HazelcastInstance hz3 = Hazelcast.newHazelcastInstance(prepareConfigWithTcpIpConfigEnabled(9099, 5701));
         Address hz2Address = hz2.getCluster().getLocalMember().getAddress();
         Address hz3Address = hz3.getCluster().getLocalMember().getAddress();
         TcpIpJoiner tcpJoiner1 = (TcpIpJoiner) Accessors.getNode(hz1).getJoiner();
@@ -250,26 +236,12 @@ public class TcpIpJoinTest extends AbstractJoinTest {
 
     @Test
     public void test_tcpIpJoinerCleanupAddressesAfterAddressRetentionPeriodIsPassed() throws Exception {
-        Config config1 = smallInstanceConfig()
-                .setProperty("hazelcast.merge.first.run.delay.seconds", "10")
-                .setProperty("hazelcast.merge.next.run.delay.seconds", "10");
-        TcpIpConfig tcpIpConfig = config1.getNetworkConfig().getJoin().getTcpIpConfig();
-        tcpIpConfig.setEnabled(true);
-
-        Config config2 = smallInstanceConfig();
-        TcpIpConfig tcpIpConfig2 = config2.getNetworkConfig().setPort(8899).getJoin().getTcpIpConfig();
-        tcpIpConfig2.setEnabled(true).addMember("127.0.0.1:5701");
-
-        Config config3 = smallInstanceConfig();
-        TcpIpConfig tcpIpConfig3 = config3.getNetworkConfig().setPort(9099).getJoin().getTcpIpConfig();
-        tcpIpConfig3.setEnabled(true).addMember("127.0.0.1:5701");
-
-        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(config1);
+        HazelcastInstance hz1 = Hazelcast.newHazelcastInstance(prepareConfigWithTcpIpConfigEnabled(5701));
         TcpIpJoiner tcpJoiner1 = (TcpIpJoiner) Accessors.getNode(hz1).getJoiner();
         overrideAddressRetentionDuration(tcpJoiner1, TimeUnit.SECONDS.toMillis(10));
+        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(prepareConfigWithTcpIpConfigEnabled(8899, 5701));
+        HazelcastInstance hz3 = Hazelcast.newHazelcastInstance(prepareConfigWithTcpIpConfigEnabled(9099, 5701));
 
-        HazelcastInstance hz2 = Hazelcast.newHazelcastInstance(config2);
-        HazelcastInstance hz3 = Hazelcast.newHazelcastInstance(config3);
         Address hz2Address = hz2.getCluster().getLocalMember().getAddress();
         Address hz3Address = hz3.getCluster().getLocalMember().getAddress();
         assertTrueEventually(() -> assertContainsAll(tcpJoiner1.getKnownMemberAddresses().keySet(), Arrays.asList(hz2Address, hz3Address)));
@@ -282,7 +254,20 @@ public class TcpIpJoinTest extends AbstractJoinTest {
         }, 20);
     }
 
-    private static void overrideAddressRetentionDuration(TcpIpJoiner tcpIpJoiner, long addressRetentionDuration) throws Exception {
+    private static Config prepareConfigWithTcpIpConfigEnabled(int port, int... otherKnownMemberPorts) {
+        Config config = smallInstanceConfig()
+                .setProperty("hazelcast.merge.first.run.delay.seconds", "10")
+                .setProperty("hazelcast.merge.next.run.delay.seconds", "10");
+        JoinConfig join = config.getNetworkConfig().setPort(port).getJoin();
+        TcpIpConfig tcpIpConfig = join.getTcpIpConfig();
+        tcpIpConfig.setEnabled(true);
+        for (int otherMemberPort : otherKnownMemberPorts) {
+            tcpIpConfig.setEnabled(true).addMember("127.0.0.1:" + otherMemberPort);
+        }
+        return config;
+    }
+
+    public static void overrideAddressRetentionDuration(TcpIpJoiner tcpIpJoiner, long addressRetentionDuration) throws Exception {
         Field privateField = TcpIpJoiner.class.getDeclaredField("previouslyJoinedMemberAddressRetentionDuration");
         privateField.setAccessible(true);
         privateField.set(tcpIpJoiner, addressRetentionDuration);
