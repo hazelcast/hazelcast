@@ -341,7 +341,7 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
 
         @Override
         public int getClassId() {
-            return JetSqlSerializerHook.AGGREGATE_JSON_ARRAY_AGG_SUPPLIER;
+            return JetSqlSerializerHook.AGGREGATE_JSON_OBJECT_AGG_SUPPLIER;
         }
     }
 
