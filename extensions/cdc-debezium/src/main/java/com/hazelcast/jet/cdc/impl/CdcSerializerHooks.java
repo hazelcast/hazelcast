@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.cdc.impl;
 
+import com.hazelcast.jet.cdc.Operation;
+import com.hazelcast.jet.cdc.RecordPart;
 import com.hazelcast.jet.impl.serialization.SerializerHookConstants;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -55,19 +57,36 @@ public class CdcSerializerHooks {
 
                 @Override
                 public void write(ObjectDataOutput out, ChangeRecordImpl record) throws IOException {
+                    out.writeLong(record.timestamp());
                     out.writeLong(record.sequenceSource());
                     out.writeLong(record.sequenceValue());
-                    out.writeString(record.getKeyJson());
-                    out.writeString(record.getValueJson());
+                    out.writeString(record.operation().code());
+                    out.writeUTF(record.getKeyJson());
+                    RecordPart oldValue = record.oldValue();
+                    out.writeUTF(oldValue == null ? null : oldValue.toJson());
+                    RecordPart newValue = record.newValue();
+                    out.writeUTF(newValue == null ? null : newValue.toJson());
+                    out.writeString(record.table());
+                    out.writeString(record.schema());
+                    out.writeString(record.database());
                 }
 
                 @Override
                 public ChangeRecordImpl read(ObjectDataInput in) throws IOException {
+                    long timestamp = in.readLong();
                     long sequenceSource = in.readLong();
                     long sequenceValue = in.readLong();
+                    Operation operation = Operation.get(in.readString());
                     String keyJson = requireNonNull(in.readString(), "keyJson cannot be null");
-                    String valueJson = requireNonNull(in.readString(), "valueJson cannot be null");
-                    return new ChangeRecordImpl(sequenceSource, sequenceValue, keyJson, valueJson);
+                    String oldValueJson = in.readString();
+                    String newValueJson = in.readString();
+                    String table = in.readString();
+                    String schema = in.readString();
+                    String database = in.readString();
+                    return new ChangeRecordImpl(
+                            timestamp, sequenceSource, sequenceValue,
+                            operation, keyJson, oldValueJson, newValueJson,
+                            table, schema, database);
                 }
             };
         }

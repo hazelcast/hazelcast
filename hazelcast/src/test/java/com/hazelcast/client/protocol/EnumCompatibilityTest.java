@@ -39,6 +39,7 @@ import com.hazelcast.cp.internal.datastructures.atomicref.operation.ApplyOp;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.internal.util.IterationType;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.TerminationMode;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.serialization.FieldKind;
@@ -485,6 +486,20 @@ public class EnumCompatibilityTest {
         mappings.put(MemoryUnit.MEGABYTES, 2);
         mappings.put(MemoryUnit.GIGABYTES, 3);
         verifyCompatibility(MemoryUnit.values(), MemoryUnit::getId, mappings);
+    }
+
+    @Test
+    public void testJobStatus() {
+        Map<JobStatus, Integer> mappings = new HashMap<>();
+        mappings.put(JobStatus.NOT_RUNNING, 0);
+        mappings.put(JobStatus.STARTING, 1);
+        mappings.put(JobStatus.RUNNING, 2);
+        mappings.put(JobStatus.SUSPENDED, 3);
+        mappings.put(JobStatus.SUSPENDED_EXPORTING_SNAPSHOT, 4);
+        mappings.put(JobStatus.COMPLETING, 5);
+        mappings.put(JobStatus.FAILED, 6);
+        mappings.put(JobStatus.COMPLETED, 7);
+        verifyCompatibility(JobStatus.values(), JobStatus::getId, mappings);
     }
 
     private <T, V> void verifyCompatibility(T[] values, Function<T, V> toId, Map<T, V> mappings) {

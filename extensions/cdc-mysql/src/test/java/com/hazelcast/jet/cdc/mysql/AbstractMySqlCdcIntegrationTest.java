@@ -39,7 +39,7 @@ import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
 @RunWith(HazelcastSerialClassRunner.class)
 public abstract class AbstractMySqlCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
-    public static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("debezium/example-mysql:1.9.3.Final")
+    public static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("debezium/example-mysql:1.9.5.Final")
             .asCompatibleSubstituteFor("mysql");
 
     @Rule
@@ -68,7 +68,7 @@ public abstract class AbstractMySqlCdcIntegrationTest extends AbstractCdcIntegra
     }
 
     protected void createDb(String database) throws SQLException {
-        String jdbcUrl = "jdbc:mysql://" + mysql.getContainerIpAddress() + ":" + mysql.getMappedPort(MYSQL_PORT) + "/";
+        String jdbcUrl = "jdbc:mysql://" + mysql.getHost() + ":" + mysql.getMappedPort(MYSQL_PORT) + "/";
         try (Connection connection = getMySqlConnection(jdbcUrl, "root", "mysqlpw")) {
             Statement statement = connection.createStatement();
             statement.addBatch("CREATE DATABASE " + database);

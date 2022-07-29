@@ -30,6 +30,7 @@ import java.net.UnknownHostException;
 import java.util.Arrays;
 import java.util.UUID;
 
+import static com.hazelcast.client.impl.management.ClientConnectionProcessListener.NOOP;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -41,7 +42,7 @@ public class DefaultAddressProviderTest {
     public void whenNoAddresses() throws UnknownHostException {
         ClientNetworkConfig config = new ClientNetworkConfig();
         DefaultAddressProvider provider = new DefaultAddressProvider(config, () -> false);
-        Addresses addresses = provider.loadAddresses();
+        Addresses addresses = provider.loadAddresses(NOOP);
 
         assertPrimary(addresses, new Address("127.0.0.1", 5701));
         assertSecondary(addresses, new Address("127.0.0.1", 5702), new Address("127.0.0.1", 5703));
@@ -52,7 +53,7 @@ public class DefaultAddressProviderTest {
         ClientNetworkConfig config = new ClientNetworkConfig();
         config.addAddress("10.0.0.1");
         DefaultAddressProvider provider = new DefaultAddressProvider(config, () -> false);
-        Addresses addresses = provider.loadAddresses();
+        Addresses addresses = provider.loadAddresses(NOOP);
 
         assertPrimary(addresses, new Address("10.0.0.1", 5701));
         assertSecondary(addresses, new Address("10.0.0.1", 5702), new Address("10.0.0.1", 5703));
@@ -64,7 +65,7 @@ public class DefaultAddressProviderTest {
         config.addAddress("10.0.0.1:5703");
         config.addAddress("10.0.0.1:5702");
         DefaultAddressProvider provider = new DefaultAddressProvider(config, () -> false);
-        Addresses addresses = provider.loadAddresses();
+        Addresses addresses = provider.loadAddresses(NOOP);
 
         assertPrimary(addresses, new Address("10.0.0.1", 5703), new Address("10.0.0.1", 5702));
         assertSecondaryEmpty(addresses);
@@ -77,7 +78,7 @@ public class DefaultAddressProviderTest {
         config.addAddress("10.0.0.1:5702");
         config.addAddress("10.0.0.2");
         DefaultAddressProvider provider = new DefaultAddressProvider(config, () -> false);
-        Addresses addresses = provider.loadAddresses();
+        Addresses addresses = provider.loadAddresses(NOOP);
 
         assertPrimary(addresses, new Address("10.0.0.1", 5701),
                 new Address("10.0.0.1", 5702),
@@ -90,7 +91,7 @@ public class DefaultAddressProviderTest {
         ClientNetworkConfig config = new ClientNetworkConfig();
         config.addAddress(UUID.randomUUID().toString());
         DefaultAddressProvider provider = new DefaultAddressProvider(config, () -> false);
-        Addresses addresses = provider.loadAddresses();
+        Addresses addresses = provider.loadAddresses(NOOP);
 
         assertPrimaryEmpty(addresses);
         assertSecondaryEmpty(addresses);

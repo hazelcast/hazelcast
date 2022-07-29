@@ -6653,6 +6653,7 @@ public class ClientCompatibilityTest_2_3 {
         assertTrue(isEqual(aSqlPage, parameters.rowPage));
         assertTrue(isEqual(aLong, parameters.updateCount));
         assertTrue(isEqual(anSqlError, parameters.error));
+        assertFalse(parameters.isIsInfiniteRowsExists);
     }
 
     @Test

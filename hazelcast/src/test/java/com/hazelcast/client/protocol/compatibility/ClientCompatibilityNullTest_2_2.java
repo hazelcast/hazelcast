@@ -6612,6 +6612,7 @@ public class ClientCompatibilityNullTest_2_2 {
         assertTrue(isEqual(null, parameters.rowPage));
         assertTrue(isEqual(aLong, parameters.updateCount));
         assertTrue(isEqual(null, parameters.error));
+        assertFalse(parameters.isIsInfiniteRowsExists);
     }
 
     @Test
