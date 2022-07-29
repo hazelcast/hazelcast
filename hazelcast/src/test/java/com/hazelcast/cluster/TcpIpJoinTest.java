@@ -295,7 +295,7 @@ public class TcpIpJoinTest extends AbstractJoinTest {
         TcpIpConfig tcpIpConfig = join.getTcpIpConfig();
         tcpIpConfig.setEnabled(true);
         for (int otherMemberPort : otherKnownMemberPorts) {
-            tcpIpConfig.setEnabled(true).addMember("127.0.0.1:" + otherMemberPort);
+            tcpIpConfig.addMember("127.0.0.1:" + otherMemberPort);
         }
         return config;
     }
