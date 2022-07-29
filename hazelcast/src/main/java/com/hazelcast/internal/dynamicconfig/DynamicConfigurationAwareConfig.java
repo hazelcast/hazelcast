@@ -1226,6 +1226,11 @@ public class DynamicConfigurationAwareConfig extends Config {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 
+    @Override
+    public Config addExternalDataStoreConfig(ExternalDataStoreConfig externalDataStoreConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
     @Nullable
     @Override
     public ExternalDataStoreConfig getExternalDataStoreConfig(String name) {
