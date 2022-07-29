@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.opt;
 
 import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import com.hazelcast.jet.sql.impl.opt.physical.CalcPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.DropLateItemsPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowAggregatePhysicalRel;
@@ -25,6 +26,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.UnionPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.utils.MutableByte;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelVisitor;
+import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
@@ -39,7 +41,6 @@ import java.util.Map;
 import java.util.Set;
 
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.emptySet;
 
 /**
  * Traverse a relational tree and assign watermark keys.
@@ -101,6 +102,8 @@ public class WatermarkKeysAssigner {
             if (relToWmKeyMapping.isEmpty()) {
                 return;
             }
+
+            WatermarkedFields wmFields = OptUtils.metadataQuery(node).extractWatermarkedFields(node);
 
             if (node instanceof CalcPhysicalRel) {
                 CalcPhysicalRel calc = (CalcPhysicalRel) node;
@@ -217,19 +220,36 @@ public class WatermarkKeysAssigner {
                 byteMap.put(sw.windowStartIndex(), newWmKey);
                 byteMap.put(sw.windowEndIndex(), newWmKey);
                 relToWmKeyMapping.put(sw, byteMap);
-            } else {
-                // anything else -- just forward without any changes.
-                if (!node.getInputs().isEmpty()) {
-                    Map<Integer, MutableByte> refByteMap = relToWmKeyMapping.get(node.getInputs().iterator().next());
-                    relToWmKeyMapping.put(node, refByteMap);
+            } else if (node instanceof Aggregate) {
+                Aggregate agg = (Aggregate) node;
+                WatermarkedFields inputWmFields = OptUtils.metadataQuery(agg).extractWatermarkedFields(agg.getInput());
+                if (inputWmFields == null || agg.getGroupSets().size() != 1) {
+                    // not implemented
+                    return;
                 }
+
+                Map<Integer, MutableByte> inputByteMap = relToWmKeyMapping.get(agg.getInput());
+                Map<Integer, MutableByte> byteMap = new HashMap<>();
+                Iterator<Integer> groupedIndexes = agg.getGroupSets().get(0).iterator();
+                // we forward only grouped fields.
+                for (int outputIndex = 0; groupedIndexes.hasNext(); outputIndex++) {
+                    int groupedBy = groupedIndexes.next();
+                    if (inputWmFields.getFieldIndexes().contains(groupedBy)) {
+                        byteMap.put(groupedBy, inputByteMap.get(outputIndex));
+                    }
+                }
+                relToWmKeyMapping.put(agg, byteMap);
+            } else if (node instanceof DropLateItemsPhysicalRel) {
+                relToWmKeyMapping.put(node, relToWmKeyMapping.get(node.getInput(0)));
+            } else {
+                // watermark is not preserving during any other rel -- break the chain.
+                return;
             }
 
-            assert relToWmKeyMapping.getOrDefault(node, emptyMap()).keySet().equals(
-                    OptUtils.metadataQuery(node).extractWatermarkedFields(node) != null
-                            ? OptUtils.metadataQuery(node).extractWatermarkedFields(node).getFieldIndexes()
-                            : emptySet()
-            ) : "mismatch between WM fields in metadata query and in WmKeyAssigner";
+            if (wmFields != null) {
+                assert relToWmKeyMapping.getOrDefault(node, emptyMap()).keySet().equals(wmFields.getFieldIndexes())
+                        : "mismatch between WM fields in metadata query and in WmKeyAssigner";
+            }
         }
     }
 }

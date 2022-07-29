@@ -47,7 +47,7 @@ import static java.lang.Math.floorMod;
  * @since Jet 3.0
  */
 public class SlidingWindowPolicy implements Serializable {
-    private static final long serialVersionUID = 1L;
+    private static final long serialVersionUID = 2L;
 
     private final long frameSize;
     private final long frameOffset;

@@ -241,7 +241,7 @@ public interface SqlConnector {
      * @param predicate               SQL expression to filter the rows
      * @param projection              the list of field names to return
      * @param eventTimePolicyProvider {@link EventTimePolicy}
-     * @param watermarkKey
+     * @param watermarkKey            watermark key for full scan processor
      * @return The DAG Vertex handling the reading
      */
     @Nonnull

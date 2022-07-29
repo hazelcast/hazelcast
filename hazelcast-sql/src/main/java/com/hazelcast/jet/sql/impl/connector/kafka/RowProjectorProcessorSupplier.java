@@ -121,6 +121,7 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
         out.writeString(topic);
         out.writeObject(eventTimePolicyProvider);
         out.writeObject(projectorSupplier);
+        out.writeByte(watermarkKey);
     }
 
     @Override
@@ -129,5 +130,6 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
         topic = in.readString();
         eventTimePolicyProvider = in.readObject();
         projectorSupplier = in.readObject();
+        watermarkKey = in.readByte();
     }
 }
