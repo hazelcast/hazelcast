@@ -185,7 +185,8 @@ public class ScheduledExecutorConfig implements IdentifiedDataSerializable, Name
 
     /**
      * Sets the capacity of the executor
-     * The capacity represents the maximum number of tasks that a scheduler can have at any given point in time per partition.
+     * The capacity represents the maximum number of tasks that a scheduler can have at any given point in time
+     * per partition or per node according to the capacity policy.
      * If this is set to 0 then there is no limit
      *
      * To prevent any undesirable data-loss, capacity is ignored during partition migrations,

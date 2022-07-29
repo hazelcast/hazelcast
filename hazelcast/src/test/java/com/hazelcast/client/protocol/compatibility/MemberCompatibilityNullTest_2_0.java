@@ -6470,6 +6470,7 @@ public class MemberCompatibilityNullTest_2_0 {
         assertTrue(isEqual(aString, parameters.mergePolicy));
         assertTrue(isEqual(anInt, parameters.mergeBatchSize));
         assertFalse(parameters.isStatisticsEnabledExists);
+        assertFalse(parameters.isCapacityPolicyExists);
     }
 
     @Test

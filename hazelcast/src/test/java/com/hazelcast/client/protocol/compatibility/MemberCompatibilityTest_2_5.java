@@ -6617,6 +6617,8 @@ public class MemberCompatibilityTest_2_5 {
         assertTrue(isEqual(anInt, parameters.mergeBatchSize));
         assertTrue(parameters.isStatisticsEnabledExists);
         assertTrue(isEqual(aBoolean, parameters.statisticsEnabled));
+        assertTrue(parameters.isCapacityPolicyExists);
+        assertTrue(isEqual(aByte, parameters.capacityPolicy));
     }
 
     @Test
