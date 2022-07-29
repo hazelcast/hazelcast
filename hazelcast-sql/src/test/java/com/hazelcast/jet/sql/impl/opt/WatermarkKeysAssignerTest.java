@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt;
 
+import com.hazelcast.internal.util.MutableByte;
 import com.hazelcast.jet.sql.impl.opt.physical.AggregateAccumulateByKeyPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.AggregateCombineByKeyPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.CalcPhysicalRel;
@@ -24,7 +25,6 @@ import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.UnionPhysicalRel;
-import com.hazelcast.jet.sql.impl.opt.utils.MutableByte;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -47,6 +47,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
+    // Note: unit test for Join will be added in S2S PR, since join is revamped there.
 
     @BeforeClass
     public static void beforeClass() {

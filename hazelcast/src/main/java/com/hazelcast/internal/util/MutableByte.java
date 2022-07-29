@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.utils;
+package com.hazelcast.internal.util;
 
 public class MutableByte {
     private byte value;
