@@ -36,6 +36,8 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class TablesStorageTest extends SimpleTestInClusterSupport {
@@ -69,8 +71,8 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         storage.put(name, originalMapping);
         storage.put(name, updatedMapping);
 
-        assert storage.allObjects().stream().noneMatch(m -> m.equals(originalMapping));
-        assert storage.allObjects().stream().anyMatch(m -> m.equals(updatedMapping));
+        assertTrue(storage.allObjects().stream().noneMatch(m -> m.equals(originalMapping)));
+        assertTrue(storage.allObjects().stream().anyMatch(m -> m.equals(updatedMapping)));
     }
 
     @Test
@@ -79,8 +81,8 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
 
         assertThat(storage.putIfAbsent(name, mapping(name, "type-1"))).isTrue();
         assertThat(storage.putIfAbsent(name, mapping(name, "type-2"))).isFalse();
-        assert storage.allObjects().stream().anyMatch(m -> m instanceof Mapping && ((Mapping) m).type().equals("type-1"));
-        assert storage.allObjects().stream().noneMatch(m -> m instanceof Mapping && ((Mapping) m).type().equals("type-2"));
+        assertTrue(storage.allObjects().stream().anyMatch(m -> m instanceof Mapping && ((Mapping) m).type().equals("type-1")));
+        assertTrue(storage.allObjects().stream().noneMatch(m -> m instanceof Mapping && ((Mapping) m).type().equals("type-2")));
     }
 
     @Test
@@ -90,7 +92,7 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         storage.put(name, mapping(name, "type"));
 
         assertThat(storage.removeMapping(name)).isNotNull();
-        assert storage.mappingNames().stream().noneMatch(m -> m.equals(name));
+        assertTrue(storage.mappingNames().stream().noneMatch(m -> m.equals(name)));
     }
 
     @Test
@@ -100,7 +102,7 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         storage.put(name, view(name, "type"));
 
         assertThat(storage.removeView(name)).isNotNull();
-        assert storage.allObjects().stream().noneMatch(o -> o instanceof View && ((View) o).name().equals(name));
+        assertTrue(storage.allObjects().stream().noneMatch(o -> o instanceof View && ((View) o).name().equals(name)));
     }
 
     @Test
@@ -113,8 +115,8 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         String name = randomName();
         storage.put(name, mapping(name, "type"));
 
-        assert storage.newStorage().size() == 1;
-        assert storage.oldStorage().size() == 0;
+        assertEquals(1, storage.newStorage().size());
+        assertEquals(0, storage.oldStorage().size());
     }
 
     @Test
@@ -122,9 +124,9 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         String name = randomName();
         storage.oldStorage().put(name, mapping(name, "type"));
 
-        assert storage.allObjects().size() == 1;
-        assert storage.newStorage().size() == 1;
-        assert storage.oldStorage().size() == 0;
+        assertEquals(1, storage.allObjects().size());
+        assertEquals(1, storage.newStorage().size());
+        assertEquals(0, storage.oldStorage().size());
     }
 
     @Test
@@ -141,8 +143,8 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         String name = randomName();
         storage.oldStorage().put(name, mapping(name, "type"));
 
-        assert storage.allObjects().size() == 0;
-        assert storage.oldStorage().size() == 1;
+        assertEquals(0, storage.allObjects().size());
+        assertEquals(1, storage.oldStorage().size());
     }
 
     @Test
@@ -157,10 +159,10 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         storage.newStorage().clear();
 
         assertTrueEventually(() -> {
-            assert clearCounter.get() == 1;
+            assertEquals(1, clearCounter.get());
         });
         MILLISECONDS.sleep(100);
-        assert clearCounter.get() == 1;
+        assertEquals(1, clearCounter.get());
     }
 
     private static Mapping mapping(String name, String type) {
