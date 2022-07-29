@@ -38,9 +38,9 @@ import static com.hazelcast.internal.util.QuickMath.nextPowerOfTwo;
  * due to fragmentation (perhaps it can't be allocated because of fragmentation), but it can also
  * lead to fragmentation because buffers can have different sizes.
  *
- * So instead of having a ByteBuffer underneath, allow for a list of ByteBuffer all with some semi
+ * So instead of having a single ByteBuffer underneath, allow for a list of ByteBuffer all with some
  * fixed size, e.g. up to 16 KB. So if a 1MB chunk of data is received, just 64 byte-arrays of 16KB.
- * This will prevent the above fragmentation problems although it could lead to some increased
+ * This will prevent the above fragmentation problem although it could lead to some increased
  * internal fragmentation because more memory is allocated than used. I believe this isn't such a
  * big problem because IOBuffer are short lived.
  *
