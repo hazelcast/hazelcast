@@ -183,7 +183,8 @@ public class ClientDynamicClusterConfig extends Config {
                 cacheConfig.getCacheEntryListeners(),
                 EvictionConfigHolder.of(cacheConfig.getEvictionConfig(), serializationService),
                 cacheConfig.getWanReplicationRef(), cacheConfig.getEventJournalConfig(),
-                cacheConfig.getHotRestartConfig(), cacheConfig.getMerkleTreeConfig());
+                cacheConfig.getHotRestartConfig(), cacheConfig.getMerkleTreeConfig(),
+                cacheConfig.getDataPersistenceConfig());
         invoke(request);
         return this;
     }

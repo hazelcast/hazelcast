@@ -6693,6 +6693,7 @@ public class MemberCompatibilityNullTest_2_2 {
         assertTrue(isEqual(null, parameters.eventJournalConfig));
         assertTrue(isEqual(null, parameters.hotRestartConfig));
         assertFalse(parameters.isMerkleTreeConfigExists);
+        assertFalse(parameters.isDataPersistenceConfigExists);
     }
 
     @Test
