@@ -20,6 +20,8 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.util.JVMUtil.OBJECT_HEADER_SIZE;
+import static com.hazelcast.internal.util.TimeStripUtil.recomputeWithBaseTime;
+import static com.hazelcast.internal.util.TimeStripUtil.stripBaseTime;
 import static com.hazelcast.map.impl.record.RecordReaderWriter.DATA_RECORD_WITH_STATS_READER_WRITER;
 
 /**

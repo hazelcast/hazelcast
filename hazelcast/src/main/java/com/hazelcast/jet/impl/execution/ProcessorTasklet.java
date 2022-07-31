@@ -51,6 +51,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.BitSet;
+import java.util.Deque;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -59,7 +60,7 @@ import java.util.TreeMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLongArray;
-import java.util.function.Predicate;
+import java.util.function.Consumer;
 
 import static com.hazelcast.jet.core.metrics.MetricNames.COALESCED_WM;
 import static com.hazelcast.jet.core.metrics.MetricNames.EMITTED_COUNT;
@@ -78,15 +79,14 @@ import static com.hazelcast.jet.impl.execution.ProcessorState.END;
 import static com.hazelcast.jet.impl.execution.ProcessorState.NULLARY_PROCESS;
 import static com.hazelcast.jet.impl.execution.ProcessorState.PRE_EMIT_DONE_ITEM;
 import static com.hazelcast.jet.impl.execution.ProcessorState.PROCESS_INBOX;
-import static com.hazelcast.jet.impl.execution.ProcessorState.PROCESS_WATERMARK;
+import static com.hazelcast.jet.impl.execution.ProcessorState.PROCESS_WATERMARKS;
 import static com.hazelcast.jet.impl.execution.ProcessorState.SAVE_SNAPSHOT;
 import static com.hazelcast.jet.impl.execution.ProcessorState.SNAPSHOT_COMMIT_FINISH__COMPLETE;
 import static com.hazelcast.jet.impl.execution.ProcessorState.SNAPSHOT_COMMIT_FINISH__FINAL;
 import static com.hazelcast.jet.impl.execution.ProcessorState.SNAPSHOT_COMMIT_FINISH__PROCESS;
 import static com.hazelcast.jet.impl.execution.ProcessorState.SNAPSHOT_COMMIT_PREPARE;
 import static com.hazelcast.jet.impl.execution.ProcessorState.WAITING_FOR_SNAPSHOT_COMPLETED;
-import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
-import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.NO_NEW_WM;
+import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE_TIME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
@@ -112,7 +112,7 @@ public class ProcessorTasklet implements Tasklet {
 
     private final ArrayDequeInbox inbox = new ArrayDequeInbox(progTracker);
     private final Queue<InboundEdgeStream[]> instreamGroupQueue;
-    private final WatermarkCoalescer watermarkCoalescer;
+    private final KeyedWatermarkCoalescer coalescers;
     private final ILogger logger;
     private final SerializationService serializationService;
     private final List<? extends InboundEdgeStream> instreams;
@@ -130,7 +130,19 @@ public class ProcessorTasklet implements Tasklet {
     private long pendingSnapshotId2;
 
     private SnapshotBarrier currentBarrier;
-    private Watermark pendingWatermark;
+
+    /**
+     * A "global watermark" is a watermark coalesced from all input edges,
+     * passed to the {@link Processor#tryProcessWatermark(Watermark)} method
+     * (the one without the ordinal).
+     */
+    private final Deque<Watermark> pendingGlobalWatermarks = new ArrayDeque<>();
+    /**
+     * An "edge watermark" is non-coalesced watermark, received from a
+     * particular edge, passed to the {@link Processor#tryProcessWatermark(int,
+     * Watermark)} method (the one with the ordinal).
+     */
+    private final Deque<Watermark> pendingEdgeWatermark = new ArrayDeque<>();
 
     // Tells whether we are operating in exactly-once or at-least-once mode.
     // In other words, whether a barrier from all inputs must be present before
@@ -148,7 +160,7 @@ public class ProcessorTasklet implements Tasklet {
     @Probe(name = MetricNames.QUEUES_CAPACITY)
     private final Counter queuesCapacity = SwCounter.newSwCounter();
 
-    private final Predicate<Object> addToInboxFunction = inbox.queue()::add;
+    private final Consumer<Object> addToInboxFunction = inbox.queue()::add;
     private Future<?> closeFuture;
 
     @SuppressWarnings("checkstyle:ExecutableStatementCount")
@@ -190,7 +202,7 @@ public class ProcessorTasklet implements Tasklet {
         pendingSnapshotId1 = pendingSnapshotId2 = ssContext.activeSnapshotIdPhase1() + 1;
         waitForAllBarriers = ssContext.processingGuarantee() == ProcessingGuarantee.EXACTLY_ONCE;
 
-        watermarkCoalescer = WatermarkCoalescer.create(instreams.size());
+        coalescers = new KeyedWatermarkCoalescer(instreams.size());
     }
 
     private Queue<InboundEdgeStream[]> createInstreamGroupQueue(List<? extends InboundEdgeStream> instreams) {
@@ -296,22 +308,23 @@ public class ProcessorTasklet implements Tasklet {
     @SuppressWarnings("checkstyle:returncount")
     private void stateMachineStep() {
         switch (state) {
-            case PROCESS_WATERMARK:
-                if (pendingWatermark == null) {
-                    long wm = watermarkCoalescer.checkWmHistory();
-                    if (wm == NO_NEW_WM) {
-                        state = NULLARY_PROCESS;
-                        stateMachineStep(); // recursion
-                        break;
+            case PROCESS_WATERMARKS:
+                while (!pendingEdgeWatermark.isEmpty()) {
+                    if (!tryProcessEdgeWatermark(currInstream.ordinal(), pendingEdgeWatermark.peek())) {
+                        return;
                     }
-                    pendingWatermark = new Watermark(wm);
+                    pendingEdgeWatermark.remove();
                 }
-                if (pendingWatermark.equals(IDLE_MESSAGE)
-                        ? outbox.offer(IDLE_MESSAGE)
-                        : doWithClassLoader(context.classLoader(), () -> processor.tryProcessWatermark(pendingWatermark))) {
-                    state = NULLARY_PROCESS;
-                    pendingWatermark = null;
+
+                while (!pendingGlobalWatermarks.isEmpty()) {
+                    if (!tryProcessGlobalWatermark(pendingGlobalWatermarks.peek())) {
+                        return;
+                    }
+                    pendingGlobalWatermarks.remove();
                 }
+
+                state = NULLARY_PROCESS;
+                stateMachineStep();
                 break;
 
             case NULLARY_PROCESS:
@@ -319,7 +332,6 @@ public class ProcessorTasklet implements Tasklet {
                 if (currInstream == null || isSnapshotInbox() ||
                         doWithClassLoader(context.classLoader(), () -> processor.tryProcess())) {
                     state = PROCESS_INBOX;
-                    outbox.reset();
                     stateMachineStep(); // recursion
                 }
                 break;
@@ -446,6 +458,20 @@ public class ProcessorTasklet implements Tasklet {
         }
     }
 
+    private boolean tryProcessGlobalWatermark(Watermark wm) {
+        // A watermark is handled by the processor, while the IDLE message is passed directly to the outbox.
+        if (wm.timestamp() == IDLE_MESSAGE_TIME) {
+            return outbox.offer(wm);
+        } else {
+            return doWithClassLoader(context.classLoader(), () -> processor.tryProcessWatermark(wm));
+        }
+    }
+
+    private boolean tryProcessEdgeWatermark(int ordinal, Watermark wm) {
+        assert wm.timestamp() != IDLE_MESSAGE_TIME;
+        return doWithClassLoader(context.classLoader(), () -> processor.tryProcessWatermark(ordinal, wm));
+    }
+
     private void processInbox() {
         if (ssContext.activeSnapshotIdPhase2() == pendingSnapshotId2) {
             state = SNAPSHOT_COMMIT_FINISH__PROCESS;
@@ -477,7 +503,7 @@ public class ProcessorTasklet implements Tasklet {
                 progTracker.madeProgress();
                 state = COMPLETE;
             } else {
-                state = PROCESS_WATERMARK;
+                state = PROCESS_WATERMARKS;
             }
         }
     }
@@ -521,7 +547,8 @@ public class ProcessorTasklet implements Tasklet {
 
     private void fillInbox() {
         assert inbox.isEmpty() : "inbox is not empty";
-        assert pendingWatermark == null : "null wm expected, but was " + pendingWatermark;
+        assert pendingGlobalWatermarks.isEmpty() && pendingEdgeWatermark.isEmpty()
+                : "No pending watermarks are expected here";
 
         // We need to collect metrics before draining the queues into Inbox,
         // otherwise they would appear empty even for slow processors
@@ -546,33 +573,37 @@ public class ProcessorTasklet implements Tasklet {
                 continue;
             }
             result = currInstream.drainTo(addToInboxFunction);
+            assert inbox.queue().stream().allMatch(i -> i instanceof SpecialBroadcastItem)
+                    || inbox.queue().stream().noneMatch(i -> i instanceof SpecialBroadcastItem)
+                    : "mix of special and non-special items in the inbox: " + inbox.queue();
             progTracker.madeProgress(result.isMadeProgress());
 
-            // check if the last drained item is special
-            Object lastItem = inbox.queue().peekLast();
-            if (lastItem instanceof Watermark) {
-                long newWmValue = ((Watermark) inbox.queue().removeLast()).timestamp();
-                long wm = watermarkCoalescer.observeWm(currInstream.ordinal(), newWmValue);
-                if (wm != NO_NEW_WM) {
-                    pendingWatermark = new Watermark(wm);
+            // handle special items
+            while (inbox.queue().peek() instanceof SpecialBroadcastItem) {
+                Object item = inbox.queue().poll();
+                if (item instanceof Watermark) {
+                    Watermark wm = ((Watermark) item);
+                    if (wm.timestamp() != IDLE_MESSAGE_TIME) {
+                        pendingEdgeWatermark.add(wm);
+                    }
+                    pendingGlobalWatermarks.addAll(coalescers.observeWm(currInstream.ordinal(), wm));
+                } else if (item instanceof SnapshotBarrier) {
+                    observeBarrier(currInstream.ordinal(), (SnapshotBarrier) item);
+                } else {
+                    assert false : "Unexpected item in inbox: " + item;
                 }
-            } else if (lastItem instanceof SnapshotBarrier) {
-                SnapshotBarrier barrier = (SnapshotBarrier) inbox.queue().removeLast();
-                observeBarrier(currInstream.ordinal(), barrier);
-            } else if (lastItem != null && !(lastItem instanceof BroadcastItem)) {
-                watermarkCoalescer.observeEvent(currInstream.ordinal());
+            }
+
+            if (!inbox.queue().isEmpty()) {
+                // based on the contract of InboundEdgeStream.drainTo(), if there were any special items
+                // in the inbox, there must be no normal items there, and vice versa.
+                assert pendingEdgeWatermark.isEmpty() && pendingGlobalWatermarks.isEmpty();
+                coalescers.observeEvent(currInstream.ordinal());
             }
 
             if (result.isDone()) {
                 receivedBarriers.clear(currInstream.ordinal());
-                long wm = watermarkCoalescer.queueDone(currInstream.ordinal());
-                // Note that there can be a WM received from upstream and the result can be done after single drain.
-                // In this case we might overwrite the WM here, but that's fine since the second WM should be newer.
-                if (wm != NO_NEW_WM) {
-                    assert pendingWatermark == null || pendingWatermark.timestamp() < wm
-                            : "trying to assign lower WM. Old=" + pendingWatermark.timestamp() + ", new=" + wm;
-                    pendingWatermark = new Watermark(wm);
-                }
+                pendingGlobalWatermarks.addAll(coalescers.queueDone(currInstream.ordinal()));
                 instreamCursor.remove();
                 numActiveOrdinals--;
             }
@@ -621,11 +652,11 @@ public class ProcessorTasklet implements Tasklet {
     }
 
     /**
-     * If there are no inbound ordinals left, we will go to COMPLETE state
-     * otherwise to PROCESS_WATERMARK.
+     * If there are no inbound ordinals left, we will go to COMPLETE state,
+     * otherwise to PROCESS_WATERMARKS.
      */
     private ProcessorState processingState() {
-        return instreamCursor == null ? COMPLETE : PROCESS_WATERMARK;
+        return instreamCursor == null ? COMPLETE : PROCESS_WATERMARKS;
     }
 
     /**
@@ -637,7 +668,7 @@ public class ProcessorTasklet implements Tasklet {
 
     private long lastForwardedWmLatency() {
         long wm = outbox.lastForwardedWm();
-        if (wm == IDLE_MESSAGE.timestamp()) {
+        if (wm == IDLE_MESSAGE_TIME) {
             return Long.MIN_VALUE; // idle
         }
         if (wm == Long.MIN_VALUE) {
@@ -689,8 +720,12 @@ public class ProcessorTasklet implements Tasklet {
             mContext.collect(descriptorWithOrdinal, EMITTED_COUNT, ProbeLevel.INFO, ProbeUnit.COUNT, emittedCounts.get(i));
         }
 
-        mContext.collect(descriptor, TOP_OBSERVED_WM, ProbeLevel.INFO, ProbeUnit.MS, watermarkCoalescer.topObservedWm());
-        mContext.collect(descriptor, COALESCED_WM, ProbeLevel.INFO, ProbeUnit.MS, watermarkCoalescer.coalescedWm());
+        for (Byte key : coalescers.keys()) {
+            MetricDescriptor keyedDesc = descriptor.copy().withDiscriminator("key", Byte.toString(key));
+            mContext.collect(keyedDesc, TOP_OBSERVED_WM, ProbeLevel.INFO, ProbeUnit.MS, coalescers.topObservedWm(key));
+            mContext.collect(keyedDesc, COALESCED_WM, ProbeLevel.INFO, ProbeUnit.MS, coalescers.coalescedWm(key));
+        }
+
         mContext.collect(descriptor, LAST_FORWARDED_WM, ProbeLevel.INFO, ProbeUnit.MS, outbox.lastForwardedWm());
         mContext.collect(descriptor, LAST_FORWARDED_WM_LATENCY, ProbeLevel.INFO, ProbeUnit.MS, lastForwardedWmLatency());
 

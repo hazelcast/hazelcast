@@ -63,7 +63,7 @@
         </maven.javadoc.plugin.excludePackageNames>
         <maven.antrun.plugin.version>3.0.0</maven.antrun.plugin.version>
         <maven.gpg.plugin.version>3.0.1</maven.gpg.plugin.version>
-        <maven.assembly.plugin.version>3.3.0</maven.assembly.plugin.version>
+        <maven.assembly.plugin.version>3.4.2</maven.assembly.plugin.version>
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
         <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
         <maven.shade.plugin.version>3.2.4</maven.shade.plugin.version>
@@ -81,7 +81,7 @@
         <maven.os.plugin.version>1.7.0</maven.os.plugin.version>
         <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
         <maven.resources.plugin.version>3.2.0</maven.resources.plugin.version>
-        <owasp.dependency-check.version>6.5.3</owasp.dependency-check.version>
+        <owasp.dependency-check.version>7.1.1</owasp.dependency-check.version>
         <maven.dependency.plugin.version>3.1.2</maven.dependency.plugin.version>
         <codehause.license.plugin.version>2.0.0</codehause.license.plugin.version>
 
@@ -92,12 +92,13 @@
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.0</avro.version>
-        <aws.sdk.version>1.12.150</aws.sdk.version>
-        <classgraph.version>4.8.139</classgraph.version>
+        <aws.sdk.version>1.12.267</aws.sdk.version>
+        <classgraph.version>4.8.149</classgraph.version>
+        <debezium.version>1.9.3.Final</debezium.version>
         <grpc.version>1.43.0</grpc.version>
         <guava.version>30.1.1-jre</guava.version>
-        <hadoop.version>3.3.1</hadoop.version>
-        <jackson.version>2.12.6</jackson.version>
+        <hadoop.version>3.3.3</hadoop.version>
+        <jackson.version>2.13.3</jackson.version>
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
         <jline.version>3.21.0</jline.version>
         <jms.api.version>2.0.1</jms.api.version>
@@ -107,14 +108,14 @@
         <kafka.version>2.8.1</kafka.version>
         <kotlin.version>1.5.32</kotlin.version>
         <log4j.version>1.2.17.redhat-00008</log4j.version>
-        <log4j2.version>2.17.1</log4j2.version>
-        <mysql.connector.version>8.0.20</mysql.connector.version>
-        <netty.version>4.1.74.Final</netty.version>
+        <log4j2.version>2.18.0</log4j2.version>
+        <mysql.connector.version>8.0.30</mysql.connector.version>
+        <netty.version>4.1.79.Final</netty.version>
         <objenesis.version>3.2</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
-        <parquet.version>1.12.2</parquet.version>
+        <parquet.version>1.12.3</parquet.version>
         <picocli.version>4.4.0</picocli.version>
-        <postgresql.version>42.2.25</postgresql.version>
+        <postgresql.version>42.3.6</postgresql.version>
         <prometheus.version>0.14.0</prometheus.version>
         <protobuf.version>3.19.4</protobuf.version>
         <scala.version>2.13</scala.version>
@@ -128,7 +129,7 @@
         <activemq.version>5.15.11</activemq.version>
         <assertj.version>3.15.0</assertj.version>
         <atomikos.version>3.9.3</atomikos.version>
-        <bytebuddy.version>1.10.21</bytebuddy.version>
+        <bytebuddy.version>1.12.12</bytebuddy.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-io.version>2.11.0</commons-io.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
@@ -141,7 +142,7 @@
         <mockito.version>3.6.0</mockito.version>
         <powermock.version>2.0.9</powermock.version>
         <reflections.version>0.9.10</reflections.version>
-        <testcontainers.version>1.17.1</testcontainers.version>
+        <testcontainers.version>1.17.3</testcontainers.version>
         <archunit.version>0.22.0</archunit.version>
         <errorprone.version>2.11.0</errorprone.version>
         <awaitility.version>4.1.1</awaitility.version>
@@ -269,7 +270,7 @@
                 <version>${maven.checkstyle.plugin.version}</version>
                 <executions>
                     <execution>
-                        <phase>process-sources</phase>
+                        <phase>validate</phase>
                         <goals>
                             <goal>checkstyle</goal>
                         </goals>
@@ -632,6 +633,11 @@
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>${maven.surefire.plugin.version}</version>
+                </plugin>
+                <plugin>
+                    <groupId>org.jacoco</groupId>
+                    <artifactId>jacoco-maven-plugin</artifactId>
+                    <version>${maven.jacoco.plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -1510,7 +1516,7 @@
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-bom</artifactId>
-                <version>9.4.44.v20210927</version>
+                <version>9.4.48.v20220622</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -1549,6 +1555,13 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <dependency>
+                <groupId>com.google.oauth-client</groupId>
+                <artifactId>google-oauth-client-bom</artifactId>
+                <version>1.34.1</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
 
             <dependency>
                 <groupId>org.apache.hadoop</groupId>
@@ -1557,8 +1570,12 @@
                 <exclusions>
                     <!-- The following dependencies are not needed for our use of Hadoop -->
                     <exclusion>
-                        <groupId>log4j</groupId>
-                        <artifactId>log4j</artifactId>
+                        <groupId>ch.qos.reload4j</groupId>
+                        <artifactId>reload4j</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>org.slf4j</groupId>
+                        <artifactId>slf4j-reload4j</artifactId>
                     </exclusion>
                     <exclusion>
                         <groupId>org.eclipse.jetty</groupId>
@@ -1696,11 +1713,6 @@
                 <artifactId>postgresql</artifactId>
                 <version>${postgresql.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.apache.htrace</groupId>
-                <artifactId>htrace-core4</artifactId>
-                <version>4.2.0-incubating.hazelcast-2</version>
-            </dependency>
             <!-- NOTE: httpcore and httpclient versions are not in sync -->
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
@@ -1770,7 +1782,7 @@
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
-                <version>3.21.2</version>
+                <version>3.23.0</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
@@ -1805,7 +1817,7 @@
             <dependency>
               <groupId>org.wildfly.openssl</groupId>
               <artifactId>wildfly-openssl</artifactId>
-              <version>1.0.12.Final</version>
+              <version>1.1.3.Final</version>
             </dependency>
             <dependency>
               <groupId>io.netty</groupId>
@@ -1997,7 +2009,7 @@
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
-            <version>10.0.14</version>
+            <version>10.0.23</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
