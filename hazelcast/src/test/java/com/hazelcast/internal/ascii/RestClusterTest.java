@@ -16,18 +16,6 @@
 
 package com.hazelcast.internal.ascii;
 
-import java.io.IOException;
-import java.net.HttpURLConnection;
-import java.net.SocketException;
-import java.util.concurrent.CountDownLatch;
-
-import org.apache.http.NoHttpResponseException;
-import org.junit.After;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
-
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.RestApiConfig;
@@ -44,6 +32,17 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestAwareInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
+import org.apache.http.NoHttpResponseException;
+import org.junit.After;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
+
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.SocketException;
+import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterStateEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertContains;

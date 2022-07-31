@@ -16,23 +16,13 @@
 
 package com.hazelcast.internal.ascii;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.security.KeyManagementException;
-import java.security.NoSuchAlgorithmException;
-import java.security.SecureRandom;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.logging.Level;
-
-import javax.net.ssl.KeyManager;
-import javax.net.ssl.KeyManagerFactory;
-import javax.net.ssl.SSLContext;
-import javax.net.ssl.TrustManager;
-import javax.net.ssl.TrustManagerFactory;
+import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.config.AdvancedNetworkConfig;
+import com.hazelcast.config.SSLConfig;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
+import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.logging.ILogger;
 import org.apache.http.Consts;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
@@ -53,13 +43,22 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.util.EntityUtils;
 
-import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.config.AdvancedNetworkConfig;
-import com.hazelcast.config.SSLConfig;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.ascii.rest.HttpCommandProcessor;
-import com.hazelcast.internal.nio.IOUtil;
-import com.hazelcast.logging.ILogger;
+import javax.net.ssl.KeyManager;
+import javax.net.ssl.KeyManagerFactory;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
+import javax.net.ssl.TrustManagerFactory;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import java.util.logging.Level;
 
 import static com.hazelcast.instance.EndpointQualifier.REST;
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_PLAIN_TEXT;
