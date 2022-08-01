@@ -214,16 +214,14 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         }
 
         assert wmState.containsKey(watermark.key()) : "unexpected watermark key: " + watermark.key();
-        assert wmState.get(watermark.key()) < watermark.timestamp() : "non-monotonic watermark : " + watermark;
+        assert wmState.get(watermark.key()) < watermark.timestamp() : "non-monotonic watermark: " + watermark;
 
         lastReceivedWm.put((Byte) watermark.key(), watermark.timestamp());
 
-        if (!postponeTimeMap.get(watermark.key()).isEmpty()) {
-            // 5.1 : update wm state
-            applyToWmState(watermark);
-
-            // TODO optimization: don't need to clean up if nothing was changed in wmState in the previous call
-            //   Or better: don't need to clean up particular edge, if nothing was changed for that edge.
+        // 5.1 : update wm state
+        boolean modified = applyToWmState(watermark);
+        if (modified) {
+            // TODO don't need to clean up particular edge, if nothing was changed for that edge
             clearExpiredItemsInBuffer(0);
             clearExpiredItemsInBuffer(1);
         }
@@ -255,13 +253,22 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         return true;
     }
 
-    private void applyToWmState(Watermark watermark) {
+    /**
+     * @return Returns true, if the state was modified
+     */
+    private boolean applyToWmState(Watermark watermark) {
+        boolean modified = false;
         Byte inputWmKey = watermark.key();
         Map<Byte, Long> wmKeyMapping = postponeTimeMap.get(inputWmKey);
         for (Map.Entry<Byte, Long> entry : wmKeyMapping.entrySet()) {
             Long newLimit = watermark.timestamp() - entry.getValue();
-            wmState.merge(entry.getKey(), newLimit, Long::max);
+            Long oldLimit = wmState.get(entry.getKey());
+            if (newLimit > oldLimit) {
+                wmState.put(entry.getKey(), newLimit);
+                modified = true;
+            }
         }
+        return modified;
     }
 
     private long findMinimumBufferTime(byte key) {
