@@ -1212,16 +1212,13 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             }
 
             for (Member member : client.getClientClusterService().getMemberList()) {
-                if (clientState == ClientState.SWITCHING_CLUSTER) {
-                    // when switching cluster we only want to open a new
-                    // connection via `doConnectToCandidateCluster`
-                    return;
-                }
-
-                if (clientState == ClientState.DISCONNECTED_FROM_CLUSTER) {
-                    // best-effort check to prevent this task from trying to
-                    // connect to all cluster members when the client is not
-                    // connected to any.
+                if (clientState == ClientState.SWITCHING_CLUSTER
+                        || clientState == ClientState.DISCONNECTED_FROM_CLUSTER) {
+                    // Best effort check to prevent this task from attempting to
+                    // open a new connection when the client is either switching
+                    // clusters or is not connected to any of the cluster members.
+                    // In such occasions, only `doConnectToCandidateCluster`
+                    // method should open new connections.
                     return;
                 }
 
