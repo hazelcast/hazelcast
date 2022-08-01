@@ -37,6 +37,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Objects;
 
+import static java.lang.String.format;
 import static java.time.Instant.ofEpochMilli;
 import static java.time.ZoneId.systemDefault;
 import static java.time.ZoneOffset.UTC;
@@ -103,6 +104,11 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
     @Test
     public void test_fullInsert() {
         initDefault();
+        execute("CREATE OR REPLACE MAPPING test (__key BIGINT, this UserType) TYPE IMap OPTIONS ("
+                + "'keyFormat'='bigint',"
+                + "'valueFormat'='java',"
+                + format("'valueJavaClass'='%s'", User.class.getName())
+                + ")");
 
         final Office office = new Office(5L, "office2");
         final Organization organization = new Organization(4L, "organization2", office);
@@ -128,7 +134,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
 
     @Test
     public void test_selfRefType() {
-        createType("SelfRefType", SelfRef.class);
+        createJavaType("SelfRefType", SelfRef.class, "id BIGINT", "other SelfRefType");
 
         final SelfRef first = new SelfRef(1L, "first");
         final SelfRef second = new SelfRef(2L, "second");
@@ -140,8 +146,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         third.other = fourth;
         fourth.other = first;
 
-        createMapping("test", Long.class, Long.class);
-        createMapping("test", Long.class, SelfRef.class);
+        createJavaMapping("test", SelfRef.class,  "this SelfRefType");
         client().getMap("test").put(1L, first);
 
         assertRowsAnyOrder(client(), "SELECT "
@@ -162,9 +167,9 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
 
     @Test
     public void test_circularlyRecurrentTypes() {
-        createType("AType", A.class);
-        createType("BType", B.class);
-        createType("CType", C.class);
+        createJavaType("AType", A.class, "name VARCHAR", "b BType");
+        createJavaType("BType", B.class, "name VARCHAR", "c CType");
+        createJavaType("CType", C.class, "name VARCHAR", "a AType");
 
         final A a = new A("a");
         final B b = new B("b");
@@ -174,11 +179,11 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         b.c = c;
         c.a = a;
 
-        createMapping("test", Long.class, A.class);
+        createJavaMapping("test", A.class, "this AType");
         IMap<Long, A> map = client().getMap("test");
         map.put(1L, a);
 
-        assertRowsAnyOrder(client(), "SELECT test.this.b.c.a.name FROM test", rows(1, "a"));
+        assertRowsAnyOrder(client(), "SELECT (this).b.c.a.name FROM test", rows(1, "a"));
     }
 
     @Test
@@ -196,9 +201,9 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
 
     @Test
     public void test_deepUpdate() {
-        createType("AType", A.class);
-        createType("BType", B.class);
-        createType("CType", C.class);
+        createJavaType("AType", A.class, "name VARCHAR", "b BType");
+        createJavaType("BType", B.class, "name VARCHAR", "c CType");
+        createJavaType("CType", C.class, "name VARCHAR", "a AType");
 
         final A a = new A("a");
         final B b = new B("b");
@@ -208,24 +213,28 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         b.c = c;
         c.a = a;
 
-        createMapping("public", Long.class, A.class);
+        createJavaMapping("public", A.class, "this AType");
 
         IMap<Long, A> map = client().getMap("public");
         map.put(1L, a);
 
         execute("UPDATE public SET this = (((public.this, 'c_2'), 'b_2'), 'a_2')");
-        assertRowsAnyOrder(client(), "SELECT public.public.this.name, public.public.this.b.name, public.public.this.b.c.name FROM public", rows(3, "a_2", "b_2", "c_2"));
+        assertRowsAnyOrder(client(), "SELECT "
+                + "public.public.this.name, "
+                + "public.public.this.b.name, "
+                + "public.public.this.b.c.name "
+                + "FROM public", rows(3, "a_2", "b_2", "c_2"));
     }
 
     @Test
     public void test_mixedModeQuerying() {
         createType("NestedType", NestedPOJO.class);
-        createMapping("test", Long.class, RegularPOJO.class);
+        createJavaMapping("test", RegularPOJO.class, "name VARCHAR", "child NestedType");
 
         client().getMap("test")
                 .put(1L, new RegularPOJO("parentPojo", new NestedPOJO(1L, "childPojo")));
 
-        assertRowsAnyOrder(client(), "SELECT name, test.child.name FROM test", rows(2,
+        assertRowsAnyOrder(client(), "SELECT name, (child).name FROM test", rows(2,
                 "parentPojo",
                 "childPojo"
         ));
@@ -236,7 +245,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
     @Test
     public void test_mixedModeAliasQuerying() {
         createType("NestedType", NestedPOJO.class);
-        execute(String.format("CREATE MAPPING test ("
+        execute(format("CREATE MAPPING test ("
                 + "__key BIGINT,"
                 + "parentName VARCHAR EXTERNAL NAME \"name\","
                 + "childObj NestedType EXTERNAL NAME \"child\""
@@ -256,7 +265,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
     @Test
     public void test_mixedModeUpsert() {
         createType("NestedType", NestedPOJO.class);
-        createMapping("test", Long.class, RegularPOJO.class);
+        createJavaMapping("test", RegularPOJO.class, "name VARCHAR", "child NestedType");
 
         execute("INSERT INTO test (__key, name, child) "
                 + "VALUES (1, 'parent', (1, 'child'))");
@@ -271,7 +280,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
     @Test
     public void test_typeCoercionUpserts() {
         createType("AllTypesValue", AllTypesValue.class);
-        createMapping("test", Long.class, AllTypesParent.class);
+        createJavaMapping("test", AllTypesParent.class, "name VARCHAR", "child AllTypesValue");
 
         final String allTypesValueRowLiteral = "("
                 + "1,"
@@ -370,7 +379,12 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
     @Test
     public void test_joins() {
         initDefault();
-        createMapping("test2", Long.class, User.class);
+        execute("CREATE MAPPING test2 (__key BIGINT, this UserType) "
+                + "TYPE IMap OPTIONS ("
+                + "'keyFormat'='bigint', "
+                + "'valueFormat'='java', "
+                + "'valueJavaClass'='" + User.class.getName() + "')");
+
         execute("INSERT INTO test2 VALUES (1, (1, 'user2', (1, 'organization2', (1, 'office2'))))");
 
         assertRowsAnyOrder(client(), "SELECT (((t1.this).organization).office).name, (((t2.this).organization).office).name "
@@ -393,11 +407,12 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
     @Test
     public void test_joinsOnNestedFields() {
         initDefault();
-        createMapping("test2", Long.class, User.class);
+        createJavaMapping("test2", User.class, "this UserType");
         execute("INSERT INTO test2 VALUES (1, (1, 'user2', (1, 'organization2', (1, 'office2'))))");
 
-        assertRowsAnyOrder(client(), "SELECT (((t1.this).organization).office).name, (((t2.this).organization).office).name "
-                        + "FROM test AS t1 JOIN test2 AS t2 ON (ABS((t1.this).id) = (t2.this).id AND (t1.this).id = (t2.this).id)",
+        assertRowsAnyOrder(client(), "SELECT t1.this.organization.office.name, t2.this.organization.office.name "
+                        + "FROM test AS t1 JOIN test2 AS t2 "
+                        + "ON ABS(t1.this.id) = t2.this.id AND t1.this.id = t2.this.id",
                 rows(2, "office1", "office2"));
     }
 
@@ -410,12 +425,14 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
     }
 
     private User initDefault() {
-        createType(client(), "UserType", User.class);
-        createType(client(), "OfficeType", Office.class);
-        createType(client(), "OrganizationType", Organization.class);
-
+        client().getSql().execute(format("CREATE TYPE UserType (id BIGINT, name VARCHAR, organization OrganizationType) "
+                + "OPTIONS ('format'='java', 'javaClass'='%s')", User.class.getName()));
+        client().getSql().execute(format("CREATE TYPE OrganizationType (id BIGINT, name VARCHAR, office OfficeType) "
+                + "OPTIONS ('format'='java', 'javaClass'='%s')", Organization.class.getName()));
+        client().getSql().execute(format("CREATE TYPE OfficeType (id BIGINT, name VARCHAR) "
+                + "OPTIONS ('format'='java', 'javaClass'='%s')", Office.class.getName()));
         final IMap<Long, User> testMap = client().getMap("test");
-        execute("CREATE MAPPING test "
+        execute("CREATE MAPPING test (__key BIGINT, this UserType) "
                 + "TYPE IMap OPTIONS ("
                 + "'keyFormat'='bigint', "
                 + "'valueFormat'='java', "
@@ -429,7 +446,34 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         return user;
     }
 
-    private void execute(String sql, Object... args) {
+    static void createJavaType(String name, Class<?> typeClass, String ...columns) {
+        final String sql = "CREATE TYPE " + name
+                + "(" + String.join(",", columns) + ")"
+                + "OPTIONS ("
+                + "'format'='java',"
+                + format("'javaClass'='%s'", typeClass.getName())
+                + ")";
+
+        execute(sql);
+    }
+
+    static void createJavaMapping(String name, Class<?> javaClass, String ...columns) {
+        final String sql = "CREATE MAPPING " + name
+                + "("
+                + "__key BIGINT,"
+                + String.join(",", columns) +
+                ")"
+                + " TYPE IMap "
+                + "OPTIONS ("
+                + "'keyFormat'='bigint',"
+                + "'valueFormat'='java',"
+                + format("'valueJavaClass'='%s'", javaClass.getName())
+                + ")";
+
+        execute(sql);
+    }
+
+    static void execute(String sql, Object... args) {
         client().getSql().execute(sql, args);
     }
 

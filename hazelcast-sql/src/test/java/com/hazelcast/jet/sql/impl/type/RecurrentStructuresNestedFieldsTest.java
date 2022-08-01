@@ -16,15 +16,16 @@
 
 package com.hazelcast.jet.sql.impl.type;
 
-import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.Serializable;
+
+import static com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.createJavaMapping;
+import static com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.createJavaType;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
@@ -36,9 +37,9 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
 
     @Test
     public void test_fullyConnectedGraph() {
-        createType(FullyConnectedA.class.getSimpleName(), FullyConnectedA.class);
-        createType(FullyConnectedB.class.getSimpleName(), FullyConnectedB.class);
-        createType(FullyConnectedC.class.getSimpleName(), FullyConnectedC.class);
+        createJavaType("FCA", FullyConnectedA.class, "name VARCHAR", "b FCB", "c FCC");
+        createJavaType("FCB", FullyConnectedB.class, "name VARCHAR", "a FCA", "c FCC");
+        createJavaType("FCC", FullyConnectedC.class, "name VARCHAR", "a FCA", "b FCB");
 
         final FullyConnectedA a = new FullyConnectedA("A1");
         final FullyConnectedB b = new FullyConnectedB("B1");
@@ -52,27 +53,27 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
         c.setA(a);
         c.setB(b);
 
-        createMapping("tableA", Long.class, FullyConnectedA.class);
-        createMapping("tableB", Long.class, FullyConnectedB.class);
-        createMapping("tableC", Long.class, FullyConnectedC.class);
+        createJavaMapping("tableA", FullyConnectedA.class, "this FCA");
+        createJavaMapping("tableB", FullyConnectedB.class, "this FCB");
+        createJavaMapping("tableC", FullyConnectedC.class, "this FCC");
 
         client().getSql().execute("INSERT INTO tableA VALUES (1, ?)", a);
         client().getSql().execute("INSERT INTO tableB VALUES (1, ?)", b);
         client().getSql().execute("INSERT INTO tableC VALUES (1, ?)", c);
 
-        assertRowsAnyOrder(client(), "SELECT tableA.this.b.c.a.name, tableA.this.c.a.name FROM tableA",
+        assertRowsAnyOrder(client(), "SELECT (this).b.c.a.name, tableA.this.c.a.name FROM tableA",
                 rows(2, "A1", "A1"));
-        assertRowsAnyOrder(client(), "SELECT tableB.this.a.c.b.name, tableB.this.a.b.name FROM tableB",
+        assertRowsAnyOrder(client(), "SELECT (this).a.c.b.name, tableB.this.a.b.name FROM tableB",
                 rows(2, "B1", "B1"));
-        assertRowsAnyOrder(client(), "SELECT tableC.this.a.b.c.name, tableC.this.b.c.name FROM tableC",
+        assertRowsAnyOrder(client(), "SELECT (this).a.b.c.name, tableC.this.b.c.name FROM tableC",
                 rows(2, "C1", "C1"));
     }
 
     @Test
     public void test_sameTypesDifferentInstances() {
-        createType(FullyConnectedA.class.getSimpleName(), FullyConnectedA.class);
-        createType(FullyConnectedB.class.getSimpleName(), FullyConnectedB.class);
-        createType(FullyConnectedC.class.getSimpleName(), FullyConnectedC.class);
+        createJavaType("FCA", FullyConnectedA.class, "name VARCHAR", "b FCB", "c FCC");
+        createJavaType("FCB", FullyConnectedB.class, "name VARCHAR", "a FCA", "c FCC");
+        createJavaType("FCC", FullyConnectedC.class, "name VARCHAR", "a FCA", "b FCB");
 
         // A1 -> B1 -> C1 -> A2 -> B2 -> C2 -> <A1>
         final FullyConnectedA a1 = new FullyConnectedA("A1");
@@ -90,19 +91,18 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
         b2.setC(c2);
         c2.setA(a1);
 
-        createMapping("test", Long.class, FullyConnectedA.class);
+        createJavaMapping("test", FullyConnectedA.class, "this FCA");
         client().getSql().execute("INSERT INTO test VALUES (1, ?)", a1);
 
-        // TODO: client
         assertRowsAnyOrder(client(),
                 "SELECT "
-                + "test.this.name, "
-                + "test.this.b.name, "
-                + "test.this.b.c.name, "
-                + "test.this.b.c.a.name, "
-                + "test.this.b.c.a.b.name, "
-                + "test.this.b.c.a.b.c.name, "
-                + "test.this.b.c.a.b.c.a.name "
+                + "(this).name, "
+                + "(this).b.name, "
+                + "(this).b.c.name, "
+                + "(this).b.c.a.name, "
+                + "(this).b.c.a.b.name, "
+                + "(this).b.c.a.b.c.name, "
+                + "(this).b.c.a.b.c.a.name "
                 + "FROM test", rows(7,
                 "A1", "B1", "C1", "A2", "B2", "C2", "A1"));
     }
@@ -118,7 +118,8 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
                 |   \     \
                [A1][A4]   [A3]
          */
-        createType(DualPathGraph.class.getSimpleName(), DualPathGraph.class);
+        createJavaType("DualGraph", DualPathGraph.class,
+                "name VARCHAR", "\"left\" DualGraph", "\"right\" DualGraph");
         DualPathGraph a1 = new DualPathGraph("A1");
         DualPathGraph a2 = new DualPathGraph("A2");
         DualPathGraph a3 = new DualPathGraph("A3");
@@ -135,25 +136,21 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
 
         a5.setRight(a3);
 
-        createMapping("test", Long.class, DualPathGraph.class);
+        createJavaMapping("test", DualPathGraph.class, "this DualGraph");
         client().getSql().execute("INSERT INTO test VALUES (1, ?)", a1);
 
         assertRowsAnyOrder(client(), "SELECT "
-                        + "test.this.name, "
-                        + "test.this.\"left\".name, "
-                        + "test.this.\"right\".name, "
-                        + "test.this.\"left\".\"left\".name, "
-                        + "test.this.\"left\".\"right\".name, "
-                        + "test.this.\"left\".\"left\".\"left\".name, "
-                        + "test.this.\"left\".\"left\".\"right\".name, "
-                        + "test.this.\"left\".\"left\".\"left\".\"right\".name "
+                        + "(this).name, "
+                        + "(this).\"left\".name, "
+                        + "(this).\"right\".name, "
+                        + "(this).\"left\".\"left\".name, "
+                        + "(this).\"left\".\"right\".name, "
+                        + "(this).\"left\".\"left\".\"left\".name, "
+                        + "(this).\"left\".\"left\".\"right\".name, "
+                        + "(this).\"left\".\"left\".\"left\".\"right\".name "
                         + " FROM test",
                 rows(8, "A1", "A2", "A3", "A4", "A5", "A1", "A4", "A3"));
 
-    }
-
-    private TypesStorage typesStorage() {
-        return new TypesStorage(((HazelcastInstanceProxy) instance()).getOriginal().node.nodeEngine);
     }
 
     public static class FullyConnectedA implements Serializable {

@@ -21,8 +21,6 @@ import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
-import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
@@ -82,7 +80,6 @@ import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlNode;
@@ -93,7 +90,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Optional;
-import java.util.TreeMap;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
@@ -531,16 +527,7 @@ public class PlanExecutor {
                 throw QueryException.error("Compact Type Name must not be empty for Compact-based Types.");
             }
             type.setCompactTypeName(compactTypeName);
-
-            final TreeMap<String, FieldDescriptor> schemaFieldDescriptors = new TreeMap<>();
-            for (final Type.TypeField field : typeFields) {
-                schemaFieldDescriptors.put(field.getName(), new FieldDescriptor(
-                        field.getName(),
-                        QueryDataTypeUtils.resolveCompactType(field.getQueryDataType())
-                ));
-            }
-            final Schema schema = new Schema(type.getName(), schemaFieldDescriptors);
-            type.setCompactFingerprint(schema.getSchemaId());
+            // TODO: maybe preemptively distribute schema here through MemberSchemaService.put?
         } else if (SqlConnector.JAVA_FORMAT.equals(format)) {
             final Class<?> typeClass;
             try {
@@ -550,7 +537,7 @@ public class PlanExecutor {
                         + plan.options().get(SqlConnector.OPTION_TYPE_JAVA_CLASS) + "'", e);
             }
 
-            type = TypesUtils.convertJavaClassToType(plan.name(), typeClass, typesStorage);
+            type = TypesUtils.convertJavaClassToType(plan.name(), plan.columns(), typeClass);
         } else {
             throw QueryException.error("Unsupported type format: " + format);
         }

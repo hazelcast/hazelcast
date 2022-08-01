@@ -36,7 +36,6 @@ public class Type implements IdentifiedDataSerializable, Serializable {
     private TypeKind kind = TypeKind.JAVA;
     private String javaClassName;
     private String compactTypeName;
-    private Long compactFingerprint;
     private Integer portableFactoryId;
     private Integer portableClassId;
     private Integer portableVersion;
@@ -121,14 +120,6 @@ public class Type implements IdentifiedDataSerializable, Serializable {
         this.compactTypeName = compactTypeName;
     }
 
-    public Long getCompactFingerprint() {
-        return compactFingerprint;
-    }
-
-    public void setCompactFingerprint(final Long compactFingerprint) {
-        this.compactFingerprint = compactFingerprint;
-    }
-
     @Override
     public void writeData(final ObjectDataOutput out) throws IOException {
         out.writeString(name);
@@ -144,7 +135,6 @@ public class Type implements IdentifiedDataSerializable, Serializable {
                 break;
             case COMPACT:
                 out.writeString(compactTypeName);
-                out.writeLong(compactFingerprint);
                 break;
             default:
                 throw new UnsupportedOperationException("Unsupported Type Kind: " + kind);
@@ -171,7 +161,6 @@ public class Type implements IdentifiedDataSerializable, Serializable {
                 break;
             case COMPACT:
                 this.compactTypeName = in.readString();
-                this.compactFingerprint = in.readLong();
                 break;
             default:
                 throw new UnsupportedOperationException("Unsupported Type Kind: " + kind);
@@ -197,20 +186,12 @@ public class Type implements IdentifiedDataSerializable, Serializable {
     public static class TypeField implements IdentifiedDataSerializable, Serializable {
         private String name;
         private QueryDataType queryDataType;
-        // Java-type specific class name, used for the 2-phase initialization algorithm
-        // (part of class-level-cycles support)
-        private String queryDataTypeMetadata = "";
 
         public TypeField() { }
 
         public TypeField(final String name, final QueryDataType queryDataType) {
             this.name = name;
             this.queryDataType = queryDataType;
-        }
-
-        public TypeField(final String name, final String queryDataTypeMetadata) {
-            this.name = name;
-            this.queryDataTypeMetadata = queryDataTypeMetadata;
         }
 
         public String getName() {
@@ -229,20 +210,11 @@ public class Type implements IdentifiedDataSerializable, Serializable {
             this.queryDataType = queryDataType;
         }
 
-        public String getQueryDataTypeMetadata() {
-            return queryDataTypeMetadata;
-        }
-
-        public void setQueryDataTypeMetadata(final String queryDataTypeMetadata) {
-            this.queryDataTypeMetadata = queryDataTypeMetadata;
-        }
-
         @Override
         public void writeData(final ObjectDataOutput out) throws IOException {
             out.writeString(name);
             out.writeInt(queryDataType == null ? -1 : queryDataType.getConverter().getId());
             out.writeString(queryDataType == null ? "" : queryDataType.getObjectTypeName());
-            out.writeString(queryDataTypeMetadata);
         }
 
         @Override
@@ -250,21 +222,11 @@ public class Type implements IdentifiedDataSerializable, Serializable {
             this.name = in.readString();
             final int converterId = in.readInt();
             final String typeName = in.readString();
-            this.queryDataTypeMetadata = in.readString();
-
-            // Type doesn't have a QueryDataType yet because its a class.
-            // TODO: maybe empty HZ_OBJECT?
-            if (converterId == -1) {
-                return;
-            }
-
             final Converter converter = Converters.getConverter(converterId);
-            // TODO: simplify, generify
-            // Used for partially initialized Java types
+
             this.queryDataType = converter.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)
-                    && ((typeName != null && !typeName.isEmpty()) || queryDataTypeMetadata != null
-                    && !queryDataTypeMetadata.isEmpty())
-                    ? new QueryDataType(typeName, this.queryDataTypeMetadata)
+                    && ((typeName != null && !typeName.isEmpty()))
+                    ? new QueryDataType(typeName)
                     : QueryDataTypeUtils.resolveTypeForClass(converter.getValueClass());
         }
 

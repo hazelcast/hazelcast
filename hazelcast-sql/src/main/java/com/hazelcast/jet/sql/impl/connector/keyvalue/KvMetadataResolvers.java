@@ -19,9 +19,12 @@ package com.hazelcast.jet.sql.impl.connector.keyvalue;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.TypesStorage;
+import com.hazelcast.jet.sql.impl.schema.TypesUtils;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.type.Type;
+import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -116,6 +119,23 @@ public class KvMetadataResolvers {
 
         Map<String, MappingField> fields = concat(keyFields, valueFields)
                 .collect(LinkedHashMap::new, (map, field) -> map.putIfAbsent(field.name(), field), Map::putAll);
+
+        // TODO: remove or move to base interface's extractFields
+        for (final String fieldName : fields.keySet()) {
+            final MappingField field = fields.get(fieldName);
+            if (!field.type().isCustomType()) {
+                continue;
+            }
+            final Type type = typesStorage.getType(field.type().getObjectTypeName());
+            if (type == null) {
+                throw QueryException.error("Non existing type found in the mapping: "
+                        + field.type().getObjectTypeName());
+            }
+
+            // TODO: validate mapping.format == type.format
+            final QueryDataType resolved = TypesUtils.convertTypeToQueryDataType(type, typesStorage);
+            field.setType(resolved);
+        }
 
         if (fields.isEmpty()) {
             throw QueryException.error("The resolved field list is empty");

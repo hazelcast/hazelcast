@@ -157,43 +157,6 @@ final class MetadataPortableResolver implements KvMetadataResolver {
         return userFieldsByPath.values().stream();
     }
 
-    @SuppressWarnings("checkstyle:ReturnCount")
-    private static QueryDataType resolvePortableType(FieldType type) {
-        switch (type) {
-            case BOOLEAN:
-                return QueryDataType.BOOLEAN;
-            case BYTE:
-                return QueryDataType.TINYINT;
-            case SHORT:
-                return QueryDataType.SMALLINT;
-            case INT:
-                return QueryDataType.INT;
-            case LONG:
-                return QueryDataType.BIGINT;
-            case FLOAT:
-                return QueryDataType.REAL;
-            case DOUBLE:
-                return QueryDataType.DOUBLE;
-            case DECIMAL:
-                return QueryDataType.DECIMAL;
-            case CHAR:
-                return QueryDataType.VARCHAR_CHARACTER;
-            case UTF:
-                return QueryDataType.VARCHAR;
-            case TIME:
-                return QueryDataType.TIME;
-            case DATE:
-                return QueryDataType.DATE;
-            case TIMESTAMP:
-                return QueryDataType.TIMESTAMP;
-            case TIMESTAMP_WITH_TIMEZONE:
-                return QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
-            case PORTABLE:
-            default:
-                return QueryDataType.OBJECT;
-        }
-    }
-
     @Override
     public KvMetadata resolveMetadata(
             boolean isKey,

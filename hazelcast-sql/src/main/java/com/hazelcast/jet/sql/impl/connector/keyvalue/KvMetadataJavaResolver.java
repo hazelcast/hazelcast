@@ -29,7 +29,6 @@ import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
-import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
@@ -49,7 +48,6 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLA
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.extractFields;
 import static com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver.maybeAddDefaultField;
-import static com.hazelcast.jet.sql.impl.schema.TypesUtils.convertTypeToQueryDataType;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 
@@ -88,28 +86,11 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             TypesStorage typesStorage
     ) {
         QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(clazz);
-        if (type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
-            type = resolveDataType(clazz, typesStorage);
-        }
-
         if (!type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT) || type.isCustomType()) {
             return resolvePrimitiveSchema(isKey, userFields, type);
         } else {
             return resolveObjectSchema(isKey, userFields, clazz, typesStorage);
         }
-    }
-
-    private QueryDataType resolveDataType(final Class<?> clazz, final TypesStorage typesStorage) {
-        if (typesStorage == null) {
-            // TODO: wiring in tests?
-            return QueryDataType.OBJECT;
-        }
-        final Type rootType = typesStorage.getTypeByClass(clazz);
-        if (rootType == null) {
-            return QueryDataType.OBJECT;
-        }
-
-        return convertTypeToQueryDataType(rootType, typesStorage);
     }
 
     private Stream<MappingField> resolvePrimitiveSchema(
@@ -181,9 +162,6 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
                 .map(classField -> {
                     QueryPath path = new QueryPath(classField.getKey(), isKey);
                     QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(classField.getValue());
-                    if (type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
-                        type = resolveDataType(classField.getValue(), typesStorage);
-                    }
                     String name = classField.getKey();
 
                     return new MappingField(name, type, path.toString());
@@ -204,19 +182,11 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             QueryPath path = new QueryPath(classField.getKey(), isKey);
             QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(classField.getValue());
 
-            if (type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
-                type = resolveDataType(classField.getValue(), typesStorage);
-            }
-
             MappingField userField = userFieldsByPath.get(path);
             if (userField != null && !type.getTypeFamily().equals(userField.type().getTypeFamily())) {
                 throw QueryException.error("Mismatch between declared and resolved type for field '"
                         + userField.name() + "'. Declared: " + userField.type().getTypeFamily()
                         + ", resolved: " + type.getTypeFamily());
-            }
-
-            if (userField != null && userField.type().isCustomType()) {
-                userField.setType(resolveDataType(classField.getValue(), typesStorage));
             }
         }
 
@@ -244,8 +214,16 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
         QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(clazz);
         Map<QueryPath, MappingField> fields = extractFields(resolvedFields, isKey);
 
-        if (type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
-            type = resolveDataType(clazz, typesStorage);
+        // TODO: something more generic?
+        if (type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT) && !resolvedFields.isEmpty()) {
+            final String topLevelFieldName = isKey ? KEY : VALUE;
+            final MappingField topLevelField = resolvedFields.stream()
+                    .filter(field -> field.name().equals(topLevelFieldName))
+                    .findFirst()
+                    .orElse(null);
+            if (topLevelField != null) {
+                type = topLevelField.type();
+            }
         }
 
         if (type != QueryDataType.OBJECT || type.isCustomType()) {

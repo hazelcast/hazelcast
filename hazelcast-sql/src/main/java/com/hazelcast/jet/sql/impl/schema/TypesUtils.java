@@ -116,38 +116,34 @@ public final class TypesUtils {
 
     public static Type convertJavaClassToType(
             final String name,
-            final Class<?> typeClass,
-            final TypesStorage typesStorage
+            final List<TypeDefinitionColumn> columns,
+            final Class<?> typeClass
     ) {
+        final Map<String, QueryDataType> userColumnsMap = columns.stream()
+                .collect(Collectors.toMap(TypeDefinitionColumn::name, TypeDefinitionColumn::dataType));
+
         final Type type = new Type();
         type.setName(name);
         type.setKind(TypeKind.JAVA);
         type.setJavaClassName(typeClass.getName());
-        final List<Type.TypeField> fields = FieldsUtil.resolveClass(typeClass).entrySet().stream()
-                .map(entry -> {
-                    final QueryDataType queryDataType;
-                    if (isUserClass(entry.getValue())) {
-                        if (entry.getValue().getName().equals(type.getJavaClassName())) {
-                            queryDataType = type.toQueryDataTypeRef();
-                        } else {
-                            final Type existingType = typesStorage.getTypeByClass(entry.getValue());
-                            if (existingType != null) {
-                                queryDataType = existingType.toQueryDataTypeRef();
-                            } else {
-                                queryDataType = null;
-                            }
-                        }
 
-                        if (queryDataType == null) {
-                            return new Type.TypeField(entry.getKey(), entry.getValue().getName());
-                        }
-                    } else {
-                        queryDataType = QueryDataTypeUtils.resolveTypeForClass(entry.getValue());
-                    }
+        final List<Type.TypeField> fields = new ArrayList<>();
+        for (final Map.Entry<String, Class<?>> entry : FieldsUtil.resolveClass(typeClass).entrySet()) {
+            final QueryDataType queryDataType;
+            if (isUserClass(entry.getValue())) {
+                if (entry.getValue().getName().equals(type.getJavaClassName())) {
+                    queryDataType = type.toQueryDataTypeRef();
+                } else {
+                    queryDataType = userColumnsMap.get(entry.getKey()) != null
+                            ? userColumnsMap.get(entry.getKey())
+                            : QueryDataType.OBJECT;
+                }
+            } else {
+                queryDataType = QueryDataTypeUtils.resolveTypeForClass(entry.getValue());
+            }
 
-                    return new Type.TypeField(entry.getKey(), queryDataType);
-                })
-                .collect(Collectors.toList());
+            fields.add(new Type.TypeField(entry.getKey(), queryDataType));
+        }
         type.setFields(fields);
 
         return type;

@@ -107,6 +107,7 @@ public class PortableNestedFieldsTest extends SqlTestSupport {
         instance().getSql().execute("CREATE TYPE \"User\" (id BIGINT, name VARCHAR, organization Organization) OPTIONS "
                 + "('format'='portable', 'portableFactoryId'='2', 'portableClassId'='1', 'portableClassVersion'='0')");
 
+        // TODO: maybe specifying top level fields as custom type shouldn't be supported?
         instance().getSql().execute("CREATE MAPPING test (__key BIGINT, this \"User\") TYPE IMap "
                 + "OPTIONS ("
                 + "'keyFormat'='bigint', "
