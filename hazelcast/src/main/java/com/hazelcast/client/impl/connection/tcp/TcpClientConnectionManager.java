@@ -191,10 +191,21 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         INITIALIZED_ON_CLUSTER,
 
         /**
-         * We get into this state before we try to connect to next cluster. As soon as the state is `SWITCHING_CLUSTER`
-         * any connection happened without cluster switch intent are no longer allowed and will be closed.
-         * Also we will not allow ConnectToAllClusterMembersTask to make any further connection attempts as long as
-         * the state is `SWITCHING_CLUSTER`
+         * When the client closes the last connection to the cluster it
+         * currently connected to, it switches to this state.
+         * <p>
+         * In this state, ConnectToAllClusterMembersTask is not allowed to
+         * attempt connecting to last known member list.
+         */
+        DISCONNECTED_FROM_CLUSTER,
+
+        /**
+         * We get into this state before we try to connect to next cluster. As
+         * soon as the state is `SWITCHING_CLUSTER` any connection happened
+         * without cluster switch intent are no longer allowed and will be
+         * closed. Also, we will not allow ConnectToAllClusterMembersTask to
+         * make any further connection attempts as long as the state is
+         * `SWITCHING_CLUSTER`
          */
         SWITCHING_CLUSTER
     }
@@ -806,6 +817,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                         fireLifecycleEvent(LifecycleState.CLIENT_DISCONNECTED);
                     }
 
+                    clientState = ClientState.DISCONNECTED_FROM_CLUSTER;
                     triggerClusterReconnection();
                 }
 
@@ -1206,7 +1218,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                     return;
                 }
 
-                if (activeConnections.isEmpty()) {
+                if (clientState == ClientState.DISCONNECTED_FROM_CLUSTER) {
                     // best-effort check to prevent this task from trying to
                     // connect to all cluster members when the client is not
                     // connected to any.
