@@ -272,7 +272,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     }
 
     private long findMinimumBufferTime(byte key) {
-        // TODO optimization: use PriorityQueues. Or at least one PriorityQueue in case of single WM key.
+        // TODO optimization: use PriorityQueues. At least in case of a single WM key.
         ToLongFunctionEx<JetSqlRow> extractor = leftTimeExtractors.get(key);
         int ordinal = 0;
         if (extractor == null) {
@@ -312,7 +312,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         buffer[ordinal].removeIf(row -> {
             for (int idx = 0; idx < extractors.length; idx++) {
                 if (extractors[idx].applyAsLong(row) < limits[idx]) {
-                    if (!joinInfo.isInner() && unusedEventsTracker.remove(row)) {
+                    if (outerJoinSide == ordinal && unusedEventsTracker.remove(row)) {
                         // 5.4 : If doing an outer join, emit events removed from the buffer,
                         // with `null`s for the other side, if the event was never joined.
                         JetSqlRow joinedRow = composeRowWithNulls(row, ordinal);
