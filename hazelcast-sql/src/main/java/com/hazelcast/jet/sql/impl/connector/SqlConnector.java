@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector;
 
-import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.EventTimePolicy;
@@ -241,7 +241,6 @@ public interface SqlConnector {
      * @param predicate               SQL expression to filter the rows
      * @param projection              the list of field names to return
      * @param eventTimePolicyProvider {@link EventTimePolicy}
-     * @param watermarkKey            watermark key for full scan processor
      * @return The DAG Vertex handling the reading
      */
     @Nonnull
@@ -250,8 +249,7 @@ public interface SqlConnector {
             @Nonnull Table table,
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection,
-            @Nullable BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
-            byte watermarkKey
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         throw new UnsupportedOperationException("Full scan not supported for " + typeName());
     }

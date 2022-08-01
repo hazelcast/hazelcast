@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
-import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -51,9 +51,8 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
 
     private Properties properties;
     private String topic;
-    private BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
+    private FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider;
     private KvRowProjector.Supplier projectorSupplier;
-    private byte watermarkKey;
 
     private transient ExpressionEvalContext evalContext;
     private transient EventTimePolicy<JetSqlRow> eventTimePolicy;
@@ -66,19 +65,17 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
     RowProjectorProcessorSupplier(
             Properties properties,
             String topic,
-            BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
+            FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
             QueryPath[] paths,
             QueryDataType[] types,
             QueryTargetDescriptor keyDescriptor,
             QueryTargetDescriptor valueDescriptor,
             Expression<Boolean> predicate,
-            List<Expression<?>> projection,
-            byte watermarkKey
+            List<Expression<?>> projection
     ) {
         this.properties = properties;
         this.topic = topic;
         this.eventTimePolicyProvider = eventTimePolicyProvider;
-        this.watermarkKey = watermarkKey;
         this.projectorSupplier = KvRowProjector.supplier(
                 paths,
                 types,
@@ -94,7 +91,7 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
         evalContext = ExpressionEvalContext.from(context);
         eventTimePolicy = eventTimePolicyProvider == null
                 ? EventTimePolicy.noEventTime()
-                : eventTimePolicyProvider.apply(evalContext, watermarkKey);
+                : eventTimePolicyProvider.apply(evalContext);
         extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
     }
 
@@ -121,7 +118,6 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
         out.writeString(topic);
         out.writeObject(eventTimePolicyProvider);
         out.writeObject(projectorSupplier);
-        out.writeByte(watermarkKey);
     }
 
     @Override
@@ -130,6 +126,5 @@ final class RowProjectorProcessorSupplier implements ProcessorSupplier, DataSeri
         topic = in.readString();
         eventTimePolicyProvider = in.readObject();
         projectorSupplier = in.readObject();
-        watermarkKey = in.readByte();
     }
 }

@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.connector.test;
 
-import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
@@ -186,8 +185,8 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
             @Nonnull Table table_,
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection,
-            @Nullable BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
-            byte watermarkKey) {
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
+    ) {
         TestTable table = (TestTable) table_;
         List<Object[]> rows = table.rows;
         boolean streaming = table.streaming;
@@ -196,7 +195,7 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
             ExpressionEvalContext evalContext = ExpressionEvalContext.from(ctx);
             EventTimePolicy<JetSqlRow> eventTimePolicy = eventTimePolicyProvider == null
                     ? EventTimePolicy.noEventTime()
-                    : eventTimePolicyProvider.apply(evalContext, watermarkKey);
+                    : eventTimePolicyProvider.apply(evalContext);
             return new TestDataGenerator(rows, predicate, projection, evalContext, eventTimePolicy, streaming);
         };
 

@@ -730,7 +730,7 @@ public final class Processors {
             @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
         return () -> new SessionWindowP<>(
-                sessionTimeout, earlyResultsPeriod, timestampFns, keyFns, aggrOp, mapToOutputFn);
+                sessionTimeout, earlyResultsPeriod, timestampFns, keyFns, aggrOp, mapToOutputFn, (byte) 0);
     }
 
     /**
