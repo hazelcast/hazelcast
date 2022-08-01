@@ -202,8 +202,7 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
 
         for (Map.Entry<String, IndexConfig> indexDefinition : mapContainer.getIndexDefinitions().entrySet()) {
             Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
-            String mapName = mapContainer.getName();
-            indexes.addOrGetIndex(mapName, indexDefinition.getValue());
+            indexes.addOrGetIndex(indexDefinition.getValue());
         }
 
         Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
@@ -342,7 +341,6 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
         }
 
         MapContainer mapContainer = recordStore.getMapContainer();
-        String mapName = mapContainer.getName();
         if (mapContainer.isGlobalIndexEnabled()) {
             // creating global indexes on partition thread in case they do not exist
             for (IndexConfig indexConfig : indexConfigs) {
@@ -350,14 +348,14 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
 
                 // optimisation not to synchronize each partition thread on the addOrGetIndex method
                 if (indexes.getIndex(indexConfig.getName()) == null) {
-                    indexes.addOrGetIndex(mapName, indexConfig);
+                    indexes.addOrGetIndex(indexConfig);
                 }
             }
         } else {
             Indexes indexes = mapContainer.getIndexes(getPartitionId());
             indexes.createIndexesFromRecordedDefinitions();
             for (IndexConfig indexConfig : indexConfigs) {
-                indexes.addOrGetIndex(mapName, indexConfig);
+                indexes.addOrGetIndex(indexConfig);
             }
         }
     }

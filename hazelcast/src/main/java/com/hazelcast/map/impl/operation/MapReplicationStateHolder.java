@@ -183,7 +183,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
                         .getPartitionContainer(operation.getPartitionId());
                     for (Map.Entry<String, IndexConfig> indexDefinition : mapContainer.getIndexDefinitions().entrySet()) {
                         Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
-                        indexes.addOrGetIndex(mapContainer.getName(), indexDefinition.getValue());
+                        indexes.addOrGetIndex(indexDefinition.getValue());
                     }
 
                     final Indexes indexes = mapContainer.getIndexes(partitionContainer.getPartitionId());
@@ -312,14 +312,14 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
 
                 // optimisation not to synchronize each partition thread on the addOrGetIndex method
                 if (indexes.getIndex(indexConfig.getName()) == null) {
-                    indexes.addOrGetIndex(mapName, indexConfig);
+                    indexes.addOrGetIndex(indexConfig);
                 }
             }
         } else {
             Indexes indexes = mapContainer.getIndexes(operation.getPartitionId());
             indexes.createIndexesFromRecordedDefinitions();
             for (IndexConfig indexConfig : indexConfigs) {
-                indexes.addOrGetIndex(mapName, indexConfig);
+                indexes.addOrGetIndex(indexConfig);
             }
         }
     }

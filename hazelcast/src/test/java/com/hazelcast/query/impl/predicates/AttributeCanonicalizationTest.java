@@ -129,7 +129,7 @@ public class AttributeCanonicalizationTest {
 
         assertEquals(expName.toString(), normalizedConfig.getName());
 
-        InternalIndex index = indexes.addOrGetIndex("test", normalizedConfig);
+        InternalIndex index = indexes.addOrGetIndex(normalizedConfig);
         assertEquals(normalizedConfig.getName(), index.getName());
 
         assertNotNull(indexes.getIndex(normalizedConfig.getName()));

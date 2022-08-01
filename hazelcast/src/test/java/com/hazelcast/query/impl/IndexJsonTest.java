@@ -68,9 +68,9 @@ public class IndexJsonTest {
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
         Indexes indexes = Indexes.newBuilder(null, "test", ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).extractors(Extractors.newBuilder(ss).build()).indexProvider(
                 new DefaultIndexProvider()).usesCachedQueryableEntries(true).statsEnabled(true).global(true).build();
-        Index numberIndex = indexes.addOrGetIndex("test", IndexUtils.createTestIndexConfig(IndexType.HASH, "age"));
-        Index boolIndex = indexes.addOrGetIndex("test", IndexUtils.createTestIndexConfig(IndexType.HASH, "active"));
-        Index stringIndex = indexes.addOrGetIndex("test", IndexUtils.createTestIndexConfig(IndexType.HASH, "name"));
+        Index numberIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "age"));
+        Index boolIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "active"));
+        Index stringIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"));
 
         for (int i = 0; i < 1001; i++) {
             Data key = ss.toData(i);

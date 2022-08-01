@@ -430,7 +430,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
 
         IndexConfig config0 = getNormalizedIndexConfig(config);
 
-        indexes.addOrGetIndex(mapName, config0);
+        indexes.addOrGetIndex(config0);
 
         InternalSerializationService serializationService = context.getSerializationService();
 

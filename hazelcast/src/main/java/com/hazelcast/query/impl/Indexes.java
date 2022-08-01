@@ -153,7 +153,7 @@ public class Indexes {
         return new Builder(node, mapName, ss, indexCopyBehavior, inMemoryFormat);
     }
 
-    public synchronized InternalIndex addOrGetIndex(String mapName, IndexConfig indexConfig) {
+    public synchronized InternalIndex addOrGetIndex(IndexConfig indexConfig) {
         String name = indexConfig.getName();
 
         assert name != null;
@@ -228,7 +228,7 @@ public class Indexes {
      */
     public void createIndexesFromRecordedDefinitions() {
         definitions.forEach((name, indexConfig) -> {
-            addOrGetIndex(mapName, indexConfig);
+            addOrGetIndex(indexConfig);
             definitions.compute(name, (k, v) -> indexConfig == v ? null : v);
         });
     }

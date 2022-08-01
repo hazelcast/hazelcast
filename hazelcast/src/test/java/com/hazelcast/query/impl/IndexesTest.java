@@ -77,9 +77,9 @@ public class IndexesTest {
     @Test
     public void testAndWithSingleEntry() {
         Indexes indexes = Indexes.newBuilder(null, "test", serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
-        indexes.addOrGetIndex("test", IndexUtils.createTestIndexConfig(IndexType.HASH, "name"));
-        indexes.addOrGetIndex("test", IndexUtils.createTestIndexConfig(IndexType.SORTED, "age"));
-        indexes.addOrGetIndex("test", IndexUtils.createTestIndexConfig(IndexType.SORTED, "salary"));
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"));
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "age"));
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "salary"));
         for (int i = 0; i < 100; i++) {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 1000));
             indexes.putEntry(new QueryEntry(serializationService, toData(i), employee, newExtractor()), null,
@@ -99,9 +99,9 @@ public class IndexesTest {
     @Test
     public void testIndex() {
         Indexes indexes = Indexes.newBuilder(null, "test", serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
-        indexes.addOrGetIndex("test", IndexUtils.createTestIndexConfig(IndexType.HASH, "name"));
-        indexes.addOrGetIndex("test", IndexUtils.createTestIndexConfig(IndexType.SORTED, "age"));
-        indexes.addOrGetIndex("test", IndexUtils.createTestIndexConfig(IndexType.SORTED, "salary"));
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"));
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "age"));
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "salary"));
         for (int i = 0; i < 2000; i++) {
             Employee employee = new Employee(i + "Name", i % 80, (i % 2 == 0), 100 + (i % 100));
             indexes.putEntry(new QueryEntry(serializationService, toData(i), employee, newExtractor()), null,
@@ -117,7 +117,7 @@ public class IndexesTest {
     @Test
     public void testIndex2() {
         Indexes indexes = Indexes.newBuilder(null, "test", serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
-        indexes.addOrGetIndex("test", IndexUtils.createTestIndexConfig(IndexType.HASH, "name"));
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"));
         indexes.putEntry(new QueryEntry(serializationService, toData(1), new Value("abc"), newExtractor()), null,
                 Index.OperationSource.USER);
         indexes.putEntry(new QueryEntry(serializationService, toData(2), new Value("xyz"), newExtractor()), null,
@@ -151,7 +151,7 @@ public class IndexesTest {
     @Test
     public void shouldNotThrowException_withNullValues_whenIndexAddedForValueField() {
         Indexes indexes = Indexes.newBuilder(null, "test", serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
-        indexes.addOrGetIndex("test", IndexUtils.createTestIndexConfig(IndexType.HASH, "name"));
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "name"));
 
         shouldReturnNull_whenQueryingOnKeys(indexes);
     }
@@ -177,7 +177,7 @@ public class IndexesTest {
     @Test
     public void shouldNotThrowException_withNullValue_whenIndexAddedForKeyField() {
         Indexes indexes = Indexes.newBuilder(null, "test", serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
-        indexes.addOrGetIndex("test", IndexUtils.createTestIndexConfig(IndexType.HASH, "__key"));
+        indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "__key"));
 
         for (int i = 0; i < 100; i++) {
             // passing null value to QueryEntry
@@ -194,28 +194,28 @@ public class IndexesTest {
 
         IndexConfig config1 = IndexUtils.createTestIndexConfig(IndexType.HASH, "a");
 
-        InternalIndex index = indexes.addOrGetIndex("test", config1);
+        InternalIndex index = indexes.addOrGetIndex(config1);
         assertNotNull(index);
-        assertSame(index, indexes.addOrGetIndex("test", config1));
+        assertSame(index, indexes.addOrGetIndex(config1));
 
         IndexConfig config2 = IndexUtils.createTestIndexConfig(IndexType.HASH, "a", "b");
 
-        index = indexes.addOrGetIndex("test", config2);
+        index = indexes.addOrGetIndex(config2);
         assertNotNull(index);
-        assertSame(index, indexes.addOrGetIndex("test", config2));
+        assertSame(index, indexes.addOrGetIndex(config2));
     }
 
     @Test
     public void testEvaluateOnlyIndexesMatching() {
         Indexes indexes = Indexes.newBuilder(null, "test", serializationService, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
 
-        Index hashIndex = indexes.addOrGetIndex("test", IndexUtils.createTestIndexConfig(IndexType.HASH, "a"));
+        Index hashIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "a"));
         Index matched = indexes.matchIndex("a", IndexMatchHint.NONE, SKIP_PARTITIONS_COUNT_CHECK);
         assertSame(hashIndex, matched);
         matched = indexes.matchIndex("a", EqualPredicate.class, IndexMatchHint.NONE, SKIP_PARTITIONS_COUNT_CHECK);
         assertNull(matched);
 
-        Index bitmapIndex = indexes.addOrGetIndex("test", IndexUtils.createTestIndexConfig(IndexType.BITMAP, "a"));
+        Index bitmapIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.BITMAP, "a"));
         matched = indexes.matchIndex("a", IndexMatchHint.NONE, SKIP_PARTITIONS_COUNT_CHECK);
         assertSame(hashIndex, matched);
         matched = indexes.matchIndex("a", EqualPredicate.class, IndexMatchHint.NONE, SKIP_PARTITIONS_COUNT_CHECK);

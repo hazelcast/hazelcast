@@ -128,7 +128,7 @@ public class IndexTest {
 
         String mapName = mapContainer.getName();
         Indexes is = Indexes.newBuilder(null, mapName, ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
-        is.addOrGetIndex(mapName, config);
+        is.addOrGetIndex(config);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
         is.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
@@ -144,7 +144,7 @@ public class IndexTest {
 
         String mapName = mapContainer.getName();
         Indexes is = Indexes.newBuilder(null, mapName, ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
-        is.addOrGetIndex(mapName, config);
+        is.addOrGetIndex(config);
         Data key = ss.toData(1);
         Data value = ss.toData(new SerializableWithEnum(SerializableWithEnum.City.ISTANBUL));
         is.putEntry(new QueryEntry(ss, key, value, newExtractor()), null, Index.OperationSource.USER);
@@ -164,9 +164,9 @@ public class IndexTest {
     public void testIndex() throws QueryException {
         String mapName = mapContainer.getName();
         Indexes indexes = Indexes.newBuilder(null, mapName, ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
-        Index dIndex = indexes.addOrGetIndex(mapName, IndexUtils.createTestIndexConfig(IndexType.HASH, "d"));
-        Index boolIndex = indexes.addOrGetIndex(mapName, IndexUtils.createTestIndexConfig(IndexType.HASH, "bool"));
-        Index strIndex = indexes.addOrGetIndex(mapName, IndexUtils.createTestIndexConfig(IndexType.HASH, "str"));
+        Index dIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "d"));
+        Index boolIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "bool"));
+        Index strIndex = indexes.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.HASH, "str"));
         for (int i = 0; i < 1000; i++) {
             Data key = ss.toData(i);
             Data value = ss.toData(new MainPortable(i % 2 == 0, -10.34d, "joe" + i));
@@ -229,7 +229,7 @@ public class IndexTest {
         String mapName = mapContainer.getName();
 
         Indexes is = Indexes.newBuilder(null, mapName, ss, copyBehavior, DEFAULT_IN_MEMORY_FORMAT).build();
-        Index strIndex = is.addOrGetIndex(mapName, IndexUtils.createTestIndexConfig(IndexType.SORTED, "str"));
+        Index strIndex = is.addOrGetIndex(IndexUtils.createTestIndexConfig(IndexType.SORTED, "str"));
 
         Data value = ss.toData(new MainPortable(false, 1, null));
         Data key1 = ss.toData(0);
