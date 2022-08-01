@@ -20,14 +20,13 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
-import com.hazelcast.jet.impl.JobSummary;
+import com.hazelcast.jet.impl.JobAndSqlSummary;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -40,8 +39,8 @@ import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
 import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
-@Ignore("https://github.com/hazelcast/hazelcast/issues/20372")
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlMetadataInJobConfigTest extends SqlTestSupport {
     @BeforeClass
@@ -77,16 +76,15 @@ public class SqlMetadataInJobConfigTest extends SqlTestSupport {
     public void test_selectMetadata_clientJobSummary() {
         String sql = "SELECT * FROM table(generate_stream(1))";
         try (SqlResult ignored = client().getSql().execute(new SqlStatement(sql).setCursorBufferSize(1))) {
-            List<JobSummary> jobSummaries = ((JetClientInstanceImpl) client().getJet()).getJobSummaryList().stream()
+            List<JobAndSqlSummary> jobSummaries = ((JetClientInstanceImpl) client().getJet()).getJobAndSqlSummaryList().stream()
                     .filter(jobSummary -> jobSummary.getStatus() == RUNNING)
                     .collect(Collectors.toList());
             assertEquals(1, jobSummaries.size());
 
-            JobSummary jobSummary = jobSummaries.get(0);
-// TODO uncomment this when doing https://github.com/hazelcast/hazelcast/issues/20372
-//            assertNotNull(jobSummary.getSqlSummary());
-//            assertEquals(sql, jobSummary.getSqlSummary().getQuery());
-//            assertEquals(Boolean.TRUE, jobSummary.getSqlSummary().isUnbounded());
+            JobAndSqlSummary jobSummary = jobSummaries.get(0);
+            assertNotNull(jobSummary.getSqlSummary());
+            assertEquals(sql, jobSummary.getSqlSummary().getQuery());
+            assertEquals(Boolean.TRUE, jobSummary.getSqlSummary().isUnbounded());
         }
     }
 
