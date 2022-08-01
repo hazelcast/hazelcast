@@ -50,8 +50,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     final Object2LongHashMap<Byte> lastEmittedWm = new Object2LongHashMap<>(Long.MIN_VALUE);
 
     // NOTE: we are using LinkedList, because we are expecting:
-    //  (1) removals in the middle,
-    //  (2) traversing whole list without index-based access
+    //  (1) removals at any position,
+    //  (2) no index-based access, only full traversal
     // package-visible for tests
     @SuppressWarnings("unchecked") final List<JetSqlRow>[] buffer = new List[]{new LinkedList<>(), new LinkedList<>()};
 
@@ -101,8 +101,9 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         }
 
         for (Byte wmKey : postponeTimeMap.keySet()) {
-            wmState.put(wmKey, Long.MIN_VALUE + 1); // +1 because Object2LongHashMap doesn't accept missingValue
-            lastEmittedWm.put(wmKey, Long.MIN_VALUE + 1); // +1 because Object2LongHashMap doesn't accept missingValue
+            // using MIN_VALUE + 1 because Object2LongHashMap uses MIN_VALUE as a missing value, and it cannot be used as a value
+            wmState.put(wmKey, Long.MIN_VALUE + 1);
+            lastEmittedWm.put(wmKey, Long.MIN_VALUE + 1);
         }
 
         // no key must be on both sides
@@ -143,36 +144,36 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             return processPendingOutput();
         }
 
-        // drop the event, if it's late
-        for (Entry<Byte, ToLongFunctionEx<JetSqlRow>> en : timeExtractors(ordinal).entrySet()) {
-            long wmValue = lastReceivedWm.getValue(en.getKey());
-            long time = en.getValue().applyAsLong((JetSqlRow) item);
-            if (time < wmValue) {
-                logLateEvent(getLogger(), en.getKey(), wmValue, item);
-                return true;
-            }
-        }
-
-        // if the item is not late, but would already be removed from the buffer, don't add it to the buffer
-        for (Entry<Byte, ToLongFunctionEx<JetSqlRow>> en : timeExtractors(ordinal).entrySet()) {
-            long joinTimeLimit = wmState.get(en.getKey());
-            long time = en.getValue().applyAsLong((JetSqlRow) item);
-            if (time < joinTimeLimit) {
-                if (!joinInfo.isInner()) {
-                    JetSqlRow joinedRow = composeRowWithNulls((JetSqlRow) item, ordinal);
-                    if (joinedRow != null && !tryEmit(joinedRow)) {
-                        pendingOutput.add(joinedRow);
-                        return false;
-                    }
-                }
-                return true;
-            }
-        }
-
-        // having side input, traverse the opposite buffer
         if (currItem == null) {
+            // drop the event, if it's late according to any watermarked value it contains
+            for (Entry<Byte, ToLongFunctionEx<JetSqlRow>> en : timeExtractors(ordinal).entrySet()) {
+                long wmValue = lastReceivedWm.getValue(en.getKey());
+                long time = en.getValue().applyAsLong((JetSqlRow) item);
+                if (time < wmValue) {
+                    logLateEvent(getLogger(), en.getKey(), wmValue, item);
+                    return true;
+                }
+            }
+
+            // if the item is not late, but would already be removed from the buffer, don't add it to the buffer
+            for (Entry<Byte, ToLongFunctionEx<JetSqlRow>> en : timeExtractors(ordinal).entrySet()) {
+                long joinTimeLimit = wmState.get(en.getKey());
+                long time = en.getValue().applyAsLong((JetSqlRow) item);
+                if (time < joinTimeLimit) {
+                    if (!joinInfo.isInner()) {
+                        JetSqlRow joinedRow = composeRowWithNulls((JetSqlRow) item, ordinal);
+                        if (joinedRow != null && !tryEmit(joinedRow)) {
+                            pendingOutput.add(joinedRow);
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+            }
+
             currItem = (JetSqlRow) item;
             buffer[ordinal].add(currItem);
+            // we'll emit joined rows from currItem and the buffered rows from the opposite side
             iterator = buffer[1 - ordinal].iterator();
             if (ordinal == outerJoinSide) {
                 unusedEventsTracker.add(currItem);
