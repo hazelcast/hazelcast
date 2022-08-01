@@ -758,7 +758,7 @@ public class MembershipManager {
         nodeEngine.onMemberLeft(deadMember);
         node.getNodeExtension().onMemberListChange();
         Joiner joiner = node.getJoiner();
-        if (joiner instanceof TcpIpJoiner) {
+        if (joiner != null && joiner.getClass() == TcpIpJoiner.class) {
             ((TcpIpJoiner) joiner).onMemberRemoved(deadMember);
         }
     }
@@ -771,7 +771,7 @@ public class MembershipManager {
                 node.getPartitionService().memberAdded(newMember);
                 node.getNodeExtension().onMemberListChange();
                 Joiner joiner = node.getJoiner();
-                if (joiner instanceof TcpIpJoiner) {
+                if (joiner != null && joiner.getClass() == TcpIpJoiner.class) {
                     ((TcpIpJoiner) joiner).onMemberAdded(newMember);
                 }
                 // async events
