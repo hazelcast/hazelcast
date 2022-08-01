@@ -70,7 +70,8 @@ public class SessionWindowPTest {
                 Collections.<ToLongFunction<Entry<?, Long>>>singletonList(Entry::getValue),
                 singletonList(entryKey()),
                 AggregateOperations.counting(),
-                KeyedWindowResult::new);
+                KeyedWindowResult::new,
+                (byte) 0);
     }
 
     @After

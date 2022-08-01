@@ -29,6 +29,7 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
+import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -68,8 +69,7 @@ import static java.util.Objects.requireNonNull;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
- * Session window processor. See {@link
- * com.hazelcast.jet.core.processor.Processors#aggregateToSessionWindowP
+ * Session window processor. See {@link Processors#aggregateToSessionWindowP
  * Processors.aggregateToSessionWindowP()} for documentation.
  *
  * @param <K> type of the extracted grouping key
@@ -123,27 +123,6 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
     };
 
     @SuppressWarnings("unchecked")
-    public SessionWindowP(
-            long sessionTimeout,
-            long earlyResultsPeriod,
-            @Nonnull List<? extends ToLongFunction<?>> timestampFns,
-            @Nonnull List<? extends Function<?, ? extends K>> keyFns,
-            @Nonnull AggregateOperation<A, ? extends R> aggrOp,
-            @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
-    ) {
-        checkTrue(keyFns.size() == aggrOp.arity(), keyFns.size() + " key functions " +
-                "provided for " + aggrOp.arity() + "-arity aggregate operation");
-        this.timestampFns = (List<ToLongFunction<Object>>) timestampFns;
-        this.keyFns = (List<Function<Object, K>>) keyFns;
-        this.earlyResultsPeriod = earlyResultsPeriod;
-        this.aggrOp = aggrOp;
-        this.combineFn = requireNonNull(aggrOp.combineFn());
-        this.mapToOutputFn = mapToOutputFn;
-        this.sessionTimeout = sessionTimeout;
-        this.closedWindowFlatmapper = flatMapper(this::traverseClosedWindows);
-        this.windowWatermarkKey = 0;
-    }
-
     public SessionWindowP(
             long sessionTimeout,
             long earlyResultsPeriod,

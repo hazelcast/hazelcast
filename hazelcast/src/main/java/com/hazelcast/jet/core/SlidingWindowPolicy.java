@@ -47,12 +47,11 @@ import static java.lang.Math.floorMod;
  * @since Jet 3.0
  */
 public class SlidingWindowPolicy implements Serializable {
-    private static final long serialVersionUID = 2L;
+    private static final long serialVersionUID = 1L;
 
     private final long frameSize;
     private final long frameOffset;
     private final long windowSize;
-    private final byte windowWatermarkKey;
 
     SlidingWindowPolicy(long frameSize, long frameOffset, long framesPerWindow) {
         checkPositive(frameSize, "frameLength must be positive");
@@ -64,19 +63,6 @@ public class SlidingWindowPolicy implements Serializable {
         this.frameSize = frameSize;
         this.frameOffset = frameOffset;
         this.windowSize = frameSize * framesPerWindow;
-        this.windowWatermarkKey = 0; // default wm key value.
-    }
-    SlidingWindowPolicy(long frameSize, long frameOffset, long framesPerWindow, byte windowWatermarkKey) {
-        checkPositive(frameSize, "frameLength must be positive");
-        checkNotNegative(frameOffset, "frameOffset must not be negative");
-        checkTrue(frameOffset < frameSize, "frameOffset must be less than frameSize, offset="
-                + frameOffset + ", size=" + frameSize);
-        checkPositive(framesPerWindow, "framesPerWindow must be positive");
-
-        this.frameSize = frameSize;
-        this.frameOffset = frameOffset;
-        this.windowSize = frameSize * framesPerWindow;
-        this.windowWatermarkKey = windowWatermarkKey;
     }
 
     /**
@@ -179,30 +165,6 @@ public class SlidingWindowPolicy implements Serializable {
     }
 
     /**
-     * Returns the definition of a sliding window of length {@code
-     * windowSize} that slides by {@code slideBy} and specified {@code watermarkKey}.
-     * Given {@code windowSize = 4} and {@code slideBy = 2}, the generated windows would
-     * cover timestamps {@code ..., [-2, 2), [0..4), [2..6), [4..8), [6..10),
-     * ...}
-     * <p>
-     * Since the window will be computed internally by maintaining {@link
-     * SlidingWindowPolicy frames} of size equal to the sliding step, the
-     * configured window length must be an integer multiple of the sliding
-     * step.
-     *
-     * @param windowSize the length of the window, must be a multiple of {@code slideBy}
-     * @param slideBy the amount to slide the window by
-     * @param watermarkKey attached watermark key
-     */
-    public static SlidingWindowPolicy slidingWinPolicy(long windowSize, long slideBy, byte watermarkKey) {
-        Preconditions.checkNotNegative(watermarkKey, "Watermark key must not be negative");
-        Preconditions.checkPositive(windowSize, "windowSize must be >= 1");
-        Preconditions.checkPositive(slideBy, "slideBy must be >= 1");
-        Preconditions.checkTrue(windowSize % slideBy == 0, "windowSize must be an integer multiple of slideBy");
-        return new SlidingWindowPolicy(slideBy, 0, windowSize / slideBy);
-    }
-
-    /**
      * Returns the definition of a tumbling window of length {@code
      * windowSize}. The tumbling window is a special case of the sliding
      * window with {@code slideBy = windowSize}. Given {@code
@@ -211,17 +173,5 @@ public class SlidingWindowPolicy implements Serializable {
      */
     public static SlidingWindowPolicy tumblingWinPolicy(long windowSize) {
         return slidingWinPolicy(windowSize, windowSize);
-    }
-
-    /**
-     * Returns the definition of a tumbling window of length {@code
-     * windowSize} and specified {@code watermarkKey} for window bounds.
-     * The tumbling window is a special case of the sliding
-     * window with {@code slideBy = windowSize}. Given {@code
-     * windowSize = 4}, the generated windows would cover timestamps {@code
-     * ..., [-4, 0), [0..4), [4..8), ...}
-     */
-    public static SlidingWindowPolicy tumblingWinPolicy(long windowSize, byte watermarkKey) {
-        return slidingWinPolicy(windowSize, windowSize, watermarkKey);
     }
 }

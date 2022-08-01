@@ -528,19 +528,7 @@ public final class Processors {
             @Nonnull AggregateOperation<A, ? extends R> aggrOp,
             @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn
     ) {
-        FunctionEx<KeyedWindowResult<K, A>, K> keyFn = KeyedWindowResult::key;
-        ToLongFunctionEx<KeyedWindowResult<K, A>> timestampFn = KeyedWindowResult::end;
-        return aggregateByKeyAndWindowP(
-                singletonList(keyFn),
-                singletonList(timestampFn),
-                TimestampKind.FRAME,
-                winPolicy,
-                0L,
-                aggrOp.withCombiningAccumulateFn(KeyedWindowResult<Object, A>::result),
-                mapToOutputFn,
-                true,
-                (byte) 0
-        );
+        return combineToSlidingWindowP(winPolicy, aggrOp, mapToOutputFn, (byte) 0);
     }
 
     /**
@@ -632,15 +620,8 @@ public final class Processors {
             @Nonnull KeyedWindowResultFunction<? super K, ? super R, ? extends OUT> mapToOutputFn,
             boolean isLastStage
     ) {
-        return () -> new SlidingWindowP<>(
-                keyFns,
-                toList(timestampFns, f -> toFrameTimestampFn(f, timestampKind, winPolicy)),
-                winPolicy,
-                earlyResultsPeriod,
-                aggrOp,
-                mapToOutputFn,
-                isLastStage,
-                (byte) 0);
+        return aggregateByKeyAndWindowP(keyFns, timestampFns, timestampKind, winPolicy, earlyResultsPeriod,
+                aggrOp, mapToOutputFn, isLastStage, (byte) 0);
     }
 
     /**
