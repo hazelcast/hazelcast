@@ -37,6 +37,17 @@ import static org.junit.Assert.assertEquals;
 public class RabinFingerprintTest {
 
     @Test
+    public void testRabinFingerprint() {
+        SchemaWriter writer = new SchemaWriter("SomeType");
+        writer.writeInt32("id", 0);
+        writer.writeString("name", null);
+        writer.writeInt8("age", (byte) 0);
+        writer.writeArrayOfTimestamp("times", null);
+        Schema schema = writer.build();
+        assertEquals(-5445839760245891300L, schema.getSchemaId());
+    }
+
+    @Test
     public void testRabinFingerprintIsConsistentWithWrittenData() throws IOException {
         SchemaWriter writer = new SchemaWriter("typeName");
         writer.addField(new FieldDescriptor("a", FieldKind.BOOLEAN));

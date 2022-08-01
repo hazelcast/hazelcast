@@ -62,11 +62,14 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public static final int AGGREGATE_CREATE_SUPPLIER = 14;
     public static final int AGGREGATE_ACCUMULATE_FUNCTION = 15;
     public static final int AGGREGATE_COMBINE_FUNCTION = 16;
-    public static final int AGGREGATE_EXPORT_FINISH_FUNCTION = 17;
+    public static final int AGGREGATE_FINISH_FUNCTION = 17;
     public static final int AGGREGATE_SUM_SUPPLIER = 18;
     public static final int AGGREGATE_AVG_SUPPLIER = 19;
     public static final int AGGREGATE_COUNT_SUPPLIER = 20;
-    public static final int TO_ROW = 21;
+    public static final int AGGREGATE_JSON_ARRAY_AGG_SUPPLIER = 21;
+    public static final int ROW_IDENTITY_FN = 22;
+    public static final int AGGREGATE_EXPORT_FUNCTION = 23;
+    public static final int TO_ROW = 24;
 
     public static final int LEN = TO_ROW + 1;
 
@@ -99,11 +102,14 @@ public class JetSqlSerializerHook implements DataSerializerHook {
                 arg -> new AggregateAbstractPhysicalRule.AggregateAccumulateFunction();
         constructors[AGGREGATE_COMBINE_FUNCTION] =
                 arg -> AggregateAbstractPhysicalRule.AggregateCombineFunction.INSTANCE;
-        constructors[AGGREGATE_EXPORT_FINISH_FUNCTION] =
-                arg -> AggregateAbstractPhysicalRule.AggregateExportFinishFunction.INSTANCE;
+        constructors[AGGREGATE_FINISH_FUNCTION] =
+                arg -> AggregateAbstractPhysicalRule.AggregateFinishFunction.INSTANCE;
         constructors[AGGREGATE_SUM_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateSumSupplier();
         constructors[AGGREGATE_AVG_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateAvgSupplier();
         constructors[AGGREGATE_COUNT_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateCountSupplier();
+        constructors[AGGREGATE_JSON_ARRAY_AGG_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateArrayAggSupplier();
+        constructors[ROW_IDENTITY_FN] = arg -> new AggregateAbstractPhysicalRule.RowIdentityFn();
+        constructors[AGGREGATE_EXPORT_FUNCTION] = arg -> AggregateAbstractPhysicalRule.AggregateExportFunction.INSTANCE;
         constructors[TO_ROW] = arg -> new ToRowFunction();
 
         return new ArrayDataSerializableFactory(constructors);

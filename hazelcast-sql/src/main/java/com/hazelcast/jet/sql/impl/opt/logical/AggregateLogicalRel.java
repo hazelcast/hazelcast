@@ -49,4 +49,8 @@ public class AggregateLogicalRel extends Aggregate implements LogicalRel {
     ) {
         return new AggregateLogicalRel(getCluster(), traitSet, input, groupSet, groupSets, aggregateCalls);
     }
+
+    public final boolean hasCollation() {
+        return getAggCallList().stream().anyMatch(agg -> agg.getCollation().getFieldCollations().size() > 0);
+    }
 }

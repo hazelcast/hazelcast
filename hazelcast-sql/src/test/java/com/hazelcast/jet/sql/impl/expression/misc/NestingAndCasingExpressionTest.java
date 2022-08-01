@@ -88,6 +88,9 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
                     || field.getName().equals("IMPOSE_ORDER")
                     || field.getName().equals("TUMBLE")
                     || field.getName().equals("HOP")
+                    || field.getName().equals("WITHIN_GROUP")
+                    || field.getName().equals("JSON_ARRAYAGG_ABSENT_ON_NULL")
+                    || field.getName().equals("JSON_ARRAYAGG_NULL_ON_NULL")
                     || field.getName().equals("DOT")
                     || field.getName().equals("TO_ROW")
             ) {
@@ -547,6 +550,11 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     @Test
     public void test_JSON_ARRAY() {
         check(sql("JSON_ARRAY(?) || JSON_ARRAY(?)"), "v", "v");
+    }
+
+    @Test
+    public void test_JSON_ARRAYAGG() {
+        check(sql("JSON_VALUE(JSON_ARRAYAGG(?), '$[0]')"), "k");
     }
 
     private void check(String sql, Object... params) {

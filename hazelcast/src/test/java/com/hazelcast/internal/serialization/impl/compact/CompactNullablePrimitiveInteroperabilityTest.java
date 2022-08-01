@@ -290,6 +290,8 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         GenericRecordBuilder builder = compact(PrimitiveObject.class.getName());
         builder.setNullableBoolean("boolean_", true);
         builder.setNullableInt8("byte_", (byte) 2);
+        // Reflective serializer represents char as short
+        builder.setNullableInt16("char_", (short) '\u4242');
         builder.setNullableInt16("short_", (short) 4);
         builder.setNullableInt32("int_", 8);
         builder.setNullableInt64("long_", 4444L);
@@ -297,6 +299,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         builder.setNullableFloat64("double_", 41231.32);
         builder.setArrayOfNullableBoolean("booleans", new Boolean[]{true, false});
         builder.setArrayOfNullableInt8("bytes", new Byte[]{1, 2});
+        builder.setArrayOfNullableInt16("chars", new Short[]{'\u4224', '\u0101'});
         builder.setArrayOfNullableInt16("shorts", new Short[]{1, 4});
         builder.setArrayOfNullableInt32("ints", new Integer[]{1, 8});
         builder.setArrayOfNullableInt64("longs", new Long[]{1L, 4444L});
@@ -304,6 +307,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         builder.setArrayOfNullableFloat64("doubles", new Double[]{41231.32, 2.0});
         builder.setBoolean("nullableBoolean", true);
         builder.setInt8("nullableByte", (byte) 4);
+        builder.setInt16("nullableCharacter", (short) '\u1234');
         builder.setInt16("nullableShort", (short) 6);
         builder.setInt32("nullableInt", 8);
         builder.setInt64("nullableLong", 4444L);
@@ -311,6 +315,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         builder.setFloat64("nullableDouble", 41231.32);
         builder.setArrayOfBoolean("nullableBooleans", new boolean[]{true, false});
         builder.setArrayOfInt8("nullableBytes", new byte[]{1, 2});
+        builder.setArrayOfInt16("nullableCharacters", new short[]{'\u4321', 'a', '0'});
         builder.setArrayOfInt16("nullableShorts", new short[]{1, 4});
         builder.setArrayOfInt32("nullableInts", new int[]{1, 8});
         builder.setArrayOfInt64("nullableLongs", new long[]{1L, 4444L});
@@ -323,6 +328,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
 
         assertEquals(true, primitiveObject.boolean_);
         assertEquals((byte) 2, primitiveObject.byte_);
+        assertEquals('\u4242', primitiveObject.char_);
         assertEquals((short) 4, primitiveObject.short_);
         assertEquals(8, primitiveObject.int_);
         assertEquals(4444L, primitiveObject.long_);
@@ -331,6 +337,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
 
         assertArrayEquals(new boolean[]{true, false}, primitiveObject.booleans);
         assertArrayEquals(new byte[]{1, 2}, primitiveObject.bytes);
+        assertArrayEquals(new char[]{'\u4224', '\u0101'}, primitiveObject.chars);
         assertArrayEquals(new short[]{1, 4}, primitiveObject.shorts);
         assertArrayEquals(new int[]{1, 8}, primitiveObject.ints);
         assertArrayEquals(new long[]{1L, 4444L}, primitiveObject.longs);
@@ -339,6 +346,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
 
         assertEquals(true, primitiveObject.nullableBoolean);
         assertEquals(Byte.valueOf((byte) 4), primitiveObject.nullableByte);
+        assertEquals(Character.valueOf('\u1234'), primitiveObject.nullableCharacter);
         assertEquals(Short.valueOf((short) 6), primitiveObject.nullableShort);
         assertEquals(Integer.valueOf(8), primitiveObject.nullableInt);
         assertEquals(Long.valueOf(4444L), primitiveObject.nullableLong);
@@ -347,6 +355,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
 
         assertArrayEquals(new Boolean[]{true, false}, primitiveObject.nullableBooleans);
         assertArrayEquals(new Byte[]{1, 2}, primitiveObject.nullableBytes);
+        assertArrayEquals(new Character[]{'\u4321', 'a', '0'}, primitiveObject.nullableCharacters);
         assertArrayEquals(new Short[]{1, 4}, primitiveObject.nullableShorts);
         assertArrayEquals(new Integer[]{1, 8}, primitiveObject.nullableInts);
         assertArrayEquals(new Long[]{1L, 4444L}, primitiveObject.nullableLongs);
@@ -358,6 +367,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
 
         boolean boolean_;
         byte byte_;
+        char char_;
         short short_;
         int int_;
         long long_;
@@ -366,6 +376,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
 
         boolean[] booleans;
         byte[] bytes;
+        char[] chars;
         short[] shorts;
         int[] ints;
         long[] longs;
@@ -374,6 +385,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
 
         Boolean nullableBoolean;
         Byte nullableByte;
+        Character nullableCharacter;
         Short nullableShort;
         Integer nullableInt;
         Long nullableLong;
@@ -382,6 +394,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
 
         Boolean[] nullableBooleans;
         Byte[] nullableBytes;
+        Character[] nullableCharacters;
         Short[] nullableShorts;
         Integer[] nullableInts;
         Long[] nullableLongs;
