@@ -78,6 +78,7 @@ import static com.hazelcast.jet.impl.JetServiceBackend.SERVICE_NAME;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.EXECUTION;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
 import static java.util.Collections.newSetFromMap;
@@ -557,21 +558,24 @@ public class JobExecutionService implements DynamicMetricsProvider {
                           }
                           return terminalMetrics;
                       })
-                      .handleAsync((metrics, e) -> {
+                      .handleAsync((metrics, e) -> completeExecution(execCtx, peel(e))
+                              .thenApply(ignored -> {
+                                  if (e == null) {
+                                      return metrics;
+                                  }
+                                  throw rethrow(e);
+                              }))
+                      .thenCompose(stage -> stage)
+                      .whenComplete(withTryCatch(logger, (metrics, e) -> {
                           if (e instanceof CancellationException) {
                               logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " was cancelled");
-                              throw rethrow(e);
                           } else if (e != null) {
                               logger.fine("Execution of " + execCtx.jobNameAndExecutionId()
                                       + " completed with failure", e);
-                              throw rethrow(e);
                           } else {
                               logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " completed");
-                              return metrics;
                           }
-                      })
-                      .handleAsync((metrics, e) -> completeExecution(execCtx, peel(e)).thenApplyAsync(ignored -> metrics))
-                      .thenCompose(stage -> stage);
+                      }));
     }
 
     @Override
