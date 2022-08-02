@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.Condition;
 import org.junit.Before;

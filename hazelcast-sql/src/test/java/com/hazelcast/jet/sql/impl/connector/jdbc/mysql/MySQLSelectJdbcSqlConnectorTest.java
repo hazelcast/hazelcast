@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc.mysql;
 
+import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 import com.hazelcast.jet.sql.impl.connector.jdbc.SelectJdbcSqlConnectorTest;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;

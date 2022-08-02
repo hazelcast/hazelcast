@@ -19,8 +19,8 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.test.jdbc.TestDatabaseProvider;
 import org.junit.AfterClass;
-import org.testcontainers.jdbc.ContainerDatabaseDriver;
 
 import javax.annotation.Nonnull;
 import java.sql.Connection;
@@ -190,66 +190,4 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         }
     }
 
-    interface TestDatabaseProvider {
-
-        String createDatabase(String dbName);
-
-        void shutdown();
-    }
-
-    static class H2DatabaseProvider implements TestDatabaseProvider {
-
-        @Override
-        public String createDatabase(String dbName) {
-            return "jdbc:h2:mem:" + dbName + ";DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1";
-        }
-
-        @Override
-        public void shutdown() {
-            try (Connection conn = DriverManager.getConnection(dbConnectionUrl)) {
-                conn.createStatement().execute("shutdown");
-            } catch (SQLException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    public static class PostgresDatabaseProvider implements TestDatabaseProvider {
-
-        private String jdbcUrl;
-
-        @Override
-        public String createDatabase(String dbName) {
-            jdbcUrl = "jdbc:tc:postgresql:10.21:///" + dbName + "?TC_DAEMON=true";
-            return jdbcUrl;
-        }
-
-        @Override
-        public void shutdown() {
-            if (jdbcUrl != null) {
-                ContainerDatabaseDriver.killContainer(jdbcUrl);
-                jdbcUrl = null;
-            }
-        }
-    }
-
-    public static class MySQLDatabaseProvider implements TestDatabaseProvider {
-
-        private String jdbcUrl;
-
-        @Override
-        public String createDatabase(String dbName) {
-            jdbcUrl = "jdbc:tc:mysql:8.0.29:///" + dbName + "?TC_DAEMON=true&sessionVariables=sql_mode=ANSI";
-//            jdbcUrl = "jdbc:tc:mysql:8.0.29:///" + dbName + "?TC_DAEMON=true,sessionVariables=sql_mode=''ANSI''";
-            return jdbcUrl;
-        }
-
-        @Override
-        public void shutdown() {
-            if (jdbcUrl != null) {
-                ContainerDatabaseDriver.killContainer(jdbcUrl);
-                jdbcUrl = null;
-            }
-        }
-    }
 }

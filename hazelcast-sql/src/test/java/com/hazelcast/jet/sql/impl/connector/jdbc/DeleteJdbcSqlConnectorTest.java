@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
+import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;

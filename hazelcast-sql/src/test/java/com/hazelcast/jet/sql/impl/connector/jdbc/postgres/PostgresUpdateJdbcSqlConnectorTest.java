@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc.postgres;
 
+import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import com.hazelcast.jet.sql.impl.connector.jdbc.UpdateJdbcSqlConnectorTest;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
