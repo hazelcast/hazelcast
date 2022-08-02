@@ -41,6 +41,7 @@ import javax.annotation.Nullable;
 import javax.security.auth.Subject;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.lang.reflect.Array;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -48,6 +49,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.IntFunction;
 import java.util.function.Predicate;
 
 import static java.util.stream.Collectors.toList;
@@ -188,6 +190,24 @@ public final class ImdgUtil {
             list.add(input.readObject());
         }
         return list;
+    }
+
+    public static <E> void writeArray(@Nonnull ObjectDataOutput output, @Nonnull E[] array) throws IOException {
+        output.writeInt(array.length);
+        for (E o : array) {
+            output.writeObject(o);
+        }
+    }
+
+    @Nonnull
+    public static <E> E[] readArray(@Nonnull ObjectDataInput input, @Nonnull IntFunction<E[]> arrayConstructor)
+            throws IOException {
+        int length = input.readInt();
+        E[] array = arrayConstructor.apply(length);
+        for (int i = 0; i < length; i++) {
+            array[i] = input.readObject();
+        }
+        return array;
     }
 
     private static final class ImdgPredicateWrapper<T> implements PredicateEx<T> {

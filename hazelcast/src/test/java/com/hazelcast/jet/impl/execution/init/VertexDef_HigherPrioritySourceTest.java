@@ -154,7 +154,7 @@ public class VertexDef_HigherPrioritySourceTest extends SimpleTestInClusterSuppo
         }
         jetService.getJobClassLoaderService().tryRemoveClassloadersForJob(0, JobPhase.EXECUTION);
 
-        Set<Integer> higherPriorityVertices = VertexDef.getHigherPriorityVertices(plan.getVertices());
+        Set<Integer> higherPriorityVertices = VertexDef.getHigherPriorityVertices(plan.getVertices().toArray(new VertexDef[0]));
         String actualHigherPriorityVertices = plan.getVertices().stream()
                 .filter(v -> higherPriorityVertices.contains(v.vertexId()))
                 .map(VertexDef::name)

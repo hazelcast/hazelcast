@@ -86,13 +86,16 @@ import static com.hazelcast.jet.core.Edge.DISTRIBUTE_TO_ALL;
 import static com.hazelcast.jet.impl.execution.OutboundCollector.compositeCollector;
 import static com.hazelcast.jet.impl.execution.TaskletExecutionService.TASKLET_INIT_CLOSE_EXECUTOR_NAME;
 import static com.hazelcast.jet.impl.util.ImdgUtil.getMemberConnection;
-import static com.hazelcast.jet.impl.util.ImdgUtil.readList;
-import static com.hazelcast.jet.impl.util.ImdgUtil.writeList;
+import static com.hazelcast.jet.impl.util.ImdgUtil.readArray;
+import static com.hazelcast.jet.impl.util.ImdgUtil.writeArray;
+import static com.hazelcast.jet.impl.util.ImdgUtil.writeSubject;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefixedLogger;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.memoize;
 import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
+import static java.util.Arrays.asList;
+import static java.util.Arrays.stream;
 import static java.util.Collections.unmodifiableList;
 import static java.util.stream.Collectors.toMap;
 
@@ -109,7 +112,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     private Map<Address, int[]> partitionAssignment;
 
     private JobConfig jobConfig;
-    private List<VertexDef> vertices = new ArrayList<>();
+    private VertexDef[] vertices;
 
     private int memberIndex;
     private int memberCount;
@@ -160,10 +163,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         this.memberCount = memberCount;
         this.isLightJob = isLightJob;
         this.subject = subject;
-        this.vertices = new ArrayList<>(expectedVerticesCount);
-        for (int i = 0; i < expectedVerticesCount; i++) {
-            vertices.add(null); // placeholder to be replaced with for set()
-        }
+        this.vertices = new VertexDef[expectedVerticesCount];
     }
 
     /**
@@ -198,7 +198,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 }
                 memberConnections.put(destAddr, conn);
             }
-            dagNodeUtil = new DagNodeUtil(vertices, partitionAssignment.keySet(), nodeEngine.getThisAddress());
+            dagNodeUtil = new DagNodeUtil(asList(vertices), partitionAssignment.keySet(), nodeEngine.getThisAddress());
             createLocalConveyorsAndSenderReceiverTasklets(jobId, jobSerializationService);
 
             for (VertexDef vertex : vertices) {
@@ -391,8 +391,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         return jobConfig;
     }
 
-    synchronized void setVertex(int position, VertexDef vertex) {
-        vertices.set(position, vertex);
+    void setVertex(int position, VertexDef vertex) {
+        vertices[position] = vertex;
     }
 
     // Implementation of IdentifiedDataSerializable
@@ -409,19 +409,19 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        writeList(out, vertices);
+        writeArray(out, vertices);
         out.writeLong(lastSnapshotId);
         out.writeObject(partitionAssignment);
         out.writeBoolean(isLightJob);
         out.writeObject(jobConfig);
         out.writeInt(memberIndex);
         out.writeInt(memberCount);
-        ImdgUtil.writeSubject(out, subject);
+        writeSubject(out, subject);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        vertices = readList(in);
+        vertices = readArray(in, VertexDef[]::new);
         lastSnapshotId = in.readLong();
         partitionAssignment = in.readObject();
         isLightJob = in.readBoolean();
@@ -439,7 +439,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             ConcurrentHashMap<String, File> tempDirectories,
             InternalSerializationService jobSerializationService
     ) {
-        CompletableFuture[] futures = new CompletableFuture[vertices.size()];
+        CompletableFuture[] futures = new CompletableFuture[vertices.length];
         int index = 0;
         for (VertexDef vertex : vertices) {
             ClassLoader processorClassLoader = isLightJob ? null :
@@ -481,13 +481,13 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     }
 
     private void initDag(InternalSerializationService jobSerializationService) {
-        final Map<Integer, VertexDef> vMap = vertices.stream().collect(toMap(VertexDef::vertexId, v -> v));
+        final Map<Integer, VertexDef> vMap = stream(vertices).collect(toMap(VertexDef::vertexId, v -> v));
         for (VertexDef v : vertices) {
             v.inboundEdges().forEach(e -> e.initTransientFields(vMap, v, false));
             v.outboundEdges().forEach(e -> e.initTransientFields(vMap, v, true));
         }
         final IPartitionService partitionService = nodeEngine.getPartitionService();
-        vertices.stream()
+        stream(vertices)
                 .map(VertexDef::outboundEdges)
                 .flatMap(List::stream)
                 .map(EdgeDef::partitioner)
@@ -581,8 +581,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             int remainder = upstreamParallelism % downstreamParallelism;
 
             localConveyorMap.put(edge.edgeId(), Stream.concat(
-                    Arrays.stream(createConveyorArray(remainder, queueCount + 1, queueSize)),
-                    Arrays.stream(createConveyorArray(
+                    stream(createConveyorArray(remainder, queueCount + 1, queueSize)),
+                    stream(createConveyorArray(
                             downstreamParallelism - remainder, Math.max(1, queueCount), queueSize
                     ))).toArray((IntFunction<ConcurrentConveyor<Object>[]>) ConcurrentConveyor[]::new)
             );
@@ -848,6 +848,6 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     }
 
     public List<VertexDef> getVertices() {
-        return unmodifiableList(vertices);
+        return unmodifiableList(asList(vertices));
     }
 }
