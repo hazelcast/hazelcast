@@ -51,10 +51,10 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.sql.impl.connector.jdbc.ExpressionTranslator.validateExpression;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.toList;
 
 public class JdbcSqlConnector implements SqlConnector {
 
@@ -219,7 +219,7 @@ public class JdbcSqlConnector implements SqlConnector {
         validateExpression(predicate);
 
         return dag.newUniqueVertex(
-                table.toString(),
+                "Select (" + table.getExternalName() + ")",
                 ProcessorMetaSupplier.forceTotalParallelismOne(
                         new SelectProcessorSupplier(
                                 table.getJdbcUrl(),
@@ -237,7 +237,7 @@ public class JdbcSqlConnector implements SqlConnector {
         JdbcTable table = (JdbcTable) table0;
 
         return new VertexWithInputConfig(dag.newUniqueVertex(
-                table.toString(),
+                "Insert (" + table.getExternalName() + ")",
                 new InsertProcessorSupplier(
                         table.getJdbcUrl(),
                         table.getExternalName(),
@@ -264,7 +264,10 @@ public class JdbcSqlConnector implements SqlConnector {
             remappedUpdatesByFieldNames.put(table.getField(entry.getKey()).externalName(), entry.getValue());
         }
         List<String> pkFields = getPrimaryKey(table0)
-                .stream().map(f -> table.getField(f).externalName()).collect(Collectors.toList());
+                .stream()
+                .map(f -> table.getField(f).externalName())
+                .collect(toList());
+
         return dag.newUniqueVertex(
                 "Update(" + table.getExternalName() + ")",
                 new UpdateProcessorSupplier(
@@ -283,7 +286,10 @@ public class JdbcSqlConnector implements SqlConnector {
         JdbcTable table = (JdbcTable) table0;
 
         List<String> pkFields = getPrimaryKey(table0)
-                .stream().map(f -> table.getField(f).externalName()).collect(Collectors.toList());
+                .stream()
+                .map(f -> table.getField(f).externalName())
+                .collect(toList());
+
         return dag.newUniqueVertex(
                 "Delete(" + table.getExternalName() + ")",
                 new DeleteProcessorSupplier(
