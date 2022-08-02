@@ -775,8 +775,12 @@ public final class Util {
     }
 
     public static void checkJetIsEnabled(NodeEngine nodeEngine) {
-        if (!nodeEngine.getConfig().getJetConfig().isEnabled()) {
+        if (!isJetEnabled(nodeEngine)) {
             throw new JetDisabledException(JET_IS_DISABLED_MESSAGE);
         }
+    }
+
+    public static boolean isJetEnabled(NodeEngine nodeEngine) {
+        return nodeEngine.getConfig().getJetConfig().isEnabled();
     }
 }
