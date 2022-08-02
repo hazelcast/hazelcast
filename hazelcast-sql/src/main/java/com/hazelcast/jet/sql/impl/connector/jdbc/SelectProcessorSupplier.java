@@ -45,6 +45,7 @@ import java.util.List;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 
 public class SelectProcessorSupplier implements ProcessorSupplier, DataSerializable, SecuredFunction {
 
@@ -83,16 +84,9 @@ public class SelectProcessorSupplier implements ProcessorSupplier, DataSerializa
         ExpressionTranslator translator = new ExpressionTranslator(evalContext, fields);
         String select;
         if (projection != null) {
-            StringBuilder sb = new StringBuilder();
-            for (int i = 0; i < projection.size(); i++) {
-                Expression<?> projectionExpression = projection.get(i);
-                String translated = translator.translate(projectionExpression);
-                sb.append(translated);
-                if (i < projection.size() - 1) {
-                    sb.append(",");
-                }
-            }
-            select = sb.toString();
+            select = projection.stream()
+                               .map(translator::translate)
+                               .collect(joining(","));
         } else {
             select = "*";
         }

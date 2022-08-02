@@ -111,11 +111,11 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
     }
 
     private String buildQuery() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("UPDATE ");
-        sb.append(tableName);
-        sb.append(" SET ").append(setClause);
-        sb.append(" WHERE ").append(whereClause);
+        StringBuilder sb = new StringBuilder()
+                .append("UPDATE ")
+                .append(tableName)
+                .append(" SET ").append(setClause)
+                .append(" WHERE ").append(whereClause);
 
         return sb.toString();
     }
