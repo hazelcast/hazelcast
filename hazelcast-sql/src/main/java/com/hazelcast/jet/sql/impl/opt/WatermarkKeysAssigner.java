@@ -34,12 +34,11 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Set;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
@@ -82,19 +81,18 @@ public class WatermarkKeysAssigner {
 
         @Override
         public void visit(RelNode node, int ordinal, @Nullable RelNode parent) {
-            // front wave of recursion
+            visit0(node, ordinal, parent);
 
-            if (node instanceof FullScanPhysicalRel) {
-                assert node.getInputs().isEmpty() : "FullScan not a leaf";
-                FullScanPhysicalRel scan = (FullScanPhysicalRel) node;
-                int idx = scan.watermarkedColumnIndex();
-                if (idx >= 0) {
-                    scan.setWatermarkKey(WatermarkKeysAssigner.this.keyCounter);
-                    relToWmKeyMapping.put(scan, Collections.singletonMap(idx, new MutableByte(keyCounter)));
-                }
-                return;
+            WatermarkedFields wmFields = OptUtils.metadataQuery(node).extractWatermarkedFields(node);
+            if (!Objects.equals(
+                    wmFields == null ? emptySet() : wmFields.getFieldIndexes(),
+                    relToWmKeyMapping.getOrDefault(node, emptyMap()).keySet())) {
+                throw new RuntimeException("mismatch between WM fields in metadata query and in WmKeyAssigner");
             }
+        }
 
+        private void visit0(RelNode node, int ordinal, @Nullable RelNode parent) {
+            // start with recursion to children
             super.visit(node, ordinal, parent);
 
             // back wave of recursion
@@ -243,13 +241,6 @@ public class WatermarkKeysAssigner {
             } else {
                 // watermark is not preserving during any other rel -- break the chain.
                 return;
-            }
-
-            WatermarkedFields wmFields = OptUtils.metadataQuery(node).extractWatermarkedFields(node);
-            if (!Objects.equals(
-                    wmFields == null ? emptySet() : wmFields.getFieldIndexes(),
-                    relToWmKeyMapping.getOrDefault(node, emptyMap()).keySet())) {
-                throw new RuntimeException("mismatch between WM fields in metadata query and in WmKeyAssigner");
             }
         }
     }
