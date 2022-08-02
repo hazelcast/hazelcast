@@ -191,6 +191,13 @@ public final class ImdgUtil {
         return list;
     }
 
+    /**
+     * Writes given array into the ObjectDataOutput to be later read by {@linkplain #readArray}.
+     *
+     * @param output output to which we write
+     * @param array array what will be written, must not be null
+     * @param <E> element type of the array
+     */
     public static <E> void writeArray(@Nonnull ObjectDataOutput output, @Nonnull E[] array) throws IOException {
         output.writeInt(array.length);
         for (E o : array) {
@@ -198,6 +205,14 @@ public final class ImdgUtil {
         }
     }
 
+    /**
+     * Reads array of type {@code E[]} from given ObjectDataInput, written by {@linkplain #writeArray}.
+     *
+     * @param input input from which the array will be read.
+     * @param arrayConstructor constructor used to construct new instance of E[], returned value should not be null.
+     * @return array read from input
+     * @param <E> element type of the array
+     */
     @Nonnull
     public static <E> E[] readArray(@Nonnull ObjectDataInput input, @Nonnull IntFunction<E[]> arrayConstructor)
             throws IOException {
