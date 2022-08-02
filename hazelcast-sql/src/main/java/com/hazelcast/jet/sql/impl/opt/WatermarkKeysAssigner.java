@@ -95,9 +95,19 @@ public class WatermarkKeysAssigner {
             // start with recursion to children
             super.visit(node, ordinal, parent);
 
-            // back wave of recursion
 
-            // don't add anything if all traversed FullScan's aren't watermarked.
+            if (node instanceof FullScanPhysicalRel) {
+                assert node.getInputs().isEmpty() : "FullScan not a leaf";
+                FullScanPhysicalRel scan = (FullScanPhysicalRel) node;
+                int idx = scan.watermarkedColumnIndex();
+                if (idx >= 0) {
+                    scan.setWatermarkKey(WatermarkKeysAssigner.this.keyCounter);
+                    relToWmKeyMapping.put(scan, Collections.singletonMap(idx, new MutableByte(keyCounter)));
+                }
+                return;
+            }
+
+            // don't add anything if no traversed FullScan is watermarked.
             if (relToWmKeyMapping.isEmpty()) {
                 return;
             }
@@ -130,29 +140,21 @@ public class WatermarkKeysAssigner {
                 UnionPhysicalRel union = (UnionPhysicalRel) node;
                 assert !union.getInputs().isEmpty();
 
-                // Collect intersection of watermarked fields from all union inputs.
-                Iterator<RelNode> it = union.getInputs().iterator();
-                Set<Integer> commonWmIdx = new HashSet<>(relToWmKeyMapping.getOrDefault(it.next(), emptyMap()).keySet());
-                while (it.hasNext()) {
-                    commonWmIdx.retainAll(relToWmKeyMapping.getOrDefault(it.next(), emptyMap()).keySet());
-                }
-
-                // Get a reference keyed wm map from first input
-                if (commonWmIdx.isEmpty()) {
-                    return;
-                }
-                it = union.getInputs().iterator();
-                Map<Integer, MutableByte> byteMap = relToWmKeyMapping.get(it.next());
-
-                // Assign a new byte value for all referenced bytes
-                it = union.getInputs().iterator();
-                while (it.hasNext()) {
-                    for (Integer idx : commonWmIdx) {
-                        relToWmKeyMapping.get(it.next()).get(idx).setValue(byteMap.get(idx).getValue());
+                Map<Integer, MutableByte> intersection = new HashMap<>(relToWmKeyMapping.getOrDefault(union.getInput(0), emptyMap()));
+                for (int inputIndex = 0; inputIndex < union.getInputs().size(); inputIndex++) {
+                    Map<Integer, MutableByte> inputWmKeys = relToWmKeyMapping.getOrDefault(union.getInput(inputIndex), emptyMap());
+                    for (Iterator<Entry<Integer, MutableByte>> intersectionIterator = intersection.entrySet().iterator(); intersectionIterator.hasNext(); ) {
+                        Entry<Integer, MutableByte> intersectionEntry = intersectionIterator.next();
+                        MutableByte inputWmKey = inputWmKeys.get(intersectionEntry.getKey());
+                        if (inputWmKey == null) {
+                            intersectionIterator.remove();
+                        } else {
+                            inputWmKey.setValue(intersectionEntry.getValue().getValue());
+                        }
                     }
                 }
-                it = union.getInputs().iterator();
-                relToWmKeyMapping.put(union, relToWmKeyMapping.get(it.next()));
+
+                relToWmKeyMapping.put(union, intersection);
 //            } else if (node instanceof StreamToStreamJoinPhysicalRel) {
 //                StreamToStreamJoinPhysicalRel join = (StreamToStreamJoinPhysicalRel) node;
 //                Map<RexInputRef, MutableByte> leftRefByteMap = refToWmKeyMapping.get(join.getLeft());
@@ -239,7 +241,7 @@ public class WatermarkKeysAssigner {
             } else if (node instanceof DropLateItemsPhysicalRel) {
                 relToWmKeyMapping.put(node, relToWmKeyMapping.get(node.getInput(0)));
             } else {
-                // watermark is not preserving during any other rel -- break the chain.
+                // watermark is not preserved for other rels -- break the chain.
                 return;
             }
         }
