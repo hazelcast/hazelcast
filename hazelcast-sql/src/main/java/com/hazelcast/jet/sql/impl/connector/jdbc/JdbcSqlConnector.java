@@ -111,7 +111,7 @@ public class JdbcSqlConnector implements SqlConnector {
     }
 
     @Nonnull
-    private Map<String, DbField> readDbFields(@Nonnull Map<String, String> options, @Nonnull String externalName) {
+    private Map<String, DbField> readDbFields(@Nonnull Map<String, String> options, @Nonnull String externalTableName) {
         Map<String, DbField> fields = new HashMap<>();
         try {
             String jdbcUrl = requireNonNull(options.get(OPTION_JDBC_URL), OPTION_JDBC_URL + " must be set");
@@ -119,11 +119,11 @@ public class JdbcSqlConnector implements SqlConnector {
 
             try (Connection connection = driver.connect(jdbcUrl, new Properties());
                  Statement statement = connection.createStatement()) {
-                Set<String> pkColumns = readPrimaryKeyColumns(externalName, connection);
+                Set<String> pkColumns = readPrimaryKeyColumns(externalTableName, connection);
 
-                boolean hasResultSet = statement.execute("SELECT * FROM " + externalName + " LIMIT 0");
+                boolean hasResultSet = statement.execute("SELECT * FROM " + externalTableName + " LIMIT 0");
                 if (!hasResultSet) {
-                    throw new IllegalStateException("Could not resolve fields for table " + externalName);
+                    throw new IllegalStateException("Could not resolve fields for table " + externalTableName);
                 }
                 ResultSet rs = statement.getResultSet();
                 ResultSetMetaData metaData = rs.getMetaData();
