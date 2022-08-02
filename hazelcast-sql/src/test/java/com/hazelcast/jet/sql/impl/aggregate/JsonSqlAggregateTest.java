@@ -281,13 +281,16 @@ public class JsonSqlAggregateTest extends SqlJsonTestSupport {
             JsonValue value = actualRowsInMap.get(kv.getKey());
             JsonObject object = value.asObject();
             JsonObject object2 = kv.getValue().asObject();
-            if (!(jsonObjectEquals(object, object2))) {
+            if (!(jsonObjectEqualsFirstLevelMixed(object, object2))) {
                 throw new AssertionError("Object: " + object + " is not equal to Object: " + object2);
             }
         }
     }
 
-    private boolean jsonObjectEquals(JsonObject obj, JsonObject obj2) {
+    // A helper method to check whether two JSON objects are equal.
+    // It checks whether first level of fields are same (although they can be
+    // in mixed order).
+    private boolean jsonObjectEqualsFirstLevelMixed(JsonObject obj, JsonObject obj2) {
         Map<String, JsonValue> fields = new HashMap<>();
         obj.iterator().forEachRemaining(m -> fields.put(m.getName(), m.getValue()));
 

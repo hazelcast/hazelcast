@@ -24,10 +24,11 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Map.Entry;
 
 public class JsonObjectAggAggregation implements SqlAggregation {
-    private HashMap<Object, Object> keyValues = new HashMap<>();
+    private final Map<Object, Object> keyValues = new HashMap<>();
 
     private int keyIndex;
     private int valueIndex;
