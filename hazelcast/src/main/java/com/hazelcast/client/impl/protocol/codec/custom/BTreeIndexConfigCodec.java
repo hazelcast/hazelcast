@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("e821dbe123d55d5e1f205014b5e02135")
+@Generated("528693f0bc6063ef420cef7ffe731450")
 public final class BTreeIndexConfigCodec {
 
     private BTreeIndexConfigCodec() {
@@ -33,8 +33,8 @@ public final class BTreeIndexConfigCodec {
     public static void encode(ClientMessage clientMessage, com.hazelcast.config.BTreeIndexConfig bTreeIndexConfig) {
         clientMessage.add(BEGIN_FRAME.copy());
 
-        CodecUtil.encodeNullable(clientMessage, bTreeIndexConfig.getPageSize(), CapacityCodec::encode);
-        CodecUtil.encodeNullable(clientMessage, bTreeIndexConfig.getMemoryTierConfig(), MemoryTierConfigCodec::encode);
+        CapacityCodec.encode(clientMessage, bTreeIndexConfig.getPageSize());
+        MemoryTierConfigCodec.encode(clientMessage, bTreeIndexConfig.getMemoryTierConfig());
 
         clientMessage.add(END_FRAME.copy());
     }
@@ -43,8 +43,8 @@ public final class BTreeIndexConfigCodec {
         // begin frame
         iterator.next();
 
-        com.hazelcast.memory.Capacity pageSize = CodecUtil.decodeNullable(iterator, CapacityCodec::decode);
-        com.hazelcast.config.MemoryTierConfig memoryTierConfig = CodecUtil.decodeNullable(iterator, MemoryTierConfigCodec::decode);
+        com.hazelcast.memory.Capacity pageSize = CapacityCodec.decode(iterator);
+        com.hazelcast.config.MemoryTierConfig memoryTierConfig = MemoryTierConfigCodec.decode(iterator);
 
         fastForwardToEndFrame(iterator);
 
