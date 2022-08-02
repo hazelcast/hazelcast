@@ -106,11 +106,11 @@
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
         <kafka.version>2.8.1</kafka.version>
-        <kotlin.version>1.5.32</kotlin.version>
+        <kotlin.version>1.7.10</kotlin.version>
         <log4j.version>1.2.17.redhat-00008</log4j.version>
         <log4j2.version>2.18.0</log4j2.version>
-        <mysql.connector.version>8.0.29</mysql.connector.version>
-        <netty.version>4.1.74.Final</netty.version>
+        <mysql.connector.version>8.0.30</mysql.connector.version>
+        <netty.version>4.1.79.Final</netty.version>
         <objenesis.version>3.2</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.12.3</parquet.version>
@@ -1516,7 +1516,7 @@
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-bom</artifactId>
-                <version>9.4.44.v20210927</version>
+                <version>9.4.48.v20220622</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -1817,7 +1817,7 @@
             <dependency>
               <groupId>org.wildfly.openssl</groupId>
               <artifactId>wildfly-openssl</artifactId>
-              <version>1.0.12.Final</version>
+              <version>1.1.3.Final</version>
             </dependency>
             <dependency>
               <groupId>io.netty</groupId>
@@ -2009,7 +2009,7 @@
         <dependency>
             <groupId>org.apache.tomcat.embed</groupId>
             <artifactId>tomcat-embed-core</artifactId>
-            <version>10.0.14</version>
+            <version>10.0.23</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
