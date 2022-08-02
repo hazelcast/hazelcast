@@ -31,6 +31,8 @@ import java.io.EOFException;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.channels.CancelledKeyException;
+import java.util.Arrays;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
@@ -187,20 +189,24 @@ public class TcpIpConnection
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof TcpIpConnection)) {
-            return false;
-        }
-        TcpIpConnection that = (TcpIpConnection) o;
-        return connectionId == that.getConnectionId();
+    public int hashCode() {
+        return hash(channel.isClientMode(), connectionId);
     }
 
     @Override
-    public int hashCode() {
-        return connectionId;
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        TcpIpConnection other = (TcpIpConnection) obj;
+        return channel.isClientMode() == other.channel.isClientMode() && connectionId == other.connectionId
+                && equals(endPoint, other.endPoint);
     }
 
     @Override
@@ -297,4 +303,13 @@ public class TcpIpConnection
                 + ", type=" + type
                 + "]";
     }
+
+    private static int hash(Object... values) {
+        return Arrays.hashCode(values);
+    }
+
+    private static boolean equals(Object a, Object b) {
+        return (a == b) || (a != null && a.equals(b));
+    }
+
 }
