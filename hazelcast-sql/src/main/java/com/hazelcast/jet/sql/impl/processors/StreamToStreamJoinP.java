@@ -138,6 +138,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         emptyRightRow = new JetSqlRow(ss, new Object[columnCounts.f1()]);
     }
 
+    @SuppressWarnings("checkstyle:NestedIfDepth")
     @Override
     public boolean tryProcess(int ordinal, @Nonnull Object item) {
         assert ordinal == 0 || ordinal == 1; // bad DAG
