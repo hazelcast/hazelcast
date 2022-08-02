@@ -666,8 +666,8 @@ public class ProcessorTasklet implements Tasklet {
         return currInstream != null && currInstream.priority() == Integer.MIN_VALUE;
     }
 
-    private long lastForwardedWmLatency() {
-        long wm = outbox.lastForwardedWm();
+    private long lastForwardedWmLatency(byte wmKey) {
+        long wm = outbox.lastForwardedWm(wmKey);
         if (wm == IDLE_MESSAGE_TIME) {
             return Long.MIN_VALUE; // idle
         }
@@ -724,10 +724,9 @@ public class ProcessorTasklet implements Tasklet {
             MetricDescriptor keyedDesc = descriptor.copy().withDiscriminator("key", Byte.toString(key));
             mContext.collect(keyedDesc, TOP_OBSERVED_WM, ProbeLevel.INFO, ProbeUnit.MS, coalescers.topObservedWm(key));
             mContext.collect(keyedDesc, COALESCED_WM, ProbeLevel.INFO, ProbeUnit.MS, coalescers.coalescedWm(key));
+            mContext.collect(keyedDesc, LAST_FORWARDED_WM, ProbeLevel.INFO, ProbeUnit.MS, outbox.lastForwardedWm(key));
+            mContext.collect(keyedDesc, LAST_FORWARDED_WM_LATENCY, ProbeLevel.INFO, ProbeUnit.MS, lastForwardedWmLatency(key));
         }
-
-        mContext.collect(descriptor, LAST_FORWARDED_WM, ProbeLevel.INFO, ProbeUnit.MS, outbox.lastForwardedWm());
-        mContext.collect(descriptor, LAST_FORWARDED_WM_LATENCY, ProbeLevel.INFO, ProbeUnit.MS, lastForwardedWmLatency());
 
         mContext.collect(descriptor, this);
 
