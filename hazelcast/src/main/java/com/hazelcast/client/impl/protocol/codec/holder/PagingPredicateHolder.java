@@ -21,6 +21,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.IterationType;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
+import com.hazelcast.query.impl.predicates.MultiPartitionPredicateImpl;
 import com.hazelcast.query.impl.predicates.PagingPredicateImpl;
 import com.hazelcast.query.impl.predicates.PartitionPredicateImpl;
 import java.util.AbstractMap;
@@ -114,7 +115,10 @@ public class PagingPredicateHolder {
         for (Data keyData : partitionKeysData) {
             partitionKeys.add(serializationService.toObject(keyData));
         }
-        return new PartitionPredicateImpl<>(partitionKeys, pagingPredicate);
+        
+        return partitionKeys.size() == 1 
+            ? new PartitionPredicateImpl<>(partitionKeys.iterator().next(), pagingPredicate)
+            : new MultiPartitionPredicateImpl<>(partitionKeys, pagingPredicate);
     }
 
     public static <K, V> PagingPredicateHolder of(Predicate<K, V> predicate,

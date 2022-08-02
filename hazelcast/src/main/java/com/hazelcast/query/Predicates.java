@@ -28,6 +28,7 @@ import com.hazelcast.query.impl.predicates.ILikePredicate;
 import com.hazelcast.query.impl.predicates.InPredicate;
 import com.hazelcast.query.impl.predicates.InstanceOfPredicate;
 import com.hazelcast.query.impl.predicates.LikePredicate;
+import com.hazelcast.query.impl.predicates.MultiPartitionPredicateImpl;
 import com.hazelcast.query.impl.predicates.NotEqualPredicate;
 import com.hazelcast.query.impl.predicates.NotPredicate;
 import com.hazelcast.query.impl.predicates.OrPredicate;
@@ -36,7 +37,6 @@ import com.hazelcast.query.impl.predicates.PartitionPredicateImpl;
 import com.hazelcast.query.impl.predicates.RegexPredicate;
 import com.hazelcast.query.impl.predicates.SqlPredicate;
 import com.hazelcast.query.impl.predicates.TruePredicate;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.Map;
@@ -578,7 +578,7 @@ public final class Predicates {
      */
     public static <K, V> PartitionPredicate<K, V> partitionPredicate(Object partitionKey, Predicate<K, V> target) {
         checkNotNull(partitionKey, "partitionKey can't be null");
-        return new PartitionPredicateImpl<>(Collections.singleton(partitionKey), target);
+        return new PartitionPredicateImpl<>(partitionKey, target);
     }
 
     /**
@@ -593,6 +593,6 @@ public final class Predicates {
      */
     public static <K, V> PartitionPredicate<K, V> multiPartitionPredicate(Set<? extends Object> partitionKeys,
                                                                           Predicate<K, V> target) {
-        return new PartitionPredicateImpl<>(partitionKeys, target);
+        return new MultiPartitionPredicateImpl<>(partitionKeys, target);
     }
 }

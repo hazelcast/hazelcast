@@ -16,24 +16,17 @@
 
 package com.hazelcast.query.impl.predicates;
 
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static com.hazelcast.internal.util.Preconditions.checkTrue;
-
-import com.hazelcast.internal.cluster.Versions;
-import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
+
 import java.io.IOException;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Map;
-import java.util.Objects;
-import java.util.Random;
-import java.util.Set;
+
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
 /**
  * Implementation of {@link PartitionPredicate}.
@@ -42,11 +35,11 @@ import java.util.Set;
  * @param <V> type of the entry value
  */
 @BinaryInterface
-public class PartitionPredicateImpl<K, V> implements PartitionPredicate<K, V>, IdentifiedDataSerializable, Versioned {
+public class PartitionPredicateImpl<K, V> implements PartitionPredicate<K, V>, IdentifiedDataSerializable {
 
     private static final long serialVersionUID = 1L;
-    private static final Random RANDOM = new Random();
-    private Set<? extends Object> partitionKeys;
+
+    private Object partitionKey;
     private Predicate<K, V> target;
 
     // should only be used for deserialization
@@ -56,43 +49,23 @@ public class PartitionPredicateImpl<K, V> implements PartitionPredicate<K, V>, I
     /**
      * Creates a new PartitionPredicate.
      *
-     * @param partitionKeys the partition keys
+     * @param partitionKey the partition key
      * @param target       the target {@link Predicate}
      * @throws NullPointerException     if partitionKey or target predicate is {@code null}
      */
-    public PartitionPredicateImpl(Set<? extends Object> partitionKeys, Predicate<K, V> target) {
-        this.partitionKeys = checkNotNull(partitionKeys, "partitionKeys can't be null");
-        checkTrue(partitionKeys.size() > 0, "partitionKeys must not be empty");
+    public PartitionPredicateImpl(Object partitionKey, Predicate<K, V> target) {
+        this.partitionKey = checkNotNull(partitionKey, "partitionKey can't be null");
         this.target = checkNotNull(target, "target predicate can't be null");
     }
 
     /**
-     * Returns the partition keys that determines the partitions the target {@link Predicate} is going to execute on.
+     * Returns the partition key that determines the partition the target {@link Predicate} is going to execute on.
      *
-     * @return the partition IDs
-     */
-    @Override
-    public Collection<? extends Object> getPartitionKeys() {
-        return partitionKeys;
-    }
-
-    /**
-     * Returns a random partition key that can be used to pick which member of a cluster to execute on.
-     *
-     * If there is only a single partition key in {@linkplain #getPartitionKeys() partitionKeys} it is always returned immediately
-     *
-     * @return the randomly selected partition key from {@linkplain #getPartitionKeys()} partitionKeys}.
+     * @return the partition ID
      */
     @Override
     public Object getPartitionKey() {
-        if (partitionKeys.size() == 1) {
-            return getSinglePartitionKey();
-        }
-        // Empty collections are rejected by the object constructor and serializer so this should be safe
-        return partitionKeys.stream()
-                .skip(RANDOM.nextInt(partitionKeys.size()))
-                .findFirst()
-                .get();
+        return partitionKey;
     }
 
     /**
@@ -122,30 +95,22 @@ public class PartitionPredicateImpl<K, V> implements PartitionPredicate<K, V>, I
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        if (out.getVersion().isLessThan(Versions.V5_2)) {
-            out.writeObject(getSinglePartitionKey());
-        } else {
-            out.writeObject(partitionKeys);
-        }
+        out.writeObject(partitionKey);
         out.writeObject(target);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        if (in.getVersion().isLessThan(Versions.V5_2)) {
-            this.partitionKeys = Collections.singleton(in.readObject());
-        } else {
-            this.partitionKeys = in.readObject();
-        }
+        this.partitionKey = in.readObject();
         this.target = in.readObject();
     }
 
     @Override
     public String toString() {
         return "PartitionPredicate{"
-               + "partitionKeys=" + partitionKeys
-               + ", target=" + target
-               + '}';
+                + "partitionKey=" + partitionKey
+                + ", target=" + target
+                + '}';
     }
 
     @Override
@@ -156,24 +121,19 @@ public class PartitionPredicateImpl<K, V> implements PartitionPredicate<K, V>, I
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
+
         PartitionPredicateImpl<?, ?> that = (PartitionPredicateImpl<?, ?>) o;
-        return Objects.equals(partitionKeys, that.partitionKeys)
-               && Objects.equals(target, that.target);
+
+        if (partitionKey != null ? !partitionKey.equals(that.partitionKey) : that.partitionKey != null) {
+            return false;
+        }
+        return target != null ? target.equals(that.target) : that.target == null;
     }
 
     @Override
     public int hashCode() {
-        int result = partitionKeys != null ? partitionKeys.hashCode() : 0;
+        int result = partitionKey != null ? partitionKey.hashCode() : 0;
         result = 31 * result + (target != null ? target.hashCode() : 0);
         return result;
-    }
-
-    private Object getSinglePartitionKey() {
-        for (Object key : partitionKeys) {
-            return key;
-        }
-        throw new RuntimeException(
-            "Unreachable branch. PartitionPredicateImpl constructor should check and throw if partitionKeys is empty"
-        );
     }
 }
