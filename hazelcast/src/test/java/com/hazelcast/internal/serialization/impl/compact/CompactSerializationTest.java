@@ -28,7 +28,12 @@ import com.hazelcast.nio.serialization.compact.CompactWriter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import example.serialization.EmployeeDTO;
 import example.serialization.EmployeeDTOSerializer;
+import example.serialization.ExternalizableEmployeeDTO;
+import example.serialization.InnerDTOSerializer;
+import example.serialization.MainDTO;
+import example.serialization.MainDTOSerializer;
 import example.serialization.SameClassEmployeeDTOSerializer;
 import example.serialization.SameTypeNameEmployeeDTOSerializer;
 import org.junit.Test;
@@ -37,9 +42,17 @@ import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 
+import java.io.Serializable;
+
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -117,6 +130,137 @@ public class CompactSerializationTest {
                 .hasMessageContaining("type name");
     }
 
+    @Test
+    public void testMultipleSerializerRegistration() {
+        SerializationConfig config = new SerializationConfig();
+
+        InnerDTOSerializer innerDTOSerializer = spy(new InnerDTOSerializer());
+        MainDTOSerializer mainDTOSerializer = spy(new MainDTOSerializer());
+
+        config.getCompactSerializationConfig()
+                .setEnabled(true)
+                .setSerializers(innerDTOSerializer, mainDTOSerializer);
+
+        SerializationService service = createSerializationService(config);
+
+        MainDTO mainDTO = CompactTestUtil.createMainDTO();
+        MainDTO deserialized = service.toObject(service.toData(mainDTO));
+
+        assertEquals(mainDTO, deserialized);
+        verify(innerDTOSerializer, times(1)).read(any());
+        // one to build schema, one to write object
+        verify(innerDTOSerializer, times(2)).write(any(), any());
+        verify(mainDTOSerializer, times(1)).read(any());
+        // one to build schema, one to write object
+        verify(mainDTOSerializer, times(2)).write(any(), any());
+    }
+
+    @Test
+    public void testMultipleSerializerRegistration_withDuplicateClasses() {
+        SerializationConfig config = new SerializationConfig();
+
+        assertThatThrownBy(() -> {
+            config.getCompactSerializationConfig()
+                    .setSerializers(new EmployeeDTOSerializer(), new SameClassEmployeeDTOSerializer());
+        }).isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Duplicate")
+                .hasMessageContaining("class");
+    }
+
+    @Test
+    public void testMultipleSerializerRegistration_withDuplicateTypeNames() {
+        SerializationConfig config = new SerializationConfig();
+
+        assertThatThrownBy(() -> {
+            config.getCompactSerializationConfig()
+                    .setSerializers(new EmployeeDTOSerializer(), new SameTypeNameEmployeeDTOSerializer());
+        }).isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Duplicate")
+                .hasMessageContaining("type name");
+    }
+
+    @Test
+    public void testMultipleSerializerRegistration_clearPreviousRegistrations() {
+        SerializationConfig config = new SerializationConfig();
+
+        EmployeeDTOSerializer serializer = spy(new EmployeeDTOSerializer());
+        config.getCompactSerializationConfig()
+                .setEnabled(true)
+                .addSerializer(serializer)
+                .setSerializers(new InnerDTOSerializer(), new MainDTOSerializer());
+
+        SerializationService service = createSerializationService(config);
+        EmployeeDTO employeeDTO = new EmployeeDTO();
+        service.toObject(service.toData(employeeDTO));
+
+        // The previously added serializer should be cleared and not used
+        verify(serializer, never()).read(any());
+        verify(serializer, never()).write(any(), any());
+    }
+
+    @Test
+    public void testMultipleClassRegistration() {
+        SerializationConfig config = new SerializationConfig();
+        config.getCompactSerializationConfig()
+                .setEnabled(true)
+                .setClasses(ExternalizableEmployeeDTO.class, SerializableFoo.class);
+
+        SerializationService service = createSerializationService(config);
+
+        ExternalizableEmployeeDTO externalizableEmployeeDTO = new ExternalizableEmployeeDTO();
+        service.toObject(service.toData(externalizableEmployeeDTO));
+
+        assertFalse(externalizableEmployeeDTO.usedExternalizableSerialization());
+
+        Data data = service.toData(new SerializableFoo());
+        assertTrue(data.isCompact());
+    }
+
+    @Test
+    public void testMultipleClassRegistration_withDuplicateClasses() {
+        SerializationConfig config = new SerializationConfig();
+
+        assertThatThrownBy(() -> {
+            config.getCompactSerializationConfig()
+                    .setClasses(ExternalizableEmployeeDTO.class, ExternalizableEmployeeDTO.class);
+        }).isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Duplicate")
+                .hasMessageContaining("type name");
+    }
+
+    @Test
+    public void testMultipleSerializerRegistration_whenThereAreClassRegistrations() {
+        // Make sure that multiple serializer registrations do no override class
+        // registrations
+        SerializationConfig config = new SerializationConfig();
+        config.getCompactSerializationConfig()
+                .setEnabled(true)
+                .setClasses(SerializableFoo.class)
+                .setSerializers(new EmployeeDTOSerializer());
+
+        SerializationService service = createSerializationService(config);
+        Data data = service.toData(new SerializableFoo());
+        assertTrue(data.isCompact());
+    }
+
+    @Test
+    public void testMultipleClassRegistration_whenThereAreSerializerRegistrations() {
+        // Make sure that multiple class registrations do no override serializer
+        // registrations
+        SerializationConfig config = new SerializationConfig();
+        EmployeeDTOSerializer serializer = spy(new EmployeeDTOSerializer());
+        config.getCompactSerializationConfig()
+                .setEnabled(true)
+                .setSerializers(serializer)
+                .setClasses(SerializableFoo.class);
+
+        SerializationService service = createSerializationService(config);
+        service.toObject(service.toData(new EmployeeDTO()));
+
+        verify(serializer, times(1)).read(any());
+        verify(serializer, times(2)).write(any(), any());
+    }
+
     private SerializationService createSerializationService(SerializationConfig config) {
         config.getCompactSerializationConfig().setEnabled(true);
         return new DefaultSerializationServiceBuilder()
@@ -156,6 +300,11 @@ public class CompactSerializationTest {
         private Foo(int bar) {
             this.bar = bar;
         }
+    }
+
+    // Not static by purpose to fail the test if Java Serialization is used
+    private class SerializableFoo implements Serializable {
+        private int i;
     }
 
     private static class DuplicateWritingSerializer implements CompactSerializer<Foo> {
