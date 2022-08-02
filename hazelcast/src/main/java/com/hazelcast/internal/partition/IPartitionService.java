@@ -213,5 +213,9 @@ public interface IPartitionService extends CoreService {
      * @param keys the collection of key objects to map to an id set
      * @return the mapped id set
      */
-    PartitionIdSet getPartitionIdSet(Collection<Object> keys);
+    default PartitionIdSet getPartitionIdSet(Collection<Object> keys) {
+        PartitionIdSet partitionIds = new PartitionIdSet(getPartitionCount());
+        keys.forEach(o -> partitionIds.add(getPartitionId(o)));
+        return partitionIds;
+    }
 }

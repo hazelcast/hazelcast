@@ -50,7 +50,6 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.internal.util.StringUtil;
-import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.internal.util.scheduler.CoalescingDelayedTrigger;
 import com.hazelcast.internal.util.scheduler.ScheduledEntry;
 import com.hazelcast.logging.ILogger;
@@ -871,13 +870,6 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
         IPartition[] result = new IPartition[partitionCount];
         System.arraycopy(partitionStateManager.getPartitions(), 0, result, 0, partitionCount);
         return result;
-    }
-
-    @Override
-    public PartitionIdSet getPartitionIdSet(Collection<Object> keys) {
-        PartitionIdSet partitionIds = new PartitionIdSet(getPartitionCount());
-        keys.forEach(o -> partitionIds.add(getPartitionId(o)));
-        return partitionIds;
     }
 
     @Override
