@@ -38,9 +38,11 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import static java.util.Collections.emptyMap;
+import static java.util.Collections.emptySet;
 
 /**
  * Traverse a relational tree and assign watermark keys.
@@ -50,7 +52,6 @@ public class WatermarkKeysAssigner {
     private final BottomUpWatermarkKeyAssignerVisitor visitor;
     // Note: at the moment, no need to separate watermark keys without stream-to-stream join introduction.
     private final byte keyCounter = 0;
-//    private final byte[] keyCounter = {0};
 
     public WatermarkKeysAssigner(PhysicalRel root) {
         this.root = root;
@@ -102,8 +103,6 @@ public class WatermarkKeysAssigner {
             if (relToWmKeyMapping.isEmpty()) {
                 return;
             }
-
-            WatermarkedFields wmFields = OptUtils.metadataQuery(node).extractWatermarkedFields(node);
 
             if (node instanceof CalcPhysicalRel) {
                 CalcPhysicalRel calc = (CalcPhysicalRel) node;
@@ -246,9 +245,11 @@ public class WatermarkKeysAssigner {
                 return;
             }
 
-            if (wmFields != null) {
-                assert relToWmKeyMapping.getOrDefault(node, emptyMap()).keySet().equals(wmFields.getFieldIndexes())
-                        : "mismatch between WM fields in metadata query and in WmKeyAssigner";
+            WatermarkedFields wmFields = OptUtils.metadataQuery(node).extractWatermarkedFields(node);
+            if (!Objects.equals(
+                    wmFields == null ? emptySet() : wmFields.getFieldIndexes(),
+                    relToWmKeyMapping.getOrDefault(node, emptyMap()).keySet())) {
+                throw new RuntimeException("mismatch between WM fields in metadata query and in WmKeyAssigner");
             }
         }
     }
