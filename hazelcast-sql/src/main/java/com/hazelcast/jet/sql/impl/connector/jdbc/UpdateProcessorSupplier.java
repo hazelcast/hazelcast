@@ -46,9 +46,6 @@ import static java.util.stream.Collectors.joining;
 
 public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializable, SecuredFunction {
 
-    // TODO SQL connector parameter
-    public static final int BATCH_LIMIT = 100;
-
     private String jdbcUrl;
     private String tableName;
     private List<String> pkFields;
@@ -56,6 +53,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
     private Map<String, Expression<?>> updatesByFieldNames;
     private String whereClause;
     private String setClause;
+    private int batchLimit;
 
     private transient ExpressionEvalContext evalContext;
 
@@ -64,12 +62,14 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
     }
 
     public UpdateProcessorSupplier(String jdbcUrl, String tableName, List<String> pkFields,
-                                   List<String> fields, Map<String, Expression<?>> updatesByFieldNames) {
+                                   List<String> fields, Map<String, Expression<?>> updatesByFieldNames,
+                                   int batchLimit) {
         this.jdbcUrl = jdbcUrl;
         this.tableName = tableName;
         this.pkFields = pkFields;
         this.fields = fields;
         this.updatesByFieldNames = updatesByFieldNames;
+        this.batchLimit = batchLimit;
     }
 
     @Override
@@ -103,7 +103,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
                         }
                     },
                     false,
-                    BATCH_LIMIT
+                    batchLimit
             );
             processors.add(processor);
         }
@@ -133,6 +133,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
         writeList(out, pkFields);
         writeList(out, fields);
         out.writeObject(updatesByFieldNames);
+        out.writeInt(batchLimit);
     }
 
     private void writeList(ObjectDataOutput out, List<String> list) throws IOException {
@@ -149,6 +150,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
         pkFields = readList(in);
         fields = readList(in);
         updatesByFieldNames = in.readObject();
+        batchLimit = in.readInt();
     }
 
     private List<String> readList(ObjectDataInput in) throws IOException {

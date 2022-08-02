@@ -35,6 +35,7 @@ public class JdbcTable extends JetTable {
     private final List<String> primaryKeyFieldNames;
     private final String externalName;
     private final String jdbcUrl;
+    private final int batchLimit;
     private final SerializationService serializationService;
 
     public JdbcTable(
@@ -45,6 +46,7 @@ public class JdbcTable extends JetTable {
             @Nonnull TableStatistics statistics,
             @Nonnull String externalName,
             @Nonnull String jdbcUrl,
+            int batchLimit,
             @Nonnull SerializationService serializationService) {
 
         super(sqlConnector, fields, schemaName, name, statistics);
@@ -64,6 +66,7 @@ public class JdbcTable extends JetTable {
         this.primaryKeyFieldNames = unmodifiableList(primaryKeyFieldNames);
         this.externalName = externalName;
         this.jdbcUrl = jdbcUrl;
+        this.batchLimit = batchLimit;
         this.serializationService = serializationService;
     }
 
@@ -77,6 +80,10 @@ public class JdbcTable extends JetTable {
 
     public String getJdbcUrl() {
         return jdbcUrl;
+    }
+
+    public int getBatchLimit() {
+        return batchLimit;
     }
 
     public JdbcTableField getField(String fieldName) {

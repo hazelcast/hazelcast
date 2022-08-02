@@ -43,25 +43,24 @@ import static java.util.stream.Collectors.joining;
 
 public class DeleteProcessorSupplier implements ProcessorSupplier, DataSerializable, SecuredFunction {
 
-    // TODO SQL connector parameter
-    public static final int BATCH_LIMIT = 100;
-
     private String jdbcUrl;
     private String tableName;
     private List<String> pkFields;
     private List<String> fields;
     private String whereClause;
+    private int batchLimit;
 
     @SuppressWarnings("unused")
     public DeleteProcessorSupplier() {
     }
 
     public DeleteProcessorSupplier(String jdbcUrl, String tableName, List<String> pkFields,
-                                   List<String> fields) {
+                                   List<String> fields, int batchLimit) {
         this.jdbcUrl = jdbcUrl;
         this.tableName = tableName;
         this.pkFields = pkFields;
         this.fields = fields;
+        this.batchLimit = batchLimit;
     }
 
     @Override
@@ -86,7 +85,7 @@ public class DeleteProcessorSupplier implements ProcessorSupplier, DataSerializa
                         }
                     },
                     false,
-                    BATCH_LIMIT
+                    batchLimit
             );
             processors.add(processor);
         }
@@ -114,6 +113,7 @@ public class DeleteProcessorSupplier implements ProcessorSupplier, DataSerializa
         out.writeString(tableName);
         writeStringList(out, pkFields);
         writeStringList(out, fields);
+        out.writeInt(batchLimit);
     }
 
     private void writeStringList(ObjectDataOutput out, List<String> list) throws IOException {
@@ -129,6 +129,7 @@ public class DeleteProcessorSupplier implements ProcessorSupplier, DataSerializa
         tableName = in.readString();
         pkFields = readStringList(in);
         fields = readStringList(in);
+        batchLimit = in.readInt();
     }
 
     private List<String> readStringList(ObjectDataInput in) throws IOException {

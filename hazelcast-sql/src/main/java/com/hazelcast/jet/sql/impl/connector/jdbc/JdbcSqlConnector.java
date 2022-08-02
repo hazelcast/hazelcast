@@ -53,6 +53,7 @@ import java.util.Properties;
 import java.util.Set;
 
 import static com.hazelcast.jet.sql.impl.connector.jdbc.ExpressionTranslator.validateExpression;
+import static java.lang.Integer.parseInt;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
 
@@ -61,6 +62,9 @@ public class JdbcSqlConnector implements SqlConnector {
     public static final String TYPE_NAME = "JDBC";
 
     public static final String OPTION_JDBC_URL = "jdbc.url";
+    public static final String OPTION_JDBC_BATCH_LIMIT = "jdbc.batch-limit";
+
+    public static final String JDBC_BATCH_LIMIT_DEFAULT_VALUE = "100";
 
     // ?? Metadata resolvers
 
@@ -200,6 +204,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 new ConstantTableStatistics(0), // TODO Can I query the table for size?
                 externalName,
                 options.get(OPTION_JDBC_URL),
+                parseInt(options.getOrDefault(OPTION_JDBC_BATCH_LIMIT, JDBC_BATCH_LIMIT_DEFAULT_VALUE)),
                 nodeEngine.getSerializationService()
         );
     }
@@ -241,7 +246,8 @@ public class JdbcSqlConnector implements SqlConnector {
                 new InsertProcessorSupplier(
                         table.getJdbcUrl(),
                         table.getExternalName(),
-                        table.getFieldCount()
+                        table.getFieldCount(),
+                        table.getBatchLimit()
                 )
         ));
     }
@@ -275,7 +281,8 @@ public class JdbcSqlConnector implements SqlConnector {
                         table.getExternalName(),
                         pkFields,
                         table.dbFieldNames(),
-                        remappedUpdatesByFieldNames
+                        remappedUpdatesByFieldNames,
+                        table.getBatchLimit()
                 )
         );
     }
@@ -296,7 +303,8 @@ public class JdbcSqlConnector implements SqlConnector {
                         table.getJdbcUrl(),
                         table.getExternalName(),
                         pkFields,
-                        table.dbFieldNames()
+                        table.dbFieldNames(),
+                        table.getBatchLimit()
                 )
         );
     }

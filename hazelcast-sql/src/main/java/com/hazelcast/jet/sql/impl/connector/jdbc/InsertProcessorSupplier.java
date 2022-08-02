@@ -42,21 +42,20 @@ import static java.util.Collections.singletonList;
 
 public class InsertProcessorSupplier implements ProcessorSupplier, DataSerializable, SecuredFunction {
 
-    // TODO change to SQL connector parameter
-    public static final int BATCH_LIMIT = 100;
-
     private String jdbcUrl;
     private String tableName;
     private int fieldCount;
+    private int batchLimit;
 
     @SuppressWarnings("unused")
     public InsertProcessorSupplier() {
     }
 
-    public InsertProcessorSupplier(String jdbcUrl, String tableName, int fieldCount) {
+    public InsertProcessorSupplier(String jdbcUrl, String tableName, int fieldCount, int batchLimit) {
         this.jdbcUrl = jdbcUrl;
         this.tableName = tableName;
         this.fieldCount = fieldCount;
+        this.batchLimit = batchLimit;
     }
 
     @Nonnull
@@ -75,7 +74,7 @@ public class InsertProcessorSupplier implements ProcessorSupplier, DataSerializa
                         }
                     },
                     false,
-                    BATCH_LIMIT
+                    batchLimit
             );
             processors.add(processor);
         }
@@ -108,6 +107,7 @@ public class InsertProcessorSupplier implements ProcessorSupplier, DataSerializa
         out.writeString(jdbcUrl);
         out.writeString(tableName);
         out.writeInt(fieldCount);
+        out.writeInt(batchLimit);
     }
 
     @Override
@@ -115,5 +115,6 @@ public class InsertProcessorSupplier implements ProcessorSupplier, DataSerializa
         jdbcUrl = in.readString();
         tableName = in.readString();
         fieldCount = in.readInt();
+        batchLimit = in.readInt();
     }
 }
