@@ -6600,6 +6600,7 @@ public class MemberCompatibilityNullTest_2_3 {
         assertTrue(isEqual(anInt, parameters.mergeBatchSize));
         assertTrue(parameters.isStatisticsEnabledExists);
         assertTrue(isEqual(aBoolean, parameters.statisticsEnabled));
+        assertFalse(parameters.isCapacityPolicyExists);
     }
 
     @Test
@@ -6738,6 +6739,7 @@ public class MemberCompatibilityNullTest_2_3 {
         assertTrue(isEqual(null, parameters.hotRestartConfig));
         assertTrue(parameters.isMerkleTreeConfigExists);
         assertTrue(isEqual(null, parameters.merkleTreeConfig));
+        assertFalse(parameters.isDataPersistenceConfigExists);
     }
 
     @Test
