@@ -34,6 +34,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -55,7 +56,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Random;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.config.IndexType.HASH;
 import static com.hazelcast.config.IndexType.SORTED;
@@ -78,6 +83,7 @@ import static com.hazelcast.jet.sql.SqlBasicTest.serializationConfig;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
@@ -605,7 +611,123 @@ public class SqlOrderByTest extends SqlTestSupport {
                 .hasMessageContaining("FETCH/OFFSET is only supported for the top-level SELECT");
     }
 
-    private void addIndex(List<String> fieldNames, IndexType type) {
+    @Ignore
+    @Test
+    public void testConcurrentPutAndOrderbyQueries() {
+        IMap<Object, AbstractPojo> map = getTarget().getMap(stableMapName());
+
+        IndexConfig indexConfig = new IndexConfig()
+            .setName("Index_" + randomName())
+            .setType(SORTED);
+
+        indexConfig.addAttribute("intVal");
+        map.addIndex(indexConfig);
+
+        ExecutorService executor = Executors.newFixedThreadPool(10);
+
+        int threadsCount = 10;
+        int keysPerThread = 5000;
+        CountDownLatch latch = new CountDownLatch(threadsCount);
+        AtomicReference<Throwable> exception = new AtomicReference<>();
+
+        for (int i = 0; i < threadsCount; ++i) {
+            int index = i;
+            executor.submit(() -> {
+
+                try {
+                    if (index < threadsCount / 2) {
+
+                        int startingIndex = index * keysPerThread;
+                        // Put thread
+                        for (int n = 0; n < keysPerThread; ++n) {
+                            long keyIndex = startingIndex + n;
+                            getTarget().getMap(stableMapName()).put(key(keyIndex), value(keyIndex));
+                        }
+
+                    } else {
+                        for (int n = 0; n < 10; ++n) {
+                            // order by queries
+                            String sql = String.format("SELECT intVal, varcharVal FROM %s ORDER BY intVal", stableMapName());
+                            assertSqlResultOrdered(sql, singletonList("intVal"), singletonList(false), -1);
+                        }
+                    }
+                } catch (Throwable t) {
+                    t.printStackTrace(System.err);
+                    exception.compareAndSet(null, t);
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        assertOpenEventually(latch);
+        assertNull(exception.get());
+        executor.shutdown();
+    }
+
+    @Ignore
+    @Test
+    public void testConcurrentUpdateAndOrderbyQueries() {
+        IMap<Object, AbstractPojo> map = getTarget().getMap(stableMapName());
+
+        IndexConfig indexConfig = new IndexConfig()
+            .setName("Index_" + randomName())
+            .setType(SORTED);
+
+        indexConfig.addAttribute("intVal");
+        map.addIndex(indexConfig);
+
+        ExecutorService executor = Executors.newFixedThreadPool(10);
+
+        int threadsCount = 10;
+        int keysPerThread = 5000;
+        CountDownLatch latch = new CountDownLatch(threadsCount);
+        AtomicReference<Throwable> exception = new AtomicReference<>();
+
+        // Pre load data
+        for (long i = 0; i < threadsCount * keysPerThread; ++i) {
+            getTarget().getMap(stableMapName()).put(key(i), value(i));
+        }
+
+        for (int i = 0; i < threadsCount; ++i) {
+            int index = i;
+            executor.submit(() -> {
+
+                try {
+                    if (index < threadsCount / 2) {
+
+                        int startingIndex = index * keysPerThread;
+                        // updater thread
+                        for (int n = 0; n < keysPerThread; ++n) {
+                            int diff = ThreadLocalRandom.current().nextInt(10);
+                            diff = ThreadLocalRandom.current().nextBoolean() ? diff : -diff;
+                            long keyIndex = startingIndex + n;
+                            long valueIndex = keyIndex + diff;
+                            getTarget().getMap(stableMapName()).put(key(keyIndex), value(valueIndex));
+                        }
+
+                    } else {
+                        for (int n = 0; n < 10; ++n) {
+                            // order by queries
+                            String sql = String.format("SELECT intVal, varcharVal FROM %s ORDER BY intVal", stableMapName());
+                            assertSqlResultOrdered(sql, singletonList("intVal"), singletonList(false), -1);
+                        }
+                    }
+                } catch (Throwable t) {
+                    t.printStackTrace(System.err);
+                    exception.compareAndSet(null, t);
+                } finally {
+                    latch.countDown();
+                }
+            });
+        }
+
+        assertOpenEventually(latch);
+        assertNull(exception.get());
+        executor.shutdown();
+    }
+
+        private void addIndex(List<String> fieldNames, IndexType type) {
         addIndex(fieldNames, type, mapName());
     }
 
@@ -687,7 +809,9 @@ public class SqlOrderByTest extends SqlTestSupport {
                     highRow = row;
                 }
             }
-            assertEquals(expectedCount, count);
+            if (expectedCount != -1) {
+                assertEquals(expectedCount, count);
+            }
             if (lowRow != null && low != null) {
                 String fieldName = orderFields.get(0);
                 Object fieldValue = lowRow.getObject(rowMetadata.findColumn(fieldName));
