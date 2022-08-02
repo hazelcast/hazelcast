@@ -784,14 +784,14 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     public void when_psInitBlocks_then_otherJobsNotBlocked() throws Exception {
         // Given
         DAG dagBlocking = new DAG().vertex(new Vertex("test",
-                new MockPS(MockP::new, MEMBER_COUNT).initBlocks()));
+                new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT).initBlocks())));
         DAG dagNormal = new DAG().vertex(new Vertex("test",
-                new MockPS(MockP::new, MEMBER_COUNT)));
+                new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT))));
 
         List<Future<Job>> submitFutures = new ArrayList<>();
 
         // When
-        int numJobs = 5;
+        int numJobs = 15;
         for (int i = 0; i < numJobs; i++) {
             submitFutures.add(spawn(() -> newJob(dagBlocking)));
         }
@@ -811,7 +811,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         TestProcessors.assertNoErrorsInProcessors();
     }
 
-    @Test(timeout = 20_000L)
+    @Test
     public void when_psCloseBlocks_then_otherJobsNotBlocked() throws Exception {
         // Given
         DAG dagBlocking = new DAG().vertex(new Vertex("test",
@@ -822,8 +822,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         List<Future<?>> submitFutures = new ArrayList<>();
 
         // When
-        // important: let it me more than JobCoordinationService.COORDINATOR_THREADS_POOL_SIZE
-        int numJobs = 5;
+        int numJobs = 15;
         for (int i = 0; i < numJobs; i++) {
             submitFutures.add(newJob(dagBlocking).getFuture());
         }
@@ -857,7 +856,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         List<Future<Job>> submitFutures = new ArrayList<>();
 
         // When
-        int numJobs = 5;
+        int numJobs = 15;
         for (int i = 0; i < numJobs; i++) {
             submitFutures.add(spawn(() -> newJob(dagBlocking)));
         }

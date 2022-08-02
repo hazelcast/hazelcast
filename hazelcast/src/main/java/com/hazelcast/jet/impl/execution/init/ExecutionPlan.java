@@ -75,11 +75,13 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.Executor;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.internal.util.concurrent.ConcurrentConveyor.concurrentConveyor;
 import static com.hazelcast.jet.config.EdgeConfig.DEFAULT_QUEUE_SIZE;
 import static com.hazelcast.jet.core.Edge.DISTRIBUTE_TO_ALL;
@@ -441,6 +443,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
     ) {
         CompletableFuture[] futures = new CompletableFuture[vertices.length];
         int index = 0;
+        ManagedExecutorService offloadExecutor = nodeEngine.getExecutionService().getExecutor(JOB_OFFLOADABLE_EXECUTOR);
         for (VertexDef vertex : vertices) {
             ClassLoader processorClassLoader = isLightJob ? null :
                     jobClassLoaderService.getProcessorClassLoader(jobId, vertex.name());
@@ -469,13 +472,8 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                                 processorClassLoader
                         )));
             };
-            if (supplier.initIsCooperative()) {
-                action.run();
-                futures[index++] = CompletableFuture.completedFuture(null);
-            } else {
-                ManagedExecutorService executor = nodeEngine.getExecutionService().getExecutor(JOB_OFFLOADABLE_EXECUTOR);
-                futures[index++] = CompletableFuture.runAsync(action, executor);
-            }
+            Executor executor = supplier.initIsCooperative() ? CALLER_RUNS : offloadExecutor;
+            futures[index++] = CompletableFuture.runAsync(action, executor);
         }
         return CompletableFuture.allOf(futures);
     }
