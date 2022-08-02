@@ -31,7 +31,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.util.List;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_QUERY_TEXT;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
@@ -52,12 +51,9 @@ public class SqlMetadataInJobConfigTest extends SqlTestSupport {
     public void test_selectMetadata_member() {
         String sql = "SELECT * FROM table(generate_stream(1))";
         try (SqlResult ignored = client().getSql().execute(new SqlStatement(sql).setCursorBufferSize(1))) {
-            AtomicReference<List<Job>> runningJobs = new AtomicReference<>();
-            assertEqualsEventually(() ->
-                    runningJobs.compareAndSet(null, getJobsByStatus(RUNNING))
-                            ? runningJobs.get().size()
-                            : -1, 1);
-            JobConfig config = runningJobs.get().get(0).getConfig();
+            waitForJobRunning();
+            List<Job> runningJobs = getJobsByStatus(RUNNING);
+            JobConfig config = runningJobs.get(0).getConfig();
             assertEquals(sql, config.getArgument(KEY_SQL_QUERY_TEXT));
             assertEquals(Boolean.TRUE, config.getArgument(KEY_SQL_UNBOUNDED));
         }
@@ -67,12 +63,9 @@ public class SqlMetadataInJobConfigTest extends SqlTestSupport {
     public void test_selectMetadata_client() {
         String sql = "SELECT * FROM table(generate_stream(1))";
         try (SqlResult ignored = client().getSql().execute(new SqlStatement(sql).setCursorBufferSize(1))) {
-            AtomicReference<List<Job>> runningJobs = new AtomicReference<>();
-            assertEqualsEventually(() ->
-                    runningJobs.compareAndSet(null, getJobsByStatus(RUNNING))
-                            ? runningJobs.get().size()
-                            : -1, 1);
-            JobConfig config = runningJobs.get().get(0).getConfig();
+            waitForJobRunning();
+            List<Job> runningJobs = getJobsByStatus(RUNNING);
+            JobConfig config = runningJobs.get(0).getConfig();
             assertEquals(sql, config.getArgument(KEY_SQL_QUERY_TEXT));
             assertEquals(Boolean.TRUE, config.getArgument(KEY_SQL_UNBOUNDED));
         }
@@ -82,21 +75,13 @@ public class SqlMetadataInJobConfigTest extends SqlTestSupport {
     public void test_selectMetadata_clientJobSummary() {
         String sql = "SELECT * FROM table(generate_stream(1))";
         try (SqlResult ignored = client().getSql().execute(new SqlStatement(sql).setCursorBufferSize(1))) {
-            AtomicReference<List<JobAndSqlSummary>> jobSummaries = new AtomicReference<>();
+            waitForJobRunning();
+            JetClientInstanceImpl jet = (JetClientInstanceImpl) client().getJet();
+            List<JobAndSqlSummary> jobSummaries = jet.getJobAndSqlSummaryList().stream()
+                                        .filter(jobSummary -> jobSummary.getStatus() == RUNNING)
+                                        .collect(toList());
 
-            assertEqualsEventually(() -> {
-                JetClientInstanceImpl jet = (JetClientInstanceImpl) client().getJet();
-                List<JobAndSqlSummary> jobSummaryList = jet.getJobAndSqlSummaryList().stream()
-                                                         .filter(jobSummary -> jobSummary.getStatus() == RUNNING)
-                                                         .collect(toList());
-                return jobSummaries.compareAndSet(null, jobSummaryList)
-                        ? jobSummaries.get().size()
-                        : -1;
-            }, 1);
-
-            assertEqualsEventually(() -> getJobsByStatus(RUNNING).size(), 1);
-
-            JobAndSqlSummary jobSummary = jobSummaries.get().get(0);
+            JobAndSqlSummary jobSummary = jobSummaries.get(0);
             assertNotNull(jobSummary.getSqlSummary());
             assertEquals(sql, jobSummary.getSqlSummary().getQuery());
             assertEquals(Boolean.TRUE, jobSummary.getSqlSummary().isUnbounded());
@@ -134,6 +119,10 @@ public class SqlMetadataInJobConfigTest extends SqlTestSupport {
         JobConfig config = runningJobs.get(0).getConfig();
         assertEquals(sql, config.getArgument(KEY_SQL_QUERY_TEXT));
         assertEquals(Boolean.FALSE, config.getArgument(KEY_SQL_UNBOUNDED));
+    }
+
+    private void waitForJobRunning() {
+        assertTrueEventually(() -> assertEquals(1, getJobsByStatus(RUNNING).size()));
     }
 
     private List<Job> getJobsByStatus(JobStatus status) {
