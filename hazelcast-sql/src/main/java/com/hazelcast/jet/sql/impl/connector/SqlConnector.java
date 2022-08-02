@@ -23,6 +23,7 @@ import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -253,6 +254,23 @@ public interface SqlConnector {
             @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         throw new UnsupportedOperationException("Full scan not supported for " + typeName());
+    }
+
+    /**
+     * Variant of {@link #fullScanReader(DAG, Table, Expression, List, FunctionEx)} that provides
+     * {@link HazelcastTable}. It is useful to get filter and projection as RexNode instead of Expression.
+     *
+     * You should override only one of the {@code fullScanReader} methods.
+     */
+    default Vertex fullScanReader(
+            @Nonnull DAG dag,
+            @Nonnull Table table,
+            @Nonnull HazelcastTable hzTable,
+            @Nullable Expression<Boolean> predicate,
+            @Nonnull List<Expression<?>> projection,
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
+    ) {
+        return fullScanReader(dag, table, predicate, projection, eventTimePolicyProvider);
     }
 
     /**

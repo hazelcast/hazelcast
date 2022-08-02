@@ -24,7 +24,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.impl.function.SecuredFunction;
 import com.hazelcast.security.permission.ConnectorPermission;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
@@ -45,15 +44,14 @@ import java.util.List;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.joining;
 
 public class SelectProcessorSupplier implements ProcessorSupplier, DataSerializable, SecuredFunction {
 
     private String jdbcUrl;
     private String tableName;
     private List<String> fields;
-    private Expression<Boolean> predicate;
-    private List<Expression<?>> projection;
+    private String predicateSql;
+    private String projectionSql;
 
     private transient ExpressionEvalContext evalContext;
     private transient String query;
@@ -65,13 +63,13 @@ public class SelectProcessorSupplier implements ProcessorSupplier, DataSerializa
     public SelectProcessorSupplier(@Nonnull String jdbcUrl,
                                    @Nonnull String tableName,
                                    @Nonnull List<String> fields,
-                                   @Nullable Expression<Boolean> predicate,
-                                   List<Expression<?>> projection) {
+                                   @Nullable String predicateSql,
+                                   @Nullable String projectionSql) {
         this.jdbcUrl = requireNonNull(jdbcUrl, "jdbcUrl must not be null");
         this.tableName = requireNonNull(tableName, "tableName must not be null");
         this.fields = requireNonNull(fields, "fields must not be null");
-        this.predicate = predicate;
-        this.projection = projection;
+        this.predicateSql = predicateSql;
+        this.projectionSql = projectionSql;
     }
 
     @Override
@@ -81,18 +79,14 @@ public class SelectProcessorSupplier implements ProcessorSupplier, DataSerializa
     }
 
     private String buildQuery() {
-        ExpressionTranslator translator = new ExpressionTranslator(evalContext, fields);
         String select;
-        if (projection != null) {
-            select = projection.stream()
-                               .map(translator::translate)
-                               .collect(joining(","));
+        if (projectionSql != null) {
+            select = projectionSql;
         } else {
             select = "*";
         }
-        if (predicate != null) {
-            String wherePredicate = translator.translate(predicate);
-            return "SELECT " + select + " FROM " + tableName + " WHERE " + wherePredicate;
+        if (predicateSql != null) {
+            return "SELECT " + select + " FROM " + tableName + " WHERE " + predicateSql;
         } else {
             return "SELECT " + select + " FROM " + tableName;
         }
@@ -107,6 +101,11 @@ public class SelectProcessorSupplier implements ProcessorSupplier, DataSerializa
                     () -> DriverManager.getConnection(jdbcUrl),
                     (connection, parallelism, index) -> {
                         PreparedStatement statement = connection.prepareStatement(query);
+                        List<Object> arguments = evalContext.getArguments();
+                        for (int j = 0; j < arguments.size(); j++) {
+                            // TODO is some conversion needed here? maybe for dates (the opposite of convertValue)
+                            statement.setObject(j + 1, arguments.get(j));
+                        }
                         try {
                             return statement.executeQuery();
                         } catch (SQLException e) {
@@ -157,15 +156,8 @@ public class SelectProcessorSupplier implements ProcessorSupplier, DataSerializa
         for (int i = 0; i < fields.size(); i++) {
             out.writeString(fields.get(i));
         }
-        out.writeObject(predicate);
-        if (projection != null) {
-            out.writeInt(projection.size());
-            for (int i = 0; i < projection.size(); i++) {
-                out.writeObject(projection.get(i));
-            }
-        } else {
-            out.writeInt(0);
-        }
+        out.writeString(predicateSql);
+        out.writeString(projectionSql);
     }
 
     @Override
@@ -177,13 +169,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier, DataSerializa
         for (int i = 0; i < numFields; i++) {
             fields.add(in.readString());
         }
-        predicate = in.readObject();
-        int numProjection = in.readInt();
-        if (numProjection > 0) {
-            projection = new ArrayList<>(numProjection);
-            for (int i = 0; i < numProjection; i++) {
-                projection.add(in.readObject());
-            }
-        }
+        predicateSql = in.readString();
+        projectionSql = in.readString();
     }
 }

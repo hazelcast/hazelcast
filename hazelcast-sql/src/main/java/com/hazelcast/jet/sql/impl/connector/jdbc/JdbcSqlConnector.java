@@ -23,6 +23,7 @@ import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -33,6 +34,12 @@ import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
+import org.apache.calcite.rel.rel2sql.SqlImplementor.SimpleContext;
+import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.sql.SqlDialect;
+import org.apache.calcite.sql.SqlIdentifier;
+import org.apache.calcite.sql.dialect.H2SqlDialect;
+import org.apache.calcite.sql.parser.SqlParserPos;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -55,6 +62,7 @@ import java.util.Set;
 import static com.hazelcast.jet.sql.impl.connector.jdbc.ExpressionTranslator.validateExpression;
 import static java.lang.Integer.parseInt;
 import static java.util.Objects.requireNonNull;
+import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 public class JdbcSqlConnector implements SqlConnector {
@@ -214,10 +222,34 @@ public class JdbcSqlConnector implements SqlConnector {
     public Vertex fullScanReader(
             @Nonnull DAG dag,
             @Nonnull Table table0,
+            @Nonnull HazelcastTable hzTable,
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection,
             @Nullable FunctionEx<ExpressionEvalContext,
                     EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
+
+        // TODO All tests pass with H2 dialect, this would be either detected or set as mapping parameter
+        SqlDialect dialect = new H2SqlDialect(H2SqlDialect.DEFAULT_CONTEXT);
+//        SqlDialect dialect = new MysqlSqlDialect(MysqlSqlDialect.DEFAULT_CONTEXT);
+//        SqlDialect dialect = new PostgresqlSqlDialect(PostgresqlSqlDialect.DEFAULT_CONTEXT);
+        SimpleContext simpleContext = new SimpleContext(dialect, value -> {
+            JdbcTable target = hzTable.getTarget();
+            JdbcTableField field = target.getField(value);
+            return new SqlIdentifier(field.externalName(), SqlParserPos.ZERO);
+        });
+        RexNode filter = hzTable.getFilter();
+        String filterSqlFragment = null;
+        if (filter != null) {
+            filterSqlFragment = simpleContext.toSql(null, filter).toSqlString(dialect).toString();
+        }
+
+        String projectionSqlFragment = null;
+        List<RexNode> projects = hzTable.getProjects();
+        if (!projects.isEmpty()) {
+            projectionSqlFragment = projects.stream()
+                                      .map(proj -> simpleContext.toSql(null, proj).toSqlString(dialect).toString())
+                                      .collect(joining(","));
+        }
 
         JdbcTable table = (JdbcTable) table0;
 
@@ -230,8 +262,8 @@ public class JdbcSqlConnector implements SqlConnector {
                                 table.getJdbcUrl(),
                                 table.getExternalName(),
                                 table.dbFieldNames(),
-                                predicate,
-                                projection
+                                filterSqlFragment,
+                                projectionSqlFragment
                         ))
         );
     }

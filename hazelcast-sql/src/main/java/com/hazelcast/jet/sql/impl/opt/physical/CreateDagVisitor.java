@@ -158,12 +158,14 @@ public class CreateDagVisitor {
     }
 
     public Vertex onFullScan(FullScanPhysicalRel rel) {
-        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        HazelcastTable hazelcastTable = rel.getTable().unwrap(HazelcastTable.class);
+        Table table = hazelcastTable.getTarget();
         collectObjectKeys(table);
 
         return getJetSqlConnector(table).fullScanReader(
                 dag,
                 table,
+                hazelcastTable,
                 rel.filter(parameterMetadata),
                 rel.projection(parameterMetadata),
                 rel.eventTimePolicyProvider()

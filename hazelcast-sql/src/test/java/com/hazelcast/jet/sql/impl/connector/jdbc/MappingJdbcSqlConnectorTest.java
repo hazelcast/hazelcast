@@ -105,7 +105,8 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         return new Condition<Throwable>() {
             @Override
             public boolean matches(Throwable value) {
-                return value.getMessage().contains(message);
+                return value.getMessage().contains(message) ||
+                        (value.getCause() != null && matches(value.getCause()));
             }
         };
     }
