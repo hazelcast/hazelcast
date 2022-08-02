@@ -192,7 +192,7 @@ public interface SqlConnector {
      * @param nodeEngine an instance of {@link NodeEngine}
      * @param options    user-provided options
      * @param userFields user-provided list of fields, possibly empty
-     * @param externalName
+     * @param externalName external name of the table
      * @return final field list, must not be empty
      */
     @Nonnull
