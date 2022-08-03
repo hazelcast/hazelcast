@@ -25,14 +25,42 @@ public class ArrayOfFixedFieldsDTOSerializerReadingNullable implements CompactSe
     @Nonnull
     @Override
     public ArrayOfFixedFieldsDTO read(@Nonnull CompactReader reader) {
-        byte[] b = reader.readArrayOfInt8("b");
-        boolean[] bool = reader.readArrayOfBoolean("bool");
-        short[] s = reader.readArrayOfInt16("s");
-        int[] i = reader.readArrayOfInt32("i");
-        long[] l = reader.readArrayOfInt64("l");
-        float[] f = reader.readArrayOfFloat32("f");
-        double[] d = reader.readArrayOfFloat64("d");
-        return new ArrayOfFixedFieldsDTO(b, bool, s, i, l, f, d);
+        Byte[] b = reader.readArrayOfNullableInt8("b");
+        Boolean[] bool = reader.readArrayOfNullableBoolean("bool");
+        Short[] s = reader.readArrayOfNullableInt16("s");
+        Integer[] i = reader.readArrayOfNullableInt32("i");
+        Long[] l = reader.readArrayOfNullableInt64("l");
+        Float[] f = reader.readArrayOfNullableFloat32("f");
+        Double[] d = reader.readArrayOfNullableFloat64("d");
+        byte[] pBytes = new byte[b.length];
+        for(int k = 0; k < b.length; k++) {
+            pBytes[k] = b[k];
+        }
+        boolean[] pBools = new boolean[bool.length];
+        for(int k = 0; k < bool.length; k++) {
+            pBools[k] = bool[k];
+        }
+        short[] pShorts = new short[s.length];
+        for(int k = 0; k < s.length; k++) {
+            pShorts[k] = s[k];
+        }
+        int[] pInts = new int[i.length];
+        for(int k = 0; k < i.length; k++) {
+            pInts[k] = i[k];
+        }
+        long[] pLongs = new long[l.length];
+        for(int k = 0; k < l.length; k++) {
+            pLongs[k] = l[k];
+        }
+        float[] pFloats = new float[f.length];
+        for(int k = 0; k < f.length; k++) {
+            pFloats[k] = f[k];
+        }
+        double[] pDoubles = new double[d.length];
+        for(int k = 0; k < d.length; k++) {
+            pDoubles[k] = d[k];
+        }
+        return new ArrayOfFixedFieldsDTO(pBytes, pBools, pShorts, pInts, pLongs, pFloats, pDoubles);
     }
 
     @Override

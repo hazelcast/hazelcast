@@ -164,6 +164,20 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         FixedFieldsDTO obj = serializationService.toObject(data);
 
         assertEquals(obj, fixedFieldsDTO);
+
+        ArrayOfFixedFieldsDTO arrayOfFixedFieldsDTO = createArrayOfFixedFieldsDTO();
+        CompactSerializationConfig compactSerializationConfig2 = new CompactSerializationConfig();
+        compactSerializationConfig2.register(ArrayOfFixedFieldsDTO.class, "arrayOfFixedFieldsDTO", new ArrayOfFixedFieldsDTOSerializerWritingNullable());
+        compactSerializationConfig2.setEnabled(true);
+        SerializationService serializationService2 = new DefaultSerializationServiceBuilder()
+                .setSchemaService(schemaService)
+                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig2))
+                .build();
+
+        Data data2 = serializationService2.toData(arrayOfFixedFieldsDTO);
+        ArrayOfFixedFieldsDTO obj2 = serializationService2.toObject(data2);
+
+        assertEquals(obj2, arrayOfFixedFieldsDTO);
     }
 
     void assertReadAsNullable(GenericRecord record) {
@@ -259,6 +273,12 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         assertTrue(serializedRecord instanceof DeserializedGenericRecord);
         assertReadNullAsPrimitiveThrowsException(serializedRecord);
     }
+
+    @Test
+    public void testWriteNullReadPrimitiveThrowsExceptionCustomSerializer() {
+
+    }
+
 
     @Test
     public void testWriteNullReadPrimitiveThrowsExceptionWithCorrectMethodPrefixCompactReader() {
