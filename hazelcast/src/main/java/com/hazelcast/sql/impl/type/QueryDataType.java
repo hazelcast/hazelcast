@@ -117,8 +117,6 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
     public QueryDataType(String objectTypeName) {
         this.converter = ObjectConverter.INSTANCE;
-        // This constructor is mainly used for Type Reference QDT instances - instances with just TypeName
-        // specified, used to lookup "real" instance of Type. TypeKind.NONE is used to
         this.objectTypeKind = OBJECT_TYPE_KIND_NONE;
         this.objectTypeName = objectTypeName;
     }
