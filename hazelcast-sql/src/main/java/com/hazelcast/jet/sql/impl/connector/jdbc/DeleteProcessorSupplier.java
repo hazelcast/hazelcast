@@ -93,12 +93,8 @@ public class DeleteProcessorSupplier implements ProcessorSupplier, DataSerializa
     }
 
     private String buildQuery() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("DELETE FROM ");
-        sb.append(tableName);
-        sb.append(" WHERE ").append(whereClause);
-
-        return sb.toString();
+        return "DELETE FROM " + tableName +
+                " WHERE " + whereClause;
     }
 
     @Nullable

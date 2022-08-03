@@ -82,10 +82,10 @@ public class InsertProcessorSupplier implements ProcessorSupplier, DataSerializa
     }
 
     private String buildQuery() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("INSERT INTO ")
-          .append(tableName)
-          .append(" VALUES (");
+        StringBuilder sb = new StringBuilder()
+                .append("INSERT INTO ")
+                .append(tableName)
+                .append(" VALUES (");
         for (int i = 0; i < fieldCount; i++) {
             sb.append('?');
             if (i < (fieldCount - 1)) {
