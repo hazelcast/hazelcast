@@ -23,11 +23,9 @@ import com.hazelcast.internal.serialization.impl.compact.SchemaWriter;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.inject.CompactUpsertTargetDescriptor;
-import com.hazelcast.jet.sql.impl.inject.HazelcastObjectUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.jet.sql.impl.schema.TypesUtils;
 import com.hazelcast.nio.serialization.FieldKind;
-import com.hazelcast.query.QueryConstants;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
@@ -39,7 +37,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -78,18 +75,8 @@ final class MetadataCompactResolver implements KvMetadataResolver {
             throw QueryException.error("Unable to resolve table metadata. Missing '" + typeNameProperty + "' option");
         }
 
-        final Type existingType = typesStorage.getType(typeName);
-        if (userFields.isEmpty() && existingType == null) {
+        if (userFields.isEmpty()) {
             throw QueryException.error("Column list or existing Type is required for Compact format");
-        }
-
-        if (existingType != null) {
-            final String fieldName = isKey
-                    ? QueryConstants.KEY_ATTRIBUTE_NAME.value()
-                    : QueryConstants.THIS_ATTRIBUTE_NAME.value();
-            final QueryDataType queryDataType = TypesUtils.convertTypeToQueryDataType(existingType, typesStorage);
-
-            return Stream.of(new MappingField(fieldName, queryDataType, fieldName));
         }
 
         Map<QueryPath, MappingField> fields = extractFields(userFields, isKey);
@@ -119,25 +106,6 @@ final class MetadataCompactResolver implements KvMetadataResolver {
 
         String typeNameProperty = isKey ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME;
         String typeName = options.get(typeNameProperty);
-        final Type existingType = typesStorage.getType(typeName);
-
-        if (existingType != null) {
-            final String fieldName = isKey
-                    ? QueryConstants.KEY_ATTRIBUTE_NAME.value()
-                    : QueryConstants.THIS_ATTRIBUTE_NAME.value();
-            final QueryDataType queryDataType = TypesUtils.convertTypeToQueryDataType(existingType, typesStorage);
-
-            return new KvMetadata(
-                    Collections.singletonList(new MapTableField(
-                            fieldName,
-                            queryDataType,
-                            false,
-                            isKey ? QueryPath.KEY_PATH : QueryPath.VALUE_PATH
-                    )),
-                    GenericQueryTargetDescriptor.DEFAULT,
-                    new HazelcastObjectUpsertTargetDescriptor()
-            );
-        }
 
         List<TableField> fields = new ArrayList<>(fieldsByPath.size());
         for (Entry<QueryPath, MappingField> entry : fieldsByPath.entrySet()) {

@@ -60,11 +60,11 @@ public final class TypesUtils {
 
             final QueryDataType queryDataType;
             if (portableField.getType().equals(FieldType.PORTABLE)) {
-                queryDataType = typesStorage.getTypeByPortableClass(
+                queryDataType = toQueryDataTypeRef(typesStorage.getTypeByPortableClass(
                         portableField.getFactoryId(),
                         portableField.getClassId(),
                         portableField.getVersion()
-                ).toQueryDataTypeRef();
+                ));
             } else {
                 queryDataType = resolvePortableFieldType(portableField.getType());
             }
@@ -114,6 +114,34 @@ public final class TypesUtils {
         }
     }
 
+    public static QueryDataType toQueryDataTypeRef(final Type type) {
+        final QueryDataType queryDataType;
+        switch (type.getKind()) {
+            case JAVA:
+                queryDataType = new QueryDataType(type.getName(), QueryDataType.OBJECT_TYPE_KIND_JAVA);
+                queryDataType.setObjectTypeMetadata(type.getJavaClassName());
+                return queryDataType;
+            case PORTABLE:
+                queryDataType = new QueryDataType(type.getName(), QueryDataType.OBJECT_TYPE_KIND_PORTABLE);
+                queryDataType.setObjectTypeMetadata(encodePortableId(
+                        type.getPortableFactoryId(),
+                        type.getPortableClassId(),
+                        type.getPortableVersion()
+                ));
+                return queryDataType;
+            case COMPACT:
+                queryDataType = new QueryDataType(type.getName(), QueryDataType.OBJECT_TYPE_KIND_COMPACT);
+                queryDataType.setObjectTypeMetadata(type.getCompactTypeName());
+                return queryDataType;
+            default:
+                throw new UnsupportedOperationException("Not implemented yet.");
+        }
+    }
+
+    public static String encodePortableId(final int factoryId, final int classId, final int version) {
+        return factoryId + ":" + classId + ":" + version;
+    }
+
     public static Type convertJavaClassToType(
             final String name,
             final List<TypeDefinitionColumn> columns,
@@ -132,7 +160,7 @@ public final class TypesUtils {
             final QueryDataType queryDataType;
             if (isUserClass(entry.getValue())) {
                 if (entry.getValue().getName().equals(type.getJavaClassName())) {
-                    queryDataType = type.toQueryDataTypeRef();
+                    queryDataType = toQueryDataTypeRef(type);
                 } else {
                     queryDataType = userColumnsMap.get(entry.getKey()) != null
                             ? userColumnsMap.get(entry.getKey())
@@ -169,7 +197,7 @@ public final class TypesUtils {
 
         // At this point the `convertedType` lacks fields. We put it to the `seen` map for the purpose of resolving
         // cyclic references, we'll add the fields later below.
-        convertedType = type.toQueryDataTypeRef();
+        convertedType = toQueryDataTypeRef(type);
         seen.putIfAbsent(type.getName(), convertedType);
 
         for (Type.TypeField field : type.getFields()) {
@@ -190,5 +218,29 @@ public final class TypesUtils {
 
     private static boolean isUserClass(Class<?> clazz) {
         return !clazz.isPrimitive() && !clazz.getPackage().getName().startsWith("java.");
+    }
+
+    public static class PortableTypeIdentifier {
+        private final Integer factoryId;
+        private final Integer classId;
+        private final Integer version;
+
+        public PortableTypeIdentifier(final Integer factoryId, final Integer classId, final Integer version) {
+            this.factoryId = factoryId;
+            this.classId = classId;
+            this.version = version;
+        }
+
+        public Integer getFactoryId() {
+            return factoryId;
+        }
+
+        public Integer getClassId() {
+            return classId;
+        }
+
+        public Integer getVersion() {
+            return version;
+        }
     }
 }

@@ -31,23 +31,23 @@ public class CompactNestedFieldsTest extends SqlTestSupport {
         final Config config = new Config();
         config.getJetConfig().setEnabled(true);
         config.getSerializationConfig().getCompactSerializationConfig().setEnabled(true);
-        initialize(2, config);
+        initializeWithClient(3, config, null);
     }
 
     @Test
     public void test_basicQuerying() {
-        instance().getSql().execute("CREATE TYPE Office ("
+        client().getSql().execute("CREATE TYPE Office ("
                 + "id BIGINT, "
                 + "name VARCHAR "
-                + ") OPTIONS ('format'='compact', 'compactTypeName'='Office')");
+                + ") OPTIONS ('format'='compact', 'compactTypeName'='OfficeCompactType')");
 
-        instance().getSql().execute("CREATE TYPE Organization ("
+        client().getSql().execute("CREATE TYPE Organization ("
                 + "id BIGINT, "
                 + "name VARCHAR, "
                 + "office Office"
-                + ") OPTIONS ('format'='compact', 'compactTypeName'='Organization')");
+                + ") OPTIONS ('format'='compact', 'compactTypeName'='OrganizationCompactType')");
 
-        instance().getSql().execute(
+        client().getSql().execute(
                 "CREATE MAPPING test ("
                         + "__key BIGINT,"
                         + "id BIGINT, "
@@ -58,42 +58,10 @@ public class CompactNestedFieldsTest extends SqlTestSupport {
                         + "OPTIONS ("
                         + "'keyFormat'='bigint',"
                         + "'valueFormat'='compact',"
-                        + "'valueCompactTypeName'='user'"
+                        + "'valueCompactTypeName'='UserCompactType'"
                         + ")");
 
-        instance().getSql().execute("INSERT INTO test VALUES (1, 1, 'user1', (1, 'organization1', (1, 'office1')))");
+        client().getSql().execute("INSERT INTO test VALUES (1, 1, 'user1', (1, 'organization1', (1, 'office1')))");
         assertRowsAnyOrder("SELECT (organization).office.name FROM test", rows(1, "office1"));
-    }
-
-    @Test
-    public void test_existingCompactType() {
-        instance().getSql().execute("CREATE TYPE Office ("
-                + "id BIGINT, "
-                + "name VARCHAR "
-                + ") OPTIONS ('format'='compact', 'compactTypeName'='Office')");
-
-        instance().getSql().execute("CREATE TYPE Organization ("
-                + "id BIGINT, "
-                + "name VARCHAR, "
-                + "office Office"
-                + ") OPTIONS ('format'='compact', 'compactTypeName'='Organization')");
-
-        instance().getSql().execute("CREATE TYPE \"User\" ("
-                + "id BIGINT, "
-                + "name VARCHAR, "
-                + "organization Organization"
-                + ") OPTIONS ('format'='compact', 'compactTypeName'='User')");
-
-        instance().getSql().execute(
-                "CREATE MAPPING test "
-                        + "TYPE IMap "
-                        + "OPTIONS ("
-                        + "'keyFormat'='bigint',"
-                        + "'valueFormat'='compact',"
-                        + "'valueCompactTypeName'='User'"
-                        + ")");
-
-        instance().getSql().execute("INSERT INTO test VALUES (1, (1, 'user1', (1, 'organization1', (1, 'office1'))))");
-        assertRowsAnyOrder("SELECT (this).organization.office.name FROM test", rows(1, "office1"));
     }
 }

@@ -40,7 +40,7 @@ public final class UpsertTargetUtils {
     private UpsertTargetUtils() { }
 
     public static Object convertRowToJavaType(final Object value, final QueryDataType type) {
-        final Class<?> targetClass = ReflectionUtils.loadClass(type.getObjectTypeClassName());
+        final Class<?> targetClass = ReflectionUtils.loadClass(type.getObjectTypeMetadata());
         if (value.getClass().isAssignableFrom(targetClass)) {
             return value;
         }
@@ -104,7 +104,7 @@ public final class UpsertTargetUtils {
     }
 
     public static GenericRecord convertRowToCompactType(RowValue rowValue, QueryDataType targetDataType) {
-        final GenericRecordBuilder recordBuilder = GenericRecordBuilder.compact(targetDataType.getObjectTypeName());
+        final GenericRecordBuilder recordBuilder = GenericRecordBuilder.compact(targetDataType.getObjectTypeMetadata());
 
         setFields(rowValue, targetDataType, recordBuilder);
 
@@ -157,7 +157,7 @@ public final class UpsertTargetUtils {
                     break;
                 case OBJECT:
                     final GenericRecordBuilder nestedRecordBuilder = GenericRecordBuilder
-                            .compact(field.getDataType().getObjectTypeName());
+                            .compact(field.getDataType().getObjectTypeMetadata());
                     setFields((RowValue) fieldValue, field.getDataType(), nestedRecordBuilder);
                     recordBuilder.setGenericRecord(field.getName(), nestedRecordBuilder.build());
                     break;

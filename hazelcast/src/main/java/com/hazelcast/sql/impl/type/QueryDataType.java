@@ -109,7 +109,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
     private String objectTypeName = "";
     private Integer objectTypeKind = OBJECT_TYPE_KIND_NONE;
     private List<QueryDataTypeField> objectFields = new ArrayList<>();
-    private String objectTypeClassName = "";
+    private String objectTypeMetadata = "";
 
     public QueryDataType() {
         // No-op.
@@ -117,14 +117,10 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
     public QueryDataType(String objectTypeName) {
         this.converter = ObjectConverter.INSTANCE;
+        // This constructor is mainly used for Type Reference QDT instances - instances with just TypeName
+        // specified, used to lookup "real" instance of Type. TypeKind.NONE is used to
+        this.objectTypeKind = OBJECT_TYPE_KIND_NONE;
         this.objectTypeName = objectTypeName;
-    }
-
-    public QueryDataType(String objectTypeName, String objectTypeClassName) {
-        this.converter = ObjectConverter.INSTANCE;
-        this.objectTypeName = objectTypeName;
-        this.objectTypeClassName = objectTypeClassName;
-        this.objectTypeKind = OBJECT_TYPE_KIND_JAVA;
     }
 
     public QueryDataType(String objectTypeName, int typeKind) {
@@ -149,12 +145,12 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
         this.objectFields = objectFields;
     }
 
-    public String getObjectTypeClassName() {
-        return objectTypeClassName;
+    public String getObjectTypeMetadata() {
+        return objectTypeMetadata;
     }
 
-    public void setObjectTypeClassName(final String objectTypeClassName) {
-        this.objectTypeClassName = objectTypeClassName;
+    public void setObjectTypeMetadata(final String objectTypeMetadata) {
+        this.objectTypeMetadata = objectTypeMetadata;
     }
 
     public QueryDataTypeFamily getTypeFamily() {
@@ -239,9 +235,8 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
         if (!converter.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
             return;
         }
-        out.writeInt(objectTypeKind);
-        out.writeString(objectTypeName);
-        out.writeString(objectTypeClassName);
+
+        writeObjectTypeMetadata(this, out);
 
         if (!isCustomType()) {
             return;
@@ -266,7 +261,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
             throws IOException {
         out.writeInt(queryDataType.objectTypeKind);
         out.writeString(queryDataType.objectTypeName);
-        out.writeString(queryDataType.objectTypeClassName);
+        out.writeString(queryDataType.objectTypeMetadata);
     }
 
     private void collectNestedTypes(final QueryDataType dataType, final Map<String, QueryDataType> collected) {
@@ -290,7 +285,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
 
         this.objectTypeKind = in.readInt();
         this.objectTypeName = in.readString();
-        this.objectTypeClassName = in.readString();
+        this.objectTypeMetadata = in.readString();
         if (!isCustomType()) {
             return;
         }
@@ -303,12 +298,13 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
         for (int i = 0; i < typeMapSize; i++) {
             final Integer currentTypeKind = in.readInt();
             final String currentTypeName = in.readString();
-            final String currentTypeClassName = in.readString();
+            final String currentTypeMetadata = in.readString();
+
             final int fieldsSize = in.readInt();
             final QueryDataType currentType = nestedTypes.computeIfAbsent(currentTypeName, s -> {
                 // TODO: simplify?
                 final QueryDataType fieldType = new QueryDataType(currentTypeName);
-                fieldType.setObjectTypeClassName(currentTypeClassName);
+                fieldType.setObjectTypeMetadata(currentTypeMetadata);
                 fieldType.setObjectTypeKind(currentTypeKind);
                 return fieldType;
             });
@@ -318,7 +314,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
                 final int fieldConverterId = in.readInt();
                 final int fieldTypeKind = in.readInt();
                 final String fieldTypeName = in.readString();
-                final String fieldTypeClassName = in.readString();
+                final String fieldTypeMetadata = in.readString();
 
                 if (fieldConverterId == QueryDataType.OBJECT.getConverter().getId()
                         && (fieldTypeName != null && !fieldTypeName.isEmpty())) {
@@ -326,7 +322,7 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
                             nestedTypes.computeIfAbsent(fieldTypeName, s -> {
                                 // TODO: simplify?
                                 final QueryDataType fieldType = new QueryDataType(fieldTypeName);
-                                fieldType.setObjectTypeClassName(fieldTypeClassName);
+                                fieldType.setObjectTypeMetadata(fieldTypeMetadata);
                                 fieldType.setObjectTypeKind(fieldTypeKind);
                                 return fieldType;
                             })));

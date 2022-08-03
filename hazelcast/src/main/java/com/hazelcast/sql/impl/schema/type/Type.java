@@ -75,19 +75,6 @@ public class Type implements IdentifiedDataSerializable, Serializable {
         this.fields = fields;
     }
 
-    public QueryDataType toQueryDataTypeRef() {
-        switch (kind) {
-            case JAVA:
-                return new QueryDataType(name, javaClassName);
-            case PORTABLE:
-                return new QueryDataType(name, QueryDataType.OBJECT_TYPE_KIND_PORTABLE);
-            case COMPACT:
-                return new QueryDataType(name, QueryDataType.OBJECT_TYPE_KIND_COMPACT);
-            default:
-                throw new UnsupportedOperationException("Not implemented yet.");
-        }
-    }
-
     public Integer getPortableFactoryId() {
         return portableFactoryId;
     }
@@ -224,6 +211,7 @@ public class Type implements IdentifiedDataSerializable, Serializable {
             final String typeName = in.readString();
             final Converter converter = Converters.getConverter(converterId);
 
+            // TODO: is this the correct type kind? (NONE). Maybe worth writing it too.
             this.queryDataType = converter.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)
                     && ((typeName != null && !typeName.isEmpty()))
                     ? new QueryDataType(typeName)
