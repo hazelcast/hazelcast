@@ -2534,11 +2534,11 @@
         </xs:simpleContent>
     </xs:complexType>
     <xs:complexType name="index">
-        <xs:sequence>
+        <xs:all>
             <xs:element name="attributes" type="index-attributes"/>
             <xs:element name="bitmap-index-options" type="bitmap-index-options" minOccurs="0"/>
             <xs:element name="btree-index" type="btree-index" minOccurs="0"/>
-        </xs:sequence>
+        </xs:all>
         <xs:attribute name="name"/>
         <xs:attribute name="type" type="index-type" default="SORTED"/>
     </xs:complexType>

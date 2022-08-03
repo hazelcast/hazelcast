@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.util.Objects;
 
 import static com.hazelcast.memory.MemoryUnit.KILOBYTES;
+import static java.util.Objects.requireNonNull;
 
 /**
  * Configuration options specific for B-Tree indexes.
@@ -65,7 +66,7 @@ public class BTreeIndexConfig implements IdentifiedDataSerializable {
      * @param pageSize page size of the index
      */
     public BTreeIndexConfig setPageSize(Capacity pageSize) {
-        this.pageSize = pageSize;
+        this.pageSize = requireNonNull(pageSize, "pageSize cannot be null");
         return this;
     }
 
@@ -86,7 +87,7 @@ public class BTreeIndexConfig implements IdentifiedDataSerializable {
      * @param memoryTierConfig new memory tier configuration to be set.
      */
     public BTreeIndexConfig setMemoryTierConfig(MemoryTierConfig memoryTierConfig) {
-        this.memoryTierConfig = memoryTierConfig;
+        this.memoryTierConfig = requireNonNull(memoryTierConfig, "memoryTierConfig cannot be null");
         return this;
     }
 

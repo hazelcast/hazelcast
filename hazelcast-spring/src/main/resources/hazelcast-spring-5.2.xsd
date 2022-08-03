@@ -3833,8 +3833,8 @@
 
     <xs:complexType name="btree-index">
         <xs:all>
-            <xs:element name="page-size" type="memory-size" minOccurs="1"/>
-            <xs:element name="memory-tier" type="memory-tier" minOccurs="1"/>
+            <xs:element name="page-size" type="memory-size" minOccurs="0"/>
+            <xs:element name="memory-tier" type="memory-tier" minOccurs="0"/>
         </xs:all>
     </xs:complexType>
 
