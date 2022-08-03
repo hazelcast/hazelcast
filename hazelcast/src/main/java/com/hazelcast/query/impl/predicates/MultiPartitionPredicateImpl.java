@@ -23,7 +23,6 @@ import com.hazelcast.internal.serialization.BinaryInterface;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import java.io.IOException;
@@ -40,9 +39,8 @@ import java.util.Set;
  * @param <V> type of the entry value
  */
 @BinaryInterface
-public class MultiPartitionPredicateImpl<K, V> implements PartitionPredicate<K, V>, IdentifiedDataSerializable, Versioned {
+public class MultiPartitionPredicateImpl<K, V> implements PartitionPredicate<K, V>, IdentifiedDataSerializable {
 
-    private static final long serialVersionUID = 1L;
     private static final Random RANDOM = new Random();
     private Set<? extends Object> partitionKeys;
     private Predicate<K, V> target;

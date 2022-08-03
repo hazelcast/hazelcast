@@ -196,7 +196,7 @@ public class PartitionPredicateTest extends HazelcastTestSupport {
     @Test
     public void testToString() {
         assertContains(predicate.toString(), "PartitionPredicate");
-        assertContains(predicate.toString(), "partitionKeys=[" + partitionKey + "]");
+        assertContains(predicate.toString(), "partitionKey=" + partitionKey);
     }
 
     @Test

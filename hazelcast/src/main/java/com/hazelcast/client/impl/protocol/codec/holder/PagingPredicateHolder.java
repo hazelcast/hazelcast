@@ -92,7 +92,7 @@ public class PagingPredicateHolder {
         if (partitionKeysData == null) {
             return null;
         }
-        // PartitionPredicateImpl ensures that partitionKeysData is non-empty
+        // PagingPredicateHolder constructor ensures that partitionKeysData is non-empty
         return partitionKeysData.iterator().next();
     }
 

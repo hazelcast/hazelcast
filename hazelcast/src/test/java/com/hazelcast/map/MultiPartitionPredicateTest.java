@@ -48,7 +48,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class PartitionsPredicateTest extends HazelcastTestSupport {
+public class MultiPartitionPredicateTest extends HazelcastTestSupport {
 
     private static final int PARTITIONS = 10;
     private static final int ITEMS_PER_PARTITION = 20;
@@ -234,17 +234,17 @@ public class PartitionsPredicateTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void partitionsPredicateWithNullSetThrowsNullPointerException() {
+    public void multiPartitionPredicateWithNullSetThrowsNullPointerException() {
         assertThrows(NullPointerException.class, () -> Predicates.multiPartitionPredicate(null, a -> true));
     }
 
     @Test
-    public void partitionsPredicateWithEmptySetThrowsNullPointerException() {
+    public void multiPartitionPredicateWithEmptySetThrowsNullPointerException() {
         assertThrows(IllegalArgumentException.class, () -> Predicates.multiPartitionPredicate(Collections.emptySet(), a -> true));
     }
 
     @Test
-    public void partitionsPredicateWithNullPredicateThrowsNullPointerException() {
+    public void multiPartitionPredicateWithNullPredicateThrowsNullPointerException() {
         assertThrows(NullPointerException.class, () -> Predicates.multiPartitionPredicate(Collections.singleton("foo"), null));
     }
 
