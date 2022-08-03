@@ -285,6 +285,16 @@
                                     com.damnhandy.uri.template;resolution:=optional,
                                     org.apache.commons.validator.routines;resolution:=optional,
                                     com.google.re2j;resolution:=optional,
+                                    com.codahale.metrics;resolution:=optional,
+                                    com.codahale.metrics.health;resolution:=optional,
+                                    io.micrometer.core.instrument;resolution:=optional,
+                                    io.prometheus.client;resolution:=optional,
+                                    javassist;resolution:=optional,
+                                    javassist.bytecode;resolution:=optional,
+                                    org.hibernate;resolution:=optional,
+                                    org.hibernate.engine.jdbc.connections.spi;resolution:=optional,
+                                    org.hibernate.service;resolution:=optional,
+                                    org.hibernate.service.spi;resolution:=optional,
                                     *
                                 </Import-Package>
                                 <Bundle-Name>Hazelcast(Core)</Bundle-Name>
