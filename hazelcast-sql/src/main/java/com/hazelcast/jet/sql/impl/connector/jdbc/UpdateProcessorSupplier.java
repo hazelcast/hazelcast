@@ -25,7 +25,6 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.security.impl.function.SecuredFunction;
 import com.hazelcast.security.permission.ConnectorPermission;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
@@ -38,7 +37,6 @@ import java.sql.PreparedStatement;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
 import static java.util.Collections.singletonList;
@@ -50,9 +48,9 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
     private String tableName;
     private List<String> pkFields;
     private List<String> fields;
-    private Map<String, Expression<?>> updatesByFieldNames;
     private String whereClause;
-    private String setClause;
+    private List<Integer> parameterList;
+    private String setSqlFragment;
     private int batchLimit;
 
     private transient ExpressionEvalContext evalContext;
@@ -62,13 +60,14 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
     }
 
     public UpdateProcessorSupplier(String jdbcUrl, String tableName, List<String> pkFields,
-                                   List<String> fields, Map<String, Expression<?>> updatesByFieldNames,
+                                   List<String> fields, List<Integer> parameterList, String setSqlFragment,
                                    int batchLimit) {
         this.jdbcUrl = jdbcUrl;
         this.tableName = tableName;
         this.pkFields = pkFields;
         this.fields = fields;
-        this.updatesByFieldNames = updatesByFieldNames;
+        this.parameterList = parameterList;
+        this.setSqlFragment = setSqlFragment;
         this.batchLimit = batchLimit;
     }
 
@@ -76,15 +75,8 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
     public void init(@Nonnull Context context) throws Exception {
         evalContext = ExpressionEvalContext.from(context);
 
-        ExpressionTranslator expressionTranslator = new ExpressionTranslator(evalContext, fields);
-
         whereClause = pkFields.stream().map(e -> e + " = ?")
                               .collect(joining(" AND "));
-
-        // TODO create a query with parameters (?) and store value to array, set the value to the prepared statement
-        setClause = updatesByFieldNames.entrySet().stream()
-                                       .map(e -> e.getKey() + '=' + expressionTranslator.translate(e.getValue()))
-                                       .collect(joining(", "));
     }
 
     @Nonnull
@@ -97,10 +89,17 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
                     buildQuery(),
                     ds,
                     (PreparedStatement ps, JetSqlRow row) -> {
+                        List<Object> arguments = evalContext.getArguments();
+
+                        for (int j = 0; j < parameterList.size(); j++) {
+                            // TODO is some conversion needed here? maybe for dates (the opposite of convertValue)
+                            ps.setObject(j + 1, arguments.get(parameterList.get(j)));
+                        }
                         for (int j = 0; j < pkFields.size(); j++) {
                             int fieldIndex = fields.indexOf(pkFields.get(j));
-                            ps.setObject(j + 1, row.get(fieldIndex));
+                            ps.setObject(parameterList.size() + j + 1, row.get(fieldIndex));
                         }
+
                     },
                     false,
                     batchLimit
@@ -112,7 +111,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
 
     private String buildQuery() {
         return "UPDATE " + tableName +
-                " SET " + setClause +
+                " SET " + setSqlFragment +
                 " WHERE " + whereClause;
     }
 
@@ -128,7 +127,11 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
         out.writeString(tableName);
         writeList(out, pkFields);
         writeList(out, fields);
-        out.writeObject(updatesByFieldNames);
+        out.writeInt(parameterList.size());
+        for (int i = 0; i < parameterList.size(); i++) {
+            out.writeInt(parameterList.get(i));
+        }
+        out.writeString(setSqlFragment);
         out.writeInt(batchLimit);
     }
 
@@ -145,7 +148,12 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
         tableName = in.readString();
         pkFields = readList(in);
         fields = readList(in);
-        updatesByFieldNames = in.readObject();
+        int numParameters = in.readInt();
+        parameterList = new ArrayList<>(numParameters);
+        for (int i = 0; i < numParameters; i++) {
+            parameterList.add(in.readInt());
+        }
+        setSqlFragment = in.readString();
         batchLimit = in.readInt();
     }
 

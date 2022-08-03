@@ -147,9 +147,9 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
     }
 
 
-    protected static void execute(String sql) {
+    protected static void execute(String sql, Object... arguments) {
         requireNonNull(dbConnectionUrl);
-        try (SqlResult ignored = sqlService.execute(sql)) {
+        try (SqlResult ignored = sqlService.execute(sql, arguments)) {
             // empty try-with-resources
         }
     }

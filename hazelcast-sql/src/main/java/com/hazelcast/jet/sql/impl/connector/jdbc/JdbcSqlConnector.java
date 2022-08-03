@@ -41,7 +41,7 @@ import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.SqlDialectFactoryImpl;
 import org.apache.calcite.sql.SqlIdentifier;
-import org.apache.calcite.sql.dialect.H2SqlDialect;
+import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.parser.SqlParserPos;
 
 import javax.annotation.Nonnull;
@@ -62,7 +62,6 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.ExpressionTranslator.validateExpression;
 import static java.lang.Integer.parseInt;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
@@ -272,8 +271,11 @@ public class JdbcSqlConnector implements SqlConnector {
         });
         RexNode filter = hzTable.getFilter();
         String filterSqlFragment = null;
+        ParamCollectingVisitor paramCollectingVisitor = new ParamCollectingVisitor();
         if (filter != null) {
-            filterSqlFragment = simpleContext.toSql(null, filter).toSqlString(dialect).toString();
+            SqlNode sqlNode = simpleContext.toSql(null, filter);
+            sqlNode.accept(paramCollectingVisitor);
+            filterSqlFragment = sqlNode.toSqlString(dialect).toString();
         }
 
         String projectionSqlFragment = null;
@@ -284,8 +286,6 @@ public class JdbcSqlConnector implements SqlConnector {
                                             .collect(joining(","));
         }
 
-        validateExpression(predicate);
-
         return dag.newUniqueVertex(
                 "Select (" + table.getExternalName() + ")",
                 ProcessorMetaSupplier.forceTotalParallelismOne(
@@ -293,6 +293,7 @@ public class JdbcSqlConnector implements SqlConnector {
                                 table.getJdbcUrl(),
                                 table.getExternalName(),
                                 table.dbFieldNames(),
+                                paramCollectingVisitor.parameterList(),
                                 filterSqlFragment,
                                 projectionSqlFragment
                         ))
@@ -324,7 +325,9 @@ public class JdbcSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public Vertex updateProcessor(@Nonnull DAG dag, @Nonnull Table table0,
+    public Vertex updateProcessor(@Nonnull DAG dag,
+                                  @Nonnull Table table0,
+                                  @Nonnull Map<String, RexNode> updates,
                                   @Nonnull Map<String, Expression<?>> updatesByFieldNames) {
         JdbcTable table = (JdbcTable) table0;
 
@@ -337,6 +340,23 @@ public class JdbcSqlConnector implements SqlConnector {
                 .map(f -> table.getField(f).externalName())
                 .collect(toList());
 
+        SqlDialect dialect = table.sqlDialect();
+        SimpleContext simpleContext = new SimpleContext(dialect, value -> {
+            JdbcTableField field = table.getField(value);
+            return new SqlIdentifier(field.externalName(), SqlParserPos.ZERO);
+        });
+
+        ParamCollectingVisitor paramCollectingVisitor = new ParamCollectingVisitor();
+        String setSqlFragment = updates.entrySet().stream()
+                                       .map(entry -> {
+                                           SqlNode sqlNode = simpleContext.toSql(null, entry.getValue());
+                                           sqlNode.accept(paramCollectingVisitor);
+                                           return table.getField(entry.getKey()).externalName()
+                                                   + "="
+                                                   + sqlNode.toSqlString(dialect).toString();
+                                       })
+                                       .collect(joining(", "));
+
         return dag.newUniqueVertex(
                 "Update(" + table.getExternalName() + ")",
                 new UpdateProcessorSupplier(
@@ -344,7 +364,8 @@ public class JdbcSqlConnector implements SqlConnector {
                         table.getExternalName(),
                         pkFields,
                         table.dbFieldNames(),
-                        remappedUpdatesByFieldNames,
+                        paramCollectingVisitor.parameterList(),
+                        setSqlFragment,
                         table.getBatchLimit()
                 )
         );

@@ -30,6 +30,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
+import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -365,6 +366,16 @@ public interface SqlConnector {
             @Nonnull Map<String, Expression<?>> updatesByFieldNames
     ) {
         throw new UnsupportedOperationException("UPDATE not supported for " + typeName());
+    }
+
+    @Nonnull
+    default Vertex updateProcessor(
+            @Nonnull DAG dag,
+            @Nonnull Table table,
+            @Nonnull Map<String, RexNode> updates,
+            @Nonnull Map<String, Expression<?>> updatesByFieldNames
+    ) {
+        return updateProcessor(dag, table, updatesByFieldNames);
     }
 
     /**

@@ -84,6 +84,29 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
+    public void updateTableWhereIdUsingQueryParameter() throws Exception {
+        createTable(tableName);
+        insertItems(tableName, 2);
+        execute(
+                "CREATE MAPPING " + tableName + " ("
+                        + " id INT, "
+                        + " name VARCHAR "
+                        + ") "
+                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
+                        + "OPTIONS ( "
+                        + " '" + OPTION_JDBC_URL + "'='" + dbConnectionUrl + "'"
+                        + ")"
+        );
+
+        execute("UPDATE " + tableName + " SET name = 'updated' WHERE id = ?", 0);
+
+        assertJdbcRowsAnyOrder(tableName,
+                new Row(0, "updated"),
+                new Row(1, "name-1")
+        );
+    }
+
+    @Test
     public void updateTableWhereOnNonPKColumn() throws Exception {
         createTable(tableName);
         insertItems(tableName, 2);
@@ -153,7 +176,7 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void updateTableSetUsingTableColumn() throws Exception {
+    public void updateTableSetUsingExpressionWithTableColumn() throws Exception {
         createTable(tableName);
         insertItems(tableName, 2);
         execute(
@@ -172,6 +195,28 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         assertJdbcRowsAnyOrder(tableName,
                 new Row(0, "updated-0"),
                 new Row(1, "updated-1")
+        );
+    }
+
+    @Test
+    public void updateTableSetUsingQueryParameter() throws Exception {
+        createTable(tableName);
+        insertItems(tableName, 1);
+        execute(
+                "CREATE MAPPING " + tableName + " ("
+                        + " id INT, "
+                        + " name VARCHAR "
+                        + ") "
+                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
+                        + "OPTIONS ( "
+                        + " '" + OPTION_JDBC_URL + "'='" + dbConnectionUrl + "'"
+                        + ")"
+        );
+
+        execute("UPDATE " + tableName + " SET name = ?", "updated");
+
+        assertJdbcRowsAnyOrder(tableName,
+                new Row(0, "updated")
         );
     }
 
@@ -219,6 +264,56 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
 
         assertJdbcRowsAnyOrder(tableName,
                 new Row(0, "name-0", 42),
+                new Row(1, "name-1", 20)
+        );
+    }
+
+    @Test
+    public void updateTableWhereAndSetUsingQueryParameter() throws Exception {
+        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(10)", "age INT");
+        executeJdbc("INSERT INTO " + tableName + " VALUES(0, 'name-0', 20)");
+        executeJdbc("INSERT INTO " + tableName + " VALUES(1, 'name-1', 20)");
+        execute(
+                "CREATE MAPPING " + tableName + " ("
+                        + " id INT, "
+                        + " name VARCHAR,"
+                        + " age INT "
+                        + ") "
+                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
+                        + "OPTIONS ( "
+                        + " '" + OPTION_JDBC_URL + "'='" + dbConnectionUrl + "'"
+                        + ")"
+        );
+
+        execute("UPDATE " + tableName + " SET age = ? WHERE name = ?", 42, "name-0");
+
+        assertJdbcRowsAnyOrder(tableName,
+                new Row(0, "name-0", 42),
+                new Row(1, "name-1", 20)
+        );
+    }
+
+    @Test
+    public void updateTableWhereOnPKAndSetUsingQueryParameter() throws Exception {
+        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(10)", "age INT");
+        executeJdbc("INSERT INTO " + tableName + " VALUES(0, 'name-0', 20)");
+        executeJdbc("INSERT INTO " + tableName + " VALUES(1, 'name-1', 20)");
+        execute(
+                "CREATE MAPPING " + tableName + " ("
+                        + " id INT, "
+                        + " name VARCHAR,"
+                        + " age INT "
+                        + ") "
+                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
+                        + "OPTIONS ( "
+                        + " '" + OPTION_JDBC_URL + "'='" + dbConnectionUrl + "'"
+                        + ")"
+        );
+
+        execute("UPDATE " + tableName + " SET age = ?, name = ? WHERE id = ?", 42, "updated", 0);
+
+        assertJdbcRowsAnyOrder(tableName,
+                new Row(0, "updated", 42),
                 new Row(1, "name-1", 20)
         );
     }
