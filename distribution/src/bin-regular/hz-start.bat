@@ -69,7 +69,7 @@ set JAVA_OPTS=%JAVA_OPTS%^
  "-Dlog4j.configurationFile=file:%HAZELCAST_HOME%\config\log4j2.properties"^
  "-Dhazelcast.config=%HAZELCAST_HOME%\%HAZELCAST_CONFIG%"
 
-set "LOGGING_PATTERN=%%d [%%highlight{${LOG_LEVEL_PATTERN:-%%5p}}{FATAL=red, ERROR=red, WARN=yellow, INFO=green, DEBUG=magenta}] [%%style{%%t{1.}}{cyan}] [%%style{%%c{1.}}{blue}]: %%m%%n"
+set "LOGGING_PATTERN=%%d [%%highlight{%%5p}{FATAL=red, ERROR=red, WARN=yellow, INFO=green, DEBUG=magenta}] [%%style{%%t{1.}}{cyan}] [%%style{%%c{1.}}{blue}]: %%m%%n"
 
 set CLASSPATH="%HAZELCAST_HOME%\lib\*;%HAZELCAST_HOME%\bin\user-lib;%HAZELCAST_HOME%\bin\user-lib\*";%CLASSPATH%
 
