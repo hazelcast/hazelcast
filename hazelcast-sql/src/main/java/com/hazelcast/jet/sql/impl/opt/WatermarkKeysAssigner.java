@@ -206,19 +206,7 @@ public class WatermarkKeysAssigner {
             } else if (node instanceof SlidingWindow) {
                 SlidingWindow sw = (SlidingWindow) node;
 
-                // if the field used to calculate window bounds isn't watermarked,
-                // the window bounds aren't watermarked either -- just forward input's map.
-                if (!relToWmKeyMapping.get(sw.getInput()).containsKey(sw.orderingFieldIndex())) {
-                    relToWmKeyMapping.put(sw, relToWmKeyMapping.get(sw.getInput()));
-                }
-
-                Map<Integer, MutableByte> byteMap = new HashMap<>(relToWmKeyMapping.get(sw.getInput()));
-                MutableByte newWmKey = new MutableByte(keyCounter);
-//                we should use new wm key for window start and end bounds
-//                MutableByte newWmKey = new MutableByte(keyCounter[0]++);
-                byteMap.put(sw.windowStartIndex(), newWmKey);
-                byteMap.put(sw.windowEndIndex(), newWmKey);
-                relToWmKeyMapping.put(sw, byteMap);
+                relToWmKeyMapping.put(sw, relToWmKeyMapping.get(sw.getInput()));
             } else if (node instanceof Aggregate) {
                 Aggregate agg = (Aggregate) node;
                 WatermarkedFields inputWmFields = OptUtils.metadataQuery(agg).extractWatermarkedFields(agg.getInput());

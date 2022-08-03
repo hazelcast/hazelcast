@@ -89,9 +89,7 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     private Watermark minRestoredWm = new Watermark(Long.MAX_VALUE, (byte) 0);
     private int asyncOpsCounter;
 
-    /**
-     * Temporary collection for restored objects during snapshot restore.
-     */
+    /** Temporary collection for restored objects during snapshot restore. */
     private ArrayDeque<T> restoredObjects = new ArrayDeque<>();
 
     @Probe(name = "numInFlightOps")
