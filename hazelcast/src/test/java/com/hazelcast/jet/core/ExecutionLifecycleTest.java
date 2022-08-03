@@ -791,7 +791,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         List<Future<Job>> submitFutures = new ArrayList<>();
 
         // When
-        int numJobs = 15;
+        int numJobs = 100;
         for (int i = 0; i < numJobs; i++) {
             submitFutures.add(spawn(() -> newJob(dagBlocking)));
         }
@@ -822,7 +822,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         List<Future<?>> submitFutures = new ArrayList<>();
 
         // When
-        int numJobs = 15;
+        int numJobs = 100;
         for (int i = 0; i < numJobs; i++) {
             submitFutures.add(newJob(dagBlocking).getFuture());
         }
@@ -849,14 +849,14 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     public void when_processorInitBlocks_then_otherJobsNotBlocked() throws Exception {
         // Given
         DAG dagBlocking = new DAG().vertex(new Vertex("test",
-                () -> new MockP().initBlocks()));
+                new MockPMS(() -> new MockPS(() -> new MockP().initBlocks(), MEMBER_COUNT))));
         DAG dagNormal = new DAG().vertex(new Vertex("test",
-                MockP::new));
+                new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT))));
 
         List<Future<Job>> submitFutures = new ArrayList<>();
 
         // When
-        int numJobs = 15;
+        int numJobs = 100;
         for (int i = 0; i < numJobs; i++) {
             submitFutures.add(spawn(() -> newJob(dagBlocking)));
         }
