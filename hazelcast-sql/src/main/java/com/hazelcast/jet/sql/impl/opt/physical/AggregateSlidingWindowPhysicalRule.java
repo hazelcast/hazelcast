@@ -202,9 +202,6 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
             return null;
         }
 
-        RexNode timestampExpression = logicalAggregate.getCluster().getRexBuilder().makeInputRef(
-                physicalInput, watermarkedField);
-
         return new SlidingWindowAggregatePhysicalRel(
                 physicalInput.getCluster(),
                 physicalInput.getTraitSet(),
@@ -212,7 +209,7 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
                 logicalAggregate.getGroupSet(),
                 logicalAggregate.getGroupSets(),
                 logicalAggregate.getAggCallList(),
-                timestampExpression,
+                watermarkedField,
                 windowPolicyProvider,
                 logicalAggregate.containsDistinctCall() ? 1 : 2,
                 windowStartIndexes,

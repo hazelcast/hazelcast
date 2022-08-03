@@ -193,13 +193,18 @@ public class WatermarkKeysAssigner {
                 relToWmKeyMapping.put(node, refByteMap);
             } else if (node instanceof SlidingWindowAggregatePhysicalRel) {
                 SlidingWindowAggregatePhysicalRel swAgg = (SlidingWindowAggregatePhysicalRel) node;
-
+                Map<Integer, MutableByte> inputWmKeys = relToWmKeyMapping.get(swAgg.getInput());
+                if (inputWmKeys == null) {
+                    return;
+                }
+                MutableByte inputTimestampKey = inputWmKeys.get(swAgg.timestampFieldIndex());
+                if (inputTimestampKey == null) {
+                    return;
+                }
                 WatermarkedFields watermarkedFields = swAgg.watermarkedFields();
                 Map<Integer, MutableByte> refByteMap = new HashMap<>();
-                MutableByte newWmKey = new MutableByte(keyCounter);
-//                MutableByte newWmKey = new MutableByte(keyCounter++); // we should use new wm key for window end bound
                 for (Integer fieldIndex : watermarkedFields.getFieldIndexes()) {
-                    refByteMap.put(fieldIndex, newWmKey);
+                    refByteMap.put(fieldIndex, inputTimestampKey);
                 }
 
                 relToWmKeyMapping.put(swAgg, refByteMap);
