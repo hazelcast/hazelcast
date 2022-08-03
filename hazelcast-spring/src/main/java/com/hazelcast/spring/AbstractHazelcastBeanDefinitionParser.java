@@ -665,12 +665,8 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                             treeIndexConfig.setPageSize(parseCapacity(columnNode));
                         }
                         if ("memory-tier".equals(cleanNodeName(columnNode))) {
-                            for (Node memoryTierNode : childElements(columnsNode)) {
-                                if (memoryTierNode.getNodeName().equals("capacity")) {
-                                    Node capacity = columnNode.getChildNodes().item(0);
-                                    treeIndexConfig.getMemoryTierConfig().setCapacity(parseCapacity(capacity));
-                                }
-                            }
+                            Node capacityNode = searchForNode(columnNode, "capacity");
+                            treeIndexConfig.getMemoryTierConfig().setCapacity(parseCapacity(capacityNode));
                         }
                     }
                     indexConfBuilder.addPropertyValue("bTreeIndexConfig", treeIndexConfig);
@@ -681,6 +677,15 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             indexConfBuilder.addPropertyValue("attributes", columns);
 
             indexes.add(indexConfBuilder.getBeanDefinition());
+        }
+
+        private Node searchForNode(Node parentNode, String nodeCleanName) {
+            for (Node node : childElements(parentNode)) {
+                if (cleanNodeName(node).equals(nodeCleanName)) {
+                    return node;
+                }
+            }
+            throw new IllegalStateException("no node with name " + nodeCleanName + " found");
         }
 
         private Capacity parseCapacity(Node columnNode) {
