@@ -168,8 +168,8 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
 
     @Nonnull
     @Override
-    public Class<Object> getClazz() {
-        throw new IllegalStateException("getClazz should not be called for the record serializer");
+    public Class<Object> getCompactClass() {
+        throw new IllegalStateException("getCompactClass should not be called for the record serializer");
     }
 
     private void populateReadersWriters(Class<?> clazz) {

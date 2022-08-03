@@ -306,7 +306,7 @@ public class CompactStreamSerializerTest {
 
                     @Nonnull
                     @Override
-                    public Class<EmployeeDTO> getClazz() {
+                    public Class<EmployeeDTO> getCompactClass() {
                         return EmployeeDTO.class;
                     }
                 });
@@ -342,7 +342,7 @@ public class CompactStreamSerializerTest {
 
                     @Nonnull
                     @Override
-                    public Class<EmployerDTO> getClazz() {
+                    public Class<EmployerDTO> getCompactClass() {
                         return EmployerDTO.class;
                     }
                 });
@@ -583,7 +583,7 @@ public class CompactStreamSerializerTest {
 
                     @Nonnull
                     @Override
-                    public Class<EmployeeDTO> getClazz() {
+                    public Class<EmployeeDTO> getCompactClass() {
                         return EmployeeDTO.class;
                     }
                 });
@@ -634,7 +634,7 @@ public class CompactStreamSerializerTest {
 
                     @Nonnull
                     @Override
-                    public Class<EmployeeDTO> getClazz() {
+                    public Class<EmployeeDTO> getCompactClass() {
                         return EmployeeDTO.class;
                     }
                 });

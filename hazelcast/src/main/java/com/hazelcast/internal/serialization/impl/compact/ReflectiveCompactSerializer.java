@@ -118,8 +118,8 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
 
     @Nonnull
     @Override
-    public Class<T> getClazz() {
-        throw new IllegalStateException("getClazz should not be called for the reflective serializer");
+    public Class<T> getCompactClass() {
+        throw new IllegalStateException("getCompactClass should not be called for the reflective serializer");
     }
 
     private boolean writeFast(Class clazz, CompactWriter compactWriter, Object object) {

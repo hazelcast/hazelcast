@@ -289,7 +289,7 @@ public class CompactSerializationTest {
 
         @Nonnull
         @Override
-        public Class<Integer> getClazz() {
+        public Class<Integer> getCompactClass() {
             return Integer.class;
         }
     }
@@ -328,7 +328,7 @@ public class CompactSerializationTest {
 
         @Nonnull
         @Override
-        public Class<Foo> getClazz() {
+        public Class<Foo> getCompactClass() {
             return Foo.class;
         }
     }

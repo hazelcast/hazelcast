@@ -138,8 +138,8 @@ public class CompactSerializationConfig {
      * Registers the given Compact serializer.
      * <p>
      * For the class returned by the serializer's
-     * {@link CompactSerializer#getClazz()} method, Compact serialization will
-     * be used instead of Portable, Identified, Java Serializable, or
+     * {@link CompactSerializer#getCompactClass()} method, Compact serialization
+     * will be used instead of Portable, Identified, Java Serializable, or
      * GlobalSerializer.
      * <p>
      * Type name will be read from the serializer's
@@ -150,7 +150,7 @@ public class CompactSerializationConfig {
      */
     public <T> CompactSerializationConfig addSerializer(@Nonnull CompactSerializer<T> serializer) {
         checkNotNull(serializer, "Serializer cannot be null");
-        register0(serializer.getClazz(), serializer.getTypeName(), serializer);
+        register0(serializer.getCompactClass(), serializer.getTypeName(), serializer);
         return this;
     }
 
@@ -158,8 +158,8 @@ public class CompactSerializationConfig {
      * Registers the given Compact serializers.
      * <p>
      * For the classes returned by the serializers'
-     * {@link CompactSerializer#getClazz()} method, Compact serialization will
-     * be used instead of Portable, Identified, Java Serializable, or
+     * {@link CompactSerializer#getCompactClass()} method, Compact serialization
+     * will be used instead of Portable, Identified, Java Serializable, or
      * GlobalSerializer.
      * <p>
      * Type names will be read from the serializers'

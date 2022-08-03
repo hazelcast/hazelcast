@@ -67,5 +67,5 @@ public interface CompactSerializer<T> {
      * @return the class to be serialized with this serializer.
      */
     @Nonnull
-    Class<T> getClazz();
+    Class<T> getCompactClass();
 }

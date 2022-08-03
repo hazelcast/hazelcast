@@ -95,7 +95,7 @@ public class InnerDTOSerializer implements CompactSerializer<InnerDTO> {
 
     @Nonnull
     @Override
-    public Class<InnerDTO> getClazz() {
+    public Class<InnerDTO> getCompactClass() {
         return InnerDTO.class;
     }
 }

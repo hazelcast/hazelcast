@@ -116,7 +116,7 @@ public class SqlCompactTest extends SqlTestSupport {
 
             @Nonnull
             @Override
-            public Class<Person> getClazz() {
+            public Class<Person> getCompactClass() {
                 return Person.class;
             }
         });

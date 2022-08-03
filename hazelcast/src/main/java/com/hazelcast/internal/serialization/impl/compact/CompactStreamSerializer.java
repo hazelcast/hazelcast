@@ -323,7 +323,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
             }
 
             CompactSerializableRegistration registration = new CompactSerializableRegistration(
-                    serializer.getClazz(),
+                    serializer.getCompactClass(),
                     serializer.getTypeName(),
                     serializer
             );

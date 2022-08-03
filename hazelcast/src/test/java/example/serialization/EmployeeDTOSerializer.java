@@ -43,7 +43,7 @@ public class EmployeeDTOSerializer implements CompactSerializer<EmployeeDTO> {
 
     @Nonnull
     @Override
-    public Class<EmployeeDTO> getClazz() {
+    public Class<EmployeeDTO> getCompactClass() {
         return EmployeeDTO.class;
     }
 }

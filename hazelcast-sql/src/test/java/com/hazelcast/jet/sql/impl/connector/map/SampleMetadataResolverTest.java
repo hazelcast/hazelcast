@@ -315,7 +315,7 @@ public class SampleMetadataResolverTest {
 
             @Nonnull
             @Override
-            public Class<CompactClass> getClazz() {
+            public Class<CompactClass> getCompactClass() {
                 return CompactClass.class;
             }
         }

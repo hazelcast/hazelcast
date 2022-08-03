@@ -42,7 +42,7 @@ public class DummyCompactSerializer implements CompactSerializer<DummyCompactSer
 
     @Nonnull
     @Override
-    public Class<DummyCompactSerializable> getClazz() {
+    public Class<DummyCompactSerializable> getCompactClass() {
         return DummyCompactSerializable.class;
     }
 }

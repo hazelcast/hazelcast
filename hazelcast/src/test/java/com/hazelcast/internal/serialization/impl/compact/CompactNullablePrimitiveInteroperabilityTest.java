@@ -82,7 +82,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
 
         @Nonnull
         @Override
-        public Class<A> getClazz() {
+        public Class<A> getCompactClass() {
             return A.class;
         }
     }

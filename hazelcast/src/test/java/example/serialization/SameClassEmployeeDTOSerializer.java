@@ -19,9 +19,9 @@ package example.serialization;
 import javax.annotation.Nonnull;
 
 /**
- * An extension of {@link EmployeeDTOSerializer} where the {@link #getTypeName()}
- * returns a different type name, but the {@link #getClazz()} returns the
- * same class.
+ * An extension of {@link EmployeeDTOSerializer} where the
+ * {@link #getTypeName()} returns a different type name, but the
+ * {@link #getCompactClass()} returns the same class.
  */
 public class SameClassEmployeeDTOSerializer extends EmployeeDTOSerializer {
     @Nonnull

@@ -96,7 +96,7 @@ public class MainDTOSerializer implements CompactSerializer<MainDTO> {
 
     @Nonnull
     @Override
-    public Class<MainDTO> getClazz() {
+    public Class<MainDTO> getCompactClass() {
         return MainDTO.class;
     }
 }
