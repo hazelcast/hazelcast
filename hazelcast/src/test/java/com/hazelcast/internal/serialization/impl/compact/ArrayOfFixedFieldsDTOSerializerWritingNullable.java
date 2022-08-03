@@ -38,31 +38,31 @@ public class ArrayOfFixedFieldsDTOSerializerWritingNullable implements CompactSe
     @Override
     public void write(@Nonnull CompactWriter out, @Nonnull ArrayOfFixedFieldsDTO object) {
         Byte[] bb = new Byte[object.b.length];
-        for(int k = 0; k < object.b.length; k++) {
+        for (int k = 0; k < object.b.length; k++) {
             bb[k] = object.b[k];
         }
         Boolean[] bools = new Boolean[object.bool.length];
-        for(int k = 0; k < object.bool.length; k++) {
+        for (int k = 0; k < object.bool.length; k++) {
             bools[k] = object.bool[k];
         }
         Short[] ss = new Short[object.s.length];
-        for(int k = 0; k < object.s.length; k++) {
+        for (int k = 0; k < object.s.length; k++) {
             ss[k] = object.s[k];
         }
         Integer[] ii = new Integer[object.i.length];
-        for(int k = 0; k < object.i.length; k++) {
+        for (int k = 0; k < object.i.length; k++) {
             ii[k] = object.i[k];
         }
         Long[] ll = new Long[object.l.length];
-        for(int k = 0; k < object.l.length; k++) {
+        for (int k = 0; k < object.l.length; k++) {
             ll[k] = object.l[k];
         }
         Float[] ff = new Float[object.f.length];
-        for(int k = 0; k < object.f.length; k++) {
+        for (int k = 0; k < object.f.length; k++) {
             ff[k] = object.f[k];
         }
         Double[] dd = new Double[object.d.length];
-        for(int k = 0; k < object.d.length; k++) {
+        for (int k = 0; k < object.d.length; k++) {
             dd[k] = object.d[k];
         }
         out.writeArrayOfNullableInt8("b", bb);

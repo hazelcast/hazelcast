@@ -33,31 +33,31 @@ public class ArrayOfFixedFieldsDTOSerializerReadingNullable implements CompactSe
         Float[] f = reader.readArrayOfNullableFloat32("f");
         Double[] d = reader.readArrayOfNullableFloat64("d");
         byte[] pBytes = new byte[b.length];
-        for(int k = 0; k < b.length; k++) {
+        for (int k = 0; k < b.length; k++) {
             pBytes[k] = b[k];
         }
         boolean[] pBools = new boolean[bool.length];
-        for(int k = 0; k < bool.length; k++) {
+        for (int k = 0; k < bool.length; k++) {
             pBools[k] = bool[k];
         }
         short[] pShorts = new short[s.length];
-        for(int k = 0; k < s.length; k++) {
+        for (int k = 0; k < s.length; k++) {
             pShorts[k] = s[k];
         }
         int[] pInts = new int[i.length];
-        for(int k = 0; k < i.length; k++) {
+        for (int k = 0; k < i.length; k++) {
             pInts[k] = i[k];
         }
         long[] pLongs = new long[l.length];
-        for(int k = 0; k < l.length; k++) {
+        for (int k = 0; k < l.length; k++) {
             pLongs[k] = l[k];
         }
         float[] pFloats = new float[f.length];
-        for(int k = 0; k < f.length; k++) {
+        for (int k = 0; k < f.length; k++) {
             pFloats[k] = f[k];
         }
         double[] pDoubles = new double[d.length];
-        for(int k = 0; k < d.length; k++) {
+        for (int k = 0; k < d.length; k++) {
             pDoubles[k] = d[k];
         }
         return new ArrayOfFixedFieldsDTO(pBytes, pBools, pShorts, pInts, pLongs, pFloats, pDoubles);

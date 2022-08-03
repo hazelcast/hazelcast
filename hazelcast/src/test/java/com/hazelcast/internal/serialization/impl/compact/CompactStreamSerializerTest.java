@@ -70,6 +70,7 @@ import static example.serialization.HiringStatus.HIRING;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
@@ -757,7 +758,7 @@ public class CompactStreamSerializerTest {
     }
 
     @Test
-    public void testSchemaEvolution_fieldAdded() {
+    public void testSchemaEvolution_variableSizeFieldAdded() {
         SerializationConfig serializationConfig = new SerializationConfig();
         //Using this registration to mimic schema evolution. This is usage is not advised.
         serializationConfig.getCompactSerializationConfig().setEnabled(true)
@@ -798,7 +799,48 @@ public class CompactStreamSerializerTest {
     }
 
     @Test
-    public void testSchemaEvolution_fieldRemoved() {
+    public void testSchemaEvolution_fixedSizeFieldAdded() {
+        SerializationConfig serializationConfig = new SerializationConfig();
+        //Using this registration to mimic schema evolution. This is usage is not advised.
+        serializationConfig.getCompactSerializationConfig().setEnabled(true)
+                .register(EmployeeDTO.class, EmployeeDTO.class.getName(), new CompactSerializer<EmployeeDTO>() {
+                    @Nonnull
+                    @Override
+                    public EmployeeDTO read(@Nonnull CompactReader in) {
+                        throw new UnsupportedOperationException("We will not read from here on this test");
+                    }
+
+                    @Override
+                    public void write(@Nonnull CompactWriter out, @Nonnull EmployeeDTO object) {
+                        out.writeInt32("age", object.getAge());
+                        out.writeInt64("id", object.getId());
+                        out.writeInt8("height", (byte) 187);
+                    }
+                });
+
+        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .setConfig(serializationConfig)
+                .setSchemaService(schemaService)
+                .build();
+
+        EmployeeDTO expected = new EmployeeDTO(20, 102310312);
+        Data data = serializationService.toData(expected);
+
+        SerializationConfig serializationConfig2 = new SerializationConfig();
+        serializationConfig2.getCompactSerializationConfig().setEnabled(true);
+        SerializationService serializationService2 = new DefaultSerializationServiceBuilder()
+                .setSchemaService(schemaService)
+                .setConfig(serializationConfig2)
+                .build();
+
+        EmployeeDTO actual = serializationService2.toObject(data);
+
+        assertEquals(expected.getAge(), actual.getAge());
+        assertEquals(expected.getId(), actual.getId());
+    }
+
+    @Test
+    public void testSchemaEvolution_fixedSizeFieldRemoved() {
         SerializationConfig serializationConfig = new SerializationConfig();
         //Using this registration to mimic schema evolution. This is usage is not advised.
         serializationConfig.getCompactSerializationConfig().setEnabled(true)
@@ -830,6 +872,40 @@ public class CompactStreamSerializerTest {
 
         assertEquals(expected.getAge(), actual.getAge());
         assertEquals(0, actual.getId());
+    }
+
+    @Test
+    public void testSchemaEvolution_variableSizeFieldRemoved() {
+        SerializationConfig serializationConfig = new SerializationConfig();
+        //Using this registration to mimic schema evolution. This is usage is not advised.
+        serializationConfig.getCompactSerializationConfig().setEnabled(true)
+                .register(NodeDTO.class, NodeDTO.class.getName(), new CompactSerializer<NodeDTO>() {
+                    @Nonnull
+                    @Override
+                    public NodeDTO read(@Nonnull CompactReader in) {
+                        throw new UnsupportedOperationException("We will not read from here on this test");
+                    }
+
+                    @Override
+                    public void write(@Nonnull CompactWriter out, @Nonnull NodeDTO object) {
+                        out.writeInt32("id", object.getId());
+                    }
+                });
+
+        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .setConfig(serializationConfig)
+                .setSchemaService(schemaService)
+                .build();
+
+        NodeDTO expected = new NodeDTO(new NodeDTO(null, 1), 102310312);
+        Data data = serializationService.toData(expected);
+
+        SerializationService serializationService2 = createSerializationService(schemaService);
+
+        NodeDTO actual = serializationService2.toObject(data);
+
+        assertEquals(expected.getId(), actual.getId());
+        assertNull(actual.getChild());
     }
 
     private static class TypeMismatchDTO {

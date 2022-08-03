@@ -19,10 +19,12 @@ package com.hazelcast.internal.serialization.impl.compact.integration;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.query.Predicates;
@@ -43,11 +45,13 @@ import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CountDownLatch;
 
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
+import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
@@ -203,6 +207,29 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
         assertEquals(employeeDTO, map.get(1));
         // Perform a query to make sure that the schema is available on the cluster
         assertEquals(1, map.values(Predicates.sql("age == 30")).size());
+    }
+
+    @Test
+    public void testMapListener() {
+        IMap<Integer, EmployeeDTO> map = instance1.getMap("test");
+        CountDownLatch latch = new CountDownLatch(1);
+
+        class MapListener implements EntryAddedListener {
+            @Override
+            public void entryAdded(EntryEvent event) {
+                latch.countDown();
+            }
+        }
+        map.addEntryListener(new MapListener(), true);
+
+        // Put the entry from the other instance to not create a local
+        // registry in the actual instance. This will force it to
+        // go the cluster to fetch the schema.
+        IMap<Integer, EmployeeDTO> map2 = instance2.getMap("test");
+        EmployeeDTO employeeDTO = new EmployeeDTO(30, 102310312);
+        map2.put(1, employeeDTO);
+
+        assertOpenEventually(latch);
     }
 
     protected abstract void restartCluster();
