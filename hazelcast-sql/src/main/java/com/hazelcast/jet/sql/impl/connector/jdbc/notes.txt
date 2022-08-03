@@ -7,5 +7,4 @@ TODO
 - publish compact generic record instead of row ? is this possible?
 - different parallelism if possible - for sink - insert, update and delete
 
-- fix throws new RuntimeException
 - create PR with description

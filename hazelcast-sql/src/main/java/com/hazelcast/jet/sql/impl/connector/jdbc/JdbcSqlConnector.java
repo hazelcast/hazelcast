@@ -117,8 +117,8 @@ public class JdbcSqlConnector implements SqlConnector {
     @Nonnull
     private Map<String, DbField> readDbFields(@Nonnull Map<String, String> options, @Nonnull String externalTableName) {
         Map<String, DbField> fields = new HashMap<>();
+        String jdbcUrl = requireNonNull(options.get(OPTION_JDBC_URL), OPTION_JDBC_URL + " must be set");
         try {
-            String jdbcUrl = requireNonNull(options.get(OPTION_JDBC_URL), OPTION_JDBC_URL + " must be set");
             Driver driver = DriverManager.getDriver(jdbcUrl);
 
             try (Connection connection = driver.connect(jdbcUrl, new Properties());
@@ -138,11 +138,11 @@ public class JdbcSqlConnector implements SqlConnector {
                 }
 
             } catch (SQLException e) {
-                throw new RuntimeException(e);
+                throw new HazelcastException("Could not read column metadata for table " + externalTableName, e);
             }
 
         } catch (SQLException e) {
-            throw new RuntimeException(e);
+            throw new HazelcastException("Could not get Driver for jdbc.url " + jdbcUrl, e);
         }
         return fields;
     }
@@ -155,7 +155,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 primaryKeyColumns.add(columnName);
             }
         } catch (SQLException e) {
-            throw new RuntimeException("Could not read primary key columns for table " + externalName, e);
+            throw new HazelcastException("Could not read primary key columns for table " + externalName, e);
         }
         return primaryKeyColumns;
     }
@@ -169,7 +169,7 @@ public class JdbcSqlConnector implements SqlConnector {
                         + " does not match db type " + type.getTypeFamily());
             }
         } catch (ClassNotFoundException e) {
-            throw new HazelcastException(e);
+            throw new HazelcastException("Could not validate type for dbField " + dbField, e);
         }
     }
 
@@ -331,6 +331,15 @@ public class JdbcSqlConnector implements SqlConnector {
 
         public boolean primaryKey() {
             return primaryKey;
+        }
+
+        @Override
+        public String toString() {
+            return "DbField{" +
+                    "className='" + className + '\'' +
+                    ", columnName='" + columnName + '\'' +
+                    ", primaryKey=" + primaryKey +
+                    '}';
         }
     }
 }
