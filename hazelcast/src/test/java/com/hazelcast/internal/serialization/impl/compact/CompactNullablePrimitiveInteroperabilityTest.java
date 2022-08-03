@@ -58,9 +58,9 @@ public class CompactNullablePrimitiveInteroperabilityTest {
     private static class ASerializer implements CompactSerializer<A> {
         @Nonnull
         @Override
-        public A read(@Nonnull CompactReader in) {
-            int age = in.readInt32("age");
-            int[] ids = in.readArrayOfInt32("ids");
+        public A read(@Nonnull CompactReader reader) {
+            int age = reader.readInt32("age");
+            int[] ids = reader.readArrayOfInt32("ids");
             Integer[] boxedIds = new Integer[ids.length];
             for (int i = 0; i < ids.length; i++) {
                 boxedIds[i] = ids[i];
@@ -69,9 +69,9 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         }
 
         @Override
-        public void write(@Nonnull CompactWriter out, @Nonnull A object) {
-            out.writeNullableInt32("age", object.age);
-            out.writeArrayOfNullableInt32("ids", object.ids);
+        public void write(@Nonnull CompactWriter writer, @Nonnull A object) {
+            writer.writeNullableInt32("age", object.age);
+            writer.writeArrayOfNullableInt32("ids", object.ids);
         }
 
         @Nonnull

@@ -25,14 +25,14 @@ import javax.annotation.Nonnull;
 public class EmployeeDTOSerializer implements CompactSerializer<EmployeeDTO> {
     @Nonnull
     @Override
-    public EmployeeDTO read(@Nonnull CompactReader in) {
-        return new EmployeeDTO(in.readInt32("age"), in.readInt64("id"));
+    public EmployeeDTO read(@Nonnull CompactReader reader) {
+        return new EmployeeDTO(reader.readInt32("age"), reader.readInt64("id"));
     }
 
     @Override
-    public void write(@Nonnull CompactWriter out, @Nonnull EmployeeDTO object) {
-        out.writeInt32("age", object.getAge());
-        out.writeInt64("id", object.getId());
+    public void write(@Nonnull CompactWriter writer, @Nonnull EmployeeDTO object) {
+        writer.writeInt32("age", object.getAge());
+        writer.writeInt64("id", object.getId());
     }
 
     @Nonnull

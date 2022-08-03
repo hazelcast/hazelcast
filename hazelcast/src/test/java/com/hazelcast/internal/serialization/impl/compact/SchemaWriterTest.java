@@ -125,7 +125,8 @@ public class SchemaWriterTest {
     }
 
     private boolean isSupportedByCompact(FieldKind kind) {
-        return !(FieldKind.CHAR == kind
+        return !(FieldKind.NONE == kind
+                || FieldKind.CHAR == kind
                 || FieldKind.ARRAY_OF_CHAR == kind
                 || FieldKind.PORTABLE == kind
                 || FieldKind.ARRAY_OF_PORTABLE == kind

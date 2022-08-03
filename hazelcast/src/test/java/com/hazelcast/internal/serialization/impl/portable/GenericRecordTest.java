@@ -15,9 +15,14 @@
  */
 package com.hazelcast.internal.serialization.impl.portable;
 
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.TestSerializationConstants;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
+import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -27,7 +32,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+
 import static com.hazelcast.test.HazelcastTestSupport.assertThrows;
+import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -73,5 +81,26 @@ public class GenericRecordTest {
         assertThrows(UnsupportedOperationException.class, () -> record.getArrayOfNullableInt64("name"));
         assertThrows(UnsupportedOperationException.class, () -> record.getArrayOfNullableFloat32("name"));
         assertThrows(UnsupportedOperationException.class, () -> record.getArrayOfNullableFloat64("name"));
+    }
+
+    @Test
+    public void testGetFieldKind() throws IOException {
+        ClassDefinition classDefinition = new ClassDefinitionBuilder(42, 42)
+                .addStringField("s")
+                .build();
+
+        GenericRecord record = GenericRecordBuilder.portable(classDefinition)
+                .setString("s", "s")
+                .build();
+
+        assertEquals(FieldKind.STRING, record.getFieldKind("s"));
+        assertEquals(FieldKind.NONE, record.getFieldKind("ss"));
+
+        InternalSerializationService service = new DefaultSerializationServiceBuilder().build();
+        Data data = service.toData(record);
+        InternalGenericRecord internalGenericRecord = service.readAsInternalGenericRecord(data);
+
+        assertEquals(FieldKind.STRING, internalGenericRecord.getFieldKind("s"));
+        assertEquals(FieldKind.NONE, internalGenericRecord.getFieldKind("ss"));
     }
 }

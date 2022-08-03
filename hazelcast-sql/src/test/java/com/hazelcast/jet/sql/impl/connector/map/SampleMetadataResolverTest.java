@@ -298,13 +298,13 @@ public class SampleMetadataResolverTest {
 
             @Nonnull
             @Override
-            public CompactClass read(@Nonnull CompactReader in) {
-                return new CompactClass(in.readInt32("field"));
+            public CompactClass read(@Nonnull CompactReader reader) {
+                return new CompactClass(reader.readInt32("field"));
             }
 
             @Override
-            public void write(@Nonnull CompactWriter out, @Nonnull CompactClass object) {
-                out.writeInt32("field", object.field);
+            public void write(@Nonnull CompactWriter writer, @Nonnull CompactClass object) {
+                writer.writeInt32("field", object.field);
             }
 
             @Nonnull

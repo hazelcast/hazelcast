@@ -25,6 +25,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.util.FilteringClassLoader;
+import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -215,17 +216,21 @@ public class GenericRecordTest {
     }
 
     @Test
-    public void testGetFieldKindThrowsExceptionWhenFieldDoesNotExist() throws IOException {
-        GenericRecord record = compact("test").build();
-        assertThatThrownBy(() -> record.getFieldKind("doesNotExist"))
-                .isInstanceOf(IllegalArgumentException.class);
+    public void testGetFieldKind() throws IOException {
+        GenericRecord record = compact("test")
+                .setString("s", "s")
+                .build();
 
-        InternalSerializationService serializationService = (InternalSerializationService) createSerializationService();
-        Data data = serializationService.toData(record);
+        assertEquals(FieldKind.STRING, record.getFieldKind("s"));
+        assertEquals(FieldKind.NONE, record.getFieldKind("ss"));
 
-        InternalGenericRecord internalGenericRecord = serializationService.readAsInternalGenericRecord(data);
-        assertThatThrownBy(() -> internalGenericRecord.getFieldKind("doesNotExist"))
-                .isInstanceOf(IllegalArgumentException.class);
+        SerializationService service = createSerializationService();
+        Data data = service.toData(record);
+        InternalGenericRecord internalGenericRecord
+                = ((InternalSerializationService) service).readAsInternalGenericRecord(data);
+
+        assertEquals(FieldKind.STRING, internalGenericRecord.getFieldKind("s"));
+        assertEquals(FieldKind.NONE, internalGenericRecord.getFieldKind("ss"));
     }
 
     private void assertSetterThrows(GenericRecordBuilder builder, String fieldName, int value, String errorMessage) {

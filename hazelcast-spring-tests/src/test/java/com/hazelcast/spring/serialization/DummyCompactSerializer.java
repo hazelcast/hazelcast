@@ -25,12 +25,12 @@ import javax.annotation.Nonnull;
 public class DummyCompactSerializer implements CompactSerializer<DummyCompactSerializable> {
     @Nonnull
     @Override
-    public DummyCompactSerializable read(@Nonnull CompactReader in) {
+    public DummyCompactSerializable read(@Nonnull CompactReader reader) {
         return new DummyCompactSerializable();
     }
 
     @Override
-    public void write(@Nonnull CompactWriter out, @Nonnull DummyCompactSerializable object) {
+    public void write(@Nonnull CompactWriter writer, @Nonnull DummyCompactSerializable object) {
 
     }
 
