@@ -61,6 +61,7 @@ import java.util.Objects;
 
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createCompactGenericRecord;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createFixedFieldsDTO;
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createInnerDTO;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createMainDTO;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createSerializationService;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createVarFieldsDTO;
@@ -248,6 +249,128 @@ public class CompactStreamSerializerTest {
 
 
         Data innerData = serializationService.toData(GenericRecordBuilder.compact("inner").build());
+        InnerDTO innerDTO = serializationService.toObject(innerData);
+        assertArrayEquals(new boolean[0], innerDTO.bools);
+        assertArrayEquals(new byte[0], innerDTO.bytes);
+        assertArrayEquals(new short[0], innerDTO.shorts);
+        assertArrayEquals(new int[0], innerDTO.ints);
+        assertArrayEquals(new long[0], innerDTO.longs);
+        assertArrayEquals(new float[0], innerDTO.floats, 0.001f);
+        assertArrayEquals(new double[0], innerDTO.doubles, 0.001);
+        assertArrayEquals(new String[0], innerDTO.strings);
+        assertArrayEquals(new NamedDTO[0], innerDTO.nn);
+        assertArrayEquals(new BigDecimal[0], innerDTO.bigDecimals);
+        assertArrayEquals(new LocalTime[0], innerDTO.localTimes);
+        assertArrayEquals(new LocalDate[0], innerDTO.localDates);
+        assertArrayEquals(new LocalDateTime[0], innerDTO.localDateTimes);
+        assertArrayEquals(new OffsetDateTime[0], innerDTO.offsetDateTimes);
+        assertArrayEquals(new Boolean[0], innerDTO.nullableBools);
+        assertArrayEquals(new Byte[0], innerDTO.nullableBytes);
+        assertArrayEquals(new Short[0], innerDTO.nullableShorts);
+        assertArrayEquals(new Integer[0], innerDTO.nullableIntegers);
+        assertArrayEquals(new Long[0], innerDTO.nullableLongs);
+        assertArrayEquals(new Float[0], innerDTO.nullableFloats);
+        assertArrayEquals(new Double[0], innerDTO.nullableDoubles);
+    }
+
+    @Test
+    public void testReaderReturnsDefaultValues_whenFieldDoesNotExist() {
+        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
+        compactSerializationConfig.register(MainDTO.class, "main", new MainDTOSerializerReadingMissingFields());
+        compactSerializationConfig.register(InnerDTO.class, "inner", new InnerDTOSerializerReadingMissingFields());
+        compactSerializationConfig.setEnabled(true);
+        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .setSchemaService(schemaService)
+                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                .build();
+
+        Data data = serializationService.toData(createMainDTO());
+        MainDTO actual = serializationService.toObject(data);
+
+        assertEquals(1, actual.b);
+        assertEquals(false, actual.bool);
+        assertEquals(1, actual.s);
+        assertEquals(1, actual.i);
+        assertEquals(1, actual.l);
+        assertEquals(1, actual.f, 0.001);
+        assertEquals(1, actual.d, 0.001);
+        assertEquals("NA", actual.str);
+        assertEquals(BigDecimal.valueOf(1), actual.bigDecimal);
+        assertEquals(LocalTime.of(1, 1, 1), actual.localTime);
+        assertEquals(LocalDate.of(1, 1, 1), actual.localDate);
+        assertEquals(LocalDateTime.of(1, 1, 1, 1, 1, 1), actual.localDateTime);
+        assertEquals(OffsetDateTime.of(1, 1, 1, 1, 1, 1, 1, ZoneOffset.ofHours(1)), actual.offsetDateTime);
+        assertEquals(Byte.valueOf((byte) 1), actual.nullableB);
+        assertEquals(Boolean.FALSE, actual.nullableBool);
+        assertEquals(Short.valueOf((short) 1), actual.nullableS);
+        assertEquals(Integer.valueOf(1), actual.nullableI);
+        assertEquals(Long.valueOf(1), actual.nullableL);
+        assertEquals(1F, actual.nullableF, 0.001);
+        assertEquals(1.0, actual.nullableD, 0.001);
+
+
+        Data innerData = serializationService.toData(createInnerDTO());
+        InnerDTO innerDTO = serializationService.toObject(innerData);
+        assertArrayEquals(new boolean[0], innerDTO.bools);
+        assertArrayEquals(new byte[0], innerDTO.bytes);
+        assertArrayEquals(new short[0], innerDTO.shorts);
+        assertArrayEquals(new int[0], innerDTO.ints);
+        assertArrayEquals(new long[0], innerDTO.longs);
+        assertArrayEquals(new float[0], innerDTO.floats, 0.001f);
+        assertArrayEquals(new double[0], innerDTO.doubles, 0.001);
+        assertArrayEquals(new String[0], innerDTO.strings);
+        assertArrayEquals(new NamedDTO[0], innerDTO.nn);
+        assertArrayEquals(new BigDecimal[0], innerDTO.bigDecimals);
+        assertArrayEquals(new LocalTime[0], innerDTO.localTimes);
+        assertArrayEquals(new LocalDate[0], innerDTO.localDates);
+        assertArrayEquals(new LocalDateTime[0], innerDTO.localDateTimes);
+        assertArrayEquals(new OffsetDateTime[0], innerDTO.offsetDateTimes);
+        assertArrayEquals(new Boolean[0], innerDTO.nullableBools);
+        assertArrayEquals(new Byte[0], innerDTO.nullableBytes);
+        assertArrayEquals(new Short[0], innerDTO.nullableShorts);
+        assertArrayEquals(new Integer[0], innerDTO.nullableIntegers);
+        assertArrayEquals(new Long[0], innerDTO.nullableLongs);
+        assertArrayEquals(new Float[0], innerDTO.nullableFloats);
+        assertArrayEquals(new Double[0], innerDTO.nullableDoubles);
+    }
+
+    @Test
+    public void testReaderReturnsDefaultValues_whenFieldTypeDoesNotMatch() {
+        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
+        compactSerializationConfig.register(MainDTO.class, "main", new MainDTOSerializerReadingWrongTypedField());
+        compactSerializationConfig.register(InnerDTO.class, "inner", new InnerDTOSerializerReadingWrongTypedField());
+        compactSerializationConfig.setEnabled(true);
+        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .setSchemaService(schemaService)
+                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                .build();
+
+        Data data = serializationService.toData(createMainDTO());
+        MainDTO actual = serializationService.toObject(data);
+
+        assertEquals(1, actual.b);
+        assertEquals(false, actual.bool);
+        assertEquals(1, actual.s);
+        assertEquals(1, actual.i);
+        assertEquals(1, actual.l);
+        assertEquals(1, actual.f, 0.001);
+        assertEquals(1, actual.d, 0.001);
+        assertEquals("NA", actual.str);
+        assertEquals(BigDecimal.valueOf(1), actual.bigDecimal);
+        assertEquals(LocalTime.of(1, 1, 1), actual.localTime);
+        assertEquals(LocalDate.of(1, 1, 1), actual.localDate);
+        assertEquals(LocalDateTime.of(1, 1, 1, 1, 1, 1), actual.localDateTime);
+        assertEquals(OffsetDateTime.of(1, 1, 1, 1, 1, 1, 1, ZoneOffset.ofHours(1)), actual.offsetDateTime);
+        assertEquals(Byte.valueOf((byte) 1), actual.nullableB);
+        assertEquals(Boolean.FALSE, actual.nullableBool);
+        assertEquals(Short.valueOf((short) 1), actual.nullableS);
+        assertEquals(Integer.valueOf(1), actual.nullableI);
+        assertEquals(Long.valueOf(1), actual.nullableL);
+        assertEquals(1F, actual.nullableF, 0.001);
+        assertEquals(1.0, actual.nullableD, 0.001);
+
+
+        Data innerData = serializationService.toData(createInnerDTO());
         InnerDTO innerDTO = serializationService.toObject(innerData);
         assertArrayEquals(new boolean[0], innerDTO.bools);
         assertArrayEquals(new byte[0], innerDTO.bytes);

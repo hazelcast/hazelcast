@@ -276,9 +276,36 @@ public class CompactNullablePrimitiveInteroperabilityTest {
 
     @Test
     public void testWriteNullReadPrimitiveThrowsExceptionCustomSerializer() {
+        FixedFieldsDTO fixedFieldsDTO = createFixedFieldsDTO();
+        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
+        compactSerializationConfig.register(FixedFieldsDTO.class, "fixedFieldsDTO", new FixedFieldsDTOSerializerWritingNull());
+        compactSerializationConfig.setEnabled(true);
+        SerializationService serializationService = new DefaultSerializationServiceBuilder()
+                .setSchemaService(schemaService)
+                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                .build();
 
+        Data data = serializationService.toData(fixedFieldsDTO);
+
+        assertThatThrownBy(() -> serializationService.toObject(data))
+                .isInstanceOf(HazelcastSerializationException.class)
+                .hasMessageContaining("Use readNullable");
+
+        ArrayOfFixedFieldsDTO arrayOfFixedFieldsDTO = createArrayOfFixedFieldsDTO();
+        CompactSerializationConfig compactSerializationConfig2 = new CompactSerializationConfig();
+        compactSerializationConfig2.register(ArrayOfFixedFieldsDTO.class, "arrayOfFixedFieldsDTO", new ArrayOfFixedFieldsDTOSerializerWritingNull());
+        compactSerializationConfig2.setEnabled(true);
+        SerializationService serializationService2 = new DefaultSerializationServiceBuilder()
+                .setSchemaService(schemaService)
+                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig2))
+                .build();
+
+        Data data2 = serializationService2.toData(arrayOfFixedFieldsDTO);
+
+        assertThatThrownBy(() -> serializationService2.toObject(data2))
+                .isInstanceOf(HazelcastSerializationException.class)
+                .hasMessageContaining("Use readArrayOfNullable");
     }
-
 
     @Test
     public void testWriteNullReadPrimitiveThrowsExceptionWithCorrectMethodPrefixCompactReader() {

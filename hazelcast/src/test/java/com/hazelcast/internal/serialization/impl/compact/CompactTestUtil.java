@@ -102,7 +102,7 @@ public final class CompactTestUtil {
     }
 
     @Nonnull
-    private static InnerDTO createInnerDTO() {
+    static InnerDTO createInnerDTO() {
         NamedDTO[] nn = new NamedDTO[2];
         nn[0] = new NamedDTO("name", 123);
         nn[1] = new NamedDTO("name", 123);
