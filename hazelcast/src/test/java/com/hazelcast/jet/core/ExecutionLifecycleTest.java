@@ -718,12 +718,12 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         DAG dagBlocking = new DAG().vertex(new Vertex("test",
                 new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT)).initBlocks()));
         DAG dagNormal = new DAG().vertex(new Vertex("test",
-                new MockPS(MockP::new, MEMBER_COUNT)));
+                new MockPMS(() -> new MockPS(MockP::new, MEMBER_COUNT))));
 
         List<Future<Job>> submitFutures = new ArrayList<>();
 
         // When
-        int numJobs = 4;
+        int numJobs = 100;
         for (int i = 0; i < numJobs; i++) {
             submitFutures.add(spawn(() -> newJob(dagBlocking)));
         }
@@ -756,7 +756,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         // When
         // important: let it me more than JobCoordinationService.COORDINATOR_THREADS_POOL_SIZE
-        int numJobs = 5;
+        int numJobs = 100;
         for (int i = 0; i < numJobs; i++) {
             submitFutures.add(newJob(dagBlocking).getFuture());
         }
