@@ -86,9 +86,9 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
                 .nonSharedService(pctx -> "foo");
         return ordered
                 ? AsyncTransformUsingServiceOrderedP.supplier(
-                        serviceFactory, maxConcurrentOps, mapFn)
+                serviceFactory, maxConcurrentOps, mapFn)
                 : AsyncTransformUsingServiceUnorderedP.supplier(
-                        serviceFactory, maxConcurrentOps, mapFn, FunctionEx.identity());
+                serviceFactory, maxConcurrentOps, mapFn, FunctionEx.identity());
     }
 
     @BeforeClass
@@ -128,6 +128,26 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
     }
 
     @Test
+    public void test_futuresCompletedInSeparateThreadWithMultipleWatermarks() {
+        TestSupport
+                .verifyProcessor(getSupplier((ctx, item) -> {
+                            CompletableFuture<Traverser<String>> f = new CompletableFuture<>();
+                            spawn(() -> f.complete(traverseItems(item + "-1", item + "-2")));
+                            return f;
+                        })
+                )
+                .hazelcastInstance(instance())
+                .input(asList("a", "b", new Watermark(10), "c", new Watermark(15, (byte) 1)))
+                .outputChecker((expected, actual) ->
+                        actual.equals(asList("a-1", "a-2", "b-1", "b-2", wm(10), "c-1", "c-2", wm(15, (byte) 1)))
+                                || !ordered && actual.equals(
+                                asList("b-1", "b-2", "a-1", "a-2", wm(10), "c-1", "c-2", wm(15, (byte) 1))))
+                .disableSnapshots()
+                .disableProgressAssertion()
+                .expectOutput(singletonList("<see code>"));
+    }
+
+    @Test
     public void test_forwardWatermarksWithoutItems() {
         TestSupport
                 .verifyProcessor(getSupplier((ctx, item) -> {
@@ -136,6 +156,20 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
                 .hazelcastInstance(instance())
                 .input(singletonList(wm(10)))
                 .expectOutput(singletonList(wm(10)));
+    }
+
+    @Test
+    public void test_forwardMultipleWatermarksWithoutItems() {
+        if (ordered) {
+            return;
+        }
+        TestSupport
+                .verifyProcessor(getSupplier((ctx, item) -> {
+                    throw new UnsupportedOperationException();
+                }))
+                .hazelcastInstance(instance())
+                .input(asList(wm(10, (byte) 0), wm(5, (byte) 1), wm(0, (byte) 2)))
+                .expectOutput(asList(wm(10, (byte) 0), wm(5, (byte) 1), wm(0, (byte) 2)));
     }
 
     @Test
