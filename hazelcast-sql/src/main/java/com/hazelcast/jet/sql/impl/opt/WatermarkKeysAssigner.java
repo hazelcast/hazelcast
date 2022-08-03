@@ -197,7 +197,7 @@ public class WatermarkKeysAssigner {
                 WatermarkedFields watermarkedFields = swAgg.watermarkedFields();
                 Map<Integer, MutableByte> refByteMap = new HashMap<>();
                 MutableByte newWmKey = new MutableByte(keyCounter);
-//                MutableByte newWmKey = new MutableByte(keyCounter[0]++); // we should use new wm key for window end bound
+//                MutableByte newWmKey = new MutableByte(keyCounter++); // we should use new wm key for window end bound
                 for (Integer fieldIndex : watermarkedFields.getFieldIndexes()) {
                     refByteMap.put(fieldIndex, newWmKey);
                 }
