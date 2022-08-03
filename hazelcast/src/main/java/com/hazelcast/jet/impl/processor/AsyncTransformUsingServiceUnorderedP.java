@@ -41,10 +41,9 @@ import javax.annotation.Nullable;
 import java.util.ArrayDeque;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.SortedMap;
-import java.util.TreeMap;
 import java.util.concurrent.CompletableFuture;
 import java.util.function.Function;
 
@@ -78,20 +77,21 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     private final BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> callAsyncFn;
     private final Function<? super T, ? extends K> extractKeyFn;
 
-    private ManyToOneConcurrentArrayQueue<Tuple3<T, Long, Object>> resultQueue;
-    // TODO we can use more efficient structure: we only remove from the beginning and add to the end
-    private final SortedMap<Long, Long> watermarkCounts = new TreeMap<>();
+    private ManyToOneConcurrentArrayQueue<Tuple3<T, Watermark, Object>> resultQueue;
+    private final Map<Watermark, Long> watermarkCounts = new LinkedHashMap<>();
     private final Map<T, Integer> inFlightItems = new IdentityHashMap<>();
     private Traverser<Object> currentTraverser = Traversers.empty();
     @SuppressWarnings("rawtypes")
     private Traverser<Entry> snapshotTraverser;
 
-    private Long lastReceivedWm = Long.MIN_VALUE;
-    private long lastEmittedWm = Long.MIN_VALUE;
-    private long minRestoredWm = Long.MAX_VALUE;
+    private Watermark lastReceivedWm = new Watermark(Long.MIN_VALUE, (byte) 0);
+    private Watermark lastEmittedWm = new Watermark(Long.MIN_VALUE, (byte) 0);
+    private Watermark minRestoredWm = new Watermark(Long.MAX_VALUE, (byte) 0);
     private int asyncOpsCounter;
 
-    /** Temporary collection for restored objects during snapshot restore. */
+    /**
+     * Temporary collection for restored objects during snapshot restore.
+     */
     private ArrayDeque<T> restoredObjects = new ArrayDeque<>();
 
     @Probe(name = "numInFlightOps")
@@ -144,10 +144,11 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
             return true;
         }
         asyncOpsCounter++;
+
         watermarkCounts.merge(lastReceivedWm, 1L, Long::sum);
-        Long lastWatermarkAtReceiveTime = lastReceivedWm;
+        Watermark lastReceivedWmOnTime = lastReceivedWm;
         future.whenComplete(withTryCatch(getLogger(),
-                (r, e) -> resultQueue.add(tuple3(item, lastWatermarkAtReceiveTime, r != null ? r : e))));
+                (r, e) -> resultQueue.add(tuple3(item, lastReceivedWmOnTime, r != null ? r : e))));
         inFlightItems.merge(item, 1, Integer::sum);
         return true;
     }
@@ -157,19 +158,14 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
         if (!emitFromTraverser(currentTraverser)) {
             return false;
         }
-        assert lastEmittedWm <= lastReceivedWm : "lastEmittedWm=" + lastEmittedWm + ", lastReceivedWm=" + lastReceivedWm;
-        // Ignore a watermark that is going back. This is possible after restoring from a snapshot
-        // taken in at-least-once mode.
-        if (watermark.timestamp() <= lastReceivedWm) {
-            return true;
-        }
+
         if (watermarkCounts.isEmpty()) {
             if (!tryEmit(watermark)) {
                 return false;
             }
-            lastEmittedWm = watermark.timestamp();
+            lastEmittedWm = watermark;
         }
-        lastReceivedWm = watermark.timestamp();
+        lastReceivedWm = watermark;
         return true;
     }
 
@@ -192,8 +188,8 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
             return false;
         }
         if (snapshotTraverser == null) {
-            LoggingUtil.logFinest(getLogger(), "Saving to snapshot: %s, lastReceivedWm=%d",
-                    inFlightItems, lastReceivedWm);
+            LoggingUtil.logFinest(getLogger(), "Saving to snapshot: %s, lastReceivedWm=%d, key=%d",
+                    inFlightItems, lastReceivedWm.timestamp(), lastReceivedWm.key());
             snapshotTraverser = traverseIterable(inFlightItems.entrySet())
                     .<Entry>map(en -> entry(
                             extractKeyFn.apply(en.getKey()),
@@ -209,8 +205,11 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         if (key instanceof BroadcastKey) {
             assert ((BroadcastKey) key).key().equals(Keys.LAST_EMITTED_WM) : "Unexpected key: " + key;
-            // we restart at the oldest WM any instance was at at the time of snapshot
-            minRestoredWm = Math.min(minRestoredWm, (long) value);
+            assert value instanceof Watermark;
+            // we restart at the oldest WM any instance was at the time of snapshot
+            Watermark restoredWm = (Watermark) value;
+            long minWmValue = Math.min(minRestoredWm.timestamp(), restoredWm.timestamp());
+            minRestoredWm = new Watermark(minWmValue, restoredWm.key());
             return;
         }
         Tuple2<T, Integer> value1 = (Tuple2<T, Integer>) value;
@@ -250,15 +249,15 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
      * </li></ul>
      *
      * @return true if there are no more in-flight items and everything was emitted
-     *         to the outbox
+     * to the outbox
      */
     @SuppressWarnings("unchecked")
     private boolean tryFlushQueue() {
-        for (;;) {
+        for (; ; ) {
             if (!emitFromTraverser(currentTraverser)) {
                 return false;
             }
-            Tuple3<T, Long, Object> tuple = resultQueue.poll();
+            Tuple3<T, Watermark, Object> tuple = resultQueue.poll();
             if (tuple == null) {
                 return watermarkCounts.isEmpty();
             }
@@ -279,9 +278,9 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
             if (count > 0) {
                 continue;
             }
-            long wmToEmit = Long.MIN_VALUE;
-            for (Iterator<Entry<Long, Long>> it = watermarkCounts.entrySet().iterator(); it.hasNext(); ) {
-                Entry<Long, Long> entry = it.next();
+            Watermark wmToEmit = null;
+            for (Iterator<Entry<Watermark, Long>> it = watermarkCounts.entrySet().iterator(); it.hasNext(); ) {
+                Entry<Watermark, Long> entry = it.next();
                 if (entry.getValue() != 0) {
                     wmToEmit = entry.getKey();
                     break;
@@ -289,12 +288,12 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
                     it.remove();
                 }
             }
-            if (watermarkCounts.isEmpty() && lastReceivedWm > lastEmittedWm) {
+            if (watermarkCounts.isEmpty()) {
                 wmToEmit = lastReceivedWm;
             }
-            if (wmToEmit > Long.MIN_VALUE && wmToEmit > lastEmittedWm) {
+            if (wmToEmit != null && wmToEmit.timestamp() > Long.MIN_VALUE) {
                 lastEmittedWm = wmToEmit;
-                currentTraverser = currentTraverser.append(new Watermark(wmToEmit));
+                currentTraverser = currentTraverser.append(wmToEmit);
             }
         }
     }

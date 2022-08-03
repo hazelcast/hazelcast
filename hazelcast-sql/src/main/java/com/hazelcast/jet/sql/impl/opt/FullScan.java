@@ -43,6 +43,7 @@ public abstract class FullScan extends TableScan {
             int watermarkedColumnIndex
     ) {
         super(cluster, traitSet, emptyList(), table);
+        assert watermarkedColumnIndex < 0 ^ eventTimePolicyProvider != null;
         this.eventTimePolicyProvider = eventTimePolicyProvider;
         this.watermarkedColumnIndex = watermarkedColumnIndex;
     }
