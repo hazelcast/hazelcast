@@ -80,6 +80,7 @@ import com.hazelcast.config.WanConsumerConfig;
 import com.hazelcast.config.WanCustomPublisherConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
+import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.memory.Capacity;
@@ -115,9 +116,11 @@ import static java.lang.Boolean.TRUE;
 public class DynamicConfigYamlGenerator {
 
     private static final int INDENT = 2;
-    private static final boolean MASK_SENSITIVE_FIELDS = true;
+    private static final boolean DEFAULT_MASK_SENSITIVE_FIELDS = false;
+    private static boolean maskSensitiveFields = DEFAULT_MASK_SENSITIVE_FIELDS;
 
-    String generate(Config config) {
+    String generate(Config config, boolean isMask) {
+        maskSensitiveFields = isMask;
         Map<String, Object> document = new LinkedHashMap<>();
         Map<String, Object> root = new LinkedHashMap<>();
         document.put("hazelcast", root);
@@ -154,7 +157,7 @@ public class DynamicConfigYamlGenerator {
     }
 
     public static void licenseKeyYamlGenerator(Map<String, Object> parent, Config config) {
-        addNonNullToMap(parent, LICENSE_KEY.getName(), config.getLicenseKey());
+        addNonNullToMap(parent, LICENSE_KEY.getName(), getOrMaskValue(config.getLicenseKey()));
     }
 
     @SuppressWarnings("checkstyle:MethodLength")
@@ -842,11 +845,11 @@ public class DynamicConfigYamlGenerator {
 
         Properties props = sslConfig.getProperties();
 
-        if (MASK_SENSITIVE_FIELDS && props.containsKey("trustStorePassword")) {
+        if (maskSensitiveFields && props.containsKey("trustStorePassword")) {
             props.setProperty("trustStorePassword", MASK_FOR_SENSITIVE_DATA);
         }
 
-        if (MASK_SENSITIVE_FIELDS && props.containsKey("keyStorePassword")) {
+        if (maskSensitiveFields && props.containsKey("keyStorePassword")) {
             props.setProperty("keyStorePassword", MASK_FOR_SENSITIVE_DATA);
         }
         addNonNullToMap(child, "properties", props);
@@ -919,6 +922,7 @@ public class DynamicConfigYamlGenerator {
             return;
         }
         Map<String, Object> child = new LinkedHashMap<>();
+        addNonNullToMap(child, "enabled", icmpFailureDetectorConfig.isEnabled());
         addNonNullToMap(child, "timeout-milliseconds", icmpFailureDetectorConfig.getTimeoutMilliseconds());
         addNonNullToMap(child, "fail-fast-on-startup", icmpFailureDetectorConfig.isFailFastOnStartup());
         addNonNullToMap(child, "interval-milliseconds", icmpFailureDetectorConfig.getIntervalMilliseconds());
@@ -956,7 +960,7 @@ public class DynamicConfigYamlGenerator {
     private static void endpointConfigYamlGenerator(Map<String, Object> parent, EndpointConfig endpointConfig) {
         Map<String, Object> child = new LinkedHashMap<>();
 
-        if (endpointConfig.getName() != null) {
+        if (endpointConfig.getName() != null && !endpointConfig.getProtocolType().equals(ProtocolType.WAN)) {
             child.put("name", endpointConfig.getName());
         }
 
@@ -1004,7 +1008,11 @@ public class DynamicConfigYamlGenerator {
             addNonNullToMap(child, "reuse-address", serverSocketEndpointConfig.isReuseAddress());
             addNonNullToMap(child, "port", portCfg);
         }
-        parent.put(endpointConfigElementName(endpointConfig), child);
+        if (endpointConfig.getName() != null && endpointConfig.getProtocolType().equals(ProtocolType.WAN)) {
+            parent.put(endpointConfigElementName(endpointConfig), wrapObjectWithMap(endpointConfig.getName(), child));
+        } else {
+            parent.put(endpointConfigElementName(endpointConfig), child);
+        }
     }
 
     private static Map<String, Object> getWanConsumerConfigsAsMap(WanConsumerConfig wanConsumerConfig) {
@@ -1734,6 +1742,6 @@ public class DynamicConfigYamlGenerator {
     }
 
     private static String getOrMaskValue(String value) {
-        return MASK_SENSITIVE_FIELDS ? MASK_FOR_SENSITIVE_DATA : value;
+        return maskSensitiveFields ? MASK_FOR_SENSITIVE_DATA : value;
     }
 }
