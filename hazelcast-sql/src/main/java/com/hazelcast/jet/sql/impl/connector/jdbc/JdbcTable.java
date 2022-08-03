@@ -22,6 +22,7 @@ import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.TableStatistics;
+import org.apache.calcite.sql.SqlDialect;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -33,6 +34,7 @@ public class JdbcTable extends JetTable {
 
     private final List<String> dbFieldNames;
     private final List<String> primaryKeyFieldNames;
+    private final SqlDialect sqlDialect;
     private final String externalName;
     private final String jdbcUrl;
     private final int batchLimit;
@@ -41,6 +43,7 @@ public class JdbcTable extends JetTable {
     public JdbcTable(
             @Nonnull SqlConnector sqlConnector,
             @Nonnull List<TableField> fields,
+            @Nonnull SqlDialect dialect,
             @Nonnull String schemaName,
             @Nonnull String name,
             @Nonnull TableStatistics statistics,
@@ -64,6 +67,7 @@ public class JdbcTable extends JetTable {
 
         this.dbFieldNames = unmodifiableList(dbFieldNames);
         this.primaryKeyFieldNames = unmodifiableList(primaryKeyFieldNames);
+        this.sqlDialect = dialect;
         this.externalName = externalName;
         this.jdbcUrl = jdbcUrl;
         this.batchLimit = batchLimit;
@@ -72,6 +76,10 @@ public class JdbcTable extends JetTable {
 
     public List<String> dbFieldNames() {
         return dbFieldNames;
+    }
+
+    public SqlDialect sqlDialect() {
+        return sqlDialect;
     }
 
     public String getExternalName() {

@@ -24,6 +24,8 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -37,6 +39,7 @@ import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import org.apache.calcite.rel.rel2sql.SqlImplementor.SimpleContext;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlDialect;
+import org.apache.calcite.sql.SqlDialectFactoryImpl;
 import org.apache.calcite.sql.SqlIdentifier;
 import org.apache.calcite.sql.dialect.H2SqlDialect;
 import org.apache.calcite.sql.parser.SqlParserPos;
@@ -66,6 +69,8 @@ import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 public class JdbcSqlConnector implements SqlConnector {
+
+    private static final ILogger log = Logger.getLogger(JdbcSqlConnector.class);
 
     public static final String TYPE_NAME = "JDBC";
 
@@ -204,18 +209,48 @@ public class JdbcSqlConnector implements SqlConnector {
             ));
         }
 
+        String jdbcUrl = options.get(OPTION_JDBC_URL);
+        SqlDialect dialect = resolveDialect(jdbcUrl);
+
         return new JdbcTable(
                 this,
                 fields,
+                dialect,
                 schemaName,
                 mappingName,
                 new ConstantTableStatistics(0), // TODO Can I query the table for size?
                 externalName,
-                options.get(OPTION_JDBC_URL),
+                jdbcUrl,
                 parseInt(options.getOrDefault(OPTION_JDBC_BATCH_LIMIT, JDBC_BATCH_LIMIT_DEFAULT_VALUE)),
                 nodeEngine.getSerializationService()
         );
     }
+
+    private SqlDialect resolveDialect(String jdbcUrl) {
+        try {
+            Driver driver = DriverManager.getDriver(jdbcUrl);
+
+            try (Connection connection = driver.connect(jdbcUrl, new Properties())) {
+
+                SqlDialect dialect = SqlDialectFactoryImpl.INSTANCE.create(connection.getMetaData());
+                String databaseProductName = connection.getMetaData().getDatabaseProductName();
+                switch (databaseProductName) {
+                    case "MySQL":
+                    case "PostgreSQL":
+                    case "H2":
+                        return dialect;
+
+                    default:
+                        log.warning("Database " + databaseProductName + " is not officially supported");
+                        return dialect;
+                }
+
+            }
+        } catch (SQLException e) {
+            throw new HazelcastException("Could not determine dialect for jdbcUrl " + jdbcUrl, e);
+        }
+    }
+
 
     @Nonnull
     @Override
@@ -227,11 +262,9 @@ public class JdbcSqlConnector implements SqlConnector {
             @Nonnull List<Expression<?>> projection,
             @Nullable FunctionEx<ExpressionEvalContext,
                     EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
+        JdbcTable table = (JdbcTable) table0;
 
-        // TODO All tests pass with H2 dialect, this would be either detected or set as mapping parameter
-        SqlDialect dialect = new H2SqlDialect(H2SqlDialect.DEFAULT_CONTEXT);
-//        SqlDialect dialect = new MysqlSqlDialect(MysqlSqlDialect.DEFAULT_CONTEXT);
-//        SqlDialect dialect = new PostgresqlSqlDialect(PostgresqlSqlDialect.DEFAULT_CONTEXT);
+        SqlDialect dialect = table.sqlDialect();
         SimpleContext simpleContext = new SimpleContext(dialect, value -> {
             JdbcTable target = hzTable.getTarget();
             JdbcTableField field = target.getField(value);
@@ -247,11 +280,9 @@ public class JdbcSqlConnector implements SqlConnector {
         List<RexNode> projects = hzTable.getProjects();
         if (!projects.isEmpty()) {
             projectionSqlFragment = projects.stream()
-                                      .map(proj -> simpleContext.toSql(null, proj).toSqlString(dialect).toString())
-                                      .collect(joining(","));
+                                            .map(proj -> simpleContext.toSql(null, proj).toSqlString(dialect).toString())
+                                            .collect(joining(","));
         }
-
-        JdbcTable table = (JdbcTable) table0;
 
         validateExpression(predicate);
 
