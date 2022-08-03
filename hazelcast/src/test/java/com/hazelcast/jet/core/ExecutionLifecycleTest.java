@@ -744,7 +744,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         TestProcessors.assertNoErrorsInProcessors();
     }
 
-    @Test(timeout = 2000L)
+    @Test
     public void when_pmsCloseBlocks_then_otherJobsNotBlocked() throws Exception {
         // Given
         DAG dagBlocking = new DAG().vertex(new Vertex("test",
