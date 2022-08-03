@@ -971,10 +971,11 @@ public class DynamicConfigYamlGenerator {
                 Map<String, Object> btreeOptionsAsMap = new LinkedHashMap<>();
                 addNonNullToMap(btreeOptionsAsMap, "page-size", getCapacityAsMap(bTreeConf.getPageSize()));
 
-                Map<String, Object> capacityAsMap = new LinkedHashMap<>();
-                addNonNullToMap(capacityAsMap, "capacity", getCapacityAsMap(bTreeConf.getMemoryTierConfig().getCapacity()));
+                Map<String, Object> memoryTierAsMap = new LinkedHashMap<>();
+                addNonNullToMap(memoryTierAsMap, "capacity", getCapacityAsMap(bTreeConf.getMemoryTierConfig().getCapacity()));
 
-                addNonNullToMap(btreeOptionsAsMap, "memory-tier", capacityAsMap);
+                addNonNullToMap(btreeOptionsAsMap, "memory-tier", memoryTierAsMap);
+                indexConfigAsMap.put("btree-index", btreeOptionsAsMap);
             }
 
             addNonNullToList(indexConfigsAsList, indexConfigAsMap);
