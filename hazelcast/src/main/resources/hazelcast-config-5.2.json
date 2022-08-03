@@ -1098,7 +1098,11 @@
           "properties": {
             "page-size": {
               "$ref": "#/definitions/MemorySize",
-              "description": "Page size of the index B+ Tree"
+              "description": "Page size of the index B+ Tree. Default value is 16 kB.",
+              "default": {
+                "value": 16,
+                "unit": "KILOBYTES"
+              }
             },
 
             "memory-tier": {
@@ -1109,6 +1113,14 @@
                 "capacity": {
                   "$ref": "#/definitions/MemorySize",
                   "description": "Memory tier capacity, i.e., how much main memory should this tier consume at most. The default is 256 megabytes."
+                }
+              },
+              "default": {
+                "capacity": {
+                  "default": {
+                    "value": 16,
+                    "unit": "KILOBYTES"
+                  }
                 }
               }
             }
