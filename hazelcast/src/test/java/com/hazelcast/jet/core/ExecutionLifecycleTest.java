@@ -78,6 +78,7 @@ import java.util.concurrent.CompletionException;
 import java.util.concurrent.Future;
 import java.util.function.Function;
 
+import static com.hazelcast.internal.util.RootCauseMatcher.getRootCause;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
@@ -712,8 +713,10 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         try {
             job.join();
         } catch (Throwable t) {
-            assertTrue("exception must be of type MemberLeftException or TargetNotMemberException",
-                    t instanceof MemberLeftException || t instanceof TargetNotMemberException);
+            Throwable cause = getRootCause(t);
+            assertTrue("exception must be of type MemberLeftException or TargetNotMemberException, but was "
+                    + cause.getClass(),
+                    cause instanceof MemberLeftException || cause instanceof TargetNotMemberException);
         }
     }
 
