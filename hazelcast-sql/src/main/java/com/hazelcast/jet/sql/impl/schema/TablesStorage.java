@@ -19,6 +19,8 @@ package com.hazelcast.jet.sql.impl.schema;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
+import com.hazelcast.config.DataPersistenceConfig;
+import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.cluster.Versions;
@@ -145,6 +147,14 @@ public class TablesStorage {
     }
 
     void initializeWithListener(EntryListener<String, Object> listener) {
+        nodeEngine.getConfig().getMapConfig(CATALOG_MAP_NAME)
+                .setBackupCount(2)
+                .setInMemoryFormat(InMemoryFormat.BINARY)
+                .setDataPersistenceConfig(
+                        new DataPersistenceConfig()
+                                .setEnabled(true)
+                );
+
         boolean useOldStorage = useOldStorage();
 
         if (!useOldStorage) {
