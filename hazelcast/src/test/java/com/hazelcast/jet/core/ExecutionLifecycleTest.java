@@ -45,6 +45,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
@@ -708,8 +709,12 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertJobRunningEventually(inst1, job, null);
         inst2.getLifecycleService().terminate();
 
-        assertThatThrownBy(job::join)
-                .hasRootCauseInstanceOf(MemberLeftException.class);
+        try {
+            job.join();
+        } catch (Throwable t) {
+            assertTrue("exception must be of type MemberLeftException or TargetNotMemberException",
+                    t instanceof MemberLeftException || t instanceof TargetNotMemberException);
+        }
     }
 
     @Test
