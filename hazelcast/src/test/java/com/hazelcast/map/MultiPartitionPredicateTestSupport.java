@@ -47,7 +47,7 @@ public abstract class MultiPartitionPredicateTestSupport extends HazelcastTestSu
 
     private static final int PARTITIONS = 10;
     private static final int ITEMS_PER_PARTITION = 20;
-    
+
     private TestHazelcastFactory factory;
     private String mapName;
     private String aggMapName;
@@ -66,7 +66,9 @@ public abstract class MultiPartitionPredicateTestSupport extends HazelcastTestSu
     protected abstract IMap<String, Integer> getMap(String name);
     protected abstract HazelcastInstance getInstance();
     protected abstract void setupInternal();
-    protected TestHazelcastFactory getFactory() { return factory; }
+    protected TestHazelcastFactory getFactory() {
+        return factory;
+    }
 
 
     @Before

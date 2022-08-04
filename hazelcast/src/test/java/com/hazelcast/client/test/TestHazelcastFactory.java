@@ -85,7 +85,7 @@ public class TestHazelcastFactory extends TestHazelcastInstanceFactory {
 
         ClientConnectionManagerFactory connectionManagerFactory = clientRegistry.createClientServiceFactory(sourceIp);
         AddressProvider addressProvider = createAddressProvider(config);
-        HazelcastInstance proxy = HazelcastClientUtil.newHazelcastClient(config, connectionManagerFactory, addressProvider);    
+        HazelcastInstance proxy = HazelcastClientUtil.newHazelcastClient(config, connectionManagerFactory, addressProvider);
         HazelcastClientInstanceImpl client = ((HazelcastClientProxy) proxy).client;
         registerJvmNameAndPidMetric(client);
         clients.put(client.getName(), client);
