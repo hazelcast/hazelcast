@@ -39,6 +39,8 @@ import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.ArrayDeque;
+import java.util.Arrays;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.Map;
@@ -55,7 +57,6 @@ import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.impl.processor.ProcessorSupplierWithService.supplierWithService;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
-import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 
 /**
  * Processor which, for each received item, emits all the items from the
@@ -78,17 +79,28 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     private final BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> callAsyncFn;
     private final Function<? super T, ? extends K> extractKeyFn;
 
-    private ManyToOneConcurrentArrayQueue<Tuple3<T, Long, Object>> resultQueue;
+    private ManyToOneConcurrentArrayQueue<Tuple3<T, long[], Object>> resultQueue;
     // TODO we can use more efficient structure: we only remove from the beginning and add to the end
-    private final SortedMap<Long, Long> watermarkCounts = new TreeMap<>();
+    @SuppressWarnings("unchecked")
+    private SortedMap<Long, Integer>[] watermarkCounts = new SortedMap[0];
     private final Map<T, Integer> inFlightItems = new IdentityHashMap<>();
     private Traverser<Object> currentTraverser = Traversers.empty();
     @SuppressWarnings("rawtypes")
     private Traverser<Entry> snapshotTraverser;
 
-    private Long lastReceivedWm = Long.MIN_VALUE;
-    private long lastEmittedWm = Long.MIN_VALUE;
-    private long minRestoredWm = Long.MAX_VALUE;
+    /**
+     * Array of received WM keys. It maps wmIndex to wmKey.
+     */
+    private byte[] wmKeys = {};
+    /**
+     * The inverse of {@link #wmKeys}, it maps wmKey to wmIndex.
+     * It's used when we receive a WM to find at which index we store data for that
+     * WM key.
+     */
+    private byte[] wmKeysInv = {};
+    private long[] lastReceivedWms = {};
+    private long[] lastEmittedWms = {};
+    private long[] minRestoredWms = {};
     private int asyncOpsCounter;
 
     /** Temporary collection for restored objects during snapshot restore. */
@@ -144,34 +156,84 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
             return true;
         }
         asyncOpsCounter++;
-        watermarkCounts.merge(lastReceivedWm, 1L, Long::sum);
-        Long lastWatermarkAtReceiveTime = lastReceivedWm;
+        for (int i = 0; i < wmKeys.length; i++) {
+            watermarkCounts[i].merge(lastReceivedWms[i], 1, Integer::sum);
+        }
+
+        long[] lastWatermarksAtReceiveTime = lastReceivedWms;
         future.whenComplete(withTryCatch(getLogger(),
-                (r, e) -> resultQueue.add(tuple3(item, lastWatermarkAtReceiveTime, r != null ? r : e))));
+                (r, e) -> resultQueue.add(tuple3(item, lastWatermarksAtReceiveTime, r != null ? r : e))));
         inFlightItems.merge(item, 1, Integer::sum);
         return true;
     }
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
-        keyedWatermarkCheck(watermark);
         if (!emitFromTraverser(currentTraverser)) {
             return false;
         }
-        assert lastEmittedWm <= lastReceivedWm : "lastEmittedWm=" + lastEmittedWm + ", lastReceivedWm=" + lastReceivedWm;
+        int wmIndex = getWmIndex(watermark.key());
+
+        assert lastEmittedWms[wmIndex] <= lastReceivedWms[wmIndex]
+                : "lastEmittedWm=" + lastEmittedWms[wmIndex] + ", lastReceivedWm=" + lastReceivedWms[wmIndex];
         // Ignore a watermark that is going back. This is possible after restoring from a snapshot
         // taken in at-least-once mode.
-        if (watermark.timestamp() <= lastReceivedWm) {
+        if (watermark.timestamp() <= lastReceivedWms[wmIndex]) {
             return true;
         }
-        if (watermarkCounts.isEmpty()) {
+        if (allEmpty(watermarkCounts)) {
             if (!tryEmit(watermark)) {
                 return false;
             }
-            lastEmittedWm = watermark.timestamp();
+            lastEmittedWms[wmIndex] = watermark.timestamp();
         }
-        lastReceivedWm = watermark.timestamp();
+        // We must not mutate lastReceivedWms, because we share the instance in the inFlightItems - we would
+        // mutate the instance they have. Instead, we copy and mutate it.
+        lastReceivedWms = Arrays.copyOf(lastReceivedWms, Math.max(wmIndex + 1, lastReceivedWms.length));
+        lastReceivedWms[wmIndex] = watermark.timestamp();
         return true;
+    }
+
+    /**
+     * Get the index for the given WM key. Extends the arrays, if needed.
+     */
+    private int getWmIndex(byte wmKey_) {
+        int wmKey = wmKey_ & 0xff; // convert the key to range 0..255
+        if (wmKeysInv.length <= wmKey) {
+            int oldLength = wmKeysInv.length;
+            int newLength = wmKey + 1;
+            wmKeysInv = Arrays.copyOf(wmKeysInv, newLength);
+            for (int i = oldLength; i < newLength; i++) {
+                wmKeysInv[i] = -1; // -1 marks unused wm key
+            }
+        }
+        int wmIndex = wmKeysInv[wmKey];
+
+        // if the wm key is seen for the 1st time, extend the arrays
+        if (wmIndex < 0) {
+            wmIndex = wmKeys.length;
+            wmKeysInv[wmIndex] = wmKey_;
+            int newLength = wmKeys.length + 1;
+
+            wmKeys = Arrays.copyOf(wmKeys, newLength);
+            wmKeys[wmIndex] = (byte) wmKey; // thanks to the cast, the key will be again in range -128 .. 127
+
+            lastReceivedWms = Arrays.copyOf(lastReceivedWms, newLength);
+            lastReceivedWms[wmIndex] = Long.MIN_VALUE;
+
+            lastEmittedWms = Arrays.copyOf(lastEmittedWms, newLength);
+            lastEmittedWms[wmIndex] = Long.MIN_VALUE;
+
+            watermarkCounts = Arrays.copyOf(watermarkCounts, newLength);
+            watermarkCounts[wmIndex] = new TreeMap<>();
+            if (inFlightItems.size() > 0) {
+                watermarkCounts[wmIndex].put(Long.MIN_VALUE, inFlightItems.size());
+            }
+
+            minRestoredWms = Arrays.copyOf(minRestoredWms, newLength);
+            minRestoredWms[wmIndex] = Long.MAX_VALUE;
+        }
+        return wmIndex;
     }
 
     @Override
@@ -193,13 +255,17 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
             return false;
         }
         if (snapshotTraverser == null) {
-            LoggingUtil.logFinest(getLogger(), "Saving to snapshot: %s, lastReceivedWm=%d",
-                    inFlightItems, lastReceivedWm);
+            Map<Byte, Long> lastReceivedWmsMap = new HashMap<>();
+            for (int i = 0; i < lastReceivedWms.length; i++) {
+                lastReceivedWmsMap.put(wmKeys[i], lastReceivedWms[i]);
+            }
+            LoggingUtil.logFinest(getLogger(), "Saving to snapshot: %s, lastReceivedWm=%s",
+                    inFlightItems, lastReceivedWmsMap);
             snapshotTraverser = traverseIterable(inFlightItems.entrySet())
                     .<Entry>map(en -> entry(
                             extractKeyFn.apply(en.getKey()),
                             tuple2(en.getKey(), en.getValue())))
-                    .append(entry(broadcastKey(Keys.LAST_EMITTED_WM), lastReceivedWm))
+                    .append(entry(broadcastKey(Keys.LAST_RECEIVED_WMS), lastReceivedWmsMap))
                     .onFirstNull(() -> snapshotTraverser = null);
         }
         return emitFromTraverserToSnapshot(snapshotTraverser);
@@ -209,13 +275,18 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     @SuppressWarnings("unchecked")
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         if (key instanceof BroadcastKey) {
-            assert ((BroadcastKey) key).key().equals(Keys.LAST_EMITTED_WM) : "Unexpected key: " + key;
+            assert ((BroadcastKey) key).key().equals(Keys.LAST_RECEIVED_WMS) : "Unexpected key: " + key;
             // we restart at the oldest WM any instance was at at the time of snapshot
-            minRestoredWm = Math.min(minRestoredWm, (long) value);
+            for (Entry<Byte, Long> en : ((Map<Byte, Long>) value).entrySet()) {
+                int wmIndex = getWmIndex(en.getKey());
+                minRestoredWms[wmIndex] = Math.min(minRestoredWms[wmIndex], en.getValue());
+            }
+
             return;
         }
         Tuple2<T, Integer> value1 = (Tuple2<T, Integer>) value;
         // we can't apply backpressure here, we have to store the items and execute them later
+        assert value1.f0() != null && value1.f1() != null;
         for (int i = 0; i < value1.f1(); i++) {
             restoredObjects.add(value1.f0());
             LoggingUtil.logFinest(getLogger(), "Restored: %s", value1.f0());
@@ -233,8 +304,7 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
                 return false;
             }
             restoredObjects = new ArrayDeque<>(0); // minimize the internal storage
-            lastReceivedWm = minRestoredWm;
-            logFine(getLogger(), "restored lastReceivedWm=%s", minRestoredWm);
+            lastReceivedWms = minRestoredWms;
             return true;
         } else {
             tryFlushQueue();
@@ -259,15 +329,13 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
             if (!emitFromTraverser(currentTraverser)) {
                 return false;
             }
-            Tuple3<T, Long, Object> tuple = resultQueue.poll();
+            Tuple3<T, long[], Object> tuple = resultQueue.poll();
             if (tuple == null) {
-                return watermarkCounts.isEmpty();
+                return allEmpty(watermarkCounts);
             }
             asyncOpsCounter--;
             Integer inFlightItemsCount = inFlightItems.merge(tuple.f0(), -1, (o, n) -> o == 1 ? null : o + n);
             assert inFlightItemsCount == null || inFlightItemsCount > 0 : "inFlightItemsCount=" + inFlightItemsCount;
-            Long count = watermarkCounts.merge(tuple.f1(), -1L, Long::sum);
-            assert count >= 0 : "count=" + count;
             // the result is either Throwable or Traverser<Object>
             if (tuple.f2() instanceof Throwable) {
                 throw new JetException("Async operation completed exceptionally: " + tuple.f2(),
@@ -277,25 +345,34 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
             if (currentTraverser == null) {
                 currentTraverser = Traversers.empty();
             }
-            if (count > 0) {
-                continue;
-            }
-            long wmToEmit = Long.MIN_VALUE;
-            for (Iterator<Entry<Long, Long>> it = watermarkCounts.entrySet().iterator(); it.hasNext(); ) {
-                Entry<Long, Long> entry = it.next();
-                if (entry.getValue() != 0) {
-                    wmToEmit = entry.getKey();
-                    break;
-                } else {
-                    it.remove();
+
+            for (int i = 0; i < watermarkCounts.length; i++) {
+                SortedMap<Long, Integer> watermarkCount = watermarkCounts[i];
+                assert tuple.f1() != null;
+                long wmAtReceiveTime = tuple.f1().length > i ? tuple.f1()[i] : Long.MIN_VALUE;
+                int count = watermarkCount.merge(wmAtReceiveTime, -1, Integer::sum);
+                assert count >= 0 : "count=" + count;
+
+                if (count > 0) {
+                    continue;
                 }
-            }
-            if (watermarkCounts.isEmpty() && lastReceivedWm > lastEmittedWm) {
-                wmToEmit = lastReceivedWm;
-            }
-            if (wmToEmit > Long.MIN_VALUE && wmToEmit > lastEmittedWm) {
-                lastEmittedWm = wmToEmit;
-                currentTraverser = currentTraverser.append(new Watermark(wmToEmit));
+                long wmToEmit = Long.MIN_VALUE;
+                for (Iterator<Entry<Long, Integer>> it = watermarkCount.entrySet().iterator(); it.hasNext(); ) {
+                    Entry<Long, Integer> entry = it.next();
+                    if (entry.getValue() != 0) {
+                        wmToEmit = entry.getKey();
+                        break;
+                    } else {
+                        it.remove();
+                    }
+                }
+                if (watermarkCount.isEmpty() && lastReceivedWms[i] > lastEmittedWms[i]) {
+                    wmToEmit = lastReceivedWms[i];
+                }
+                if (wmToEmit > Long.MIN_VALUE && wmToEmit > lastEmittedWms[i]) {
+                    lastEmittedWms[i] = wmToEmit;
+                    currentTraverser = currentTraverser.append(new Watermark(wmToEmit, wmKeys[i]));
+                }
             }
         }
     }
@@ -316,6 +393,18 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     }
 
     private enum Keys {
-        LAST_EMITTED_WM
+        LAST_RECEIVED_WMS
+    }
+
+    /**
+     * Returns `true` if all maps in the given array are empty.
+     */
+    private static <T extends Map<?, ?>> boolean allEmpty(T[] collections) {
+        for (Map<?, ?> c : collections) {
+            if (!c.isEmpty()) {
+                return false;
+            }
+        }
+        return true;
     }
 }
