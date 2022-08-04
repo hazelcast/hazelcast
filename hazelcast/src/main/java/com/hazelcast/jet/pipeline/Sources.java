@@ -1331,13 +1331,30 @@ public final class Sources {
     /**
      * Returns a source which connects to the specified database using the given
      * {@code externalDataStoreRef}, queries the database and creates a result set
-     * using the the given {@code resultSetFn}. It creates output objects from the
+     * using the given {@code resultSetFn}. It creates output objects from the
      * {@link ResultSet} using given {@code mapOutputFn} and emits them to
      * downstream.
      * <p>
-     * Example: <pre>{@code
+     * Example:
+     * <p>
+     * (Prerequisite) External dataStore configuration:
+     * <pre>{@code
+     *      Config config = smallInstanceConfig();
+     *      Properties properties = new Properties();
+     *      properties.put("jdbc.url", jdbcUrl);
+     *      properties.put("jdbc.username", username);
+     *      properties.put("jdbc.password", password);
+     *      ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
+     *              .setName("my-jdbc-data-store")
+     *              .setClassName(JdbcDataStoreFactory.class.getName())
+     *              .setProperties(properties);
+     *      config.getExternalDataStoreConfigs().put(name, externalDataStoreConfig);
+     * }</pre>
+     * </p>
+     * <p>Pipeline configuration
+     * <pre>{@code
      *     p.readFrom(Sources.jdbc(
-     *         ExternalDataStoreRef.externalDataStoreRef(JDBC_DATA_STORE),
+     *         ExternalDataStoreRef.externalDataStoreRef("my-jdbc-data-store"),
      *         (con, parallelism, index) -> {
      *              PreparedStatement stmt = con.prepareStatement("SELECT * FROM TABLE WHERE MOD(id, ?) = ?)");
      *              stmt.setInt(1, parallelism);
@@ -1346,6 +1363,7 @@ public final class Sources {
      *         },
      *         resultSet -> new Person(resultSet.getInt(1), resultSet.getString(2))))
      * }</pre>
+     * </p>
      * <p>
      * <p>
      * See also {@link Sources#jdbc(SupplierEx, ToResultSetFunction, FunctionEx)}.
