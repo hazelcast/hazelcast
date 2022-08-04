@@ -248,12 +248,10 @@ public class PartitionContainer {
      *                     cleanup is necessary or not
      */
     final void cleanUpOnMigration(int replicaIndex) {
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        NodeEngine nodeEngine = mapServiceContext.getNodeEngine();
-
-        mapServiceContext.getMapContainers().keySet().stream()
+        mapService.getMapServiceContext().getMapContainers().keySet()
+                .stream()
                 .filter(mapName -> replicaIndex == -1
-                        || replicaIndex > nodeEngine.getConfig().findMapConfig(mapName).getTotalBackupCount())
+                        || replicaIndex > getRecordStore(mapName).getMapContainer().getTotalBackupCount())
                 .forEach(this::cleanUpMap);
     }
 
