@@ -25,21 +25,19 @@ import com.hazelcast.jet.impl.util.ConstantFunctionEx;
 import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
-import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import org.apache.calcite.plan.HazelcastRelOptCluster;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Aggregate;
 import org.apache.calcite.rel.core.AggregateCall;
-import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.rex.RexVisitor;
+import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.util.ImmutableBitSet;
 
 import java.util.ArrayList;
@@ -48,10 +46,11 @@ import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
 import static com.hazelcast.jet.sql.impl.aggregate.WindowUtils.insertWindowBound;
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
 
 public class SlidingWindowAggregatePhysicalRel extends Aggregate implements PhysicalRel {
 
-    private final RexNode timestampExpression;
+    private final int timestampFieldIndex;
     private final FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider;
     private final int numStages;
     private final List<Integer> windowStartIndexes;
@@ -65,7 +64,7 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
             ImmutableBitSet groupSet,
             List<ImmutableBitSet> groupSets,
             List<AggregateCall> aggCalls,
-            RexNode timestampExpression,
+            int timestampFieldIndex,
             FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider,
             int numStages,
             List<Integer> windowStartIndexes,
@@ -73,7 +72,7 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
     ) {
         super(cluster, traits, new ArrayList<>(), input, groupSet, groupSets, aggCalls);
 
-        this.timestampExpression = timestampExpression;
+        this.timestampFieldIndex = timestampFieldIndex;
         this.windowPolicyProvider = windowPolicyProvider;
         this.numStages = numStages;
         this.windowStartIndexes = windowStartIndexes;
@@ -104,10 +103,13 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
         return reducedGroupSet;
     }
 
+    public int timestampFieldIndex() {
+        return timestampFieldIndex;
+    }
+
     public Expression<?> timestampExpression() {
-        QueryParameterMetadata parameterMetadata = ((HazelcastRelOptCluster) getCluster()).getParameterMetadata();
-        RexVisitor<Expression<?>> visitor = OptUtils.createRexToExpressionVisitor(schema(parameterMetadata), parameterMetadata);
-        return timestampExpression.accept(visitor);
+        RelDataTypeField timestampField = getInput().getRowType().getFieldList().get(timestampFieldIndex);
+        return ColumnExpression.create(timestampFieldIndex, toHazelcastType(timestampField.getType()));
     }
 
     public FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider() {
@@ -122,7 +124,7 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
     public KeyedWindowResultFunction<? super Object, ? super JetSqlRow, ?> outputValueMapping() {
         int[] windowBoundsIndexMask = new int[getRowType().getFieldCount()];
 
-        QueryDataType descriptorType = HazelcastTypeUtils.toHazelcastType(timestampExpression.getType());
+        QueryDataType descriptorType = timestampExpression().getType();
 
         for (Integer index : windowStartIndexes) {
             windowBoundsIndexMask[index] = -1;
@@ -171,7 +173,7 @@ public class SlidingWindowAggregatePhysicalRel extends Aggregate implements Phys
                 groupSet,
                 groupSets,
                 aggCalls,
-                timestampExpression,
+                timestampFieldIndex,
                 windowPolicyProvider,
                 numStages,
                 windowStartIndexes,

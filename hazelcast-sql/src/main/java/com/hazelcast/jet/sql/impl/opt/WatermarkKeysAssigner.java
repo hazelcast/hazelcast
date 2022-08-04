@@ -34,12 +34,11 @@ import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Set;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
@@ -82,7 +81,20 @@ public class WatermarkKeysAssigner {
 
         @Override
         public void visit(RelNode node, int ordinal, @Nullable RelNode parent) {
-            // front wave of recursion
+            visit0(node, ordinal, parent);
+
+            WatermarkedFields wmFields = OptUtils.metadataQuery(node).extractWatermarkedFields(node);
+            if (!Objects.equals(
+                    wmFields == null ? emptySet() : wmFields.getFieldIndexes(),
+                    relToWmKeyMapping.getOrDefault(node, emptyMap()).keySet())) {
+                throw new RuntimeException("mismatch between WM fields in metadata query and in WmKeyAssigner");
+            }
+        }
+
+        private void visit0(RelNode node, int ordinal, @Nullable RelNode parent) {
+            // start with recursion to children
+            super.visit(node, ordinal, parent);
+
 
             if (node instanceof FullScanPhysicalRel) {
                 assert node.getInputs().isEmpty() : "FullScan not a leaf";
@@ -95,11 +107,7 @@ public class WatermarkKeysAssigner {
                 return;
             }
 
-            super.visit(node, ordinal, parent);
-
-            // back wave of recursion
-
-            // don't add anything if all traversed FullScan's aren't watermarked.
+            // don't add anything if no traversed FullScan is watermarked.
             if (relToWmKeyMapping.isEmpty()) {
                 return;
             }
@@ -132,29 +140,21 @@ public class WatermarkKeysAssigner {
                 UnionPhysicalRel union = (UnionPhysicalRel) node;
                 assert !union.getInputs().isEmpty();
 
-                // Collect intersection of watermarked fields from all union inputs.
-                Iterator<RelNode> it = union.getInputs().iterator();
-                Set<Integer> commonWmIdx = new HashSet<>(relToWmKeyMapping.getOrDefault(it.next(), emptyMap()).keySet());
-                while (it.hasNext()) {
-                    commonWmIdx.retainAll(relToWmKeyMapping.getOrDefault(it.next(), emptyMap()).keySet());
-                }
-
-                // Get a reference keyed wm map from first input
-                if (commonWmIdx.isEmpty()) {
-                    return;
-                }
-                it = union.getInputs().iterator();
-                Map<Integer, MutableByte> byteMap = relToWmKeyMapping.get(it.next());
-
-                // Assign a new byte value for all referenced bytes
-                it = union.getInputs().iterator();
-                while (it.hasNext()) {
-                    for (Integer idx : commonWmIdx) {
-                        relToWmKeyMapping.get(it.next()).get(idx).setValue(byteMap.get(idx).getValue());
+                Map<Integer, MutableByte> intersection = new HashMap<>(relToWmKeyMapping.getOrDefault(union.getInput(0), emptyMap()));
+                for (int inputIndex = 0; inputIndex < union.getInputs().size(); inputIndex++) {
+                    Map<Integer, MutableByte> inputWmKeys = relToWmKeyMapping.getOrDefault(union.getInput(inputIndex), emptyMap());
+                    for (Iterator<Entry<Integer, MutableByte>> intersectionIterator = intersection.entrySet().iterator(); intersectionIterator.hasNext(); ) {
+                        Entry<Integer, MutableByte> intersectionEntry = intersectionIterator.next();
+                        MutableByte inputWmKey = inputWmKeys.get(intersectionEntry.getKey());
+                        if (inputWmKey == null) {
+                            intersectionIterator.remove();
+                        } else {
+                            inputWmKey.setValue(intersectionEntry.getValue().getValue());
+                        }
                     }
                 }
-                it = union.getInputs().iterator();
-                relToWmKeyMapping.put(union, relToWmKeyMapping.get(it.next()));
+
+                relToWmKeyMapping.put(union, intersection);
 //            } else if (node instanceof StreamToStreamJoinPhysicalRel) {
 //                StreamToStreamJoinPhysicalRel join = (StreamToStreamJoinPhysicalRel) node;
 //                Map<RexInputRef, MutableByte> leftRefByteMap = refToWmKeyMapping.get(join.getLeft());
@@ -193,32 +193,25 @@ public class WatermarkKeysAssigner {
                 relToWmKeyMapping.put(node, refByteMap);
             } else if (node instanceof SlidingWindowAggregatePhysicalRel) {
                 SlidingWindowAggregatePhysicalRel swAgg = (SlidingWindowAggregatePhysicalRel) node;
-
+                Map<Integer, MutableByte> inputWmKeys = relToWmKeyMapping.get(swAgg.getInput());
+                if (inputWmKeys == null) {
+                    return;
+                }
+                MutableByte inputTimestampKey = inputWmKeys.get(swAgg.timestampFieldIndex());
+                if (inputTimestampKey == null) {
+                    return;
+                }
                 WatermarkedFields watermarkedFields = swAgg.watermarkedFields();
                 Map<Integer, MutableByte> refByteMap = new HashMap<>();
-                MutableByte newWmKey = new MutableByte(keyCounter);
-//                MutableByte newWmKey = new MutableByte(keyCounter++); // we should use new wm key for window end bound
                 for (Integer fieldIndex : watermarkedFields.getFieldIndexes()) {
-                    refByteMap.put(fieldIndex, newWmKey);
+                    refByteMap.put(fieldIndex, inputTimestampKey);
                 }
 
                 relToWmKeyMapping.put(swAgg, refByteMap);
             } else if (node instanceof SlidingWindow) {
                 SlidingWindow sw = (SlidingWindow) node;
 
-                // if the field used to calculate window bounds isn't watermarked,
-                // the window bounds aren't watermarked either -- just forward input's map.
-                if (!relToWmKeyMapping.get(sw.getInput()).containsKey(sw.orderingFieldIndex())) {
-                    relToWmKeyMapping.put(sw, relToWmKeyMapping.get(sw.getInput()));
-                }
-
-                Map<Integer, MutableByte> byteMap = new HashMap<>(relToWmKeyMapping.get(sw.getInput()));
-                MutableByte newWmKey = new MutableByte(keyCounter);
-//                we should use new wm key for window start and end bounds
-//                MutableByte newWmKey = new MutableByte(keyCounter[0]++);
-                byteMap.put(sw.windowStartIndex(), newWmKey);
-                byteMap.put(sw.windowEndIndex(), newWmKey);
-                relToWmKeyMapping.put(sw, byteMap);
+                relToWmKeyMapping.put(sw, relToWmKeyMapping.get(sw.getInput()));
             } else if (node instanceof Aggregate) {
                 Aggregate agg = (Aggregate) node;
                 WatermarkedFields inputWmFields = OptUtils.metadataQuery(agg).extractWatermarkedFields(agg.getInput());
@@ -241,15 +234,8 @@ public class WatermarkKeysAssigner {
             } else if (node instanceof DropLateItemsPhysicalRel) {
                 relToWmKeyMapping.put(node, relToWmKeyMapping.get(node.getInput(0)));
             } else {
-                // watermark is not preserving during any other rel -- break the chain.
+                // watermark is not preserved for other rels -- break the chain.
                 return;
-            }
-
-            WatermarkedFields wmFields = OptUtils.metadataQuery(node).extractWatermarkedFields(node);
-            if (!Objects.equals(
-                    wmFields == null ? emptySet() : wmFields.getFieldIndexes(),
-                    relToWmKeyMapping.getOrDefault(node, emptyMap()).keySet())) {
-                throw new RuntimeException("mismatch between WM fields in metadata query and in WmKeyAssigner");
             }
         }
     }
