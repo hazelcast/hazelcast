@@ -352,6 +352,17 @@ hazelcast:
           bitmap-index-options:
             unique-key: id
             unique-key-transformation: RAW
+        - type: SORTED
+          attributes:
+            - "age"
+          btree-index:
+            page-size:
+              value: 16
+              unit: KILOBYTES
+            memory-tier:
+              capacity:
+                value: 3000
+                unit: GIGABYTES
 
       attributes:
         currency:
