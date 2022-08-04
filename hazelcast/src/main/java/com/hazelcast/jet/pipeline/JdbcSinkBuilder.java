@@ -185,6 +185,23 @@ public class JdbcSinkBuilder<T> {
     }
 
     /**
+     * Sets the reference to the configured external dataStore of {@link ExternalDataStoreRef} from which
+     * the instance of the {@link javax.sql.DataSource} will be retrieved.
+     *
+     * @param externalDataStoreRef the reference to the configured external dataStore
+     * @return this instance for fluent API
+     * @since 5.2
+     */
+    @Nonnull
+    @Beta
+    public JdbcSinkBuilder<T> externalDataStoreRef(ExternalDataStoreRef externalDataStoreRef) {
+        this.dataSourceSupplier = null;
+        this.jdbcUrl = null;
+        this.externalDataStoreRef = externalDataStoreRef;
+        return this;
+    }
+
+    /**
      * Creates and returns the JDBC {@link Sink} with the supplied components.
      */
     @Nonnull
@@ -206,22 +223,5 @@ public class JdbcSinkBuilder<T> {
                 SinkProcessors.writeJdbcP(updateQuery, externalDataStoreRef, bindFn,
                         exactlyOnce, batchLimit));
 
-    }
-
-    /**
-     * Sets the reference to the configured external dataStore of {@link ExternalDataStoreRef} from which
-     * the instance of the {@link javax.sql.DataSource} will be retrieved.
-     *
-     * @param externalDataStoreRef the reference to the configured external dataStore
-     * @return this instance for fluent API
-     * @since 5.2
-     */
-    @Nonnull
-    @Beta
-    public JdbcSinkBuilder<T> externalDataStoreRef(ExternalDataStoreRef externalDataStoreRef) {
-        this.dataSourceSupplier = null;
-        this.jdbcUrl = null;
-        this.externalDataStoreRef = externalDataStoreRef;
-        return this;
     }
 }
