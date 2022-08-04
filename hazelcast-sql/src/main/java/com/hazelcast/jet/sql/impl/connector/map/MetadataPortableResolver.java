@@ -81,7 +81,6 @@ final class MetadataPortableResolver implements KvMetadataResolver {
         Map<QueryPath, MappingField> userFieldsByPath = extractFields(userFields, isKey);
         ClassDefinition classDefinition = findClassDefinition(isKey, options, serializationService);
 
-        // TODO: return "this", resolveAndValidateFields
         return userFields.isEmpty()
                 ? resolveFields(isKey, classDefinition, serializationService, typesStorage)
                 : resolveAndValidateFields(isKey, userFieldsByPath, classDefinition);
@@ -103,12 +102,7 @@ final class MetadataPortableResolver implements KvMetadataResolver {
                 .map(name -> {
                     QueryPath path = new QueryPath(name, isKey);
                     FieldType portableFieldType = clazz.getFieldType(name);
-                    QueryDataType type;
-                    if (portableFieldType.equals(FieldType.PORTABLE)) {
-                        type = resolveNestedPortableFieldType(clazz.getField(name), typesStorage);
-                    } else {
-                        type = TypesUtils.resolvePortableFieldType(portableFieldType);
-                    }
+                    QueryDataType type = TypesUtils.resolvePortableFieldType(portableFieldType);
 
                     return new MappingField(name, type, path.toString());
                 });

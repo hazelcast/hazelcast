@@ -68,15 +68,15 @@ final class MetadataCompactResolver implements KvMetadataResolver {
             InternalSerializationService serializationService,
             TypesStorage typesStorage
     ) {
+        if (userFields.isEmpty()) {
+            throw QueryException.error("Column list is required for Compact format");
+        }
+
         String typeNameProperty = isKey ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME;
         String typeName = options.get(typeNameProperty);
 
         if (typeName == null) {
             throw QueryException.error("Unable to resolve table metadata. Missing '" + typeNameProperty + "' option");
-        }
-
-        if (userFields.isEmpty()) {
-            throw QueryException.error("Column list or existing Type is required for Compact format");
         }
 
         Map<QueryPath, MappingField> fields = extractFields(userFields, isKey);

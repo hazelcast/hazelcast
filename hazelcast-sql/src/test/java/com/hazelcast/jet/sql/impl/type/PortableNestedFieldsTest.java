@@ -70,10 +70,13 @@ public class PortableNestedFieldsTest extends SqlTestSupport {
                 + "('format'='portable', 'portableFactoryId'='1', 'portableClassId'='3', 'portableClassVersion'='0')");
         instance().getSql().execute("CREATE TYPE Organization OPTIONS "
                 + "('format'='portable', 'portableFactoryId'='1', 'portableClassId'='2', 'portableClassVersion'='0')");
-        instance().getSql().execute("CREATE TYPE \"User\" OPTIONS "
-                + "('format'='portable', 'portableFactoryId'='1', 'portableClassId'='1', 'portableClassVersion'='0')");
 
-        instance().getSql().execute("CREATE MAPPING test TYPE IMap "
+        instance().getSql().execute("CREATE MAPPING test ("
+                + "__key BIGINT, "
+                + "id BIGINT, "
+                + "name VARCHAR, "
+                + "organization Organization "
+                + ") TYPE IMap "
                 + "OPTIONS ("
                 + "'keyFormat'='bigint', "
                 + "'valueFormat'='portable', "

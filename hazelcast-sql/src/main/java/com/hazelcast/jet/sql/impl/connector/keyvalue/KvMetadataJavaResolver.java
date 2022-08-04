@@ -221,7 +221,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
                     .filter(field -> field.name().equals(topLevelFieldName))
                     .findFirst()
                     .orElse(null);
-            if (topLevelField != null) {
+            if (topLevelField != null && topLevelField.type().isCustomType()) {
                 type = topLevelField.type();
             }
         }
