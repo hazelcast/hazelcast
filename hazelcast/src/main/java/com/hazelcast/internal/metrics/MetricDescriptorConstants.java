@@ -574,6 +574,10 @@ public final class MetricDescriptorConstants {
     // ===[/THREAD]=====================================================
 
     // ===[TSTORE]======================================================
+    public static final String DEVICE_DISCRIMINATOR_NAME = "name";
+    public static final String TSTORE_DEVICE_USED_SPACE = "tstore.device.usedSpace";
+    public static final String TSTORE_DEVICE_FREE_SPACE = "tstore.device.freeSpace";
+    public static final String TSTORE_DEVICE_MAX_SPACE = "tstore.device.maxSpace";
     public static final String TSTORE_HLOG_PAGE_WRITE_DURATION_AVG = "tstore.hlog.pageWriteDuration.avg";
     public static final String TSTORE_HLOG_PAGE_WRITE_DURATION_MIN = "tstore.hlog.pageWriteDuration.min";
     public static final String TSTORE_HLOG_PAGE_WRITE_DURATION_MAX = "tstore.hlog.pageWriteDuration.max";
