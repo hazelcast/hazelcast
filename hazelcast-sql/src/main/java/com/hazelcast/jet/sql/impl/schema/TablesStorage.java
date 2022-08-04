@@ -147,14 +147,6 @@ public class TablesStorage {
     }
 
     void initializeWithListener(EntryListener<String, Object> listener) {
-        nodeEngine.getConfig().getMapConfig(CATALOG_MAP_NAME)
-                .setBackupCount(2)
-                .setInMemoryFormat(InMemoryFormat.BINARY)
-                .setDataPersistenceConfig(
-                        new DataPersistenceConfig()
-                                .setEnabled(true)
-                );
-
         boolean useOldStorage = useOldStorage();
 
         if (!useOldStorage) {
