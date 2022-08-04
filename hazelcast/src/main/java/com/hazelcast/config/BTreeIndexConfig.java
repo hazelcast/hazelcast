@@ -42,7 +42,7 @@ public class BTreeIndexConfig implements IdentifiedDataSerializable {
 
     private Capacity pageSize = DEFAULT_PAGE_SIZE;
 
-    private MemoryTierConfig memoryTierConfig;
+    private MemoryTierConfig memoryTierConfig = new MemoryTierConfig();
 
 
     public BTreeIndexConfig() {
@@ -76,9 +76,6 @@ public class BTreeIndexConfig implements IdentifiedDataSerializable {
      */
     @Nonnull
     public MemoryTierConfig getMemoryTierConfig() {
-        if (memoryTierConfig == null) {
-            memoryTierConfig = new MemoryTierConfig();
-        }
         return memoryTierConfig;
     }
 

@@ -57,7 +57,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
 
     private BitmapIndexOptions bitmapIndexOptions;
 
-    private BTreeIndexConfig bTreeIndexConfig;
+    private BTreeIndexConfig bTreeIndexConfig = new BTreeIndexConfig();
 
     public IndexConfig() {
         // No-op.
@@ -227,9 +227,6 @@ public class IndexConfig implements IdentifiedDataSerializable {
      * @return the b-tree index configuration associated with this config.
      */
     public BTreeIndexConfig getBTreeIndexConfig() {
-        if (bTreeIndexConfig == null) {
-            bTreeIndexConfig = new BTreeIndexConfig();
-        }
         return bTreeIndexConfig;
     }
 
