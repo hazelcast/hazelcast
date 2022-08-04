@@ -21,6 +21,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import com.hazelcast.aggregation.Aggregators;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
@@ -30,32 +31,26 @@ import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
-public class MultiPartitionPredicateTest extends HazelcastTestSupport {
+public abstract class MultiPartitionPredicateTestSupport extends HazelcastTestSupport {
 
     private static final int PARTITIONS = 10;
     private static final int ITEMS_PER_PARTITION = 20;
-
-    private HazelcastInstance local;
-    private IMap<String, Integer> map;
-    private IMap<String, Integer> aggMap;
+    
+    private TestHazelcastFactory factory;
+    private String mapName;
+    private String aggMapName;
 
     private String partitionKey1;
     private int partitionId1;
@@ -68,19 +63,25 @@ public class MultiPartitionPredicateTest extends HazelcastTestSupport {
     private Predicate<String, Integer> predicate;
     private Predicate<String, Integer> aggPredicate;
 
+    protected abstract IMap<String, Integer> getMap(String name);
+    protected abstract HazelcastInstance getInstance();
+    protected abstract void setupInternal();
+    protected TestHazelcastFactory getFactory() { return factory; }
+
+
     @Before
     public void setUp() {
         Config config = getConfig()
                 .setProperty(ClusterProperty.PARTITION_COUNT.getName(), "" + PARTITIONS);
 
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(2);
-
-        local = nodeFactory.newHazelcastInstance(config);
-        HazelcastInstance remote = nodeFactory.newHazelcastInstance(config);
+        factory = new TestHazelcastFactory(2);
+        HazelcastInstance local = factory.newHazelcastInstance(config);
+        HazelcastInstance remote = factory.newHazelcastInstance(config);
         warmUpPartitions(local, remote);
-
-        map = local.getMap(randomString());
-        aggMap = local.getMap(randomString());
+        mapName = randomString();
+        aggMapName = randomString();
+        IMap<String, Integer> map = local.getMap(mapName);
+        IMap<String, Integer> aggMap = local.getMap(aggMapName);
         for (int p = 0; p < PARTITIONS; p++) {
             for (int k = 0; k < ITEMS_PER_PARTITION; k++) {
                 map.put(generateKeyForPartition(local, p), p);
@@ -109,13 +110,17 @@ public class MultiPartitionPredicateTest extends HazelcastTestSupport {
 
         predicate = Predicates.multiPartitionPredicate(partitionKeys, Predicates.alwaysTrue());
         aggPredicate = Predicates.multiPartitionPredicate(partitionKeys, Predicates.or(Predicates.equal("this", partitionId1), Predicates.equal("this", partitionId2), Predicates.equal("this", partitionId3)));
+        setupInternal();
+    }
 
-
+    @After
+    public void tearDown() {
+        factory.shutdownAll();
     }
 
     @Test
     public void values() {
-        Collection<Integer> values = map.values(predicate);
+        Collection<Integer> values = getMap(mapName).values(predicate);
         assertEquals(ITEMS_PER_PARTITION * 2, values.size());
         for (Integer value : values) {
             assertTrue(value.intValue() == partitionId1 || value.intValue() == partitionId2);
@@ -124,22 +129,22 @@ public class MultiPartitionPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void keySet() {
-        Collection<String> keys = map.keySet(predicate);
+        Collection<String> keys = getMap(mapName).keySet(predicate);
 
         assertEquals(ITEMS_PER_PARTITION * 2, keys.size());
         for (String key : keys) {
-            int partition =  local.getPartitionService().getPartition(key).getPartitionId();
+            int partition =  getInstance().getPartitionService().getPartition(key).getPartitionId();
             assertTrue(partition == partitionId1 || partition == partitionId2);
         }
     }
 
     @Test
     public void entries() {
-        Collection<Map.Entry<String, Integer>> entries = map.entrySet(predicate);
+        Collection<Map.Entry<String, Integer>> entries = getMap(mapName).entrySet(predicate);
 
         assertEquals(ITEMS_PER_PARTITION * 2, entries.size());
         for (Map.Entry<String, Integer> entry : entries) {
-            int partition =  local.getPartitionService().getPartition(entry.getKey()).getPartitionId();
+            int partition =  getInstance().getPartitionService().getPartition(entry.getKey()).getPartitionId();
             int value = entry.getValue().intValue();
             assertTrue(partition == partitionId1 || partition == partitionId2);
             assertEquals(partition, value);
@@ -149,13 +154,13 @@ public class MultiPartitionPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void aggregate() {
-        Long aggregate = aggMap.aggregate(Aggregators.count(), aggPredicate);
+        Long aggregate = getMap(aggMapName).aggregate(Aggregators.count(), aggPredicate);
         assertEquals(4, aggregate.longValue()); //matches two per partition
     }
 
     @Test
     public void project() {
-        Collection<Integer> values = aggMap.project(Projections.
+        Collection<Integer> values = getMap(aggMapName).project(Projections.
                 singleAttribute("this"), aggPredicate);
         assertEquals(4, values.size()); //matches two per partition
         assertTrue(values.contains(partitionId1));
@@ -166,11 +171,11 @@ public class MultiPartitionPredicateTest extends HazelcastTestSupport {
     public void executeOnEntries() {
         PartitionPredicate<String, Integer> lessThan10pp = Predicates.multiPartitionPredicate(partitionKeys,
                 Predicates.lessThan("this", 10));
-        Map<String, Integer> result = aggMap.executeOnEntries(new EntryNoop<>(), lessThan10pp);
+        Map<String, Integer> result = getMap(aggMapName).executeOnEntries(new EntryNoop<>(), lessThan10pp);
 
         assertEquals(20, result.size());
         for (Map.Entry<String, Integer> entry : result.entrySet()) {
-            int partition = local.getPartitionService().getPartition(entry.getKey()).getPartitionId();
+            int partition = getInstance().getPartitionService().getPartition(entry.getKey()).getPartitionId();
             assertTrue(partition == partitionId1 || partition == partitionId2);
             assertEquals(-1, (int) entry.getValue());
         }
@@ -178,6 +183,7 @@ public class MultiPartitionPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void removeAll() {
+        IMap<String, Integer> map = getMap(mapName);
         int sizeBefore = map.size();
         int partitionSizeBefore = map.keySet(predicate).size();
 
@@ -188,7 +194,7 @@ public class MultiPartitionPredicateTest extends HazelcastTestSupport {
         for (int i = 0; i < ITEMS_PER_PARTITION; ++i) {
             String key;
             do {
-                key = generateKeyForPartition(local, partitionId1);
+                key = generateKeyForPartition(getInstance(), partitionId1);
             } while (map.containsKey(key));
 
             map.put(key, i);
@@ -196,7 +202,7 @@ public class MultiPartitionPredicateTest extends HazelcastTestSupport {
         for (int i = 0; i < ITEMS_PER_PARTITION; ++i) {
             String key;
             do {
-                key = generateKeyForPartition(local, partitionId2);
+                key = generateKeyForPartition(getInstance(), partitionId2);
             } while (map.containsKey(key));
 
             map.put(key, i);
@@ -216,7 +222,7 @@ public class MultiPartitionPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void testToString() {
-        assertContains(predicate.toString(), "PartitionPredicate");
+        assertContains(predicate.toString(), "MultiPartitionPredicate");
         assertContains(predicate.toString(), "partitionKeys=[");
         assertContains(predicate.toString(), partitionKey1);
         assertContains(predicate.toString(), partitionKey2);
@@ -225,7 +231,7 @@ public class MultiPartitionPredicateTest extends HazelcastTestSupport {
 
     @Test
     public void testSerialization() {
-        SerializationService serializationService = getSerializationService(local);
+        SerializationService serializationService = getSerializationService(getInstance());
         Data serialized = serializationService.toData(predicate);
         PartitionPredicate deserialized = serializationService.toObject(serialized);
 
