@@ -76,6 +76,18 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
  */
 public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends AbstractAsyncTransformUsingServiceP<C, S> {
 
+    /*
+    HOW IT WORKS
+
+    When an event is received, we submit the async op, and when response is received, we add it to resultQueue.
+    In the resultQueue we also store the last received WM value for each key.
+
+    Separately, we track watermark counts for each key, which we increment for each WM key when an event is received,
+    and decrement when a response is processed. The count is the count of events received _before_ that WM, since
+    the previous WM. When the count gets to 0, we know we can emit the watermark, because all the responses
+    for events received before it were already sent.
+     */
+
     private final BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> callAsyncFn;
     private final Function<? super T, ? extends K> extractKeyFn;
 
