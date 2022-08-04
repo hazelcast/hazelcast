@@ -665,7 +665,7 @@ public class MasterJobContext {
             }
             mc.unlock();
           })
-          .thenComposeAsync(r -> completeVertices(failure))
+          .thenCompose(r -> completeVertices(failure))
           .thenCompose(ignored -> mc.coordinationService().submitToCoordinatorThread(() -> {
             final Runnable nonSynchronizedAction;
             try {
