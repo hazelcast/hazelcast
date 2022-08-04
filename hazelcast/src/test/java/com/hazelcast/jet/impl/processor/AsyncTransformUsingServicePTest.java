@@ -137,11 +137,11 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
                         })
                 )
                 .hazelcastInstance(instance())
-                .input(asList("a", "b", new Watermark(10), "c", new Watermark(15, (byte) 1)))
+                .input(asList("a", "b", wm(10), wm(15, (byte) 1)))
                 .outputChecker((expected, actual) ->
-                        actual.equals(asList("a-1", "a-2", "b-1", "b-2", wm(10), "c-1", "c-2", wm(15, (byte) 1)))
+                        actual.equals(asList("a-1", "a-2", "b-1", "b-2", wm(10), wm(15, (byte) 1)))
                                 || !ordered && actual.equals(
-                                asList("b-1", "b-2", "a-1", "a-2", wm(10), "c-1", "c-2", wm(15, (byte) 1))))
+                                asList("b-1", "b-2", "a-1", "a-2", wm(10), wm(15, (byte) 1))))
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .expectOutput(singletonList("<see code>"));
