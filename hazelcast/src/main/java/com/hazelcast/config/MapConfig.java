@@ -57,9 +57,14 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
     public static final int MAX_BACKUP_COUNT = IPartition.MAX_BACKUP_COUNT;
 
     /**
+     * The number of Time to Live that represents infinitive.
+     */
+    public static final int INFINITE_TTL_SECONDS = 0;
+
+    /**
      * The number of default Time to Live in seconds.
      */
-    public static final int DEFAULT_TTL_SECONDS = 0;
+    public static final int DEFAULT_TTL_SECONDS = INFINITE_TTL_SECONDS;
 
     /**
      * The number of default time to wait eviction in seconds.

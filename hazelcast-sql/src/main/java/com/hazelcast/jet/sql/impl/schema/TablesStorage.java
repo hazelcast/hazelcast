@@ -21,6 +21,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.InMemoryFormat;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.cluster.Versions;
@@ -46,11 +47,19 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.config.MapConfig.DEFAULT_MAX_IDLE_SECONDS;
+import static com.hazelcast.config.MapConfig.INFINITE_TTL_SECONDS;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 public class TablesStorage {
     static final String CATALOG_MAP_NAME = "__sql.catalog";
+
+    static final MapConfig SQL_CATALOG_MAP_CONFIG = new MapConfig()
+            .setName(CATALOG_MAP_NAME)
+            .setBackupCount(MapConfig.MAX_BACKUP_COUNT)
+            .setTimeToLiveSeconds(INFINITE_TTL_SECONDS)
+            .setStatisticsEnabled(true);
 
     private static final int MAX_CHECK_ATTEMPTS = 5;
     private static final long SLEEP_MILLIS = 100;
@@ -147,13 +156,7 @@ public class TablesStorage {
     }
 
     void initializeWithListener(EntryListener<String, Object> listener) {
-        nodeEngine.getConfig().getMapConfig(CATALOG_MAP_NAME)
-                .setBackupCount(2)
-                .setInMemoryFormat(InMemoryFormat.BINARY)
-                .setDataPersistenceConfig(
-                        new DataPersistenceConfig()
-                                .setEnabled(true)
-                );
+        nodeEngine.getConfig().addMapConfig(SQL_CATALOG_MAP_CONFIG);
 
         boolean useOldStorage = useOldStorage();
 

@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
+import com.hazelcast.client.map.ClientMapBasicTest;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
@@ -29,9 +31,16 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
+import java.io.FileOutputStream;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.config.MapConfig.INFINITE_TTL_SECONDS;
+import static com.hazelcast.config.MapConfig.MAX_BACKUP_COUNT;
+import static com.hazelcast.jet.sql.impl.schema.TablesStorage.CATALOG_MAP_NAME;
+import static com.hazelcast.jet.sql.impl.schema.TablesStorage.SQL_CATALOG_MAP_CONFIG;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -165,6 +174,13 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         assertEquals(1, clearCounter.get());
     }
 
+    @Test
+    public void when_storageIsInitialized_then_catalogMapIsConfigured() {
+        storage.initializeWithListener(new EmptyEntryListener());
+        MapConfig mapConfig = instance().getConfig().getMapConfig(CATALOG_MAP_NAME);
+        assertEquals(SQL_CATALOG_MAP_CONFIG, mapConfig);
+    }
+
     private static Mapping mapping(String name, String type) {
         return new Mapping(name, name, type, emptyList(), emptyMap());
     }
@@ -198,5 +214,28 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
             @Override
             public void mapEvicted(MapEvent event) { }
         };
+    }
+
+    private static class EmptyEntryListener implements EntryListener<String, Object> {
+        @Override
+        public void entryAdded(EntryEvent<String, Object> event) { }
+
+        @Override
+        public void entryRemoved(EntryEvent<String, Object> event) { }
+
+        @Override
+        public void entryUpdated(EntryEvent<String, Object> event) { }
+
+        @Override
+        public void entryEvicted(EntryEvent<String, Object> event) { }
+
+        @Override
+        public void mapEvicted(MapEvent event) { }
+
+        @Override
+        public void mapCleared(MapEvent event) { }
+
+        @Override
+        public void entryExpired(EntryEvent<String, Object> event) { }
     }
 }
