@@ -115,7 +115,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord impleme
             fieldType = cd.getFieldType(fieldName);
         } catch (IllegalArgumentException ignored) {
             // field does not exist
-            return FieldKind.NONE;
+            return FieldKind.NOT_AVAILABLE;
         }
         return FieldTypeToFieldKind.toFieldKind(fieldType);
     }

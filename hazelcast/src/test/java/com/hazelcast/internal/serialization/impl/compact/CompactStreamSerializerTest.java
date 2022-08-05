@@ -23,6 +23,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
+import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.compact.CompactReader;
@@ -550,7 +551,7 @@ public class CompactStreamSerializerTest {
         Object object = serializationService2.toObject(data);
         GenericRecord genericRecord = (GenericRecord) object;
 
-        assertFalse(genericRecord.hasField("foobar"));
+        assertEquals(FieldKind.NOT_AVAILABLE, genericRecord.getFieldKind("foobar"));
 
         assertEquals(1, genericRecord.getInt32("foo"));
         assertEquals(1231L, genericRecord.getInt64("bar"));

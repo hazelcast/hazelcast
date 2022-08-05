@@ -60,8 +60,8 @@ public interface CompactReader {
     /**
      * Returns the kind of the field for the given field name.
      * <p>
-     * If the field with the given name does not exist, {@link FieldKind#NONE}
-     * is returned.
+     * If the field with the given name does not exist,
+     * {@link FieldKind#NOT_AVAILABLE} is returned.
      * <p>
      * This method can be used to check the existence of a field, which can be
      * useful when the class is evolved.

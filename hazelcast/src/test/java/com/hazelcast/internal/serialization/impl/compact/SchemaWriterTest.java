@@ -125,11 +125,14 @@ public class SchemaWriterTest {
     }
 
     private boolean isSupportedByCompact(FieldKind kind) {
-        return !(FieldKind.NONE == kind
-                || FieldKind.CHAR == kind
-                || FieldKind.ARRAY_OF_CHAR == kind
-                || FieldKind.PORTABLE == kind
-                || FieldKind.ARRAY_OF_PORTABLE == kind
-        );
+        switch (kind) {
+            case NOT_AVAILABLE:
+            case CHAR:
+            case ARRAY_OF_CHAR:
+            case PORTABLE:
+            case ARRAY_OF_PORTABLE:
+                return false;
+        }
+        return true;
     }
 }

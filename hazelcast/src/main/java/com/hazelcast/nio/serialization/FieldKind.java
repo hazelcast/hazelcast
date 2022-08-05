@@ -34,7 +34,7 @@ public enum FieldKind {
     /**
      * Represents fields that do not exist.
      */
-    NONE(0),
+    NOT_AVAILABLE(0),
     BOOLEAN(1),
     ARRAY_OF_BOOLEAN(2),
     INT8(3),

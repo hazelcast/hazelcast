@@ -94,13 +94,13 @@ public class GenericRecordTest {
                 .build();
 
         assertEquals(FieldKind.STRING, record.getFieldKind("s"));
-        assertEquals(FieldKind.NONE, record.getFieldKind("ss"));
+        assertEquals(FieldKind.NOT_AVAILABLE, record.getFieldKind("ss"));
 
         InternalSerializationService service = new DefaultSerializationServiceBuilder().build();
         Data data = service.toData(record);
         InternalGenericRecord internalGenericRecord = service.readAsInternalGenericRecord(data);
 
         assertEquals(FieldKind.STRING, internalGenericRecord.getFieldKind("s"));
-        assertEquals(FieldKind.NONE, internalGenericRecord.getFieldKind("ss"));
+        assertEquals(FieldKind.NOT_AVAILABLE, internalGenericRecord.getFieldKind("ss"));
     }
 }

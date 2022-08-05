@@ -222,7 +222,7 @@ public class GenericRecordTest {
                 .build();
 
         assertEquals(FieldKind.STRING, record.getFieldKind("s"));
-        assertEquals(FieldKind.NONE, record.getFieldKind("ss"));
+        assertEquals(FieldKind.NOT_AVAILABLE, record.getFieldKind("ss"));
 
         SerializationService service = createSerializationService();
         Data data = service.toData(record);
@@ -230,7 +230,7 @@ public class GenericRecordTest {
                 = ((InternalSerializationService) service).readAsInternalGenericRecord(data);
 
         assertEquals(FieldKind.STRING, internalGenericRecord.getFieldKind("s"));
-        assertEquals(FieldKind.NONE, internalGenericRecord.getFieldKind("ss"));
+        assertEquals(FieldKind.NOT_AVAILABLE, internalGenericRecord.getFieldKind("ss"));
     }
 
     private void assertSetterThrows(GenericRecordBuilder builder, String fieldName, int value, String errorMessage) {
