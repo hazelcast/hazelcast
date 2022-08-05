@@ -6600,6 +6600,7 @@ public class MemberCompatibilityTest_2_3 {
         assertTrue(isEqual(anInt, parameters.mergeBatchSize));
         assertTrue(parameters.isStatisticsEnabledExists);
         assertTrue(isEqual(aBoolean, parameters.statisticsEnabled));
+        assertFalse(parameters.isCapacityPolicyExists);
     }
 
     @Test
@@ -6738,6 +6739,7 @@ public class MemberCompatibilityTest_2_3 {
         assertTrue(isEqual(aHotRestartConfig, parameters.hotRestartConfig));
         assertTrue(parameters.isMerkleTreeConfigExists);
         assertTrue(isEqual(aMerkleTreeConfig, parameters.merkleTreeConfig));
+        assertFalse(parameters.isDataPersistenceConfigExists);
     }
 
     @Test
@@ -7518,7 +7520,7 @@ public class MemberCompatibilityTest_2_3 {
     @Test
     public void test_SqlExecuteCodec_encodeResponse() {
         int fileClientMessageIndex = 846;
-        ClientMessage encoded = SqlExecuteCodec.encodeResponse(aListOfSqlColumnMetadata, aSqlPage, aLong, anSqlError);
+        ClientMessage encoded = SqlExecuteCodec.encodeResponse(aListOfSqlColumnMetadata, aSqlPage, aLong, anSqlError, aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

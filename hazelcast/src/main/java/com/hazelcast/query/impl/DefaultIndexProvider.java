@@ -17,6 +17,7 @@
 package com.hazelcast.query.impl;
 
 import com.hazelcast.config.IndexConfig;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.monitor.impl.PerIndexStats;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.query.impl.getters.Extractors;
@@ -27,12 +28,14 @@ import com.hazelcast.query.impl.getters.Extractors;
 public class DefaultIndexProvider implements IndexProvider {
     @Override
     public InternalIndex createIndex(
+            Node node,
             IndexConfig config,
             Extractors extractors,
             InternalSerializationService ss,
             IndexCopyBehavior copyBehavior,
             PerIndexStats stats,
-            int partitionCount) {
-        return new IndexImpl(config, ss, extractors, copyBehavior, stats, partitionCount);
+            int partitionCount,
+            String mapName) {
+        return new IndexImpl(node, config, ss, extractors, copyBehavior, stats, partitionCount, mapName);
     }
 }

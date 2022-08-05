@@ -167,12 +167,14 @@ public class LikePredicateTest {
         Extractors mockExtractors = Extractors.newBuilder(mockSerializationService).build();
         IndexConfig config = IndexUtils.createTestIndexConfig(indexType, "this");
         return new IndexImpl(
+                null,
                 config,
                 mockSerializationService,
                 mockExtractors,
                 IndexCopyBehavior.COPY_ON_READ,
                 PerIndexStats.EMPTY,
-                MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT
+                MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT,
+                "test"
         );
     }
 

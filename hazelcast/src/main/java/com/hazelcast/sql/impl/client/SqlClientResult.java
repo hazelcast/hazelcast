@@ -66,6 +66,9 @@ public class SqlClientResult implements SqlResult {
     /** Whether any SqlRow was returned from an iterator. */
     private volatile boolean returnedAnyResult;
 
+    /** Whether the result set is unbounded. */
+    private volatile Boolean isInfiniteRows;
+
     /** Fetch descriptor. Available when the fetch operation is in progress. */
     private SqlFetchResult fetch;
 
@@ -91,9 +94,11 @@ public class SqlClientResult implements SqlResult {
     public void onExecuteResponse(
         SqlRowMetadata rowMetadata,
         SqlPage rowPage,
-        long updateCount
+        long updateCount,
+        Boolean isInfiniteRows
     ) {
         synchronized (mux) {
+            this.isInfiniteRows = isInfiniteRows;
             if (closed) {
                 // The result is already closed, ignore the response.
                 return;
@@ -458,5 +463,9 @@ public class SqlClientResult implements SqlResult {
         synchronized (mux) {
             return resubmissionCount > 0;
         }
+    }
+
+    public Boolean isInfiniteRows() {
+        return isInfiniteRows;
     }
 }

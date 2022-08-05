@@ -515,7 +515,7 @@ public class PortableInternalGenericRecord extends PortableGenericRecord impleme
 
     @Nonnull
     @Override
-    public GenericRecordBuilder cloneWithBuilder() {
+    public GenericRecordBuilder newBuilderWithClone() {
         throw new UnsupportedOperationException();
     }
 
