@@ -187,6 +187,38 @@ public class JdbcSinkBuilder<T> {
     /**
      * Sets the reference to the configured external dataStore of {@link ExternalDataStoreRef} from which
      * the instance of the {@link javax.sql.DataSource} will be retrieved.
+     * <p>
+     * Example:
+     * <p>
+     * (Prerequisite) External dataStore configuration:
+     * <pre>{@code
+     *      Config config = smallInstanceConfig();
+     *      Properties properties = new Properties();
+     *      properties.put("jdbc.url", jdbcUrl);
+     *      properties.put("jdbc.username", username);
+     *      properties.put("jdbc.password", password);
+     *      ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
+     *              .setName("my-jdbc-data-store")
+     *              .setClassName(JdbcDataStoreFactory.class.getName())
+     *              .setProperties(properties);
+     *      config.getExternalDataStoreConfigs().put(name, externalDataStoreConfig);
+     * }</pre>
+     * </p>
+     * <p>Pipeline configuration
+     * <pre>{@code
+     *
+     *         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
+     *                 .map(item -> entry(item, item.toString()))
+     *                 .writeTo(Sinks.<Entry<Integer, String>>jdbcBuilder()
+     *                         .updateQuery("INSERT INTO " + tableName + " VALUES(?, ?)")
+     *                         .externalDataStoreRef(externalDataStoreRef("my-jdbc-data-store"))
+     *                         .bindFn((stmt, item1) -> {
+     *                             stmt.setInt(1, item1.getKey());
+     *                             stmt.setString(2, item1.getValue());
+     *                         })
+     *                         .build());
+     * }</pre>
+     * </p>
      *
      * @param externalDataStoreRef the reference to the configured external dataStore
      * @return this instance for fluent API

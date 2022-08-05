@@ -3108,6 +3108,9 @@ public class Config {
 
     /**
      * Sets the map of external data store configurations, mapped by config name.
+     * <p>
+     * <p>
+     * Example configuration: see {@link #addExternalDataStoreConfig(com.hazelcast.config.ExternalDataStoreConfig)}
      *
      * @since 5.2
      */
@@ -3123,6 +3126,21 @@ public class Config {
 
     /**
      * Adds an external data store configurations.
+     * <p>
+     * <p>
+     * Example:
+     * <pre>{@code
+     *      Config config = smallInstanceConfig();
+     *      Properties properties = new Properties();
+     *      properties.put("jdbc.url", jdbcUrl);
+     *      properties.put("jdbc.username", username);
+     *      properties.put("jdbc.password", password);
+     *      ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
+     *              .setName("my-jdbc-data-store")
+     *              .setClassName(JdbcDataStoreFactory.class.getName())
+     *              .setProperties(properties);
+     *      config.addExternalDataStoreConfig(externalDataStoreConfig);
+     * }</pre>
      *
      * @since 5.2
      */
