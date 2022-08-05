@@ -63,13 +63,13 @@ import java.util.Properties;
 import java.util.Set;
 
 import static java.lang.Integer.parseInt;
+import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.resolveTypeForClass;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 public class JdbcSqlConnector implements SqlConnector {
 
-    private static final ILogger log = Logger.getLogger(JdbcSqlConnector.class);
 
     public static final String TYPE_NAME = "JDBC";
 
@@ -78,8 +78,7 @@ public class JdbcSqlConnector implements SqlConnector {
 
     public static final String JDBC_BATCH_LIMIT_DEFAULT_VALUE = "100";
 
-    // ?? Metadata resolvers
-
+    private static final ILogger LOG = Logger.getLogger(JdbcSqlConnector.class);
 
     @Override
     public String typeName() {
@@ -102,25 +101,36 @@ public class JdbcSqlConnector implements SqlConnector {
         Map<String, DbField> dbFields = readDbFields(options, externalName);
 
         List<MappingField> resolvedFields = new ArrayList<>();
-        for (MappingField f : userFields) {
-            if (f.externalName() != null) {
-                DbField dbField = dbFields.get(f.externalName());
-                if (dbField == null) {
-                    throw new IllegalStateException("could not resolve field with external name " + f.externalName());
+        if (userFields.isEmpty()) {
+            for (DbField dbField : dbFields.values()) {
+                try {
+                    Class<?> columnClass = Class.forName(dbField.className);
+                    resolvedFields.add(new MappingField(dbField.columnName(), resolveTypeForClass(columnClass)));
+                } catch (ClassNotFoundException e) {
+                    throw new IllegalStateException("Could not load column class " + dbField.className, e);
                 }
-                validateType(f, dbField);
-                MappingField mappingField = new MappingField(f.name(), f.type(), f.externalName());
-                mappingField.setPrimaryKey(dbField.primaryKey());
-                resolvedFields.add(mappingField);
-            } else {
-                DbField dbField = dbFields.get(f.name());
-                if (dbField == null) {
-                    throw new IllegalStateException("could not resolve field with name " + f.name());
+            }
+        } else {
+            for (MappingField f : userFields) {
+                if (f.externalName() != null) {
+                    DbField dbField = dbFields.get(f.externalName());
+                    if (dbField == null) {
+                        throw new IllegalStateException("could not resolve field with external name " + f.externalName());
+                    }
+                    validateType(f, dbField);
+                    MappingField mappingField = new MappingField(f.name(), f.type(), f.externalName());
+                    mappingField.setPrimaryKey(dbField.primaryKey());
+                    resolvedFields.add(mappingField);
+                } else {
+                    DbField dbField = dbFields.get(f.name());
+                    if (dbField == null) {
+                        throw new IllegalStateException("could not resolve field with name " + f.name());
+                    }
+                    validateType(f, dbField);
+                    MappingField mappingField = new MappingField(f.name(), f.type());
+                    mappingField.setPrimaryKey(dbField.primaryKey());
+                    resolvedFields.add(mappingField);
                 }
-                validateType(f, dbField);
-                MappingField mappingField = new MappingField(f.name(), f.type());
-                mappingField.setPrimaryKey(dbField.primaryKey());
-                resolvedFields.add(mappingField);
             }
         }
         return resolvedFields;
@@ -175,7 +185,7 @@ public class JdbcSqlConnector implements SqlConnector {
     private void validateType(MappingField field, DbField dbField) {
         try {
             Class<?> columnClassType = Class.forName(dbField.className());
-            QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(columnClassType);
+            QueryDataType type = resolveTypeForClass(columnClassType);
             if (!field.type().equals(type) && !type.getConverter().canConvertTo(field.type().getTypeFamily())) {
                 throw new IllegalStateException("type " + field.type().getTypeFamily() + " of field " + field.name()
                         + " does not match db type " + type.getTypeFamily());
@@ -240,7 +250,7 @@ public class JdbcSqlConnector implements SqlConnector {
                         return dialect;
 
                     default:
-                        log.warning("Database " + databaseProductName + " is not officially supported");
+                        LOG.warning("Database " + databaseProductName + " is not officially supported");
                         return dialect;
                 }
 

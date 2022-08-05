@@ -59,17 +59,14 @@ import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.SingleRel;
-import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexProgram;
 
 import javax.annotation.Nullable;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.stream.IntStream;
 
 import static com.hazelcast.function.Functions.entryKey;
 import static com.hazelcast.jet.core.Edge.between;
@@ -84,7 +81,6 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlCon
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.toMap;
 
 public class CreateDagVisitor {
 

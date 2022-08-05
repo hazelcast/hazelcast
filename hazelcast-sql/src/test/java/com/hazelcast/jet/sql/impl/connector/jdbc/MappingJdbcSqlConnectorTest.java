@@ -17,6 +17,9 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlColumnMetadata;
+import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.assertj.core.api.Assertions;
 import org.assertj.core.api.Condition;
@@ -29,6 +32,7 @@ import java.sql.DriverManager;
 import java.sql.Statement;
 
 import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_JDBC_URL;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.emptyList;
 import static org.assertj.core.util.Lists.newArrayList;
@@ -209,5 +213,25 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         assertRowsAnyOrder("SHOW MAPPINGS",
                 emptyList()
         );
+    }
+
+    @Test
+    public void createMappingAutoResolveColumns() throws Exception {
+        createTable(tableName);
+
+        execute("CREATE MAPPING " + tableName
+                + " TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
+                + "OPTIONS ( "
+                + " '" + OPTION_JDBC_URL + "'='" + dbConnectionUrl + "'"
+                + ")"
+        );
+
+        try (SqlResult result = sqlService.execute("SELECT * FROM " + tableName)) {
+            SqlRowMetadata metadata = result.getRowMetadata();
+
+            assertThat(metadata.getColumns())
+                    .extracting(SqlColumnMetadata::getName)
+                    .contains("id", "name");
+        }
     }
 }
