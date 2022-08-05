@@ -16,7 +16,6 @@
 
 package com.hazelcast.map;
 
-import static com.hazelcast.test.Accessors.getSerializationService;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
@@ -24,8 +23,6 @@ import com.hazelcast.aggregation.Aggregators;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
@@ -68,6 +65,12 @@ public abstract class MultiPartitionPredicateTestSupport extends HazelcastTestSu
     protected abstract void setupInternal();
     protected TestHazelcastFactory getFactory() {
         return factory;
+    }
+    protected Set<String> getPartitionKeys() {
+        return partitionKeys;
+    }
+    protected Predicate getPredicate() {
+        return predicate;
     }
 
 
@@ -229,16 +232,6 @@ public abstract class MultiPartitionPredicateTestSupport extends HazelcastTestSu
         assertContains(predicate.toString(), partitionKey1);
         assertContains(predicate.toString(), partitionKey2);
         assertContains(predicate.toString(), partitionKey3);
-    }
-
-    @Test
-    public void testSerialization() {
-        SerializationService serializationService = getSerializationService(getInstance());
-        Data serialized = serializationService.toData(predicate);
-        PartitionPredicate deserialized = serializationService.toObject(serialized);
-
-        assertEquals(partitionKeys, deserialized.getPartitionKeys());
-        assertEquals(Predicates.alwaysTrue(), deserialized.getTarget());
     }
 
     @Test

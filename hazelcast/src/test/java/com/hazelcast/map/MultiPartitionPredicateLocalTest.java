@@ -15,10 +15,18 @@
  */
 package com.hazelcast.map;
 
+import static com.hazelcast.test.Accessors.getSerializationService;
+import static org.junit.Assert.assertEquals;
+
+import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.query.PartitionPredicate;
+import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -42,5 +50,15 @@ public class MultiPartitionPredicateLocalTest extends MultiPartitionPredicateTes
     @Override
     protected HazelcastInstance getInstance() {
         return instance;
+    }
+
+    @Test
+    public void testSerialization() {
+        SerializationService serializationService = getSerializationService(getInstance());
+        Data serialized = serializationService.toData(getPredicate());
+        PartitionPredicate deserialized = serializationService.toObject(serialized);
+
+        assertEquals(getPartitionKeys(), deserialized.getPartitionKeys());
+        assertEquals(Predicates.alwaysTrue(), deserialized.getTarget());
     }
 }
