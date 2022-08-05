@@ -184,8 +184,8 @@ public class ProcessorTasklet implements Tasklet {
         this.instreams = instreams;
         this.instreamGroupQueue = createInstreamGroupQueue(instreams);
         this.outstreams = outstreams.stream()
-                                    .sorted(comparing(OutboundEdgeStream::ordinal))
-                                    .toArray(OutboundEdgeStream[]::new);
+                .sorted(comparing(OutboundEdgeStream::ordinal))
+                .toArray(OutboundEdgeStream[]::new);
         this.ssContext = ssContext;
         String prefix = prefix(context.jobConfig().getName(),
                 context.jobId(), context.vertexName(), context.globalProcessorIndex());
@@ -281,7 +281,8 @@ public class ProcessorTasklet implements Tasklet {
         }
     }
 
-    @Override @Nonnull
+    @Override
+    @Nonnull
     public ProgressState call() {
         assert state != END : "already in terminal state";
         progTracker.reset();
@@ -624,8 +625,8 @@ public class ProcessorTasklet implements Tasklet {
 
     private CircularListCursor<InboundEdgeStream> popInstreamGroup() {
         return Optional.ofNullable(instreamGroupQueue.poll())
-                       .map(CircularListCursor::new)
-                       .orElse(null);
+                .map(CircularListCursor::new)
+                .orElse(null);
     }
 
     @Override
@@ -698,8 +699,8 @@ public class ProcessorTasklet implements Tasklet {
     @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext mContext) {
         descriptor = descriptor.withTag(MetricTags.VERTEX, this.context.vertexName())
-                       .withTag(MetricTags.PROCESSOR_TYPE, this.processor.getClass().getSimpleName())
-                       .withTag(MetricTags.PROCESSOR, Integer.toString(this.context.globalProcessorIndex()));
+                .withTag(MetricTags.PROCESSOR_TYPE, this.processor.getClass().getSimpleName())
+                .withTag(MetricTags.PROCESSOR, Integer.toString(this.context.globalProcessorIndex()));
 
         if (isSource) {
             descriptor = descriptor.withTag(MetricTags.SOURCE, "true");
@@ -720,12 +721,20 @@ public class ProcessorTasklet implements Tasklet {
             mContext.collect(descriptorWithOrdinal, EMITTED_COUNT, ProbeLevel.INFO, ProbeUnit.COUNT, emittedCounts.get(i));
         }
 
-        for (Byte key : coalescers.keys()) {
-            MetricDescriptor keyedDesc = descriptor.copy().withDiscriminator("key", Byte.toString(key));
-            mContext.collect(keyedDesc, TOP_OBSERVED_WM, ProbeLevel.INFO, ProbeUnit.MS, coalescers.topObservedWm(key));
-            mContext.collect(keyedDesc, COALESCED_WM, ProbeLevel.INFO, ProbeUnit.MS, coalescers.coalescedWm(key));
-            mContext.collect(keyedDesc, LAST_FORWARDED_WM, ProbeLevel.INFO, ProbeUnit.MS, outbox.lastForwardedWm(key));
-            mContext.collect(keyedDesc, LAST_FORWARDED_WM_LATENCY, ProbeLevel.INFO, ProbeUnit.MS, lastForwardedWmLatency(key));
+        if (!coalescers.keys().isEmpty()) {
+            for (Byte key : coalescers.keys()) {
+                MetricDescriptor keyedDesc = descriptor.copy().withDiscriminator("key", Byte.toString(key));
+                mContext.collect(keyedDesc, TOP_OBSERVED_WM, ProbeLevel.INFO, ProbeUnit.MS, coalescers.topObservedWm(key));
+                mContext.collect(keyedDesc, COALESCED_WM, ProbeLevel.INFO, ProbeUnit.MS, coalescers.coalescedWm(key));
+                mContext.collect(keyedDesc, LAST_FORWARDED_WM, ProbeLevel.INFO, ProbeUnit.MS, outbox.lastForwardedWm(key));
+                mContext.collect(keyedDesc, LAST_FORWARDED_WM_LATENCY, ProbeLevel.INFO, ProbeUnit.MS, lastForwardedWmLatency(key));
+            }
+        } else {
+            MetricDescriptor keyedDesc = descriptor.copy().withDiscriminator("key", "0");
+            mContext.collect(keyedDesc, TOP_OBSERVED_WM, ProbeLevel.INFO, ProbeUnit.MS, Long.MIN_VALUE);
+            mContext.collect(keyedDesc, COALESCED_WM, ProbeLevel.INFO, ProbeUnit.MS, Long.MIN_VALUE);
+            mContext.collect(keyedDesc, LAST_FORWARDED_WM, ProbeLevel.INFO, ProbeUnit.MS, Long.MIN_VALUE);
+            mContext.collect(keyedDesc, LAST_FORWARDED_WM_LATENCY, ProbeLevel.INFO, ProbeUnit.MS, 0L);
         }
 
         mContext.collect(descriptor, this);
