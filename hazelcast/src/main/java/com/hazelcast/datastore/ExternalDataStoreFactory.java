@@ -20,14 +20,23 @@ import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.spi.annotation.Beta;
 
 /**
- * Creates external datastore
+ * Creates external datastore. Configuration is provided by {@link #init(ExternalDataStoreConfig)}.
  *
  * @param <DS> - type of the data store
  * @since 5.2
  */
 @Beta
 public interface ExternalDataStoreFactory<DS> {
+    /**
+     * Returns configured data store. Depending on configuration and implementation it can create new data store
+     * or reuse existing one.
+     */
     DS getDataStore();
 
+    /**
+     * Initialize factory with the config
+     *
+     * @param config configuration of the given datastore
+     */
     void init(ExternalDataStoreConfig config);
 }

@@ -3861,7 +3861,7 @@
     <external-data-store name="mysql-database">
         <class-name>com.hazelcast.datastore.JdbcDataStoreFactory</class-name>
         <properties>
-            <property name="jdbc.url">jdbc:mysql://dummy:3306</property>
+            <property name="jdbcUrl">jdbc:mysql://dummy:3306</property>
         </properties>
         <shared>false</shared>
     </external-data-store>

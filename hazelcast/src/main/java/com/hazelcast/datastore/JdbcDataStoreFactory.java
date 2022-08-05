@@ -24,15 +24,17 @@ import com.zaxxer.hikari.HikariDataSource;
 import javax.sql.DataSource;
 
 /**
- * Creates a JDBC data store as a {@link DataSource}
+ * Creates a JDBC data store as a {@link DataSource}.
+ * <p>
+ * Implementation is based on {@link HikariDataSource}. {@link ExternalDataStoreConfig#getProperties()} are passed directly
+ * to {@link HikariConfig}. For available options see
+ * <a href="https://github.com/brettwooldridge/HikariCP#gear-configuration-knobs-baby">HikariCP configuration</a>
+ * </p>
  *
  * @since 5.2
  */
 @Beta
 public class JdbcDataStoreFactory implements ExternalDataStoreFactory<DataSource> {
-    private static final String JDBC_URL = "jdbc.url";
-    private static final String JDBC_USERNAME = "jdbc.username";
-    private static final String JDBC_PASSWORD = "jdbc.password";
     private ExternalDataStoreConfig config;
     private DataSource shareDataSource;
 
@@ -49,11 +51,7 @@ public class JdbcDataStoreFactory implements ExternalDataStoreFactory<DataSource
     }
 
     private DataSource createDataSource() {
-        String jdbcUrl = config.getProperty(JDBC_URL);
-        HikariConfig dataSourceConfig = new HikariConfig();
-        dataSourceConfig.setJdbcUrl(jdbcUrl);
-        dataSourceConfig.setUsername(config.getProperty(JDBC_USERNAME));
-        dataSourceConfig.setPassword(config.getProperty(JDBC_PASSWORD));
+        HikariConfig dataSourceConfig = new HikariConfig(config.getProperties());
         return new HikariDataSource(dataSourceConfig);
     }
 }

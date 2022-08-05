@@ -4418,7 +4418,7 @@ public class YamlConfigBuilderTest
                 + "    mysql-database:\n"
                 + "      class-name: com.hazelcast.datastore.JdbcDataStore\n"
                 + "      properties:\n"
-                + "        jdbc.url: jdbc:mysql://dummy:3306\n"
+                + "        jdbcUrl: jdbc:mysql://dummy:3306\n"
                 + "        some.property: dummy-value\n"
                 + "      shared: true\n"
                 + "    other-database:\n"
@@ -4434,7 +4434,7 @@ public class YamlConfigBuilderTest
         assertThat(mysqlDataStoreConfig.getClassName()).isEqualTo("com.hazelcast.datastore.JdbcDataStore");
         assertThat(mysqlDataStoreConfig.getName()).isEqualTo("mysql-database");
         assertThat(mysqlDataStoreConfig.isShared()).isTrue();
-        assertThat(mysqlDataStoreConfig.getProperty("jdbc.url")).isEqualTo("jdbc:mysql://dummy:3306");
+        assertThat(mysqlDataStoreConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
         assertThat(mysqlDataStoreConfig.getProperty("some.property")).isEqualTo("dummy-value");
 
         assertThat(externalDataStoreConfigs).containsKey("other-database");

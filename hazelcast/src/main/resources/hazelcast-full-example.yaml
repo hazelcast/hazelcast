@@ -3775,7 +3775,7 @@ hazelcast:
     mysql-database:
       class-name: com.hazelcast.datastore.JdbcDataStoreFactory
       properties:
-        jdbc.url: jdbc:mysql://dummy:3306
+        jdbcUrl: jdbc:mysql://dummy:3306
       shared: false
     other-database:
       class-name: com.hazelcast.datastore.OtherDataStore

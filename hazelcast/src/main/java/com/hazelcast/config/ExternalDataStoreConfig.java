@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.datastore.ExternalDataStoreFactory;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.map.MapLoader;
@@ -123,7 +124,8 @@ public class ExternalDataStoreConfig implements NamedConfig {
     }
 
     /**
-     * Sets the properties
+     * Sets the properties of a datastore. See implementations of {@link ExternalDataStoreFactory}
+     * for supported values
      *
      * @param properties the properties to be set
      * @return this ExternalDataStoreConfig

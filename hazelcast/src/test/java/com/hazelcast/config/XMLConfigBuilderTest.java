@@ -4369,7 +4369,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    <external-data-store name=\"mysql-database\">\n"
                 + "        <class-name>com.hazelcast.datastore.JdbcDataStore</class-name>\n"
                 + "        <properties>\n"
-                + "            <property name=\"jdbc.url\">jdbc:mysql://dummy:3306</property>\n"
+                + "            <property name=\"jdbcUrl\">jdbc:mysql://dummy:3306</property>\n"
                 + "            <property name=\"some.property\">dummy-value</property>\n"
                 + "        </properties>\n"
                 + "      <shared>true</shared>\n"
@@ -4387,7 +4387,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertThat(mysqlDataStoreConfig.getClassName()).isEqualTo("com.hazelcast.datastore.JdbcDataStore");
         assertThat(mysqlDataStoreConfig.getName()).isEqualTo("mysql-database");
         assertThat(mysqlDataStoreConfig.isShared()).isTrue();
-        assertThat(mysqlDataStoreConfig.getProperty("jdbc.url")).isEqualTo("jdbc:mysql://dummy:3306");
+        assertThat(mysqlDataStoreConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
         assertThat(mysqlDataStoreConfig.getProperty("some.property")).isEqualTo("dummy-value");
 
         assertThat(externalDataStoreConfigs).containsKey("other-database");

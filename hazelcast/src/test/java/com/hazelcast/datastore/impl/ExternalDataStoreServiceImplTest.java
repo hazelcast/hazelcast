@@ -49,7 +49,7 @@ public class ExternalDataStoreServiceImplTest extends HazelcastTestSupport {
     @Before
     public void configure() {
         Properties properties = new Properties();
-        properties.put("jdbc.url", "jdbc:h2:mem:" + ExternalDataStoreServiceImplTest.class.getSimpleName());
+        properties.put("jdbcUrl", "jdbc:h2:mem:" + ExternalDataStoreServiceImplTest.class.getSimpleName());
         ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
                 .setName("test-data-store")
                 .setClassName("com.hazelcast.datastore.JdbcDataStoreFactory")

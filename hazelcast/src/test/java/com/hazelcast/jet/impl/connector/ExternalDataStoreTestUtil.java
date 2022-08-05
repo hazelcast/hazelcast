@@ -30,7 +30,7 @@ final class ExternalDataStoreTestUtil {
 
     static void configureJdbcDataStore(String name, String jdbcUrl, Config config) {
         Properties properties = new Properties();
-        properties.put("jdbc.url", jdbcUrl);
+        properties.put("jdbcUrl", jdbcUrl);
         ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
                 .setName(name)
                 .setClassName(JdbcDataStoreFactory.class.getName())
@@ -41,9 +41,9 @@ final class ExternalDataStoreTestUtil {
 
     static void configureJdbcDataStore(String name, String jdbcUrl, String username, String password, Config config) {
         Properties properties = new Properties();
-        properties.put("jdbc.url", jdbcUrl);
-        properties.put("jdbc.username", username);
-        properties.put("jdbc.password", password);
+        properties.put("jdbcUrl", jdbcUrl);
+        properties.put("username", username);
+        properties.put("password", password);
         ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
                 .setName(name)
                 .setClassName(JdbcDataStoreFactory.class.getName())

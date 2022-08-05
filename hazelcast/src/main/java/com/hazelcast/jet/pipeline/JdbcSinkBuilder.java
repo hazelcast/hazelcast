@@ -194,9 +194,9 @@ public class JdbcSinkBuilder<T> {
      * <pre>{@code
      *      Config config = smallInstanceConfig();
      *      Properties properties = new Properties();
-     *      properties.put("jdbc.url", jdbcUrl);
-     *      properties.put("jdbc.username", username);
-     *      properties.put("jdbc.password", password);
+     *      properties.put("jdbcUrl", jdbcUrl);
+     *      properties.put("username", username);
+     *      properties.put("password", password);
      *      ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
      *              .setName("my-jdbc-data-store")
      *              .setClassName(JdbcDataStoreFactory.class.getName())
