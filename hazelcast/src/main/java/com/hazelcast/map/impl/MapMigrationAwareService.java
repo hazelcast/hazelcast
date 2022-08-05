@@ -271,7 +271,7 @@ class MapMigrationAwareService
      * @return predicate to find all map partitions which are expected to have
      * fewer backups than given backupCount.
      */
-    private static Predicate<RecordStore> lesserBackupMapsThen(final int backupCount) {
+    static Predicate<RecordStore> lesserBackupMapsThen(final int backupCount) {
         return recordStore -> recordStore.getMapContainer().getTotalBackupCount() < backupCount;
     }
 
