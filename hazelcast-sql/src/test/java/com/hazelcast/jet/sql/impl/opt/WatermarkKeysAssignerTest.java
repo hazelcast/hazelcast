@@ -180,10 +180,8 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
 
         Map<Integer, MutableByte> map = keysAssigner.getWatermarkedFieldsKey(sw);
         assertThat(map).isNotNull();
-        assertThat(map.size()).isEqualTo(3);
+        assertThat(map.size()).isEqualTo(1);
         assertThat(map.get(0).getValue()).isEqualTo((byte) 0); // original watermarked field
-        assertThat(map.get(2).getValue()).isEqualTo((byte) 0); // watermarked window_start
-        assertThat(map.get(3).getValue()).isEqualTo((byte) 0); // watermarked window_end
     }
 
     @Test
@@ -230,7 +228,7 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
         map = keysAssigner.getWatermarkedFieldsKey(nextRelContainsWm);
         assertThat(map).isNotNull();
         assertThat(map).isNotEmpty();
-        assertThat(map.get(0)).isNotNull();
-        assertThat(map.get(0).getValue()).isEqualTo((byte) 0);
+        assertThat(map.get(2)).isNotNull();
+        assertThat(map.get(2).getValue()).isEqualTo((byte) 0);
     }
 }
