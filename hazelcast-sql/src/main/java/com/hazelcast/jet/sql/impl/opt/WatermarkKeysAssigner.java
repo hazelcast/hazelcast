@@ -140,14 +140,17 @@ public class WatermarkKeysAssigner {
                 UnionPhysicalRel union = (UnionPhysicalRel) node;
                 assert !union.getInputs().isEmpty();
 
-                Map<Integer, MutableByte> intersection = new HashMap<>(relToWmKeyMapping.getOrDefault(union.getInput(0), emptyMap()));
+                Map<Integer, MutableByte> intersection =
+                        new HashMap<>(relToWmKeyMapping.getOrDefault(union.getInput(0), emptyMap()));
                 for (int inputIndex = 0; inputIndex < union.getInputs().size(); inputIndex++) {
-                    Map<Integer, MutableByte> inputWmKeys = relToWmKeyMapping.getOrDefault(union.getInput(inputIndex), emptyMap());
-                    for (Iterator<Entry<Integer, MutableByte>> intersectionIterator = intersection.entrySet().iterator(); intersectionIterator.hasNext(); ) {
-                        Entry<Integer, MutableByte> intersectionEntry = intersectionIterator.next();
+                    Map<Integer, MutableByte> inputWmKeys =
+                            relToWmKeyMapping.getOrDefault(union.getInput(inputIndex), emptyMap());
+                    for (Iterator<Entry<Integer, MutableByte>> intersectionIt = intersection.entrySet().iterator();
+                                                                                intersectionIt.hasNext(); ) {
+                        Entry<Integer, MutableByte> intersectionEntry = intersectionIt.next();
                         MutableByte inputWmKey = inputWmKeys.get(intersectionEntry.getKey());
                         if (inputWmKey == null) {
-                            intersectionIterator.remove();
+                            intersectionIt.remove();
                         } else {
                             inputWmKey.setValue(intersectionEntry.getValue().getValue());
                         }
