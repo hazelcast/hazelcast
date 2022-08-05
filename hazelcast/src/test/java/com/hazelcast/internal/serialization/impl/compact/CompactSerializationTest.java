@@ -43,6 +43,8 @@ import org.junit.runner.RunWith;
 import javax.annotation.Nonnull;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.OptionalDouble;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -257,6 +259,52 @@ public class CompactSerializationTest {
         verify(serializer, times(2)).write(any(), any());
     }
 
+    @Test
+    public void testSerializingClassReflectively_whenTheClassIsNotSupported() {
+        SerializationConfig config = new SerializationConfig();
+        config.getCompactSerializationConfig()
+                .setEnabled(true);
+
+        SerializationService service = createSerializationService(config);
+
+        // OptionalDouble is a class that does not implement the Serializable interface
+        // from the java.util package, which is not allowed to be serialized
+        // by zero-config serializer.
+        assertThatThrownBy(() -> {
+            service.toData(OptionalDouble.of(1));
+        }).isInstanceOf(HazelcastSerializationException.class)
+                .hasStackTraceContaining("cannot be serialized with zero configuration Compact serialization")
+                .hasStackTraceContaining("If you want to serialize this class");
+    }
+
+    @Test
+    public void testSerializingClassReflectively_withUnsupportedFieldType() {
+        SerializationConfig config = new SerializationConfig();
+        config.getCompactSerializationConfig()
+                .setEnabled(true);
+
+        SerializationService service = createSerializationService(config);
+        assertThatThrownBy(() -> {
+            service.toData(new ClassWithUnsupportedField());
+        }).isInstanceOf(HazelcastSerializationException.class)
+                .hasStackTraceContaining("cannot be serialized with zero configuration Compact serialization")
+                .hasStackTraceContaining("which uses this class in its fields");
+    }
+
+    @Test
+    public void testSerializingClassReflectively_withUnsupportedArrayItemType() {
+        SerializationConfig config = new SerializationConfig();
+        config.getCompactSerializationConfig()
+                .setEnabled(true);
+
+        SerializationService service = createSerializationService(config);
+        assertThatThrownBy(() -> {
+            service.toData(new ClassWithUnsupportedArrayField());
+        }).isInstanceOf(HazelcastSerializationException.class)
+                .hasStackTraceContaining("cannot be serialized with zero configuration Compact serialization")
+                .hasStackTraceContaining("which uses this class in its fields");
+    }
+
     private SerializationService createSerializationService(SerializationConfig config) {
         config.getCompactSerializationConfig().setEnabled(true);
         return new DefaultSerializationServiceBuilder()
@@ -288,6 +336,14 @@ public class CompactSerializationTest {
         public Class<Integer> getCompactClass() {
             return Integer.class;
         }
+    }
+
+    private static class ClassWithUnsupportedField {
+        private ArrayList<String> list;
+    }
+
+    private static class ClassWithUnsupportedArrayField {
+        private ArrayList<String>[] lists;
     }
 
     private static class Foo {

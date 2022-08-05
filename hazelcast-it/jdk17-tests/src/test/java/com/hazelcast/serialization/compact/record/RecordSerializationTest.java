@@ -25,16 +25,21 @@ import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
 import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import jdk.net.UnixDomainPrincipal;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -175,4 +180,38 @@ public class RecordSerializationTest extends HazelcastTestSupport {
         assertThat(deserialized.objectBooleanArray())
                 .containsExactly(genericRecord.getArrayOfBoolean("objectBooleanArray")[0]);
     }
+
+    @Test
+    public void testSerializingRecordReflectively_whenTheRecordClassIsNotSupported() {
+        // UnixDomainPrincipal is a record that does not implement the Serializable
+        // interface from the jdk.net package, which is not allowed to be serialized
+        // by zero-config serializer.
+        assertThatThrownBy(() -> {
+            service.toData(new UnixDomainPrincipal(() -> null, () -> null));
+        }).isInstanceOf(HazelcastSerializationException.class)
+                .hasStackTraceContaining("cannot be serialized with zero configuration Compact serialization")
+                .hasStackTraceContaining("If you want to serialize this class");
+    }
+
+    @Test
+    public void testSerializingRecordReflectively_withUnsupportedFieldType() {
+        assertThatThrownBy(() -> {
+            service.toData(new RecordWithUnsupportedField(new ArrayList<>()));
+        }).isInstanceOf(HazelcastSerializationException.class)
+                .hasStackTraceContaining("cannot be serialized with zero configuration Compact serialization")
+                .hasStackTraceContaining("which uses this class in its fields");
+    }
+
+    @Test
+    public void testSerializingRecordReflectively_withUnsupportedArrayItemType() {
+        assertThatThrownBy(() -> {
+            service.toData(new RecordWithUnsupportedArrayField(new ArrayList[0]));
+        }).isInstanceOf(HazelcastSerializationException.class)
+                .hasStackTraceContaining("cannot be serialized with zero configuration Compact serialization")
+                .hasStackTraceContaining("which uses this class in its fields");
+    }
+
+    private record RecordWithUnsupportedField(ArrayList<String> list) {}
+
+    private record RecordWithUnsupportedArrayField(ArrayList<String>[] lists) {}
 }

@@ -25,6 +25,14 @@ import java.lang.reflect.Array;
  * Utility methods to be used in compact serialization
  */
 public final class CompactUtil {
+    // To determine classes that we won't serialize with zero-config serialization
+    private static final String[] FORBIDDEN_PACKAGE_NAME_SUFFIXES = new String[]{
+            "java",
+            "javax",
+            "com.sun",
+            "sun",
+            "jdk"
+    };
 
     private CompactUtil() {
 
@@ -164,5 +172,45 @@ public final class CompactUtil {
             shortArray[i] = characterAsShort(characterArray[i]);
         }
         return shortArray;
+    }
+
+    public static void verifyClassIsCompactSerializable(Class<?> clazz) {
+        if (canBeSerializedAsCompact(clazz)) {
+            return;
+        }
+
+        throw new HazelcastSerializationException("The '" + clazz + "' cannot "
+                + "be serialized with zero configuration Compact serialization "
+                + "because this type is not supported yet. If you want to "
+                + "serialize this class, consider writing a CompactSerializer "
+                + "for it.");
+    }
+
+    public static void verifyFieldClassIsCompactSerializable(Class<?> fieldClass, Class<?> clazz) {
+        if (canBeSerializedAsCompact(fieldClass)) {
+            return;
+        }
+
+        throw new HazelcastSerializationException("The '" + fieldClass + "' "
+                + "cannot be serialized with zero configuration Compact "
+                + "serialization because this type is not supported yet. If you "
+                + "want to serialize '" + clazz + "' which uses this class in "
+                + "its fields, consider writing a CompactSerializer for it.");
+    }
+
+    private static boolean canBeSerializedAsCompact(Class<?> clazz) {
+        Package classPackage = clazz.getPackage();
+        if (classPackage == null) {
+            return false;
+        }
+
+        String name = classPackage.getName();
+        for (String suffix : FORBIDDEN_PACKAGE_NAME_SUFFIXES) {
+            if (name.startsWith(suffix)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }
