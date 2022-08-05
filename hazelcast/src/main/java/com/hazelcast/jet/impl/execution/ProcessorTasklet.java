@@ -726,7 +726,8 @@ public class ProcessorTasklet implements Tasklet {
                 mContext.collect(keyedDesc, TOP_OBSERVED_WM, ProbeLevel.INFO, ProbeUnit.MS, coalescers.topObservedWm(key));
                 mContext.collect(keyedDesc, COALESCED_WM, ProbeLevel.INFO, ProbeUnit.MS, coalescers.coalescedWm(key));
                 mContext.collect(keyedDesc, LAST_FORWARDED_WM, ProbeLevel.INFO, ProbeUnit.MS, outbox.lastForwardedWm(key));
-                mContext.collect(keyedDesc, LAST_FORWARDED_WM_LATENCY, ProbeLevel.INFO, ProbeUnit.MS, lastForwardedWmLatency(key));
+                long lastForwardedWmLatency = lastForwardedWmLatency(key);
+                mContext.collect(keyedDesc, LAST_FORWARDED_WM_LATENCY, ProbeLevel.INFO, ProbeUnit.MS, lastForwardedWmLatency);
             }
         } else {
             MetricDescriptor keyedDesc = descriptor.copy().withDiscriminator("key", "0");
