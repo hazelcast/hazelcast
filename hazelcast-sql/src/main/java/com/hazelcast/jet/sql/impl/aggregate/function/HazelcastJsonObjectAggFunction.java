@@ -36,7 +36,6 @@ public class HazelcastJsonObjectAggFunction extends HazelcastAggFunction {
 
     private final SqlJsonConstructorNullClause nullClause;
 
-
     protected HazelcastJsonObjectAggFunction(SqlJsonConstructorNullClause nullClause) {
         super(
                 "JSON_OBJECTAGG" + "_" + nullClause.name(),
@@ -60,7 +59,6 @@ public class HazelcastJsonObjectAggFunction extends HazelcastAggFunction {
     public SqlOperandCountRange getOperandCountRange() {
         return SqlOperandCountRanges.from(1);
     }
-
 
     public boolean isAbsentOnNull() {
         return nullClause == SqlJsonConstructorNullClause.ABSENT_ON_NULL;
