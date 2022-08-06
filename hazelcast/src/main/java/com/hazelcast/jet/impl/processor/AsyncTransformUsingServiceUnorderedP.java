@@ -209,8 +209,9 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     /**
      * Get the index for the given WM key. Extends the arrays, if needed.
      */
-    private int getWmIndex(byte wmKey_) {
-        int wmKey = wmKey_ & 0xff; // convert the key to range 0..255
+    @SuppressWarnings("checkstyle:MagicNumber")
+    private int getWmIndex(byte wmKey0) {
+        int wmKey = wmKey0 & 0xff; // convert the key to range 0..255
         if (wmKeysInv.length <= wmKey) {
             int oldLength = wmKeysInv.length;
             int newLength = wmKey + 1;
@@ -224,7 +225,7 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
         // if the wm key is seen for the 1st time, extend the arrays
         if (wmIndex < 0) {
             wmIndex = wmKeys.length;
-            wmKeysInv[wmIndex] = wmKey_;
+            wmKeysInv[wmIndex] = wmKey0;
             int newLength = wmKeys.length + 1;
 
             wmKeys = Arrays.copyOf(wmKeys, newLength);
