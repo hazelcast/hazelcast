@@ -33,14 +33,19 @@ import org.junit.experimental.categories.Category;
 import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.core.test.TestSupport.SAME_ITEMS_ANY_ORDER;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(Enclosed.class)
 public class JsonSqlAggregateTest {
@@ -216,10 +221,68 @@ public class JsonSqlAggregateTest {
         }
 
         @Test
+        public void when_jsonObjectAgg_jsonInputClause_then_fail() {
+            assertThatThrownBy(() -> sqlService.execute("select json_objectagg('k' value 'v' format json)"))
+                    .hasMessage("From line 1, column 33 to line 1, column 47: JSON VALUE EXPRESSION not supported");
+        }
+
+        @Test
+        public void when_jsonObjectAgg_keyUniquenessConstraint_then_fail() {
+            assertThatThrownBy(() -> sqlService.execute("select json_objectagg('k' value 'v' with unique keys)"))
+                    .hasMessageStartingWith("Encountered \"with\" at line 1, column 37");
+        }
+
+        @Test
+        public void when_jsonObjectAgg_outputClause_then_fail() {
+            assertThatThrownBy(() -> sqlService.execute("select json_objectagg('k' value 'v' returning varchar)"))
+                    .hasMessageStartingWith("Encountered \"returning\" at line 1, column 37.");
+        }
+
+        @Test
+        public void test_literal() {
+            assertJsonRowsAnyOrder("select json_objectagg('k' value 'v')", singletonList(new Row(json("{\"k\":\"v\"}"))));
+        }
+
+        @Test
+        public void test_alternateSyntax() {
+            assertJsonRowsAnyOrder("select json_objectagg(key 'k' value 'v')", singletonList(new Row(json("{\"k\":\"v\"}"))));
+            assertJsonRowsAnyOrder("select json_objectagg('k':'v')", singletonList(new Row(json("{\"k\":\"v\"}"))));
+        }
+
+        @Test
+        public void test_nullKey() {
+            // null literal key
+            assertThatThrownBy(() -> sqlService.execute("select json_objectagg(null value 'v')"))
+                    .hasMessage("this should throw");
+
+            TestBatchSqlConnector.create(sqlService, "m", asList("k", "v"), asList(VARCHAR, VARCHAR),
+                    singletonList(new String[]{null, "v1"}));
+
+            // null column value for key
+            assertThatThrownBy(() -> sqlService.execute("select json_objectagg(k value v) from m"))
+                    .hasMessage("this should throw");
+        }
+
+        @Test
+        public void test_nullValueLiteral() {
+            assertJsonRowsAnyOrder("select json_objectagg('k' value null)", singletonList(new Row(json("{\"k\":null}"))));
+            assertJsonRowsAnyOrder("select json_objectagg('k' value null absent on null)", singletonList(new Row((Object) null)));
+        }
+
+        @Test
+        public void test_duplicateKey() {
+            TestBatchSqlConnector.create(sqlService, "m", asList("k", "v"), asList(VARCHAR, VARCHAR),
+                    asList(new String[]{"k", "v1"},
+                            new String[]{"k", "v2"}));
+
+            assertJsonRowsAnyOrder("select json_objectagg(k value v) from m", singletonList(new Row(json("{\"k\":\"v1\",\"k\":\"v2\"}"))));
+        }
+
+        @Test
         public void test_jsonObjectAgg() {
             String name = createTable();
 
-            assertRowsWithJsonValues(
+            assertJsonRowsAnyOrder(
                     "SELECT name, JSON_OBJECTAGG(k VALUE v ABSENT ON NULL) FROM " + name + " GROUP BY name",
                     asList(
                             new Row("Alice", json("{ \"department\" : \"dep1\", \"job\" : \"job1\", \"description\" : \"desc1\" }")),
@@ -229,7 +292,7 @@ public class JsonSqlAggregateTest {
                     )
             );
 
-            assertRowsWithJsonValues(
+            assertJsonRowsAnyOrder(
                     "SELECT name, JSON_OBJECTAGG(k VALUE v NULL ON NULL) FROM " + name + " GROUP BY name",
                     asList(
                             new Row("Alice", json("{ \"department\" : \"dep1\", \"job\" : \"job1\", \"description\" : \"desc1\" }")),
@@ -270,54 +333,50 @@ public class JsonSqlAggregateTest {
             return name;
         }
 
-        void assertRowsWithJsonValues(String sql, Collection<Row> rows) {
-            Map<Object, JsonValue> rowsInMap = new HashMap<>();
+        void assertJsonRowsAnyOrder(String sql, Collection<Row> rows) {
             for (Row row : rows) {
-                Object[] rowObj = row.getValues();
-                if (rowObj.length != 2) {
-                    throw new AssertionError("Row length must be 2");
-                }
-                if (!(rowObj[1] instanceof HazelcastJsonValue)) {
-                    throw new AssertionError("Second element in the row must be HazelcastJsonValue");
-                }
-                JsonValue value = Json.parse(((HazelcastJsonValue) rowObj[1]).getValue());
-                rowsInMap.put(rowObj[0], value);
+                convertRow(row);
             }
 
-            SqlResult result = sqlService.execute(sql);
-            Map<String, JsonValue> actualRowsInMap = new HashMap<>();
-            result.iterator().forEachRemaining(r -> {
-                if (r.getMetadata().getColumnCount() != 2) {
-                    throw new AssertionError("The length of the result row is not 2");
-                }
-                JsonValue value = Json.parse(((HazelcastJsonValue) r.getObject(1)).getValue());
-                actualRowsInMap.put(r.getObject(0), value);
-            });
-
-            if (rowsInMap.size() != actualRowsInMap.size()) {
-                throw new AssertionError("Number of expected rows is different than actual");
+            List<Row> actualRows = new ArrayList<>();
+            try (SqlResult result = sqlService.execute(sql)) {
+                result.iterator().forEachRemaining(row -> actualRows.add(convertRow(new Row(row))));
             }
-            for (Map.Entry<Object, JsonValue> kv : rowsInMap.entrySet()) {
-                JsonValue value = actualRowsInMap.get(kv.getKey());
-                JsonObject object = value.asObject();
-                JsonObject object2 = kv.getValue().asObject();
-                if (!(jsonObjectEqualsFirstLevelMixed(object, object2))) {
-                    throw new AssertionError("Object: " + object + " is not equal to Object: " + object2);
-                }
-            }
+            assertThat(actualRows).containsExactlyInAnyOrderElementsOf(rows);
         }
 
-        // A helper method to check whether two JSON objects are equal.
-        // It checks whether first level of fields are same (although they can be
-        // in mixed order).
-        boolean jsonObjectEqualsFirstLevelMixed(JsonObject obj, JsonObject obj2) {
-            Map<String, JsonValue> fields = new HashMap<>();
-            obj.iterator().forEachRemaining(m -> fields.put(m.getName(), m.getValue()));
+        private static Row convertRow(Row row) {
+            Object[] rowObj = row.getValues();
+            for (int i = 0; i < rowObj.length; i++) {
+                if (rowObj[i] instanceof HazelcastJsonValue) {
+                    rowObj[i] = new JsonObjectWithRelaxedEquality((HazelcastJsonValue) rowObj[i]);
+                }
+            }
+            return row;
+        }
 
-            Map<String, JsonValue> fields2 = new HashMap<>();
-            obj2.iterator().forEachRemaining(m -> fields2.put(m.getName(), m.getValue()));
+        /**
+         * A JSON value with equals method that returns true for objects with
+         * the same keys and values, but in any order.
+         */
+        private static class JsonObjectWithRelaxedEquality {
+            private final List<Map.Entry<String, JsonValue>> fields = new ArrayList<>();
 
-            return fields.equals(fields2);
+            public JsonObjectWithRelaxedEquality(HazelcastJsonValue json) {
+                JsonObject jsonObject = (JsonObject) Json.parse(json.getValue());
+                jsonObject.iterator().forEachRemaining(m -> fields.add(entry(m.getName(), m.getValue())));
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                return o instanceof JsonObjectWithRelaxedEquality
+                        && SAME_ITEMS_ANY_ORDER.test(fields, ((JsonObjectWithRelaxedEquality) o).fields);
+            }
+
+            @Override
+            public String toString() {
+                return fields.toString();
+            }
         }
     }
 }
