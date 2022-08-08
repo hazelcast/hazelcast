@@ -227,6 +227,9 @@
         },
         "network": {
           "$ref": "#/definitions/ClientNetwork"
+        },
+        "sql": {
+          "$ref": "#/definitions/ClientSql"
         }
       }
     },
@@ -4254,6 +4257,22 @@
         },
         "format-pattern": {
           "type": "string"
+        }
+      }
+    },
+    "ClientSql": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "resubmission-mode": {
+          "enum": [
+            "NEVER",
+            "RETRY_SELECTS",
+            "RETRY_SELECTS_ALLOW_DUPLICATES",
+            "RETRY_ALL"
+          ],
+          "default": "NEVER",
+          "description": "The configuration when to retry query that fails with reasons CONNECTION_PROBLEM, PARTITION_DISTRIBUTION, TOPOLOGY_CHANGE."
         }
       }
     },

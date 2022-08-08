@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.HazelcastSqlException;
@@ -71,6 +72,14 @@ public final class QueryUtils {
 
             return new HazelcastSqlException(originatingMemberId, e0.getCode(), e0.getMessage(), e, e0.getSuggestion());
         } else {
+            Throwable copy = e;
+            while (copy != null) {
+                if (ExceptionUtil.isTopologyException(copy)) {
+                    return new HazelcastSqlException(localMemberId, SqlErrorCode.TOPOLOGY_CHANGE, e.getMessage(), e, null);
+                }
+                copy = copy.getCause();
+            }
+
             return new HazelcastSqlException(localMemberId, SqlErrorCode.GENERIC, e.getMessage(), e, null);
         }
     }

@@ -358,6 +358,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
         }
     }
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     private void execute() {
         invocationService.deRegisterInvocation(clientMessage.getCorrelationId());
         if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
@@ -365,7 +366,7 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
             executionService.execute(this);
         } else {
             // progressive retry delay
-            long delayMillis = Math.min(1 << (invokeCount - MAX_FAST_INVOCATION_COUNT), retryPauseMillis);
+            long delayMillis = Math.min(1L << Math.min(62, invokeCount - MAX_FAST_INVOCATION_COUNT), retryPauseMillis);
             executionService.schedule(this, delayMillis, TimeUnit.MILLISECONDS);
         }
     }

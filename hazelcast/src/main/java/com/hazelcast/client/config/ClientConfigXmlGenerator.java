@@ -141,6 +141,7 @@ public final class ClientConfigXmlGenerator {
         //Metrics
         metrics(gen, clientConfig.getMetricsConfig());
         instanceTrackingConfig(gen, clientConfig.getInstanceTrackingConfig());
+        sql(gen, clientConfig.getSqlConfig());
 
         //close HazelcastClient
         gen.close();
@@ -675,6 +676,12 @@ public final class ClientConfigXmlGenerator {
         gen.open("instance-tracking", "enabled", trackingConfig.isEnabled())
            .node("file-name", trackingConfig.getFileName())
            .node("format-pattern", trackingConfig.getFormatPattern())
+           .close();
+    }
+
+    private static void sql(XmlGenerator gen, ClientSqlConfig sqlConfig) {
+        gen.open("sql")
+           .node("resubmission-mode", sqlConfig.getResubmissionMode().name())
            .close();
     }
 

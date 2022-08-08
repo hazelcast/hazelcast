@@ -23,7 +23,7 @@
   the directory where you start your Hazelcast client.
 
   To learn how to configure Hazelcast, please see the schema at
-  https://hazelcast.com/schema/client-config/hazelcast-client-config-5.1.xsd
+  https://hazelcast.com/schema/client-config/hazelcast-client-config-5.2.xsd
   or the Reference Manual at https://docs.hazelcast.com/
 -->
 
@@ -31,7 +31,7 @@
 <hazelcast-client xmlns="http://www.hazelcast.com/schema/client-config"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="http://www.hazelcast.com/schema/client-config
-                  http://www.hazelcast.com/schema/client-config/hazelcast-client-config-5.1.xsd">
+                  http://www.hazelcast.com/schema/client-config/hazelcast-client-config-5.2.xsd">
 
     <!--
         You can use the <import> element to load different Hazelcast declarative configuration files you prepared.
@@ -995,4 +995,16 @@
         <format-pattern>$HZ_INSTANCE_TRACKING{product}:$HZ_INSTANCE_TRACKING{version}</format-pattern>
     </instance-tracking>
 
+    <!--
+    ===== HAZELCAST SQL CLIENT CONFIGURATION =====
+
+    Configuration element's name is <sql>.
+
+    It has the following sub-elements:
+    * <resubmission-mode>:
+        Sets the resubmission mode for failing queries. By default, it is set to NEVER.
+    -->
+    <sql>
+        <resubmission-mode>RETRY_SELECTS</resubmission-mode>
+    </sql>
 </hazelcast-client>
