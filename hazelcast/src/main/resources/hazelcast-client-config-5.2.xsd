@@ -366,6 +366,7 @@
             <xs:enumeration value="RAW"/>
         </xs:restriction>
     </xs:simpleType>
+
     <xs:complexType name="item-listener">
         <xs:simpleContent>
             <xs:extension base="listener-base">

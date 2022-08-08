@@ -69,7 +69,8 @@ public class JetSqlSerializerHook implements DataSerializerHook {
     public static final int AGGREGATE_JSON_ARRAY_AGG_SUPPLIER = 21;
     public static final int ROW_IDENTITY_FN = 22;
     public static final int AGGREGATE_EXPORT_FUNCTION = 23;
-    public static final int TO_ROW = 24;
+    public static final int AGGREGATE_JSON_OBJECT_AGG_SUPPLIER = 24;
+    public static final int TO_ROW = 25;
 
     public static final int LEN = TO_ROW + 1;
 
@@ -110,6 +111,7 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[AGGREGATE_JSON_ARRAY_AGG_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateArrayAggSupplier();
         constructors[ROW_IDENTITY_FN] = arg -> new AggregateAbstractPhysicalRule.RowIdentityFn();
         constructors[AGGREGATE_EXPORT_FUNCTION] = arg -> AggregateAbstractPhysicalRule.AggregateExportFunction.INSTANCE;
+        constructors[AGGREGATE_JSON_OBJECT_AGG_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateObjectAggSupplier();
         constructors[TO_ROW] = arg -> new ToRowFunction();
 
         return new ArrayDataSerializableFactory(constructors);

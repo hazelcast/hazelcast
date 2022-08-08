@@ -607,7 +607,7 @@ public final class DynamicConfigXmlGenerator {
                 gen.node("serialize-keys", queryCacheConfig.isSerializeKeys());
 
                 evictionConfigXmlGenerator(gen, queryCacheConfig.getEvictionConfig());
-                IndexUtils.generateXml(gen, queryCacheConfig.getIndexConfigs());
+                IndexUtils.generateXml(gen, queryCacheConfig.getIndexConfigs(), false);
                 mapQueryCachePredicateConfigXmlGenerator(gen, queryCacheConfig);
 
                 entryListenerConfigXmlGenerator(gen, queryCacheConfig.getEntryListenerConfigs());
@@ -662,7 +662,7 @@ public final class DynamicConfigXmlGenerator {
     }
 
     private static void indexConfigXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, MapConfig m) {
-        IndexUtils.generateXml(gen, m.getIndexConfigs());
+        IndexUtils.generateXml(gen, m.getIndexConfigs(), true);
     }
 
     private static void attributeConfigXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, MapConfig m) {

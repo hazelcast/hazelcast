@@ -36,13 +36,12 @@ import java.util.List;
  * Represents a JSON object, a set of name/value pairs, where the names are strings and the values
  * are JSON values.
  * <p>
- * Members can be added using the <code>add(String, ...)</code> methods which accept instances of
+ * Members can be added using the <code>add(String, ...)</code> methods which accepts instances of
  * {@link JsonValue}, strings, primitive numbers, and boolean values. To modify certain values of an
  * object, use the <code>set(String, ...)</code> methods. Please note that the <code>add</code>
  * methods are faster than <code>set</code> as they do not search for existing members. On the other
  * hand, the <code>add</code> methods do not prevent adding multiple members with the same name.
  * Duplicate names are discouraged but not prohibited by JSON.
- * </p>
  * <p>
  * Members can be accessed by their name using {@link #get(String)}. A list of all names can be
  * obtained from the method {@link #names()}. This class also supports iterating over the members in
@@ -58,16 +57,13 @@ import java.util.List;
  * <p>
  * Even though JSON objects are unordered by definition, instances of this class preserve the order
  * of members to allow processing in document order and to guarantee a predictable output.
- * </p>
  * <p>
  * Note that this class is <strong>not thread-safe</strong>. If multiple threads access a
  * <code>JsonObject</code> instance concurrently, while at least one of these threads modifies the
  * contents of this object, access to the instance must be synchronized externally. Failure to do so
  * may lead to an inconsistent state.
- * </p>
  * <p>
  * This class is <strong>not supposed to be extended</strong> by clients.
- * </p>
  */
 @SerializableByConvention
 public class JsonObject extends JsonValue implements Iterable<Member> {

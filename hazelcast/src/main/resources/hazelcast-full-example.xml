@@ -1404,6 +1404,17 @@
                     <unique-key-transformation>RAW</unique-key-transformation>
                 </bitmap-index-options>
             </index>
+            <index type="SORTED">
+                <attributes>
+                    <attribute>age</attribute>
+                </attributes>
+                <btree-index>
+                    <memory-tier>
+                        <capacity value="128" unit="BYTES" />
+                    </memory-tier>
+                    <page-size value="1024" unit="BYTES" />
+                </btree-index>
+            </index>
         </indexes>
         <attributes>
             <attribute extractor-class-name="com.bank.CurrencyExtractor">currency</attribute>

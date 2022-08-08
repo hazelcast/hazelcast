@@ -2537,6 +2537,7 @@
         <xs:all>
             <xs:element name="attributes" type="index-attributes"/>
             <xs:element name="bitmap-index-options" type="bitmap-index-options" minOccurs="0"/>
+            <xs:element name="btree-index" type="btree-index" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name"/>
         <xs:attribute name="type" type="index-type" default="SORTED"/>
@@ -2567,6 +2568,25 @@
             <xs:enumeration value="RAW"/>
         </xs:restriction>
     </xs:simpleType>
+    <xs:complexType name="btree-index">
+        <xs:all>
+            <xs:element name="memory-tier" type="memory-tier" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Memory tier capacity, i.e., how much main memory should this tier consume at most.
+                        The default is 256 megabytes.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="page-size" type="memory-size" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Page size of the index B+ Tree. Default value is 16 kB.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
     <xs:complexType name="map-attribute">
         <xs:simpleContent>
             <xs:extension base="xs:string">

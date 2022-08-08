@@ -166,6 +166,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.DESCENDING);
 
         SUPPORTED_KINDS.add(SqlKind.JSON_ARRAYAGG);
+        SUPPORTED_KINDS.add(SqlKind.JSON_OBJECTAGG);
         SUPPORTED_KINDS.add(SqlKind.WITHIN_GROUP);
 
         // Nested Fields
@@ -234,6 +235,8 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_ARRAY);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_ARRAYAGG_ABSENT_ON_NULL);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_ARRAYAGG_NULL_ON_NULL);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_OBJECTAGG_ABSENT_ON_NULL);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_OBJECTAGG_NULL_ON_NULL);
 
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.WITHIN_GROUP);
 
