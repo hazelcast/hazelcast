@@ -142,6 +142,7 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStore;
 import com.hazelcast.map.MapStoreFactory;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.multimap.MultiMap;
@@ -196,6 +197,7 @@ import java.util.concurrent.ExecutorService;
 import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.PersistenceClusterDataRecoveryPolicy.PARTIAL_RECOVERY_MOST_COMPLETE;
 import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
+import static com.hazelcast.memory.MemoryUnit.GIGABYTES;
 import static com.hazelcast.spi.properties.ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
@@ -371,15 +373,20 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(321, journalConfig.getTimeToLiveSeconds());
         assertEquals(MetadataPolicy.OFF, testMapConfig.getMetadataPolicy());
         assertTrue(testMapConfig.isReadBackupData());
-        assertEquals(2, testMapConfig.getIndexConfigs().size());
+        assertEquals(3, testMapConfig.getIndexConfigs().size());
         for (IndexConfig index : testMapConfig.getIndexConfigs()) {
             if ("name".equals(index.getAttributes().get(0))) {
                 assertEquals(IndexType.HASH, index.getType());
                 assertNull(index.getName());
-            } else if ("age".equals(index.getAttributes().get(0))) {
+            } else if ("sortedIndex".equals(index.getName())) {
                 assertEquals(IndexType.SORTED, index.getType());
-                assertEquals("sortedIndex", index.getName());
-                assertEquals("name", index.getAttributes().get(1));
+                assertEquals("age", index.getAttributes().get(0));
+            } else if ("sortedIndexTiered".equals(index.getName())) {
+                assertEquals(IndexType.SORTED, index.getType());
+                assertEquals("age", index.getAttributes().get(0));
+                assertEquals(Capacity.of(17, GIGABYTES), index.getBTreeIndexConfig().getPageSize());
+                assertEquals(Capacity.of(129, GIGABYTES),
+                        index.getBTreeIndexConfig().getMemoryTierConfig().getCapacity());
             } else {
                 fail("unknown index!");
             }
@@ -1202,7 +1209,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testNativeMemoryConfig() {
         NativeMemoryConfig nativeMemoryConfig = config.getNativeMemoryConfig();
         assertFalse(nativeMemoryConfig.isEnabled());
-        assertEquals(MemoryUnit.GIGABYTES, nativeMemoryConfig.getSize().getUnit());
+        assertEquals(GIGABYTES, nativeMemoryConfig.getSize().getUnit());
         assertEquals(256, nativeMemoryConfig.getSize().getValue());
         assertEquals(20, nativeMemoryConfig.getPageSize());
         assertEquals(NativeMemoryConfig.MemoryAllocatorType.STANDARD, nativeMemoryConfig.getAllocatorType());

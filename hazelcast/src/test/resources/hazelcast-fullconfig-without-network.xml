@@ -385,6 +385,17 @@
                     <unique-key-transformation>RAW</unique-key-transformation>
                 </bitmap-index-options>
             </index>
+            <index type="SORTED">
+                <attributes>
+                    <attribute>age</attribute>
+                </attributes>
+                <btree-index>
+                    <page-size value="16" unit="KILOBYTES" />
+                    <memory-tier>
+                        <capacity value="3000" unit="GIGABYTES" />
+                    </memory-tier>
+                </btree-index>
+            </index>
         </indexes>
 
         <attributes>
