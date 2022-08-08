@@ -33,26 +33,24 @@ public class JsonObjectAggAggregation implements SqlAggregation {
     private int valueIndex;
     private boolean isAbsentOnNull;
 
+    @SuppressWarnings("unused") // for deserialization
     public JsonObjectAggAggregation() {
     }
 
-    private JsonObjectAggAggregation(int keyIndex, int valueIndex, boolean isAbsentOnNull) {
+    public JsonObjectAggAggregation(int keyIndex, int valueIndex, boolean isAbsentOnNull) {
         this.keyIndex = keyIndex;
         this.valueIndex = valueIndex;
         this.isAbsentOnNull = isAbsentOnNull;
     }
 
-    public static JsonObjectAggAggregation create(
-            int keyIndex,
-            int valueIndex,
-            boolean isAbsentOnNull) {
-        return new JsonObjectAggAggregation(keyIndex, valueIndex, isAbsentOnNull);
-    }
-
     @Override
     public void accumulate(Object value) {
         JetSqlRow row = (JetSqlRow) value;
-        keyValues.add(new Pair<>(row.get(keyIndex), row.get(valueIndex)));
+        Pair<Object, Object> pair = new Pair<>(row.get(keyIndex), row.get(valueIndex));
+        if (pair.getKey() == null) {
+            throw QueryException.error("NULL key is not supported for JSON_OBJECTAGG");
+        }
+        keyValues.add(pair);
     }
 
     @Override
@@ -66,27 +64,23 @@ public class JsonObjectAggAggregation implements SqlAggregation {
         StringBuilder sb = new StringBuilder();
         boolean firstValue = true;
 
-        sb.append("{ ");
+        sb.append("{");
         for (Pair<Object, Object> pair : keyValues) {
-            if (pair.getKey() == null) {
-                throw QueryException.error("NULL key is not supported for JSON_OBJECTAGG");
-            }
-
             Object value = pair.getValue();
             if (value == null && isAbsentOnNull) {
-                    continue;
+                continue;
             }
             if (firstValue) {
                 firstValue = false;
             } else {
-                sb.append(", ");
+                sb.append(",");
             }
             sb.append(JsonCreationUtil.serializeValue(pair.getKey()));
-            sb.append(" : ");
+            sb.append(":");
             sb.append(JsonCreationUtil.serializeValue(value));
         }
 
-        sb.append(" }");
+        sb.append("}");
         if (firstValue) {
             return null;
         } else {

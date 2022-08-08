@@ -316,8 +316,8 @@ public abstract class AggregateAbstractPhysicalRule extends RelRule<Config> {
         }
 
         @Override
-        public SqlAggregation getEx() throws Exception {
-            return JsonObjectAggAggregation.create(keyIndex, valueIndex, isAbsentOnNull);
+        public SqlAggregation getEx() {
+            return new JsonObjectAggAggregation(keyIndex, valueIndex, isAbsentOnNull);
         }
 
         @Override

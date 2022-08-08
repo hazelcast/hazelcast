@@ -266,7 +266,11 @@ public class JsonSqlAggregateTest {
         @Test
         public void test_nullValueLiteral() {
             assertJsonRowsAnyOrder("SELECT JSON_OBJECTAGG('k' VALUE NULL)", singletonList(new Row(json("{\"k\":null}"))));
+            // oracle returns {} in this case, but NULL is correct
             assertJsonRowsAnyOrder("SELECT JSON_OBJECTAGG('k' VALUE NULL ABSENT ON NULL)", singletonList(new Row((Object) null)));
+            assertJsonRowsAnyOrder("SELECT JSON_OBJECTAGG('k' VALUE NULL ABSENT ON NULL) " +
+                    "FROM table(generate_series(1, 1)) " +
+                    "WHERE 1=2", singletonList(new Row((Object) null)));
         }
 
         @Test
