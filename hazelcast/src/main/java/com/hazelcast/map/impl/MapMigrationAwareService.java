@@ -174,16 +174,18 @@ class MapMigrationAwareService
             depopulateIndexes(event, "commitMigration");
         }
 
+        PartitionContainer partitionContainer
+                = mapServiceContext.getPartitionContainer(event.getPartitionId());
         if (SOURCE == event.getMigrationEndpoint()) {
             // Do not change order of below methods
             removeWbqCountersHavingLesserBackupCountThan(event.getPartitionId(),
                     event.getNewReplicaIndex());
             removeRecordStoresHavingLesserBackupCountThan(event.getPartitionId(),
                     event.getNewReplicaIndex());
+
+            partitionContainer.cleanUpOnMigration(event.getNewReplicaIndex());
         }
 
-        PartitionContainer partitionContainer
-                = mapServiceContext.getPartitionContainer(event.getPartitionId());
         for (RecordStore recordStore : partitionContainer.getAllRecordStores()) {
             // in case the record store has been created without
             // loading during migration trigger again if loading
@@ -193,6 +195,7 @@ class MapMigrationAwareService
         mapServiceContext.nullifyOwnedPartitions();
 
         removeOrRegenerateNearCacheUuid(event);
+
     }
 
     private void removeOrRegenerateNearCacheUuid(PartitionMigrationEvent event) {
@@ -216,6 +219,9 @@ class MapMigrationAwareService
             removeRecordStoresHavingLesserBackupCountThan(event.getPartitionId(),
                     event.getCurrentReplicaIndex());
             getMetaDataGenerator().removeUuidAndSequence(event.getPartitionId());
+
+            PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(event.getPartitionId());
+            partitionContainer.cleanUpOnMigration(event.getCurrentReplicaIndex());
         }
 
         mapServiceContext.nullifyOwnedPartitions();
@@ -265,7 +271,7 @@ class MapMigrationAwareService
      * @return predicate to find all map partitions which are expected to have
      * fewer backups than given backupCount.
      */
-    private static Predicate<RecordStore> lesserBackupMapsThen(final int backupCount) {
+    static Predicate<RecordStore> lesserBackupMapsThen(final int backupCount) {
         return recordStore -> recordStore.getMapContainer().getTotalBackupCount() < backupCount;
     }
 

@@ -44,6 +44,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.function.Predicate;
 
 import static com.hazelcast.map.impl.MapKeyLoaderUtil.getMaxSizePerNode;
+import static com.hazelcast.map.impl.MapMigrationAwareService.lesserBackupMapsThen;
 
 public class PartitionContainer {
 
@@ -237,6 +238,26 @@ public class PartitionContainer {
 
     public void setLastCleanupTimeCopy(long lastCleanupTimeCopy) {
         this.lastCleanupTimeCopy = lastCleanupTimeCopy;
+    }
+
+    /**
+     * Cleans up the container's state if the enclosing partition is migrated
+     * off this member. Whether cleanup is needed is decided based on the
+     * provided {@code replicaIndex}.
+     *
+     * @param replicaIndex The replica index to use for deciding per map whether
+     *                     cleanup is necessary or not
+     */
+    final void cleanUpOnMigration(int replicaIndex) {
+        mapService.getMapServiceContext().getMapContainers().keySet()
+                .stream()
+                .filter(mapName -> replicaIndex == -1
+                        || lesserBackupMapsThen(replicaIndex).test(getRecordStore(mapName)))
+                .forEach(this::cleanUpMap);
+    }
+
+    protected void cleanUpMap(String mapName) {
+        // overridden in enterprise
     }
 
     // -------------------------------------------------------------------------------------------------------------
