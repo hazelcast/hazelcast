@@ -17,6 +17,7 @@
 package com.hazelcast.spi.impl.operationservice;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.internal.cluster.ClusterClock;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.server.ServerConnection;
@@ -637,6 +638,7 @@ public abstract class Operation implements DataSerializable, Tenantable {
      *
      * @param e Exception/Error thrown during operation execution
      */
+    @SuppressWarnings("checkstyle:cyclomaticcomplexity")
     public void logError(Throwable e) {
         final ILogger logger = getLogger();
         if (e instanceof SilentException) {
@@ -651,6 +653,17 @@ public abstract class Operation implements DataSerializable, Tenantable {
                 logger.severe(e.getMessage(), e);
             } catch (Throwable ignored) {
                 ignore(ignored);
+            }
+        } else if (e instanceof IllegalStateException) {
+            // if start is not yet completed, do not warn about IllegalStateExceptions
+            // due to cluster state being PASSIVE
+            final Level level = nodeEngine != null
+                    && nodeEngine.getClusterService().getClusterState() == ClusterState.PASSIVE
+                    && nodeEngine.isStartCompleted()
+                    && nodeEngine.isRunning()
+                    ? Level.WARNING : Level.FINE;
+            if (logger.isLoggable(level)) {
+                logger.log(level, e.getMessage(), e);
             }
         } else {
             final Level level = nodeEngine != null && nodeEngine.isRunning() ? Level.SEVERE : Level.FINEST;
