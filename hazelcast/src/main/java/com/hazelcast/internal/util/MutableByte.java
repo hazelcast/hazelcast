@@ -34,4 +34,11 @@ public class MutableByte {
     public void inc() {
         ++this.value;
     }
+
+    @Override
+    public String toString() {
+        return "MutableByte{" +
+                "value=" + value +
+                '}';
+    }
 }
