@@ -22,16 +22,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import org.apache.calcite.util.Pair;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
 
 public class JsonObjectAggAggregation implements SqlAggregation {
-    private final Map<Object, ArrayList<Object>> keyValues = new HashMap<>();
-
+    private final ArrayList<Pair<Object, Object>> keyValues = new ArrayList<>();
     private int keyIndex;
     private int valueIndex;
     private boolean isAbsentOnNull;
@@ -55,20 +52,13 @@ public class JsonObjectAggAggregation implements SqlAggregation {
     @Override
     public void accumulate(Object value) {
         JetSqlRow row = (JetSqlRow) value;
-        Object key = row.get(keyIndex);
-        ArrayList<Object> bucket = keyValues.getOrDefault(key, new ArrayList<>());
-        bucket.add(row.get(valueIndex));
-        keyValues.put(key, bucket);
+        keyValues.add(new Pair<>(row.get(keyIndex), row.get(valueIndex)));
     }
 
     @Override
     public void combine(SqlAggregation other) {
         JsonObjectAggAggregation other0 = (JsonObjectAggAggregation) other;
-        for (Map.Entry<Object, ArrayList<Object>> entry : other0.keyValues.entrySet()) {
-            ArrayList<Object> bucket = keyValues.getOrDefault(entry.getKey(), new ArrayList<>());
-            bucket.addAll(entry.getValue());
-            keyValues.put(entry.getKey(), bucket);
-        }
+        keyValues.addAll(other0.keyValues);
     }
 
     @Override
@@ -77,26 +67,25 @@ public class JsonObjectAggAggregation implements SqlAggregation {
         boolean firstValue = true;
 
         sb.append("{ ");
-        for (Entry<Object, ArrayList<Object>> entry: keyValues.entrySet()) {
-            if (entry.getKey() == null) {
+        for (Pair<Object, Object> pair : keyValues) {
+            if (pair.getKey() == null) {
                 throw QueryException.error("NULL key is not supported for JSON_OBJECTAGG");
             }
 
-            for (Object value : entry.getValue()) {
-                if (value == null && isAbsentOnNull) {
+            Object value = pair.getValue();
+            if (value == null && isAbsentOnNull) {
                     continue;
-                }
-                if (firstValue) {
-                    firstValue = false;
-                } else {
-                    sb.append(", ");
-                }
-                sb.append(JsonCreationUtil.serializeValue(entry.getKey()));
-                sb.append(" : ");
-                sb.append(JsonCreationUtil.serializeValue(value));
             }
-
+            if (firstValue) {
+                firstValue = false;
+            } else {
+                sb.append(", ");
+            }
+            sb.append(JsonCreationUtil.serializeValue(pair.getKey()));
+            sb.append(" : ");
+            sb.append(JsonCreationUtil.serializeValue(value));
         }
+
         sb.append(" }");
         if (firstValue) {
             return null;
@@ -111,12 +100,9 @@ public class JsonObjectAggAggregation implements SqlAggregation {
         out.writeInt(valueIndex);
         out.writeBoolean(isAbsentOnNull);
         out.writeInt(keyValues.size());
-        for (Entry<Object, ArrayList<Object>> entry : keyValues.entrySet()) {
+        for (Pair<Object, Object> entry : keyValues) {
             out.writeObject(entry.getKey());
-            out.writeInt(entry.getValue().size());
-            for (Object value : entry.getValue()) {
-                out.writeObject(value);
-            }
+            out.writeObject(entry.getValue());
         }
     }
 
@@ -126,14 +112,11 @@ public class JsonObjectAggAggregation implements SqlAggregation {
         valueIndex = in.readInt();
         isAbsentOnNull = in.readBoolean();
         int size = in.readInt();
+        keyValues.ensureCapacity(size);
         for (int i = 0; i < size; i++) {
             Object key = in.readObject();
-            int valuesSize = in.readInt();
-            ArrayList<Object> bucket = new ArrayList<>(valuesSize);
-            for (int j = 0; j < valuesSize; j++) {
-                bucket.add(in.readObject());
-            }
-            keyValues.put(key, bucket);
+            Object value = in.readObject();
+            keyValues.add(new Pair<>(key, value));
         }
     }
 }

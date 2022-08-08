@@ -252,15 +252,15 @@ public class JsonSqlAggregateTest {
         @Test
         public void test_nullKey() {
             // null literal key
-            assertThatThrownBy(() -> sqlService.execute("SELECT JSON_OBJECTAGG(NULL VALUE 'v')"))
-                    .hasMessage("NULL key is not supported for JSON_OBJECTAGG");
+            assertThatThrownBy(() -> sqlService.execute("SELECT JSON_OBJECTAGG(NULL VALUE 'v')").iterator().next())
+                    .hasMessageContaining("NULL key is not supported for JSON_OBJECTAGG");
 
-            TestBatchSqlConnector.create(sqlService, "m", asList("k", "v"), asList(VARCHAR, VARCHAR),
+            TestBatchSqlConnector.create(sqlService, "m1", asList("k", "v"), asList(VARCHAR, VARCHAR),
                     singletonList(new String[]{null, "v1"}));
 
             // null column value for key
-            assertThatThrownBy(() -> sqlService.execute("SELECT JSON_OBJECTAGG(k VALUE v) FROM m"))
-                    .hasMessage("NULL key is not supported for JSON_OBJECTAGG");
+            assertThatThrownBy(() -> sqlService.execute("SELECT JSON_OBJECTAGG(k VALUE v) FROM m1").iterator().next())
+                    .hasMessageContaining("NULL key is not supported for JSON_OBJECTAGG");
         }
 
         @Test
