@@ -37,8 +37,6 @@ public class MutableByte {
 
     @Override
     public String toString() {
-        return "MutableByte{" +
-                "value=" + value +
-                '}';
+        return "MutableByte{value=" + value + '}';
     }
 }
