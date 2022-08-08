@@ -40,7 +40,7 @@ public interface OutboxInternal extends Outbox {
     void unblock();
 
     /**
-     * Returns the timestamp of the last forwarded watermark.
+     * Returns the timestamp of the last forwarded watermark for the given key.
      * <p>
      * If there was no watermark added, it returns {@code Long.MIN_VALUE}. Can
      * be called from a concurrent thread.

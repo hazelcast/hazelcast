@@ -19,6 +19,7 @@ package com.hazelcast.internal.util;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 
+import javax.annotation.Nonnull;
 import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -195,7 +196,7 @@ public final class CollectionUtil {
     /**
      * Returns true, if the two collections contain any common item.
      */
-    public static <T> boolean hasNonEmptyIntersection(Collection<T> a, Collection<T> b) {
+    public static <T> boolean hasNonEmptyIntersection(@Nonnull Collection<T> a, @Nonnull Collection<T> b) {
         for (T t : a) {
             if (b.contains(t)) {
                 return true;

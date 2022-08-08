@@ -6470,6 +6470,7 @@ public class MemberCompatibilityTest_2_0 {
         assertTrue(isEqual(aString, parameters.mergePolicy));
         assertTrue(isEqual(anInt, parameters.mergeBatchSize));
         assertFalse(parameters.isStatisticsEnabledExists);
+        assertFalse(parameters.isCapacityPolicyExists);
     }
 
     @Test
@@ -6605,6 +6606,7 @@ public class MemberCompatibilityTest_2_0 {
         assertTrue(isEqual(anEventJournalConfig, parameters.eventJournalConfig));
         assertTrue(isEqual(aHotRestartConfig, parameters.hotRestartConfig));
         assertFalse(parameters.isMerkleTreeConfigExists);
+        assertFalse(parameters.isDataPersistenceConfigExists);
     }
 
     @Test

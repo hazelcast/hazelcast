@@ -128,7 +128,8 @@ public class JetSqlRow implements IdentifiedDataSerializable {
     @Override
     public int hashCode() {
         // This is a dummy value that will not break the contract, but the object is not supposed
-        // to be used as a hash map key.
+        // to be used as a hash map key. Ideally we would throw an UOE here, but we use the instances
+        // as a map key in tests
         return 0;
     }
 

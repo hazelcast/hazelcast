@@ -18,28 +18,20 @@ package com.hazelcast.jet.sql.impl.processors;
 
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.collection.Object2LongHashMap;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
+import java.util.Collections;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -59,8 +51,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     final Object2LongHashMap<Byte> lastEmittedWm = new Object2LongHashMap<>(Long.MIN_VALUE);
 
     // NOTE: we are using LinkedList, because we are expecting:
-    //  (1) removals in the middle,
-    //  (2) traversing whole list without index-based access
+    //  (1) removals at any position,
+    //  (2) no index-based access, only full traversal
     // package-visible for tests
     @SuppressWarnings("unchecked") final List<JetSqlRow>[] buffer = new List[]{new LinkedList<>(), new LinkedList<>()};
 
@@ -75,7 +67,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private Iterator<JetSqlRow> iterator;
     private JetSqlRow currItem;
 
-    private final Set<JetSqlRow> unusedEventsTracker = new HashSet<>();
+    private final Set<JetSqlRow> unusedEventsTracker = Collections.newSetFromMap(new IdentityHashMap<>());
 
     private final Queue<Object> pendingOutput = new ArrayDeque<>();
     private JetSqlRow emptyLeftRow;
@@ -110,8 +102,9 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         }
 
         for (Byte wmKey : postponeTimeMap.keySet()) {
-            wmState.put(wmKey, Long.MIN_VALUE + 1); // +1 because Object2LongHashMap doesn't accept missingValue
-            lastEmittedWm.put(wmKey, Long.MIN_VALUE + 1); // +1 because Object2LongHashMap doesn't accept missingValue
+            // using MIN_VALUE + 1 because Object2LongHashMap uses MIN_VALUE as a missing value, and it cannot be used as a value
+            wmState.put(wmKey, Long.MIN_VALUE + 1);
+            lastEmittedWm.put(wmKey, Long.MIN_VALUE + 1);
         }
 
         // no key must be on both sides
@@ -145,22 +138,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         emptyRightRow = new JetSqlRow(ss, new Object[columnCounts.f1()]);
     }
 
-    public static StreamToStreamJoinProcessorSupplier supplier(
-            final JetJoinInfo joinInfo,
-            final Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors,
-            final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors,
-            final Map<Byte, Map<Byte, Long>> postponeTimeMap,
-            final int leftInputColumnCount,
-            final int rightInputColumnCount) {
-        return new StreamToStreamJoinProcessorSupplier(
-                joinInfo,
-                leftTimeExtractors,
-                rightTimeExtractors,
-                postponeTimeMap,
-                leftInputColumnCount,
-                rightInputColumnCount);
-    }
-
+    @SuppressWarnings("checkstyle:NestedIfDepth")
     @Override
     public boolean tryProcess(int ordinal, @Nonnull Object item) {
         assert ordinal == 0 || ordinal == 1; // bad DAG
@@ -168,36 +146,36 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             return processPendingOutput();
         }
 
-        // drop the event, if it's late
-        for (Entry<Byte, ToLongFunctionEx<JetSqlRow>> en : timeExtractors(ordinal).entrySet()) {
-            long wmValue = lastReceivedWm.getValue(en.getKey());
-            long time = en.getValue().applyAsLong((JetSqlRow) item);
-            if (time < wmValue) {
-                logLateEvent(getLogger(), en.getKey(), wmValue, item);
-                return true;
-            }
-        }
-
-        // if the item is not late, but would already be removed from the buffer, don't add it to the buffer
-        for (Entry<Byte, ToLongFunctionEx<JetSqlRow>> en : timeExtractors(ordinal).entrySet()) {
-            long joinTimeLimit = wmState.get(en.getKey());
-            long time = en.getValue().applyAsLong((JetSqlRow) item);
-            if (time < joinTimeLimit) {
-                if (!joinInfo.isInner()) {
-                    JetSqlRow joinedRow = composeRowWithNulls((JetSqlRow) item, ordinal);
-                    if (joinedRow != null && !tryEmit(joinedRow)) {
-                        pendingOutput.add(joinedRow);
-                        return false;
-                    }
-                }
-                return true;
-            }
-        }
-
-        // having side input, traverse the opposite buffer
         if (currItem == null) {
+            // drop the event, if it's late according to any watermarked value it contains
+            for (Entry<Byte, ToLongFunctionEx<JetSqlRow>> en : timeExtractors(ordinal).entrySet()) {
+                long wmValue = lastReceivedWm.getValue(en.getKey());
+                long time = en.getValue().applyAsLong((JetSqlRow) item);
+                if (time < wmValue) {
+                    logLateEvent(getLogger(), en.getKey(), wmValue, item);
+                    return true;
+                }
+            }
+
+            // if the item is not late, but would already be removed from the buffer, don't add it to the buffer
+            for (Entry<Byte, ToLongFunctionEx<JetSqlRow>> en : timeExtractors(ordinal).entrySet()) {
+                long joinTimeLimit = wmState.get(en.getKey());
+                long time = en.getValue().applyAsLong((JetSqlRow) item);
+                if (time < joinTimeLimit) {
+                    if (!joinInfo.isInner()) {
+                        JetSqlRow joinedRow = composeRowWithNulls((JetSqlRow) item, ordinal);
+                        if (joinedRow != null && !tryEmit(joinedRow)) {
+                            pendingOutput.add(joinedRow);
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+            }
+
             currItem = (JetSqlRow) item;
             buffer[ordinal].add(currItem);
+            // we'll emit joined rows from currItem and the buffered rows from the opposite side
             iterator = buffer[1 - ordinal].iterator();
             if (ordinal == outerJoinSide) {
                 unusedEventsTracker.add(currItem);
@@ -209,7 +187,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             JetSqlRow preparedOutput = ExpressionUtil.join(
                     ordinal == 0 ? currItem : oppositeBufferItem,
                     ordinal == 0 ? oppositeBufferItem : currItem,
-                    joinInfo.nonEquiCondition(),
+                    joinInfo.condition(),
                     evalContext);
 
             if (preparedOutput == null) {
@@ -237,16 +215,14 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         }
 
         assert wmState.containsKey(watermark.key()) : "unexpected watermark key: " + watermark.key();
-        assert wmState.get(watermark.key()) < watermark.timestamp() : "non-monotonic watermark : " + watermark;
+        assert wmState.get(watermark.key()) < watermark.timestamp() : "non-monotonic watermark: " + watermark;
 
         lastReceivedWm.put((Byte) watermark.key(), watermark.timestamp());
 
-        if (!postponeTimeMap.get(watermark.key()).isEmpty()) {
-            // 5.1 : update wm state
-            applyToWmState(watermark);
-
-            // TODO optimization: don't need to clean up if nothing was changed in wmState in the previous call
-            //   Or better: don't need to clean up particular edge, if nothing was changed for that edge.
+        // 5.1 : update wm state
+        boolean modified = applyToWmState(watermark);
+        if (modified) {
+            // TODO don't need to clean up particular edge, if nothing was changed for that edge
             clearExpiredItemsInBuffer(0);
             clearExpiredItemsInBuffer(1);
         }
@@ -278,17 +254,26 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         return true;
     }
 
-    private void applyToWmState(Watermark watermark) {
+    /**
+     * @return Returns true, if the state was modified
+     */
+    private boolean applyToWmState(Watermark watermark) {
+        boolean modified = false;
         Byte inputWmKey = watermark.key();
         Map<Byte, Long> wmKeyMapping = postponeTimeMap.get(inputWmKey);
         for (Map.Entry<Byte, Long> entry : wmKeyMapping.entrySet()) {
             Long newLimit = watermark.timestamp() - entry.getValue();
-            wmState.merge(entry.getKey(), newLimit, Long::max);
+            Long oldLimit = wmState.get(entry.getKey());
+            if (newLimit > oldLimit) {
+                wmState.put(entry.getKey(), newLimit);
+                modified = true;
+            }
         }
+        return modified;
     }
 
     private long findMinimumBufferTime(byte key) {
-        // TODO optimization: use PriorityQueues. Or at least one PriorityQueue in case of single WM key.
+        // TODO optimization: use PriorityQueues. At least in case of a single WM key.
         ToLongFunctionEx<JetSqlRow> extractor = leftTimeExtractors.get(key);
         int ordinal = 0;
         if (extractor == null) {
@@ -328,7 +313,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         buffer[ordinal].removeIf(row -> {
             for (int idx = 0; idx < extractors.length; idx++) {
                 if (extractors[idx].applyAsLong(row) < limits[idx]) {
-                    if (!joinInfo.isInner() && unusedEventsTracker.remove(row)) {
+                    if (outerJoinSide == ordinal && unusedEventsTracker.remove(row)) {
                         // 5.4 : If doing an outer join, emit events removed from the buffer,
                         // with `null`s for the other side, if the event was never joined.
                         JetSqlRow joinedRow = composeRowWithNulls(row, ordinal);
@@ -369,68 +354,5 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             );
         }
         return joinedRow;
-    }
-
-    private static final class StreamToStreamJoinProcessorSupplier implements ProcessorSupplier, DataSerializable {
-        private JetJoinInfo joinInfo;
-        private Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors;
-        private Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors;
-        private Map<Byte, Map<Byte, Long>> postponeTimeMap;
-        private int leftInputColumnCount;
-        private int rightInputColumnCount;
-
-        @SuppressWarnings("unused") // for deserialization
-        private StreamToStreamJoinProcessorSupplier() {
-        }
-
-        private StreamToStreamJoinProcessorSupplier(final JetJoinInfo joinInfo,
-                                                    final Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors,
-                                                    final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors,
-                                                    final Map<Byte, Map<Byte, Long>> postponeTimeMap,
-                                                    final int leftInputColumnCount,
-                                                    final int rightInputColumnCount) {
-            this.joinInfo = joinInfo;
-            this.leftTimeExtractors = leftTimeExtractors;
-            this.rightTimeExtractors = rightTimeExtractors;
-            this.postponeTimeMap = postponeTimeMap;
-            this.leftInputColumnCount = leftInputColumnCount;
-            this.rightInputColumnCount = rightInputColumnCount;
-
-        }
-
-        @Nonnull @Override
-        public Collection<? extends Processor> get(int count) {
-            List<StreamToStreamJoinP> processors = new ArrayList<>(count);
-            for (int i = 0; i < count; i++) {
-                processors.add(
-                        new StreamToStreamJoinP(
-                                joinInfo,
-                                leftTimeExtractors,
-                                rightTimeExtractors,
-                                postponeTimeMap,
-                                Tuple2.tuple2(leftInputColumnCount, rightInputColumnCount)));
-            }
-            return processors;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeObject(joinInfo);
-            SerializationUtil.writeMap(leftTimeExtractors, out);
-            SerializationUtil.writeMap(rightTimeExtractors, out);
-            SerializationUtil.writeMap(postponeTimeMap, out);
-            out.writeInt(leftInputColumnCount);
-            out.writeInt(rightInputColumnCount);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            joinInfo = in.readObject();
-            leftTimeExtractors = SerializationUtil.readMap(in);
-            rightTimeExtractors = SerializationUtil.readMap(in);
-            postponeTimeMap = SerializationUtil.readMap(in);
-            leftInputColumnCount = in.readInt();
-            rightInputColumnCount = in.readInt();
-        }
     }
 }

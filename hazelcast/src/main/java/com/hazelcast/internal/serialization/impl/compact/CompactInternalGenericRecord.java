@@ -166,7 +166,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Override
     @Nonnull
-    public GenericRecordBuilder cloneWithBuilder() {
+    public GenericRecordBuilder newBuilderWithClone() {
         TreeMap<String, Object> objects = new TreeMap<>();
         for (String fieldName : getFieldNames()) {
             objects.put(fieldName, readAny(fieldName));

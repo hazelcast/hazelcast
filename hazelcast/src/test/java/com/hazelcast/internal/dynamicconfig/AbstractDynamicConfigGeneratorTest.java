@@ -20,6 +20,7 @@ import com.hazelcast.collection.QueueStore;
 import com.hazelcast.collection.QueueStoreFactory;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.AwsConfig;
+import com.hazelcast.config.BTreeIndexConfig;
 import com.hazelcast.config.CacheDeserializedValues;
 import com.hazelcast.config.CachePartitionLostListenerConfig;
 import com.hazelcast.config.CacheSimpleConfig;
@@ -205,6 +206,25 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
 
         Config decConfig = getNewConfigViaGenerator(config);
         MapConfig actualConfig = decConfig.getMapConfig("testMapWithEnabledMerkleTreeConfig");
+        assertEquals(expectedConfig, actualConfig);
+    }
+
+    @Test
+    public void testMapWithBTreeConfig() {
+        MapConfig expectedConfig = newMapConfig()
+                .setName("testMapWithBTreeConfig");
+        IndexConfig indexConfig = new IndexConfig();
+        indexConfig.setAttributes(singletonList("age"));
+        BTreeIndexConfig bTreeIndexConfig = indexConfig.getBTreeIndexConfig();
+        bTreeIndexConfig.getMemoryTierConfig().setCapacity(Capacity.of(1337, MemoryUnit.GIGABYTES));
+        bTreeIndexConfig.setPageSize(Capacity.of(4871, MemoryUnit.GIGABYTES));
+        expectedConfig.addIndexConfig(indexConfig);
+
+        Config config = new Config()
+                .addMapConfig(expectedConfig);
+
+        Config decConfig = getNewConfigViaGenerator(config);
+        MapConfig actualConfig = decConfig.getMapConfig("testMapWithBTreeConfig");
         assertEquals(expectedConfig, actualConfig);
     }
 

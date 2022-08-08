@@ -109,6 +109,24 @@
                 "unique-key": "id",
                 "unique-key-transformation": "RAW"
               }
+            },
+            {
+              "type": "SORTED",
+              "attributes": [
+                "name"
+              ],
+              "btree-index": {
+                "page-size": {
+                  "value": 16,
+                  "unit": "KILOBYTES"
+                },
+                "memory-tier": {
+                  "capacity": {
+                    "value": 160,
+                    "unit": "MEGABYTES"
+                  }
+                }
+              }
             }
           ],
           "attributes": {

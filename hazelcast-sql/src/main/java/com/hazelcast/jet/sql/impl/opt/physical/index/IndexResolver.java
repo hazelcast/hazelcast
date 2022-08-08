@@ -475,7 +475,7 @@ public final class IndexResolver {
                                 singletonList(ConstantExpression.FALSE), singletonList(false)
                         )),
                         new IndexEqualsFilter(new IndexFilterValue(
-                                singletonList(ConstantExpression.create(null, QueryDataType.BOOLEAN)), singletonList(true)
+                                singletonList(ConstantExpression.NULL), singletonList(true)
                         ))
                 );
 
@@ -489,7 +489,7 @@ public final class IndexResolver {
                                 singletonList(ConstantExpression.TRUE), singletonList(false)
                         )),
                         new IndexEqualsFilter(new IndexFilterValue(
-                                singletonList(ConstantExpression.create(null, QueryDataType.BOOLEAN)), singletonList(true)
+                                singletonList(ConstantExpression.NULL), singletonList(true)
                         ))
                 );
         }

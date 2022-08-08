@@ -40,6 +40,8 @@ public final class ConstantExpression<T> implements Expression<T>, IdentifiedDat
     public static final ConstantExpression<Boolean> TRUE = (ConstantExpression<Boolean>) create(true, QueryDataType.BOOLEAN);
     @SuppressWarnings("unchecked")
     public static final ConstantExpression<Boolean> FALSE = (ConstantExpression<Boolean>) create(false, QueryDataType.BOOLEAN);
+    @SuppressWarnings("unchecked")
+    public static final ConstantExpression<Boolean> NULL = (ConstantExpression<Boolean>) create(null, QueryDataType.BOOLEAN);
 
     private QueryDataType type;
     private T value;

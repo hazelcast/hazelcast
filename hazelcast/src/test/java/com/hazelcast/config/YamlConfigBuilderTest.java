@@ -31,6 +31,7 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.config.SchemaViolationConfigurationException;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
@@ -1220,7 +1221,7 @@ public class YamlConfigBuilderTest
                 + "  map:\n"
                 + "    mymap:\n"
                 + "      map-store:"
-                + (useDefault ? " {}" : "\n        write-coalescing: " + String.valueOf(value) + "\n");
+                + (useDefault ? " {}" : "\n        write-coalescing: " + value + "\n");
     }
 
     @Override
@@ -2598,14 +2599,31 @@ public class YamlConfigBuilderTest
                 + "          attributes:\n"
                 + "            - \"name\"\n"
                 + "        - attributes:\n"
-                + "          - \"age\"\n";
+                + "          - \"age\"\n"
+                + "        - type: SORTED\n"
+                + "          attributes:\n"
+                + "            - \"age\"\n"
+                + "          btree-index:\n"
+                + "            page-size:\n"
+                + "              value: 1337\n"
+                + "              unit: BYTES\n"
+                + "            memory-tier: \n"
+                + "              capacity: \n"
+                + "                value: 1138\n"
+                + "                unit: BYTES\n"
+                ;
 
         Config config = buildConfig(yaml);
         MapConfig mapConfig = config.getMapConfig("people");
 
-        assertFalse(mapConfig.getIndexConfigs().isEmpty());
-        assertIndexEqual("name", false, mapConfig.getIndexConfigs().get(0));
-        assertIndexEqual("age", true, mapConfig.getIndexConfigs().get(1));
+        List<IndexConfig> indexConfigs = mapConfig.getIndexConfigs();
+        assertFalse(indexConfigs.isEmpty());
+        assertIndexEqual("name", false, indexConfigs.get(0));
+        assertIndexEqual("age", true, indexConfigs.get(1));
+        assertIndexEqual("age", true, indexConfigs.get(2));
+        BTreeIndexConfig bTreeIndexConfig = indexConfigs.get(2).getBTreeIndexConfig();
+        assertEquals(Capacity.of(1337, MemoryUnit.BYTES), bTreeIndexConfig.getPageSize());
+        assertEquals(Capacity.of(1138, MemoryUnit.BYTES), bTreeIndexConfig.getMemoryTierConfig().getCapacity());
     }
 
     @Override

@@ -28,6 +28,7 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
+import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -109,7 +110,7 @@ public class CreateDagVisitor {
     public CreateDagVisitor(
             NodeEngine nodeEngine,
             QueryParameterMetadata parameterMetadata,
-            WatermarkKeysAssigner watermarkKeysAssigner
+            @Nullable WatermarkKeysAssigner watermarkKeysAssigner
     ) {
         this.nodeEngine = nodeEngine;
         this.localMemberAddress = nodeEngine.getThisAddress();
@@ -175,13 +176,16 @@ public class CreateDagVisitor {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(table);
 
+        BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> policyProvider = rel.eventTimePolicyProvider();
+        byte watermarkKey = rel.getWatermarkKey();
         return getJetSqlConnector(table).fullScanReader(
                 dag,
                 table,
                 rel.filter(parameterMetadata),
                 rel.projection(parameterMetadata),
-                rel.eventTimePolicyProvider(),
-                rel.getWatermarkKey()
+                policyProvider != null
+                        ? context -> policyProvider.apply(context, watermarkKey)
+                        : null
         );
     }
 

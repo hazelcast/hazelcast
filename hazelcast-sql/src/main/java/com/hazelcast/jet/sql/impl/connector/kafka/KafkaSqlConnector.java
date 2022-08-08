@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
-import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -123,8 +123,7 @@ public class KafkaSqlConnector implements SqlConnector {
             @Nonnull Table table0,
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projections,
-            @Nullable BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
-            byte watermarkKey
+            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
     ) {
         KafkaTable table = (KafkaTable) table0;
 
@@ -141,8 +140,7 @@ public class KafkaSqlConnector implements SqlConnector {
                                 table.keyQueryDescriptor(),
                                 table.valueQueryDescriptor(),
                                 predicate,
-                                projections,
-                                watermarkKey
+                                projections
                         )
                 )
         );
