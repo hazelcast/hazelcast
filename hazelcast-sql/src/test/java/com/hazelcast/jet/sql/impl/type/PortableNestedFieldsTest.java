@@ -17,12 +17,10 @@
 package com.hazelcast.jet.sql.impl.type;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecordBuilder;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
-import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
@@ -83,16 +81,7 @@ public class PortableNestedFieldsTest extends SqlTestSupport {
                 + "'valuePortableFactoryId'='1', "
                 + "'valuePortableClassId'='1')");
 
-        final GenericRecord office = new PortableGenericRecordBuilder(officeType)
-                .setInt64("id", 1)
-                .setString("name", "office1")
-                .build();
-        final GenericRecord organization = new PortableGenericRecordBuilder(organizationType)
-                .setInt64("id", 1)
-                .setString("name", "organization1")
-                .setGenericRecord("office", office)
-                .build();
-        instance().getSql().execute("INSERT INTO test (__key, id, name, organization) VALUES (1, 1, 'user1', ?)", organization);
+        instance().getSql().execute("INSERT INTO test VALUES (1, 1, 'user1', (1, 'organization1', (1, 'office1')))");
 
         assertRowsAnyOrder("SELECT (organization).name FROM test", rows(1, "organization1"));
         assertRowsAnyOrder("SELECT (organization).office.name FROM test", rows(1, "office1"));

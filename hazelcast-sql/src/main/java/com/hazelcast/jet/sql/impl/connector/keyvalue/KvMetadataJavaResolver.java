@@ -38,7 +38,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
@@ -158,17 +157,13 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             return Stream.of(new MappingField(name, QueryDataType.OBJECT, name));
         }
 
-        final List<MappingField> topLevelFields = fieldsInClass.entrySet().stream()
-                .map(classField -> {
-                    QueryPath path = new QueryPath(classField.getKey(), isKey);
-                    QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(classField.getValue());
-                    String name = classField.getKey();
+        return fieldsInClass.entrySet().stream().map(classField -> {
+            QueryPath path = new QueryPath(classField.getKey(), isKey);
+            QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(classField.getValue());
+            String name = classField.getKey();
 
-                    return new MappingField(name, type, path.toString());
-                }).collect(Collectors.toList());
-
-        // TODO [viliam] Can't we return the stream directly, rather than materializing it first?
-        return topLevelFields.stream();
+            return new MappingField(name, type, path.toString());
+        });
     }
 
     private Stream<MappingField> resolveAndValidateObjectFields(
@@ -214,7 +209,6 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
         QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(clazz);
         Map<QueryPath, MappingField> fields = extractFields(resolvedFields, isKey);
 
-        // TODO: something more generic?
         if (type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT) && !resolvedFields.isEmpty()) {
             final String topLevelFieldName = isKey ? KEY : VALUE;
             final MappingField topLevelField = resolvedFields.stream()
@@ -251,7 +245,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             return new KvMetadata(
                     fields,
                     GenericQueryTargetDescriptor.DEFAULT,
-                    new HazelcastObjectUpsertTargetDescriptor(type)
+                    HazelcastObjectUpsertTargetDescriptor.INSTANCE
             );
         } else {
             return new KvMetadata(

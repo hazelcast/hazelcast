@@ -16,9 +16,16 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
+import com.hazelcast.internal.serialization.impl.portable.FieldDefinitionImpl;
+import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
+import com.hazelcast.jet.sql.impl.schema.TypesUtils;
 import com.hazelcast.jet.sql.impl.type.converter.ToConverter;
 import com.hazelcast.jet.sql.impl.type.converter.ToConverters;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
+import com.hazelcast.nio.serialization.FieldDefinition;
+import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.sql.impl.QueryException;
@@ -106,12 +113,171 @@ public final class UpsertTargetUtils {
     public static GenericRecord convertRowToCompactType(RowValue rowValue, QueryDataType targetDataType) {
         final GenericRecordBuilder recordBuilder = GenericRecordBuilder.compact(targetDataType.getObjectTypeMetadata());
 
-        setFields(rowValue, targetDataType, recordBuilder);
+        setCompactFields(rowValue, targetDataType, recordBuilder);
 
         return recordBuilder.build();
     }
 
-    private static void setFields(RowValue rowValue, QueryDataType targetDataType, GenericRecordBuilder recordBuilder) {
+    public static GenericRecord convertRowToPortableType(RowValue rowValue, QueryDataType queryDataType) {
+        final ClassDefinition classDefinition = toPortableClassDefinition(queryDataType);
+        final GenericRecordBuilder recordBuilder = GenericRecordBuilder.portable(classDefinition);
+
+        setPortableFields(recordBuilder, rowValue, classDefinition, queryDataType);
+
+        return recordBuilder.build();
+    }
+
+    private static void setPortableFields(
+            GenericRecordBuilder builder,
+            RowValue rowValue,
+            ClassDefinition classDefinition,
+            QueryDataType queryDataType
+    ) {
+        for (int i = 0; i < classDefinition.getFieldCount(); i++) {
+            final Object value = rowValue.getValues().get(i);
+            final FieldDefinition field = classDefinition.getField(i);
+            final String name = field.getName();
+
+            switch (field.getType()) {
+                case UTF:
+                    builder.setString(name, value == null ? null : (String) QueryDataType.VARCHAR.convert(value));
+                    break;
+                case BOOLEAN:
+                    builder.setBoolean(name, value != null && (boolean) value);
+                    break;
+                case BYTE:
+                    builder.setInt8(name, value == null ? (byte) 0 : (byte) value);
+                    break;
+                case SHORT:
+                    builder.setInt16(name, value == null ? (short) 0 : (short) value);
+                    break;
+                case CHAR:
+                    builder.setChar(name, value == null ? (char) 0 : (char) value);
+                    break;
+                case INT:
+                    builder.setInt32(name, value == null ? 0 : (int) value);
+                    break;
+                case LONG:
+                    builder.setInt64(name, value == null ? 0L : (long) value);
+                    break;
+                case FLOAT:
+                    builder.setFloat32(name, value == null ? 0F : (float) value);
+                    break;
+                case DOUBLE:
+                    builder.setFloat64(name, value == null ? 0D : (double) value);
+                    break;
+                case DECIMAL:
+                    builder.setDecimal(name, value == null ? null : (BigDecimal) value);
+                    break;
+                case TIME:
+                    builder.setTime(name, value == null ? null : (LocalTime) value);
+                    break;
+                case DATE:
+                    builder.setDate(name, value == null ? null : (LocalDate) value);
+                    break;
+                case TIMESTAMP:
+                    builder.setTimestamp(name, value == null ? null : (LocalDateTime) value);
+                    break;
+                case TIMESTAMP_WITH_TIMEZONE:
+                    builder.setTimestampWithTimezone(name, value == null ? null : (OffsetDateTime) value);
+                    break;
+                case PORTABLE:
+                    if (value instanceof RowValue) {
+                        final QueryDataType fieldQDT = queryDataType.getObjectFields().get(i).getDataType();
+                        final ClassDefinition fieldClassDefinition = toPortableClassDefinition(fieldQDT);
+                        final GenericRecordBuilder fieldBuilder = GenericRecordBuilder.portable(fieldClassDefinition);
+
+                        setPortableFields(fieldBuilder, (RowValue) value, fieldClassDefinition, fieldQDT);
+                        builder.setGenericRecord(name, fieldBuilder.build());
+                    } else if (value instanceof GenericRecord) {
+                        builder.setGenericRecord(name, (GenericRecord) value);
+                    } else {
+                        throw QueryException.error("Can not set non-GenericRecord or RowValue to field " + name);
+                    }
+                    break;
+                default:
+                    throw QueryException.error("Unsupported Portable Nested Fields upsert target type: "
+                            + field.getType());
+            }
+        }
+    }
+
+    public static ClassDefinition toPortableClassDefinition(final QueryDataType queryDataType) {
+        final Tuple3<Integer, Integer, Integer> ids = TypesUtils
+                .decodePortableId(queryDataType.getObjectTypeMetadata());
+        final ClassDefinitionBuilder builder = new ClassDefinitionBuilder(ids.f0(), ids.f1(), ids.f2());
+
+        for (int i = 0; i < queryDataType.getObjectFields().size(); i++) {
+            final String name = queryDataType.getObjectFields().get(i).getName();
+            final QueryDataType type = queryDataType.getObjectFields().get(i).getDataType();
+
+            switch (type.getTypeFamily()) {
+                case BOOLEAN:
+                    builder.addBooleanField(name);
+                    break;
+                case TINYINT:
+                    builder.addByteField(name);
+                    break;
+                case SMALLINT:
+                    builder.addShortField(name);
+                    break;
+                case INTEGER:
+                    builder.addIntField(name);
+                    break;
+                case BIGINT:
+                    builder.addLongField(name);
+                    break;
+                case REAL:
+                    builder.addFloatField(name);
+                    break;
+                case DOUBLE:
+                    builder.addDoubleField(name);
+                    break;
+                case DECIMAL:
+                    builder.addDecimalField(name);
+                    break;
+                case VARCHAR:
+                    builder.addStringField(name);
+                    break;
+                case TIME:
+                    builder.addTimeField(name);
+                    break;
+                case DATE:
+                    builder.addDateField(name);
+                    break;
+                case TIMESTAMP:
+                    builder.addTimestampField(name);
+                    break;
+                case TIMESTAMP_WITH_TIME_ZONE:
+                    builder.addTimestampWithTimezoneField(name);
+                    break;
+                case OBJECT:
+                    if (type.isCustomType()) {
+                        final Tuple3<Integer, Integer, Integer> portableFieldIds =
+                                TypesUtils.decodePortableId(type.getObjectTypeMetadata());
+                        builder.addField(new FieldDefinitionImpl(
+                                i,
+                                name,
+                                FieldType.PORTABLE,
+                                portableFieldIds.f0(),
+                                portableFieldIds.f1(),
+                                portableFieldIds.f2()
+                        ));
+                    }
+                    break;
+                default:
+                    throw QueryException.error("Unsupported Nested Fields Portable data type: " + type);
+            }
+        }
+
+        return builder.build();
+    }
+
+    private static void setCompactFields(
+            final RowValue rowValue,
+            final QueryDataType targetDataType,
+            final GenericRecordBuilder recordBuilder
+    ) {
         for (int i = 0; i < targetDataType.getObjectFields().size(); i++) {
             final QueryDataType.QueryDataTypeField field = targetDataType.getObjectFields().get(i);
             final Object fieldValue = rowValue.getValues().get(i);
@@ -158,7 +324,7 @@ public final class UpsertTargetUtils {
                 case OBJECT:
                     final GenericRecordBuilder nestedRecordBuilder = GenericRecordBuilder
                             .compact(field.getDataType().getObjectTypeMetadata());
-                    setFields((RowValue) fieldValue, field.getDataType(), nestedRecordBuilder);
+                    setCompactFields((RowValue) fieldValue, field.getDataType(), nestedRecordBuilder);
                     recordBuilder.setGenericRecord(field.getName(), nestedRecordBuilder.build());
                     break;
                 case INTERVAL_YEAR_MONTH:

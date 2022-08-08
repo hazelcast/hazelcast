@@ -30,10 +30,6 @@ public class HazelcastObjectUpsertTarget implements UpsertTarget {
 
     public HazelcastObjectUpsertTarget() { }
 
-    public HazelcastObjectUpsertTarget(final QueryDataType queryDataType) {
-        // TODO precompute injectors and perform checks
-    }
-
     @Override
     public UpsertInjector createInjector(@Nullable final String path, final QueryDataType queryDataType) {
         return value -> {

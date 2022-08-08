@@ -120,6 +120,7 @@ public class KvMetadataResolvers {
         Map<String, MappingField> fields = concat(keyFields, valueFields)
                 .collect(LinkedHashMap::new, (map, field) -> map.putIfAbsent(field.name(), field), Map::putAll);
 
+        // TODO: split to key and value fields post-processing, filter out unsupported formats (Avro, Json).
         // TODO: remove or move to base interface's extractFields
         for (final String fieldName : fields.keySet()) {
             final MappingField field = fields.get(fieldName);

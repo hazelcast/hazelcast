@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
+import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
@@ -140,6 +141,17 @@ public final class TypesUtils {
 
     public static String encodePortableId(final int factoryId, final int classId, final int version) {
         return factoryId + ":" + classId + ":" + version;
+    }
+
+    public static Tuple3<Integer, Integer, Integer> decodePortableId(final String encoded) {
+        final String[] components = encoded.split(":");
+        assert components.length == 3 : "Number of Portable ID components should always be 3";
+
+        return Tuple3.tuple3(
+                Integer.parseInt(components[0]),
+                Integer.parseInt(components[1]),
+                Integer.parseInt(components[2])
+        );
     }
 
     public static Type convertJavaClassToType(

@@ -19,22 +19,17 @@ package com.hazelcast.jet.sql.impl.inject;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
 
 public class HazelcastObjectUpsertTargetDescriptor implements UpsertTargetDescriptor {
-    private QueryDataType dataType;
+    public static final HazelcastObjectUpsertTargetDescriptor INSTANCE = new HazelcastObjectUpsertTargetDescriptor();
 
     public HazelcastObjectUpsertTargetDescriptor() { }
 
-    public HazelcastObjectUpsertTargetDescriptor(final QueryDataType dataType) {
-        this.dataType = dataType;
-    }
-
     @Override
     public UpsertTarget create(final InternalSerializationService serializationService) {
-        return new HazelcastObjectUpsertTarget(dataType);
+        return new HazelcastObjectUpsertTarget();
     }
 
     @Override

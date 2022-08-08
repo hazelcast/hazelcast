@@ -25,15 +25,12 @@ import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.jet.sql.impl.schema.TypesUtils;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
-import com.hazelcast.nio.serialization.FieldDefinition;
-import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
-import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nonnull;
@@ -101,25 +98,10 @@ final class MetadataPortableResolver implements KvMetadataResolver {
         return clazz.getFieldNames().stream()
                 .map(name -> {
                     QueryPath path = new QueryPath(name, isKey);
-                    FieldType portableFieldType = clazz.getFieldType(name);
-                    QueryDataType type = TypesUtils.resolvePortableFieldType(portableFieldType);
+                    QueryDataType type = TypesUtils.resolvePortableFieldType(clazz.getFieldType(name));
 
                     return new MappingField(name, type, path.toString());
                 });
-    }
-
-    private QueryDataType resolveNestedPortableFieldType(final FieldDefinition sourceField, TypesStorage typesStorage) {
-        final Type portableType = typesStorage.getTypeByPortableClass(
-                sourceField.getFactoryId(),
-                sourceField.getClassId(),
-                sourceField.getVersion()
-        );
-
-        if (portableType == null) {
-            return QueryDataType.OBJECT;
-        }
-
-        return TypesUtils.convertTypeToQueryDataType(portableType, typesStorage);
     }
 
     private static Stream<MappingField> resolveAndValidateFields(
