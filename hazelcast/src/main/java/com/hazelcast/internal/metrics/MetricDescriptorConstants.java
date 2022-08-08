@@ -578,6 +578,8 @@ public final class MetricDescriptorConstants {
     public static final String TSTORE_DEVICE_USED_SPACE = "tstore.device.usedSpace";
     public static final String TSTORE_DEVICE_FREE_SPACE = "tstore.device.freeSpace";
     public static final String TSTORE_DEVICE_MAX_SPACE = "tstore.device.maxSpace";
+    public static final String TSTORE_DEVICE_USAGE = "tstore.device.usage";
+    public static final String TSTORE_HLOG_LENGTH = "tstore.hlog.length";
     public static final String TSTORE_HLOG_PAGE_WRITE_DURATION_AVG = "tstore.hlog.pageWriteDuration.avg";
     public static final String TSTORE_HLOG_PAGE_WRITE_DURATION_MIN = "tstore.hlog.pageWriteDuration.min";
     public static final String TSTORE_HLOG_PAGE_WRITE_DURATION_MAX = "tstore.hlog.pageWriteDuration.max";
@@ -610,8 +612,6 @@ public final class MetricDescriptorConstants {
     public static final String TSTORE_HLOG_PAGING_FREQUENCY_AVG = "tstore.hlog.paging.frequency.avg";
     public static final String TSTORE_HLOG_PAGING_FREQUENCY_MIN = "tstore.hlog.paging.frequency.min";
     public static final String TSTORE_HLOG_PAGING_FREQUENCY_MAX = "tstore.hlog.paging.frequency.max";
-    public static final String TSTORE_DISK_USAGE = "tstore.disk.usage";
-    public static final String TSTORE_LOG_LENGTH = "tstore.log.length";
     // ===[/TSTORE]=====================================================
 
     // ===[WAN]=========================================================
