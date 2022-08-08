@@ -20,9 +20,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
-import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -106,12 +104,6 @@ public class QueryUtilsTest extends CoreSqlTestSupport {
             assertEquals(SqlErrorCode.PARTITION_DISTRIBUTION, e.getCode());
             assertTrue(e.getMessage(), e.getMessage().startsWith("Partition is not assigned to any member"));
         }
-    }
-
-    @Test
-    public void test_whenMappingTargetDisconnectedException_then_connectionProblemIsSetAsCode() {
-        HazelcastSqlException sqlException = QueryUtils.toPublicException(new TargetDisconnectedException(""), UUID.randomUUID());
-        assertEquals(SqlErrorCode.CONNECTION_PROBLEM, sqlException.getCode());
     }
 
     @Test
