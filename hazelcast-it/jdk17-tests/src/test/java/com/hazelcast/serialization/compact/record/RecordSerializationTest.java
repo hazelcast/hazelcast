@@ -211,7 +211,9 @@ public class RecordSerializationTest extends HazelcastTestSupport {
                 .hasStackTraceContaining("which uses this class in its fields");
     }
 
-    private record RecordWithUnsupportedField(ArrayList<String> list) {}
+    private record RecordWithUnsupportedField(ArrayList<String> list) {
+    }
 
-    private record RecordWithUnsupportedArrayField(ArrayList<String>[] lists) {}
+    private record RecordWithUnsupportedArrayField(ArrayList<String>[] lists) {
+    }
 }
