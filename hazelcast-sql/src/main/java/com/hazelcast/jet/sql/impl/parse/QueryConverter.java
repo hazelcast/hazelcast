@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.parse;
 
 import com.hazelcast.jet.sql.impl.HazelcastSqlToRelConverter;
-import com.hazelcast.jet.sql.impl.opt.logical.CalcMergeRule;
+import com.hazelcast.jet.sql.impl.opt.common.CalcMergeRule;
 import com.hazelcast.jet.sql.impl.schema.HazelcastViewExpander;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.HazelcastRelOptCluster;

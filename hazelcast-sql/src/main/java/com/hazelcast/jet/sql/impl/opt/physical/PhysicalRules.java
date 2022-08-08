@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.hazelcast.jet.sql.impl.opt.logical.CalcMergeRule;
+import com.hazelcast.jet.sql.impl.opt.common.CalcMergeRule;
 import org.apache.calcite.plan.volcano.AbstractConverter;
 import org.apache.calcite.rel.core.RelFactories;
 import org.apache.calcite.tools.RuleSet;
