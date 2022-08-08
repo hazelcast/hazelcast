@@ -574,7 +574,7 @@ public final class MetricDescriptorConstants {
     // ===[/THREAD]=====================================================
 
     // ===[TSTORE]======================================================
-    public static final String DEVICE_DISCRIMINATOR_NAME = "name";
+    public static final String TSTORE_DEVICE_DISCRIMINATOR_NAME = "name";
     public static final String TSTORE_DEVICE_USED_SPACE = "tstore.device.usedSpace";
     public static final String TSTORE_DEVICE_FREE_SPACE = "tstore.device.freeSpace";
     public static final String TSTORE_DEVICE_MAX_SPACE = "tstore.device.maxSpace";
