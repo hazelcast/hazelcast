@@ -222,51 +222,51 @@ public class JsonSqlAggregateTest {
 
         @Test
         public void when_jsonObjectAgg_jsonInputClause_then_fail() {
-            assertThatThrownBy(() -> sqlService.execute("select json_objectagg('k' value 'v' format json)"))
+            assertThatThrownBy(() -> sqlService.execute("SELECT JSON_OBJECTAGG('k' VALUE 'v' FORMAT JSON)"))
                     .hasMessage("From line 1, column 33 to line 1, column 47: JSON VALUE EXPRESSION not supported");
         }
 
         @Test
         public void when_jsonObjectAgg_keyUniquenessConstraint_then_fail() {
-            assertThatThrownBy(() -> sqlService.execute("select json_objectagg('k' value 'v' with unique keys)"))
-                    .hasMessageStartingWith("Encountered \"with\" at line 1, column 37");
+            assertThatThrownBy(() -> sqlService.execute("SELECT JSON_OBJECTAGG('k' VALUE 'v' WITH UNIQUE KEYS)"))
+                    .hasMessageStartingWith("Encountered \"WITH\" at line 1, column 37");
         }
 
         @Test
         public void when_jsonObjectAgg_outputClause_then_fail() {
-            assertThatThrownBy(() -> sqlService.execute("select json_objectagg('k' value 'v' returning varchar)"))
-                    .hasMessageStartingWith("Encountered \"returning\" at line 1, column 37.");
+            assertThatThrownBy(() -> sqlService.execute("SELECT JSON_OBJECTAGG('k' VALUE 'v' RETURNING VARCHAR)"))
+                    .hasMessageStartingWith("Encountered \"RETURNING\" at line 1, column 37.");
         }
 
         @Test
         public void test_literal() {
-            assertJsonRowsAnyOrder("select json_objectagg('k' value 'v')", singletonList(new Row(json("{\"k\":\"v\"}"))));
+            assertJsonRowsAnyOrder("SELECT JSON_OBJECTAGG('k' VALUE 'v')", singletonList(new Row(json("{\"k\":\"v\"}"))));
         }
 
         @Test
         public void test_alternateSyntax() {
-            assertJsonRowsAnyOrder("select json_objectagg(key 'k' value 'v')", singletonList(new Row(json("{\"k\":\"v\"}"))));
-            assertJsonRowsAnyOrder("select json_objectagg('k':'v')", singletonList(new Row(json("{\"k\":\"v\"}"))));
+            assertJsonRowsAnyOrder("SELECT JSON_OBJECTAGG(key 'k' value 'v')", singletonList(new Row(json("{\"k\":\"v\"}"))));
+            assertJsonRowsAnyOrder("SELECT JSON_OBJECTAGG('k':'v')", singletonList(new Row(json("{\"k\":\"v\"}"))));
         }
 
         @Test
         public void test_nullKey() {
             // null literal key
-            assertThatThrownBy(() -> sqlService.execute("select json_objectagg(null value 'v')"))
-                    .hasMessage("this should throw");
+            assertThatThrownBy(() -> sqlService.execute("SELECT JSON_OBJECTAGG(NULL VALUE 'v')"))
+                    .hasMessage("NULL key is not supported for JSON_OBJECTAGG");
 
             TestBatchSqlConnector.create(sqlService, "m", asList("k", "v"), asList(VARCHAR, VARCHAR),
                     singletonList(new String[]{null, "v1"}));
 
             // null column value for key
-            assertThatThrownBy(() -> sqlService.execute("select json_objectagg(k value v) from m"))
-                    .hasMessage("this should throw");
+            assertThatThrownBy(() -> sqlService.execute("SELECT JSON_OBJECTAGG(k VALUE v) FROM m"))
+                    .hasMessage("NULL key is not supported for JSON_OBJECTAGG");
         }
 
         @Test
         public void test_nullValueLiteral() {
-            assertJsonRowsAnyOrder("select json_objectagg('k' value null)", singletonList(new Row(json("{\"k\":null}"))));
-            assertJsonRowsAnyOrder("select json_objectagg('k' value null absent on null)", singletonList(new Row((Object) null)));
+            assertJsonRowsAnyOrder("SELECT JSON_OBJECTAGG('k' VALUE NULL)", singletonList(new Row(json("{\"k\":null}"))));
+            assertJsonRowsAnyOrder("SELECT JSON_OBJECTAGG('k' VALUE NULL ABSENT ON NULL)", singletonList(new Row((Object) null)));
         }
 
         @Test
@@ -275,7 +275,7 @@ public class JsonSqlAggregateTest {
                     asList(new String[]{"k", "v1"},
                             new String[]{"k", "v2"}));
 
-            assertJsonRowsAnyOrder("select json_objectagg(k value v) from m", singletonList(new Row(json("{\"k\":\"v1\",\"k\":\"v2\"}"))));
+            assertJsonRowsAnyOrder("SELECT JSON_OBJECTAGG(k VALUE v) FROM m", singletonList(new Row(json("{\"k\":\"v1\",\"k\":\"v2\"}"))));
         }
 
         @Test
@@ -283,22 +283,18 @@ public class JsonSqlAggregateTest {
             String name = createTable();
 
             assertJsonRowsAnyOrder(
-                    "SELECT name, JSON_OBJECTAGG(k VALUE v ABSENT ON NULL) FROM " + name + " GROUP BY name",
+                    "SELECT name, JSON_OBJECTAGG(k VALUE v ABSENT ON NULL) FROM " + name + " WHERE name IS NOT NULL GROUP BY name",
                     asList(
                             new Row("Alice", json("{ \"department\" : \"dep1\", \"job\" : \"job1\", \"description\" : \"desc1\" }")),
-                            new Row("Bob", json("{ \"department\" : \"dep2\", \"job\" : \"job2\" }")),
-                            new Row(null, json("{ \"department\" : \"dep2\", \"job\" : \"job1\" }"))
-
+                            new Row("Bob", json("{ \"department\" : \"dep2\", \"job\" : \"job2\" }"))
                     )
             );
 
             assertJsonRowsAnyOrder(
-                    "SELECT name, JSON_OBJECTAGG(k VALUE v NULL ON NULL) FROM " + name + " GROUP BY name",
+                    "SELECT name, JSON_OBJECTAGG(k VALUE v NULL ON NULL) FROM " + name + " WHERE name IS NOT NULL GROUP BY name",
                     asList(
                             new Row("Alice", json("{ \"department\" : \"dep1\", \"job\" : \"job1\", \"description\" : \"desc1\" }")),
-                            new Row("Bob", json("{ \"department\" : \"dep2\", \"job\" : \"job2\", \"description\" : null }")),
-                            new Row(null, json("{ \"department\" : \"dep2\", \"job\" : \"job1\" }"))
-
+                            new Row("Bob", json("{ \"department\" : \"dep2\", \"job\" : \"job2\", \"description\" : null }"))
                     )
             );
         }
@@ -362,7 +358,7 @@ public class JsonSqlAggregateTest {
         private static class JsonObjectWithRelaxedEquality {
             private final List<Map.Entry<String, JsonValue>> fields = new ArrayList<>();
 
-            public JsonObjectWithRelaxedEquality(HazelcastJsonValue json) {
+            JsonObjectWithRelaxedEquality(HazelcastJsonValue json) {
                 JsonObject jsonObject = (JsonObject) Json.parse(json.getValue());
                 jsonObject.iterator().forEachRemaining(m -> fields.add(entry(m.getName(), m.getValue())));
             }
