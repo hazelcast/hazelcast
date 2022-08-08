@@ -205,7 +205,7 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
 
     protected abstract ProcessorMetaSupplier createProcessorSupplier(FunctionEx<Context, TestDataGenerator> createContextFn);
 
-    private static final class TestTable extends JetTable {
+    public static final class TestTable extends JetTable {
 
         private final List<Object[]> rows;
         private final boolean streaming;

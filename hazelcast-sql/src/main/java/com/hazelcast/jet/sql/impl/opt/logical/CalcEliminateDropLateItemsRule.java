@@ -78,16 +78,13 @@ public class CalcEliminateDropLateItemsRule extends RelRule<RelRule.Config> impl
         Calc calc = call.rel(0);
         DropLateItemsLogicalRel dropRel = call.rel(1);
 
-        if (!(dropRel.wmField() instanceof RexInputRef)) {
-            return false;
-        }
-        RexInputRef wmField = (RexInputRef) dropRel.wmField();
+        int wmField = dropRel.wmField();
 
         List<RexNode> rexNodes = calc.getProgram().expandList(calc.getProgram().getProjectList());
         return rexNodes.stream()
                 .filter(r -> r instanceof RexInputRef)
                 .map(r -> (RexInputRef) r)
-                .noneMatch(r -> r.getIndex() == wmField.getIndex());
+                .noneMatch(r -> r.getIndex() == wmField);
     }
 
     @Override

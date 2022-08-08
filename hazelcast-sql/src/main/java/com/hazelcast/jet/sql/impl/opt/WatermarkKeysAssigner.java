@@ -23,7 +23,9 @@ import com.hazelcast.jet.sql.impl.opt.physical.DropLateItemsPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowAggregatePhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.StreamToStreamJoinPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.UnionPhysicalRel;
+import com.hazelcast.sql.impl.QueryException;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.core.Aggregate;
@@ -49,8 +51,7 @@ import static java.util.Collections.emptySet;
 public class WatermarkKeysAssigner {
     private final PhysicalRel root;
     private final BottomUpWatermarkKeyAssignerVisitor visitor;
-    // Note: at the moment, no need to separate watermark keys without stream-to-stream join introduction.
-    private final byte keyCounter = 0;
+    private byte keyCounter;
 
     public WatermarkKeysAssigner(PhysicalRel root) {
         this.root = root;
@@ -102,7 +103,7 @@ public class WatermarkKeysAssigner {
                 int idx = scan.watermarkedColumnIndex();
                 if (idx >= 0) {
                     scan.setWatermarkKey(WatermarkKeysAssigner.this.keyCounter);
-                    relToWmKeyMapping.put(scan, Collections.singletonMap(idx, new MutableByte(keyCounter)));
+                    relToWmKeyMapping.put(scan, Collections.singletonMap(idx, new MutableByte(keyCounter++)));
                 }
                 return;
             }
@@ -146,7 +147,7 @@ public class WatermarkKeysAssigner {
                     Map<Integer, MutableByte> inputWmKeys =
                             relToWmKeyMapping.getOrDefault(union.getInput(inputIndex), emptyMap());
                     for (Iterator<Entry<Integer, MutableByte>> intersectionIt = intersection.entrySet().iterator();
-                                                                                intersectionIt.hasNext(); ) {
+                         intersectionIt.hasNext(); ) {
                         Entry<Integer, MutableByte> intersectionEntry = intersectionIt.next();
                         MutableByte inputWmKey = inputWmKeys.get(intersectionEntry.getKey());
                         if (inputWmKey == null) {
@@ -158,36 +159,36 @@ public class WatermarkKeysAssigner {
                 }
 
                 relToWmKeyMapping.put(union, intersection);
-//            } else if (node instanceof StreamToStreamJoinPhysicalRel) {
-//                StreamToStreamJoinPhysicalRel join = (StreamToStreamJoinPhysicalRel) node;
-//                Map<RexInputRef, MutableByte> leftRefByteMap = refToWmKeyMapping.get(join.getLeft());
-//                if (leftRefByteMap == null) {
-//                    throw QueryException.error("Left input of stream-to-stream JOIN doesn't contain watermarks");
-//                }
-//
-//                Map<RexInputRef, MutableByte> rightRefByteMap = refToWmKeyMapping.get(join.getRight());
-//                if (rightRefByteMap == null) {
-//                    throw QueryException.error("Right input of stream-to-stream JOIN doesn't contain watermarks");
-//                }
-//
-//                Map<RexInputRef, RexInputRef> jointToLeftInputMapping = join.jointRowToLeftInputMapping();
-//                Map<RexInputRef, RexInputRef> jointToRightInputMapping = join.jointRowToRightInputMapping();
-//
-//                Map<RexInputRef, MutableByte> jointRefByteMap = new HashMap<>();
-//                for (Map.Entry<RexInputRef, RexInputRef> entry : jointToLeftInputMapping.entrySet()) {
-//                    if (leftRefByteMap.get(entry.getValue()) != null) {
-//                        jointRefByteMap.put(entry.getKey(), leftRefByteMap.get(entry.getValue()));
-//                    }
-//                }
-//
-//                for (Map.Entry<RexInputRef, RexInputRef> entry : jointToRightInputMapping.entrySet()) {
-//                    if (rightRefByteMap.get(entry.getValue()) != null) {
-//                        jointRefByteMap.put(entry.getKey(), rightRefByteMap.get(entry.getValue()));
-//                    }
-//                }
-//
-//                assert leftRefByteMap.size() + rightRefByteMap.size() == jointRefByteMap.size();
-//                refToWmKeyMapping.put(join, jointRefByteMap);
+            } else if (node instanceof StreamToStreamJoinPhysicalRel) {
+                StreamToStreamJoinPhysicalRel join = (StreamToStreamJoinPhysicalRel) node;
+                Map<Integer, MutableByte> leftRefByteMap = relToWmKeyMapping.get(join.getLeft());
+                if (leftRefByteMap == null) {
+                    throw QueryException.error("Left input of stream-to-stream JOIN doesn't contain watermarks");
+                }
+
+                Map<Integer, MutableByte> rightRefByteMap = relToWmKeyMapping.get(join.getRight());
+                if (rightRefByteMap == null) {
+                    throw QueryException.error("Right input of stream-to-stream JOIN doesn't contain watermarks");
+                }
+
+                Map<Integer, Integer> jointToLeftInputMapping = join.jointRowToLeftInputMapping();
+                Map<Integer, Integer> jointToRightInputMapping = join.jointRowToRightInputMapping();
+
+                Map<Integer, MutableByte> jointRefByteMap = new HashMap<>();
+                for (Map.Entry<Integer, Integer> entry : jointToLeftInputMapping.entrySet()) {
+                    if (leftRefByteMap.get(entry.getValue()) != null) {
+                        jointRefByteMap.put(entry.getKey(), leftRefByteMap.get(entry.getValue()));
+                    }
+                }
+
+                for (Map.Entry<Integer, Integer> entry : jointToRightInputMapping.entrySet()) {
+                    if (rightRefByteMap.get(entry.getValue()) != null) {
+                        jointRefByteMap.put(entry.getKey(), rightRefByteMap.get(entry.getValue()));
+                    }
+                }
+
+                assert leftRefByteMap.size() + rightRefByteMap.size() == jointRefByteMap.size();
+                relToWmKeyMapping.put(join, jointRefByteMap);
             } else if (node instanceof Join) {
                 // Hash Join and Nested Loop Join just forward watermarks from left input.
                 // TODO the above not true for s2s join - see TODO in HazelcastRelMdWatermarkedFields

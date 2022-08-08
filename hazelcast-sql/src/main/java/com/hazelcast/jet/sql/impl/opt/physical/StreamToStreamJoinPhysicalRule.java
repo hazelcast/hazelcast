@@ -26,7 +26,6 @@ import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexBuilder;
@@ -106,7 +105,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
             return;
         }
 
-        if (!watermarkedFieldsAreTemporalTypeCheck(join, leftFields)) {
+        if (!watermarkedFieldsAreTemporalTypeCheck(join.getLeft(), leftFields)) {
             call.transformTo(fail(join, "Left input of stream-to-stream JOIN watermarked columns are not temporal"));
             return;
         }
@@ -116,7 +115,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
             return;
         }
 
-        if (!watermarkedFieldsAreTemporalTypeCheck(join, rightFields)) {
+        if (!watermarkedFieldsAreTemporalTypeCheck(join.getRight(), rightFields)) {
             call.transformTo(fail(join, "Right input of stream-to-stream JOIN watermarked columns are not temporal"));
             return;
         }
@@ -127,7 +126,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
             return;
         }
 
-        BoundsExtractorVisitor visitor = new BoundsExtractorVisitor(join, watermarkedFields);
+        BoundsExtractorVisitor visitor = new BoundsExtractorVisitor(watermarkedFields);
         RexNode predicate;
         if (join.analyzeCondition().isEqui()) {
             predicate = join.getCondition();
@@ -148,7 +147,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         }
         // endregion
 
-        Map<Integer, Map<Integer, Long>> postponeMap = assemblePostponeTimeMap(join, visitor);
+        Map<Integer, Map<Integer, Long>> postponeMap = assemblePostponeTimeMap(visitor);
 
         Map<Integer, Integer> leftInputToJointRowMapping = new HashMap<>();
         Map<Integer, Integer> rightInputToJointRowMapping = new HashMap<>();
@@ -159,7 +158,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
             leftInputToJointRowMapping.put(i, i);
         }
         for (int j = 0; j < right.getRowType().getFieldList().size(); ++j) {
-            rightInputToJointRowMapping.put(j, i++);
+            rightInputToJointRowMapping.put(i++, j);
         }
 
         call.transformTo(
@@ -188,9 +187,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         );
     }
 
-    private Map<Integer, Map<Integer, Long>> assemblePostponeTimeMap(
-            Join join,
-            BoundsExtractorVisitor visitor) {
+    private Map<Integer, Map<Integer, Long>> assemblePostponeTimeMap(BoundsExtractorVisitor visitor) {
         Map<Integer, Map<Integer, Long>> postponeMap = new HashMap<>();
 
         Map<Integer, Long> leftBoundMap = new HashMap<>();
@@ -225,9 +222,9 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
      * Checks if all watermarked fields are temporal type.
      */
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    private boolean watermarkedFieldsAreTemporalTypeCheck(Join join, WatermarkedFields fields) {
+    private boolean watermarkedFieldsAreTemporalTypeCheck(RelNode input, WatermarkedFields fields) {
         for (Integer idx : fields.getFieldIndexes()) {
-            RelDataType type = join.getRowType().getFieldList().get(idx).getType();
+            RelDataType type = input.getRowType().getFieldList().get(idx).getType();
             if (!HazelcastTypeUtils.isTemporalType(type)) {
                 return false;
             }
@@ -238,7 +235,6 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
 
     @SuppressWarnings("CheckStyle")
     private static final class BoundsExtractorVisitor extends RexVisitorImpl<Void> {
-        private final Join joinRel;
         private final WatermarkedFields watermarkedFields;
         private final String defaultErrorMessage = "Stream-to-stream JOIN condition must contain time boundness predicate";
         private String errorMessage = null;
@@ -248,9 +244,8 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
 
         public boolean isValid = true;
 
-        private BoundsExtractorVisitor(JoinLogicalRel joinRel, WatermarkedFields watermarkedFields) {
+        private BoundsExtractorVisitor(WatermarkedFields watermarkedFields) {
             super(true);
-            this.joinRel = joinRel;
             this.watermarkedFields = watermarkedFields;
         }
 

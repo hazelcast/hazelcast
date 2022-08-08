@@ -19,9 +19,12 @@ package com.hazelcast.jet.sql.impl.connector;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
-import org.junit.experimental.runners.Enclosed;
+import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIGINT;
@@ -34,7 +37,8 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @SuppressWarnings("resource")
-@RunWith(Enclosed.class)
+@RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlStreamToStreamJoinTest extends SqlTestSupport {
 
     private static SqlService sqlService;
@@ -373,39 +377,6 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
         );
     }
 
-    // region WatermarkKeyAssigner tests
-    @Test
-    public void given_streamToStreamJoin_when_joinHasProjectOnTop_then_success() {
-        String stream = "stream1";
-        TestStreamSqlConnector.create(
-                sqlService,
-                stream,
-                singletonList("a"),
-                singletonList(TIMESTAMP),
-                row(timestamp(0L))
-        );
-
-        String stream2 = "stream2";
-        TestStreamSqlConnector.create(
-                sqlService,
-                stream2,
-                singletonList("b"),
-                singletonList(TIMESTAMP),
-                row(timestamp(1L))
-        );
-
-        sqlService.execute("CREATE VIEW s1 AS " +
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.001' SECOND))");
-        sqlService.execute("CREATE VIEW s2 AS " +
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), INTERVAL '0.001' SECOND))");
-
-        assertTipOfStream(
-                "SELECT b FROM s1 JOIN s2 ON s2.b BETWEEN s1.a - INTERVAL '0.002' SECOND " +
-                        "                             AND     s1.a + INTERVAL '0.002' SECOND ",
-                singletonList(new Row(timestamp(1L)))
-        );
-    }
-
     @Test
     public void given_streamToStreamJoin_when_calcReordersFields_then_success() {
         String stream = "stream1";
@@ -474,6 +445,7 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
     }
 
     @Test
+    // TODO: fix it, failing now.
     public void given_streamToStreamJoin_when_relTreeHasUnion_then_success() {
         String stream = "stream1";
         TestStreamSqlConnector.create(
@@ -521,5 +493,4 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
         );
     }
 
-    // endregion
 }

@@ -18,18 +18,27 @@ package com.hazelcast.jet.sql.impl.processors;
 
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.collection.Object2LongHashMap;
 import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import javax.annotation.Nonnull;
+import java.io.IOException;
 import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
@@ -130,6 +139,23 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         }
     }
 
+    public static StreamToStreamJoinProcessorSupplier supplier(
+            JetJoinInfo joinInfo,
+            Map<Byte, ToLongFunctionEx<JetSqlRow>> leftExtractors,
+            Map<Byte, ToLongFunctionEx<JetSqlRow>> rightExtractors,
+            Map<Byte, Map<Byte, Long>> postponeTimeMap,
+            int leftInputFieldsCount,
+            int rightInputFieldsCount) {
+        return new StreamToStreamJoinProcessorSupplier(
+                joinInfo,
+                leftExtractors,
+                rightExtractors,
+                postponeTimeMap,
+                leftInputFieldsCount,
+                rightInputFieldsCount
+        );
+    }
+
     @Override
     protected void init(@Nonnull Context context) throws Exception {
         this.evalContext = ExpressionEvalContext.from(context);
@@ -187,7 +213,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             JetSqlRow preparedOutput = ExpressionUtil.join(
                     ordinal == 0 ? currItem : oppositeBufferItem,
                     ordinal == 0 ? oppositeBufferItem : currItem,
-                    joinInfo.condition(),
+                    joinInfo.nonEquiCondition(),
                     evalContext);
 
             if (preparedOutput == null) {
@@ -354,5 +380,69 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             );
         }
         return joinedRow;
+    }
+
+    private static final class StreamToStreamJoinProcessorSupplier implements ProcessorSupplier, DataSerializable {
+        private JetJoinInfo joinInfo;
+        private Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors;
+        private Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors;
+        private Map<Byte, Map<Byte, Long>> postponeTimeMap;
+        private int leftInputColumnCount;
+        private int rightInputColumnCount;
+
+        @SuppressWarnings("unused") // for deserialization
+        private StreamToStreamJoinProcessorSupplier() {
+        }
+
+        private StreamToStreamJoinProcessorSupplier(final JetJoinInfo joinInfo,
+                                                    final Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors,
+                                                    final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors,
+                                                    final Map<Byte, Map<Byte, Long>> postponeTimeMap,
+                                                    final int leftInputColumnCount,
+                                                    final int rightInputColumnCount) {
+            this.joinInfo = joinInfo;
+            this.leftTimeExtractors = leftTimeExtractors;
+            this.rightTimeExtractors = rightTimeExtractors;
+            this.postponeTimeMap = postponeTimeMap;
+            this.leftInputColumnCount = leftInputColumnCount;
+            this.rightInputColumnCount = rightInputColumnCount;
+
+        }
+
+        @Nonnull
+        @Override
+        public Collection<? extends Processor> get(int count) {
+            List<StreamToStreamJoinP> processors = new ArrayList<>(count);
+            for (int i = 0; i < count; i++) {
+                processors.add(
+                        new StreamToStreamJoinP(
+                                joinInfo,
+                                leftTimeExtractors,
+                                rightTimeExtractors,
+                                postponeTimeMap,
+                                Tuple2.tuple2(leftInputColumnCount, rightInputColumnCount)));
+            }
+            return processors;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeObject(joinInfo);
+            SerializationUtil.writeMap(leftTimeExtractors, out);
+            SerializationUtil.writeMap(rightTimeExtractors, out);
+            SerializationUtil.writeMap(postponeTimeMap, out);
+            out.writeInt(leftInputColumnCount);
+            out.writeInt(rightInputColumnCount);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            joinInfo = in.readObject();
+            leftTimeExtractors = SerializationUtil.readMap(in);
+            rightTimeExtractors = SerializationUtil.readMap(in);
+            postponeTimeMap = SerializationUtil.readMap(in);
+            leftInputColumnCount = in.readInt();
+            rightInputColumnCount = in.readInt();
+        }
     }
 }
