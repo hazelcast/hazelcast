@@ -26,12 +26,12 @@ import java.lang.reflect.Array;
  */
 public final class CompactUtil {
     // To determine classes that we won't serialize with zero-config serialization
-    private static final String[] FORBIDDEN_PACKAGE_NAME_SUFFIXES = new String[]{
-            "java",
-            "javax",
-            "com.sun",
-            "sun",
-            "jdk"
+    private static final UnsupportedPackagePrefix[] UNSUPPORTED_PACKAGE_PREFIXES = new UnsupportedPackagePrefix[]{
+            new UnsupportedPackagePrefix("java"),
+            new UnsupportedPackagePrefix("javax"),
+            new UnsupportedPackagePrefix("com.sun"),
+            new UnsupportedPackagePrefix("sun"),
+            new UnsupportedPackagePrefix("jdk")
     };
 
     private CompactUtil() {
@@ -40,8 +40,8 @@ public final class CompactUtil {
 
     @Nonnull
     public static HazelcastSerializationException exceptionForUnexpectedNullValue(@Nonnull String fieldName,
-                                                                           @Nonnull String methodPrefix,
-                                                                           @Nonnull String methodSuffix) {
+                                                                                  @Nonnull String methodPrefix,
+                                                                                  @Nonnull String methodSuffix) {
         return new HazelcastSerializationException("Error while reading " + fieldName + ". "
                 + "null value can not be read via " + methodPrefix + methodSuffix + " methods. "
                 + "Use " + methodPrefix + "Nullable" + methodSuffix + " instead.");
@@ -49,8 +49,8 @@ public final class CompactUtil {
 
     @Nonnull
     public static HazelcastSerializationException exceptionForUnexpectedNullValueInArray(@Nonnull String fieldName,
-                                                                                  @Nonnull String methodPrefix,
-                                                                                  @Nonnull String methodSuffix) {
+                                                                                         @Nonnull String methodPrefix,
+                                                                                         @Nonnull String methodSuffix) {
         return new HazelcastSerializationException("Error while reading " + fieldName + ". "
                 + "null value can not be read via " + methodPrefix + "ArrayOf" + methodSuffix + " methods. "
                 + "Use " + methodPrefix + "ArrayOfNullable" + methodSuffix + " instead.");
@@ -205,12 +205,44 @@ public final class CompactUtil {
         }
 
         String name = classPackage.getName();
-        for (String suffix : FORBIDDEN_PACKAGE_NAME_SUFFIXES) {
-            if (name.startsWith(suffix)) {
+        for (UnsupportedPackagePrefix prefix : UNSUPPORTED_PACKAGE_PREFIXES) {
+            if (prefix.matches(name)) {
                 return false;
             }
         }
 
         return true;
+    }
+
+    /**
+     * This class is used to check if the given package name can be supported
+     * with the zero-config Compact serialization, by trying to check if the
+     * given package name is one of the known JDK package prefixes.
+     */
+    private static final class UnsupportedPackagePrefix {
+        private final String prefix;
+        private final String prefixWithDot;
+
+        private UnsupportedPackagePrefix(String prefix) {
+            this.prefix = prefix;
+            this.prefixWithDot = prefix + ".";
+        }
+
+        /**
+         * Returns {@code true} if the given package name
+         * <ul>
+         *     <li>starts with the unsupported {@code prefix + "."}, hence
+         *     under some package with the given prefix</li>
+         *     <li>equals to the {@code prefix}, hence directly in the
+         *     given package</li>
+         * </ul>
+         * <p>
+         * The extra logic is to prevent falsely identifying packages which
+         * starts with the given unsupported package name prefix like
+         * {@code java_but_not_really_jdk}.
+         */
+        public boolean matches(String packageName) {
+            return packageName.startsWith(prefixWithDot) || packageName.equals(prefix);
+        }
     }
 }
