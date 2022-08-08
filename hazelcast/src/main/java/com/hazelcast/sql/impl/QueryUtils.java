@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.partition.Partition;
+import com.hazelcast.spi.exception.TargetDisconnectedException;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnMetadata;
@@ -71,6 +72,8 @@ public final class QueryUtils {
             }
 
             return new HazelcastSqlException(originatingMemberId, e0.getCode(), e0.getMessage(), e, e0.getSuggestion());
+        } else if (e instanceof TargetDisconnectedException) {
+            return new HazelcastSqlException(localMemberId, SqlErrorCode.CONNECTION_PROBLEM, e.getMessage(), e, null);
         } else {
             Throwable copy = e;
             while (copy != null) {
