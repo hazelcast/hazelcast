@@ -518,11 +518,10 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of INTEGER type, but REAL was found"),
                 TestParams.passingCase(1809, REAL, BIGINT, "cast(42 as real)", 42F, 42L)
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but REAL was found"),
-                // the following case fails because of https://issues.apache.org/jira/browse/CALCITE-5228
-                // TestParams.passingCase(1810, REAL, BIGINT, "cast(42.1 as real)", 42.1F, 42L)
-                //         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but REAL was found"),
-                TestParams.failingCase(1810, REAL, BIGINT, "cast(42.1 as real)", 42.1F)
-                        .withExpectedFailureRegex("For input string: \"42.1\""),
+                TestParams.passingCase(1810, REAL, BIGINT, "cast(42.1 as real)", 42.1F, 42L)
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but REAL was found")
+                        // the following case fails because of https://issues.apache.org/jira/browse/CALCITE-5228
+                        .withExpectedLiteralFailureRegex("For input string: \"42.1\""),
                 TestParams.failingCase(1811, REAL, BIGINT, "cast(18223372036854775808000 as real)", 18223372036854775808000F)
                         .withExpectedLiteralFailureRegex("Numeric overflow while converting REAL to BIGINT")
                         .withExpectedColumnFailureRegex("Numeric overflow while converting REAL to BIGINT")
@@ -590,11 +589,10 @@ public class RowAssignmentTypeCoercionTest extends SqlTestSupport {
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of DECIMAL type, but DOUBLE was found"),
                 TestParams.passingCase(1912, DOUBLE, REAL, "cast(42 as double)", 42D, 42F)
                         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of REAL type, but DOUBLE was found"),
-                // the following case fails because of https://issues.apache.org/jira/browse/CALCITE-5228
-                // TestParams.passingCase(1913, DOUBLE, BIGINT, "cast(42.1 as double)", 42.1D, 42L)
-                //         .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but DOUBLE was found"),
-                TestParams.failingCase(1913, DOUBLE, BIGINT, "cast(42.1 as double)", 42.1D)
-                        .withExpectedFailureRegex("For input string: \"42.1\""),
+                TestParams.passingCase(1913, DOUBLE, BIGINT, "cast(42.1 as double)", 42.1D, 42L)
+                        .withExpectedDynamicParameterFailureRegex("Parameter at position 0 must be of BIGINT type, but DOUBLE was found")
+                        // the following case fails because of https://issues.apache.org/jira/browse/CALCITE-5228
+                        .withExpectedLiteralFailureRegex("For input string: \"42.1\""),
                 TestParams.failingCase(1914, DOUBLE, REAL, "cast(42e42 as double)", 42e42D)
                         .withExpectedLiteralFailureRegex("Numeric overflow while converting DOUBLE to REAL")
                         .withExpectedColumnFailureRegex("Numeric overflow while converting DOUBLE to REAL")
