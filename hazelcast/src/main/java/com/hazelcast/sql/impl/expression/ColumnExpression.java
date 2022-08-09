@@ -46,10 +46,6 @@ public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataS
         this.type = type;
     }
 
-    public int index() {
-        return index;
-    }
-
     public static ColumnExpression<?> create(int index, QueryDataType type) {
         // Canonicalize the column type: currently values of non-canonical types,
         // like QueryDataType.VARCHAR_CHARACTER, are canonicalized to values of
