@@ -29,12 +29,13 @@ Non-goal is to discuss stream-to-stream join.
 
 In Jet we used the term _watermark_ for two things:
 - a broadcast stream item carrying a value
-- the set of all watermarks in the stream
+- the set of all watermarks in a stream (after keyed WM support is added, we
+  mean the set of all watermarks with the same key in a stream)
 
-In this document we'll use the term _watermark instance_ for a stream item
-carrying the value, and the term _watermark_ (WM) only for the set of all
-watermarks in a stream. If we say there are _two watermarks in the stream_, it
-means there are two independent sets of watermarks, differentiated by a key.
+Which meaning is used is often clear from the context. We'll use the term
+_watermark instance_ if we want to stress that a stream item carrying the value
+is meant. If we say there are _two watermarks in the stream_, it means there are
+two independent sets of watermarks, differentiated by a key.
 
 ### Description of current behavior
 
@@ -47,9 +48,9 @@ We say that a stream is at WM value N when the value of the last received WM
 instance is N. Since each new WM instance is required to have a higher value,
 the WM value for the stream is ever-increasing.
 
-So-called _WM coalescing_ happens when there are two inputs that are merged into
-one stream - the lowest current WM value of all the merged streams is used for
-the merged stream.
+So-called _WM coalescing_ happens when there are two streams that are merged
+into one - the lowest current WM value of all the merged streams is used for the
+merged stream.
 
 #### Example
 
@@ -81,8 +82,9 @@ input, that input is excluded from coalescing and the WM is output based on the
 minimum of the remaining non-idle inputs. Any new WM or event from that input
 clears the idle status and includes that input into coalescing again.
 
-The `IDLE_MESSAGE` is implemented as a WM with a `Long.MAX_VALUE` value, but
-it's not really a WM, we just piggyback on the WM broadcast mechanism.
+The `IDLE_MESSAGE` is implemented as a WM instance with a `Long.MAX_VALUE`
+value, but it's not really a WM instance, we just piggyback on the WM
+broadcasting mechanism.
 
 #### WM generation
 
@@ -187,7 +189,9 @@ same key if it's the same field and a different key, if it's not.
 
 The processor currently uses a queue to which it adds both events and
 watermarks, as they are received. This preserves the original order of events
-w.r.t. watermarks, so no change is needed.
+w.r.t. watermarks, so no substantial change is needed. There's an optimization
+that if the last element in the queue is a watermark, it is replaced and not
+added. Here we need to check that it's a watermark with the same key.
 
 ##### Unordered
 
@@ -199,13 +203,10 @@ count reaches zero, it checks the watermark counts from oldest to newest, and
 emits the watermark up to the first non-zero count.
 
 This processor must be modified to take the WM key into account. Instead of
-storing just the WM value for each event, we need to store a tuple `{wmKey,
-wmValue}`, or the whole `Watermark` instance which contains exactly these two
-fields. Instead of a `TreeMap` where the key was a WM value we should use a
-`List` or a `Deque`, because `Watermark` instances with a key don't have an
-inherent order, we need to use the reception order.
+storing the counts for just the WM value, we need to store it for a tuple
+`{wmKey, wmValue}`.
 
-#### Changes to sliding window processor
+#### Changes to window aggregation processors
 
 This processor forwards the input watermarks, but before doing so, it emits
 windows for which all the events were received.
@@ -243,3 +244,9 @@ so this will be a lot of extra work. This is the reason why we will not
 implement this. It's very rare to group by a watermarked column. The sliding
 window processor will drop all input watermarks, the output will have watermarks
 only on the window bounds.
+
+### Handling of keyed idle messages
+
+Thanks to the change in the `Watermark` class, idle messages now also carry a
+key. Currently, we mark streams as idle after receiving an idle message from it,
+and mark them active after receiving _any_ event.
