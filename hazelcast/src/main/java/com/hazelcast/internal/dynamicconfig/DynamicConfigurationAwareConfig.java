@@ -1217,7 +1217,10 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Map<String, ExternalDataStoreConfig> getExternalDataStoreConfigs() {
-        return staticConfig.getExternalDataStoreConfigs();
+        Map<String, ExternalDataStoreConfig> staticConfigs = staticConfig.getExternalDataStoreConfigs();
+        Map<String, ExternalDataStoreConfig> dynamicConfigs = configurationService.getExternalDataStoreConfigs();
+
+        return aggregate(staticConfigs, dynamicConfigs);
     }
 
     @Override
@@ -1227,12 +1230,17 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addExternalDataStoreConfig(ExternalDataStoreConfig externalDataStoreConfig) {
-        throw new UnsupportedOperationException("Unsupported operation");
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getExternalDataStoreConfigs(),
+                externalDataStoreConfig.getName(), externalDataStoreConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(externalDataStoreConfig);
+        }
+        return this;
     }
 
     @Override
     public ExternalDataStoreConfig getExternalDataStoreConfig(String name) {
-        return staticConfig.getExternalDataStoreConfig(name);
+        return (ExternalDataStoreConfig) configSearcher.getConfig(name, name, supplierFor(ExternalDataStoreConfig.class));
     }
 
     @Override

@@ -17,14 +17,19 @@
 package com.hazelcast.config;
 
 import com.hazelcast.datastore.ExternalDataStoreFactory;
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.MapStore;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -41,7 +46,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * @since 5.2
  */
 @Beta
-public class ExternalDataStoreConfig implements NamedConfig {
+public class ExternalDataStoreConfig implements IdentifiedDataSerializable, NamedConfig {
 
     private String name;
     private String className;
@@ -62,12 +67,22 @@ public class ExternalDataStoreConfig implements NamedConfig {
         this.name = checkNotNull(name, "Name must not be null");
     }
 
+    /**
+     * Sets the name of this config. It must be unique.
+     *
+     * @return this ExternalDataStoreConfig
+     */
     @Override
     public ExternalDataStoreConfig setName(String name) {
         this.name = checkNotNull(name, "Name must not be null");
         return this;
     }
 
+    /**
+     * Returns the name of this config. It must be unique.
+     *
+     * @return the name of this config
+     */
     public String getName() {
         return name;
     }
@@ -76,16 +91,16 @@ public class ExternalDataStoreConfig implements NamedConfig {
     /**
      * Returns the name of the MapStore implementation class
      *
-     * @return the name of the MapStore implementation class
+     * @return the name of the ExternalDataStoreFactory implementation class
      */
     public String getClassName() {
         return className;
     }
 
     /**
-     * Sets the name for the MapStore implementation class
+     * Sets the name for the ExternalDataStoreFactory implementation class
      *
-     * @param className the name to set for the MapStore implementation class
+     * @param className the name to set for the ExternalDataStoreFactory implementation class
      */
     public ExternalDataStoreConfig setClassName(@Nonnull String className) {
         this.className = checkHasText(className, "Data store class name must contain text");
@@ -173,5 +188,41 @@ public class ExternalDataStoreConfig implements NamedConfig {
                 + ", shared=" + shared
                 + ", properties=" + properties
                 + '}';
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeString(name);
+        out.writeString(className);
+        out.writeBoolean(shared);
+        out.writeInt(properties.size());
+        for (String key : properties.stringPropertyNames()) {
+            out.writeString(key);
+            out.writeString(properties.getProperty(key));
+        }
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readString();
+        className = in.readString();
+        shared = in.readBoolean();
+        properties.clear();
+        int propertiesSize = in.readInt();
+        for (int i = 0; i < propertiesSize; i++) {
+            String key = in.readString();
+            String value = in.readString();
+            properties.setProperty(key, value);
+        }
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return ConfigDataSerializerHook.EXTERNAL_DATA_STORE_CONFIG;
     }
 }

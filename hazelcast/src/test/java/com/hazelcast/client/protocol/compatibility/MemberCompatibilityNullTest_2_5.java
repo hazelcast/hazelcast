@@ -19,7 +19,439 @@ package com.hazelcast.client.protocol.compatibility;
 import com.hazelcast.client.HazelcastClientUtil;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageReader;
-import com.hazelcast.client.impl.protocol.codec.*;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongAddAndGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongAlterCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongApplyCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongCompareAndSetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndAddCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetAndSetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicLongGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicRefApplyCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicRefCompareAndSetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicRefContainsCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicRefGetCodec;
+import com.hazelcast.client.impl.protocol.codec.AtomicRefSetCodec;
+import com.hazelcast.client.impl.protocol.codec.CPGroupCreateCPGroupCodec;
+import com.hazelcast.client.impl.protocol.codec.CPGroupDestroyCPObjectCodec;
+import com.hazelcast.client.impl.protocol.codec.CPSessionCloseSessionCodec;
+import com.hazelcast.client.impl.protocol.codec.CPSessionCreateSessionCodec;
+import com.hazelcast.client.impl.protocol.codec.CPSessionGenerateThreadIdCodec;
+import com.hazelcast.client.impl.protocol.codec.CPSessionHeartbeatSessionCodec;
+import com.hazelcast.client.impl.protocol.codec.CPSubsystemAddGroupAvailabilityListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CPSubsystemAddMembershipListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CPSubsystemRemoveGroupAvailabilityListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CPSubsystemRemoveMembershipListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheAddEntryListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheAddNearCacheInvalidationListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheAddPartitionLostListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheClearCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheContainsKeyCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheCreateConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheDestroyCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheEntryProcessorCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheEventJournalReadCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheEventJournalSubscribeCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheFetchNearCacheInvalidationMetadataCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheGetAllCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheGetAndRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheGetAndReplaceCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheGetCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheGetConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheIterateCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheIterateEntriesCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheListenerRegistrationCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheLoadAllCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheManagementConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.CachePutAllCodec;
+import com.hazelcast.client.impl.protocol.codec.CachePutCodec;
+import com.hazelcast.client.impl.protocol.codec.CachePutIfAbsentCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheRemoveAllCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheRemoveAllKeysCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheRemoveEntryListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheRemoveInvalidationListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheRemovePartitionLostListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheReplaceCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheSetExpiryPolicyCodec;
+import com.hazelcast.client.impl.protocol.codec.CacheSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorAddCodec;
+import com.hazelcast.client.impl.protocol.codec.CardinalityEstimatorEstimateCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientAddClusterViewListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientAddDistributedObjectListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientAddMigrationListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientAddPartitionLostListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCustomCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientCreateProxiesCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientCreateProxyCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientDeployClassesCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientDestroyProxyCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientFetchSchemaCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientLocalBackupListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientPingCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientRemoveDistributedObjectListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientRemoveMigrationListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientRemovePartitionLostListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientSendAllSchemasCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientSendSchemaCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientStatisticsCodec;
+import com.hazelcast.client.impl.protocol.codec.ClientTriggerPartitionAssignmentCodec;
+import com.hazelcast.client.impl.protocol.codec.ContinuousQueryAddListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ContinuousQueryDestroyCacheCodec;
+import com.hazelcast.client.impl.protocol.codec.ContinuousQueryMadePublishableCodec;
+import com.hazelcast.client.impl.protocol.codec.ContinuousQueryPublisherCreateCodec;
+import com.hazelcast.client.impl.protocol.codec.ContinuousQueryPublisherCreateWithValueCodec;
+import com.hazelcast.client.impl.protocol.codec.ContinuousQuerySetReadCursorCodec;
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchAwaitCodec;
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchCountDownCodec;
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchGetCountCodec;
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchGetRoundCodec;
+import com.hazelcast.client.impl.protocol.codec.CountDownLatchTrySetCountCodec;
+import com.hazelcast.client.impl.protocol.codec.DurableExecutorDisposeResultCodec;
+import com.hazelcast.client.impl.protocol.codec.DurableExecutorIsShutdownCodec;
+import com.hazelcast.client.impl.protocol.codec.DurableExecutorRetrieveAndDisposeResultCodec;
+import com.hazelcast.client.impl.protocol.codec.DurableExecutorRetrieveResultCodec;
+import com.hazelcast.client.impl.protocol.codec.DurableExecutorShutdownCodec;
+import com.hazelcast.client.impl.protocol.codec.DurableExecutorSubmitToPartitionCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCacheConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCardinalityEstimatorConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDurableExecutorConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExecutorConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExternalDataStoreConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddFlakeIdGeneratorConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddListConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMapConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMultiMapConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddPNCounterConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddQueueConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddReliableTopicConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddReplicatedMapConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddRingbufferConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddScheduledExecutorConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddSetConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddTopicConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnMemberCodec;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceCancelOnPartitionCodec;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceIsShutdownCodec;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceShutdownCodec;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToMemberCodec;
+import com.hazelcast.client.impl.protocol.codec.ExecutorServiceSubmitToPartitionCodec;
+import com.hazelcast.client.impl.protocol.codec.FencedLockGetLockOwnershipCodec;
+import com.hazelcast.client.impl.protocol.codec.FencedLockLockCodec;
+import com.hazelcast.client.impl.protocol.codec.FencedLockTryLockCodec;
+import com.hazelcast.client.impl.protocol.codec.FencedLockUnlockCodec;
+import com.hazelcast.client.impl.protocol.codec.FlakeIdGeneratorNewIdBatchCodec;
+import com.hazelcast.client.impl.protocol.codec.JetExistsDistributedObjectCodec;
+import com.hazelcast.client.impl.protocol.codec.JetExportSnapshotCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobAndSqlSummaryListCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobMetricsCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobSubmissionTimeCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobSummaryListCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobSuspensionCauseCodec;
+import com.hazelcast.client.impl.protocol.codec.JetJoinSubmittedJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetResumeJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetTerminateJobCodec;
+import com.hazelcast.client.impl.protocol.codec.ListAddAllCodec;
+import com.hazelcast.client.impl.protocol.codec.ListAddAllWithIndexCodec;
+import com.hazelcast.client.impl.protocol.codec.ListAddCodec;
+import com.hazelcast.client.impl.protocol.codec.ListAddListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ListAddWithIndexCodec;
+import com.hazelcast.client.impl.protocol.codec.ListClearCodec;
+import com.hazelcast.client.impl.protocol.codec.ListCompareAndRemoveAllCodec;
+import com.hazelcast.client.impl.protocol.codec.ListCompareAndRetainAllCodec;
+import com.hazelcast.client.impl.protocol.codec.ListContainsAllCodec;
+import com.hazelcast.client.impl.protocol.codec.ListContainsCodec;
+import com.hazelcast.client.impl.protocol.codec.ListGetAllCodec;
+import com.hazelcast.client.impl.protocol.codec.ListGetCodec;
+import com.hazelcast.client.impl.protocol.codec.ListIndexOfCodec;
+import com.hazelcast.client.impl.protocol.codec.ListIsEmptyCodec;
+import com.hazelcast.client.impl.protocol.codec.ListIteratorCodec;
+import com.hazelcast.client.impl.protocol.codec.ListLastIndexOfCodec;
+import com.hazelcast.client.impl.protocol.codec.ListListIteratorCodec;
+import com.hazelcast.client.impl.protocol.codec.ListRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.ListRemoveListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ListRemoveWithIndexCodec;
+import com.hazelcast.client.impl.protocol.codec.ListSetCodec;
+import com.hazelcast.client.impl.protocol.codec.ListSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.ListSubCodec;
+import com.hazelcast.client.impl.protocol.codec.MCAddWanBatchPublisherConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.MCApplyMCConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.MCChangeClusterStateCodec;
+import com.hazelcast.client.impl.protocol.codec.MCChangeClusterVersionCodec;
+import com.hazelcast.client.impl.protocol.codec.MCChangeWanReplicationStateCodec;
+import com.hazelcast.client.impl.protocol.codec.MCCheckWanConsistencyCodec;
+import com.hazelcast.client.impl.protocol.codec.MCClearWanQueuesCodec;
+import com.hazelcast.client.impl.protocol.codec.MCGetCPMembersCodec;
+import com.hazelcast.client.impl.protocol.codec.MCGetClusterMetadataCodec;
+import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.MCGetMemberConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.MCGetSystemPropertiesCodec;
+import com.hazelcast.client.impl.protocol.codec.MCGetThreadDumpCodec;
+import com.hazelcast.client.impl.protocol.codec.MCGetTimedMemberStateCodec;
+import com.hazelcast.client.impl.protocol.codec.MCInterruptHotRestartBackupCodec;
+import com.hazelcast.client.impl.protocol.codec.MCMatchMCConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.MCPollMCEventsCodec;
+import com.hazelcast.client.impl.protocol.codec.MCPromoteLiteMemberCodec;
+import com.hazelcast.client.impl.protocol.codec.MCPromoteToCPMemberCodec;
+import com.hazelcast.client.impl.protocol.codec.MCReadMetricsCodec;
+import com.hazelcast.client.impl.protocol.codec.MCReloadConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.MCRemoveCPMemberCodec;
+import com.hazelcast.client.impl.protocol.codec.MCResetCPSubsystemCodec;
+import com.hazelcast.client.impl.protocol.codec.MCResetQueueAgeStatisticsCodec;
+import com.hazelcast.client.impl.protocol.codec.MCRunConsoleCommandCodec;
+import com.hazelcast.client.impl.protocol.codec.MCRunGcCodec;
+import com.hazelcast.client.impl.protocol.codec.MCRunScriptCodec;
+import com.hazelcast.client.impl.protocol.codec.MCShutdownClusterCodec;
+import com.hazelcast.client.impl.protocol.codec.MCShutdownMemberCodec;
+import com.hazelcast.client.impl.protocol.codec.MCTriggerForceStartCodec;
+import com.hazelcast.client.impl.protocol.codec.MCTriggerHotRestartBackupCodec;
+import com.hazelcast.client.impl.protocol.codec.MCTriggerPartialStartCodec;
+import com.hazelcast.client.impl.protocol.codec.MCUpdateConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.MCUpdateMapConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.MCWanSyncMapCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerToKeyCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerToKeyWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAddEntryListenerWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAddIndexCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAddInterceptorCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAddNearCacheInvalidationListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAddPartitionLostListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAggregateCodec;
+import com.hazelcast.client.impl.protocol.codec.MapAggregateWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.MapClearCodec;
+import com.hazelcast.client.impl.protocol.codec.MapContainsKeyCodec;
+import com.hazelcast.client.impl.protocol.codec.MapContainsValueCodec;
+import com.hazelcast.client.impl.protocol.codec.MapDeleteCodec;
+import com.hazelcast.client.impl.protocol.codec.MapEntriesWithPagingPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.MapEntriesWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.MapEntrySetCodec;
+import com.hazelcast.client.impl.protocol.codec.MapEventJournalReadCodec;
+import com.hazelcast.client.impl.protocol.codec.MapEventJournalSubscribeCodec;
+import com.hazelcast.client.impl.protocol.codec.MapEvictAllCodec;
+import com.hazelcast.client.impl.protocol.codec.MapEvictCodec;
+import com.hazelcast.client.impl.protocol.codec.MapExecuteOnAllKeysCodec;
+import com.hazelcast.client.impl.protocol.codec.MapExecuteOnKeyCodec;
+import com.hazelcast.client.impl.protocol.codec.MapExecuteOnKeysCodec;
+import com.hazelcast.client.impl.protocol.codec.MapExecuteWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.MapFetchEntriesCodec;
+import com.hazelcast.client.impl.protocol.codec.MapFetchKeysCodec;
+import com.hazelcast.client.impl.protocol.codec.MapFetchNearCacheInvalidationMetadataCodec;
+import com.hazelcast.client.impl.protocol.codec.MapFetchWithQueryCodec;
+import com.hazelcast.client.impl.protocol.codec.MapFlushCodec;
+import com.hazelcast.client.impl.protocol.codec.MapForceUnlockCodec;
+import com.hazelcast.client.impl.protocol.codec.MapGetAllCodec;
+import com.hazelcast.client.impl.protocol.codec.MapGetCodec;
+import com.hazelcast.client.impl.protocol.codec.MapGetEntryViewCodec;
+import com.hazelcast.client.impl.protocol.codec.MapIsEmptyCodec;
+import com.hazelcast.client.impl.protocol.codec.MapIsLockedCodec;
+import com.hazelcast.client.impl.protocol.codec.MapKeySetCodec;
+import com.hazelcast.client.impl.protocol.codec.MapKeySetWithPagingPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.MapKeySetWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.MapLoadAllCodec;
+import com.hazelcast.client.impl.protocol.codec.MapLoadGivenKeysCodec;
+import com.hazelcast.client.impl.protocol.codec.MapLockCodec;
+import com.hazelcast.client.impl.protocol.codec.MapProjectCodec;
+import com.hazelcast.client.impl.protocol.codec.MapProjectWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.MapPutAllCodec;
+import com.hazelcast.client.impl.protocol.codec.MapPutCodec;
+import com.hazelcast.client.impl.protocol.codec.MapPutIfAbsentCodec;
+import com.hazelcast.client.impl.protocol.codec.MapPutIfAbsentWithMaxIdleCodec;
+import com.hazelcast.client.impl.protocol.codec.MapPutTransientCodec;
+import com.hazelcast.client.impl.protocol.codec.MapPutTransientWithMaxIdleCodec;
+import com.hazelcast.client.impl.protocol.codec.MapPutWithMaxIdleCodec;
+import com.hazelcast.client.impl.protocol.codec.MapRemoveAllCodec;
+import com.hazelcast.client.impl.protocol.codec.MapRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.MapRemoveEntryListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.MapRemoveIfSameCodec;
+import com.hazelcast.client.impl.protocol.codec.MapRemoveInterceptorCodec;
+import com.hazelcast.client.impl.protocol.codec.MapRemovePartitionLostListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReplaceAllCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReplaceCodec;
+import com.hazelcast.client.impl.protocol.codec.MapReplaceIfSameCodec;
+import com.hazelcast.client.impl.protocol.codec.MapSetCodec;
+import com.hazelcast.client.impl.protocol.codec.MapSetTtlCodec;
+import com.hazelcast.client.impl.protocol.codec.MapSetWithMaxIdleCodec;
+import com.hazelcast.client.impl.protocol.codec.MapSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.MapSubmitToKeyCodec;
+import com.hazelcast.client.impl.protocol.codec.MapTryLockCodec;
+import com.hazelcast.client.impl.protocol.codec.MapTryPutCodec;
+import com.hazelcast.client.impl.protocol.codec.MapTryRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.MapUnlockCodec;
+import com.hazelcast.client.impl.protocol.codec.MapValuesCodec;
+import com.hazelcast.client.impl.protocol.codec.MapValuesWithPagingPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.MapValuesWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapAddEntryListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapAddEntryListenerToKeyCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapClearCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapContainsEntryCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapContainsKeyCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapContainsValueCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapDeleteCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapEntrySetCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapForceUnlockCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapGetCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapIsLockedCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapKeySetCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapLockCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapPutAllCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapPutCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapRemoveEntryCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapRemoveEntryListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapTryLockCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapUnlockCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapValueCountCodec;
+import com.hazelcast.client.impl.protocol.codec.MultiMapValuesCodec;
+import com.hazelcast.client.impl.protocol.codec.PNCounterAddCodec;
+import com.hazelcast.client.impl.protocol.codec.PNCounterGetCodec;
+import com.hazelcast.client.impl.protocol.codec.PNCounterGetConfiguredReplicaCountCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueAddAllCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueAddListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueClearCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueCompareAndRemoveAllCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueCompareAndRetainAllCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueContainsAllCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueContainsCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueDrainToCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueDrainToMaxSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueIsEmptyCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueIteratorCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueOfferCodec;
+import com.hazelcast.client.impl.protocol.codec.QueuePeekCodec;
+import com.hazelcast.client.impl.protocol.codec.QueuePollCodec;
+import com.hazelcast.client.impl.protocol.codec.QueuePutCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueRemainingCapacityCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueRemoveListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.QueueTakeCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerToKeyCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerToKeyWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddEntryListenerWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapAddNearCacheEntryListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapClearCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapContainsKeyCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapContainsValueCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapEntrySetCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapGetCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapIsEmptyCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapKeySetCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapPutAllCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapPutCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapRemoveEntryListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.ReplicatedMapValuesCodec;
+import com.hazelcast.client.impl.protocol.codec.RingbufferAddAllCodec;
+import com.hazelcast.client.impl.protocol.codec.RingbufferAddCodec;
+import com.hazelcast.client.impl.protocol.codec.RingbufferCapacityCodec;
+import com.hazelcast.client.impl.protocol.codec.RingbufferHeadSequenceCodec;
+import com.hazelcast.client.impl.protocol.codec.RingbufferReadManyCodec;
+import com.hazelcast.client.impl.protocol.codec.RingbufferReadOneCodec;
+import com.hazelcast.client.impl.protocol.codec.RingbufferRemainingCapacityCodec;
+import com.hazelcast.client.impl.protocol.codec.RingbufferSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.RingbufferTailSequenceCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorCancelFromMemberCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorCancelFromPartitionCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorDisposeFromMemberCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorDisposeFromPartitionCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetAllScheduledFuturesCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetDelayFromMemberCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetDelayFromPartitionCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetResultFromMemberCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetResultFromPartitionCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetStatsFromMemberCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorGetStatsFromPartitionCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsCancelledFromMemberCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsCancelledFromPartitionCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsDoneFromMemberCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorIsDoneFromPartitionCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorShutdownCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorSubmitToMemberCodec;
+import com.hazelcast.client.impl.protocol.codec.ScheduledExecutorSubmitToPartitionCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreAcquireCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreAvailablePermitsCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreChangeCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreDrainCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreGetSemaphoreTypeCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreInitCodec;
+import com.hazelcast.client.impl.protocol.codec.SemaphoreReleaseCodec;
+import com.hazelcast.client.impl.protocol.codec.SetAddAllCodec;
+import com.hazelcast.client.impl.protocol.codec.SetAddCodec;
+import com.hazelcast.client.impl.protocol.codec.SetAddListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.SetClearCodec;
+import com.hazelcast.client.impl.protocol.codec.SetCompareAndRemoveAllCodec;
+import com.hazelcast.client.impl.protocol.codec.SetCompareAndRetainAllCodec;
+import com.hazelcast.client.impl.protocol.codec.SetContainsAllCodec;
+import com.hazelcast.client.impl.protocol.codec.SetContainsCodec;
+import com.hazelcast.client.impl.protocol.codec.SetGetAllCodec;
+import com.hazelcast.client.impl.protocol.codec.SetIsEmptyCodec;
+import com.hazelcast.client.impl.protocol.codec.SetRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.SetRemoveListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.SetSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlCloseCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlExecuteCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlExecute_reservedCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlFetch_reservedCodec;
+import com.hazelcast.client.impl.protocol.codec.SqlMappingDdlCodec;
+import com.hazelcast.client.impl.protocol.codec.TopicAddMessageListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.TopicPublishAllCodec;
+import com.hazelcast.client.impl.protocol.codec.TopicPublishCodec;
+import com.hazelcast.client.impl.protocol.codec.TopicRemoveMessageListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionCommitCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionCreateCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionRollbackCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalListAddCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalListRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalListSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapContainsKeyCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapContainsValueCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapDeleteCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapGetCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapGetForUpdateCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapIsEmptyCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapKeySetCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapKeySetWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapPutCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapPutIfAbsentCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapRemoveIfSameCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapReplaceCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapReplaceIfSameCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapSetCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapValuesCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMapValuesWithPredicateCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapGetCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapPutCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapRemoveEntryCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalMultiMapValueCountCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalQueueOfferCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalQueuePeekCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalQueuePollCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalQueueSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalQueueTakeCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalSetAddCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalSetRemoveCodec;
+import com.hazelcast.client.impl.protocol.codec.TransactionalSetSizeCodec;
+import com.hazelcast.client.impl.protocol.codec.XATransactionClearRemoteCodec;
+import com.hazelcast.client.impl.protocol.codec.XATransactionCollectTransactionsCodec;
+import com.hazelcast.client.impl.protocol.codec.XATransactionCommitCodec;
+import com.hazelcast.client.impl.protocol.codec.XATransactionCreateCodec;
+import com.hazelcast.client.impl.protocol.codec.XATransactionFinalizeCodec;
+import com.hazelcast.client.impl.protocol.codec.XATransactionPrepareCodec;
+import com.hazelcast.client.impl.protocol.codec.XATransactionRollbackCodec;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -38,12 +470,60 @@ import java.util.Arrays;
 import java.util.List;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
-import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.*;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aBoolean;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aByte;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aByteArray;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aCacheConfigHolder;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aCpMember;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aData;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aDataPersistenceConfig;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListJobAndSqlSummary;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfCacheEventData;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfClientBwListEntries;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfCpMembers;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfData;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfDataToData;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfDataToListOfData;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfDistributedObjectInfo;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfIndexConfigs;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfIntegerToInteger;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfIntegerToUUID;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfLongToByteArray;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfLongs;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfMCEvents;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfMemberInfos;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfQueryCacheEventData;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfScheduledTaskHandler;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfSchemas;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfStringToByteArray;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfStringToListOfIntegerToLong;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfStringToString;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfStrings;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfUUIDToListOfIntegers;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfUUIDToUUID;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfUUIDs;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfUuidToLong;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aListOfXids;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aLong;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aMapOfStringToString;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aMigrationState;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aPagingPredicateHolder;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aQueryCacheEventData;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aRaftGroupId;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aSchema;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aString;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aTieredStoreConfig;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.aUUID;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anAnchorDataListHolder;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anIndexConfig;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anInt;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anSqlQueryId;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.anXid;
+import static com.hazelcast.client.protocol.compatibility.ReferenceObjects.isEqual;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -6815,8 +7295,27 @@ public class MemberCompatibilityNullTest_2_5 {
     }
 
     @Test
-    public void test_FlakeIdGeneratorNewIdBatchCodec_decodeRequest() {
+    public void test_DynamicConfigAddExternalDataStoreConfigCodec_decodeRequest() {
         int fileClientMessageIndex = 757;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        DynamicConfigAddExternalDataStoreConfigCodec.RequestParameters parameters = DynamicConfigAddExternalDataStoreConfigCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aString, parameters.name));
+        assertTrue(isEqual(aString, parameters.className));
+        assertTrue(isEqual(aBoolean, parameters.shared));
+        assertTrue(isEqual(aMapOfStringToString, parameters.properties));
+    }
+
+    @Test
+    public void test_DynamicConfigAddExternalDataStoreConfigCodec_encodeResponse() {
+        int fileClientMessageIndex = 758;
+        ClientMessage encoded = DynamicConfigAddExternalDataStoreConfigCodec.encodeResponse();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_FlakeIdGeneratorNewIdBatchCodec_decodeRequest() {
+        int fileClientMessageIndex = 759;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         FlakeIdGeneratorNewIdBatchCodec.RequestParameters parameters = FlakeIdGeneratorNewIdBatchCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
@@ -6825,7 +7324,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_FlakeIdGeneratorNewIdBatchCodec_encodeResponse() {
-        int fileClientMessageIndex = 758;
+        int fileClientMessageIndex = 760;
         ClientMessage encoded = FlakeIdGeneratorNewIdBatchCodec.encodeResponse(aLong, aLong, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -6833,7 +7332,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_PNCounterGetCodec_decodeRequest() {
-        int fileClientMessageIndex = 759;
+        int fileClientMessageIndex = 761;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         PNCounterGetCodec.RequestParameters parameters = PNCounterGetCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
@@ -6843,7 +7342,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_PNCounterGetCodec_encodeResponse() {
-        int fileClientMessageIndex = 760;
+        int fileClientMessageIndex = 762;
         ClientMessage encoded = PNCounterGetCodec.encodeResponse(aLong, aListOfUuidToLong, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -6851,7 +7350,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_PNCounterAddCodec_decodeRequest() {
-        int fileClientMessageIndex = 761;
+        int fileClientMessageIndex = 763;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         PNCounterAddCodec.RequestParameters parameters = PNCounterAddCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
@@ -6863,7 +7362,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_PNCounterAddCodec_encodeResponse() {
-        int fileClientMessageIndex = 762;
+        int fileClientMessageIndex = 764;
         ClientMessage encoded = PNCounterAddCodec.encodeResponse(aLong, aListOfUuidToLong, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -6871,14 +7370,14 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_PNCounterGetConfiguredReplicaCountCodec_decodeRequest() {
-        int fileClientMessageIndex = 763;
+        int fileClientMessageIndex = 765;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aString, PNCounterGetConfiguredReplicaCountCodec.decodeRequest(fromFile)));
     }
 
     @Test
     public void test_PNCounterGetConfiguredReplicaCountCodec_encodeResponse() {
-        int fileClientMessageIndex = 764;
+        int fileClientMessageIndex = 766;
         ClientMessage encoded = PNCounterGetConfiguredReplicaCountCodec.encodeResponse(anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -6886,14 +7385,14 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_CPGroupCreateCPGroupCodec_decodeRequest() {
-        int fileClientMessageIndex = 765;
+        int fileClientMessageIndex = 767;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aString, CPGroupCreateCPGroupCodec.decodeRequest(fromFile)));
     }
 
     @Test
     public void test_CPGroupCreateCPGroupCodec_encodeResponse() {
-        int fileClientMessageIndex = 766;
+        int fileClientMessageIndex = 768;
         ClientMessage encoded = CPGroupCreateCPGroupCodec.encodeResponse(aRaftGroupId);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -6901,7 +7400,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_CPGroupDestroyCPObjectCodec_decodeRequest() {
-        int fileClientMessageIndex = 767;
+        int fileClientMessageIndex = 769;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         CPGroupDestroyCPObjectCodec.RequestParameters parameters = CPGroupDestroyCPObjectCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aRaftGroupId, parameters.groupId));
@@ -6911,7 +7410,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_CPGroupDestroyCPObjectCodec_encodeResponse() {
-        int fileClientMessageIndex = 768;
+        int fileClientMessageIndex = 770;
         ClientMessage encoded = CPGroupDestroyCPObjectCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -6919,7 +7418,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_CPSessionCreateSessionCodec_decodeRequest() {
-        int fileClientMessageIndex = 769;
+        int fileClientMessageIndex = 771;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         CPSessionCreateSessionCodec.RequestParameters parameters = CPSessionCreateSessionCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aRaftGroupId, parameters.groupId));
@@ -6928,7 +7427,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_CPSessionCreateSessionCodec_encodeResponse() {
-        int fileClientMessageIndex = 770;
+        int fileClientMessageIndex = 772;
         ClientMessage encoded = CPSessionCreateSessionCodec.encodeResponse(aLong, aLong, aLong);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -6936,7 +7435,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_CPSessionCloseSessionCodec_decodeRequest() {
-        int fileClientMessageIndex = 771;
+        int fileClientMessageIndex = 773;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         CPSessionCloseSessionCodec.RequestParameters parameters = CPSessionCloseSessionCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aRaftGroupId, parameters.groupId));
@@ -6945,7 +7444,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_CPSessionCloseSessionCodec_encodeResponse() {
-        int fileClientMessageIndex = 772;
+        int fileClientMessageIndex = 774;
         ClientMessage encoded = CPSessionCloseSessionCodec.encodeResponse(aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -6953,7 +7452,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_CPSessionHeartbeatSessionCodec_decodeRequest() {
-        int fileClientMessageIndex = 773;
+        int fileClientMessageIndex = 775;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         CPSessionHeartbeatSessionCodec.RequestParameters parameters = CPSessionHeartbeatSessionCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aRaftGroupId, parameters.groupId));
@@ -6962,7 +7461,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_CPSessionHeartbeatSessionCodec_encodeResponse() {
-        int fileClientMessageIndex = 774;
+        int fileClientMessageIndex = 776;
         ClientMessage encoded = CPSessionHeartbeatSessionCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -6970,14 +7469,14 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_CPSessionGenerateThreadIdCodec_decodeRequest() {
-        int fileClientMessageIndex = 775;
+        int fileClientMessageIndex = 777;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aRaftGroupId, CPSessionGenerateThreadIdCodec.decodeRequest(fromFile)));
     }
 
     @Test
     public void test_CPSessionGenerateThreadIdCodec_encodeResponse() {
-        int fileClientMessageIndex = 776;
+        int fileClientMessageIndex = 778;
         ClientMessage encoded = CPSessionGenerateThreadIdCodec.encodeResponse(aLong);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -6985,7 +7484,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCReadMetricsCodec_decodeRequest() {
-        int fileClientMessageIndex = 777;
+        int fileClientMessageIndex = 779;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCReadMetricsCodec.RequestParameters parameters = MCReadMetricsCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aUUID, parameters.uuid));
@@ -6994,7 +7493,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCReadMetricsCodec_encodeResponse() {
-        int fileClientMessageIndex = 778;
+        int fileClientMessageIndex = 780;
         ClientMessage encoded = MCReadMetricsCodec.encodeResponse(aListOfLongToByteArray, aLong);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7002,14 +7501,14 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCChangeClusterStateCodec_decodeRequest() {
-        int fileClientMessageIndex = 779;
+        int fileClientMessageIndex = 781;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(anInt, MCChangeClusterStateCodec.decodeRequest(fromFile)));
     }
 
     @Test
     public void test_MCChangeClusterStateCodec_encodeResponse() {
-        int fileClientMessageIndex = 780;
+        int fileClientMessageIndex = 782;
         ClientMessage encoded = MCChangeClusterStateCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7017,14 +7516,14 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCGetMapConfigCodec_decodeRequest() {
-        int fileClientMessageIndex = 781;
+        int fileClientMessageIndex = 783;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aString, MCGetMapConfigCodec.decodeRequest(fromFile)));
     }
 
     @Test
     public void test_MCGetMapConfigCodec_encodeResponse() {
-        int fileClientMessageIndex = 782;
+        int fileClientMessageIndex = 784;
         ClientMessage encoded = MCGetMapConfigCodec.encodeResponse(anInt, anInt, anInt, anInt, anInt, anInt, anInt, aBoolean, anInt, aString, aListOfIndexConfigs);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7032,7 +7531,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCUpdateMapConfigCodec_decodeRequest() {
-        int fileClientMessageIndex = 783;
+        int fileClientMessageIndex = 785;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCUpdateMapConfigCodec.RequestParameters parameters = MCUpdateMapConfigCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.mapName));
@@ -7046,7 +7545,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCUpdateMapConfigCodec_encodeResponse() {
-        int fileClientMessageIndex = 784;
+        int fileClientMessageIndex = 786;
         ClientMessage encoded = MCUpdateMapConfigCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7054,12 +7553,12 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCGetMemberConfigCodec_decodeRequest() {
-        int fileClientMessageIndex = 785;
+        int fileClientMessageIndex = 787;
     }
 
     @Test
     public void test_MCGetMemberConfigCodec_encodeResponse() {
-        int fileClientMessageIndex = 786;
+        int fileClientMessageIndex = 788;
         ClientMessage encoded = MCGetMemberConfigCodec.encodeResponse(aString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7067,12 +7566,12 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCRunGcCodec_decodeRequest() {
-        int fileClientMessageIndex = 787;
+        int fileClientMessageIndex = 789;
     }
 
     @Test
     public void test_MCRunGcCodec_encodeResponse() {
-        int fileClientMessageIndex = 788;
+        int fileClientMessageIndex = 790;
         ClientMessage encoded = MCRunGcCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7080,14 +7579,14 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCGetThreadDumpCodec_decodeRequest() {
-        int fileClientMessageIndex = 789;
+        int fileClientMessageIndex = 791;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aBoolean, MCGetThreadDumpCodec.decodeRequest(fromFile)));
     }
 
     @Test
     public void test_MCGetThreadDumpCodec_encodeResponse() {
-        int fileClientMessageIndex = 790;
+        int fileClientMessageIndex = 792;
         ClientMessage encoded = MCGetThreadDumpCodec.encodeResponse(aString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7095,12 +7594,12 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCShutdownMemberCodec_decodeRequest() {
-        int fileClientMessageIndex = 791;
+        int fileClientMessageIndex = 793;
     }
 
     @Test
     public void test_MCShutdownMemberCodec_encodeResponse() {
-        int fileClientMessageIndex = 792;
+        int fileClientMessageIndex = 794;
         ClientMessage encoded = MCShutdownMemberCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7108,12 +7607,12 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCPromoteLiteMemberCodec_decodeRequest() {
-        int fileClientMessageIndex = 793;
+        int fileClientMessageIndex = 795;
     }
 
     @Test
     public void test_MCPromoteLiteMemberCodec_encodeResponse() {
-        int fileClientMessageIndex = 794;
+        int fileClientMessageIndex = 796;
         ClientMessage encoded = MCPromoteLiteMemberCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7121,12 +7620,12 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCGetSystemPropertiesCodec_decodeRequest() {
-        int fileClientMessageIndex = 795;
+        int fileClientMessageIndex = 797;
     }
 
     @Test
     public void test_MCGetSystemPropertiesCodec_encodeResponse() {
-        int fileClientMessageIndex = 796;
+        int fileClientMessageIndex = 798;
         ClientMessage encoded = MCGetSystemPropertiesCodec.encodeResponse(aListOfStringToString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7134,12 +7633,12 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCGetTimedMemberStateCodec_decodeRequest() {
-        int fileClientMessageIndex = 797;
+        int fileClientMessageIndex = 799;
     }
 
     @Test
     public void test_MCGetTimedMemberStateCodec_encodeResponse() {
-        int fileClientMessageIndex = 798;
+        int fileClientMessageIndex = 800;
         ClientMessage encoded = MCGetTimedMemberStateCodec.encodeResponse(null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7147,14 +7646,14 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCMatchMCConfigCodec_decodeRequest() {
-        int fileClientMessageIndex = 799;
+        int fileClientMessageIndex = 801;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aString, MCMatchMCConfigCodec.decodeRequest(fromFile)));
     }
 
     @Test
     public void test_MCMatchMCConfigCodec_encodeResponse() {
-        int fileClientMessageIndex = 800;
+        int fileClientMessageIndex = 802;
         ClientMessage encoded = MCMatchMCConfigCodec.encodeResponse(aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7162,7 +7661,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCApplyMCConfigCodec_decodeRequest() {
-        int fileClientMessageIndex = 801;
+        int fileClientMessageIndex = 803;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCApplyMCConfigCodec.RequestParameters parameters = MCApplyMCConfigCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.eTag));
@@ -7172,7 +7671,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCApplyMCConfigCodec_encodeResponse() {
-        int fileClientMessageIndex = 802;
+        int fileClientMessageIndex = 804;
         ClientMessage encoded = MCApplyMCConfigCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7180,12 +7679,12 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCGetClusterMetadataCodec_decodeRequest() {
-        int fileClientMessageIndex = 803;
+        int fileClientMessageIndex = 805;
     }
 
     @Test
     public void test_MCGetClusterMetadataCodec_encodeResponse() {
-        int fileClientMessageIndex = 804;
+        int fileClientMessageIndex = 806;
         ClientMessage encoded = MCGetClusterMetadataCodec.encodeResponse(aByte, aString, null, aLong);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7193,12 +7692,12 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCShutdownClusterCodec_decodeRequest() {
-        int fileClientMessageIndex = 805;
+        int fileClientMessageIndex = 807;
     }
 
     @Test
     public void test_MCShutdownClusterCodec_encodeResponse() {
-        int fileClientMessageIndex = 806;
+        int fileClientMessageIndex = 808;
         ClientMessage encoded = MCShutdownClusterCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7206,7 +7705,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCChangeClusterVersionCodec_decodeRequest() {
-        int fileClientMessageIndex = 807;
+        int fileClientMessageIndex = 809;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCChangeClusterVersionCodec.RequestParameters parameters = MCChangeClusterVersionCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aByte, parameters.majorVersion));
@@ -7215,7 +7714,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCChangeClusterVersionCodec_encodeResponse() {
-        int fileClientMessageIndex = 808;
+        int fileClientMessageIndex = 810;
         ClientMessage encoded = MCChangeClusterVersionCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7223,7 +7722,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCRunScriptCodec_decodeRequest() {
-        int fileClientMessageIndex = 809;
+        int fileClientMessageIndex = 811;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCRunScriptCodec.RequestParameters parameters = MCRunScriptCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.engine));
@@ -7232,7 +7731,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCRunScriptCodec_encodeResponse() {
-        int fileClientMessageIndex = 810;
+        int fileClientMessageIndex = 812;
         ClientMessage encoded = MCRunScriptCodec.encodeResponse(null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7240,7 +7739,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCRunConsoleCommandCodec_decodeRequest() {
-        int fileClientMessageIndex = 811;
+        int fileClientMessageIndex = 813;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCRunConsoleCommandCodec.RequestParameters parameters = MCRunConsoleCommandCodec.decodeRequest(fromFile);
         assertTrue(isEqual(null, parameters.namespace));
@@ -7249,7 +7748,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCRunConsoleCommandCodec_encodeResponse() {
-        int fileClientMessageIndex = 812;
+        int fileClientMessageIndex = 814;
         ClientMessage encoded = MCRunConsoleCommandCodec.encodeResponse(aString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7257,7 +7756,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCChangeWanReplicationStateCodec_decodeRequest() {
-        int fileClientMessageIndex = 813;
+        int fileClientMessageIndex = 815;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCChangeWanReplicationStateCodec.RequestParameters parameters = MCChangeWanReplicationStateCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.wanReplicationName));
@@ -7267,7 +7766,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCChangeWanReplicationStateCodec_encodeResponse() {
-        int fileClientMessageIndex = 814;
+        int fileClientMessageIndex = 816;
         ClientMessage encoded = MCChangeWanReplicationStateCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7275,7 +7774,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCClearWanQueuesCodec_decodeRequest() {
-        int fileClientMessageIndex = 815;
+        int fileClientMessageIndex = 817;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCClearWanQueuesCodec.RequestParameters parameters = MCClearWanQueuesCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.wanReplicationName));
@@ -7284,7 +7783,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCClearWanQueuesCodec_encodeResponse() {
-        int fileClientMessageIndex = 816;
+        int fileClientMessageIndex = 818;
         ClientMessage encoded = MCClearWanQueuesCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7292,7 +7791,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCAddWanBatchPublisherConfigCodec_decodeRequest() {
-        int fileClientMessageIndex = 817;
+        int fileClientMessageIndex = 819;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCAddWanBatchPublisherConfigCodec.RequestParameters parameters = MCAddWanBatchPublisherConfigCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.name));
@@ -7309,7 +7808,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCAddWanBatchPublisherConfigCodec_encodeResponse() {
-        int fileClientMessageIndex = 818;
+        int fileClientMessageIndex = 820;
         ClientMessage encoded = MCAddWanBatchPublisherConfigCodec.encodeResponse(aListOfStrings, aListOfStrings);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7317,7 +7816,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCWanSyncMapCodec_decodeRequest() {
-        int fileClientMessageIndex = 819;
+        int fileClientMessageIndex = 821;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCWanSyncMapCodec.RequestParameters parameters = MCWanSyncMapCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.wanReplicationName));
@@ -7328,7 +7827,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCWanSyncMapCodec_encodeResponse() {
-        int fileClientMessageIndex = 820;
+        int fileClientMessageIndex = 822;
         ClientMessage encoded = MCWanSyncMapCodec.encodeResponse(aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7336,7 +7835,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCCheckWanConsistencyCodec_decodeRequest() {
-        int fileClientMessageIndex = 821;
+        int fileClientMessageIndex = 823;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MCCheckWanConsistencyCodec.RequestParameters parameters = MCCheckWanConsistencyCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.wanReplicationName));
@@ -7346,7 +7845,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCCheckWanConsistencyCodec_encodeResponse() {
-        int fileClientMessageIndex = 822;
+        int fileClientMessageIndex = 824;
         ClientMessage encoded = MCCheckWanConsistencyCodec.encodeResponse(null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7354,12 +7853,12 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCPollMCEventsCodec_decodeRequest() {
-        int fileClientMessageIndex = 823;
+        int fileClientMessageIndex = 825;
     }
 
     @Test
     public void test_MCPollMCEventsCodec_encodeResponse() {
-        int fileClientMessageIndex = 824;
+        int fileClientMessageIndex = 826;
         ClientMessage encoded = MCPollMCEventsCodec.encodeResponse(aListOfMCEvents);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7367,12 +7866,12 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCGetCPMembersCodec_decodeRequest() {
-        int fileClientMessageIndex = 825;
+        int fileClientMessageIndex = 827;
     }
 
     @Test
     public void test_MCGetCPMembersCodec_encodeResponse() {
-        int fileClientMessageIndex = 826;
+        int fileClientMessageIndex = 828;
         ClientMessage encoded = MCGetCPMembersCodec.encodeResponse(aListOfUUIDToUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7380,12 +7879,12 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCPromoteToCPMemberCodec_decodeRequest() {
-        int fileClientMessageIndex = 827;
+        int fileClientMessageIndex = 829;
     }
 
     @Test
     public void test_MCPromoteToCPMemberCodec_encodeResponse() {
-        int fileClientMessageIndex = 828;
+        int fileClientMessageIndex = 830;
         ClientMessage encoded = MCPromoteToCPMemberCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7393,14 +7892,14 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCRemoveCPMemberCodec_decodeRequest() {
-        int fileClientMessageIndex = 829;
+        int fileClientMessageIndex = 831;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aUUID, MCRemoveCPMemberCodec.decodeRequest(fromFile)));
     }
 
     @Test
     public void test_MCRemoveCPMemberCodec_encodeResponse() {
-        int fileClientMessageIndex = 830;
+        int fileClientMessageIndex = 832;
         ClientMessage encoded = MCRemoveCPMemberCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7408,12 +7907,12 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCResetCPSubsystemCodec_decodeRequest() {
-        int fileClientMessageIndex = 831;
+        int fileClientMessageIndex = 833;
     }
 
     @Test
     public void test_MCResetCPSubsystemCodec_encodeResponse() {
-        int fileClientMessageIndex = 832;
+        int fileClientMessageIndex = 834;
         ClientMessage encoded = MCResetCPSubsystemCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7421,12 +7920,12 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCTriggerPartialStartCodec_decodeRequest() {
-        int fileClientMessageIndex = 833;
+        int fileClientMessageIndex = 835;
     }
 
     @Test
     public void test_MCTriggerPartialStartCodec_encodeResponse() {
-        int fileClientMessageIndex = 834;
+        int fileClientMessageIndex = 836;
         ClientMessage encoded = MCTriggerPartialStartCodec.encodeResponse(aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7434,12 +7933,12 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCTriggerForceStartCodec_decodeRequest() {
-        int fileClientMessageIndex = 835;
+        int fileClientMessageIndex = 837;
     }
 
     @Test
     public void test_MCTriggerForceStartCodec_encodeResponse() {
-        int fileClientMessageIndex = 836;
+        int fileClientMessageIndex = 838;
         ClientMessage encoded = MCTriggerForceStartCodec.encodeResponse(aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7447,12 +7946,12 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCTriggerHotRestartBackupCodec_decodeRequest() {
-        int fileClientMessageIndex = 837;
+        int fileClientMessageIndex = 839;
     }
 
     @Test
     public void test_MCTriggerHotRestartBackupCodec_encodeResponse() {
-        int fileClientMessageIndex = 838;
+        int fileClientMessageIndex = 840;
         ClientMessage encoded = MCTriggerHotRestartBackupCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7460,12 +7959,12 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCInterruptHotRestartBackupCodec_decodeRequest() {
-        int fileClientMessageIndex = 839;
+        int fileClientMessageIndex = 841;
     }
 
     @Test
     public void test_MCInterruptHotRestartBackupCodec_encodeResponse() {
-        int fileClientMessageIndex = 840;
+        int fileClientMessageIndex = 842;
         ClientMessage encoded = MCInterruptHotRestartBackupCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7473,14 +7972,14 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCResetQueueAgeStatisticsCodec_decodeRequest() {
-        int fileClientMessageIndex = 841;
+        int fileClientMessageIndex = 843;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aString, MCResetQueueAgeStatisticsCodec.decodeRequest(fromFile)));
     }
 
     @Test
     public void test_MCResetQueueAgeStatisticsCodec_encodeResponse() {
-        int fileClientMessageIndex = 842;
+        int fileClientMessageIndex = 844;
         ClientMessage encoded = MCResetQueueAgeStatisticsCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7488,12 +7987,12 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCReloadConfigCodec_decodeRequest() {
-        int fileClientMessageIndex = 843;
+        int fileClientMessageIndex = 845;
     }
 
     @Test
     public void test_MCReloadConfigCodec_encodeResponse() {
-        int fileClientMessageIndex = 844;
+        int fileClientMessageIndex = 846;
         ClientMessage encoded = MCReloadConfigCodec.encodeResponse(aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7501,14 +8000,14 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_MCUpdateConfigCodec_decodeRequest() {
-        int fileClientMessageIndex = 845;
+        int fileClientMessageIndex = 847;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aString, MCUpdateConfigCodec.decodeRequest(fromFile)));
     }
 
     @Test
     public void test_MCUpdateConfigCodec_encodeResponse() {
-        int fileClientMessageIndex = 846;
+        int fileClientMessageIndex = 848;
         ClientMessage encoded = MCUpdateConfigCodec.encodeResponse(aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7516,7 +8015,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_SqlExecute_reservedCodec_decodeRequest() {
-        int fileClientMessageIndex = 847;
+        int fileClientMessageIndex = 849;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         SqlExecute_reservedCodec.RequestParameters parameters = SqlExecute_reservedCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.sql));
@@ -7527,7 +8026,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_SqlExecute_reservedCodec_encodeResponse() {
-        int fileClientMessageIndex = 848;
+        int fileClientMessageIndex = 850;
         ClientMessage encoded = SqlExecute_reservedCodec.encodeResponse(null, null, null, aBoolean, aLong, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7535,7 +8034,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_SqlFetch_reservedCodec_decodeRequest() {
-        int fileClientMessageIndex = 849;
+        int fileClientMessageIndex = 851;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         SqlFetch_reservedCodec.RequestParameters parameters = SqlFetch_reservedCodec.decodeRequest(fromFile);
         assertTrue(isEqual(anSqlQueryId, parameters.queryId));
@@ -7544,7 +8043,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_SqlFetch_reservedCodec_encodeResponse() {
-        int fileClientMessageIndex = 850;
+        int fileClientMessageIndex = 852;
         ClientMessage encoded = SqlFetch_reservedCodec.encodeResponse(null, aBoolean, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7552,14 +8051,14 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_SqlCloseCodec_decodeRequest() {
-        int fileClientMessageIndex = 851;
+        int fileClientMessageIndex = 853;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(anSqlQueryId, SqlCloseCodec.decodeRequest(fromFile)));
     }
 
     @Test
     public void test_SqlCloseCodec_encodeResponse() {
-        int fileClientMessageIndex = 852;
+        int fileClientMessageIndex = 854;
         ClientMessage encoded = SqlCloseCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7567,7 +8066,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_SqlExecuteCodec_decodeRequest() {
-        int fileClientMessageIndex = 853;
+        int fileClientMessageIndex = 855;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         SqlExecuteCodec.RequestParameters parameters = SqlExecuteCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.sql));
@@ -7583,7 +8082,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_SqlExecuteCodec_encodeResponse() {
-        int fileClientMessageIndex = 854;
+        int fileClientMessageIndex = 856;
         ClientMessage encoded = SqlExecuteCodec.encodeResponse(null, null, aLong, null, aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7591,7 +8090,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_SqlFetchCodec_decodeRequest() {
-        int fileClientMessageIndex = 855;
+        int fileClientMessageIndex = 857;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         SqlFetchCodec.RequestParameters parameters = SqlFetchCodec.decodeRequest(fromFile);
         assertTrue(isEqual(anSqlQueryId, parameters.queryId));
@@ -7600,7 +8099,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_SqlFetchCodec_encodeResponse() {
-        int fileClientMessageIndex = 856;
+        int fileClientMessageIndex = 858;
         ClientMessage encoded = SqlFetchCodec.encodeResponse(null, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7608,14 +8107,14 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_SqlMappingDdlCodec_decodeRequest() {
-        int fileClientMessageIndex = 857;
+        int fileClientMessageIndex = 859;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aString, SqlMappingDdlCodec.decodeRequest(fromFile)));
     }
 
     @Test
     public void test_SqlMappingDdlCodec_encodeResponse() {
-        int fileClientMessageIndex = 858;
+        int fileClientMessageIndex = 860;
         ClientMessage encoded = SqlMappingDdlCodec.encodeResponse(null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7623,14 +8122,14 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_CPSubsystemAddMembershipListenerCodec_decodeRequest() {
-        int fileClientMessageIndex = 859;
+        int fileClientMessageIndex = 861;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aBoolean, CPSubsystemAddMembershipListenerCodec.decodeRequest(fromFile)));
     }
 
     @Test
     public void test_CPSubsystemAddMembershipListenerCodec_encodeResponse() {
-        int fileClientMessageIndex = 860;
+        int fileClientMessageIndex = 862;
         ClientMessage encoded = CPSubsystemAddMembershipListenerCodec.encodeResponse(aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7638,7 +8137,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_CPSubsystemAddMembershipListenerCodec_encodeMembershipEventEvent() {
-        int fileClientMessageIndex = 861;
+        int fileClientMessageIndex = 863;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         ClientMessage encoded = CPSubsystemAddMembershipListenerCodec.encodeMembershipEventEvent(aCpMember, aByte);
         compareClientMessages(fromFile, encoded);
@@ -7646,14 +8145,14 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_CPSubsystemRemoveMembershipListenerCodec_decodeRequest() {
-        int fileClientMessageIndex = 862;
+        int fileClientMessageIndex = 864;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aUUID, CPSubsystemRemoveMembershipListenerCodec.decodeRequest(fromFile)));
     }
 
     @Test
     public void test_CPSubsystemRemoveMembershipListenerCodec_encodeResponse() {
-        int fileClientMessageIndex = 863;
+        int fileClientMessageIndex = 865;
         ClientMessage encoded = CPSubsystemRemoveMembershipListenerCodec.encodeResponse(aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7661,14 +8160,14 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_CPSubsystemAddGroupAvailabilityListenerCodec_decodeRequest() {
-        int fileClientMessageIndex = 864;
+        int fileClientMessageIndex = 866;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aBoolean, CPSubsystemAddGroupAvailabilityListenerCodec.decodeRequest(fromFile)));
     }
 
     @Test
     public void test_CPSubsystemAddGroupAvailabilityListenerCodec_encodeResponse() {
-        int fileClientMessageIndex = 865;
+        int fileClientMessageIndex = 867;
         ClientMessage encoded = CPSubsystemAddGroupAvailabilityListenerCodec.encodeResponse(aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7676,7 +8175,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_CPSubsystemAddGroupAvailabilityListenerCodec_encodeGroupAvailabilityEventEvent() {
-        int fileClientMessageIndex = 866;
+        int fileClientMessageIndex = 868;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         ClientMessage encoded = CPSubsystemAddGroupAvailabilityListenerCodec.encodeGroupAvailabilityEventEvent(aRaftGroupId, aListOfCpMembers, aListOfCpMembers);
         compareClientMessages(fromFile, encoded);
@@ -7684,14 +8183,14 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_CPSubsystemRemoveGroupAvailabilityListenerCodec_decodeRequest() {
-        int fileClientMessageIndex = 867;
+        int fileClientMessageIndex = 869;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aUUID, CPSubsystemRemoveGroupAvailabilityListenerCodec.decodeRequest(fromFile)));
     }
 
     @Test
     public void test_CPSubsystemRemoveGroupAvailabilityListenerCodec_encodeResponse() {
-        int fileClientMessageIndex = 868;
+        int fileClientMessageIndex = 870;
         ClientMessage encoded = CPSubsystemRemoveGroupAvailabilityListenerCodec.encodeResponse(aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7699,7 +8198,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_JetSubmitJobCodec_decodeRequest() {
-        int fileClientMessageIndex = 869;
+        int fileClientMessageIndex = 871;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         JetSubmitJobCodec.RequestParameters parameters = JetSubmitJobCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aLong, parameters.jobId));
@@ -7711,7 +8210,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_JetSubmitJobCodec_encodeResponse() {
-        int fileClientMessageIndex = 870;
+        int fileClientMessageIndex = 872;
         ClientMessage encoded = JetSubmitJobCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7719,7 +8218,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_JetTerminateJobCodec_decodeRequest() {
-        int fileClientMessageIndex = 871;
+        int fileClientMessageIndex = 873;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         JetTerminateJobCodec.RequestParameters parameters = JetTerminateJobCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aLong, parameters.jobId));
@@ -7730,7 +8229,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_JetTerminateJobCodec_encodeResponse() {
-        int fileClientMessageIndex = 872;
+        int fileClientMessageIndex = 874;
         ClientMessage encoded = JetTerminateJobCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7738,14 +8237,14 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_JetGetJobStatusCodec_decodeRequest() {
-        int fileClientMessageIndex = 873;
+        int fileClientMessageIndex = 875;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aLong, JetGetJobStatusCodec.decodeRequest(fromFile)));
     }
 
     @Test
     public void test_JetGetJobStatusCodec_encodeResponse() {
-        int fileClientMessageIndex = 874;
+        int fileClientMessageIndex = 876;
         ClientMessage encoded = JetGetJobStatusCodec.encodeResponse(anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7753,7 +8252,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_JetGetJobIdsCodec_decodeRequest() {
-        int fileClientMessageIndex = 875;
+        int fileClientMessageIndex = 877;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         JetGetJobIdsCodec.RequestParameters parameters = JetGetJobIdsCodec.decodeRequest(fromFile);
         assertTrue(parameters.isOnlyNameExists);
@@ -7764,7 +8263,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_JetGetJobIdsCodec_encodeResponse() {
-        int fileClientMessageIndex = 876;
+        int fileClientMessageIndex = 878;
         ClientMessage encoded = JetGetJobIdsCodec.encodeResponse(aData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7772,7 +8271,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_JetJoinSubmittedJobCodec_decodeRequest() {
-        int fileClientMessageIndex = 877;
+        int fileClientMessageIndex = 879;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         JetJoinSubmittedJobCodec.RequestParameters parameters = JetJoinSubmittedJobCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aLong, parameters.jobId));
@@ -7782,7 +8281,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_JetJoinSubmittedJobCodec_encodeResponse() {
-        int fileClientMessageIndex = 878;
+        int fileClientMessageIndex = 880;
         ClientMessage encoded = JetJoinSubmittedJobCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7790,7 +8289,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_JetGetJobSubmissionTimeCodec_decodeRequest() {
-        int fileClientMessageIndex = 879;
+        int fileClientMessageIndex = 881;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         JetGetJobSubmissionTimeCodec.RequestParameters parameters = JetGetJobSubmissionTimeCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aLong, parameters.jobId));
@@ -7800,7 +8299,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_JetGetJobSubmissionTimeCodec_encodeResponse() {
-        int fileClientMessageIndex = 880;
+        int fileClientMessageIndex = 882;
         ClientMessage encoded = JetGetJobSubmissionTimeCodec.encodeResponse(aLong);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7808,7 +8307,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_JetGetJobConfigCodec_decodeRequest() {
-        int fileClientMessageIndex = 881;
+        int fileClientMessageIndex = 883;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         JetGetJobConfigCodec.RequestParameters parameters = JetGetJobConfigCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aLong, parameters.jobId));
@@ -7818,7 +8317,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_JetGetJobConfigCodec_encodeResponse() {
-        int fileClientMessageIndex = 882;
+        int fileClientMessageIndex = 884;
         ClientMessage encoded = JetGetJobConfigCodec.encodeResponse(aData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7826,14 +8325,14 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_JetResumeJobCodec_decodeRequest() {
-        int fileClientMessageIndex = 883;
+        int fileClientMessageIndex = 885;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aLong, JetResumeJobCodec.decodeRequest(fromFile)));
     }
 
     @Test
     public void test_JetResumeJobCodec_encodeResponse() {
-        int fileClientMessageIndex = 884;
+        int fileClientMessageIndex = 886;
         ClientMessage encoded = JetResumeJobCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7841,7 +8340,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_JetExportSnapshotCodec_decodeRequest() {
-        int fileClientMessageIndex = 885;
+        int fileClientMessageIndex = 887;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         JetExportSnapshotCodec.RequestParameters parameters = JetExportSnapshotCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aLong, parameters.jobId));
@@ -7851,7 +8350,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_JetExportSnapshotCodec_encodeResponse() {
-        int fileClientMessageIndex = 886;
+        int fileClientMessageIndex = 888;
         ClientMessage encoded = JetExportSnapshotCodec.encodeResponse();
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7859,12 +8358,12 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_JetGetJobSummaryListCodec_decodeRequest() {
-        int fileClientMessageIndex = 887;
+        int fileClientMessageIndex = 889;
     }
 
     @Test
     public void test_JetGetJobSummaryListCodec_encodeResponse() {
-        int fileClientMessageIndex = 888;
+        int fileClientMessageIndex = 890;
         ClientMessage encoded = JetGetJobSummaryListCodec.encodeResponse(aData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7872,7 +8371,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_JetExistsDistributedObjectCodec_decodeRequest() {
-        int fileClientMessageIndex = 889;
+        int fileClientMessageIndex = 891;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         JetExistsDistributedObjectCodec.RequestParameters parameters = JetExistsDistributedObjectCodec.decodeRequest(fromFile);
         assertTrue(isEqual(aString, parameters.serviceName));
@@ -7881,7 +8380,7 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_JetExistsDistributedObjectCodec_encodeResponse() {
-        int fileClientMessageIndex = 890;
+        int fileClientMessageIndex = 892;
         ClientMessage encoded = JetExistsDistributedObjectCodec.encodeResponse(aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7889,14 +8388,14 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_JetGetJobMetricsCodec_decodeRequest() {
-        int fileClientMessageIndex = 891;
+        int fileClientMessageIndex = 893;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aLong, JetGetJobMetricsCodec.decodeRequest(fromFile)));
     }
 
     @Test
     public void test_JetGetJobMetricsCodec_encodeResponse() {
-        int fileClientMessageIndex = 892;
+        int fileClientMessageIndex = 894;
         ClientMessage encoded = JetGetJobMetricsCodec.encodeResponse(aData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7904,14 +8403,14 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_JetGetJobSuspensionCauseCodec_decodeRequest() {
-        int fileClientMessageIndex = 893;
+        int fileClientMessageIndex = 895;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aLong, JetGetJobSuspensionCauseCodec.decodeRequest(fromFile)));
     }
 
     @Test
     public void test_JetGetJobSuspensionCauseCodec_encodeResponse() {
-        int fileClientMessageIndex = 894;
+        int fileClientMessageIndex = 896;
         ClientMessage encoded = JetGetJobSuspensionCauseCodec.encodeResponse(aData);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
@@ -7919,12 +8418,12 @@ public class MemberCompatibilityNullTest_2_5 {
 
     @Test
     public void test_JetGetJobAndSqlSummaryListCodec_decodeRequest() {
-        int fileClientMessageIndex = 895;
+        int fileClientMessageIndex = 897;
     }
 
     @Test
     public void test_JetGetJobAndSqlSummaryListCodec_encodeResponse() {
-        int fileClientMessageIndex = 896;
+        int fileClientMessageIndex = 898;
         ClientMessage encoded = JetGetJobAndSqlSummaryListCodec.encodeResponse(aListJobAndSqlSummary);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);

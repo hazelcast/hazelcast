@@ -34,6 +34,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.InMemoryFormat;
@@ -94,6 +95,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.MultiMapConfig.ValueCollectionType.LIST;
 import static com.hazelcast.test.TestConfigUtils.NON_DEFAULT_BACKUP_COUNT;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -667,6 +669,29 @@ public class DynamicConfigTest extends HazelcastTestSupport {
         for (HazelcastInstance instance : members) {
             PNCounterConfig registeredConfig = instance.getConfig().getPNCounterConfig(name);
             assertEquals(config, registeredConfig);
+        }
+    }
+
+    @Test
+    public void testExternalDataStoreConfig() {
+        Properties properties = new Properties();
+        properties.setProperty("prop1", "val1");
+        properties.setProperty("prop2", "val2");
+        ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
+                .setName("some-name")
+                .setClassName("some-class-name")
+                .setProperties(properties);
+
+
+        driver.getConfig().addExternalDataStoreConfig(externalDataStoreConfig);
+        assertConfigurationsEqualOnAllMembers(externalDataStoreConfig);
+    }
+
+    private void assertConfigurationsEqualOnAllMembers(ExternalDataStoreConfig expectedConfig) {
+        String name = expectedConfig.getName();
+        for (HazelcastInstance instance : members) {
+            ExternalDataStoreConfig registeredConfig = instance.getConfig().getExternalDataStoreConfig(name);
+            assertThat(registeredConfig).isEqualTo(expectedConfig);
         }
     }
 

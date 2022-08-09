@@ -16,6 +16,10 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.nio.BufferObjectDataInput;
+import com.hazelcast.internal.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -26,9 +30,16 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.io.IOException;
+import java.util.Properties;
+
+import static org.assertj.core.api.Assertions.assertThat;
+
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ExternalDataStoreConfigTest extends HazelcastTestSupport {
+    private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
+
     @Test
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
@@ -36,5 +47,49 @@ public class ExternalDataStoreConfigTest extends HazelcastTestSupport {
                 .usingGetClass()
                 .suppress(Warning.NONFINAL_FIELDS)
                 .verify();
+    }
+
+    @Test
+    public void should_serialize_with_empty_properties() throws IOException {
+        ExternalDataStoreConfig originalConfig = new ExternalDataStoreConfig()
+                .setName("some-name")
+                .setClassName("some-class-name")
+                .setShared(false);
+
+        byte[] data = writeData(originalConfig);
+        ExternalDataStoreConfig deserializedCopy = readData(data);
+
+        assertThat(deserializedCopy).isEqualTo(originalConfig);
+    }
+
+    @Test
+    public void should_serialize_with_NON_empty_properties() throws IOException {
+
+        Properties properties = new Properties();
+        properties.setProperty("prop1", "val1");
+        properties.setProperty("prop2", "val2");
+        ExternalDataStoreConfig originalConfig = new ExternalDataStoreConfig()
+                .setName("some-name")
+                .setClassName("some-class-name")
+                .setProperties(properties);
+
+        byte[] data = writeData(originalConfig);
+        ExternalDataStoreConfig deserializedCopy = readData(data);
+
+        assertThat(deserializedCopy).isEqualTo(originalConfig);
+    }
+
+    private ExternalDataStoreConfig readData(byte[] data) throws IOException {
+        BufferObjectDataInput objectDataInput = serializationService.createObjectDataInput(data);
+        ExternalDataStoreConfig deserializedCopy = new ExternalDataStoreConfig();
+        deserializedCopy.readData(objectDataInput);
+        return deserializedCopy;
+    }
+
+    private byte[] writeData(ExternalDataStoreConfig originalConfig) throws IOException {
+        BufferObjectDataOutput objectDataOutput = serializationService.createObjectDataOutput();
+        originalConfig.writeData(objectDataOutput);
+        byte[] data = objectDataOutput.toByteArray();
+        return data;
     }
 }
