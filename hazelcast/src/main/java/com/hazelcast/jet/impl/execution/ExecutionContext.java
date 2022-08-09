@@ -287,18 +287,21 @@ public class ExecutionContext implements DynamicMetricsProvider {
             futures.add(runAsync(closeAction, executor));
         }
 
-        tempDirectories.forEach((k, dir) -> {
-            try {
-                IOUtil.delete(dir);
-            } catch (Exception e) {
-                logger.warning("Failed to delete temporary directory " + dir);
-            }
-        });
+        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
+                .thenApply(ignored -> {
+                    tempDirectories.forEach((k, dir) -> {
+                        try {
+                            IOUtil.delete(dir);
+                        } catch (Exception e) {
+                            logger.warning("Failed to delete temporary directory " + dir);
+                        }
+                    });
 
-        if (serializationService != null) {
-            serializationService.dispose();
-        }
-        return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
+                    if (serializationService != null) {
+                        serializationService.dispose();
+                    }
+                    return null;
+                });
     }
 
     /**
