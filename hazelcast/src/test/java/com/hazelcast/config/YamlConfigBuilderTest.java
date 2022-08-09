@@ -1171,6 +1171,30 @@ public class YamlConfigBuilderTest
 
     @Override
     @Test
+    public void testMapStoreConfig_offload_whenDefault() {
+        MapStoreConfig mapStoreConfig = getOffloadMapStoreConfig(MapStoreConfig.DEFAULT_OFFLOAD, true);
+
+        assertTrue(mapStoreConfig.isOffload());
+    }
+
+    @Override
+    @Test
+    public void testMapStoreConfig_offload_whenSetFalse() {
+        MapStoreConfig mapStoreConfig = getOffloadMapStoreConfig(false, false);
+
+        assertFalse(mapStoreConfig.isOffload());
+    }
+
+    @Override
+    @Test
+    public void testMapStoreConfig_offload_whenSetTrue() {
+        MapStoreConfig mapStoreConfig = getOffloadMapStoreConfig(true, false);
+
+        assertTrue(mapStoreConfig.isOffload());
+    }
+
+    @Override
+    @Test
     public void testMapStoreWriteBatchSize() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -1222,6 +1246,21 @@ public class YamlConfigBuilderTest
                 + "    mymap:\n"
                 + "      map-store:"
                 + (useDefault ? " {}" : "\n        write-coalescing: " + value + "\n");
+    }
+
+    private MapStoreConfig getOffloadMapStoreConfig(boolean offload, boolean useDefault) {
+        String xml = getOffloadConfigYaml(offload, useDefault);
+        Config config = buildConfig(xml);
+        return config.getMapConfig("mymap").getMapStoreConfig();
+    }
+
+    private String getOffloadConfigYaml(boolean value, boolean useDefault) {
+        return ""
+                + "hazelcast:\n"
+                + "  map:\n"
+                + "    mymap:\n"
+                + "      map-store:"
+                + (useDefault ? " {}" : "\n        offload: " + String.valueOf(value) + "\n");
     }
 
     @Override

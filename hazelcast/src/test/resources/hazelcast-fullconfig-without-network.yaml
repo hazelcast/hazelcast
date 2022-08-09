@@ -301,6 +301,7 @@ hazelcast:
         write-delay-seconds: 0
         write-batch-size: 1
         write-coalescing: true
+        offload: false
         properties:
           dummy.property: value
 

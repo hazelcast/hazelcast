@@ -1981,6 +1981,22 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="offload" type="xs:boolean" minOccurs="0" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        Default value is true.
+                        MapStore or MapLoader implementations are
+                        executed by a partition thread, by setting
+                        this to true, Hazelcast makes this thread
+                        available for other cluster operations and
+                        offloads MapStore or MapLoader interacting
+                        parts of executions to a different thread
+                        pool, upon interaction finish, operations
+                        continue to work in the partition thread
+                        from the point they are offloaded.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="properties" type="properties" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="enabled" default="true" type="xs:boolean">

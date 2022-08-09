@@ -415,6 +415,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(0, testMapStoreConfig.getWriteDelaySeconds());
         assertEquals(10, testMapStoreConfig.getWriteBatchSize());
         assertTrue(testMapStoreConfig.isWriteCoalescing());
+        assertFalse(testMapStoreConfig.isOffload());
         assertEquals(MapStoreConfig.InitialLoadMode.EAGER, testMapStoreConfig.getInitialLoadMode());
 
         // test that the testMapConfig has a nearCacheConfig and it is correct
