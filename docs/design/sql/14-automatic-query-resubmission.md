@@ -78,9 +78,9 @@ The default mode will be `NEVER` (b/w compatible).
 #### Ways to pick resubmission policy
 
 1. Ideally, we would be able to configure the retry policy per query, but that's
-not possible. We could add this option to Java API (to the `SqlStatement`
+not possible. We could add this option to custom Java API (to the `SqlStatement`
 class), but this is a non-standard API. We expect many clients to use JDBC or
-other standardized APIs in other languages, which don't provide this support.
+other standardized APIs in other languages, which can't be extended in this way.
 
 2. Another idea is that we could specify this as a query hint, e.g. in the form of
 `SELECT /*+ ALLOW_RETRY */`. But for this we would have to parse the query on
@@ -95,11 +95,15 @@ not have to provide a full SQL parser.
 4. Provide a new option in `ClientConfig`, and a new JDBC URL parameter for 
 JDBC. Other standardized APIs also provide these. The disadvantage is that it
 will apply to all statements executed using that connection, that is also to DDL
-statements etc.
+statements etc., and that it can't be changed later without creating a new
+connection.
 
 We propose to implement options (3) and (4). Since the option (4) is feasible
 for all modes, except for not-that-useful `RETRY_ALL` mode, we consider the
 option (3) a nice-to-have feature.
+
+Adding of options (1) .. (3) in the future is possible as it won't break the
+backwards compatibility.
 
 #### Explanation of "no rows received yet"
 
