@@ -47,17 +47,4 @@ public class CalcOptimizerTest extends OptimizerTestSupport {
                 )
         );
     }
-
-    @Test
-    public void test_test() {
-        HazelcastTable table = partitionedTable("m", asList(field(KEY, INT), field(VALUE, VARCHAR)), 10);
-        assertPlan(
-                optimizeLogical("SELECT a FROM (SELECT AVG(__key) AS a FROM m) t WHERE a > 10", table),
-                plan(
-                        planRow(0, CalcLogicalRel.class),
-                        planRow(1, AggregateLogicalRel.class),
-                        planRow(2, FullScanLogicalRel.class)
-                )
-        );
-    }
 }

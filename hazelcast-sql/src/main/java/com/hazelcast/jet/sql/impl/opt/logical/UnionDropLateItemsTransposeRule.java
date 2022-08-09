@@ -70,7 +70,7 @@ public class UnionDropLateItemsTransposeRule extends RelRule<RelRule.Config> imp
         Config DEFAULT = ImmutableUnionDropLateItemsTransposeRule.Config.builder()
                 .description(UnionDropLateItemsTransposeRule.class.getSimpleName())
                 .operandSupplier(b0 -> b0
-                        .operand(UnionLogicalRel.class)
+                        .operand(Union.class)
                         .trait(LOGICAL)
                         .predicate(union -> union.all)
                         .unorderedInputs(b1 -> b1
@@ -92,18 +92,21 @@ public class UnionDropLateItemsTransposeRule extends RelRule<RelRule.Config> imp
 
     @Override
     public boolean matches(RelOptRuleCall call) {
-        UnionLogicalRel union = call.rel(0);
+        Union union = call.rel(0);
         boolean match = union.getInputs()
                 .stream()
                 .map(rel -> (RelSubset) rel)
                 .allMatch(rel -> rel.getBest() instanceof DropLateItemsLogicalRel);
         System.err.println(match);
         for (int i = 0; i < union.getInputs().size(); i++) {
-            for (int j = 0; j < ((RelSubset) union.getInput(i)).getRelList().size(); ++j) {
-                System.err.println(((RelSubset) union.getInput(i)).getRelList().get(j).getRelTypeName() +
-                        " -> " + ((RelSubset) union.getInput(i)).getRelList().get(j).computeSelfCost(union.getCluster().getPlanner(), HazelcastRelMetadataQuery.instance()));
+            RelSubset input = (RelSubset) union.getInput(i);
+            for (int j = 0; j < input.getRelList().size(); ++j) {
+                System.err.println(input.getRelList().get(j).getRelTypeName() +
+                        " -> " + input.getRelList().get(j).computeSelfCost(union.getCluster().getPlanner(), HazelcastRelMetadataQuery.instance()));
             }
+            System.err.println("Best " + input.getBest().getRelTypeName() + " -> " + input.getBest().computeSelfCost(union.getCluster().getPlanner(), HazelcastRelMetadataQuery.instance()));
         }
+        System.err.println("------");
         return match;
     }
 
