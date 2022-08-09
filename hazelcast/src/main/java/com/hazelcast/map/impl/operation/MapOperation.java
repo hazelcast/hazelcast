@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.internal.nearcache.impl.invalidation.Invalidator;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.services.ObjectNamespace;
@@ -31,6 +32,7 @@ import com.hazelcast.map.impl.PartitionContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
+import com.hazelcast.map.impl.mapstore.MapDataStores;
 import com.hazelcast.map.impl.mapstore.writebehind.TxnReservedCapacityCounter;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
 import com.hazelcast.map.impl.operation.steps.engine.State;
@@ -115,11 +117,14 @@ public abstract class MapOperation extends AbstractNamedOperation
         }
 
         canPublishWanEvent = canPublishWanEvent(mapContainer);
-        // TODO: add mapConfig#offload parameter here
-        hasMapStore = recordStore != null;
+        hasMapStore = recordStore != null
+                && recordStore.getMapDataStore() != MapDataStores.EMPTY_MAP_DATA_STORE;
         MapConfig mapConfig = mapContainer.getMapConfig();
-        mapStoreOffloadEnabled = getStartingStep() != null
-                && hasMapStore
+        MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
+        mapStoreOffloadEnabled = hasMapStore
+                && mapStoreConfig.isEnabled()
+                && mapStoreConfig.isOffload()
+                && getStartingStep() != null
                 && !mapConfig.getTieredStoreConfig().isEnabled();
 
         assertNativeMapOnPartitionThread();
