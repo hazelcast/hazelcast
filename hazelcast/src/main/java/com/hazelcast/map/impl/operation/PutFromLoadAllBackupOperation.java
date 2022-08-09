@@ -75,7 +75,7 @@ public class PutFromLoadAllBackupOperation extends MapOperation implements Backu
     }
 
     @Override
-    protected void afterRunInternal() {
+    public void afterRunInternal() {
         evict(null);
 
         super.afterRunInternal();

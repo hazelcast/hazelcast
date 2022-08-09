@@ -81,6 +81,12 @@ public interface ExecutionService {
     String OFFLOADABLE_EXECUTOR = "hz:offloadable";
 
     /**
+     * Name of the offloadable executor for offloaded
+     * {@link  com.hazelcast.map.MapStore} operations.
+     */
+    String MAP_STORE_OFFLOADABLE_EXECUTOR = "hz:map-store-offloadable";
+
+    /**
      * Name of the map-loader executor that loads the entry values
      * for a given key set locally on the member owning the partition
      * which contains the keys. This is the executor you want to

@@ -46,6 +46,7 @@ import com.hazelcast.internal.services.StatisticsAwareService;
 import com.hazelcast.internal.services.TenantContextAwareService;
 import com.hazelcast.internal.services.TransactionalService;
 import com.hazelcast.internal.services.WanSupportingService;
+import com.hazelcast.internal.util.MutableLong;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.impl.event.MapEventPublishingService;
 import com.hazelcast.map.impl.recordstore.RecordStore;
@@ -65,15 +66,18 @@ import com.hazelcast.transaction.impl.Transaction;
 import com.hazelcast.wan.impl.InternalWanEvent;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.UUID;
 
 import static com.hazelcast.core.EntryEventType.INVALIDATION;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_DISCRIMINATOR_NAME;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_MAP_STORE_WAITING_TO_BE_PROCESSED_COUNT;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_PREFIX;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_PREFIX_ENTRY_PROCESSOR_OFFLOADABLE_EXECUTOR;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_PREFIX_INDEX;
+import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_PREFIX_MAP_STORE_OFFLOADED_OPERATIONS;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_PREFIX_NEARCACHE;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_TAG_INDEX;
 
@@ -287,7 +291,7 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
     public void onBeforeLock(String distributedObjectName, Data key) {
         int partitionId = mapServiceContext.getNodeEngine().getPartitionService().getPartitionId(key);
         RecordStore recordStore = mapServiceContext.getRecordStore(partitionId, distributedObjectName);
-        // we have no use for the return value, invoked just for the side-effects
+        // we have no use for the return value, invoked just for the side effects
         recordStore.beforeOperation();
         try {
             recordStore.getRecordOrNull(key);
@@ -338,7 +342,6 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
                         .withDiscriminator(MAP_DISCRIMINATOR_NAME, mapName);
                 context.collect(nearCacheDescriptor, nearCacheStats);
             }
-
         }
         // stats of offloaded-entry-processor's executor
         ExecutorStats executorStats = mapServiceContext.getOffloadedEntryProcessorExecutorStats();
@@ -349,6 +352,37 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
                     .withDiscriminator(MAP_DISCRIMINATOR_NAME, name);
             context.collect(nearCacheDescriptor, offloadedExecutorStats);
         });
+
+        // mapStore offloaded operations
+        setMapStoreOffloadedOperationMetrics(descriptor, context);
+    }
+
+    private void setMapStoreOffloadedOperationMetrics(MetricDescriptor descriptor,
+                                                      MetricsCollectionContext context) {
+        // aggregate
+        PartitionContainer[] partitionContainers = mapServiceContext.getPartitionContainers();
+        Map<String, MutableLong> offloaded = new HashMap<>();
+        for (PartitionContainer partitionContainer : partitionContainers) {
+            Collection<RecordStore> allRecordStores = partitionContainer.getAllRecordStores();
+            for (RecordStore recordStore : allRecordStores) {
+                if (recordStore.getMapContainer().getMapConfig().getMapStoreConfig().isEnabled()) {
+                    MutableLong count = offloaded.computeIfAbsent(recordStore.getName(), s -> new MutableLong());
+                    count.value += recordStore.getMapStoreOffloadedOperationsCount();
+                }
+            }
+        }
+
+        // collect metrics
+        for (Map.Entry<String, MutableLong> entry : offloaded.entrySet()) {
+            String mapName = entry.getKey();
+            MutableLong count = entry.getValue();
+            MetricDescriptor descriptorOffloaded = descriptor
+                    .copy()
+                    .withMetric(MAP_METRIC_MAP_STORE_WAITING_TO_BE_PROCESSED_COUNT)
+                    .withPrefix(MAP_PREFIX_MAP_STORE_OFFLOADED_OPERATIONS)
+                    .withDiscriminator(MAP_DISCRIMINATOR_NAME, mapName);
+            context.collect(descriptorOffloaded, count.value);
+        }
     }
 
     @Override

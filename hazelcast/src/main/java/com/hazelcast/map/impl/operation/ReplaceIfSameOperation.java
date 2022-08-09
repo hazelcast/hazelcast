@@ -18,6 +18,8 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.operation.steps.engine.State;
+import com.hazelcast.map.impl.recordstore.StaticParams;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
@@ -47,7 +49,29 @@ public class ReplaceIfSameOperation extends BasePutOperation implements Mutating
     }
 
     @Override
-    protected void afterRunInternal() {
+    public State createState() {
+        return super.createState()
+                .setExpect(expect);
+    }
+
+    @Override
+    public void applyState(State state) {
+        super.applyState(state);
+        successful = state.getOldValue() != null;
+    }
+
+    @Override
+    protected Data getOldValue(State state) {
+        return expect;
+    }
+
+    @Override
+    protected StaticParams getStaticParams() {
+        return StaticParams.REPLACE_IF_SAME_PARAMS;
+    }
+
+    @Override
+    public void afterRunInternal() {
         if (successful) {
             super.afterRunInternal();
         }

@@ -16,13 +16,16 @@
 
 package com.hazelcast.map.impl.tx;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.BaseRemoveOperation;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
+import com.hazelcast.map.impl.operation.steps.engine.State;
+import com.hazelcast.map.impl.operation.steps.TxnDeleteOpSteps;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
 import com.hazelcast.transaction.TransactionException;
@@ -76,12 +79,33 @@ public class TxnDeleteOperation
     }
 
     @Override
+    public State createState() {
+        return super.createState()
+                .setVersion(version)
+                .setThreadId(threadId)
+                .setOwnerUuid(ownerUuid)
+                .setTxnId(transactionId);
+    }
+
+    @Override
+    public Step getStartingStep() {
+        return TxnDeleteOpSteps.READ;
+    }
+
+    @Override
+    public void applyState(State state) {
+        super.applyState(state);
+
+        successful = dataOldValue != null;
+    }
+
+    @Override
     public boolean shouldWait() {
         return false;
     }
 
     @Override
-    protected void afterRunInternal() {
+    public void afterRunInternal() {
         if (successful) {
             super.afterRunInternal();
         }

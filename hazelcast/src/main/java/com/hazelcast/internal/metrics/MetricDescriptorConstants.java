@@ -248,6 +248,10 @@ public final class MetricDescriptorConstants {
             = "fullPartitionReplicationRecordsCount";
     public static final String MAP_METRIC_DIFF_PARTITION_REPLICATION_RECORDS_COUNT
             = "differentialPartitionReplicationRecordsCount";
+    public static final String MAP_PREFIX_MAP_STORE_OFFLOADED_OPERATIONS
+            = "map.store.offloaded.operations";
+    public static final String MAP_METRIC_MAP_STORE_WAITING_TO_BE_PROCESSED_COUNT
+            = "waitingToBeProcessedCount";
     // ===[/MAP]========================================================
 
     // ===[MEMORY]======================================================
