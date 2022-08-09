@@ -67,9 +67,6 @@ public abstract class Converter implements Serializable {
     protected static final int ID_MAP = 23;
     protected static final int ID_JSON = 24;
 
-    // TODO add here or re-number?
-    protected static final int ID_TIME = 25;
-
     private final int id;
     private final QueryDataTypeFamily typeFamily;
 
