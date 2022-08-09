@@ -16,65 +16,51 @@
 
 package com.hazelcast.internal.serialization.impl.compact.schema;
 
-import com.hazelcast.internal.serialization.impl.compact.Schema;
-import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 
 /**
- * Tries to locate the schema from its schema id in the local registry of the
- * member and return it. It is allowed to return {@code null} as the response,
- * if there is no such schema in the registry.
+ * Sent from the coordinator member to participants node so that they
+ * will mark the schema in their local as replicated.
+ *
+ * Must be sent from the coordinator only after making sure that each
+ * participant member has the schema in their local with the
+ * prepared/replicated status.
  */
-public class FetchSchemaOperation extends Operation implements IdentifiedDataSerializable {
+public class AckSchemaReplicationOperation extends AbstractSchemaReplicationOperation {
 
     private long schemaId;
-    private Schema response;
 
-    public FetchSchemaOperation() {
+    public AckSchemaReplicationOperation() {
     }
 
-    public FetchSchemaOperation(long schemaId) {
+    public AckSchemaReplicationOperation(long schemaId, int memberListVersion) {
+        super(memberListVersion);
         this.schemaId = schemaId;
     }
 
     @Override
-    public void run() {
-        MemberSchemaService schemaService = getService();
-        response = schemaService.getLocal(schemaId);
-    }
-
-    @Override
-    public Schema getResponse() {
-        return response;
+    protected void runInternal() {
+        MemberSchemaService service = getService();
+        service.onSchemaAckRequest(schemaId, executedLocally());
     }
 
     @Override
     protected void writeInternal(ObjectDataOutput out) throws IOException {
         out.writeLong(schemaId);
+        out.writeInt(memberListVersion);
     }
 
     @Override
     protected void readInternal(ObjectDataInput in) throws IOException {
         schemaId = in.readLong();
-    }
-
-    @Override
-    public String getServiceName() {
-        return SchemaService.SERVICE_NAME;
-    }
-
-    @Override
-    public int getFactoryId() {
-        return SchemaDataSerializerHook.F_ID;
+        memberListVersion = in.readInt();
     }
 
     @Override
     public int getClassId() {
-        return SchemaDataSerializerHook.FETCH_SCHEMA_OPERATION;
+        return SchemaDataSerializerHook.ACK_SCHEMA_REPLICATION_OPERATION;
     }
 }

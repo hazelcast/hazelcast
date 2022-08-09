@@ -33,6 +33,7 @@ import com.hazelcast.internal.networking.ChannelInitializer;
 import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.ByteArrayProcessor;
@@ -200,6 +201,14 @@ public interface NodeExtension {
      * @return the compatibility serialization service
      */
     InternalSerializationService createCompatibilitySerializationService();
+
+    /**
+     * Creates and returns a schema service for the member side that is able
+     * to replicate schemas across the cluster.
+     *
+     * @return the member schema service
+     */
+    MemberSchemaService createSchemaService();
 
     /**
      * Returns <tt>SecurityContext</tt> for this <tt>Node</tt> if available, otherwise returns null.

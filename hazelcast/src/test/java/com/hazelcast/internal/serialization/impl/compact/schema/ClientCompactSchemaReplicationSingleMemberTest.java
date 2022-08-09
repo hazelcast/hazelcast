@@ -14,31 +14,26 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.serialization.impl.compact.integration;
+package com.hazelcast.internal.serialization.impl.compact.schema;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
-import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
-
-@RunWith(HazelcastParametrizedRunner.class)
-@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class LiteMemberCompactTest extends CompactFormatIntegrationTest {
+public class ClientCompactSchemaReplicationSingleMemberTest extends CompactSchemaReplicationSingleMemberTest {
 
     @Override
-    public void setup() {
-        factory.newHazelcastInstance(getConfig());
-        factory.newHazelcastInstance(getConfig());
-        Config config = getConfig();
-        config.setLiteMember(true);
-        instance1 = factory.newHazelcastInstance(config);
-        instance2 = factory.newHazelcastInstance(config);
+    protected HazelcastInstance getDriver() {
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getSerializationConfig()
+                .getCompactSerializationConfig()
+                .setEnabled(true);
+        return factory.newHazelcastClient(clientConfig);
     }
 }
-

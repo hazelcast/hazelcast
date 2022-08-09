@@ -570,11 +570,6 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public Data toDataWithSchema(Object object) {
-        return serializationService.toDataWithSchema(object);
-    }
-
-    @Override
     public MapClearExpiredRecordsTask getClearExpiredRecordsTask() {
         return clearExpiredRecordsTask;
     }
