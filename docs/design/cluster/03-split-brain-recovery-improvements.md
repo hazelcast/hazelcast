@@ -189,9 +189,8 @@ mechanism to the remembered addresses and we clean up the old member addresses
 after a specific amount of time passed after the members left the cluster. The
 default value for this retention period is selected as 4 hours which I wanted
 to choose it same with the default missing CP member auto removal period. Also,
-we added an internal property for configuring this period namely
-`hazelcast.previously.joined.member.address.retention.duration.seconds` which
-can be exposed to public API later.
+we added a property for configuring this period namely
+`hazelcast.tcp.join.previously.joined.member.address.retention.seconds`.
 
 #### Proposed Solution 2
 
