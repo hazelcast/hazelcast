@@ -1003,3 +1003,10 @@ hazelcast:
 
   sql:
     statement-timeout-millis: 0
+
+  external-data-store:
+    mysql-database:
+      class-name: com.hazelcast.datastore.JdbcDataStoreFactory
+      properties:
+        jdbcUrl: jdbc:mysql://dummy:3306
+      shared: false
