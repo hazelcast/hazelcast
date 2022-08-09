@@ -111,7 +111,6 @@ public final class Converters {
 
         // Converters for temporal data types.
         converters.add(DateConverter.INSTANCE);
-        converters.add(TimeConverter.INSTANCE);
         converters.add(CalendarConverter.INSTANCE);
 
         converters.add(LocalDateConverter.INSTANCE);
