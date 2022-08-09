@@ -91,8 +91,10 @@ public class CalcDropLateItemsTransposeRule extends RelRule<RelRule.Config> impl
         RelNode input = dropRel.getInput();
 
         Calc newCalc = calc.copy(calc.getTraitSet(), input, calc.getProgram());
-        // TODO[sasha]: calc may move watermarked field, so re-projection is needed.
-        DropLateItemsLogicalRel newDropRel = dropRel.copy(dropRel.getTraitSet(), newCalc);
+        DropLateItemsLogicalRel newDropRel = dropRel.copy(
+                dropRel.getTraitSet(),
+                newCalc,
+                newCalc.getProgram().getSourceField(dropRel.wmField()));
 
         call.transformTo(newDropRel);
     }

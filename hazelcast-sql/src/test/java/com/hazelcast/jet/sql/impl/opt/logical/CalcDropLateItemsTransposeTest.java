@@ -21,6 +21,7 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.test.TestAbstractSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
+import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTableStatistic;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
@@ -32,15 +33,19 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.logical.LogicalCalc;
 import org.apache.calcite.rel.logical.LogicalTableFunctionScan;
 import org.apache.calcite.rel.logical.LogicalTableScan;
+import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
+
+import java.util.Set;
 
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class CalcDropLateItemsTransposeTest extends OptimizerTestSupport {
     private TableResolver resolver;
@@ -135,6 +140,12 @@ public class CalcDropLateItemsTransposeTest extends OptimizerTestSupport {
                         planRow(1, FullScanLogicalRel.class)
                 )
         );
+
+        HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(RelMetadataQuery.instance());
+        Set<Integer> wmIndexes = query.extractWatermarkedFields(logicalRel).getFieldIndexes();
+        assertThat(wmIndexes.size()).isEqualTo(1);
+        assertThat(wmIndexes.iterator().next()).isEqualTo(0);
+
         assertRowsEventuallyInAnyOrder(sql, singletonList(new Row(timestamp(1L), 1)));
     }
 

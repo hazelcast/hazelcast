@@ -152,4 +152,9 @@ public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
     public void setWatermarkKey(byte watermarkKey) {
         this.watermarkKey = watermarkKey;
     }
+
+    public List<RexNode> getProjects() {
+        HazelcastTable table = getTable().unwrap(HazelcastTable.class);
+        return table.getProjects();
+    }
 }

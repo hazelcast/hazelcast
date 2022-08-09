@@ -60,7 +60,7 @@ public class DropLateItemsLogicalRel extends SingleRel implements LogicalRel {
         return new DropLateItemsLogicalRel(getCluster(), traitSet, sole(inputs), wmField);
     }
 
-    public DropLateItemsLogicalRel copy(RelTraitSet traitSet, RelNode input) {
+    public DropLateItemsLogicalRel copy(RelTraitSet traitSet, RelNode input, int wmField) {
         return new DropLateItemsLogicalRel(getCluster(), traitSet, input, wmField);
     }
 

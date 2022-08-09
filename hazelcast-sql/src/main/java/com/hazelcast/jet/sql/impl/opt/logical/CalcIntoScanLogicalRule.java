@@ -96,12 +96,13 @@ public final class CalcIntoScanLogicalRule extends RelRule<Config> implements Tr
                 scan.getCluster().getTypeFactory()
         );
 
+        int newWatermarkColumnIndex = program.getSourceField(scan.watermarkedColumnIndex());
         FullScanLogicalRel rel = new FullScanLogicalRel(
                 scan.getCluster(),
                 OptUtils.toLogicalConvention(scan.getTraitSet()),
                 convertedTable,
                 scan.eventTimePolicyProvider(),
-                scan.watermarkedColumnIndex()
+                newWatermarkColumnIndex
         );
         call.transformTo(rel);
     }
