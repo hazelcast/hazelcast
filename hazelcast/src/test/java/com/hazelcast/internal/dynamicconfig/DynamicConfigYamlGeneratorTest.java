@@ -17,7 +17,9 @@
 package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.config.InMemoryYamlConfig;
+import com.hazelcast.datastore.impl.ExternalDataStoreServiceImplTest;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -26,6 +28,8 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+
+import java.util.Properties;
 
 import static org.junit.Assert.assertEquals;
 
@@ -48,11 +52,29 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
         assertEquals(config.getLicenseKey(), actualLicenseKey);
     }
 
+    @Test
+    public void testExternalDataStoreConfig() {
+        Config expectedConfig = new Config();
+
+        Properties properties = new Properties();
+        properties.put("jdbcUrl", "jdbc:h2:mem:" + ExternalDataStoreServiceImplTest.class.getSimpleName());
+        ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
+                .setName("test-data-store")
+                .setClassName("com.hazelcast.datastore.JdbcDataStoreFactory")
+                .setProperties(properties);
+
+        expectedConfig.addExternalDataStoreConfig(externalDataStoreConfig);
+
+        Config actualConfig = getNewConfigViaGenerator(expectedConfig);
+
+        assertEquals(expectedConfig.getExternalDataStoreConfigs(), actualConfig.getExternalDataStoreConfigs());
+    }
+
     @Override
     protected Config getNewConfigViaGenerator(Config config) {
         DynamicConfigYamlGenerator dynamicConfigYamlGenerator = new DynamicConfigYamlGenerator();
         String yaml = dynamicConfigYamlGenerator.generate(config);
-        LOGGER.fine("\n" + yaml);
+        LOGGER.info("\n" + yaml);
         return new InMemoryYamlConfig(yaml);
     }
 }

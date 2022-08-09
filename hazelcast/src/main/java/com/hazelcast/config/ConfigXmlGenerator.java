@@ -197,6 +197,7 @@ public class ConfigXmlGenerator {
         factoryWithPropertiesXmlGenerator(gen, "auditlog", config.getAuditlogConfig());
         userCodeDeploymentConfig(gen, config);
         integrityCheckerXmlGenerator(gen, config);
+        externalDataStoreConfiguration(gen, config);
 
         xml.append("</hazelcast>");
 
@@ -1251,6 +1252,20 @@ public class ConfigXmlGenerator {
                 "enabled",
                 config.getIntegrityCheckerConfig().isEnabled()
         );
+    }
+
+    private static void externalDataStoreConfiguration(final XmlGenerator gen, final Config config) {
+        for (ExternalDataStoreConfig externalDataStoreConfig : config.getExternalDataStoreConfigs().values()) {
+            gen.open(
+                            "external-data-store",
+                            "name",
+                            externalDataStoreConfig.getName()
+                    )
+                    .node("class-name", externalDataStoreConfig.getClassName())
+                    .node("shared", externalDataStoreConfig.isShared())
+                    .appendProperties(externalDataStoreConfig.getProperties())
+                    .close();
+        }
     }
 
     /**
