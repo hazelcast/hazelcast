@@ -59,14 +59,6 @@ import static com.hazelcast.internal.util.FutureUtil.returnWithDeadline;
 
 public class TcpIpJoiner extends AbstractJoiner {
 
-    /**
-     * Specifies how long the address of a member that has previously joined the cluster
-     * will be retained in the knownMemberAddresses after the member leaves the cluster.
-     */
-    public static final String PREVIOUSLY_JOINED_MEMBER_ADDRESS_RETENTION_DURATION_PROP =
-            "hazelcast.previously.joined.member.address.retention.duration.seconds";
-    // Selected this default value same as default value of missing-cp-member-auto-removal-seconds
-    private static final int DEFAULT_PREVIOUSLY_JOINED_MEMBER_ADDRESS_RETENTION_DURATION_IN_SECS = 14400;
     private static final long JOIN_RETRY_WAIT_TIME = 1000L;
     private static final int MASTERSHIP_CLAIM_TIMEOUT = 10;
 
@@ -91,9 +83,8 @@ public class TcpIpJoiner extends AbstractJoiner {
         }
         maxPortTryCount = tryCount;
         joinConfig = getActiveMemberNetworkConfig(config).getJoin();
-        previouslyJoinedMemberAddressRetentionDuration = TimeUnit.SECONDS.toMillis(
-                Integer.getInteger(PREVIOUSLY_JOINED_MEMBER_ADDRESS_RETENTION_DURATION_PROP,
-                        DEFAULT_PREVIOUSLY_JOINED_MEMBER_ADDRESS_RETENTION_DURATION_IN_SECS));
+        previouslyJoinedMemberAddressRetentionDuration = node.getProperties().getMillis(
+                ClusterProperty.TCP_PREVIOUSLY_JOINED_MEMBER_ADDRESS_RETENTION_DURATION);
     }
 
     public boolean isClaimingMastership() {
