@@ -131,7 +131,7 @@ public class CompactSerializationTest {
     }
 
     @Test
-    public void testMultipleSerializerRegistration() {
+    public void testSetSerializers() {
         SerializationConfig config = new SerializationConfig();
 
         InnerDTOSerializer innerDTOSerializer = spy(new InnerDTOSerializer());
@@ -156,7 +156,7 @@ public class CompactSerializationTest {
     }
 
     @Test
-    public void testMultipleSerializerRegistration_withDuplicateClasses() {
+    public void testSetSerializers_withDuplicateClasses() {
         SerializationConfig config = new SerializationConfig();
 
         assertThatThrownBy(() -> {
@@ -168,7 +168,7 @@ public class CompactSerializationTest {
     }
 
     @Test
-    public void testMultipleSerializerRegistration_withDuplicateTypeNames() {
+    public void testSetSerializers_withDuplicateTypeNames() {
         SerializationConfig config = new SerializationConfig();
 
         assertThatThrownBy(() -> {
@@ -180,7 +180,7 @@ public class CompactSerializationTest {
     }
 
     @Test
-    public void testMultipleSerializerRegistration_clearPreviousRegistrations() {
+    public void testSetSerializers_clearPreviousRegistrations() {
         SerializationConfig config = new SerializationConfig();
 
         EmployeeDTOSerializer serializer = spy(new EmployeeDTOSerializer());
@@ -199,7 +199,7 @@ public class CompactSerializationTest {
     }
 
     @Test
-    public void testMultipleClassRegistration() {
+    public void testSetClasses() {
         SerializationConfig config = new SerializationConfig();
         config.getCompactSerializationConfig()
                 .setEnabled(true)
@@ -217,7 +217,7 @@ public class CompactSerializationTest {
     }
 
     @Test
-    public void testMultipleClassRegistration_withDuplicateClasses() {
+    public void testSetClasses_withDuplicateClasses() {
         SerializationConfig config = new SerializationConfig();
 
         assertThatThrownBy(() -> {
@@ -229,9 +229,7 @@ public class CompactSerializationTest {
     }
 
     @Test
-    public void testMultipleSerializerRegistration_whenThereAreClassRegistrations() {
-        // Make sure that multiple serializer registrations do no override class
-        // registrations
+    public void testSetSerializers_whenThereAreClassRegistrations() {
         SerializationConfig config = new SerializationConfig();
         config.getCompactSerializationConfig()
                 .setEnabled(true)
@@ -244,9 +242,7 @@ public class CompactSerializationTest {
     }
 
     @Test
-    public void testMultipleClassRegistration_whenThereAreSerializerRegistrations() {
-        // Make sure that multiple class registrations do no override serializer
-        // registrations
+    public void testSetClasses_whenThereAreSerializerRegistrations() {
         SerializationConfig config = new SerializationConfig();
         EmployeeDTOSerializer serializer = spy(new EmployeeDTOSerializer());
         config.getCompactSerializationConfig()

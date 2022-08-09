@@ -699,7 +699,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
                 + "        compact-serialization:\n"
                 + "            enabled: true\n"
                 + "            serializers:\n"
-                + "                - serializer: example.serialization.EmployeeDTOSerializer\n";
+                + "                - serializer: example.serialization.SerializableEmployeeDTOSerializer\n";
 
         SerializationConfig config = buildConfig(yaml).getSerializationConfig();
         CompactTestUtil.verifyExplicitSerializerIsUsed(config);
@@ -727,7 +727,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
                 + "        compact-serialization:\n"
                 + "            enabled: true\n"
                 + "            serializers:\n"
-                + "                - serializer: example.serialization.EmployeeDTOSerializer\n"
+                + "                - serializer: example.serialization.SerializableEmployeeDTOSerializer\n"
                 + "            classes:\n"
                 + "                - class: example.serialization.ExternalizableEmployeeDTO\n";
 

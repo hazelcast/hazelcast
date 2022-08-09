@@ -22,11 +22,11 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
-import example.serialization.EmployeeDTO;
 import example.serialization.ExternalizableEmployeeDTO;
 import example.serialization.InnerDTO;
 import example.serialization.MainDTO;
 import example.serialization.NamedDTO;
+import example.serialization.SerializableEmployeeDTO;
 
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
@@ -39,6 +39,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 public final class CompactTestUtil {
 
@@ -172,10 +173,12 @@ public final class CompactTestUtil {
                 .setConfig(serializationConfig)
                 .build();
 
-        EmployeeDTO object = new EmployeeDTO(1, 1);
+        SerializableEmployeeDTO object = new SerializableEmployeeDTO("John Doe", 1);
         Data data = serializationService.toData(object);
 
-        EmployeeDTO deserializedObject = serializationService.toObject(data);
+        assertTrue(data.isCompact());
+
+        SerializableEmployeeDTO deserializedObject = serializationService.toObject(data);
         assertEquals(object, deserializedObject);
     }
 
