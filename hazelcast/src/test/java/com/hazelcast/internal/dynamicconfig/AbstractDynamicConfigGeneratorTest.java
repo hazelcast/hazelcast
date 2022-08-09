@@ -123,6 +123,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
                 .setWriteDelaySeconds(10)
                 .setClassName("className")
                 .setWriteCoalescing(false)
+                .setOffload(false)
                 .setWriteBatchSize(500)
                 .setProperty("key", "value");
 
@@ -138,6 +139,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
                 .setImplementation(new TestMapStore())
                 .setWriteCoalescing(true)
                 .setWriteBatchSize(500)
+                .setOffload(true)
                 .setProperty("key", "value");
 
         testMap(mapStoreConfig);
@@ -151,6 +153,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
                 .setWriteDelaySeconds(10)
                 .setWriteCoalescing(true)
                 .setWriteBatchSize(500)
+                .setOffload(false)
                 .setFactoryClassName("factoryClassName")
                 .setProperty("key", "value");
 
@@ -165,6 +168,7 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
                 .setWriteDelaySeconds(10)
                 .setWriteCoalescing(true)
                 .setWriteBatchSize(500)
+                .setOffload(true)
                 .setFactoryImplementation((MapStoreFactory<Object, Object>) (mapName, properties) -> null)
                 .setProperty("key", "value");
 

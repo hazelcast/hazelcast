@@ -41,6 +41,7 @@
             "enabled": [],
             "initial-mode": "invalid",
             "class-name": null,
+            "offload": null,
             "write-delay-seconds": -60,
             "write-batch-size": -1000,
             "write-coalescing": null,
@@ -532,9 +533,16 @@
                 "causingExceptions": [],
                 "keyword": "minimum",
                 "message": "-60 is not greater or equal to 0"
+              },
+              {
+                "schemaLocation": "#/definitions/Map/additionalProperties/properties/map-store/properties/offload",
+                "pointerToViolation": "#/hazelcast/map/my-map/map-store/offload",
+                "causingExceptions": [],
+                "keyword": "type",
+                "message": "expected type: Boolean, found: Null"
               }
             ],
-            "message": "8 schema violations found"
+            "message": "9 schema violations found"
           },
           {
             "schemaLocation": "#/definitions/Map/additionalProperties/properties/merkle-tree",
@@ -954,7 +962,7 @@
             "message": "3 schema violations found"
           }
         ],
-        "message": "84 schema violations found"
+        "message": "85 schema violations found"
       },
       {
         "schemaLocation": "#/definitions/Map/additionalProperties/properties/query-caches/additionalProperties/properties/predicate",
@@ -996,6 +1004,6 @@
         "message": "#: only 1 subschema matches out of 2"
       }
     ],
-    "message": "87 schema violations found"
+    "message": "88 schema violations found"
   }
 }

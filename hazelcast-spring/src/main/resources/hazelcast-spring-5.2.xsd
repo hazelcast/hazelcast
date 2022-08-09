@@ -562,10 +562,25 @@
                                                 <xs:annotation>
                                                     <xs:documentation>
                                                         Setting write-coalescing is meaningful if you are using
-                                                        write-behind map-store. Otherwise it has no effect.
+                                                        write-behind map-store. Otherwise, it has no effect.
                                                         When write-coalescing is true, only the latest
                                                         store operation on a key in the write-delay-seconds
                                                         time-window will be reflected to the map-store.
+                                                    </xs:documentation>
+                                                </xs:annotation>
+                                            </xs:attribute>
+                                            <xs:attribute name="offload" type="parameterized-boolean"
+                                                          default="true">
+                                                <xs:annotation>
+                                                    <xs:documentation>
+                                                        Default value is true.
+                                                        MapStore or MapLoader implementations are executed by
+                                                        partition threads, by setting offload to true, Hazelcast
+                                                        makes these threads available for other cluster operations
+                                                        and offloads MapStore or MapLoader interacting parts of
+                                                        executions to a different thread pool, upon interaction finish,
+                                                        operations continue to work in the partition thread from
+                                                        the point they are offloaded.
                                                     </xs:documentation>
                                                 </xs:annotation>
                                             </xs:attribute>

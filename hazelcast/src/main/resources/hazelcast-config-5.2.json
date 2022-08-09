@@ -1281,6 +1281,11 @@
                 "default": "LAZY",
                 "description": "LAZY: Default load mode where load is async; EAGER: load mode where load is blocked till all partitions are loaded."
               },
+              "offload": {
+                "type": "boolean",
+                "default": true,
+                "description": "Set true to offload map-store interacting code parts from partition threads, otherwise interaction is executed inside partition thread"
+              },
               "write-delay-seconds": {
                 "type": "integer",
                 "minimum": 0,

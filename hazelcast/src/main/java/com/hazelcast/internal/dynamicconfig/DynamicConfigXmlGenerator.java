@@ -711,6 +711,7 @@ public final class DynamicConfigXmlGenerator {
                     .node("class-name", clazz)
                     .node("factory-class-name", factoryClass)
                     .node("write-coalescing", s.isWriteCoalescing())
+                    .node("offload", s.isOffload())
                     .node("write-delay-seconds", s.getWriteDelaySeconds())
                     .node("write-batch-size", s.getWriteBatchSize())
                     .appendProperties(s.getProperties())

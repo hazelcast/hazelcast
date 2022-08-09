@@ -178,6 +178,15 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testMapStoreDisabled();
 
     @Test
+    public abstract void testMapStoreConfig_offload_whenDefault();
+
+    @Test
+    public abstract void testMapStoreConfig_offload_whenSetFalse();
+
+    @Test
+    public abstract void testMapStoreConfig_offload_whenSetTrue();
+
+    @Test
     public abstract void testMapStoreWriteBatchSize();
 
     @Test
@@ -559,9 +568,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
         // WAN server socket configs
         EndpointConfig wanServerSockerEndpointConfig1 = advancedNetworkConfig.getEndpointConfigs()
-                                                                             .get(EndpointQualifier.resolve(WAN, "WAN_SERVER1"));
+                .get(EndpointQualifier.resolve(WAN, "WAN_SERVER1"));
         EndpointConfig wanServerSockerEndpointConfig2 = advancedNetworkConfig.getEndpointConfigs()
-                                                                             .get(EndpointQualifier.resolve(WAN, "WAN_SERVER2"));
+                .get(EndpointQualifier.resolve(WAN, "WAN_SERVER2"));
         assertEquals(WAN, wanServerSockerEndpointConfig1.getProtocolType());
         assertEquals("52000-52100", wanServerSockerEndpointConfig1.getOutboundPortDefinitions().iterator().next());
         assertEquals(WAN, wanServerSockerEndpointConfig2.getProtocolType());
@@ -569,9 +578,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
         // WAN endpoint config
         EndpointConfig wanEndpointConfig1 = advancedNetworkConfig.getEndpointConfigs()
-                                                                 .get(EndpointQualifier.resolve(WAN, "WAN_ENDPOINT1"));
+                .get(EndpointQualifier.resolve(WAN, "WAN_ENDPOINT1"));
         EndpointConfig wanEndpointConfig2 = advancedNetworkConfig.getEndpointConfigs()
-                                                                 .get(EndpointQualifier.resolve(WAN, "WAN_ENDPOINT2"));
+                .get(EndpointQualifier.resolve(WAN, "WAN_ENDPOINT2"));
         assertEquals(WAN, wanEndpointConfig1.getProtocolType());
         assertEquals("62000-62100", wanEndpointConfig1.getOutboundPortDefinitions().iterator().next());
         assertEquals(WAN, wanEndpointConfig2.getProtocolType());
@@ -682,7 +691,9 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
 
     protected abstract Config buildAuditlogConfig();
 
-    /** Build a config with overlapping wildcard configs map* & mapBackup2* */
+    /**
+     * Build a config with overlapping wildcard configs map* & mapBackup2*
+     */
     protected abstract Config buildMapWildcardConfig();
 
 }

@@ -1188,6 +1188,15 @@
         It has the following sub-elements:
         - <class-name>:
             The name of your class implementing MapLoader and/or MapStore interface.
+        - <offload>:
+            Default value is true.
+            MapStore or MapLoader implementations are executed by
+            partition threads, by setting offload to true, Hazelcast
+            makes these threads available for other cluster operations
+            and offloads MapStore or MapLoader interacting parts of
+            executions to a different thread pool, upon interaction finish,
+            operations continue to work in the partition thread from
+            the point they are offloaded.
         - <write-delay-seconds>:
             Number of seconds to delay the storing of entries. If the value is 0, then it is write-through.
             Otherwise, it is write-behind so updates will be stored after this period. Its default value is 0.
@@ -1338,6 +1347,7 @@
         </event-journal>
         <map-store enabled="true" initial-mode="LAZY">
             <class-name>com.hazelcast.examples.DummyStore</class-name>
+            <offload>true</offload>
             <write-delay-seconds>60</write-delay-seconds>
             <write-batch-size>1000</write-batch-size>
             <write-coalescing>true</write-coalescing>
