@@ -16,9 +16,21 @@
 
 package com.hazelcast.test.jdbc;
 
+/**
+ * Database provider allows changing database used in a test by providing
+ * a different implementation.
+ * For sample use see JdbcSqlTestSupport.
+ */
 public interface TestDatabaseProvider {
 
+    /**
+     * Creates database with given name and returns jdbc url that can
+     * be used to connect to the database
+     */
     String createDatabase(String dbName);
 
+    /**
+     * Stops the database
+     */
     void shutdown();
 }
