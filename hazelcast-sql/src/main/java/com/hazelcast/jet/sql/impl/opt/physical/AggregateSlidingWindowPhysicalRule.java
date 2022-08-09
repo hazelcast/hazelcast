@@ -38,6 +38,7 @@ import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexProgram;
 import org.apache.calcite.util.ImmutableBitSet;
+import org.apache.calcite.util.ImmutableBitSet.Builder;
 import org.immutables.value.Value;
 
 import javax.annotation.Nullable;
@@ -238,11 +239,11 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
         if (watermarkedFields == null) {
             return null;
         }
-        ImmutableBitSet windowBoundIndexes = ImmutableBitSet.builder()
+
+        Builder windowBoundIndexesBuilder = ImmutableBitSet.builder()
                 .addAll(windowStartIndexes)
-                .addAll(windowEndIndexes)
-                .build()
-                .intersect(logicalAggregate.getGroupSet());
-        return watermarkedFields.findFirst(windowBoundIndexes);
+                .addAll(windowEndIndexes);
+        windowBoundIndexesBuilder.intersect(logicalAggregate.getGroupSet());
+        return watermarkedFields.findFirst(windowBoundIndexesBuilder.build());
     }
 }
