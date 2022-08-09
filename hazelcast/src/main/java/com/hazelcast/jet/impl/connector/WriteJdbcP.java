@@ -170,9 +170,7 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
             idleCount = 0;
             inbox.clear();
         } catch (SQLException e) {
-            if (e instanceof SQLNonTransientException
-                    || e.getCause() instanceof SQLNonTransientException
-                    || snapshotUtility.usesTransactionLifecycle()) {
+            if (isNonTransientException(e) || snapshotUtility.usesTransactionLifecycle()) {
                 throw ExceptionUtil.rethrow(e);
             } else {
                 logger.warning("Exception during update", e);
@@ -222,12 +220,13 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
             supportsBatch = connection.getMetaData().supportsBatchUpdates();
             statement = connection.prepareStatement(updateQuery);
         } catch (SQLException e) {
-            if (snapshotUtility.usesTransactionLifecycle()) {
+            if (isNonTransientException(e) || snapshotUtility.usesTransactionLifecycle()) {
                 throw ExceptionUtil.rethrow(e);
+            } else {
+                logger.warning("Exception when connecting and preparing the statement", e);
+                idleCount++;
+                return false;
             }
-            logger.warning("Exception when connecting and preparing the statement", e);
-            idleCount++;
-            return false;
         }
         return true;
     }
@@ -284,4 +283,12 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
             logger.warning("Exception when closing " + closeable + ", ignoring it: " + e, e);
         }
     }
+
+    private boolean isNonTransientException(SQLException e) {
+        return e instanceof SQLNonTransientException
+                || e.getCause() instanceof SQLNonTransientException
+                || e.getNextException() instanceof SQLNonTransientException
+                || (e.getNextException() != null && isNonTransientException(e.getNextException()));
+    }
+
 }

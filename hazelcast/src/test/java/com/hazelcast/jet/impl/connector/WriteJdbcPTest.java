@@ -56,6 +56,8 @@ import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.when;
 
 @Category({SlowTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 public class WriteJdbcPTest extends SimpleTestInClusterSupport {
@@ -120,7 +122,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
         assertEquals(PERSON_COUNT, rowCount());
     }
 
-    @Test(expected = CompletionException.class)
+    @Test(expected = CompletionException.class, timeout = 5_000)
     public void testFailJob_withNonTransientException() {
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
@@ -129,6 +131,116 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
                  () -> createDataSource(false),
                  (stmt, item) -> {
                      throw new SQLNonTransientException();
+                 }
+         ));
+
+        instance().getJet().newJob(p).join();
+    }
+
+    @Test(expected = CompletionException.class, timeout = 5_000)
+    public void testFailJob_withNonTransientExceptionCause() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
+         .map(item -> entry(item, item.toString()))
+         .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
+                 () -> createDataSource(false),
+                 (stmt, item) -> {
+                     throw new SQLException(new SQLNonTransientException());
+                 }
+         ));
+
+        instance().getJet().newJob(p).join();
+    }
+
+    @Test(expected = CompletionException.class, timeout = 5_000)
+    public void testFailJob_withNonTransientExceptionNext() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
+         .map(item -> entry(item, item.toString()))
+         .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
+                 () -> createDataSource(false),
+                 (stmt, item) -> {
+                     SQLException ex = new SQLException();
+                     ex.setNextException(new SQLNonTransientException());
+                     throw ex;
+                 }
+         ));
+
+        instance().getJet().newJob(p).join();
+    }
+
+    @Test(expected = CompletionException.class, timeout = 5_000)
+    public void testFailJob_withNonTransientExceptionNextChain() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
+         .map(item -> entry(item, item.toString()))
+         .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
+                 () -> createDataSource(false),
+                 (stmt, item) -> {
+                     SQLException ex = new SQLException();
+                     SQLException next = new SQLException();
+                     ex.setNextException(next);
+                     next.setNextException(new SQLNonTransientException());
+                     throw ex;
+                 }
+         ));
+
+        instance().getJet().newJob(p).join();
+    }
+
+    @Test(expected = CompletionException.class, timeout = 5_000)
+    public void testFailJob_whenGetConnection_withNonTransientException() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
+         .map(item -> entry(item, item.toString()))
+         .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
+                 () -> {
+                     DataSource spyDataSource = (DataSource) spy(createDataSource(false));
+                     when(spyDataSource.getConnection()).thenThrow(new SQLNonTransientException());
+                     return spyDataSource;
+                 },
+                 (stmt, item) -> {
+                     // execution doesn't get here
+                 }
+         ));
+
+        instance().getJet().newJob(p).join();
+    }
+
+    @Test(expected = CompletionException.class, timeout = 5_000)
+    public void testFailJob_whenGetConnection_withNonTransientExceptionCause() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
+         .map(item -> entry(item, item.toString()))
+         .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
+                 () -> {
+                     DataSource spyDataSource = (DataSource) spy(createDataSource(false));
+                     when(spyDataSource.getConnection()).thenThrow(new SQLException(new SQLNonTransientException()));
+                     return spyDataSource;
+                 },
+                 (stmt, item) -> {
+                     // execution doesn't get here
+                 }
+         ));
+
+        instance().getJet().newJob(p).join();
+    }
+
+    @Test(expected = CompletionException.class, timeout = 5_000)
+    public void testFailJob_whenGetConnection_withNonTransientExceptionNext() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
+         .map(item -> entry(item, item.toString()))
+         .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
+                 () -> {
+                     DataSource spyDataSource = (DataSource) spy(createDataSource(false));
+                     SQLException ex = new SQLException();
+                     ex.setNextException(new SQLNonTransientException());
+                     when(spyDataSource.getConnection()).thenThrow(ex);
+                     return spyDataSource;
+                 },
+                 (stmt, item) -> {
+                     // execution doesn't get here
                  }
          ));
 
