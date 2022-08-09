@@ -18,18 +18,22 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
+import com.hazelcast.map.impl.operation.steps.MultipleEntryOpSteps;
+import com.hazelcast.map.impl.operation.steps.engine.State;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
 import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
+import com.hazelcast.wan.impl.CallerProvenance;
 
 import java.io.IOException;
 import java.util.Set;
@@ -61,6 +65,26 @@ public class MultipleEntryOperation extends MapOperation
         final SerializationService serializationService = getNodeEngine().getSerializationService();
         final ManagedContext managedContext = serializationService.getManagedContext();
         entryProcessor = (EntryProcessor) managedContext.initialize(entryProcessor);
+    }
+
+    @Override
+    public State createState() {
+        return super.createState()
+                .setKeys(keys)
+                .setPredicate(getPredicate())
+                .setCallerProvenance(CallerProvenance.NOT_WAN)
+                .setEntryProcessor(entryProcessor);
+    }
+
+    @Override
+    public Step getStartingStep() {
+        return MultipleEntryOpSteps.FIND_KEYS_TO_LOAD;
+    }
+
+    @Override
+    public void applyState(State state) {
+        super.applyState(state);
+        responses = (MapEntries) state.getResult();
     }
 
     @Override

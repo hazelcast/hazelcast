@@ -44,7 +44,7 @@ public class EvictBackupOperation extends KeyBasedMapOperation implements Backup
     }
 
     @Override
-    protected void afterRunInternal() {
+    public void afterRunInternal() {
         publishWanRemove(dataKey);
     }
 

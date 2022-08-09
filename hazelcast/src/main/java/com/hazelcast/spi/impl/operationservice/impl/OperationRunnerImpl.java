@@ -100,7 +100,7 @@ import static java.util.logging.Level.WARNING;
  */
 @SuppressWarnings("checkstyle:classfanoutcomplexity")
 @ExcludedMetricTargets(MANAGEMENT_CENTER)
-class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvider {
+public class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvider {
 
     static final int AD_HOC_PARTITION_ID = -2;
 
@@ -152,6 +152,10 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
         this.opLatencyDistributions = opLatencyDistributions;
         // only a ad-hoc operation runner will be called concurrently
         this.executedOperationsCounter = partitionId == AD_HOC_PARTITION_ID ? newMwCounter() : newSwCounter();
+    }
+
+    public OperationBackupHandler getBackupHandler() {
+        return backupHandler;
     }
 
     @Override
@@ -213,6 +217,16 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
         return run(op, System.nanoTime());
     }
 
+    public boolean metWithPreconditions(Operation op) {
+        checkNodeState(op);
+        if (timeout(op)) {
+            return false;
+        }
+        ensureNoPartitionProblems(op);
+        ensureNoSplitBrain(op);
+        return true;
+    }
+
     /**
      * Runs the provided operation.
      *
@@ -232,15 +246,9 @@ class OperationRunnerImpl extends OperationRunner implements StaticMetricsProvid
         }
 
         try {
-            checkNodeState(op);
-
-            if (timeout(op)) {
+            if (!metWithPreconditions(op)) {
                 return false;
             }
-
-            ensureNoPartitionProblems(op);
-
-            ensureNoSplitBrain(op);
 
             if (op.isTenantAvailable()) {
                 op.pushThreadContext();

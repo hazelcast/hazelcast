@@ -16,10 +16,13 @@
 
 package com.hazelcast.map.impl.operation;
 
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.operation.steps.DeleteOpSteps;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
+import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 
 import java.io.IOException;
 
@@ -48,15 +51,26 @@ public class DeleteOperation extends BaseRemoveOperation {
     }
 
     @Override
+    public void applyState(State state) {
+        super.applyState(state);
+        success = state.getOldValue() != null;
+    }
+
+    @Override
     public Object getResponse() {
         return success;
     }
 
     @Override
-    protected void afterRunInternal() {
+    public void afterRunInternal() {
         if (success) {
             super.afterRunInternal();
         }
+    }
+
+    @Override
+    public Step getStartingStep() {
+        return DeleteOpSteps.READ;
     }
 
     @Override
