@@ -19,8 +19,6 @@ package com.hazelcast.jet.sql.impl.schema;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
-import com.hazelcast.config.DataPersistenceConfig;
-import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
@@ -47,7 +45,6 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.config.MapConfig.DEFAULT_MAX_IDLE_SECONDS;
 import static com.hazelcast.config.MapConfig.INFINITE_TTL_SECONDS;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;

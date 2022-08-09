@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
-import com.hazelcast.client.map.ClientMapBasicTest;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
@@ -31,14 +30,9 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
-import java.io.FileOutputStream;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.config.MapConfig.INFINITE_TTL_SECONDS;
-import static com.hazelcast.config.MapConfig.MAX_BACKUP_COUNT;
 import static com.hazelcast.jet.sql.impl.schema.TablesStorage.CATALOG_MAP_NAME;
 import static com.hazelcast.jet.sql.impl.schema.TablesStorage.SQL_CATALOG_MAP_CONFIG;
 import static java.util.Collections.emptyList;
