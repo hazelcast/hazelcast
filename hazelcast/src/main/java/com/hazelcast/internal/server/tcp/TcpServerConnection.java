@@ -231,20 +231,24 @@ public class TcpServerConnection implements ServerConnection {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof TcpServerConnection)) {
-            return false;
-        }
-        TcpServerConnection that = (TcpServerConnection) o;
-        return connectionId == that.getConnectionId();
+    public int hashCode() {
+        return Objects.hash(acceptorSide, connectionId);
     }
 
     @Override
-    public int hashCode() {
-        return connectionId;
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        TcpServerConnection other = (TcpServerConnection) obj;
+        return acceptorSide == other.acceptorSide && connectionId == other.connectionId
+                && Objects.equals(remoteAddress, other.remoteAddress);
     }
 
     @Override

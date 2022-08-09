@@ -446,7 +446,7 @@ public final class ClientConfigXmlGenerator {
                             classNameOrImplClass(evictionConfig.getComparatorClassName(), evictionConfig.getComparator()));
                 queryCachePredicate(gen, queryCache.getPredicateConfig());
                 entryListeners(gen, queryCache.getEntryListenerConfigs());
-                IndexUtils.generateXml(gen, queryCache.getIndexConfigs());
+                IndexUtils.generateXml(gen, queryCache.getIndexConfigs(), false);
                 //close query-cache
                 gen.close();
             }

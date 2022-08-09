@@ -19,15 +19,20 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 import com.hazelcast.cache.CacheEventType;
 import com.hazelcast.cache.impl.CacheEventDataImpl;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.config.BTreeIndexConfig;
 import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
 import com.hazelcast.config.CacheSimpleEntryListenerConfig;
+import com.hazelcast.config.DataPersistenceConfig;
+import com.hazelcast.config.DiskTierConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.HotRestartConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.config.MemoryTierConfig;
 import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
+import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.instance.EndpointQualifier;
@@ -36,8 +41,13 @@ import com.hazelcast.internal.management.dto.ClientBwListEntryDTO;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
+import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.impl.JobAndSqlSummary;
+import com.hazelcast.jet.impl.SqlSummary;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
+import com.hazelcast.memory.Capacity;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
@@ -95,6 +105,13 @@ public final class CustomTypeFactory {
 
     public static HotRestartConfig createHotRestartConfig(boolean enabled, boolean fsync) {
         HotRestartConfig config = new HotRestartConfig();
+        config.setEnabled(enabled);
+        config.setFsync(fsync);
+        return config;
+    }
+
+    public static DataPersistenceConfig createDataPersistenceConfig(boolean enabled, boolean fsync) {
+        DataPersistenceConfig config = new DataPersistenceConfig();
         config.setEnabled(enabled);
         config.setFsync(fsync);
         return config;
@@ -175,19 +192,26 @@ public final class CustomTypeFactory {
     }
 
     public static IndexConfig createIndexConfig(String name, int type, List<String> attributes,
-                                                BitmapIndexOptions bitmapIndexOptions) {
+                                                BitmapIndexOptions bitmapIndexOptions,
+                                                boolean bTreeConfigExists,
+                                                BTreeIndexConfig bTreeIndexConfig) {
         IndexType type0 = IndexType.getById(type);
 
         return new IndexConfig()
                 .setName(name)
                 .setType(type0)
                 .setAttributes(attributes)
-                .setBitmapIndexOptions(bitmapIndexOptions);
+                .setBitmapIndexOptions(bitmapIndexOptions)
+                .setBTreeIndexConfig(bTreeConfigExists ? bTreeIndexConfig : new BTreeIndexConfig());
     }
 
     public static BitmapIndexOptions createBitmapIndexOptions(String uniqueKey, int uniqueKeyTransformation) {
         UniqueKeyTransformation resolvedUniqueKeyTransformation = UniqueKeyTransformation.fromId(uniqueKeyTransformation);
         return new BitmapIndexOptions().setUniqueKey(uniqueKey).setUniqueKeyTransformation(resolvedUniqueKeyTransformation);
+    }
+
+    public static BTreeIndexConfig createBTreeIndexConfig(Capacity pageSize, MemoryTierConfig memoryTierConfig) {
+        return new BTreeIndexConfig().setPageSize(pageSize).setMemoryTierConfig(memoryTierConfig);
     }
 
     public static ClientBwListEntryDTO createClientBwListEntry(int type, String value) {
@@ -226,14 +250,59 @@ public final class CustomTypeFactory {
     }
 
     public static Schema createSchema(String typeName, List<FieldDescriptor> fields) {
-        TreeMap<String, FieldDescriptor> map = new TreeMap<>(Comparator.naturalOrder());
-        for (FieldDescriptor field : fields) {
-            map.put(field.getFieldName(), field);
-        }
-        return new Schema(typeName, map);
+        return new Schema(typeName, fields);
     }
 
     public static HazelcastJsonValue createHazelcastJsonValue(String value) {
         return new HazelcastJsonValue(value);
+    }
+
+    public static Capacity createCapacity(long value, int unit) {
+        MemoryUnit memoryUnit = MemoryUnit.getById(unit);
+        return new Capacity(value, memoryUnit);
+    }
+
+    public static MemoryTierConfig createMemoryTierConfig(Capacity capacity) {
+        MemoryTierConfig config = new MemoryTierConfig();
+        config.setCapacity(capacity);
+        return config;
+    }
+
+    public static DiskTierConfig createDiskTierConfig(boolean enabled, String deviceName) {
+        DiskTierConfig config = new DiskTierConfig();
+        config.setEnabled(enabled);
+        config.setDeviceName(deviceName);
+        return config;
+    }
+
+    public static TieredStoreConfig createTieredStoreConfig(
+            boolean enabled,
+            MemoryTierConfig memoryTierConfig,
+            DiskTierConfig diskTierConfig
+    ) {
+        TieredStoreConfig config = new TieredStoreConfig();
+        config.setEnabled(enabled);
+        config.setMemoryTierConfig(memoryTierConfig);
+        config.setDiskTierConfig(diskTierConfig);
+        return config;
+    }
+
+    public static SqlSummary createSqlSummary(String query, boolean unbounded) {
+        return new SqlSummary(query, unbounded);
+    }
+
+    public static JobAndSqlSummary createJobAndSqlSummary(
+            boolean lightJob,
+            long jobId,
+            long executionId,
+            String nameOrId,
+            int jobStatus,
+            long submissionTime,
+            long completionTime,
+            String failureText,
+            SqlSummary sqlSummary
+    ) {
+        return new JobAndSqlSummary(lightJob, jobId, executionId, nameOrId, JobStatus.getById(jobStatus), submissionTime,
+                completionTime, failureText, sqlSummary);
     }
 }

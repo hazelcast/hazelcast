@@ -33,7 +33,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class TablesStorageTest extends SimpleTestInClusterSupport {
-
     private TablesStorage storage;
 
     @BeforeClass
@@ -101,6 +100,27 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
     @Test
     public void when_removeAbsentValue_then_returnsNull() {
         assertThat(storage.removeView("non-existing")).isNull();
+    }
+
+    @Test
+    public void when_clusterVersionIs5dot2_then_onlyNewCatalogIsUsed() {
+        String name = randomName();
+        storage.put(name, mapping(name, "type"));
+
+        assertThat(storage.newStorage().size() > 0);
+        assertThat(storage.oldStorage().size() == 0);
+    }
+
+    @Test
+    public void when_clusterVersionIs5dot2_then_oldCatalogIsMigratedOnFirstRead() {
+        String name = randomName();
+        storage.put(name, mapping(name, "type"));
+        storage.oldStorage().putAll(storage.newStorage());
+        storage.newStorage().clear();
+        storage.allObjects();
+
+        assertThat(storage.newStorage().size() > 0);
+        assertThat(storage.oldStorage().size() == 0);
     }
 
     private static Mapping mapping(String name, String type) {

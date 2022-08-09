@@ -33,6 +33,7 @@ import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
@@ -1228,7 +1229,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         return HAZELCAST_START_TAG
                 + "<map name=\"mymap\">"
                 + "<map-store >"
-                + (useDefault ? "" : "<write-coalescing>" + String.valueOf(value) + "</write-coalescing>")
+                + (useDefault ? "" : "<write-coalescing>" + value + "</write-coalescing>")
                 + "</map-store>"
                 + "</map>"
                 + HAZELCAST_END_TAG;
@@ -2603,6 +2604,17 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "                   <attribute>age</attribute>\n"
                 + "               </attributes>\n"
                 + "           </index>\n"
+                + "           <index type=\"SORTED\">\n"
+                + "               <attributes>\n"
+                + "                   <attribute>age</attribute>\n"
+                + "               </attributes>\n"
+                + "               <btree-index>"
+                + "                   <page-size value=\"1337\" unit=\"BYTES\" />"
+                + "                   <memory-tier>"
+                + "                       <capacity value=\"1138\" unit=\"BYTES\" />"
+                + "                   </memory-tier>"
+                + "               </btree-index>"
+                + "           </index>\n"
                 + "       </indexes>"
                 + "   </map>"
                 + HAZELCAST_END_TAG;
@@ -2610,9 +2622,14 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(xml);
         MapConfig mapConfig = config.getMapConfig("people");
 
-        assertFalse(mapConfig.getIndexConfigs().isEmpty());
-        assertIndexEqual("name", false, mapConfig.getIndexConfigs().get(0));
-        assertIndexEqual("age", true, mapConfig.getIndexConfigs().get(1));
+        List<IndexConfig> indexConfigs = mapConfig.getIndexConfigs();
+        assertFalse(indexConfigs.isEmpty());
+        assertIndexEqual("name", false, indexConfigs.get(0));
+        assertIndexEqual("age", true, indexConfigs.get(1));
+        assertIndexEqual("age", true, indexConfigs.get(2));
+        BTreeIndexConfig bTreeIndexConfig = indexConfigs.get(2).getBTreeIndexConfig();
+        assertEquals(Capacity.of(1337, MemoryUnit.BYTES), bTreeIndexConfig.getPageSize());
+        assertEquals(Capacity.of(1138, MemoryUnit.BYTES), bTreeIndexConfig.getMemoryTierConfig().getCapacity());
     }
 
     private static void assertIndexEqual(String expectedAttribute, boolean expectedOrdered, IndexConfig indexConfig) {

@@ -84,7 +84,7 @@ final class AggregateBatchPhysicalRule extends AggregateAbstractPhysicalRule {
                 logicalAggregate.getAggCallList()
         );
 
-        if (logicalAggregate.containsDistinctCall()) {
+        if (logicalAggregate.containsDistinctCall() || logicalAggregate.hasCollation()) {
             return new AggregatePhysicalRel(
                     physicalInput.getCluster(),
                     physicalInput.getTraitSet(),
@@ -121,7 +121,7 @@ final class AggregateBatchPhysicalRule extends AggregateAbstractPhysicalRule {
                 logicalAggregate.getAggCallList()
         );
 
-        if (logicalAggregate.containsDistinctCall()) {
+        if (logicalAggregate.containsDistinctCall() || logicalAggregate.hasCollation()) {
             return new AggregateByKeyPhysicalRel(
                     physicalInput.getCluster(),
                     physicalInput.getTraitSet(),

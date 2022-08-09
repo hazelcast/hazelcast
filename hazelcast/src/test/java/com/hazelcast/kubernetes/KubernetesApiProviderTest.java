@@ -39,6 +39,20 @@ public abstract class KubernetesApiProviderTest {
     }
 
     @Test
+    public void extractNodes() {
+        //given
+        JsonObject endpointsJson = Json.parse(getEndpointsResponseWithServices()).asObject();
+        ArrayList<EndpointAddress> privateAddresses = new ArrayList<>();
+        privateAddresses.add(new EndpointAddress("192.168.0.25", 5701, "hazelcast-0"));
+        privateAddresses.add(new EndpointAddress("172.17.0.5", 5701, "hazelcast-1"));
+        //when
+        Map<EndpointAddress, String> nodes = provider.extractNodes(endpointsJson, privateAddresses);
+        //then
+        assertThat(format(nodes), containsInAnyOrder(toString("192.168.0.25", 5701, "node-name-1"),
+                toString("172.17.0.5", 5701, "node-name-2")));
+    }
+
+    @Test
     public void getEndpointsByServiceLabelUrlStringTest() {
         //given
         assertEquals(getEndpointsByServiceLabelUrlString(), provider.getEndpointsByServiceLabelUrlString());
@@ -78,27 +92,13 @@ public abstract class KubernetesApiProviderTest {
         //given
         JsonObject endpointsJson = Json.parse(getEndpointsResponseWithServices()).asObject();
         ArrayList<EndpointAddress> privateAddresses = new ArrayList<>();
-        privateAddresses.add(new EndpointAddress("192.168.0.25", 5701));
-        privateAddresses.add(new EndpointAddress("172.17.0.5", 5701));
+        privateAddresses.add(new EndpointAddress("192.168.0.25", 5701, "hazelcast-0"));
+        privateAddresses.add(new EndpointAddress("172.17.0.5", 5701, "hazelcast-1"));
         //when
         Map<EndpointAddress, String> services = provider.extractServices(endpointsJson, privateAddresses);
         //then
         assertThat(format(services), containsInAnyOrder(toString("192.168.0.25", 5701, "hazelcast-0"),
                 toString("172.17.0.5", 5701, "service-1")));
-    }
-
-    @Test
-    public void extractNodes() {
-        //given
-        JsonObject endpointsJson = Json.parse(getEndpointsResponseWithServices()).asObject();
-        ArrayList<EndpointAddress> privateAddresses = new ArrayList<>();
-        privateAddresses.add(new EndpointAddress("192.168.0.25", 5701));
-        privateAddresses.add(new EndpointAddress("172.17.0.5", 5701));
-        //when
-        Map<EndpointAddress, String> nodes = provider.extractNodes(endpointsJson, privateAddresses);
-        //then
-        assertThat(format(nodes), containsInAnyOrder(toString("192.168.0.25", 5701, "node-name-1"),
-                toString("172.17.0.5", 5701, "node-name-2")));
     }
 
     private static List<String> format(List<Endpoint> addresses) {

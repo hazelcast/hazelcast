@@ -23,7 +23,7 @@ import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.List;
 
-import static com.hazelcast.internal.nio.IOUtil.copyToHeapBuffer;
+import static com.hazelcast.internal.nio.IOUtil.copyFromHeapBuffer;
 import static com.hazelcast.internal.util.JVMUtil.upcast;
 
 public class BulkGetCommand extends AbstractTextCommand {
@@ -47,7 +47,7 @@ public class BulkGetCommand extends AbstractTextCommand {
 
     @Override
     public boolean writeTo(ByteBuffer dst) {
-        copyToHeapBuffer(byteBuffer, dst);
+        copyFromHeapBuffer(byteBuffer, dst);
         return !byteBuffer.hasRemaining();
     }
 

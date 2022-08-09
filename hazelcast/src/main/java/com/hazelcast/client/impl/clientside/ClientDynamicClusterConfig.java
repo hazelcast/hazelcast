@@ -153,7 +153,7 @@ public class ClientDynamicClusterConfig extends Config {
                 mapConfig.getWanReplicationRef(), mapConfig.getIndexConfigs(), mapConfig.getAttributeConfigs(),
                 queryCacheConfigHolders, partitioningStrategyClassName, partitioningStrategy, mapConfig.getHotRestartConfig(),
                 mapConfig.getEventJournalConfig(), mapConfig.getMerkleTreeConfig(), mapConfig.getMetadataPolicy().getId(),
-                mapConfig.isPerEntryStatsEnabled());
+                mapConfig.isPerEntryStatsEnabled(), mapConfig.getDataPersistenceConfig(), mapConfig.getTieredStoreConfig());
         invoke(request);
         return this;
     }
@@ -183,7 +183,8 @@ public class ClientDynamicClusterConfig extends Config {
                 cacheConfig.getCacheEntryListeners(),
                 EvictionConfigHolder.of(cacheConfig.getEvictionConfig(), serializationService),
                 cacheConfig.getWanReplicationRef(), cacheConfig.getEventJournalConfig(),
-                cacheConfig.getHotRestartConfig(), cacheConfig.getMerkleTreeConfig());
+                cacheConfig.getHotRestartConfig(), cacheConfig.getMerkleTreeConfig(),
+                cacheConfig.getDataPersistenceConfig());
         invoke(request);
         return this;
     }
@@ -318,7 +319,8 @@ public class ClientDynamicClusterConfig extends Config {
                 scheduledExecutorConfig.getName(), scheduledExecutorConfig.getPoolSize(),
                 scheduledExecutorConfig.getDurability(), scheduledExecutorConfig.getCapacity(),
                 scheduledExecutorConfig.getSplitBrainProtectionName(), scheduledExecutorConfig.getMergePolicyConfig().getPolicy(),
-                scheduledExecutorConfig.getMergePolicyConfig().getBatchSize(), scheduledExecutorConfig.isStatisticsEnabled());
+                scheduledExecutorConfig.getMergePolicyConfig().getBatchSize(), scheduledExecutorConfig.isStatisticsEnabled(),
+                scheduledExecutorConfig.getCapacityPolicy().getId());
         invoke(request);
         return this;
     }

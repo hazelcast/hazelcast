@@ -64,14 +64,14 @@ public final class AsyncTransformUsingServiceBatchedP<C, S, T, R>
 
     @Override
     public void process(int ordinal, @Nonnull Inbox inbox) {
-        if (isQueueFull() && !tryFlushQueue()) {
+        if (!makeRoomInQueue()) {
             return;
         }
         // put the inbox items into a list and pass to the superclass as a single item
         List<T> batch = new ArrayList<>(Math.min(inbox.size(), maxBatchSize));
         inbox.drainTo(batch, maxBatchSize);
-        boolean success = super.tryProcess(ordinal, batch);
-        assert success : "the superclass didn't handle the batch";
+        boolean res = super.tryProcessInt(batch);
+        assert res;
     }
 
     /**
