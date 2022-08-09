@@ -36,8 +36,8 @@ import java.time.OffsetDateTime;
  * <p>
  * The way to use {@link CompactReader} for class evolution is to check for the
  * existence of a field with its name and kind, with the
- * {@link #getFieldKind(String)} method. One should read the field, if it exists
- * with the given name and kind and use some other logic, like using a default
+ * {@link #getFieldKind(String)} method. One should read the field if it exists
+ * with the given name and kind, and use some other logic, like using a default
  * value, if it does not exist.
  * <pre>{@code
  * public Foo read(CompactReader reader) {
