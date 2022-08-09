@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.cluster.Versions;
@@ -34,6 +35,7 @@ import com.hazelcast.replicatedmap.impl.operation.GetOperation;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.merge.DiscardMergePolicy;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.view.View;
 
@@ -56,6 +58,8 @@ public class TablesStorage {
             .setName(CATALOG_MAP_NAME)
             .setBackupCount(MapConfig.MAX_BACKUP_COUNT)
             .setTimeToLiveSeconds(INFINITE_TTL_SECONDS)
+            .setReadBackupData(true)
+            .setMergePolicyConfig(new MergePolicyConfig().setPolicy(DiscardMergePolicy.class.getName()))
             .setStatisticsEnabled(true);
 
     private static final int MAX_CHECK_ATTEMPTS = 5;
