@@ -35,7 +35,6 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeUtils;
 import org.apache.calcite.rel.rel2sql.SqlImplementor.SimpleContext;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlDialect;
@@ -62,8 +61,8 @@ import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 
-import static java.lang.Integer.parseInt;
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.resolveTypeForClass;
+import static java.lang.Integer.parseInt;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -364,8 +363,7 @@ public class JdbcSqlConnector implements SqlConnector {
                                        .map(entry -> {
                                            SqlNode sqlNode = simpleContext.toSql(null, entry.getValue());
                                            sqlNode.accept(paramCollectingVisitor);
-                                           return table.getField(entry.getKey()).externalName()
-                                                   + "="
+                                           return '\"' + table.getField(entry.getKey()).externalName() + "\" ="
                                                    + sqlNode.toSqlString(dialect).toString();
                                        })
                                        .collect(joining(", "));

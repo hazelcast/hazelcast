@@ -170,4 +170,22 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 new Row("name-1", 1)
         );
     }
+
+    @Test
+    public void deleteFromWithQuotedColumnInWhere() throws Exception {
+        createTable(tableName, "\"person-id\" INT PRIMARY KEY", "name VARCHAR(100)");
+        insertItems(tableName, 1);
+
+        execute(
+                "CREATE MAPPING " + tableName
+                        + " TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
+                        + " OPTIONS ( "
+                        + " '" + OPTION_JDBC_URL + "'='" + dbConnectionUrl + "'"
+                        + ")"
+        );
+
+        execute("DELETE FROM " + tableName + " WHERE \"person-id\" = 0");
+        assertJdbcRowsAnyOrder(tableName);
+    }
+
 }

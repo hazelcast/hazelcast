@@ -403,4 +403,42 @@ public class UpdateJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 new Row(0, "updated")
         );
     }
+
+    @Test
+    public void updateMappingWithQuotedColumnInWhere() throws Exception {
+        createTable(tableName, "\"person-id\" INT PRIMARY KEY", "name VARCHAR(100)");
+        insertItems(tableName, 1);
+
+        execute(
+                "CREATE MAPPING " + tableName
+                        + " TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
+                        + " OPTIONS ( "
+                        + " '" + OPTION_JDBC_URL + "'='" + dbConnectionUrl + "'"
+                        + ")"
+        );
+
+        execute("UPDATE " + tableName + " SET name = 'updated' WHERE \"person-id\" = 0");
+        assertJdbcRowsAnyOrder(tableName,
+                new Row(0, "updated")
+        );
+    }
+
+    @Test
+    public void updateMappingWithQuotedColumnInSet() throws Exception {
+        createTable(tableName, "id INT PRIMARY KEY", "\"full-name\" VARCHAR(100)");
+        insertItems(tableName, 1);
+
+        execute(
+                "CREATE MAPPING " + tableName
+                        + " TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
+                        + " OPTIONS ( "
+                        + " '" + OPTION_JDBC_URL + "'='" + dbConnectionUrl + "'"
+                        + ")"
+        );
+
+        execute("UPDATE " + tableName + " SET \"full-name\" = 'updated' WHERE id = 0");
+        assertJdbcRowsAnyOrder(tableName,
+                new Row(0, "updated")
+        );
+    }
 }

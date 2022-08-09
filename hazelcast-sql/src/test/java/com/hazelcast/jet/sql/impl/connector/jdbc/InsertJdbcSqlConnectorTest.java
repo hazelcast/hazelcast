@@ -136,7 +136,6 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
      * java.sql.BatchUpdateException as non-transient exception, or something else, not sure
      */
     @Test
-    @Ignore
     public void insertIntoTableSameValues() throws Exception {
         createTable(tableName);
         createMapping(tableName);

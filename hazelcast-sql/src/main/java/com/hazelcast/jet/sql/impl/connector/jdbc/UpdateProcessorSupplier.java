@@ -75,7 +75,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
     public void init(@Nonnull Context context) throws Exception {
         evalContext = ExpressionEvalContext.from(context);
 
-        whereClause = pkFields.stream().map(e -> e + " = ?")
+        whereClause = pkFields.stream().map(e -> '\"' + e + "\" = ?")
                               .collect(joining(" AND "));
     }
 

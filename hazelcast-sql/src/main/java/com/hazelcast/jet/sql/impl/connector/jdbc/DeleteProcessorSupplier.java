@@ -65,7 +65,7 @@ public class DeleteProcessorSupplier implements ProcessorSupplier, DataSerializa
 
     @Override
     public void init(@Nonnull Context context) throws Exception {
-        whereClause = pkFields.stream().map(e -> e + " = ?")
+        whereClause = pkFields.stream().map(e -> '\"' + e + "\" = ?")
                               .collect(joining(" AND "));
     }
 
