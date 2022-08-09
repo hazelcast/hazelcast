@@ -105,7 +105,9 @@ public class JdbcSqlConnector implements SqlConnector {
             for (DbField dbField : dbFields.values()) {
                 try {
                     Class<?> columnClass = Class.forName(dbField.className);
-                    resolvedFields.add(new MappingField(dbField.columnName(), resolveTypeForClass(columnClass)));
+                    MappingField mappingField = new MappingField(dbField.columnName(), resolveTypeForClass(columnClass));
+                    mappingField.setPrimaryKey(dbField.primaryKey());
+                    resolvedFields.add(mappingField);
                 } catch (ClassNotFoundException e) {
                     throw new IllegalStateException("Could not load column class " + dbField.className, e);
                 }
@@ -320,6 +322,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 new InsertProcessorSupplier(
                         table.getJdbcUrl(),
                         table.getExternalName(),
+                        table.dbFieldNames(),
                         table.getFieldCount(),
                         table.getBatchLimit()
                 )

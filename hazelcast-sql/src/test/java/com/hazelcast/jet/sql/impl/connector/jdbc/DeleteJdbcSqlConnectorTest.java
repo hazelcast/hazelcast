@@ -123,10 +123,11 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void updateTableWithMultiplePKColumns() throws Exception {
+    public void deleteFromWithMultiplePKColumns() throws Exception {
         createTable(tableName, "id INT", "id2 INT", "name VARCHAR(10)", "PRIMARY KEY(id, id2)");
         executeJdbc("INSERT INTO " + tableName + " VALUES(0, 0, 'name-0')");
         executeJdbc("INSERT INTO " + tableName + " VALUES(1, 0, 'name-1')");
+        executeJdbc("INSERT INTO " + tableName + " VALUES(0, 1, 'name-2')");
         execute(
                 "CREATE MAPPING " + tableName + " ("
                         + " id INT, "
@@ -139,10 +140,34 @@ public class DeleteJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ")"
         );
 
-        execute("DELETE FROM " + tableName + " WHERE id = 0 AND id2 = 0");
+        execute("DELETE FROM " + tableName + " WHERE id = 0 AND id2 = 1");
 
         assertJdbcRowsAnyOrder(tableName,
+                new Row(0, 0, "name-0"),
                 new Row(1, 0, "name-1")
+        );
+    }
+
+    @Test
+    public void deleteFromWithReverseColumnOrder() throws Exception {
+        createTable(tableName, "name VARCHAR(10)", "id INT PRIMARY KEY");
+        executeJdbc("INSERT INTO " + tableName + " VALUES('name-0', 0)");
+        executeJdbc("INSERT INTO " + tableName + " VALUES('name-1', 1)");
+        execute(
+                "CREATE MAPPING " + tableName + " ("
+                        + " name VARCHAR, "
+                        + " id INT "
+                        + ") "
+                        + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
+                        + "OPTIONS ( "
+                        + " '" + OPTION_JDBC_URL + "'='" + dbConnectionUrl + "'"
+                        + ")"
+        );
+
+        execute("DELETE FROM " + tableName + " WHERE id = 0");
+
+        assertJdbcRowsAnyOrder(tableName,
+                new Row("name-1", 1)
         );
     }
 }

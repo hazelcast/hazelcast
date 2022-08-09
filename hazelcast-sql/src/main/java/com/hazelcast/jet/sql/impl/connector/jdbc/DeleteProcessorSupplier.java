@@ -80,8 +80,7 @@ public class DeleteProcessorSupplier implements ProcessorSupplier, DataSerializa
                     ds,
                     (PreparedStatement ps, JetSqlRow row) -> {
                         for (int j = 0; j < pkFields.size(); j++) {
-                            int fieldIndex = fields.indexOf(pkFields.get(j));
-                            ps.setObject(j + 1, row.get(fieldIndex));
+                            ps.setObject(j + 1, row.get(j));
                         }
                     },
                     false,

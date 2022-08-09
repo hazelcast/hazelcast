@@ -39,11 +39,13 @@ import java.util.List;
 
 import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
 import static java.util.Collections.singletonList;
+import static java.util.stream.Collectors.joining;
 
 public class InsertProcessorSupplier implements ProcessorSupplier, DataSerializable, SecuredFunction {
 
     private String jdbcUrl;
     private String tableName;
+    private List<String> fieldNames;
     private int fieldCount;
     private int batchLimit;
 
@@ -51,9 +53,10 @@ public class InsertProcessorSupplier implements ProcessorSupplier, DataSerializa
     public InsertProcessorSupplier() {
     }
 
-    public InsertProcessorSupplier(String jdbcUrl, String tableName, int fieldCount, int batchLimit) {
+    public InsertProcessorSupplier(String jdbcUrl, String tableName, List<String> fieldNames, int fieldCount, int batchLimit) {
         this.jdbcUrl = jdbcUrl;
         this.tableName = tableName;
+        this.fieldNames = fieldNames;
         this.fieldCount = fieldCount;
         this.batchLimit = batchLimit;
     }
@@ -85,6 +88,9 @@ public class InsertProcessorSupplier implements ProcessorSupplier, DataSerializa
         StringBuilder sb = new StringBuilder()
                 .append("INSERT INTO ")
                 .append(tableName)
+                .append(" ( ")
+                .append(fieldNames.stream().map(name -> "\"" + name + "\"").collect(joining(",")))
+                .append(" ) ")
                 .append(" VALUES (");
         for (int i = 0; i < fieldCount; i++) {
             sb.append('?');
@@ -107,6 +113,10 @@ public class InsertProcessorSupplier implements ProcessorSupplier, DataSerializa
         out.writeString(jdbcUrl);
         out.writeString(tableName);
         out.writeInt(fieldCount);
+        out.writeInt(fieldNames.size());
+        for (String fieldName : fieldNames) {
+            out.writeString(fieldName);
+        }
         out.writeInt(batchLimit);
     }
 
@@ -115,6 +125,11 @@ public class InsertProcessorSupplier implements ProcessorSupplier, DataSerializa
         jdbcUrl = in.readString();
         tableName = in.readString();
         fieldCount = in.readInt();
+        int n = in.readInt();
+        fieldNames = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) {
+            fieldNames.add(in.readString());
+        }
         batchLimit = in.readInt();
     }
 }

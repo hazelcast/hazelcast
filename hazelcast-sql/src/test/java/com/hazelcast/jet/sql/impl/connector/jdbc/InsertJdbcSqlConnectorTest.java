@@ -148,4 +148,22 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
         ).isInstanceOf(HazelcastSqlException.class);
     }
 
+    @Test
+    public void insertIntoTableReverseColumnOrder() throws Exception {
+        createTable(tableName, "id INT PRIMARY KEY", "name VARCHAR(10)");
+        execute(
+                "CREATE MAPPING " + tableName
+                        + " TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
+                        + " OPTIONS ( "
+                        + " '" + OPTION_JDBC_URL + "'='" + dbConnectionUrl + "'"
+                        + ")"
+        );
+
+        execute("INSERT INTO " + tableName + " (name, id) VALUES ('name-0', 0)");
+
+        assertJdbcRowsAnyOrder(tableName,
+                new Row(0, "name-0")
+        );
+    }
+
 }

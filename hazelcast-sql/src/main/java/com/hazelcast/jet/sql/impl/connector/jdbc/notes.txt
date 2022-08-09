@@ -7,4 +7,5 @@ TODO
 - publish compact generic record instead of row ? is this possible?
 - different parallelism if possible - for sink - insert, update and delete
 
+- Refactor processor serialization (e.g. build query in processor constructor, serialize less fields)
 - create PR with description

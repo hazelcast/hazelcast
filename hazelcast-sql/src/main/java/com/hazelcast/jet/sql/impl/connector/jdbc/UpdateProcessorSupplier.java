@@ -96,8 +96,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
                             ps.setObject(j + 1, arguments.get(parameterList.get(j)));
                         }
                         for (int j = 0; j < pkFields.size(); j++) {
-                            int fieldIndex = fields.indexOf(pkFields.get(j));
-                            ps.setObject(parameterList.size() + j + 1, row.get(fieldIndex));
+                            ps.setObject(parameterList.size() + j + 1, row.get(j));
                         }
 
                     },
