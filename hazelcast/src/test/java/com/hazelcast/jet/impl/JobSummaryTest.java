@@ -133,8 +133,8 @@ public class JobSummaryTest extends JetTestSupport {
         // wait till jobs are scanned
         Thread.sleep(200);
 
+        assertTrueEventually(() -> assertEquals(1, getJetClientInstanceImpl(client).getJobSummaryList().size()));
         List<JobSummary> list = getJetClientInstanceImpl(client).getJobSummaryList();
-        assertEquals(1, list.size());
         JobSummary jobSummary = list.get(0);
 
         assertTrue(jobSummary.isLightJob());
