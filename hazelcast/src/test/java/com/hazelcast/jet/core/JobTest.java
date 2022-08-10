@@ -913,6 +913,7 @@ public class JobTest extends SimpleTestInClusterSupport {
 
         // light streaming job, cancelled
         Job lightStreamingJobCancelled = jet.newLightJob(streamingDag);
+        assertJobVisible(inst, lightStreamingJobCancelled, "lightStreamingJobCancelled");
         lightStreamingJobCancelled.cancel();
         joinAndExpectCancellation(lightStreamingJobCancelled);
 
@@ -935,13 +936,12 @@ public class JobTest extends SimpleTestInClusterSupport {
         assertThat(toList(jet.getJobs(), this::jobEqualityString))
                 .containsExactlyInAnyOrderElementsOf(toList(allJobsExceptCompletedLightJobs, this::jobEqualityString));
 
-        int index = 0;
         for (Job job : allJobs) {
-            assertJobVisible(inst, job, "job" + (index++));
             Job trackedJobById = jet.getJob(job.getId());
             Job trackedJobByName = job.getName() != null ? jet.getJob(job.getName()) : null;
 
             if (allJobsExceptCompletedLightJobs.contains(job)) {
+                assertJobVisible(inst, trackedJobById, "trackedJobById");
                 assertEquals(jobEqualityString(job), jobEqualityString(trackedJobById));
                 if (job.getName() != null && job != namedStreamingJob2) {
                     assertEquals(jobEqualityString(job), jobEqualityString(trackedJobByName));
