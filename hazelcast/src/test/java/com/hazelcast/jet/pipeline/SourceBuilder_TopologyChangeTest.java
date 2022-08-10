@@ -28,7 +28,6 @@ import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -47,11 +46,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category(QuickTest.class)
 @SuppressWarnings("NewClassNamingConvention")
 public class SourceBuilder_TopologyChangeTest extends JetTestSupport {
 
-    private static volatile boolean stateRestored;
+    private static volatile boolean stateRestored = false;
 
     @Test
     public void test_restartJob_nodeShutDown() {
@@ -85,14 +84,14 @@ public class SourceBuilder_TopologyChangeTest extends JetTestSupport {
                     }
                 })
                 .createSnapshotFn(src -> {
-                    System.out.println("Will save " + src.current + " to snapshot");
+                        System.out.println("Will save " + src.current + " to snapshot");
                     return src;
                 })
                 .restoreSnapshotFn((src, states) -> {
-                    stateRestored = true;
                     assert states.size() == 1;
                     src.restore(states.get(0));
                     System.out.println("Restored " + src.current + " from snapshot");
+                    stateRestored = true;
                 })
                 .build();
 
@@ -120,8 +119,12 @@ public class SourceBuilder_TopologyChangeTest extends JetTestSupport {
         waitForFirstSnapshot(jr, job.getId(), 10, false);
 
         assertFalse(stateRestored);
+        int membersBefore = hz.getCluster().getMembers().size();
         changeTopologyFn.accept(possibleSecondNode);
-        assertTrueEventually(() -> assertTrue("restoreSnapshotFn was not called", stateRestored));
+        assertTrueEventually("cluster size should have changed",
+                () -> assertTrue(hz.getCluster().getMembers().size() != membersBefore));
+        assertTrueEventually(() -> assertTrue("restoreSnapshotFn was not called",
+                stateRestored));
 
         // wait until more results are added
         int oldSize = result.size();
