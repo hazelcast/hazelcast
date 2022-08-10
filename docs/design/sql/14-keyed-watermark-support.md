@@ -247,6 +247,109 @@ only on the window bounds.
 
 ### Handling of keyed idle messages
 
+Idle messages were originally introduced to handle the case where some partition
+doesn't have any data, but others do. For example, if there are 5 partitions,
+but only 4 distinct keys. In this case, thanks to watermark coalescing, no
+watermark will be ever forwarded and a windowing aggregation could never produce
+any results. The above case is very often a user error, but it happens in real
+life, especially in toy projects, and can confuse users.
+
+The timeout is configurable in Core API, but in Pipeline API it's hard-coded to
+60 seconds, which leads to issue reports such as "Jet pipeline starts producing
+results only after 60 seconds after start".
+
+Idle messages are handled in two places:
+
+1. Source processors generate them if they see no events for the configured
+   timeout.
+
+2. Watermark coalescing forwards it, if all coalesced inputs are idle.
+
+So if we have a DAG like this:
+
+```
+scan1 -> map1 --\
+                 +--> aggr
+scan2 -> map2 --/
+```
+
+and if `scan1` sees no data, after the idle timeout `scan1` sends the idle
+message, `map1` forwards it (because all its inputs are idle), and the coalescer
+on input to `aggr` will ignore the input from `map1` from watermark coalescing
+and will forward WMs from the other input, and `aggr` can start producing
+results.
+
 Thanks to the change in the `Watermark` class, idle messages now also carry a
-key. Currently, we mark streams as idle after receiving an idle message from it,
-and mark them active after receiving _any_ event.
+key. Currently, we mark a stream as idle after receiving an idle message from it
+and mark it active after receiving _any_ event or watermark. We track idle
+status for each stream. This means that idle messages have a key, but the
+inverse messages (the events) don't.
+
+Currently, for each stream we track the idle status: a stream is either
+_active_, or _idle_. With keyed idle messages, the status could be _"queue is
+active for key=0 and idle for key=1"_. Or in other words _"queue is partially
+idle"_. This doesn't make sense: an event has all timestamps, so if there is an
+event, the stream is not idle or partially idle, but active.
+
+Therefore, we should ignore the key in the idle messages. An idle message with
+any key will mark the stream as idle, and the stream will be excluded from
+coalescing for _all keys_.
+
+In the implementation it might be useful to only allow idle message with key=0 -
+the above design will be more apparent in the code.
+
+#### Analysis of examples
+
+Let's inspect the behavior in a couple of common examples to confirm its
+correctness.
+
+##### Merge operator
+
+```
+-aggr
+--merge
+---join
+----scan1
+----scan2
+---scan3
+```
+
+If both `scan1` and `scan2` are idle, `join` will be marked as idle, even though
+`scan1` and `scan2` have a different watermark key. The `merge` operator will
+exclude the `join` from WM coalescing, and will directly forward the watermarks
+from `scan3`. This will enable the `aggr` operator to use those watermarks and
+produce output.
+
+In this example, the idle messages help to make progress if some input of the
+`merge` operator has no data.
+
+Note that the merge operator is a prototype of merging homogenous streams. Such
+merging happens also when merging multiple streams contributing to a single DAG
+edge, for example when the `scan1` vertex is backed by multiple processors. It
+shows that the algorithm helps also in that case.
+
+##### JOIN operator
+
+```
+-joinOuter
+--joinInner
+---scan1
+---scan2
+--scan3
+```
+
+`joinInner` will be idle if both its input scans are idle, even though each of
+the scans uses a different WM key. `joinInner` will send the idle message with
+`key=0` (as the only possible key for an idle message).
+
+`joinOuter` has two inputs: `joinInner` and `scan3`. `joinInner` will be marked
+as idle and no event or watermark will come from it. `joinOuter` will be unable
+to make any progress as it will be blocked by `joinInner` not producing any data
+(it's a stream-to-stream join, the stream-to-batch or batch-to-batch joins don't
+use watermarks). Moreover, `joinOuter` will buffer data from `scan3` forever,
+until `joinInner` is active again and sends some watermark.
+
+This scenario seems problematic, but it's not caused by the idle mechanism. It's
+caused by the fact that one side of the join doesn't advance. It would be the
+same without any idle stream handling. It only shows that excluding idle streams
+from coalescing doesn't help here.
