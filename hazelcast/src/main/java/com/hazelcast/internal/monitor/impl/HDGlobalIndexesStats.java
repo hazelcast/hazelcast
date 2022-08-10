@@ -26,7 +26,7 @@ import static java.util.concurrent.atomic.AtomicLongFieldUpdater.newUpdater;
  * The main trait of the implementation is the concurrency support, which is
  * required for global indexes because they are shared among partitions.
  */
-public final class HDGlobalIndexesStats implements IndexesStats {
+public class HDGlobalIndexesStats implements IndexesStats {
 
     private static final AtomicLongFieldUpdater<HDGlobalIndexesStats> QUERY_COUNT = newUpdater(HDGlobalIndexesStats.class,
             "queryCount");

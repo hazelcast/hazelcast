@@ -147,6 +147,9 @@
         },
         "integrity-checker": {
           "$ref": "#/definitions/IntegrityChecker"
+        },
+        "external-data-store": {
+          "$ref": "#/definitions/ExternalDataStoreConfig"
         }
       }
     },
@@ -227,6 +230,9 @@
         },
         "network": {
           "$ref": "#/definitions/ClientNetwork"
+        },
+        "sql": {
+          "$ref": "#/definitions/ClientSql"
         }
       }
     },
@@ -1091,6 +1097,40 @@
               "description": "Defines an assortment of transformations which can be applied to unique-key values. OBJECT: Extracted unique key value is interpreted as an object value. Non-negative unique ID is assigned to every distinct object value. LONG: Extracted unique key value is interpreted as a whole integer value of byte, short, int or long type. The extracted value is upcasted to long (if necessary) and unique non-negative ID is assigned to every distinct value. RAW: Extracted unique key value is interpreted as a whole integer value of byte, short, int or long type. The extracted value is upcasted to long (if necessary) and the resulting value is used directly as an ID."
             }
           }
+        },
+        "btree-index": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "page-size": {
+              "$ref": "#/definitions/MemorySize",
+              "description": "Page size of the index B+ Tree. Default value is 16 kB.",
+              "default": {
+                "value": 16,
+                "unit": "KILOBYTES"
+              }
+            },
+
+            "memory-tier": {
+              "type": "object",
+              "description": "Memory tier.",
+              "additionalProperties": false,
+              "properties": {
+                "capacity": {
+                  "$ref": "#/definitions/MemorySize",
+                  "description": "Memory tier capacity, i.e., how much main memory should this tier consume at most. The default is 256 megabytes."
+                }
+              },
+              "default": {
+                "capacity": {
+                  "default": {
+                    "value": 16,
+                    "unit": "KILOBYTES"
+                  }
+                }
+              }
+            }
+          }
         }
       },
       "required": [
@@ -1243,6 +1283,11 @@
                 ],
                 "default": "LAZY",
                 "description": "LAZY: Default load mode where load is async; EAGER: load mode where load is blocked till all partitions are loaded."
+              },
+              "offload": {
+                "type": "boolean",
+                "default": true,
+                "description": "Set true to offload map-store interacting code parts from partition threads, otherwise interaction is executed inside partition thread"
               },
               "write-delay-seconds": {
                 "type": "integer",
@@ -4223,6 +4268,22 @@
         }
       }
     },
+    "ClientSql": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "resubmission-mode": {
+          "enum": [
+            "NEVER",
+            "RETRY_SELECTS",
+            "RETRY_SELECTS_ALLOW_DUPLICATES",
+            "RETRY_ALL"
+          ],
+          "default": "NEVER",
+          "description": "The configuration when to retry query that fails with reasons CONNECTION_PROBLEM, PARTITION_DISTRIBUTION, TOPOLOGY_CHANGE."
+        }
+      }
+    },
     "OutboundPortDefinition": {
       "anyOf": [
         {
@@ -4893,6 +4954,31 @@
         "enabled"
       ],
       "description": "Enables/disables Integrity Checker. Integrity Checker can be disabled to improve startup time."
+    },
+    "ExternalDataStoreConfig": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "name": {
+            "type": "string",
+            "description": "Name of the external data store configuration."
+          },
+          "class-name": {
+            "type": "string",
+            "description": "The name of the class implementing ExternalDataStoreFactory."
+          },
+          "shared": {
+            "type": "boolean",
+            "description": "If true reuse an instance of JDBC pool or any other storage driver (e.g. kafka client) between jobs or instances of MapStore."
+          },
+          "properties": {
+            "description": "The \"properties\" used for configuring external data store",
+            "type": "object"
+          }
+        }
+      }
     }
   }
 }

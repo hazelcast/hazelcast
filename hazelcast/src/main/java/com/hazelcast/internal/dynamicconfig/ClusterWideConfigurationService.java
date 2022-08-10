@@ -40,6 +40,7 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
+import com.hazelcast.internal.management.operation.UpdateTcpIpMemberListOperation;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.CoreService;
@@ -69,6 +70,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.cluster.Versions.V4_0;
+import static com.hazelcast.internal.cluster.Versions.V5_2;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.internal.util.FutureUtil.waitForever;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
@@ -212,12 +214,12 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public ConfigUpdateResult update(@Nullable Config newConfig) {
-        throw new UnsupportedOperationException("Configuration Reload requires Hazelcast Enterprise Edition");
+        throw new UnsupportedOperationException("Configuration Update requires Hazelcast Enterprise Edition");
     }
 
     @Override
     public UUID updateAsync(String configPatch) {
-        throw new UnsupportedOperationException("Configuration Reload requires Hazelcast Enterprise Edition");
+        throw new UnsupportedOperationException("Configuration Update requires Hazelcast Enterprise Edition");
     }
 
     public InternalCompletableFuture<Object> broadcastConfigAsync(IdentifiedDataSerializable config) {
@@ -532,6 +534,18 @@ public class ClusterWideConfigurationService implements
             return null;
         }
         return new Merger(nodeEngine, allConfigurations);
+    }
+
+    @Override
+    public void updateTcpIpConfigMemberList(List<String> memberList) {
+        if (version.isLessThan(V5_2)) {
+            throw new UnsupportedOperationException("TCP-IP member list update is not supported"
+                    + " for the cluster version less than 5.2");
+        }
+        invokeOnStableClusterSerial(
+                nodeEngine,
+                () -> new UpdateTcpIpMemberListOperation(memberList), CONFIG_PUBLISH_MAX_ATTEMPT_COUNT
+        ).join();
     }
 
     public static class Merger implements Runnable {

@@ -191,10 +191,21 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         INITIALIZED_ON_CLUSTER,
 
         /**
-         * We get into this state before we try to connect to next cluster. As soon as the state is `SWITCHING_CLUSTER`
-         * any connection happened without cluster switch intent are no longer allowed and will be closed.
-         * Also we will not allow ConnectToAllClusterMembersTask to make any further connection attempts as long as
-         * the state is `SWITCHING_CLUSTER`
+         * When the client closes the last connection to the cluster it
+         * currently connected to, it switches to this state.
+         * <p>
+         * In this state, ConnectToAllClusterMembersTask is not allowed to
+         * attempt connecting to last known member list.
+         */
+        DISCONNECTED_FROM_CLUSTER,
+
+        /**
+         * We get into this state before we try to connect to next cluster. As
+         * soon as the state is `SWITCHING_CLUSTER` any connection happened
+         * without cluster switch intent are no longer allowed and will be
+         * closed. Also, we will not allow ConnectToAllClusterMembersTask to
+         * make any further connection attempts as long as the state is
+         * `SWITCHING_CLUSTER`
          */
         SWITCHING_CLUSTER
     }
@@ -806,6 +817,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                         fireLifecycleEvent(LifecycleState.CLIENT_DISCONNECTED);
                     }
 
+                    clientState = ClientState.DISCONNECTED_FROM_CLUSTER;
                     triggerClusterReconnection();
                 }
 
@@ -1200,10 +1212,16 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             }
 
             for (Member member : client.getClientClusterService().getMemberList()) {
-                if (clientState == ClientState.SWITCHING_CLUSTER) {
-                    // when switching cluster we only want to open a new connection via `doConnectToCandidateCluster`
+                if (clientState == ClientState.SWITCHING_CLUSTER
+                        || clientState == ClientState.DISCONNECTED_FROM_CLUSTER) {
+                    // Best effort check to prevent this task from attempting to
+                    // open a new connection when the client is either switching
+                    // clusters or is not connected to any of the cluster members.
+                    // In such occasions, only `doConnectToCandidateCluster`
+                    // method should open new connections.
                     return;
                 }
+
                 UUID uuid = member.getUuid();
                 if (activeConnections.get(uuid) != null) {
                     continue;

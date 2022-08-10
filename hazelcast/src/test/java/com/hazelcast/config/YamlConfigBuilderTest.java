@@ -31,6 +31,7 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.config.SchemaViolationConfigurationException;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
@@ -63,12 +64,12 @@ import java.util.Set;
 
 import static com.hazelcast.config.DynamicConfigurationConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.DynamicConfigurationConfig.DEFAULT_BACKUP_DIR;
+import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_BLOCK_SIZE_IN_BYTES;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_DEVICE_BASE_DIR;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_DEVICE_NAME;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_READ_IO_THREAD_COUNT;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_WRITE_IO_THREAD_COUNT;
-import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.MemoryTierConfig.DEFAULT_CAPACITY;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
@@ -81,6 +82,7 @@ import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static java.io.File.createTempFile;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -1170,6 +1172,30 @@ public class YamlConfigBuilderTest
 
     @Override
     @Test
+    public void testMapStoreConfig_offload_whenDefault() {
+        MapStoreConfig mapStoreConfig = getOffloadMapStoreConfig(MapStoreConfig.DEFAULT_OFFLOAD, true);
+
+        assertTrue(mapStoreConfig.isOffload());
+    }
+
+    @Override
+    @Test
+    public void testMapStoreConfig_offload_whenSetFalse() {
+        MapStoreConfig mapStoreConfig = getOffloadMapStoreConfig(false, false);
+
+        assertFalse(mapStoreConfig.isOffload());
+    }
+
+    @Override
+    @Test
+    public void testMapStoreConfig_offload_whenSetTrue() {
+        MapStoreConfig mapStoreConfig = getOffloadMapStoreConfig(true, false);
+
+        assertTrue(mapStoreConfig.isOffload());
+    }
+
+    @Override
+    @Test
     public void testMapStoreWriteBatchSize() {
         String yaml = ""
                 + "hazelcast:\n"
@@ -1220,7 +1246,22 @@ public class YamlConfigBuilderTest
                 + "  map:\n"
                 + "    mymap:\n"
                 + "      map-store:"
-                + (useDefault ? " {}" : "\n        write-coalescing: " + String.valueOf(value) + "\n");
+                + (useDefault ? " {}" : "\n        write-coalescing: " + value + "\n");
+    }
+
+    private MapStoreConfig getOffloadMapStoreConfig(boolean offload, boolean useDefault) {
+        String xml = getOffloadConfigYaml(offload, useDefault);
+        Config config = buildConfig(xml);
+        return config.getMapConfig("mymap").getMapStoreConfig();
+    }
+
+    private String getOffloadConfigYaml(boolean value, boolean useDefault) {
+        return ""
+                + "hazelcast:\n"
+                + "  map:\n"
+                + "    mymap:\n"
+                + "      map-store:"
+                + (useDefault ? " {}" : "\n        offload: " + String.valueOf(value) + "\n");
     }
 
     @Override
@@ -2598,14 +2639,31 @@ public class YamlConfigBuilderTest
                 + "          attributes:\n"
                 + "            - \"name\"\n"
                 + "        - attributes:\n"
-                + "          - \"age\"\n";
+                + "          - \"age\"\n"
+                + "        - type: SORTED\n"
+                + "          attributes:\n"
+                + "            - \"age\"\n"
+                + "          btree-index:\n"
+                + "            page-size:\n"
+                + "              value: 1337\n"
+                + "              unit: BYTES\n"
+                + "            memory-tier: \n"
+                + "              capacity: \n"
+                + "                value: 1138\n"
+                + "                unit: BYTES\n"
+                ;
 
         Config config = buildConfig(yaml);
         MapConfig mapConfig = config.getMapConfig("people");
 
-        assertFalse(mapConfig.getIndexConfigs().isEmpty());
-        assertIndexEqual("name", false, mapConfig.getIndexConfigs().get(0));
-        assertIndexEqual("age", true, mapConfig.getIndexConfigs().get(1));
+        List<IndexConfig> indexConfigs = mapConfig.getIndexConfigs();
+        assertFalse(indexConfigs.isEmpty());
+        assertIndexEqual("name", false, indexConfigs.get(0));
+        assertIndexEqual("age", true, indexConfigs.get(1));
+        assertIndexEqual("age", true, indexConfigs.get(2));
+        BTreeIndexConfig bTreeIndexConfig = indexConfigs.get(2).getBTreeIndexConfig();
+        assertEquals(Capacity.of(1337, MemoryUnit.BYTES), bTreeIndexConfig.getPageSize());
+        assertEquals(Capacity.of(1138, MemoryUnit.BYTES), bTreeIndexConfig.getMemoryTierConfig().getCapacity());
     }
 
     @Override
@@ -4407,6 +4465,38 @@ public class YamlConfigBuilderTest
         Config config = buildConfig(yaml);
 
         assertFalse(config.getIntegrityCheckerConfig().isEnabled());
+    }
+
+    @Override
+    public void testExternalDataStoreConfigs() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  external-data-store:\n"
+                + "    mysql-database:\n"
+                + "      class-name: com.hazelcast.datastore.JdbcDataStore\n"
+                + "      properties:\n"
+                + "        jdbcUrl: jdbc:mysql://dummy:3306\n"
+                + "        some.property: dummy-value\n"
+                + "      shared: true\n"
+                + "    other-database:\n"
+                + "      class-name: com.hazelcast.datastore.OtherDataStore\n";
+
+        Config config = new InMemoryYamlConfig(yaml);
+
+        Map<String, ExternalDataStoreConfig> externalDataStoreConfigs = config.getExternalDataStoreConfigs();
+
+        assertThat(externalDataStoreConfigs).hasSize(2);
+        assertThat(externalDataStoreConfigs).containsKey("mysql-database");
+        ExternalDataStoreConfig mysqlDataStoreConfig = externalDataStoreConfigs.get("mysql-database");
+        assertThat(mysqlDataStoreConfig.getClassName()).isEqualTo("com.hazelcast.datastore.JdbcDataStore");
+        assertThat(mysqlDataStoreConfig.getName()).isEqualTo("mysql-database");
+        assertThat(mysqlDataStoreConfig.isShared()).isTrue();
+        assertThat(mysqlDataStoreConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
+        assertThat(mysqlDataStoreConfig.getProperty("some.property")).isEqualTo("dummy-value");
+
+        assertThat(externalDataStoreConfigs).containsKey("other-database");
+        ExternalDataStoreConfig otherDataStoreConfig = externalDataStoreConfigs.get("other-database");
+        assertThat(otherDataStoreConfig.getClassName()).isEqualTo("com.hazelcast.datastore.OtherDataStore");
     }
 
     @Override

@@ -52,12 +52,14 @@ public class IndexImplTest {
         IndexConfig config = IndexUtils.createTestIndexConfig(IndexType.HASH, ATTRIBUTE_NAME);
 
         index = new IndexImpl(
+            null,
             config,
             mockSerializationService,
             mockExtractors,
             IndexCopyBehavior.COPY_ON_READ,
             PerIndexStats.EMPTY,
-            MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT
+            MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT,
+            "test"
         );
     }
 

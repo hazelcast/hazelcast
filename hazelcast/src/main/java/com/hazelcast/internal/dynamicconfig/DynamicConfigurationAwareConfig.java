@@ -28,6 +28,7 @@ import com.hazelcast.config.DeviceConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.DynamicConfigurationConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InstanceTrackingConfig;
@@ -1212,5 +1213,30 @@ public class DynamicConfigurationAwareConfig extends Config {
     @Override
     public Config setIntegrityCheckerConfig(final IntegrityCheckerConfig config) {
         throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public Map<String, ExternalDataStoreConfig> getExternalDataStoreConfigs() {
+        return staticConfig.getExternalDataStoreConfigs();
+    }
+
+    @Override
+    public Config setExternalDataStoreConfigs(Map<String, ExternalDataStoreConfig> externalDataStoreConfigs) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public Config addExternalDataStoreConfig(ExternalDataStoreConfig externalDataStoreConfig) {
+        throw new UnsupportedOperationException("Unsupported operation");
+    }
+
+    @Override
+    public ExternalDataStoreConfig getExternalDataStoreConfig(String name) {
+        return staticConfig.getExternalDataStoreConfig(name);
+    }
+
+    @Override
+    public ExternalDataStoreConfig findExternalDataStoreConfig(String name) {
+        return staticConfig.findExternalDataStoreConfig(name);
     }
 }

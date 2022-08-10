@@ -34,6 +34,7 @@ import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
+import com.hazelcast.datastore.impl.ExternalDataStoreServiceImplTest;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.jet.config.JetConfig;
@@ -1467,6 +1468,24 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(expected, actual);
     }
 
+    @Test
+    public void testExternalDataStoreConfig() {
+        Config expectedConfig = new Config();
+
+        Properties properties = new Properties();
+        properties.put("jdbcUrl", "jdbc:h2:mem:" + ExternalDataStoreServiceImplTest.class.getSimpleName());
+        ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
+                .setName("test-data-store")
+                .setClassName("com.hazelcast.datastore.JdbcDataStoreFactory")
+                .setProperties(properties);
+
+        expectedConfig.addExternalDataStoreConfig(externalDataStoreConfig);
+
+        Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
+
+        assertEquals(expectedConfig.getExternalDataStoreConfigs(), actualConfig.getExternalDataStoreConfigs());
+    }
+
     private Config getNewConfigViaXMLGenerator(Config config) {
         return getNewConfigViaXMLGenerator(config, true);
     }
@@ -1478,7 +1497,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         return new InMemoryXmlConfig(xml);
     }
 
-    private static TcpIpConfig tcpIpConfig() {
+    public static TcpIpConfig tcpIpConfig() {
         return new TcpIpConfig()
                 .setEnabled(true)
                 .setConnectionTimeoutSeconds(10)
@@ -1486,7 +1505,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setRequiredMember("10.11.11.2");
     }
 
-    private static MulticastConfig multicastConfig() {
+    public static MulticastConfig multicastConfig() {
         return new MulticastConfig()
                 .setEnabled(true)
                 .setMulticastTimeoutSeconds(10)
@@ -1497,7 +1516,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setTrustedInterfaces(newHashSet("*"));
     }
 
-    private static void assertFailureDetectorConfigEquals(IcmpFailureDetectorConfig expected,
+    public static void assertFailureDetectorConfigEquals(IcmpFailureDetectorConfig expected,
                                                           IcmpFailureDetectorConfig actual) {
         assertEquals(expected.isEnabled(), actual.isEnabled());
         assertEquals(expected.getIntervalMilliseconds(), actual.getIntervalMilliseconds());

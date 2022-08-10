@@ -693,7 +693,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
     }
 
     public void terminateExecution0(ExecutionContext executionContext, TerminationMode mode, Throwable cause) {
-        if (!executionContext.terminateExecution(mode)) {
+        if (!executionContext.terminateExecution(mode, cause)) {
             // If the execution was terminated before it began, call completeExecution now.
             // Otherwise, if the execution was already begun, this method will be called when the tasklets complete.
             logger.fine(executionContext.jobNameAndExecutionId()

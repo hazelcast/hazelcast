@@ -1188,6 +1188,15 @@
         It has the following sub-elements:
         - <class-name>:
             The name of your class implementing MapLoader and/or MapStore interface.
+        - <offload>:
+            Default value is true.
+            MapStore or MapLoader implementations are executed by
+            partition threads, by setting offload to true, Hazelcast
+            makes these threads available for other cluster operations
+            and offloads MapStore or MapLoader interacting parts of
+            executions to a different thread pool, upon interaction finish,
+            operations continue to work in the partition thread from
+            the point they are offloaded.
         - <write-delay-seconds>:
             Number of seconds to delay the storing of entries. If the value is 0, then it is write-through.
             Otherwise, it is write-behind so updates will be stored after this period. Its default value is 0.
@@ -1338,6 +1347,7 @@
         </event-journal>
         <map-store enabled="true" initial-mode="LAZY">
             <class-name>com.hazelcast.examples.DummyStore</class-name>
+            <offload>true</offload>
             <write-delay-seconds>60</write-delay-seconds>
             <write-batch-size>1000</write-batch-size>
             <write-coalescing>true</write-coalescing>
@@ -1403,6 +1413,17 @@
                     <unique-key>id</unique-key>
                     <unique-key-transformation>RAW</unique-key-transformation>
                 </bitmap-index-options>
+            </index>
+            <index type="SORTED">
+                <attributes>
+                    <attribute>age</attribute>
+                </attributes>
+                <btree-index>
+                    <memory-tier>
+                        <capacity value="128" unit="BYTES" />
+                    </memory-tier>
+                    <page-size value="1024" unit="BYTES" />
+                </btree-index>
             </index>
         </indexes>
         <attributes>
@@ -3851,5 +3872,23 @@
     it can be disabled to improve startup time. Integrity Checker is disabled by default.
     -->
     <integrity-checker enabled="false"/>
+
+    <!--
+      ===== HAZELCAST EXTERNAL DATA STORE CONFIGURATION =====
+    
+      Configuration element's name is <external-data-store>. Contains configuration of external data stores
+      used by map stores and jdbc sinks and sources
+      -->
+    <external-data-store name="mysql-database">
+        <class-name>com.hazelcast.datastore.JdbcDataStoreFactory</class-name>
+        <properties>
+            <property name="jdbcUrl">jdbc:mysql://dummy:3306</property>
+        </properties>
+        <shared>false</shared>
+    </external-data-store>
+
+    <external-data-store name="other-database">
+        <class-name>com.hazelcast.datastore.OtherDataStore</class-name>
+    </external-data-store>
 
 </hazelcast>

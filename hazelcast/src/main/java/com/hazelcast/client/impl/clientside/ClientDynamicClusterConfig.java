@@ -53,6 +53,7 @@ import com.hazelcast.config.DeviceConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.DynamicConfigurationConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartPersistenceConfig;
 import com.hazelcast.config.InstanceTrackingConfig;
@@ -1111,6 +1112,31 @@ public class ClientDynamicClusterConfig extends Config {
     @Nonnull
     @Override
     public Config setIntegrityCheckerConfig(final IntegrityCheckerConfig config) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Map<String, ExternalDataStoreConfig> getExternalDataStoreConfigs() {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config setExternalDataStoreConfigs(Map<String, ExternalDataStoreConfig> externalDataStoreConfigs) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public Config addExternalDataStoreConfig(ExternalDataStoreConfig externalDataStoreConfig) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public ExternalDataStoreConfig getExternalDataStoreConfig(String name) {
+        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+    }
+
+    @Override
+    public ExternalDataStoreConfig findExternalDataStoreConfig(String name) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
