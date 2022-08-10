@@ -48,51 +48,26 @@ import static java.util.Objects.requireNonNull;
 public class SelectProcessorSupplier implements ProcessorSupplier, DataSerializable, SecuredFunction {
 
     private String jdbcUrl;
-    private String tableName;
-    private List<String> fields;
-    private List<Integer> parameterList;
-    private String predicateSql;
-    private String projectionSql;
+    private String query;
+    private int[] parameterPositions;
 
     private transient ExpressionEvalContext evalContext;
-    private transient String query;
 
     @SuppressWarnings("unused")
     public SelectProcessorSupplier() {
     }
 
     public SelectProcessorSupplier(@Nonnull String jdbcUrl,
-                                   @Nonnull String tableName,
-                                   @Nonnull List<String> fields,
-                                   @Nonnull List<Integer> parameterList,
-                                   @Nullable String predicateSql,
-                                   @Nullable String projectionSql) {
+                                   @Nonnull String query,
+                                   @Nonnull int[] parameterPositions) {
         this.jdbcUrl = requireNonNull(jdbcUrl, "jdbcUrl must not be null");
-        this.tableName = requireNonNull(tableName, "tableName must not be null");
-        this.fields = requireNonNull(fields, "fields must not be null");
-        this.parameterList = requireNonNull(parameterList, "parameterList must not be null");
-        this.predicateSql = predicateSql;
-        this.projectionSql = projectionSql;
+        this.query = requireNonNull(query, "query must not be null");
+        this.parameterPositions = requireNonNull(parameterPositions, "parameterPositions must not be null");
     }
 
     @Override
     public void init(@Nonnull Context context) throws Exception {
         evalContext = ExpressionEvalContext.from(context);
-        query = buildQuery();
-    }
-
-    private String buildQuery() {
-        String select;
-        if (projectionSql != null) {
-            select = projectionSql;
-        } else {
-            select = "*";
-        }
-        if (predicateSql != null) {
-            return "SELECT " + select + " FROM " + tableName + " WHERE " + predicateSql;
-        } else {
-            return "SELECT " + select + " FROM " + tableName;
-        }
     }
 
     @Nonnull
@@ -105,9 +80,9 @@ public class SelectProcessorSupplier implements ProcessorSupplier, DataSerializa
                     (connection, parallelism, index) -> {
                         PreparedStatement statement = connection.prepareStatement(query);
                         List<Object> arguments = evalContext.getArguments();
-                        for (int j = 0; j < parameterList.size(); j++) {
+                        for (int j = 0; j < parameterPositions.length; j++) {
                             // TODO is some conversion needed here? maybe for dates (the opposite of convertValue)
-                            statement.setObject(j + 1, arguments.get(parameterList.get(j)));
+                            statement.setObject(j + 1, arguments.get(parameterPositions[j]));
                         }
                         try {
                             return statement.executeQuery();
@@ -154,34 +129,14 @@ public class SelectProcessorSupplier implements ProcessorSupplier, DataSerializa
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(jdbcUrl);
-        out.writeString(tableName);
-        out.writeInt(fields.size());
-        for (int i = 0; i < fields.size(); i++) {
-            out.writeString(fields.get(i));
-        }
-        out.writeInt(parameterList.size());
-        for (int i = 0; i < parameterList.size(); i++) {
-            out.writeInt(parameterList.get(i));
-        }
-        out.writeString(predicateSql);
-        out.writeString(projectionSql);
+        out.writeString(query);
+        out.writeIntArray(parameterPositions);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         jdbcUrl = in.readString();
-        tableName = in.readString();
-        int numFields = in.readInt();
-        fields = new ArrayList<>(numFields);
-        for (int i = 0; i < numFields; i++) {
-            fields.add(in.readString());
-        }
-        int numParameters = in.readInt();
-        parameterList = new ArrayList<>(numParameters);
-        for (int i = 0; i < numParameters; i++) {
-            parameterList.add(in.readInt());
-        }
-        predicateSql = in.readString();
-        projectionSql = in.readString();
+        query = in.readString();
+        parameterPositions = in.readIntArray();
     }
 }

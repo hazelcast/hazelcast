@@ -5,3 +5,4 @@ TODO
 - parametrize connector type (default JDBC)
 - different parallelism if possible - for sink - insert, update and delete
 
+-  some conversion needed in SelectProcessorSupplier? maybe for dates (the opposite of convertValue)

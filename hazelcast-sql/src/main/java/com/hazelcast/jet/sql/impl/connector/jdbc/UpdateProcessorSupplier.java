@@ -49,7 +49,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
     private List<String> pkFields;
     private List<String> fields;
     private String whereClause;
-    private List<Integer> parameterList;
+    private int[] parameterPositions;
     private String setSqlFragment;
     private int batchLimit;
 
@@ -60,13 +60,13 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
     }
 
     public UpdateProcessorSupplier(String jdbcUrl, String tableName, List<String> pkFields,
-                                   List<String> fields, List<Integer> parameterList, String setSqlFragment,
+                                   List<String> fields, int[] parameterPositions, String setSqlFragment,
                                    int batchLimit) {
         this.jdbcUrl = jdbcUrl;
         this.tableName = tableName;
         this.pkFields = pkFields;
         this.fields = fields;
-        this.parameterList = parameterList;
+        this.parameterPositions = parameterPositions;
         this.setSqlFragment = setSqlFragment;
         this.batchLimit = batchLimit;
     }
@@ -91,12 +91,12 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
                     (PreparedStatement ps, JetSqlRow row) -> {
                         List<Object> arguments = evalContext.getArguments();
 
-                        for (int j = 0; j < parameterList.size(); j++) {
+                        for (int j = 0; j < parameterPositions.length; j++) {
                             // TODO is some conversion needed here? maybe for dates (the opposite of convertValue)
-                            ps.setObject(j + 1, arguments.get(parameterList.get(j)));
+                            ps.setObject(j + 1, arguments.get(parameterPositions[j]));
                         }
                         for (int j = 0; j < pkFields.size(); j++) {
-                            ps.setObject(parameterList.size() + j + 1, row.get(j));
+                            ps.setObject(parameterPositions.length + j + 1, row.get(j));
                         }
 
                     },
@@ -126,10 +126,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
         out.writeString(tableName);
         writeList(out, pkFields);
         writeList(out, fields);
-        out.writeInt(parameterList.size());
-        for (int i = 0; i < parameterList.size(); i++) {
-            out.writeInt(parameterList.get(i));
-        }
+        out.writeIntArray(parameterPositions);
         out.writeString(setSqlFragment);
         out.writeInt(batchLimit);
     }
@@ -147,11 +144,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
         tableName = in.readString();
         pkFields = readList(in);
         fields = readList(in);
-        int numParameters = in.readInt();
-        parameterList = new ArrayList<>(numParameters);
-        for (int i = 0; i < numParameters; i++) {
-            parameterList.add(in.readInt());
-        }
+        parameterPositions = in.readIntArray();
         setSqlFragment = in.readString();
         batchLimit = in.readInt();
     }

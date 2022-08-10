@@ -274,39 +274,14 @@ public class JdbcSqlConnector implements SqlConnector {
                     EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
         JdbcTable table = (JdbcTable) table0;
 
-        SqlDialect dialect = table.sqlDialect();
-        SimpleContext simpleContext = new SimpleContext(dialect, value -> {
-            JdbcTable target = hzTable.getTarget();
-            JdbcTableField field = target.getField(value);
-            return new SqlIdentifier(field.externalName(), SqlParserPos.ZERO);
-        });
-        RexNode filter = hzTable.getFilter();
-        String filterSqlFragment = null;
-        ParamCollectingVisitor paramCollectingVisitor = new ParamCollectingVisitor();
-        if (filter != null) {
-            SqlNode sqlNode = simpleContext.toSql(null, filter);
-            sqlNode.accept(paramCollectingVisitor);
-            filterSqlFragment = sqlNode.toSqlString(dialect).toString();
-        }
-
-        String projectionSqlFragment = null;
-        List<RexNode> projects = hzTable.getProjects();
-        if (!projects.isEmpty()) {
-            projectionSqlFragment = projects.stream()
-                                            .map(proj -> simpleContext.toSql(null, proj).toSqlString(dialect).toString())
-                                            .collect(joining(","));
-        }
-
+        SelectQueryBuilder builder = new SelectQueryBuilder(hzTable);
         return dag.newUniqueVertex(
                 "Select (" + table.getExternalName() + ")",
                 ProcessorMetaSupplier.forceTotalParallelismOne(
                         new SelectProcessorSupplier(
                                 table.getJdbcUrl(),
-                                table.getExternalName(),
-                                table.dbFieldNames(),
-                                paramCollectingVisitor.parameterList(),
-                                filterSqlFragment,
-                                projectionSqlFragment
+                                builder.query(),
+                                builder.parameterPositions()
                         ))
         );
     }
@@ -375,7 +350,7 @@ public class JdbcSqlConnector implements SqlConnector {
                         table.getExternalName(),
                         pkFields,
                         table.dbFieldNames(),
-                        paramCollectingVisitor.parameterList(),
+                        paramCollectingVisitor.parameterPositions(),
                         setSqlFragment,
                         table.getBatchLimit()
                 )
