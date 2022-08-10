@@ -76,12 +76,14 @@ import java.util.function.UnaryOperator;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.JetServiceBackend.SERVICE_NAME;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.EXECUTION;
+import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
 import static java.util.Collections.newSetFromMap;
+import static java.util.concurrent.CompletableFuture.completedFuture;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -235,29 +237,41 @@ public class JobExecutionService implements DynamicMetricsProvider {
     /**
      * Cancels all ongoing executions using the given failure supplier.
      */
+    @SuppressWarnings("rawtypes")
     public void cancelAllExecutions(String reason) {
-        for (ExecutionContext exeCtx : executionContexts.values()) {
+        Collection<ExecutionContext> contexts = executionContexts.values();
+        CompletableFuture[] futures = new CompletableFuture[contexts.size()];
+        int index = 0;
+        for (ExecutionContext exeCtx : contexts) {
             LoggingUtil.logFine(logger, "Completing %s locally. Reason: %s",
                     exeCtx.jobNameAndExecutionId(), reason);
-            terminateExecution0(exeCtx, null, new CancellationException());
+            futures[index++] = terminateExecution0(exeCtx, null, new CancellationException());
         }
+
+        CompletableFuture.allOf(futures).join();
     }
 
     /**
      * Cancels executions that contain the leaving address as the coordinator or a
      * job participant
      */
+    @SuppressWarnings("rawtypes")
     void onMemberRemoved(Member member) {
         Address address = member.getAddress();
-        executionContexts.values().stream()
-             // note that coordinator might not be a participant (in case it is a lite member)
-             .filter(exeCtx -> exeCtx.coordinator() != null
-                     && (exeCtx.coordinator().equals(address) || exeCtx.hasParticipant(address)))
-             .forEach(exeCtx -> {
-                 LoggingUtil.logFine(logger, "Completing %s locally. Reason: Member %s left the cluster",
-                         exeCtx.jobNameAndExecutionId(), address);
-                 terminateExecution0(exeCtx, null, new MemberLeftException(member));
-             });
+        CompletableFuture[] terminationFutures =
+                executionContexts.values().stream()
+                                 // note that coordinator might not be a participant
+                                 // (in case it is a lite member)
+                                 .filter(exeCtx -> exeCtx.coordinator() != null
+                                         && (exeCtx.coordinator().equals(address) || exeCtx.hasParticipant(address)))
+                                 .map(exeCtx -> {
+                                     LoggingUtil.logFine(logger, "Completing %s " +
+                                                     "locally. Reason: Member %s left the cluster",
+                                             exeCtx.jobNameAndExecutionId(), address);
+                                     return terminateExecution0(exeCtx, null, new MemberLeftException(member));
+                                 })
+                                 .toArray(CompletableFuture[]::new);
+        CompletableFuture.allOf(terminationFutures).join();
     }
 
     public CompletableFuture<RawJobMetrics> runLightJob(
@@ -520,7 +534,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                         logger.fine("Completed execution of " + executionContext.jobNameAndExecutionId());
                     });
         } else {
-            return CompletableFuture.completedFuture(null);
+            return completedFuture(null);
         }
     }
 
@@ -593,12 +607,14 @@ public class JobExecutionService implements DynamicMetricsProvider {
     /**
      * See also javadoc at {@link CheckLightJobsOperation}.
      */
+    @SuppressWarnings("rawtypes")
     private void checkExecutions() {
         try {
             long now = System.nanoTime();
             long uninitializedContextThreshold = now - UNINITIALIZED_CONTEXT_MAX_AGE_NS;
             Map<Address, List<Long>> executionsPerMember = new HashMap<>();
 
+            List<CompletableFuture> terminateFutures = new ArrayList<>();
             for (ExecutionContext ctx : executionContexts.values()) {
                 if (!ctx.isLightJob()) {
                     continue;
@@ -614,9 +630,13 @@ public class JobExecutionService implements DynamicMetricsProvider {
                     if (ctx.getCreatedOn() <= uninitializedContextThreshold) {
                         LoggingUtil.logFine(logger, "Terminating light job %s because it wasn't initialized during %d seconds",
                                 idToString(ctx.executionId()), NANOSECONDS.toSeconds(UNINITIALIZED_CONTEXT_MAX_AGE_NS));
-                        terminateExecution0(ctx, TerminationMode.CANCEL_FORCEFUL, new CancellationException());
+                        terminateFutures.add(terminateExecution0(ctx, CANCEL_FORCEFUL, new CancellationException()));
                     }
                 }
+            }
+
+            if (!terminateFutures.isEmpty()) {
+                CompletableFuture.allOf(terminateFutures.toArray(new CompletableFuture[0])).join();
             }
 
             // submit the query to the coordinator
@@ -640,7 +660,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                         if (execCtx != null) {
                             logger.fine("Terminating light job " + idToString(executionId)
                                     + " because the coordinator doesn't know it");
-                            terminateExecution0(execCtx, TerminationMode.CANCEL_FORCEFUL, new CancellationException());
+                            terminateExecution0(execCtx, CANCEL_FORCEFUL, new CancellationException());
                         }
                     }
                 });
@@ -653,7 +673,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         }
     }
 
-    public void terminateExecution(long jobId, long executionId, Address callerAddress, TerminationMode mode) {
+    public CompletableFuture<Void> terminateExecution(long jobId, long executionId, Address callerAddress, TerminationMode mode) {
         failIfNotRunning();
 
         ExecutionContext executionContext = executionContexts.get(executionId);
@@ -661,7 +681,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
             // If this happens after the execution terminated locally, ignore.
             // If this happens before the execution was initialized locally, that means it's a light
             // job. We ignore too and rely on the CheckLightJobsOperation.
-            return;
+            return completedFuture(null);
         }
         if (!executionContext.isLightJob()) {
             Address masterAddress = nodeEngine.getMasterAddress();
@@ -688,17 +708,18 @@ public class JobExecutionService implements DynamicMetricsProvider {
                     executionContext.jobNameAndExecutionId(), coordinator, callerAddress, idToString(executionId)));
         }
         Exception cause = mode == null ? new CancellationException() : new JobTerminateRequestedException(mode);
-        terminateExecution0(executionContext, mode, cause);
+        return terminateExecution0(executionContext, mode, cause);
     }
 
-    public void terminateExecution0(ExecutionContext executionContext, TerminationMode mode, Throwable cause) {
+    public CompletableFuture<Void> terminateExecution0(ExecutionContext executionContext, TerminationMode mode, Throwable cause) {
         if (!executionContext.terminateExecution(mode)) {
             // If the execution was terminated before it began, call completeExecution now.
             // Otherwise, if the execution was already begun, this method will be called when the tasklets complete.
             logger.fine(executionContext.jobNameAndExecutionId()
                     + " calling completeExecution because execution terminated before it started");
-            completeExecution(executionContext, cause);
+            return completeExecution(executionContext, cause);
         }
+        return completedFuture(null);
     }
 
     // for test
