@@ -525,14 +525,14 @@ public class JobExecutionService implements DynamicMetricsProvider {
             JetDelegatingClassLoader jobClassLoader = jobClassloaderService.getClassLoader(executionContext.jobId());
 
             return doWithClassLoader(jobClassLoader, () -> executionContext.completeExecution(error))
-                    .whenComplete((ignored, t) -> {
+                    .whenComplete(withTryCatch(logger, (ignored, t) -> {
                         if (!executionContext.isLightJob()) {
                             jobClassloaderService.tryRemoveClassloadersForJob(executionContext.jobId(), EXECUTION);
                         }
                         executionCompleted.inc();
                         executionContextJobIds.remove(executionContext.jobId());
                         logger.fine("Completed execution of " + executionContext.jobNameAndExecutionId());
-                    });
+                    }));
         } else {
             return completedFuture(null);
         }
@@ -574,14 +574,19 @@ public class JobExecutionService implements DynamicMetricsProvider {
                       })
                       .handle((metrics, e) -> completeExecution(execCtx, peel(e))
                               .thenApply(ignored -> {
-                                  if (e == null) {
-                                      return metrics;
+                                  return metrics;
+                              })
+                              .whenComplete((m, ex) -> {
+                                  if (e != null) {
+                                      throw rethrow(e);
                                   }
-                                  throw rethrow(e);
+                                  if (ex != null) {
+                                      throw rethrow(ex);
+                                  }
                               })
                       )
                       .thenCompose(stage -> stage)
-                      .whenComplete(withTryCatch(logger, (metrics, e) -> {
+                      .whenComplete((metrics, e) -> {
                           if (e instanceof CancellationException) {
                               logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " was cancelled");
                           } else if (e != null) {
@@ -590,7 +595,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                           } else {
                               logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " completed");
                           }
-                      }));
+                      });
     }
 
     @Override
