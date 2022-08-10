@@ -1030,11 +1030,6 @@ public class JobTest extends SimpleTestInClusterSupport {
         }
     }
 
-    private static void assertJobVisible(HazelcastInstance client, Job job1, String jobName) {
-        assertTrueEventually(jobName + " not found",
-                () -> assertNotNull(client.getJet().getJob(job1.getId())));
-    }
-
     private static final class PSThatWaitsOnInit implements ProcessorSupplier {
 
         public static volatile CountDownLatch initLatch;

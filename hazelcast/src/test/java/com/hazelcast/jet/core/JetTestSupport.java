@@ -500,6 +500,17 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     }
 
     /**
+     * Asserts that the {@code job} is already visible by {@linkplain JetService#getJob} methods.
+     * @param client Hazelcast Instance used to query the cluster
+     * @param jobToCheck job to be checked for visibility
+     * @param jobName job name, for better assertion message
+     */
+    public static void assertJobVisible(HazelcastInstance client, Job jobToCheck, String jobName) {
+        assertTrueEventually(jobName + " not found",
+                () -> assertNotNull(client.getJet().getJob(jobToCheck.getId())));
+    }
+
+    /**
      * Asserts that the {@code job} does not have an {@link ExecutionContext}
      * on the given {@code instance}.
      */

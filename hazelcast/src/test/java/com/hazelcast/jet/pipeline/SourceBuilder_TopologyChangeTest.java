@@ -48,6 +48,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
+@SuppressWarnings("NewClassNamingConvention")
 public class SourceBuilder_TopologyChangeTest extends JetTestSupport {
 
     private static volatile boolean stateRestored;
@@ -112,6 +113,7 @@ public class SourceBuilder_TopologyChangeTest extends JetTestSupport {
                 .writeTo(Sinks.list(result));
 
         Job job = hz.getJet().newJob(p, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE).setSnapshotIntervalMillis(500));
+        assertJobVisible(hz, job, "test job");
         assertTrueEventually(() -> assertFalse("result list is still empty", result.isEmpty()));
         assertJobStatusEventually(job, JobStatus.RUNNING);
         JobRepository jr = new JobRepository(hz);
