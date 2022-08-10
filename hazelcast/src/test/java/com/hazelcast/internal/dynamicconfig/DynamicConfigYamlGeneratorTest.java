@@ -19,6 +19,7 @@ package com.hazelcast.internal.dynamicconfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigCompatibilityChecker;
 import com.hazelcast.config.EndpointConfig;
+import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.config.IcmpFailureDetectorConfig;
 import com.hazelcast.config.InMemoryYamlConfig;
 import com.hazelcast.config.MemberAddressProviderConfig;
@@ -512,6 +513,26 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
                 .getAdvancedNetworkConfig().getEndpointConfigs().get(expected.getQualifier());
 
         checkEndpointConfigCompatible(expected, actual);
+
+    }
+
+
+    @Test
+    public void testExternalDataStoreConfig() {
+        Config expectedConfig = new Config();
+
+        Properties properties = new Properties();
+        properties.put("jdbcUrl", "jdbc:h2:mem:" + DynamicConfigYamlGeneratorTest.class.getSimpleName());
+        ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
+                .setName("test-data-store")
+                .setClassName("com.hazelcast.datastore.JdbcDataStoreFactory")
+                .setProperties(properties);
+
+        expectedConfig.addExternalDataStoreConfig(externalDataStoreConfig);
+
+        Config actualConfig = getNewConfigViaGenerator(expectedConfig);
+
+        assertEquals(expectedConfig.getExternalDataStoreConfigs(), actualConfig.getExternalDataStoreConfigs());
     }
 
     @Override

@@ -34,6 +34,7 @@ import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
+import com.hazelcast.datastore.impl.ExternalDataStoreServiceImplTest;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.jet.config.JetConfig;
@@ -1465,6 +1466,24 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .getCacheConfig("testCacheWithDisabledMerkleTreeConfig").getMerkleTreeConfig();
 
         assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testExternalDataStoreConfig() {
+        Config expectedConfig = new Config();
+
+        Properties properties = new Properties();
+        properties.put("jdbcUrl", "jdbc:h2:mem:" + ExternalDataStoreServiceImplTest.class.getSimpleName());
+        ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
+                .setName("test-data-store")
+                .setClassName("com.hazelcast.datastore.JdbcDataStoreFactory")
+                .setProperties(properties);
+
+        expectedConfig.addExternalDataStoreConfig(externalDataStoreConfig);
+
+        Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
+
+        assertEquals(expectedConfig.getExternalDataStoreConfigs(), actualConfig.getExternalDataStoreConfigs());
     }
 
     private Config getNewConfigViaXMLGenerator(Config config) {
