@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
@@ -49,7 +50,9 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
     public static void initialize(TestDatabaseProvider provider) {
         databaseProvider = provider;
         dbConnectionUrl = databaseProvider.createDatabase(JdbcSqlTestSupport.class.getName());
-        initialize(2, null);
+        Config config = smallInstanceConfig();
+        config.getSerializationConfig().getCompactSerializationConfig().setEnabled(true);
+        initialize(2, config);
 
         sqlService = instance().getSql();
     }
