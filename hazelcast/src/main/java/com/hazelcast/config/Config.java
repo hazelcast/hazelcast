@@ -30,6 +30,7 @@ import com.hazelcast.internal.config.ConfigUtils;
 import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.config.DurableExecutorConfigReadOnly;
 import com.hazelcast.internal.config.ExecutorConfigReadOnly;
+import com.hazelcast.internal.config.ExternalDataStoreConfigReadOnly;
 import com.hazelcast.internal.config.ListConfigReadOnly;
 import com.hazelcast.internal.config.MapConfigReadOnly;
 import com.hazelcast.internal.config.MemberXmlConfigRootTagRecognizer;
@@ -3152,16 +3153,67 @@ public class Config {
 
 
     /**
-     * Returns the external data store configuration, mapped by config name.
+     * Returns the external data store configuration for the given name, creating one
+     * if necessary and adding it to the collection of known configurations.
+     * <p>
+     * The configuration is found by matching the configuration name
+     * pattern to the provided {@code name} without the partition qualifier
+     * (the part of the name after {@code '@'}).
+     * If no configuration matches, it will create one by cloning the
+     * {@code "default"} configuration and add it to the configuration
+     * collection.
+     * <p>
+     * This method is intended to easily and fluently create and add
+     * configurations more specific than the default configuration without
+     * explicitly adding it by invoking
+     * {@link #addExternalDataStoreConfig(ExternalDataStoreConfig)}.
+     * <p>
+     * Because it adds new configurations if they are not already present,
+     * this method is intended to be used before this config is used to
+     * create a hazelcast instance. Afterwards, newly added configurations
+     * may be ignored.
      *
      * @param name data store name
-     * @return external data store configuration or {@code null} if absent
+     * @return external data store configuration
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
+     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
+     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
+     * @see #getConfigPatternMatcher()
      * @since 5.2
      */
-    @Nullable
     @Beta
     public ExternalDataStoreConfig getExternalDataStoreConfig(String name) {
-        return externalDataStoreConfigs.get(name);
+        return ConfigUtils.getConfig(configPatternMatcher, externalDataStoreConfigs, name, ExternalDataStoreConfig.class);
+    }
+
+    /**
+     * Returns a read-only {@link ExternalDataStoreConfig}
+     * configuration for the given name.
+     * <p>
+     * The name is matched by pattern to the configuration and by stripping the
+     * partition ID qualifier from the given {@code name}.
+     * If there is no config found by the name, it will return the configuration
+     * with the name {@code default}.
+     *
+     * @param name name of the external DataStore
+     * @return the external DataStore configuration
+     * @throws InvalidConfigurationException if ambiguous configurations are
+     *                                       found
+     * @see StringPartitioningStrategy#getBaseName(java.lang.String)
+     * @see #setConfigPatternMatcher(ConfigPatternMatcher)
+     * @see #getConfigPatternMatcher()
+     * @see EvictionConfig#setSize(int)
+     * @since 5.2
+     */
+    @Beta
+    public ExternalDataStoreConfig findExternalDataStoreConfig(String name) {
+        name = getBaseName(name);
+        ExternalDataStoreConfig config = lookupByPattern(configPatternMatcher, externalDataStoreConfigs, name);
+        if (config != null) {
+            return new ExternalDataStoreConfig(config);
+        }
+        return new ExternalDataStoreConfigReadOnly(getExternalDataStoreConfig("default"));
     }
 
     /**

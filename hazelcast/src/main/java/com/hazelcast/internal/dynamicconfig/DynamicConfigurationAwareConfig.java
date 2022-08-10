@@ -83,7 +83,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.File;
 import java.net.URL;
 import java.util.List;
@@ -1231,7 +1230,6 @@ public class DynamicConfigurationAwareConfig extends Config {
         throw new UnsupportedOperationException("Unsupported operation");
     }
 
-    @Nullable
     @Override
     public ExternalDataStoreConfig getExternalDataStoreConfig(String name) {
         return staticConfig.getExternalDataStoreConfig(name);

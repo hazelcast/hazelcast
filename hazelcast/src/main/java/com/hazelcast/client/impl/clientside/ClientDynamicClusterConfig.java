@@ -94,7 +94,6 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.config.JetConfig;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
@@ -1129,7 +1128,6 @@ public class ClientDynamicClusterConfig extends Config {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
     }
 
-    @Nullable
     @Override
     public ExternalDataStoreConfig getExternalDataStoreConfig(String name) {
         throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
