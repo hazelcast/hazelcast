@@ -13,29 +13,35 @@
 
 In streaming data processing, there are several scenarios for joins:
 
-- batch to stream: one source is batch (e.g. a table), and the other source is streaming.
-- stream to stream: both data sources are streaming (e.g. messaging topics) that need to be joined.
+- batch to stream: one source is batch (e.g. a table), and the other source is
+  streaming.
+- stream to stream: both data sources are streaming (e.g. messaging topics) that
+  need to be joined.
 
 #### Goals
 
-Hazelcast already supports batch to stream joins. This work aims to introduce stream to stream joins. The main
-goals are:
+Hazelcast already supports batch to stream joins. This work aims to introduce
+stream to stream joins. The main goals are:
 
-- SQL based / Non-Java friendly: easy to use format also for non-Java developers to use stream to stream joins
+- SQL based / Non-Java friendly: easy to use format also for non-Java developers
+  to use stream to stream joins
 - Core API also available. Pipeline API nice to have.
 - different join types (`INNER` , `LEFT`/`RIGHT` `OUTER` `JOIN`s).
 
-The state of the join processor must be bounded (i.e. no support for stream-to-stream joins without time bounds)
-and the latency must be minimal (i.e. emit the joined row as soon as the processor receives them).
+The state of the join processor must be bounded (i.e. no support for
+stream-to-stream joins without time bounds) and the latency must be minimal
+(i.e. emit the joined row as soon as the processor receives them).
 
 ### Functional Design
 
 #### Summary of Functionality
 
-Semantically, the join operation, as specified by SQL, is easy to apply to streams: The query should output all items
-from the left input, joined with all items from the right input, which meet the join condition.
+Semantically, the join operation, as specified by SQL, is easy to apply to
+streams: The query should output all items from the left input, joined with all
+items from the right input, which meet the join condition.
 
-For example, consider `orders` and `deliveries` stream events (note, `Stream` type does not exist, used just for example):
+For example, consider `orders` and `deliveries` stream events (note, `Stream`
+type does not exist, used just for example):
 
 ```sql
 CREATE MAPPING orders (
@@ -58,10 +64,12 @@ Consider the following query:
  SELECT * 
  FROM orders_ordered AS o
  JOIN deliveries_ordered  AS d
-     ON d.delivery_time BETWEEN o.order_time AND o.order_time + INTERVAL '1' HOUR
+     ON d.delivery_time BETWEEN o.order_time 
+         AND o.order_time + INTERVAL '1' HOUR
 ```
 
-The `<table>_ordered` is a view containing the `IMPOSE_ORDER` function on top of `<table>`.
+The `<table>_ordered` is a view containing the `IMPOSE_ORDER` function on top of
+`<table>`.
 
 Example result set is shown in Table 1:
 
@@ -75,16 +83,18 @@ __Table 1__
 
 ### Technical Design
 
-SQL engine should use a specialized Jet processor to perform JOIN operation for two input streams. The join condition
-must constrain the required buffering time of events from both inputs; otherwise, the query will be rejected from
-execution because the engine would have to keep ever-growing state.
+SQL engine should use a specialized Jet processor to perform JOIN operation for
+two input streams. The join condition must constrain the required buffering time
+of events from both inputs; otherwise, the query will be rejected from execution
+because the engine would have to keep ever-growing state.
 
 #### JOIN processor design and algorithm
 
 ##### Simple case for two inputs
 
-In order to determine for how long the processor needs to buffer events from each side, the engine will extract
-time bounds from the join condition in the following form:
+In order to determine for how long the processor needs to buffer events from
+each side, the engine will extract time bounds from the join condition in the
+following form:
 
 ```
 inputLeft.time >= inputRight.time - constant
@@ -303,43 +313,52 @@ in:  r{r.time=106}
 
 ##### Processor design
 
-The processor should be independent of SQL and be available as public Core
-API. Pipeline API is nice to have for 5.2. It's code will be in the core module
-and cannot depend on Apache Calcite objects.
+The processor should be independent of SQL and be available as public Core API.
+Pipeline API is nice to have for 5.2. It's code will be in the core module and
+cannot depend on Apache Calcite objects.
 
 Parameters:
 
 - the join condition
 - extracted postpone time map from the join condition
-- list of left input stream event timestamp extraction functions (one for each watermarked column on left input stream)
-- list of right input stream event timestamp extraction functions (one for each watermarked column on right input stream)
+- list of left input stream event timestamp extraction functions (one for each
+  watermarked column on left input stream)
+- list of right input stream event timestamp extraction functions (one for each
+  watermarked column on right input stream)
 
 ##### Algorithm
 
-Consider having two input streams __S1__ and __S2__. Each input stream **must** contain at least one watermark with
-defined watermark key.
+Consider having two input streams __S1__ and __S2__. Each input stream **must**
+contain at least one watermark with defined watermark key.
 
-1. Perform query analysis, detect timestamp column from both input stream schemas
+1. Perform query analysis, detect timestamp column from both input stream
+   schemas
 2. Produce JOIN condition, timestamp extraction functions and postpone maps.
-3. Prepare a `wmState` data structure - time limit for each watermark keys relation.
-4. Prepare two buffers : `leftBuffer` to store input events from ordinal 0 and `rightBuffer` to store input events from ordinal 1.
+3. Prepare a `wmState` data structure - time limit for each watermark keys
+   relation.
+4. Prepare two buffers : `leftBuffer` to store input events from ordinal 0 and
+   `rightBuffer` to store input events from ordinal 1.
 5. If a watermark with key `key` is received:
-   1. Iterate the value of `postponeTimeMap` for the watermark's key and update the same input/output
-      WM keys in the `wmState`, postponed by the `postponeTime`
+   1. Iterate the value of `postponeTimeMap` for the watermark's key and update the
+      same input/output WM keys in the `wmState`, postponed by the
+      `postponeTime`
    2. Compute new maximum for each output WM in the `wmState`.
-   3. Remove all _expired_ events in left & right buffers: _Expired_ items are all items with any watermarked
-      timestamp less than the maximum computed in the previous step.
-   4. If doing an outer join, emit events removed from the buffer, with `null`s for the other side, if the
-      event was never joined.
-   5. From the remaining elements in the buffer, compute the minimum time value in each watermark
-      timestamp column.
-   6. For each WM key, emit a new watermark as the minimum of value computed in step 5 and of the last received value for
-      that WM key.
+   3. Remove all _expired_ events in left & right buffers: _Expired_ items are all
+      items with any watermarked timestamp less than the maximum computed in the
+      previous step.
+   4. doing an outer join, emit events removed from the buffer, with `null`s for
+      the other side, if the event was never joined.
+   5. From the remaining elements in the buffer, compute the minimum time value in
+      each watermark timestamp column.
+   6. For each WM key, emit a new watermark as the minimum of value computed in step
+      5 and of the last received value for that WM key.
 6. If an event is received:
    1. If the event is late according to any last received watermark, drop it.
-   2. If the event is out of bounds according to `wmState`, join it with nulls (if outer-joining) and stop processing it
+   2. If the event is out of bounds according to `wmState`, join it with nulls (if
+      outer-joining) and stop processing it
    3. Store the event in left/right buffer.
-   4. For each event in the opposite buffer emit the joined event (if the whole join condition is `true`).
+   4. For each event in the opposite buffer emit the joined event (if the whole join
+      condition is `true`).
 
 ### Questions
 
@@ -351,14 +370,17 @@ JOIN deliveries d ON d.time BETWEEN o.time
                   AND o.time + o.delivery_deadline + interval '1' day 
 ```
 
-A: We cannot support non-constant bounds because the processor won't be able to determine when it can remove an event
-from the buffer. For the above example, the processor doesn't know when it is safe to remove `delivery` event from the
-buffer, because it can always receive an order event with `delivery_deadline` large enough to join with any `delivery` event,
-hence the state would be unbounded, which is not allowed.
+A: We cannot support non-constant bounds because the processor won't be able to
+determine when it can remove an event from the buffer. For the above example,
+the processor doesn't know when it is safe to remove `delivery` event from the
+buffer, because it can always receive an order event with `delivery_deadline`
+large enough to join with any `delivery` event, hence the state would be
+unbounded, which is not allowed.
 
 ##### Edge cases
 
-- There can be a time bound between timestamps on the same input, which we should take into account.
+- There can be a time bound between timestamps on the same input, which we
+  should take into account.
 
 Example: TODO
 
@@ -439,6 +461,8 @@ The processor will maintain upper bound of stored events configured in
 
 The following tests will be created:
 
-- functional automated tests which will verify functional capabilities `INNER`, `LEFT`/`RIGHT`, `FULL` `OUTER` joins.
-- automated integration tests as a subset of above tests which will be run using Kafka streams.
+- functional automated tests which will verify functional capabilities `INNER`,
+  `LEFT`/`RIGHT`, `FULL` `OUTER` joins.
+- automated integration tests as a subset of above tests which will be run using
+  Kafka streams.
 - SOAK durability tests which will verify stability over time.
