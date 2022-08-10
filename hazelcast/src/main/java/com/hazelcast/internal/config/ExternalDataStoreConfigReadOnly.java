@@ -17,8 +17,8 @@
 package com.hazelcast.internal.config;
 
 import com.hazelcast.config.ExternalDataStoreConfig;
-import org.jetbrains.annotations.NotNull;
 
+import javax.annotation.Nonnull;
 import java.util.Properties;
 
 public class ExternalDataStoreConfigReadOnly extends ExternalDataStoreConfig {
@@ -37,7 +37,7 @@ public class ExternalDataStoreConfigReadOnly extends ExternalDataStoreConfig {
     }
 
     @Override
-    public ExternalDataStoreConfig setClassName(@NotNull String className) {
+    public ExternalDataStoreConfig setClassName(@Nonnull String className) {
         throw readOnly();
     }
 
