@@ -220,7 +220,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             }
         }
 
-        if (type != QueryDataType.OBJECT || type.isCustomType()) {
+        if (!type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT) || type.isCustomType()) {
             return resolvePrimitiveMetadata(isKey, resolvedFields, fields, type);
         } else {
             return resolveObjectMetadata(isKey, resolvedFields, fields, clazz);

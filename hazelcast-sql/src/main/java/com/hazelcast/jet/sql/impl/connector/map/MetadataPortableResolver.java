@@ -32,6 +32,7 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -109,13 +110,12 @@ final class MetadataPortableResolver implements KvMetadataResolver {
             Map<QueryPath, MappingField> userFieldsByPath,
             @Nullable ClassDefinition clazz
     ) {
-        // TODO: implement user fields
         if (clazz == null) {
-            // CLassDefinition does not exist, make sure there are no OBJECT fields
+            // ClassDefinition does not exist, make sure there are no OBJECT fields
             return userFieldsByPath.values().stream()
                     .peek(mappingField -> {
                         QueryDataType type = mappingField.type();
-                        if (type == QueryDataType.OBJECT) {
+                        if (type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
                             throw QueryException.error("Cannot derive Portable type for '" + type.getTypeFamily() + "'");
                         }
                     });

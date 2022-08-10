@@ -22,6 +22,7 @@ import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
 import com.hazelcast.jet.sql.impl.validate.param.NumericPrecedenceParameterConverter;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlKind;
@@ -111,8 +112,19 @@ public final class HazelcastComparisonPredicateUtils {
                         highType,
                         lowOperandNode -> callBinding.getCall().setOperand(lowIndex, lowOperandNode));
 
-        if (valid && highHZType == QueryDataType.OBJECT && lowHZType != QueryDataType.OBJECT) {
+        if (valid && highHZType.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)
+                && !lowHZType.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
             valid = false;
+        }
+
+        // Custom types can not be converted to each other.
+        if (highHZType.isCustomType() && lowHZType.isCustomType()) {
+            if (!highHZType.getObjectTypeName().equals(lowHZType.getObjectTypeName())) {
+                valid = false;
+            }
+            if (!highHZType.getObjectTypeKind().equals(lowHZType.getObjectTypeKind())) {
+                valid = false;
+            }
         }
 
         // Types cannot be converted to each other.

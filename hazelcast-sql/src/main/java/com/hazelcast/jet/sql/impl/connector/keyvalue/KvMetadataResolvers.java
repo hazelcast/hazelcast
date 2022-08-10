@@ -23,14 +23,15 @@ import com.hazelcast.jet.sql.impl.schema.TypesUtils;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.MappingField;
-import com.hazelcast.sql.impl.schema.type.Type;
-import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.schema.type.TypeKind;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
@@ -52,9 +53,16 @@ public class KvMetadataResolvers {
 
     // A string of characters (excluding a `.`), optionally prefixed with "__key." or "this."
     private static final Pattern EXT_NAME_PATTERN = Pattern.compile("((" + KEY + "|" + VALUE + ")\\.)?[^.]+");
+    private static final Set<TypeKind> NESTED_FIELDS_SUPPORTED_FORMATS = new HashSet<>();
 
     private final Map<String, KvMetadataResolver> keyResolvers;
     private final Map<String, KvMetadataResolver> valueResolvers;
+
+    static {
+        NESTED_FIELDS_SUPPORTED_FORMATS.add(TypeKind.JAVA);
+        NESTED_FIELDS_SUPPORTED_FORMATS.add(TypeKind.PORTABLE);
+        NESTED_FIELDS_SUPPORTED_FORMATS.add(TypeKind.COMPACT);
+    }
 
     public KvMetadataResolvers(KvMetadataResolver... resolvers) {
         this(resolvers, resolvers);
@@ -117,26 +125,20 @@ public class KvMetadataResolvers {
                 .resolveAndValidateFields(false, userFields, options, ss, typesStorage)
                 .filter(field -> !field.name().equals(VALUE) || field.externalName().equals(VALUE));
 
+        final TypeKind keyKind = TypesUtils.formatToTypeKind(getFormat(options, true));
+        if (NESTED_FIELDS_SUPPORTED_FORMATS.contains(keyKind)) {
+            keyFields = keyFields
+                    .peek(mappingField -> TypesUtils.enrichMappingFieldType(keyKind, mappingField, typesStorage));
+        }
+
+        final TypeKind valueKind = TypesUtils.formatToTypeKind(getFormat(options, false));
+        if (NESTED_FIELDS_SUPPORTED_FORMATS.contains(valueKind)) {
+            valueFields = valueFields
+                    .peek(mappingField -> TypesUtils.enrichMappingFieldType(valueKind, mappingField, typesStorage));
+        }
+
         Map<String, MappingField> fields = concat(keyFields, valueFields)
                 .collect(LinkedHashMap::new, (map, field) -> map.putIfAbsent(field.name(), field), Map::putAll);
-
-        // TODO: split to key and value fields post-processing, filter out unsupported formats (Avro, Json).
-        // TODO: remove or move to base interface's extractFields
-        for (final String fieldName : fields.keySet()) {
-            final MappingField field = fields.get(fieldName);
-            if (!field.type().isCustomType()) {
-                continue;
-            }
-            final Type type = typesStorage.getType(field.type().getObjectTypeName());
-            if (type == null) {
-                throw QueryException.error("Non existing type found in the mapping: "
-                        + field.type().getObjectTypeName());
-            }
-
-            // TODO: validate mapping.format == type.format
-            final QueryDataType resolved = TypesUtils.convertTypeToQueryDataType(type, typesStorage);
-            field.setType(resolved);
-        }
 
         if (fields.isEmpty()) {
             throw QueryException.error("The resolved field list is empty");
@@ -171,5 +173,10 @@ public class KvMetadataResolvers {
             throw QueryException.error("Unsupported serialization format: " + format);
         }
         return resolver;
+    }
+
+    private String getFormat(Map<String, String> options, boolean isKey) {
+        String option = isKey ? OPTION_KEY_FORMAT : OPTION_VALUE_FORMAT;
+        return options.get(option);
     }
 }

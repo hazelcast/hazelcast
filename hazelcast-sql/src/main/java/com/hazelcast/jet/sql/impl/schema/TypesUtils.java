@@ -17,10 +17,13 @@
 package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.jet.datamodel.Tuple3;
+import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
 import com.hazelcast.sql.impl.FieldsUtil;
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -187,6 +190,43 @@ public final class TypesUtils {
         type.setFields(fields);
 
         return type;
+    }
+
+    public static void enrichMappingFieldType(
+            final TypeKind mappingTypeKind,
+            final MappingField field,
+            final TypesStorage typesStorage
+    ) {
+        if (!field.type().isCustomType()) {
+            return;
+        }
+        final Type type = typesStorage.getType(field.type().getObjectTypeName());
+        if (type == null) {
+            throw QueryException.error("Non existing type found in the mapping: "
+                    + field.type().getObjectTypeName());
+        }
+
+        if (!mappingTypeKind.equals(type.getKind())) {
+            throw QueryException.error("Can not use Type " + type.getName() + "["
+                    + type.getKind() + "] with " + mappingTypeKind + " mapping.");
+        }
+
+        final QueryDataType resolved = convertTypeToQueryDataType(type, typesStorage);
+        field.setType(resolved);
+    }
+
+    public static TypeKind formatToTypeKind(String format) {
+        switch (format) {
+            case SqlConnector.JAVA_FORMAT:
+                return TypeKind.JAVA;
+            case SqlConnector.PORTABLE_FORMAT:
+                return TypeKind.PORTABLE;
+            case SqlConnector.COMPACT_FORMAT:
+                return TypeKind.COMPACT;
+            default:
+                return TypeKind.NONE;
+
+        }
     }
 
     /**
