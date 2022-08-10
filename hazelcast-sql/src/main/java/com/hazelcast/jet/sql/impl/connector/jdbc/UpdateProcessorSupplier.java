@@ -27,6 +27,7 @@ import com.hazelcast.security.impl.function.SecuredFunction;
 import com.hazelcast.security.permission.ConnectorPermission;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import org.checkerframework.checker.nullness.qual.NonNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -40,17 +41,13 @@ import java.util.List;
 
 import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
 import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.joining;
+import static java.util.Objects.requireNonNull;
 
 public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializable, SecuredFunction {
 
     private String jdbcUrl;
-    private String tableName;
-    private List<String> pkFields;
-    private List<String> fields;
-    private String whereClause;
+    private String query;
     private int[] parameterPositions;
-    private String setSqlFragment;
     private int batchLimit;
 
     private transient ExpressionEvalContext evalContext;
@@ -59,24 +56,20 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
     public UpdateProcessorSupplier() {
     }
 
-    public UpdateProcessorSupplier(String jdbcUrl, String tableName, List<String> pkFields,
-                                   List<String> fields, int[] parameterPositions, String setSqlFragment,
-                                   int batchLimit) {
-        this.jdbcUrl = jdbcUrl;
-        this.tableName = tableName;
-        this.pkFields = pkFields;
-        this.fields = fields;
-        this.parameterPositions = parameterPositions;
-        this.setSqlFragment = setSqlFragment;
+    public UpdateProcessorSupplier(@Nonnull String jdbcUrl,
+                                   @NonNull String query,
+                                   @Nonnull int[] parameterPositions,
+                                   int batchLimit
+    ) {
+        this.jdbcUrl = requireNonNull(jdbcUrl, "jdbcUrl must not be null");
+        this.query = requireNonNull(query, "query must not be null");
+        this.parameterPositions = requireNonNull(parameterPositions, "parameterPositions must not be null");
         this.batchLimit = batchLimit;
     }
 
     @Override
     public void init(@Nonnull Context context) throws Exception {
         evalContext = ExpressionEvalContext.from(context);
-
-        whereClause = pkFields.stream().map(e -> '\"' + e + "\" = ?")
-                              .collect(joining(" AND "));
     }
 
     @Nonnull
@@ -86,7 +79,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
         CommonDataSource ds = new DataSourceFromConnectionSupplier(jdbcUrl);
         for (int i = 0; i < count; i++) {
             Processor processor = new WriteJdbcP<>(
-                    buildQuery(),
+                    query,
                     ds,
                     (PreparedStatement ps, JetSqlRow row) -> {
                         List<Object> arguments = evalContext.getArguments();
@@ -95,7 +88,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
                             // TODO is some conversion needed here? maybe for dates (the opposite of convertValue)
                             ps.setObject(j + 1, arguments.get(parameterPositions[j]));
                         }
-                        for (int j = 0; j < pkFields.size(); j++) {
+                        for (int j = 0; j < row.getFieldCount(); j++) {
                             ps.setObject(parameterPositions.length + j + 1, row.get(j));
                         }
 
@@ -108,11 +101,6 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
         return processors;
     }
 
-    private String buildQuery() {
-        return "UPDATE " + tableName +
-                " SET " + setSqlFragment +
-                " WHERE " + whereClause;
-    }
 
     @Nullable
     @Override
@@ -123,38 +111,16 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(jdbcUrl);
-        out.writeString(tableName);
-        writeList(out, pkFields);
-        writeList(out, fields);
+        out.writeString(query);
         out.writeIntArray(parameterPositions);
-        out.writeString(setSqlFragment);
         out.writeInt(batchLimit);
-    }
-
-    private void writeList(ObjectDataOutput out, List<String> list) throws IOException {
-        out.writeInt(list.size());
-        for (int i = 0; i < list.size(); i++) {
-            out.writeString(list.get(i));
-        }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         jdbcUrl = in.readString();
-        tableName = in.readString();
-        pkFields = readList(in);
-        fields = readList(in);
+        query = in.readString();
         parameterPositions = in.readIntArray();
-        setSqlFragment = in.readString();
         batchLimit = in.readInt();
-    }
-
-    private List<String> readList(ObjectDataInput in) throws IOException {
-        int numFields = in.readInt();
-        List<String> fields = new ArrayList<>(numFields);
-        for (int i = 0; i < numFields; i++) {
-            fields.add(in.readString());
-        }
-        return fields;
     }
 }

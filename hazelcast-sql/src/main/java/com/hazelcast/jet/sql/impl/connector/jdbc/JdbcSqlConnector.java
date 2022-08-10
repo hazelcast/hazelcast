@@ -35,13 +35,9 @@ import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import org.apache.calcite.rel.rel2sql.SqlImplementor.SimpleContext;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.SqlDialectFactoryImpl;
-import org.apache.calcite.sql.SqlIdentifier;
-import org.apache.calcite.sql.SqlNode;
-import org.apache.calcite.sql.parser.SqlParserPos;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -57,14 +53,12 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.Set;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.resolveTypeForClass;
 import static java.lang.Integer.parseInt;
 import static java.util.Objects.requireNonNull;
-import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
 public class JdbcSqlConnector implements SqlConnector {
@@ -317,40 +311,19 @@ public class JdbcSqlConnector implements SqlConnector {
                                   @Nonnull Map<String, Expression<?>> updatesByFieldNames) {
         JdbcTable table = (JdbcTable) table0;
 
-        Map<String, Expression<?>> remappedUpdatesByFieldNames = new HashMap<>();
-        for (Entry<String, Expression<?>> entry : updatesByFieldNames.entrySet()) {
-            remappedUpdatesByFieldNames.put(table.getField(entry.getKey()).externalName(), entry.getValue());
-        }
         List<String> pkFields = getPrimaryKey(table0)
                 .stream()
                 .map(f -> table.getField(f).externalName())
                 .collect(toList());
 
-        SqlDialect dialect = table.sqlDialect();
-        SimpleContext simpleContext = new SimpleContext(dialect, value -> {
-            JdbcTableField field = table.getField(value);
-            return new SqlIdentifier(field.externalName(), SqlParserPos.ZERO);
-        });
-
-        ParamCollectingVisitor paramCollectingVisitor = new ParamCollectingVisitor();
-        String setSqlFragment = updates.entrySet().stream()
-                                       .map(entry -> {
-                                           SqlNode sqlNode = simpleContext.toSql(null, entry.getValue());
-                                           sqlNode.accept(paramCollectingVisitor);
-                                           return '\"' + table.getField(entry.getKey()).externalName() + "\" ="
-                                                   + sqlNode.toSqlString(dialect).toString();
-                                       })
-                                       .collect(joining(", "));
+        UpdateQueryBuilder builder = new UpdateQueryBuilder(table, pkFields, updates);
 
         return dag.newUniqueVertex(
                 "Update(" + table.getExternalName() + ")",
                 new UpdateProcessorSupplier(
                         table.getJdbcUrl(),
-                        table.getExternalName(),
-                        pkFields,
-                        table.dbFieldNames(),
-                        paramCollectingVisitor.parameterPositions(),
-                        setSqlFragment,
+                        builder.query(),
+                        builder.parameterPositions(),
                         table.getBatchLimit()
                 )
         );
