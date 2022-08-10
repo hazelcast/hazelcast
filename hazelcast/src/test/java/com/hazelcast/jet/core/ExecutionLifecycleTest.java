@@ -714,9 +714,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             job.join();
         } catch (Throwable t) {
             Throwable cause = getRootCause(t);
-            assertTrue("exception must be of type MemberLeftException or TargetNotMemberException, but was "
-                    + cause.getClass(),
-                    cause instanceof MemberLeftException || cause instanceof TargetNotMemberException);
+            assertThat(cause).isInstanceOfAny(MemberLeftException.class, TargetNotMemberException.class);
         }
     }
 
