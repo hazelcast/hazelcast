@@ -2983,6 +2983,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                     cpSubsystemConfig.setBaseDir(new File(getTextContent(child)).getAbsoluteFile());
                 } else if (matches("data-load-timeout-seconds", nodeName)) {
                     cpSubsystemConfig.setDataLoadTimeoutSeconds(Integer.parseInt(getTextContent(child)));
+                } else if (matches("cp-member-priority", nodeName)) {
+                    cpSubsystemConfig.setCPMemberPriority(Integer.parseInt(getTextContent(child)));
                 }
             }
         }

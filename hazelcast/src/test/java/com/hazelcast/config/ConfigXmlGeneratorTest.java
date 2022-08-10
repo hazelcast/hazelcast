@@ -1090,7 +1090,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setMissingCPMemberAutoRemovalSeconds(120)
                 .setFailOnIndeterminateOperationState(true)
                 .setPersistenceEnabled(true)
-                .setBaseDir(new File("/custom-dir"));
+                .setBaseDir(new File("/custom-dir"))
+                .setCPMemberPriority(-1);
 
         config.getCPSubsystemConfig()
                 .getRaftAlgorithmConfig()

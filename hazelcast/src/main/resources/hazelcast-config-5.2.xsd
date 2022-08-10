@@ -5203,6 +5203,14 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="cp-member-priority" type="xs:int" minOccurs="0" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The CP member priority. The CP groups' leadership will be eventually transferred to members
+                        with higher priorities within the CP group.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="raft-algorithm" type="raft-algorithm" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
