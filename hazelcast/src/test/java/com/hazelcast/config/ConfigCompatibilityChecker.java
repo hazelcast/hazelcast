@@ -140,6 +140,8 @@ public class ConfigCompatibilityChecker {
                 new InstanceTrackingConfigChecker());
         checkCompatibleConfigs("native memory", c1.getNativeMemoryConfig(), c2.getNativeMemoryConfig(),
                 new NativeMemoryConfigChecker());
+        checkCompatibleConfigs("external data store", c1, c2, c1.getExternalDataStoreConfigs(), c2.getExternalDataStoreConfigs(),
+                new ExternalDataStoreConfigChecker());
 
         return true;
     }
@@ -686,6 +688,28 @@ public class ConfigCompatibilityChecker {
             return c.getPNCounterConfig("default");
         }
     }
+
+    private static class ExternalDataStoreConfigChecker extends ConfigChecker<ExternalDataStoreConfig> {
+        @Override
+        boolean check(ExternalDataStoreConfig c1, ExternalDataStoreConfig c2) {
+            if (c1 == c2) {
+                return true;
+            }
+            if (c1 == null || c2 == null) {
+                return false;
+            }
+            return nullSafeEqual(c1.getName(), c2.getName())
+                    && nullSafeEqual(c1.getClassName(), c2.getClassName())
+                    && c1.isShared() == c2.isShared()
+                    && nullSafeEqual(c1.getProperties(), c2.getProperties());
+        }
+
+        @Override
+        ExternalDataStoreConfig getDefault(Config c) {
+            return c.getExternalDataStoreConfig("default");
+        }
+    }
+
 
     public static class CPSubsystemConfigChecker extends ConfigChecker<CPSubsystemConfig> {
 
