@@ -181,7 +181,7 @@ public final class OptUtils {
                 rowType,
                 names,
                 hazelcastTable,
-                null
+                (org.apache.calcite.linq4j.tree.Expression) null
         );
         return new HazelcastRelOptTable(relTable);
     }
@@ -196,7 +196,7 @@ public final class OptUtils {
                 newHazelcastTable.getRowType(typeFactory),
                 originalRelTable.getDelegate().getQualifiedName(),
                 newHazelcastTable,
-                null
+                (org.apache.calcite.linq4j.tree.Expression) null
         );
 
         return new HazelcastRelOptTable(newTable);
