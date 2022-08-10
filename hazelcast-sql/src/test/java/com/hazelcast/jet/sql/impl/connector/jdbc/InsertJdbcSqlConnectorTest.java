@@ -23,7 +23,7 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_JDBC_URL;
+import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_EXTERNAL_DATASTORE_REF;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
@@ -71,7 +71,7 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ") "
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ( "
-                        + " '" + OPTION_JDBC_URL + "'='" + dbConnectionUrl + "'"
+                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
                         + ")"
         );
 
@@ -103,7 +103,7 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ") "
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                         + "OPTIONS ( "
-                        + " '" + OPTION_JDBC_URL + "'='" + dbConnectionUrl + "'"
+                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
                         + ")"
         );
 
@@ -155,7 +155,7 @@ public class InsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 "CREATE MAPPING " + tableName
                         + " TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                         + " OPTIONS ( "
-                        + " '" + OPTION_JDBC_URL + "'='" + dbConnectionUrl + "'"
+                        + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
                         + ")"
         );
 

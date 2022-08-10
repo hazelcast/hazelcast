@@ -36,7 +36,7 @@ import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Collection;
 
-import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_JDBC_URL;
+import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_EXTERNAL_DATASTORE_REF;
 import static java.util.Arrays.asList;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -100,7 +100,7 @@ public class AllTypesInsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 + ") "
                 + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                 + "OPTIONS ( "
-                + " '" + OPTION_JDBC_URL + "'='" + dbConnectionUrl + "'"
+                + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
                 + ")"
         );
 

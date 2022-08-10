@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.impl.connector.DataSourceFromConnectionSupplier;
 import com.hazelcast.jet.impl.connector.WriteJdbcP;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -29,7 +28,6 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.sql.CommonDataSource;
 import java.io.IOException;
 import java.security.Permission;
 import java.sql.PreparedStatement;
@@ -40,9 +38,10 @@ import java.util.List;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
 import static java.util.Collections.singletonList;
 
-public class DeleteProcessorSupplier implements ProcessorSupplier, DataSerializable, SecuredFunction {
+public class DeleteProcessorSupplier
+        extends AbstractJdbcSqlConnectorProcessorSupplier
+        implements ProcessorSupplier, DataSerializable, SecuredFunction {
 
-    private String jdbcUrl;
     private String query;
     private int batchLimit;
 
@@ -50,10 +49,10 @@ public class DeleteProcessorSupplier implements ProcessorSupplier, DataSerializa
     public DeleteProcessorSupplier() {
     }
 
-    public DeleteProcessorSupplier(String jdbcUrl,
+    public DeleteProcessorSupplier(String externalDataStoreRef,
                                    String query,
                                    int batchLimit) {
-        this.jdbcUrl = jdbcUrl;
+        super(externalDataStoreRef);
         this.query = query;
         this.batchLimit = batchLimit;
     }
@@ -62,11 +61,10 @@ public class DeleteProcessorSupplier implements ProcessorSupplier, DataSerializa
     @Override
     public Collection<? extends Processor> get(int count) {
         List<Processor> processors = new ArrayList<>(count);
-        CommonDataSource ds = new DataSourceFromConnectionSupplier(jdbcUrl);
         for (int i = 0; i < count; i++) {
             Processor processor = new WriteJdbcP<>(
                     query,
-                    ds,
+                    dataSource,
                     (PreparedStatement ps, JetSqlRow row) -> {
                         for (int j = 0; j < row.getFieldCount(); j++) {
                             ps.setObject(j + 1, row.get(j));
@@ -83,19 +81,19 @@ public class DeleteProcessorSupplier implements ProcessorSupplier, DataSerializa
     @Nullable
     @Override
     public List<Permission> permissions() {
-        return singletonList(ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE));
+        return singletonList(ConnectorPermission.jdbc(externalDataStoreRef, ACTION_WRITE));
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeString(jdbcUrl);
+        out.writeString(externalDataStoreRef);
         out.writeString(query);
         out.writeInt(batchLimit);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        jdbcUrl = in.readString();
+        externalDataStoreRef = in.readString();
         query = in.readString();
         batchLimit = in.readInt();
     }

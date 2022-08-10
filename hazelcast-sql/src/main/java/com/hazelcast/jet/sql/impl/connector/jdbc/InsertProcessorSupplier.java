@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.impl.connector.DataSourceFromConnectionSupplier;
 import com.hazelcast.jet.impl.connector.WriteJdbcP;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -29,7 +28,6 @@ import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.sql.CommonDataSource;
 import java.io.IOException;
 import java.security.Permission;
 import java.sql.PreparedStatement;
@@ -40,9 +38,10 @@ import java.util.List;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
 import static java.util.Collections.singletonList;
 
-public class InsertProcessorSupplier implements ProcessorSupplier, DataSerializable, SecuredFunction {
+public class InsertProcessorSupplier
+        extends AbstractJdbcSqlConnectorProcessorSupplier
+        implements ProcessorSupplier, DataSerializable, SecuredFunction {
 
-    private String jdbcUrl;
     private String query;
     private int batchLimit;
 
@@ -50,8 +49,8 @@ public class InsertProcessorSupplier implements ProcessorSupplier, DataSerializa
     public InsertProcessorSupplier() {
     }
 
-    public InsertProcessorSupplier(String jdbcUrl, String query, int batchLimit) {
-        this.jdbcUrl = jdbcUrl;
+    public InsertProcessorSupplier(String externalDataStoreRef, String query, int batchLimit) {
+        super(externalDataStoreRef);
         this.query = query;
         this.batchLimit = batchLimit;
     }
@@ -60,11 +59,10 @@ public class InsertProcessorSupplier implements ProcessorSupplier, DataSerializa
     @Override
     public Collection<? extends Processor> get(int count) {
         List<Processor> processors = new ArrayList<>(count);
-        CommonDataSource ds = new DataSourceFromConnectionSupplier(jdbcUrl);
         for (int i = 0; i < count; i++) {
             Processor processor = new WriteJdbcP<>(
                     query,
-                    ds,
+                    dataSource,
                     (PreparedStatement ps, JetSqlRow row) -> {
                         for (int j = 0; j < row.getFieldCount(); j++) {
                             // JDBC parameterIndex is 1-based, so j + 1
@@ -82,19 +80,19 @@ public class InsertProcessorSupplier implements ProcessorSupplier, DataSerializa
     @Nullable
     @Override
     public List<Permission> permissions() {
-        return singletonList(ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE));
+        return singletonList(ConnectorPermission.jdbc(externalDataStoreRef, ACTION_WRITE));
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeString(jdbcUrl);
+        out.writeString(externalDataStoreRef);
         out.writeString(query);
         out.writeInt(batchLimit);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        jdbcUrl = in.readString();
+        externalDataStoreRef = in.readString();
         query = in.readString();
         batchLimit = in.readInt();
     }

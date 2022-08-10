@@ -32,7 +32,6 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.security.Permission;
 import java.sql.Date;
-import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.Time;
@@ -45,9 +44,10 @@ import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 
-public class SelectProcessorSupplier implements ProcessorSupplier, DataSerializable, SecuredFunction {
+public class SelectProcessorSupplier
+        extends AbstractJdbcSqlConnectorProcessorSupplier
+        implements ProcessorSupplier, DataSerializable, SecuredFunction {
 
-    private String jdbcUrl;
     private String query;
     private int[] parameterPositions;
 
@@ -57,16 +57,17 @@ public class SelectProcessorSupplier implements ProcessorSupplier, DataSerializa
     public SelectProcessorSupplier() {
     }
 
-    public SelectProcessorSupplier(@Nonnull String jdbcUrl,
+    public SelectProcessorSupplier(@Nonnull String externalDataStoreRef,
                                    @Nonnull String query,
                                    @Nonnull int[] parameterPositions) {
-        this.jdbcUrl = requireNonNull(jdbcUrl, "jdbcUrl must not be null");
+        super(externalDataStoreRef);
         this.query = requireNonNull(query, "query must not be null");
         this.parameterPositions = requireNonNull(parameterPositions, "parameterPositions must not be null");
     }
 
     @Override
     public void init(@Nonnull Context context) throws Exception {
+        super.init(context);
         evalContext = ExpressionEvalContext.from(context);
     }
 
@@ -76,7 +77,7 @@ public class SelectProcessorSupplier implements ProcessorSupplier, DataSerializa
         List<Processor> processors = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             Processor processor = new ReadJdbcP<>(
-                    () -> DriverManager.getConnection(jdbcUrl),
+                    () -> dataSource.getConnection(),
                     (connection, parallelism, index) -> {
                         PreparedStatement statement = connection.prepareStatement(query);
                         List<Object> arguments = evalContext.getArguments();
@@ -122,20 +123,19 @@ public class SelectProcessorSupplier implements ProcessorSupplier, DataSerializa
     @Nullable
     @Override
     public List<Permission> permissions() {
-        // TODO test security
-        return singletonList(ConnectorPermission.jdbc(jdbcUrl, ACTION_READ));
+        return singletonList(ConnectorPermission.jdbc(externalDataStoreRef, ACTION_READ));
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeString(jdbcUrl);
+        out.writeString(externalDataStoreRef);
         out.writeString(query);
         out.writeIntArray(parameterPositions);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        jdbcUrl = in.readString();
+        externalDataStoreRef = in.readString();
         query = in.readString();
         parameterPositions = in.readIntArray();
     }

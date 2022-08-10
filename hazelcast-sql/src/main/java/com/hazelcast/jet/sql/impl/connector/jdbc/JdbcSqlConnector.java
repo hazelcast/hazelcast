@@ -41,9 +41,8 @@ import org.apache.calcite.sql.SqlDialectFactoryImpl;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.sql.DataSource;
 import java.sql.Connection;
-import java.sql.Driver;
-import java.sql.DriverManager;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
@@ -53,7 +52,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 import java.util.Set;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.resolveTypeForClass;
@@ -66,7 +64,7 @@ public class JdbcSqlConnector implements SqlConnector {
 
     public static final String TYPE_NAME = "JDBC";
 
-    public static final String OPTION_JDBC_URL = "jdbc.url";
+    public static final String OPTION_EXTERNAL_DATASTORE_REF = "external-datastore-ref";
     public static final String OPTION_JDBC_BATCH_LIMIT = "jdbc.batch-limit";
 
     public static final String JDBC_BATCH_LIMIT_DEFAULT_VALUE = "100";
@@ -91,7 +89,7 @@ public class JdbcSqlConnector implements SqlConnector {
             @Nonnull List<MappingField> userFields,
             @Nonnull String externalName) {
 
-        Map<String, DbField> dbFields = readDbFields(options, externalName);
+        Map<String, DbField> dbFields = readDbFields(nodeEngine, options, externalName);
 
         List<MappingField> resolvedFields = new ArrayList<>();
         if (userFields.isEmpty()) {
@@ -131,14 +129,21 @@ public class JdbcSqlConnector implements SqlConnector {
         return resolvedFields;
     }
 
-    @Nonnull
-    private Map<String, DbField> readDbFields(@Nonnull Map<String, String> options, @Nonnull String externalTableName) {
-        Map<String, DbField> fields = new HashMap<>();
-        String jdbcUrl = requireNonNull(options.get(OPTION_JDBC_URL), OPTION_JDBC_URL + " must be set");
-        try {
-            Driver driver = DriverManager.getDriver(jdbcUrl);
+    private Map<String, DbField> readDbFields(
+            NodeEngine nodeEngine,
+            Map<String, String> options,
+            String externalTableName) {
 
-            try (Connection connection = driver.connect(jdbcUrl, new Properties());
+        String externalDataStoreRef = requireNonNull(
+                options.get(OPTION_EXTERNAL_DATASTORE_REF),
+                OPTION_EXTERNAL_DATASTORE_REF + " must be set"
+        );
+        try {
+            DataSource dataSource = (DataSource) nodeEngine.getExternalDataStoreService()
+                                                           .getExternalDataStoreFactory(externalDataStoreRef)
+                                                           .getDataStore();
+
+            try (Connection connection = dataSource.getConnection();
                  Statement statement = connection.createStatement()) {
                 Set<String> pkColumns = readPrimaryKeyColumns(externalTableName, connection);
 
@@ -148,20 +153,18 @@ public class JdbcSqlConnector implements SqlConnector {
                 }
                 ResultSet rs = statement.getResultSet();
                 ResultSetMetaData metaData = rs.getMetaData();
+
+                Map<String, DbField> fields = new HashMap<>();
                 for (int i = 1; i <= metaData.getColumnCount(); i++) {
                     String columnName = metaData.getColumnName(i);
                     fields.put(columnName, new DbField(metaData.getColumnClassName(i),
                             columnName, pkColumns.contains(columnName)));
                 }
-
-            } catch (SQLException e) {
-                throw new HazelcastException("Could not read column metadata for table " + externalTableName, e);
+                return fields;
             }
-
-        } catch (SQLException e) {
-            throw new HazelcastException("Could not get Driver for jdbc.url " + jdbcUrl, e);
+        } catch (Exception e) {
+            throw new HazelcastException("Could not read column metadata for table " + externalDataStoreRef, e);
         }
-        return fields;
     }
 
     private Set<String> readPrimaryKeyColumns(@Nonnull String externalName, Connection connection) {
@@ -213,8 +216,8 @@ public class JdbcSqlConnector implements SqlConnector {
             ));
         }
 
-        String jdbcUrl = options.get(OPTION_JDBC_URL);
-        SqlDialect dialect = resolveDialect(jdbcUrl);
+        String externalDataStoreRef = options.get(OPTION_EXTERNAL_DATASTORE_REF);
+        SqlDialect dialect = resolveDialect(nodeEngine, externalDataStoreRef);
 
         return new JdbcTable(
                 this,
@@ -224,17 +227,19 @@ public class JdbcSqlConnector implements SqlConnector {
                 mappingName,
                 new ConstantTableStatistics(0), // TODO Can I query the table for size?
                 externalName,
-                jdbcUrl,
+                externalDataStoreRef,
                 parseInt(options.getOrDefault(OPTION_JDBC_BATCH_LIMIT, JDBC_BATCH_LIMIT_DEFAULT_VALUE)),
                 nodeEngine.getSerializationService()
         );
     }
 
-    private SqlDialect resolveDialect(String jdbcUrl) {
+    private SqlDialect resolveDialect(NodeEngine nodeEngine, String externalDataStoreRef) {
         try {
-            Driver driver = DriverManager.getDriver(jdbcUrl);
+            DataSource dataSource = (DataSource) nodeEngine.getExternalDataStoreService()
+                                                           .getExternalDataStoreFactory(externalDataStoreRef)
+                                                           .getDataStore();
 
-            try (Connection connection = driver.connect(jdbcUrl, new Properties())) {
+            try (Connection connection = dataSource.getConnection()) {
 
                 SqlDialect dialect = SqlDialectFactoryImpl.INSTANCE.create(connection.getMetaData());
                 String databaseProductName = connection.getMetaData().getDatabaseProductName();
@@ -251,7 +256,8 @@ public class JdbcSqlConnector implements SqlConnector {
 
             }
         } catch (SQLException e) {
-            throw new HazelcastException("Could not determine dialect for jdbcUrl " + jdbcUrl, e);
+            throw new HazelcastException("Could not determine dialect for externalDataStoreRef: "
+                    + externalDataStoreRef, e);
         }
     }
 
@@ -273,7 +279,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 "Select (" + table.getExternalName() + ")",
                 ProcessorMetaSupplier.forceTotalParallelismOne(
                         new SelectProcessorSupplier(
-                                table.getJdbcUrl(),
+                                table.getExternalDataStoreRef(),
                                 builder.query(),
                                 builder.parameterPositions()
                         ))
@@ -289,7 +295,7 @@ public class JdbcSqlConnector implements SqlConnector {
         return new VertexWithInputConfig(dag.newUniqueVertex(
                 "Insert (" + table.getExternalName() + ")",
                 new InsertProcessorSupplier(
-                        table.getJdbcUrl(),
+                        table.getExternalDataStoreRef(),
                         builder.query(),
                         table.getBatchLimit()
                 )
@@ -321,7 +327,7 @@ public class JdbcSqlConnector implements SqlConnector {
         return dag.newUniqueVertex(
                 "Update(" + table.getExternalName() + ")",
                 new UpdateProcessorSupplier(
-                        table.getJdbcUrl(),
+                        table.getExternalDataStoreRef(),
                         builder.query(),
                         builder.parameterPositions(),
                         table.getBatchLimit()
@@ -343,7 +349,7 @@ public class JdbcSqlConnector implements SqlConnector {
         return dag.newUniqueVertex(
                 "Delete(" + table.getExternalName() + ")",
                 new DeleteProcessorSupplier(
-                        table.getJdbcUrl(),
+                        table.getExternalDataStoreRef(),
                         builder.query(),
                         table.getBatchLimit()
                 )

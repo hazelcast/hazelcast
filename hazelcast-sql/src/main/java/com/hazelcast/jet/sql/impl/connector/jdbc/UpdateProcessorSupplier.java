@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.impl.connector.DataSourceFromConnectionSupplier;
 import com.hazelcast.jet.impl.connector.WriteJdbcP;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -31,7 +30,6 @@ import org.checkerframework.checker.nullness.qual.NonNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.sql.CommonDataSource;
 import java.io.IOException;
 import java.security.Permission;
 import java.sql.PreparedStatement;
@@ -43,9 +41,10 @@ import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
 import static java.util.Collections.singletonList;
 import static java.util.Objects.requireNonNull;
 
-public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializable, SecuredFunction {
+public class UpdateProcessorSupplier
+        extends AbstractJdbcSqlConnectorProcessorSupplier
+        implements ProcessorSupplier, DataSerializable, SecuredFunction {
 
-    private String jdbcUrl;
     private String query;
     private int[] parameterPositions;
     private int batchLimit;
@@ -56,12 +55,12 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
     public UpdateProcessorSupplier() {
     }
 
-    public UpdateProcessorSupplier(@Nonnull String jdbcUrl,
+    public UpdateProcessorSupplier(@Nonnull String externalDataStoreRef,
                                    @NonNull String query,
                                    @Nonnull int[] parameterPositions,
                                    int batchLimit
     ) {
-        this.jdbcUrl = requireNonNull(jdbcUrl, "jdbcUrl must not be null");
+        super(externalDataStoreRef);
         this.query = requireNonNull(query, "query must not be null");
         this.parameterPositions = requireNonNull(parameterPositions, "parameterPositions must not be null");
         this.batchLimit = batchLimit;
@@ -69,6 +68,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
 
     @Override
     public void init(@Nonnull Context context) throws Exception {
+        super.init(context);
         evalContext = ExpressionEvalContext.from(context);
     }
 
@@ -76,11 +76,10 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
     @Override
     public Collection<? extends Processor> get(int count) {
         List<Processor> processors = new ArrayList<>(count);
-        CommonDataSource ds = new DataSourceFromConnectionSupplier(jdbcUrl);
         for (int i = 0; i < count; i++) {
             Processor processor = new WriteJdbcP<>(
                     query,
-                    ds,
+                    dataSource,
                     (PreparedStatement ps, JetSqlRow row) -> {
                         List<Object> arguments = evalContext.getArguments();
 
@@ -105,12 +104,12 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
     @Nullable
     @Override
     public List<Permission> permissions() {
-        return singletonList(ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE));
+        return singletonList(ConnectorPermission.jdbc(externalDataStoreRef, ACTION_WRITE));
     }
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeString(jdbcUrl);
+        out.writeString(externalDataStoreRef);
         out.writeString(query);
         out.writeIntArray(parameterPositions);
         out.writeInt(batchLimit);
@@ -118,7 +117,7 @@ public class UpdateProcessorSupplier implements ProcessorSupplier, DataSerializa
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        jdbcUrl = in.readString();
+        externalDataStoreRef = in.readString();
         query = in.readString();
         parameterPositions = in.readIntArray();
         batchLimit = in.readInt();
