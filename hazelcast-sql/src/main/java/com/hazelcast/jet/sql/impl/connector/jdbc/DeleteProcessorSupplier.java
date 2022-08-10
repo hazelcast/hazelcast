@@ -39,34 +39,23 @@ import java.util.List;
 
 import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
 import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.joining;
 
 public class DeleteProcessorSupplier implements ProcessorSupplier, DataSerializable, SecuredFunction {
 
     private String jdbcUrl;
-    private String tableName;
-    private List<String> pkFields;
-    private List<String> fields;
-    private String whereClause;
+    private String query;
     private int batchLimit;
 
     @SuppressWarnings("unused")
     public DeleteProcessorSupplier() {
     }
 
-    public DeleteProcessorSupplier(String jdbcUrl, String tableName, List<String> pkFields,
-                                   List<String> fields, int batchLimit) {
+    public DeleteProcessorSupplier(String jdbcUrl,
+                                   String query,
+                                   int batchLimit) {
         this.jdbcUrl = jdbcUrl;
-        this.tableName = tableName;
-        this.pkFields = pkFields;
-        this.fields = fields;
+        this.query = query;
         this.batchLimit = batchLimit;
-    }
-
-    @Override
-    public void init(@Nonnull Context context) throws Exception {
-        whereClause = pkFields.stream().map(e -> '\"' + e + "\" = ?")
-                              .collect(joining(" AND "));
     }
 
     @Nonnull
@@ -76,10 +65,10 @@ public class DeleteProcessorSupplier implements ProcessorSupplier, DataSerializa
         CommonDataSource ds = new DataSourceFromConnectionSupplier(jdbcUrl);
         for (int i = 0; i < count; i++) {
             Processor processor = new WriteJdbcP<>(
-                    buildQuery(),
+                    query,
                     ds,
                     (PreparedStatement ps, JetSqlRow row) -> {
-                        for (int j = 0; j < pkFields.size(); j++) {
+                        for (int j = 0; j < row.getFieldCount(); j++) {
                             ps.setObject(j + 1, row.get(j));
                         }
                     },
@@ -91,11 +80,6 @@ public class DeleteProcessorSupplier implements ProcessorSupplier, DataSerializa
         return processors;
     }
 
-    private String buildQuery() {
-        return "DELETE FROM " + tableName +
-                " WHERE " + whereClause;
-    }
-
     @Nullable
     @Override
     public List<Permission> permissions() {
@@ -105,34 +89,14 @@ public class DeleteProcessorSupplier implements ProcessorSupplier, DataSerializa
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(jdbcUrl);
-        out.writeString(tableName);
-        writeStringList(out, pkFields);
-        writeStringList(out, fields);
+        out.writeString(query);
         out.writeInt(batchLimit);
-    }
-
-    private void writeStringList(ObjectDataOutput out, List<String> list) throws IOException {
-        out.writeInt(list.size());
-        for (int i = 0; i < list.size(); i++) {
-            out.writeString(list.get(i));
-        }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         jdbcUrl = in.readString();
-        tableName = in.readString();
-        pkFields = readStringList(in);
-        fields = readStringList(in);
+        query = in.readString();
         batchLimit = in.readInt();
-    }
-
-    private List<String> readStringList(ObjectDataInput in) throws IOException {
-        int numFields = in.readInt();
-        List<String> fields = new ArrayList<>(numFields);
-        for (int i = 0; i < numFields; i++) {
-            fields.add(in.readString());
-        }
-        return fields;
     }
 }

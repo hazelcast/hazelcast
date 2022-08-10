@@ -366,13 +366,12 @@ public class JdbcSqlConnector implements SqlConnector {
                 .map(f -> table.getField(f).externalName())
                 .collect(toList());
 
+        DeleteQueryBuilder builder = new DeleteQueryBuilder(table.getExternalName(), pkFields);
         return dag.newUniqueVertex(
                 "Delete(" + table.getExternalName() + ")",
                 new DeleteProcessorSupplier(
                         table.getJdbcUrl(),
-                        table.getExternalName(),
-                        pkFields,
-                        table.dbFieldNames(),
+                        builder.query(),
                         table.getBatchLimit()
                 )
         );
