@@ -90,7 +90,7 @@ public class ExternalDataStoreConfig implements NamedConfig {
 
     /**
      * {@code true} if an instance of the external data store will be reused. {@code false} when on each usage
-     * the data store instance should be created. The default it {@code true}
+     * the data store instance should be created. The default is {@code true}
      *
      * @return if the data store instance should be reused
      */
