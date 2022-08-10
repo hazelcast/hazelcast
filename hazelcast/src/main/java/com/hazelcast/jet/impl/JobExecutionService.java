@@ -298,7 +298,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
         return execCtx.initialize(coordinator, addresses, plan)
                 .whenComplete((r, e) -> {
                     if (e != null) {
-                        completeExecution(execCtx, new CancellationException());
+                        completeExecution(execCtx, new CancellationException()).join();
                     }
                 })
                 .thenAccept(r -> {
@@ -572,13 +572,14 @@ public class JobExecutionService implements DynamicMetricsProvider {
                           }
                           return terminalMetrics;
                       })
-                      .handleAsync((metrics, e) -> completeExecution(execCtx, peel(e))
+                      .handle((metrics, e) -> completeExecution(execCtx, peel(e))
                               .thenApply(ignored -> {
                                   if (e == null) {
                                       return metrics;
                                   }
                                   throw rethrow(e);
-                              }))
+                              })
+                      )
                       .thenCompose(stage -> stage)
                       .whenComplete(withTryCatch(logger, (metrics, e) -> {
                           if (e instanceof CancellationException) {
