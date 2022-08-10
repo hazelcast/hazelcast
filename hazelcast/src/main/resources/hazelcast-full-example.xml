@@ -3887,4 +3887,8 @@
         <shared>false</shared>
     </external-data-store>
 
+    <external-data-store name="other-database">
+        <class-name>com.hazelcast.datastore.OtherDataStore</class-name>
+    </external-data-store>
+
 </hazelcast>

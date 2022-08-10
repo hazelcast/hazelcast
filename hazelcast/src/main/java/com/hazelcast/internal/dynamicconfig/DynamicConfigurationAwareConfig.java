@@ -1234,4 +1234,9 @@ public class DynamicConfigurationAwareConfig extends Config {
     public ExternalDataStoreConfig getExternalDataStoreConfig(String name) {
         return staticConfig.getExternalDataStoreConfig(name);
     }
+
+    @Override
+    public ExternalDataStoreConfig findExternalDataStoreConfig(String name) {
+        return staticConfig.findExternalDataStoreConfig(name);
+    }
 }

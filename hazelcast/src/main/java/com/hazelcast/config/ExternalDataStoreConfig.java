@@ -58,6 +58,10 @@ public class ExternalDataStoreConfig implements NamedConfig {
         properties.putAll(config.getProperties());
     }
 
+    public ExternalDataStoreConfig(String name) {
+        this.name = checkNotNull(name, "Name must not be null");
+    }
+
     @Override
     public ExternalDataStoreConfig setName(String name) {
         this.name = checkNotNull(name, "Name must not be null");
