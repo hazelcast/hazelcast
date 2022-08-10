@@ -416,7 +416,6 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
                 rows(2, "office1", "office2"));
     }
 
-    // TODO: cross-platform conversion
     @Test
     public void test_basicToRow() {
         initDefault();

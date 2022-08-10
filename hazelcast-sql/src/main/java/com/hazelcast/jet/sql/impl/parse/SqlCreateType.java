@@ -23,6 +23,7 @@ import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.SqlNodeList;
 import org.apache.calcite.sql.SqlOperator;
 import org.apache.calcite.sql.SqlSpecialOperator;
+import org.apache.calcite.sql.SqlWriter;
 import org.apache.calcite.sql.parser.SqlParserPos;
 import org.apache.calcite.sql.validate.SqlValidator;
 import org.apache.calcite.sql.validate.SqlValidatorScope;
@@ -68,6 +69,41 @@ public class SqlCreateType extends SqlCreate {
 
     @Override
     public void validate(final SqlValidator validator, final SqlValidatorScope scope) {
+    }
+
+    @Override
+    public void unparse(SqlWriter writer, int leftPrec, int rightPrec) {
+        writer.keyword("CREATE");
+        if (getReplace()) {
+            writer.keyword("OR REPLACE");
+        }
+
+        if (ifNotExists) {
+            writer.keyword("IF NOT EXISTS");
+        }
+
+        name.unparse(writer, leftPrec, rightPrec);
+
+        if (!columns.isEmpty()) {
+            writer.keyword("(");
+            for (final SqlNode column : columns) {
+                writer.sep(",", false);
+                column.unparse(writer, leftPrec, rightPrec);
+            }
+            writer.keyword(")");
+        }
+
+        if (options().isEmpty()) {
+            return;
+        }
+
+        writer.keyword("OPTIONS");
+        writer.keyword("(");
+        for (final SqlNode option : options) {
+            writer.sep(",", false);
+            option.unparse(writer, leftPrec, rightPrec);
+        }
+        writer.keyword(")");
     }
 
     public String getName() {

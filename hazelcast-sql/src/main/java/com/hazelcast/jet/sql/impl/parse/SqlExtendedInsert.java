@@ -21,6 +21,7 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
+import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rel.type.RelDataTypeField;
@@ -131,7 +132,7 @@ public class SqlExtendedInsert extends SqlInsert {
                 QueryPath path = ((MapTableField) field).getPath();
                 if (path.getPath() == null
                         && field.getType().getTypeFamily() == QueryDataTypeFamily.OBJECT
-                        && !field.getType().isCustomType()) {
+                        && !objectTypeSupportsTopLevelUpserts(field.getType())) {
                     throw validator.newValidationError(fieldNode, RESOURCE.insertToTopLevelObject());
                 }
             }
@@ -144,5 +145,10 @@ public class SqlExtendedInsert extends SqlInsert {
         public SqlLiteral symbol(SqlParserPos pos) {
             return SqlLiteral.createSymbol(this, pos);
         }
+    }
+
+    private boolean objectTypeSupportsTopLevelUpserts(QueryDataType dataType) {
+        // Only Java Types support top level upserts.
+        return dataType.isCustomType() && dataType.getObjectTypeKind().equals(QueryDataType.OBJECT_TYPE_KIND_JAVA);
     }
 }

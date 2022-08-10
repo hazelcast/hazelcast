@@ -62,6 +62,7 @@ public class ToRowFunction extends UniExpressionWithType<RowValue> implements Id
     }
 
     private RowValue convert(final Object obj, final QueryDataType dataType, final Set<Integer> foundObjects) {
+        // TODO: Compact and Portable support
         foundObjects.add(System.identityHashCode(obj));
 
         final List<Object> fieldValues = new ArrayList<>();

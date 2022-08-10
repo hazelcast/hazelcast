@@ -222,7 +222,8 @@ public class TableResolverImpl implements TableResolver {
                 tables.add(toTable((View) o));
                 views.add((View) o);
             } else if (o instanceof Type) {
-                // TODO: something?
+                // Types are not materialized and do not contain data by themselves, therefore they should not be
+                // returned as part of the list of queryable tables.
                 continue;
             } else {
                 throw new RuntimeException("Unexpected: " + o);

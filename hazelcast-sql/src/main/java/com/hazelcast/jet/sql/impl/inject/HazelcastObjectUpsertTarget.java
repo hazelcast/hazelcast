@@ -16,13 +16,12 @@
 
 package com.hazelcast.jet.sql.impl.inject;
 
-import com.hazelcast.sql.impl.expression.RowValue;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nullable;
 
-import static com.hazelcast.jet.sql.impl.inject.UpsertTargetUtils.convertRowToCompactType;
 import static com.hazelcast.jet.sql.impl.inject.UpsertTargetUtils.convertRowToJavaType;
 
 public class HazelcastObjectUpsertTarget implements UpsertTarget {
@@ -32,18 +31,13 @@ public class HazelcastObjectUpsertTarget implements UpsertTarget {
 
     @Override
     public UpsertInjector createInjector(@Nullable final String path, final QueryDataType queryDataType) {
-        return value -> {
-            switch (TypeKind.of(queryDataType.getObjectTypeKind())) {
-                case JAVA:
-                    this.object = convertRowToJavaType(value, queryDataType);
-                    break;
-                case COMPACT:
-                    this.object = convertRowToCompactType((RowValue) value, queryDataType);
-                    break;
-                default:
-                    break;
-            }
-        };
+        final TypeKind typeKind = TypeKind.of(queryDataType.getObjectTypeKind());
+        switch (typeKind) {
+            case JAVA:
+                return value -> this.object = convertRowToJavaType(value, queryDataType);
+            default:
+                throw QueryException.error("TypeKind " + typeKind + " does not support top level Nested Types.");
+        }
     }
 
     @Override

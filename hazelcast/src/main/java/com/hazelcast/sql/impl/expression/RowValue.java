@@ -28,7 +28,6 @@ import java.util.List;
 import java.util.Objects;
 
 public class RowValue implements Serializable, IdentifiedDataSerializable {
-    // TODO: extend to support field names? DataType spec suggests its warranted e.g.: ROW(id BIGINT, ROW(name VARCHAR))
     private List<Object> values;
 
     public RowValue() {
