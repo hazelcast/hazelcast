@@ -291,13 +291,12 @@ public class JdbcSqlConnector implements SqlConnector {
     public VertexWithInputConfig insertProcessor(@Nonnull DAG dag, @Nonnull Table table0) {
         JdbcTable table = (JdbcTable) table0;
 
+        InsertQueryBuilder builder = new InsertQueryBuilder(table.getExternalName(), table.dbFieldNames());
         return new VertexWithInputConfig(dag.newUniqueVertex(
                 "Insert (" + table.getExternalName() + ")",
                 new InsertProcessorSupplier(
                         table.getJdbcUrl(),
-                        table.getExternalName(),
-                        table.dbFieldNames(),
-                        table.getFieldCount(),
+                        builder.query(),
                         table.getBatchLimit()
                 )
         ));

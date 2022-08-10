@@ -39,25 +39,20 @@ import java.util.List;
 
 import static com.hazelcast.security.permission.ActionConstants.ACTION_WRITE;
 import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.joining;
 
 public class InsertProcessorSupplier implements ProcessorSupplier, DataSerializable, SecuredFunction {
 
     private String jdbcUrl;
-    private String tableName;
-    private List<String> fieldNames;
-    private int fieldCount;
+    private String query;
     private int batchLimit;
 
     @SuppressWarnings("unused")
     public InsertProcessorSupplier() {
     }
 
-    public InsertProcessorSupplier(String jdbcUrl, String tableName, List<String> fieldNames, int fieldCount, int batchLimit) {
+    public InsertProcessorSupplier(String jdbcUrl, String query, int batchLimit) {
         this.jdbcUrl = jdbcUrl;
-        this.tableName = tableName;
-        this.fieldNames = fieldNames;
-        this.fieldCount = fieldCount;
+        this.query = query;
         this.batchLimit = batchLimit;
     }
 
@@ -68,7 +63,7 @@ public class InsertProcessorSupplier implements ProcessorSupplier, DataSerializa
         CommonDataSource ds = new DataSourceFromConnectionSupplier(jdbcUrl);
         for (int i = 0; i < count; i++) {
             Processor processor = new WriteJdbcP<>(
-                    buildQuery(),
+                    query,
                     ds,
                     (PreparedStatement ps, JetSqlRow row) -> {
                         for (int j = 0; j < row.getFieldCount(); j++) {
@@ -84,24 +79,6 @@ public class InsertProcessorSupplier implements ProcessorSupplier, DataSerializa
         return processors;
     }
 
-    private String buildQuery() {
-        StringBuilder sb = new StringBuilder()
-                .append("INSERT INTO ")
-                .append(tableName)
-                .append(" ( ")
-                .append(fieldNames.stream().map(name -> "\"" + name + "\"").collect(joining(",")))
-                .append(" ) ")
-                .append(" VALUES (");
-        for (int i = 0; i < fieldCount; i++) {
-            sb.append('?');
-            if (i < (fieldCount - 1)) {
-                sb.append(", ");
-            }
-        }
-        sb.append(')');
-        return sb.toString();
-    }
-
     @Nullable
     @Override
     public List<Permission> permissions() {
@@ -111,25 +88,14 @@ public class InsertProcessorSupplier implements ProcessorSupplier, DataSerializa
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(jdbcUrl);
-        out.writeString(tableName);
-        out.writeInt(fieldCount);
-        out.writeInt(fieldNames.size());
-        for (String fieldName : fieldNames) {
-            out.writeString(fieldName);
-        }
+        out.writeString(query);
         out.writeInt(batchLimit);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         jdbcUrl = in.readString();
-        tableName = in.readString();
-        fieldCount = in.readInt();
-        int n = in.readInt();
-        fieldNames = new ArrayList<>(n);
-        for (int i = 0; i < n; i++) {
-            fieldNames.add(in.readString());
-        }
+        query = in.readString();
         batchLimit = in.readInt();
     }
 }
