@@ -1,0 +1,16 @@
+{
+  "instance": {
+    "hazelcast": {
+      "external-data-store": {
+        "mysql-database": {
+          "class-name": "com.hazelcast.datastore.JdbcDataStoreFactory",
+          "properties": {
+            "jdbcUrl": "jdbc:mysql://dummy:3306"
+          },
+          "shared": false
+        }
+      }
+    }
+  },
+  "error": null
+}
