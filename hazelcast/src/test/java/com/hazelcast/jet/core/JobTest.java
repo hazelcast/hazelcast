@@ -350,6 +350,7 @@ public class JobTest extends SimpleTestInClusterSupport {
         DAG dag = new DAG().vertex(new Vertex("test", new MockPS(NoOutputSourceP::new, NODE_COUNT)));
 
         Job submittedJob = instance().getJet().newJob(dag);
+        assertJobVisible(instance(), submittedJob, "submittedJob");
 
         Collection<Job> trackedJobs = instances()[1].getJet().getJobs();
         Job trackedJob = trackedJobs.stream().filter(j -> j.getId() == submittedJob.getId()).findFirst().orElse(null);
@@ -413,6 +414,7 @@ public class JobTest extends SimpleTestInClusterSupport {
         NoOutputSourceP.executionStarted.await();
 
         // Then
+        assertJobVisible(instance, job, "job");
         Job trackedJob = instance.getJet().getJob(jobName);
 
         assertNotNull(trackedJob);
@@ -442,6 +444,7 @@ public class JobTest extends SimpleTestInClusterSupport {
         NoOutputSourceP.executionStarted.await();
 
         // Then
+        assertJobVisible(instance, job, "job");
         Job trackedJob = instance.getJet().getJob(job.getId());
 
         assertNotNull(trackedJob);
@@ -518,6 +521,7 @@ public class JobTest extends SimpleTestInClusterSupport {
                 .setName(randomName());
         Job job1 = instance.getJet().newJob(dag, config);
         assertTrueEventually(() -> assertEquals(RUNNING, job1.getStatus()));
+        assertJobVisible(instance, job1, "job1");
 
         // When
         Job job2 = instance.getJet().newJobIfAbsent(dag, config);
@@ -921,8 +925,7 @@ public class JobTest extends SimpleTestInClusterSupport {
         List<Job> allJobsExceptCompletedLightJobs =
                 asList(streamingJob, batchJob1, batchJob2, namedStreamingJob1, namedStreamingJob2, namedStreamingJob2_1, lightStreamingJob);
 
-        List<Job> allJobs = new ArrayList<>();
-        allJobs.addAll(allJobsExceptCompletedLightJobs);
+        List<Job> allJobs = new ArrayList<>(allJobsExceptCompletedLightJobs);
         allJobs.add(lightStreamingJobCancelled);
         allJobs.add(lightBatchJob1);
         allJobs.add(lightBatchJob2);
@@ -932,7 +935,9 @@ public class JobTest extends SimpleTestInClusterSupport {
         assertThat(toList(jet.getJobs(), this::jobEqualityString))
                 .containsExactlyInAnyOrderElementsOf(toList(allJobsExceptCompletedLightJobs, this::jobEqualityString));
 
+        int index = 0;
         for (Job job : allJobs) {
+            assertJobVisible(inst, job, "job" + (index++));
             Job trackedJobById = jet.getJob(job.getId());
             Job trackedJobByName = job.getName() != null ? jet.getJob(job.getName()) : null;
 
@@ -995,8 +1000,8 @@ public class JobTest extends SimpleTestInClusterSupport {
         Job job1 = instances()[0].getJet().newLightJob(streamingDag());
         assertTrueEventually(() -> assertJobExecuting(job1, instances()[0]));
 
+        assertJobVisible(clientConnectedToI1, job1, "job1ThroughClient2");
         Job job1ThroughClient2 = clientConnectedToI1.getJet().getJob(job1.getId());
-        assertNotNull("job1ThroughClient2 not found", job1ThroughClient2);
         job1ThroughClient2.getSubmissionTime();
         assertEquals(RUNNING, job1ThroughClient2.getStatus());
         assertTrue(job1ThroughClient2.isLightJob());
@@ -1012,6 +1017,7 @@ public class JobTest extends SimpleTestInClusterSupport {
         for (int i = 0; i < 10; i++) {
             Job job = client.getJet().newLightJob(streamingDag());
             assertTrueEventually(() -> assertJobExecuting(job, instance()));
+            assertJobVisible(client, job, "streaming job");
             cancelAndJoin(job);
         }
     }
@@ -1022,6 +1028,11 @@ public class JobTest extends SimpleTestInClusterSupport {
             fail();
         } catch (CancellationException ignored) {
         }
+    }
+
+    private static void assertJobVisible(HazelcastInstance client, Job job1, String jobName) {
+        assertTrueEventually(jobName + " not found",
+                () -> assertNotNull(client.getJet().getJob(job1.getId())));
     }
 
     private static final class PSThatWaitsOnInit implements ProcessorSupplier {
