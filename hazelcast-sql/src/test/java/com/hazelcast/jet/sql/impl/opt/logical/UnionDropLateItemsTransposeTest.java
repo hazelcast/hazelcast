@@ -33,6 +33,7 @@ import org.apache.calcite.rel.logical.LogicalTableScan;
 import org.apache.calcite.rel.logical.LogicalUnion;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
@@ -81,6 +82,7 @@ public class UnionDropLateItemsTransposeTest extends OptimizerTestSupport {
         );
     }
 
+    @Ignore("This rule is disabled; introduce it and implement DropLateItemsP in correct way.")
     @Test
     public void when_unionAndDropItemsRelTransposes_then_transposes() {
         // TODO: optimizer support for stream tables and assertPlan(..)

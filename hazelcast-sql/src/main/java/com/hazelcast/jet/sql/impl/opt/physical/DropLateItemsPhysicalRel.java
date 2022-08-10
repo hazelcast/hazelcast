@@ -75,7 +75,7 @@ public class DropLateItemsPhysicalRel extends SingleRel implements PhysicalRel {
 
     @Override
     public @Nullable RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        return planner.getCostFactory().makeHugeCost();
+        return planner.getCostFactory().makeTinyCost();
     }
 
     @Override

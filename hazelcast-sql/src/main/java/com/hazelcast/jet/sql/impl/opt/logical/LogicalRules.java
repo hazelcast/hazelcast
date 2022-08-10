@@ -66,7 +66,7 @@ public final class LogicalRules {
                 PruneEmptyRules.UNION_INSTANCE,
                 CoreRules.UNION_REMOVE,
                 CoreRules.UNION_PULL_UP_CONSTANTS,
-                UnionDropLateItemsTransposeRule.INSTANCE,
+//                UnionDropLateItemsTransposeRule.INSTANCE,
                 UnionLogicalRule.INSTANCE,
 
                 // Value rules

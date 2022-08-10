@@ -40,7 +40,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlStreamToStreamJoinTest extends SqlTestSupport {
-
     private static SqlService sqlService;
 
     @BeforeClass
@@ -480,15 +479,19 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 "UNION ALL " +
                 "SELECT b, d FROM TABLE(IMPOSE_ORDER(TABLE stream3, DESCRIPTOR(b), INTERVAL '0.001' SECOND)) ");
 
-        assertTipOfStream(
+        assertRowsEventuallyInAnyOrder(
                 "SELECT a, d FROM s1 JOIN s2 " +
                         "ON s2.b BETWEEN s1.a - INTERVAL '0.001' SECOND " +
                         "        AND     s1.a + INTERVAL '0.004' SECOND ",
                 asList(
-                        new Row(timestamp(0L), timestamp(0L), "zero"),
-                        new Row(timestamp(1L), timestamp(1L), "one"),
-                        new Row(timestamp(1L), timestamp(1L), "one"),
-                        new Row(timestamp(2L), timestamp(2L), "two")
+                        new Row(timestamp(0L), "zero"),
+                        new Row(timestamp(0L), "one"),
+                        new Row(timestamp(0L), "one"),
+                        new Row(timestamp(0L), "two"),
+                        new Row(timestamp(1L), "zero"),
+                        new Row(timestamp(1L), "one"),
+                        new Row(timestamp(1L), "one"),
+                        new Row(timestamp(1L), "two")
                 )
         );
     }

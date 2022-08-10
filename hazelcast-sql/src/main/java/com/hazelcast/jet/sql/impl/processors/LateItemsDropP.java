@@ -44,12 +44,14 @@ public class LateItemsDropP extends AbstractProcessor {
     @Probe(name = "lateEventsDropped")
     private final Counter lateEventsDropped = SwCounter.newSwCounter();
 
+    private final byte watermarkKey;
     private final Expression<?> timestampExpression;
 
     private ExpressionEvalContext evalContext;
     private long currentWm = Long.MIN_VALUE;
 
-    public LateItemsDropP(Expression<?> timestampExpression) {
+    public LateItemsDropP(byte watermarkKey, Expression<?> timestampExpression) {
+        this.watermarkKey = watermarkKey;
         this.timestampExpression = timestampExpression;
     }
 
@@ -74,7 +76,7 @@ public class LateItemsDropP extends AbstractProcessor {
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
-        keyedWatermarkCheck(watermark);
+        shouldIgnoreMismatchedWatermark(watermark, watermarkKey);
         currentWm = watermark.timestamp();
         return super.tryProcessWatermark(watermark);
     }

@@ -48,7 +48,6 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
  * Note: we are allowed to do that. Even if Calc would be present in rel tree,
  * such transformations are suppose to happen:
  * Calc & DropRel transposition -> Calc pushdown into FullScan
- *
  */
 @Value.Enclosing
 public class StreamToStreamJoinDropLateItemsEliminationRule extends RelRule<RelRule.Config> implements TransformationRule {
@@ -62,9 +61,7 @@ public class StreamToStreamJoinDropLateItemsEliminationRule extends RelRule<RelR
                         .trait(PHYSICAL)
                         .unorderedInputs(b1 -> b1
                                 .operand(DropLateItemsPhysicalRel.class)
-                                .oneInput(b2 -> b2
-                                        .operand(FullScanPhysicalRel.class)
-                                        .noInputs())))
+                                .anyInputs()))
                 .build();
 
         @Override
@@ -83,7 +80,6 @@ public class StreamToStreamJoinDropLateItemsEliminationRule extends RelRule<RelR
     public void onMatch(RelOptRuleCall call) {
         StreamToStreamJoinPhysicalRel join = call.rel(0);
         DropLateItemsPhysicalRel drop = call.rel(1);
-        FullScanPhysicalRel scan = call.rel(2);
 
         RelNode leftInput = Objects.requireNonNull(((RelSubset) join.getLeft()).getBest());
         RelNode rightInput = Objects.requireNonNull(((RelSubset) join.getRight()).getBest());
@@ -94,7 +90,7 @@ public class StreamToStreamJoinDropLateItemsEliminationRule extends RelRule<RelR
             newJoin = (StreamToStreamJoinPhysicalRel) join.copy(
                     join.getTraitSet(),
                     join.getCondition(),
-                    scan,
+                    drop.getInput(),
                     rightInput,
                     join.getJoinType(),
                     join.isSemiJoinDone()
@@ -104,7 +100,7 @@ public class StreamToStreamJoinDropLateItemsEliminationRule extends RelRule<RelR
                     join.getTraitSet(),
                     join.getCondition(),
                     leftInput,
-                    scan,
+                    drop.getInput(),
                     join.getJoinType(),
                     join.isSemiJoinDone()
             );

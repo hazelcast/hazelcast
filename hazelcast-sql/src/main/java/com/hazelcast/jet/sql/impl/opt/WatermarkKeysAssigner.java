@@ -96,14 +96,15 @@ public class WatermarkKeysAssigner {
             // start with recursion to children
             super.visit(node, ordinal, parent);
 
-
             if (node instanceof FullScanPhysicalRel) {
                 assert node.getInputs().isEmpty() : "FullScan not a leaf";
                 FullScanPhysicalRel scan = (FullScanPhysicalRel) node;
                 int idx = scan.watermarkedColumnIndex();
                 if (idx >= 0) {
-                    scan.setWatermarkKey(WatermarkKeysAssigner.this.keyCounter);
-                    relToWmKeyMapping.put(scan, Collections.singletonMap(idx, new MutableByte(keyCounter++)));
+                    relToWmKeyMapping.computeIfAbsent(scan, key -> {
+                        scan.setWatermarkKey(WatermarkKeysAssigner.this.keyCounter);
+                        return Collections.singletonMap(idx, new MutableByte(keyCounter++));
+                    });
                 }
                 return;
             }

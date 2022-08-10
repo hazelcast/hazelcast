@@ -43,7 +43,6 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
  * DropLateItemsRel
  *   Calc[...]
  * </pre>
- * <p>
  */
 @Value.Enclosing
 public class CalcDropLateItemsTransposeRule extends RelRule<RelRule.Config> implements TransformationRule {

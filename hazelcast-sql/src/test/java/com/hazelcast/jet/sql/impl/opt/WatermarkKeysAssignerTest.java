@@ -127,24 +127,24 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
         PhysicalRel optimizedPhysicalRel = optimizePhysical(sql, parameterTypes, table).getPhysical();
 
         assertPlan(optimizedPhysicalRel, plan(
-                planRow(0, DropLateItemsPhysicalRel.class),
-                planRow(1, UnionPhysicalRel.class),
+                planRow(0, UnionPhysicalRel.class),
+                planRow(1, DropLateItemsPhysicalRel.class),
                 planRow(2, FullScanPhysicalRel.class),
+                planRow(1, DropLateItemsPhysicalRel.class),
                 planRow(2, FullScanPhysicalRel.class)
         ));
 
         WatermarkKeysAssigner keysAssigner = new WatermarkKeysAssigner(optimizedPhysicalRel);
         keysAssigner.assignWatermarkKeys();
 
-        PhysicalRel unionRel = (PhysicalRel) optimizedPhysicalRel.getInput(0);
-        assertThat(unionRel).isInstanceOf(UnionPhysicalRel.class);
+        assertThat(optimizedPhysicalRel).isInstanceOf(UnionPhysicalRel.class);
 
         // Watermark key was propagated to UnionPhysicalRel
-        Map<Integer, MutableByte> map = keysAssigner.getWatermarkedFieldsKey(unionRel);
+        Map<Integer, MutableByte> map = keysAssigner.getWatermarkedFieldsKey(optimizedPhysicalRel);
         assertThat(map).isNotNull();
         assertThat(map).isNotEmpty();
         assertThat(map.get(1)).isNotNull(); // 2nd field (this) is watermarked, that's why we have index 1.
-        assertThat(map.get(1).getValue()).isEqualTo((byte) 1);
+        assertThat(map.get(1).getValue()).isEqualTo((byte) 0);
     }
 
     @Test
