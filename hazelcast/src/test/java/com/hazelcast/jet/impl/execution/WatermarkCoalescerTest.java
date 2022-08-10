@@ -25,9 +25,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
+import static com.hazelcast.jet.core.JetTestSupport.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.NO_NEW_WM;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -40,7 +42,7 @@ public class WatermarkCoalescerTest {
 
     @Test
     public void when_nothingHappened_then_noWm() {
-        assertEquals(Long.MIN_VALUE, wc.checkWmHistory());
+        assertFalse(wc.idleMessagePending());
     }
 
     @Test
@@ -77,7 +79,7 @@ public class WatermarkCoalescerTest {
         // Then
         assertEquals(Long.MIN_VALUE, wc.observeWm(1, 12)); // not forwarded, waiting for i1
         assertEquals(12, wc.observeWm(0, 13)); // forwarded, both are at least at 12
-        assertEquals(Long.MIN_VALUE, wc.checkWmHistory());
+        assertFalse(wc.idleMessagePending());
     }
 
     @Test
@@ -115,16 +117,16 @@ public class WatermarkCoalescerTest {
     public void when_i1_activeNoWm_i2_idle_then_noWmToForward() {
         wc.observeEvent(0);
         assertEquals(Long.MIN_VALUE, wc.observeWm(1, IDLE_MESSAGE.timestamp()));
-        assertEquals(Long.MIN_VALUE, wc.checkWmHistory());
-        assertEquals(Long.MIN_VALUE, wc.checkWmHistory());
+        assertFalse(wc.idleMessagePending());
+        assertFalse(wc.idleMessagePending());
     }
 
     @Test
     public void when_i1_idle_i2_activeNoWm_then_wmForwardedAfterADelay() {
         assertEquals(Long.MIN_VALUE, wc.observeWm(0, IDLE_MESSAGE.timestamp()));
         wc.observeEvent(1);
-        assertEquals(Long.MIN_VALUE, wc.checkWmHistory());
-        assertEquals(Long.MIN_VALUE, wc.checkWmHistory());
+        assertFalse(wc.idleMessagePending());
+        assertFalse(wc.idleMessagePending());
     }
 
     @Test
@@ -233,7 +235,7 @@ public class WatermarkCoalescerTest {
         // Then
         // queue0 becomes idle. Wm should be forwarded to 11
         assertEquals(11L, wc.observeWm(0, IDLE_MESSAGE.timestamp()));
-        assertEquals(IDLE_MESSAGE.timestamp(), wc.checkWmHistory());
+        assertTrue(wc.idleMessagePending());
     }
 
     @Test
@@ -248,7 +250,7 @@ public class WatermarkCoalescerTest {
         // Then
         // queue0 becomes done. Wm should be forwarded to 11
         assertEquals(11L, wc.queueDone(0));
-        assertEquals(IDLE_MESSAGE.timestamp(), wc.checkWmHistory());
+        assertTrue(wc.idleMessagePending());
     }
 
     @Test

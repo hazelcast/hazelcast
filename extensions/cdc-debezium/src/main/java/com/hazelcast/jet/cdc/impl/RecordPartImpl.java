@@ -86,7 +86,7 @@ class RecordPartImpl implements RecordPart {
 
     @Override
     public int hashCode() {
-        return json.hashCode();
+        return toJson().hashCode();
     }
 
     @Override
@@ -98,7 +98,7 @@ class RecordPartImpl implements RecordPart {
             return false;
         }
         RecordPartImpl other = (RecordPartImpl) obj;
-        return Objects.equals(json, other.json);
+        return Objects.equals(toJson(), other.toJson());
     }
 
     @Override

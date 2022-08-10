@@ -86,6 +86,13 @@ public class JetJoinInfo implements DataSerializable {
     }
 
     /**
+     * Returns true if the join type is a RIGHT OUTER join.
+     */
+    public boolean isRightOuter() {
+        return joinType == JoinRelType.RIGHT;
+    }
+
+    /**
      * The indices of the fields from the left side of a join which are
      * equi-join keys.
      */
@@ -120,6 +127,10 @@ public class JetJoinInfo implements DataSerializable {
 
     public boolean isEquiJoin() {
         return rightEquiJoinIndices.length > 0;
+    }
+
+    public JoinRelType getJoinType() {
+        return joinType;
     }
 
     @Override

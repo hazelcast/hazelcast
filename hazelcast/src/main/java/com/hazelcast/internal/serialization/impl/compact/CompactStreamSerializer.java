@@ -83,6 +83,10 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         return classToRegistrationMap.containsKey(clazz);
     }
 
+    public Collection<Class> getCompactSerializableClasses() {
+        return classToRegistrationMap.keySet();
+    }
+
     @Override
     public int getTypeId() {
         return TYPE_COMPACT;

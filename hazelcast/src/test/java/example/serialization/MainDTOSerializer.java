@@ -15,6 +15,7 @@
  */
 package example.serialization;
 
+import com.hazelcast.internal.serialization.impl.compact.CompactUtil;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
@@ -33,6 +34,7 @@ public class MainDTOSerializer implements CompactSerializer<MainDTO> {
     public MainDTO read(@Nonnull CompactReader reader) {
         boolean bool = reader.readBoolean("bool", false);
         byte b = reader.readInt8("b", (byte) 1);
+        char c = (char) reader.readInt16("c", (short) 1);
         short s = reader.readInt16("s", (short) 1);
         int i = reader.readInt32("i", 1);
         long l = reader.readInt64("l", 1L);
@@ -49,19 +51,21 @@ public class MainDTOSerializer implements CompactSerializer<MainDTO> {
                 OffsetDateTime.of(1, 1, 1, 1, 1, 1, 1, ZoneOffset.ofHours(1)));
         Byte nullableB = reader.readNullableInt8("nullableB", (byte) 1);
         Boolean nullableBool = reader.readNullableBoolean("nullableBool", false);
+        Character nullableC = CompactUtil.characterFromShort(reader.readNullableInt16("nullableC", (short) 1));
         Short nullableS = reader.readNullableInt16("nullableS", (short) 1);
         Integer nullableI = reader.readNullableInt32("nullableI", 1);
         Long nullableL = reader.readNullableInt64("nullableL", 1L);
         Float nullableF = reader.readNullableFloat32("nullableF", 1.0f);
         Double nullableD = reader.readNullableFloat64("nullableD", 1.0d);
-        return new MainDTO(b, bool, s, i, l, f, d, str, p, bigDecimal, localTime, localDate, localDateTime,
-                offsetDateTime, nullableB, nullableBool, nullableS, nullableI, nullableL, nullableF, nullableD);
+        return new MainDTO(b, bool, c, s, i, l, f, d, str, p, bigDecimal, localTime, localDate, localDateTime,
+                offsetDateTime, nullableB, nullableBool, nullableC, nullableS, nullableI, nullableL, nullableF, nullableD);
     }
 
     @Override
     public void write(@Nonnull CompactWriter out, @Nonnull MainDTO object) {
         out.writeBoolean("bool", object.bool);
         out.writeInt8("b", object.b);
+        out.writeInt16("c", (short) object.c);
         out.writeInt16("s", object.s);
         out.writeInt32("i", object.i);
         out.writeInt64("l", object.l);
@@ -76,6 +80,7 @@ public class MainDTOSerializer implements CompactSerializer<MainDTO> {
         out.writeTimestampWithTimezone("offsetDateTime", object.offsetDateTime);
         out.writeNullableInt8("nullableB", object.nullableB);
         out.writeNullableBoolean("nullableBool", object.nullableBool);
+        out.writeNullableInt16("nullableC", CompactUtil.characterAsShort(object.nullableC));
         out.writeNullableInt16("nullableS", object.nullableS);
         out.writeNullableInt32("nullableI", object.nullableI);
         out.writeNullableInt64("nullableL", object.nullableL);

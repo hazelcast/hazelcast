@@ -48,7 +48,7 @@ public class RemoveBackupOperation extends KeyBasedMapOperation implements Backu
     }
 
     @Override
-    protected void afterRunInternal() {
+    public void afterRunInternal() {
         publishWanRemove(dataKey);
         evict(dataKey);
 

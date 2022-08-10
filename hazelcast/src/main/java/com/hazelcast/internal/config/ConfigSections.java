@@ -70,6 +70,8 @@ public enum ConfigSections {
     LOCAL_DEVICE("local-device", true),
     DYNAMIC_CONFIGURATION("dynamic-configuration", false),
     INTEGRITY_CHECKER("integrity-checker", false),
+    JOIN("join", false),
+    TCP_IP("tcp-ip", false),
     EXTERNAL_DATA_STORE("external-data-store", true);
 
     final boolean multipleOccurrence;

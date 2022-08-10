@@ -30,6 +30,7 @@ import java.util.concurrent.ExecutionException;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -81,5 +82,55 @@ public class ExceptionUtilTest extends HazelcastTestSupport {
 
         assertEquals(result.getClass(), IllegalStateException.class);
         assertEquals(result.getCause(), expectedException);
+    }
+
+    @Test
+    public void testCloneExceptionWithFixedAsyncStackTrace_whenStandardConstructorSignature_thenAppendAsyncTrace() {
+        IOException expectedException = new IOException();
+        ExecutionException result = ExceptionUtil.cloneExceptionWithFixedAsyncStackTrace(new ExecutionException(expectedException));
+
+        assertEquals(result.getClass(), ExecutionException.class);
+        assertEquals(result.getCause(), expectedException);
+    }
+
+    @Test
+    public void testCloneExceptionWithFixedAsyncStackTrace_whenNonStandardConstructor_then_cloneReflectively() {
+        IOException expectedException = new IOException();
+        Throwable result = ExceptionUtil.cloneExceptionWithFixedAsyncStackTrace(
+                new NonStandardException(1337, expectedException));
+
+        assertEquals(NonStandardException.class, result.getClass());
+        assertEquals(expectedException, result.getCause());
+        assertNoAsyncTrace(result);
+    }
+
+    @Test
+    public void testCloneExceptionWithFixedAsyncStackTrace_whenCannotConstructSource_then_returnWithoutCloning() {
+        IOException expectedException = new IOException();
+        NoPublicConstructorException result = ExceptionUtil.cloneExceptionWithFixedAsyncStackTrace(
+                new NoPublicConstructorException(expectedException));
+
+        assertEquals(NoPublicConstructorException.class, result.getClass());
+        assertEquals(expectedException, result.getCause());
+        assertNoAsyncTrace(result);
+    }
+
+    private void assertNoAsyncTrace(Throwable result) {
+        for (StackTraceElement stackTraceElement : result.getStackTrace()) {
+            if (stackTraceElement.getClassName().equals(ExceptionUtil.EXCEPTION_SEPARATOR)) {
+                fail("if exception cannot be cloned to append async stack trace, then nothing should be modified");
+            }
+        }
+    }
+
+    private static class NoPublicConstructorException extends RuntimeException {
+        private NoPublicConstructorException(Throwable cause) {
+            super(cause);
+        }
+    }
+    public static class NonStandardException extends RuntimeException {
+        private NonStandardException(Integer iDontCareAboutStandardSignatures, Throwable cause) {
+            super("" + iDontCareAboutStandardSignatures, cause);
+        }
     }
 }

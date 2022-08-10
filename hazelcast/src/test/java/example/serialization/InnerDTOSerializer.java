@@ -15,6 +15,7 @@
  */
 package example.serialization;
 
+import com.hazelcast.internal.serialization.impl.compact.CompactUtil;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
@@ -33,6 +34,7 @@ public class InnerDTOSerializer implements CompactSerializer<InnerDTO> {
         boolean[] bools = in.readArrayOfBoolean("bools", new boolean[0]);
         byte[] bytes = in.readArrayOfInt8("bytes", new byte[0]);
         short[] shorts = in.readArrayOfInt16("shorts", new short[0]);
+        char[] chars = CompactUtil.charArrayFromShortArray(in.readArrayOfInt16("chars", new short[0]));
         int[] ints = in.readArrayOfInt32("ints", new int[0]);
         long[] longs = in.readArrayOfInt64("longs", new long[0]);
         float[] floats = in.readArrayOfFloat32("floats", new float[0]);
@@ -46,20 +48,23 @@ public class InnerDTOSerializer implements CompactSerializer<InnerDTO> {
         OffsetDateTime[] offsetDateTimes = in.readArrayOfTimestampWithTimezone("offsetDateTimes", new OffsetDateTime[0]);
         Boolean[] nullableBools = in.readArrayOfNullableBoolean("nullableBools", new Boolean[0]);
         Byte[] nullableBytes = in.readArrayOfNullableInt8("nullableBytes", new Byte[0]);
+        Short[] nullableCharactersAsShorts = in.readArrayOfNullableInt16("nullableCharacters", new Short[0]);
+        Character[] nullableCharacters = CompactUtil.characterArrayFromShortArray(nullableCharactersAsShorts);
         Short[] nullableShorts = in.readArrayOfNullableInt16("nullableShorts", new Short[0]);
         Integer[] nullableIntegers = in.readArrayOfNullableInt32("nullableIntegers", new Integer[0]);
         Long[] nullableLongs = in.readArrayOfNullableInt64("nullableLongs", new Long[0]);
         Float[] nullableFloats = in.readArrayOfNullableFloat32("nullableFloats", new Float[0]);
         Double[] nullableDoubles = in.readArrayOfNullableFloat64("nullableDoubles", new Double[0]);
-        return new InnerDTO(bools, bytes, shorts, ints, longs, floats, doubles, strings, namedDTOS,
+        return new InnerDTO(bools, bytes, chars, shorts, ints, longs, floats, doubles, strings, namedDTOS,
                 bigDecimals, localTimes, localDates, localDateTimes, offsetDateTimes, nullableBools, nullableBytes,
-                nullableShorts, nullableIntegers, nullableLongs, nullableFloats, nullableDoubles);
+                nullableCharacters, nullableShorts, nullableIntegers, nullableLongs, nullableFloats, nullableDoubles);
     }
 
     @Override
     public void write(@Nonnull CompactWriter out, @Nonnull InnerDTO object) {
         out.writeArrayOfBoolean("bools", object.bools);
         out.writeArrayOfInt8("bytes", object.bytes);
+        out.writeArrayOfInt16("chars", CompactUtil.charArrayAsShortArray(object.chars));
         out.writeArrayOfInt16("shorts", object.shorts);
         out.writeArrayOfInt32("ints", object.ints);
         out.writeArrayOfInt64("longs", object.longs);
@@ -74,6 +79,7 @@ public class InnerDTOSerializer implements CompactSerializer<InnerDTO> {
         out.writeArrayOfTimestampWithTimezone("offsetDateTimes", object.offsetDateTimes);
         out.writeArrayOfNullableBoolean("nullableBools", object.nullableBools);
         out.writeArrayOfNullableInt8("nullableBytes", object.nullableBytes);
+        out.writeArrayOfNullableInt16("nullableCharacters", CompactUtil.characterArrayAsShortArray(object.nullableCharacters));
         out.writeArrayOfNullableInt16("nullableShorts", object.nullableShorts);
         out.writeArrayOfNullableInt32("nullableIntegers", object.nullableIntegers);
         out.writeArrayOfNullableInt64("nullableLongs", object.nullableLongs);

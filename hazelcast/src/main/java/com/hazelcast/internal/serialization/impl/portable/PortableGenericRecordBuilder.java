@@ -343,7 +343,7 @@ public class PortableGenericRecordBuilder implements GenericRecordBuilder {
             if (!isClone) {
                 throw new HazelcastSerializationException("It is illegal to the overwrite the field");
             } else {
-                throw new HazelcastSerializationException("Field can only overwritten once with `cloneWithBuilder`");
+                throw new HazelcastSerializationException("Field can only overwritten once with `newBuilderWithClone`");
             }
         }
         objects[index] = value;

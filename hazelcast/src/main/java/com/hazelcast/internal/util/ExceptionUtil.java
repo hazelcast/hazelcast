@@ -38,7 +38,7 @@ import java.util.function.BiFunction;
  */
 public final class ExceptionUtil {
 
-    private static final String EXCEPTION_SEPARATOR = "------ submitted from ------";
+    static final String EXCEPTION_SEPARATOR = "------ submitted from ------";
 
     private static final BiFunction<Throwable, String, HazelcastException> HAZELCAST_EXCEPTION_WRAPPER = (throwable, message) -> {
         if (message != null) {
@@ -242,7 +242,7 @@ public final class ExceptionUtil {
                                                           ConstructorMethod constructorMethod) {
         try {
             MethodHandle constructor = MethodHandles.publicLookup()
-                    .findConstructor(exceptionClass, constructorMethod.signature());
+                                                    .findConstructor(exceptionClass, constructorMethod.signature());
             return constructorMethod.cloneWith(constructor, message, cause);
         } catch (ClassCastException | WrongMethodTypeException
                 | IllegalAccessException | SecurityException | NoSuchMethodException ignored) {
@@ -332,7 +332,8 @@ public final class ExceptionUtil {
      * stack-trace the cloned exception has the same
      * cause and the message as the original exception
      */
-    public static <T extends Throwable> T cloneExceptionWithFixedAsyncStackTrace(T original) {
+    @Nonnull
+    public static <T extends Throwable> T cloneExceptionWithFixedAsyncStackTrace(@Nonnull T original) {
         StackTraceElement[] fixedStackTrace = getFixedStackTrace(original, Thread.currentThread().getStackTrace());
 
         Class<? extends Throwable> exceptionClass = original.getClass();
@@ -345,7 +346,7 @@ public final class ExceptionUtil {
             return (T) clone;
         }
 
-        return null;
+        return original;
     }
 
     private static StackTraceElement[] getFixedStackTrace(Throwable throwable,

@@ -36,6 +36,7 @@ import com.hazelcast.client.impl.connection.tcp.ClientICMPManager;
 import com.hazelcast.client.impl.connection.tcp.HeartbeatManager;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnectionManager;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
@@ -378,6 +379,10 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             clusterService.start(configuredListeners);
             clientClusterViewListenerService.start();
 
+            configuredListeners.stream().filter(ClientConnectionProcessListener.class::isInstance)
+                    // private API for Management Center (cluster connection diagnostics)
+                    .map(ClientConnectionProcessListener.class::cast)
+                    .forEach(connectionManager::addClientConnectionProcessListener);
             connectionManager.start();
             startHeartbeat();
             startIcmpPing();

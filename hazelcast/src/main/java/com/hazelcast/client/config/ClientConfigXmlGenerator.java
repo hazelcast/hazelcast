@@ -141,6 +141,7 @@ public final class ClientConfigXmlGenerator {
         //Metrics
         metrics(gen, clientConfig.getMetricsConfig());
         instanceTrackingConfig(gen, clientConfig.getInstanceTrackingConfig());
+        sql(gen, clientConfig.getSqlConfig());
 
         //close HazelcastClient
         gen.close();
@@ -446,7 +447,7 @@ public final class ClientConfigXmlGenerator {
                             classNameOrImplClass(evictionConfig.getComparatorClassName(), evictionConfig.getComparator()));
                 queryCachePredicate(gen, queryCache.getPredicateConfig());
                 entryListeners(gen, queryCache.getEntryListenerConfigs());
-                IndexUtils.generateXml(gen, queryCache.getIndexConfigs());
+                IndexUtils.generateXml(gen, queryCache.getIndexConfigs(), false);
                 //close query-cache
                 gen.close();
             }
@@ -675,6 +676,12 @@ public final class ClientConfigXmlGenerator {
         gen.open("instance-tracking", "enabled", trackingConfig.isEnabled())
            .node("file-name", trackingConfig.getFileName())
            .node("format-pattern", trackingConfig.getFormatPattern())
+           .close();
+    }
+
+    private static void sql(XmlGenerator gen, ClientSqlConfig sqlConfig) {
+        gen.open("sql")
+           .node("resubmission-mode", sqlConfig.getResubmissionMode().name())
            .close();
     }
 

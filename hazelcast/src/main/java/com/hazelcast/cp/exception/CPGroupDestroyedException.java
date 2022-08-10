@@ -21,6 +21,8 @@ import com.hazelcast.cp.CPGroupId;
 /**
  * A {@code CPSubsystemException} which is thrown when a request is sent to
  * a destroyed CP group.
+ * This exception is used as an indicator for the caller's session invalidation
+ * for {@code FencedLock} and {@code Semaphore} data structures
  */
 public class CPGroupDestroyedException extends CPSubsystemException {
 

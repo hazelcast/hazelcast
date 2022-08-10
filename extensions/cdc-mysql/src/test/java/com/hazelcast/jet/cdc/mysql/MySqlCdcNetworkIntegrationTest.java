@@ -390,7 +390,7 @@ public class MySqlCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
         } catch (ExecutionException ee) {
             //job completed exceptionally, as expected, we check the details of it
             assertThat(ee)
-                    .hasRootCauseInstanceOf(JetException.class)
+                    .hasCauseInstanceOf(JetException.class)
                     .hasStackTraceContaining("Failed to connect to database");
         }
     }

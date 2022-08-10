@@ -30,7 +30,6 @@ import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.toLocalTime;
 
 public class JobSummary implements IdentifiedDataSerializable {
-
     private boolean isLightJob;
     private long jobId;
     private long executionId;
@@ -51,8 +50,7 @@ public class JobSummary implements IdentifiedDataSerializable {
             @Nonnull JobStatus status,
             long submissionTime,
             long completionTime,
-            String failureText,
-            SqlSummary sqlSummary
+            String failureText
     ) {
         this.isLightJob = isLightJob;
         this.jobId = jobId;

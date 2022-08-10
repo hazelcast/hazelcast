@@ -68,7 +68,7 @@ public class GenericRecordBuilderTest {
                                                    .setString("name", "foo")
                                                    .setInt32("myint", 123).build();
 
-        GenericRecordBuilder builder = record.cloneWithBuilder().setString("name", "foo2");
+        GenericRecordBuilder builder = record.newBuilderWithClone().setString("name", "foo2");
         assertThrows(HazelcastSerializationException.class, () -> builder.setString("name", "foo3"));
     }
 

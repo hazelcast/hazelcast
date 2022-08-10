@@ -39,12 +39,16 @@ if [ "$JAVA_VERSION" -ge "9" ]; then
     JDK_OPTS="\
         --add-modules java.se \
         --add-exports java.base/jdk.internal.ref=ALL-UNNAMED \
-        --add-exports jdk.management/com.ibm.lang.management.internal=ALL-UNNAMED \
         --add-opens java.base/java.lang=ALL-UNNAMED \
         --add-opens java.base/sun.nio.ch=ALL-UNNAMED \
         --add-opens java.management/sun.management=ALL-UNNAMED \
         --add-opens jdk.management/com.sun.management.internal=ALL-UNNAMED \
     "
+
+    VM_NAME=$(${JAVA} -XshowSettings:properties -version 2>&1 | grep java.vm.name | cut -d "=" -f2)
+    if [[ "$VM_NAME" =~ "OpenJ9" ]]; then
+        JDK_OPTS="$JDK_OPTS --add-exports jdk.management/com.ibm.lang.management.internal=ALL-UNNAMED"
+    fi
 fi
 
 if [ -n "${CLASSPATH}" ]; then

@@ -24,6 +24,7 @@ import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.Addresses;
 import com.hazelcast.client.impl.connection.ClientConnectionManager;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnectionManager;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.util.AddressHelper;
@@ -223,7 +224,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
         CountDownLatch testFinished = new CountDownLatch(1);
         AddressProvider addressProvider = new AddressProvider() {
             @Override
-            public Addresses loadAddresses() {
+            public Addresses loadAddresses(ClientConnectionProcessListener listener) {
                 if (waitFlag.get()) {
                     try {
                         testFinished.await();
@@ -231,7 +232,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
                         e.printStackTrace();
                     }
                 }
-                return AddressHelper.getSocketAddresses("127.0.0.1");
+                return AddressHelper.getSocketAddresses("127.0.0.1", listener);
             }
 
             @Override
@@ -246,7 +247,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
         };
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "3");
-        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(addressProvider, clientConfig);
+        HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(clientConfig, addressProvider);
 
 
         HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();

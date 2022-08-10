@@ -32,6 +32,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.hazelcast.jet.core.JetTestSupport.IDLE_MESSAGE;
 import static com.hazelcast.jet.core.JetTestSupport.wm;
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
 import static com.hazelcast.jet.impl.util.ProgressState.DONE;
@@ -94,6 +95,16 @@ public class ConcurrentInboundEdgeStreamTest {
     }
 
     @Test
+    public void when_oneQueueIsIdle_then_otherHasProgress() {
+        add(q2, IDLE_MESSAGE);
+        drainAndAssert(MADE_PROGRESS);
+        add(q1, 1);
+        drainAndAssert(MADE_PROGRESS, 1);
+        add(q1, wm(2));
+        drainAndAssert(MADE_PROGRESS, wm(2));
+    }
+
+    @Test
     public void when_oneEmitterWithNoProgress_then_noProgress() {
         add(q2, 1, DONE_ITEM);
         drainAndAssert(MADE_PROGRESS, 1);
@@ -116,8 +127,7 @@ public class ConcurrentInboundEdgeStreamTest {
 
         add(q1, wm(3));
         add(q2, wm(3));
-        drainAndAssert(MADE_PROGRESS, wm(2));
-        drainAndAssert(MADE_PROGRESS, wm(3));
+        drainAndAssert(MADE_PROGRESS, wm(2), wm(3));
     }
 
     @Test
@@ -128,7 +138,8 @@ public class ConcurrentInboundEdgeStreamTest {
 
         add(q1, 2);
         add(q2, barrier(0));
-        drainAndAssert(MADE_PROGRESS, 2, barrier(0));
+        drainAndAssert(MADE_PROGRESS, 2);
+        drainAndAssert(MADE_PROGRESS, barrier(0));
     }
 
     @Test
@@ -153,7 +164,8 @@ public class ConcurrentInboundEdgeStreamTest {
 
         add(q1, 1, barrier(0));
         add(q2, DONE_ITEM);
-        drainAndAssert(MADE_PROGRESS, 1, barrier(0));
+        drainAndAssert(MADE_PROGRESS, 1);
+        drainAndAssert(MADE_PROGRESS, barrier(0));
 
         add(q1, DONE_ITEM);
         drainAndAssert(DONE);
@@ -182,8 +194,7 @@ public class ConcurrentInboundEdgeStreamTest {
         add(q2, wm(1));
 
         // Then
-        drainAndAssert(MADE_PROGRESS, barrier(0));
-        drainAndAssert(MADE_PROGRESS, wm(1));
+        drainAndAssert(MADE_PROGRESS, barrier(0), wm(1));
     }
 
     @Test
@@ -232,6 +243,28 @@ public class ConcurrentInboundEdgeStreamTest {
 
         add(q2, DONE_ITEM);
         drainAndAssert(MADE_PROGRESS, wm(1));
+    }
+
+    @Test
+    public void test_wmInQ1AndItemInQ2InSingleDrain() {
+        add(q2, wm(1));
+        drainAndAssert(MADE_PROGRESS);
+
+        add(q1, wm(1));
+        add(q2, 1);
+        drainAndAssert(MADE_PROGRESS, 1);
+        drainAndAssert(MADE_PROGRESS, wm(1));
+    }
+
+    @Test
+    public void test_barrierInQ1AndItemInQ2InSingleDrain() {
+        add(q2, barrier(1));
+        drainAndAssert(MADE_PROGRESS);
+
+        add(q1, barrier(1));
+        add(q2, 1);
+        drainAndAssert(MADE_PROGRESS, 1);
+        drainAndAssert(MADE_PROGRESS, barrier(1));
     }
 
     private void drainAndAssert(ProgressState expectedState, Object... expectedItems) {

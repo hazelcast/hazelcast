@@ -232,7 +232,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
         // into `slidingWindow` and we can't modify the value because that would
         // disturb the value that we'll deduct from `slidingWindow` later on.
         if (frameTs < nextWinToEmit) {
-            logLateEvent(getLogger(), nextWinToEmit, item);
+            logLateEvent(getLogger(), (byte) 0, nextWinToEmit, item);
             lateEventsDropped.inc();
             return true;
         }
@@ -247,6 +247,7 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark wm) {
+        keyedWatermarkCheck(wm);
         return wmFlatMapper.tryProcess(wm);
     }
 

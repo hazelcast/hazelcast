@@ -72,7 +72,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
         AbstractSqlResult result = (AbstractSqlResult) response;
 
         if (result.updateCount() >= 0) {
-            return SqlExecuteCodec.encodeResponse(null, null, result.updateCount(), null);
+            return SqlExecuteCodec.encodeResponse(null, null, result.updateCount(), null, false);
         } else {
             SqlServiceImpl sqlService = nodeEngine.getSqlService();
 
@@ -87,7 +87,8 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
                     result.getRowMetadata().getColumns(),
                     page,
                     -1,
-                    null
+                    null,
+                    result.isInfiniteRows()
             );
         }
     }
@@ -98,7 +99,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
             return super.encodeException(throwable);
         }
 
-        nodeEngine.getSqlService().getInternalService().getClientStateRegistry().closeOnError(parameters.queryId);
+        nodeEngine.getSqlService().closeOnError(parameters.queryId);
 
         if (throwable instanceof AccessControlException) {
             return super.encodeException(throwable);
@@ -112,7 +113,8 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
                 null,
                 null,
                 -1,
-                error
+                error,
+                false
         );
     }
 

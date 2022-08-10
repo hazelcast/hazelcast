@@ -37,16 +37,17 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static com.hazelcast.test.starter.HazelcastProxyFactory.proxyObjectForStarter;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.debug;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.rethrowGuardianException;
 import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 import static com.hazelcast.test.starter.ReflectionUtils.setFieldValueReflectively;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.UuidUtil.newUnsecureUuidString;
 import static java.lang.Thread.currentThread;
 import static java.lang.reflect.Proxy.isProxyClass;
 import static org.mockito.Mockito.mock;
@@ -397,7 +398,8 @@ public class HazelcastStarter {
             }
             synchronized (this) {
                 File versionDir = getOrCreateVersionDirectory(versionSpec(version, enterprise));
-                File[] files = HazelcastVersionLocator.locateVersion(version, versionDir, enterprise);
+                Map<HazelcastVersionLocator.Artifact, File> files =
+                        HazelcastVersionLocator.locateVersion(version, versionDir, enterprise);
                 List<URL> urls = fileIntoUrls(files);
                 urls.addAll(additionalJars);
                 ClassLoader parentClassloader = HazelcastStarter.class.getClassLoader();
@@ -409,9 +411,9 @@ public class HazelcastStarter {
             }
         }
 
-        private static List<URL> fileIntoUrls(File[] files) {
-            List<URL> urls = new ArrayList<>(files.length);
-            for (File file : files) {
+        private static List<URL> fileIntoUrls(Map<HazelcastVersionLocator.Artifact, File> files) {
+            List<URL> urls = new ArrayList<>(files.size());
+            for (File file : files.values()) {
                 try {
                     urls.add(file.toURI().toURL());
                 } catch (MalformedURLException e) {

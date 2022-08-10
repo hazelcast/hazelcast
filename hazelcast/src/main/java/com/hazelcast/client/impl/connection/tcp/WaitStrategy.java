@@ -62,7 +62,6 @@ public class WaitStrategy {
         attempt++;
         long currentTimeMillis = Clock.currentTimeMillis();
         long timePassed = currentTimeMillis - clusterConnectAttemptBegin;
-
         if (timePassed > clusterConnectTimeoutMillis) {
             logger.warning(String.format("Unable to get live cluster connection, cluster connect timeout (%s) is "
                     + "reached. Attempt %d.", clusterConnectTimeoutText, attempt));

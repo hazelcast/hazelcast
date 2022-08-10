@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.LifecycleService;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -49,6 +51,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -71,10 +74,18 @@ public class TableResolverImplTest {
     @Mock
     private TableListener listener;
 
+    @Mock
+    private HazelcastInstance hazelcastInstance;
+
+    @Mock
+    private LifecycleService lifecycleService;
+
     @Before
     public void before() {
         MockitoAnnotations.openMocks(this);
 
+        when(nodeEngine.getHazelcastInstance()).thenReturn(hazelcastInstance);
+        when(hazelcastInstance.getLifecycleService()).thenReturn(lifecycleService);
         catalog = new TableResolverImpl(nodeEngine, tableStorage, connectorCache);
         catalog.registerListener(listener);
     }

@@ -22,6 +22,7 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Vertex;
@@ -112,7 +113,9 @@ public class LightMasterContext {
         }
 
         if (logger.isFineEnabled()) {
-            String dotRepresentation = dag.toDotString();
+            JetConfig jetConfig = nodeEngine.getConfig().getJetConfig();
+            String dotRepresentation = dag.toDotString(jetConfig.getCooperativeThreadCount(),
+                    jetConfig.getDefaultEdgeConfig().getQueueSize());
             logFine(logger, "Start executing light job %s, execution graph in DOT format:\n%s"
                             + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.",
                     jobIdString, dotRepresentation);

@@ -63,7 +63,7 @@ public class PutBackupOperation
     }
 
     @Override
-    protected void afterRunInternal() {
+    public void afterRunInternal() {
         evict(dataKey);
         publishWanUpdate(dataKey, record.getValue());
 

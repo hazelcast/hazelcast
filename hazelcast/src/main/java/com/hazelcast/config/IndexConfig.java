@@ -57,6 +57,8 @@ public class IndexConfig implements IdentifiedDataSerializable {
 
     private BitmapIndexOptions bitmapIndexOptions;
 
+    private BTreeIndexConfig bTreeIndexConfig = new BTreeIndexConfig();
+
     public IndexConfig() {
         // No-op.
     }
@@ -90,6 +92,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
         this.name = other.name;
         this.type = other.type;
         this.bitmapIndexOptions = other.bitmapIndexOptions == null ? null : new BitmapIndexOptions(other.bitmapIndexOptions);
+        this.bTreeIndexConfig = other.bTreeIndexConfig == null ? null : new BTreeIndexConfig(other.bTreeIndexConfig);
 
         for (String attribute : other.getAttributes()) {
             addAttributeInternal(attribute);
@@ -218,6 +221,24 @@ public class IndexConfig implements IdentifiedDataSerializable {
         return this;
     }
 
+    /**
+     * Provides access to index options specific to B-Tree indexes.
+     *
+     * @return the b-tree index configuration associated with this config.
+     */
+    public BTreeIndexConfig getBTreeIndexConfig() {
+        return bTreeIndexConfig;
+    }
+
+    /**
+     * Sets B-Tree config of this index to the specified configuration.
+     * @param bTreeIndexConfig new b-tree index configuration to set.
+     */
+    public IndexConfig setBTreeIndexConfig(BTreeIndexConfig bTreeIndexConfig) {
+        this.bTreeIndexConfig = bTreeIndexConfig;
+        return this;
+    }
+
     @Override
     public int getFactoryId() {
         return ConfigDataSerializerHook.F_ID;
@@ -268,6 +289,10 @@ public class IndexConfig implements IdentifiedDataSerializable {
             return false;
         }
 
+        if (!getBTreeIndexConfig().equals(that.getBTreeIndexConfig())) {
+            return false;
+        }
+
         return getAttributes().equals(that.getAttributes());
     }
 
@@ -278,6 +303,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
         result = 31 * result + (type != null ? type.hashCode() : 0);
         result = 31 * result + getAttributes().hashCode();
         result = 31 * result + getBitmapIndexOptions().hashCode();
+        result = 31 * result + getBTreeIndexConfig().hashCode();
 
         return result;
     }
@@ -287,6 +313,9 @@ public class IndexConfig implements IdentifiedDataSerializable {
         String string = "IndexConfig{name=" + name + ", type=" + type + ", attributes=" + getAttributes();
         if (bitmapIndexOptions != null && !bitmapIndexOptions.areDefault()) {
             string += ", bitmapIndexOptions=" + bitmapIndexOptions;
+        }
+        if (bTreeIndexConfig != null) {
+            string += ", bTreeIndexConfig=" + bTreeIndexConfig;
         }
         return string + '}';
     }

@@ -17,6 +17,7 @@
 package com.hazelcast.client.util;
 
 import com.hazelcast.client.impl.connection.Addresses;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.util.AddressUtil;
@@ -49,7 +50,7 @@ public final class AddressHelper {
                 : addressHolder.getAddress();
     }
 
-    public static Addresses getSocketAddresses(String address) {
+    public static Addresses getSocketAddresses(String address, ClientConnectionProcessListener listener) {
         AddressHolder addressHolder = AddressUtil.getAddressHolder(address, -1);
         String scopedAddress = getScopedHostName(addressHolder);
 
@@ -58,10 +59,11 @@ public final class AddressHelper {
         if (port == -1) {
             maxPortTryCount = MAX_PORT_TRIES;
         }
-        return getPossibleSocketAddresses(port, scopedAddress, maxPortTryCount);
+        return getPossibleSocketAddresses(port, scopedAddress, maxPortTryCount, listener);
     }
 
-    public static Addresses getPossibleSocketAddresses(int port, String scopedAddress, int portTryCount) {
+    public static Addresses getPossibleSocketAddresses(int port, String scopedAddress, int portTryCount,
+                                                       ClientConnectionProcessListener listener) {
         InetAddress inetAddress = null;
         try {
             inetAddress = InetAddress.getByName(scopedAddress);
@@ -80,6 +82,7 @@ public final class AddressHelper {
                 try {
                     addressList.add(new Address(scopedAddress, possiblePort + i));
                 } catch (UnknownHostException ignored) {
+                    listener.hostNotFound(scopedAddress);
                     Logger.getLogger(AddressHelper.class).finest("Address not available", ignored);
                 }
             }
@@ -95,7 +98,6 @@ public final class AddressHelper {
                 }
             }
         }
-
         return toAddresses(addressList);
     }
 
