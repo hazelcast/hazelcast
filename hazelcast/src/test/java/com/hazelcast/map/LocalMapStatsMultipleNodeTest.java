@@ -143,17 +143,26 @@ public class LocalMapStatsMultipleNodeTest extends HazelcastTestSupport {
             map.set(i, i);
             assertEquals(i, map.get(i));
         }
-        LocalMapStats localMapStats = map.getLocalMapStats();
-        assertEquals(2000, localMapStats.getHits());
-        assertEquals(1000, localMapStats.getPutOperationCount());
-        assertEquals(1000, localMapStats.getSetOperationCount());
-        assertEquals(1000, localMapStats.getGetOperationCount());
+
+        // eviction happens after response return, this
+        // is why we have eventual assertion here.
+        assertTrueEventually(() -> {
+            LocalMapStats localMapStats = map.getLocalMapStats();
+            assertEquals(2000, localMapStats.getHits());
+            assertEquals(1000, localMapStats.getPutOperationCount());
+            assertEquals(1000, localMapStats.getSetOperationCount());
+            assertEquals(1000, localMapStats.getGetOperationCount());
+        });
+
         assertOpenEventually(entryEvictedLatch);
-        localMapStats = map.getLocalMapStats();
-        assertEquals(2000, localMapStats.getHits());
-        assertEquals(1000, localMapStats.getPutOperationCount());
-        assertEquals(1000, localMapStats.getSetOperationCount());
-        assertEquals(1000, localMapStats.getGetOperationCount());
+
+        assertTrueEventually(() -> {
+            LocalMapStats localMapStats = map.getLocalMapStats();
+            assertEquals(2000, localMapStats.getHits());
+            assertEquals(1000, localMapStats.getPutOperationCount());
+            assertEquals(1000, localMapStats.getSetOperationCount());
+            assertEquals(1000, localMapStats.getGetOperationCount());
+        });
     }
 
     private void assertBackupEntryCount(final long expectedBackupEntryCount, final String mapName,

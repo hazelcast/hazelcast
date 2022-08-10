@@ -343,6 +343,7 @@
                 <hz:map-store enabled="true"
                               class-name="com.hazelcast.spring.DummyStore"
                               write-delay-seconds="0"
+                              offload="false"
                               initial-mode="EAGER"
                               write-batch-size="10"/>
                 <hz:near-cache time-to-live-seconds="0"

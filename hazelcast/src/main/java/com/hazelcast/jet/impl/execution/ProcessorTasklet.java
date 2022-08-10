@@ -720,12 +720,21 @@ public class ProcessorTasklet implements Tasklet {
             mContext.collect(descriptorWithOrdinal, EMITTED_COUNT, ProbeLevel.INFO, ProbeUnit.COUNT, emittedCounts.get(i));
         }
 
-        for (Byte key : coalescers.keys()) {
-            MetricDescriptor keyedDesc = descriptor.copy().withDiscriminator("key", Byte.toString(key));
-            mContext.collect(keyedDesc, TOP_OBSERVED_WM, ProbeLevel.INFO, ProbeUnit.MS, coalescers.topObservedWm(key));
-            mContext.collect(keyedDesc, COALESCED_WM, ProbeLevel.INFO, ProbeUnit.MS, coalescers.coalescedWm(key));
-            mContext.collect(keyedDesc, LAST_FORWARDED_WM, ProbeLevel.INFO, ProbeUnit.MS, outbox.lastForwardedWm(key));
-            mContext.collect(keyedDesc, LAST_FORWARDED_WM_LATENCY, ProbeLevel.INFO, ProbeUnit.MS, lastForwardedWmLatency(key));
+        if (!coalescers.keys().isEmpty()) {
+            for (Byte key : coalescers.keys()) {
+                MetricDescriptor keyedDesc = descriptor.copy().withDiscriminator("key", Byte.toString(key));
+                mContext.collect(keyedDesc, TOP_OBSERVED_WM, ProbeLevel.INFO, ProbeUnit.MS, coalescers.topObservedWm(key));
+                mContext.collect(keyedDesc, COALESCED_WM, ProbeLevel.INFO, ProbeUnit.MS, coalescers.coalescedWm(key));
+                mContext.collect(keyedDesc, LAST_FORWARDED_WM, ProbeLevel.INFO, ProbeUnit.MS, outbox.lastForwardedWm(key));
+                long lastForwardedWmLatency = lastForwardedWmLatency(key);
+                mContext.collect(keyedDesc, LAST_FORWARDED_WM_LATENCY, ProbeLevel.INFO, ProbeUnit.MS, lastForwardedWmLatency);
+            }
+        } else {
+            MetricDescriptor keyedDesc = descriptor.copy().withDiscriminator("key", "0");
+            mContext.collect(keyedDesc, TOP_OBSERVED_WM, ProbeLevel.INFO, ProbeUnit.MS, Long.MIN_VALUE);
+            mContext.collect(keyedDesc, COALESCED_WM, ProbeLevel.INFO, ProbeUnit.MS, Long.MIN_VALUE);
+            mContext.collect(keyedDesc, LAST_FORWARDED_WM, ProbeLevel.INFO, ProbeUnit.MS, Long.MIN_VALUE);
+            mContext.collect(keyedDesc, LAST_FORWARDED_WM_LATENCY, ProbeLevel.INFO, ProbeUnit.MS, 0L);
         }
 
         mContext.collect(descriptor, this);

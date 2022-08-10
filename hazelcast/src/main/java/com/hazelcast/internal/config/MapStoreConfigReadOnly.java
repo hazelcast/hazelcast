@@ -84,4 +84,9 @@ public class MapStoreConfigReadOnly extends MapStoreConfig {
     public MapStoreConfig setWriteCoalescing(boolean writeCoalescing) {
         throw new UnsupportedOperationException("This config is read-only");
     }
+
+    @Override
+    public MapStoreConfig setOffload(boolean offload) {
+        throw new UnsupportedOperationException("This config is read-only");
+    }
 }

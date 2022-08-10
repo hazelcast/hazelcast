@@ -16,173 +16,367 @@
 
 package com.hazelcast.jet.sql.impl.aggregate;
 
+import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.internal.json.Json;
+import com.hazelcast.internal.json.JsonObject;
+import com.hazelcast.internal.json.JsonValue;
 import com.hazelcast.jet.sql.SqlJsonTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
-import junitparams.JUnitParamsRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.experimental.runners.Enclosed;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+
+import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.core.test.TestSupport.SAME_ITEMS_ANY_ORDER;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@RunWith(JUnitParamsRunner.class)
-public class JsonSqlAggregateTest extends SqlJsonTestSupport {
-    private static SqlService sqlService;
+@RunWith(Enclosed.class)
+public class JsonSqlAggregateTest {
 
-    @BeforeClass
-    public static void setUpClass() {
-        initialize(2, null);
-        sqlService = instance().getSql();
+    @RunWith(HazelcastSerialClassRunner.class)
+    @Category({QuickTest.class, ParallelJVMTest.class})
+    public static class JsonArrayAggregationTest extends SqlJsonTestSupport {
+        private static SqlService sqlService;
+
+        @BeforeClass
+        public static void setUpClass() {
+            initialize(2, null);
+            sqlService = instance().getSql();
+        }
+
+        @Test
+        public void test_jsonArrayAgg_emptyResult() {
+            String name = createTable();
+
+            assertRowsAnyOrder("SELECT JSON_ARRAYAGG(name) FROM " + name + " WHERE 1=2", singletonList(new Row((Object) null)));
+            assertRowsAnyOrder("SELECT JSON_ARRAYAGG(name NULL ON NULL) FROM " + name + " WHERE 1=2", singletonList(new Row((Object) null)));
+            assertRowsAnyOrder("SELECT JSON_ARRAYAGG(name ABSENT ON NULL) FROM " + name + " WHERE 1=2", singletonList(new Row((Object) null)));
+            assertRowsAnyOrder("SELECT JSON_ARRAYAGG(name) FROM " + name + " WHERE name IS NULL", singletonList(new Row((Object) null)));
+        }
+
+        @Test
+        public void test_jsonArrayAgg_nulls() {
+            String name = createTable();
+
+            assertRowsAnyOrder("SELECT JSON_ARRAYAGG(name NULL ON NULL) FROM " + name + " WHERE name IS NULL",
+                    singletonList(new Row(json("[null,null]"))));
+        }
+
+        @Test
+        public void test_jsonArrayAgg_unordered() {
+            String name = createTable();
+            assertRowsAnyOrder(
+                    "SELECT JSON_ARRAYAGG(name ABSENT ON NULL) FROM " + name + " WHERE name = 'Alice'",
+                    singletonList(
+                            new Row(json("[\"Alice\",\"Alice\",\"Alice\"]"))
+                    )
+            );
+
+            assertRowsAnyOrder(
+                    "SELECT name, JSON_ARRAYAGG(distance) FROM " + name + " WHERE name = 'Bob' GROUP BY name",
+                    singletonList(new Row("Bob", json("[3]")))
+            );
+        }
+
+        @Test
+        public void test_jsonArrayAgg_orderedBySameColumn() {
+            String name = createTable();
+
+            assertRowsAnyOrder(
+                    "SELECT JSON_ARRAYAGG(name ORDER BY name ABSENT ON NULL) FROM " + name,
+                    singletonList(
+                            new Row(json("[\"Alice\",\"Alice\",\"Alice\",\"Bob\"]"))
+                    )
+            );
+
+            assertRowsAnyOrder(
+                    "SELECT JSON_ARRAYAGG(name ORDER BY name NULL ON NULL) FROM " + name,
+                    singletonList(
+                            new Row(json("[null,null,\"Alice\",\"Alice\",\"Alice\",\"Bob\"]"))
+                    )
+            );
+
+            assertRowsAnyOrder(
+                    "SELECT JSON_ARRAYAGG(name ORDER BY name) FROM " + name,
+                    singletonList(
+                            new Row(json("[\"Alice\",\"Alice\",\"Alice\",\"Bob\"]"))
+                    )
+            );
+        }
+
+        @Test
+        public void test_jsonArrayAgg_orderedByDifferentColumn() {
+            String name = createTable();
+
+            assertRowsAnyOrder(
+                    "SELECT JSON_ARRAYAGG(name ORDER BY distance ABSENT ON NULL) FROM " + name,
+                    singletonList(
+                            new Row(json("[\"Alice\",\"Bob\",\"Alice\",\"Alice\"]"))
+                    )
+            );
+
+            assertRowsAnyOrder(
+                    "SELECT JSON_ARRAYAGG(name ORDER BY distance NULL ON NULL) FROM " + name,
+                    singletonList(
+                            new Row(json("[\"Alice\",\"Bob\",\"Alice\",null,\"Alice\",null]"))
+                    )
+            );
+
+            assertRowsAnyOrder(
+                    "SELECT JSON_ARRAYAGG(name ORDER BY distance) FROM " + name,
+                    singletonList(
+                            new Row(json("[\"Alice\",\"Bob\",\"Alice\",\"Alice\"]"))
+                    )
+            );
+        }
+
+        @Test
+        public void test_jsonArrayAgg_withGroupBy() {
+            String name = createTable();
+
+            assertRowsAnyOrder(
+                    "SELECT name, JSON_ARRAYAGG(distance ORDER BY distance) FROM " + name + " GROUP BY name",
+                    asList(
+                            new Row("Alice", json("[1,4,7]")),
+                            new Row("Bob", json("[3]")),
+                            new Row(null, json("[6,8]"))
+
+                    )
+            );
+
+            assertRowsAnyOrder(
+                    "SELECT name, JSON_ARRAYAGG(distance ORDER BY distance DESC) FROM " + name + " GROUP BY name",
+                    asList(
+                            new Row("Alice", json("[7,4,1]")),
+                            new Row("Bob", json("[3]")),
+                            new Row(null, json("[8,6]"))
+
+                    )
+            );
+        }
+
+        @Test
+        public void test_jsonArrayAgg_multiple() {
+            String name = createTable();
+
+            assertRowsAnyOrder(
+                    "SELECT name, " +
+                            "JSON_ARRAYAGG(distance ORDER BY distance DESC), " +
+                            "JSON_ARRAYAGG(distance ORDER BY distance ASC) " +
+                            "FROM " + name + " " +
+                            "GROUP BY name",
+                    asList(
+                            new Row("Alice", json("[7,4,1]"), json("[1,4,7]")),
+                            new Row("Bob", json("[3]"), json("[3]")),
+                            new Row(null, json("[8,6]"), json("[6,8]"))
+
+                    )
+            );
+        }
+
+        private String createTable() {
+            String name = randomName();
+            TestBatchSqlConnector.create(
+                    sqlService,
+                    name,
+                    asList("name", "distance"),
+                    asList(VARCHAR, INTEGER),
+                    asList(new String[]{"Alice", "1"},
+                            new String[]{"Bob", "3"},
+                            new String[]{"Alice", "4"},
+                            new String[]{null, "6"},
+                            new String[]{"Alice", "7"},
+                            new String[]{null, "8"})
+            );
+            return name;
+        }
     }
 
-    @Test
-    public void test_jsonArrayAgg_emptyResult() {
-        String name = createTable();
+    @RunWith(HazelcastSerialClassRunner.class)
+    @Category({QuickTest.class, ParallelJVMTest.class})
+    public static class JsonObjectAggregationTest extends SqlJsonTestSupport {
+        private static SqlService sqlService;
 
-        assertRowsAnyOrder("SELECT JSON_ARRAYAGG(name) FROM " + name + " WHERE 1=2", singletonList(new Row((Object) null)));
-        assertRowsAnyOrder("SELECT JSON_ARRAYAGG(name NULL ON NULL) FROM " + name + " WHERE 1=2", singletonList(new Row((Object) null)));
-        assertRowsAnyOrder("SELECT JSON_ARRAYAGG(name ABSENT ON NULL) FROM " + name + " WHERE 1=2", singletonList(new Row((Object) null)));
-        assertRowsAnyOrder("SELECT JSON_ARRAYAGG(name) FROM " + name + " WHERE name IS NULL", singletonList(new Row((Object) null)));
-    }
+        @BeforeClass
+        public static void setUpClass() {
+            initialize(2, null);
+            sqlService = instance().getSql();
+        }
 
-    @Test
-    public void test_jsonArrayAgg_nulls() {
-        String name = createTable();
+        @Test
+        public void when_jsonObjectAgg_jsonInputClause_then_fail() {
+            assertThatThrownBy(() -> sqlService.execute("SELECT JSON_OBJECTAGG('k' VALUE 'v' FORMAT JSON)"))
+                    .hasMessage("From line 1, column 33 to line 1, column 47: JSON VALUE EXPRESSION not supported");
+        }
 
-        assertRowsAnyOrder("SELECT JSON_ARRAYAGG(name NULL ON NULL) FROM " + name + " WHERE name IS NULL",
-                singletonList(new Row(json("[null,null]"))));
-    }
+        @Test
+        public void when_jsonObjectAgg_keyUniquenessConstraint_then_fail() {
+            assertThatThrownBy(() -> sqlService.execute("SELECT JSON_OBJECTAGG('k' VALUE 'v' WITH UNIQUE KEYS)"))
+                    .hasMessageStartingWith("Encountered \"WITH\" at line 1, column 37");
+        }
 
-    @Test
-    public void test_jsonArrayAgg_unordered() {
-        String name = createTable();
-        assertRowsAnyOrder(
-                "SELECT JSON_ARRAYAGG(name ABSENT ON NULL) FROM " + name + " WHERE name = 'Alice'",
-                singletonList(
-                        new Row(json("[\"Alice\",\"Alice\",\"Alice\"]"))
-                )
-        );
+        @Test
+        public void when_jsonObjectAgg_outputClause_then_fail() {
+            assertThatThrownBy(() -> sqlService.execute("SELECT JSON_OBJECTAGG('k' VALUE 'v' RETURNING VARCHAR)"))
+                    .hasMessageStartingWith("Encountered \"RETURNING\" at line 1, column 37.");
+        }
 
-        assertRowsAnyOrder(
-                "SELECT name, JSON_ARRAYAGG(distance) FROM " + name + " WHERE name = 'Bob' GROUP BY name",
-                singletonList(new Row("Bob", json("[3]")))
-        );
-    }
+        @Test
+        public void test_literal() {
+            assertJsonRowsAnyOrder("SELECT JSON_OBJECTAGG('k' VALUE 'v')", singletonList(new Row(json("{\"k\":\"v\"}"))));
+        }
 
-    @Test
-    public void test_jsonArrayAgg_orderedBySameColumn() {
-        String name = createTable();
+        @Test
+        public void test_alternateSyntax() {
+            assertJsonRowsAnyOrder("SELECT JSON_OBJECTAGG(key 'k' value 'v')", singletonList(new Row(json("{\"k\":\"v\"}"))));
+            assertJsonRowsAnyOrder("SELECT JSON_OBJECTAGG('k':'v')", singletonList(new Row(json("{\"k\":\"v\"}"))));
+        }
 
-        assertRowsAnyOrder(
-                "SELECT JSON_ARRAYAGG(name ORDER BY name ABSENT ON NULL) FROM " + name,
-                singletonList(
-                        new Row(json("[\"Alice\",\"Alice\",\"Alice\",\"Bob\"]"))
-                )
-        );
+        @Test
+        public void test_nullKey() {
+            // null literal key
+            assertThatThrownBy(() -> sqlService.execute("SELECT JSON_OBJECTAGG(NULL VALUE 'v')").iterator().next())
+                    .hasMessageContaining("NULL key is not supported for JSON_OBJECTAGG");
 
-        assertRowsAnyOrder(
-                "SELECT JSON_ARRAYAGG(name ORDER BY name NULL ON NULL) FROM " + name,
-                singletonList(
-                        new Row(json("[null,null,\"Alice\",\"Alice\",\"Alice\",\"Bob\"]"))
-                )
-        );
+            TestBatchSqlConnector.create(sqlService, "m1", asList("k", "v"), asList(VARCHAR, VARCHAR),
+                    singletonList(new String[]{null, "v1"}));
 
-        assertRowsAnyOrder(
-                "SELECT JSON_ARRAYAGG(name ORDER BY name) FROM " + name,
-                singletonList(
-                        new Row(json("[\"Alice\",\"Alice\",\"Alice\",\"Bob\"]"))
-                )
-        );
-    }
+            // null column value for key
+            assertThatThrownBy(() -> sqlService.execute("SELECT JSON_OBJECTAGG(k VALUE v) FROM m1").iterator().next())
+                    .hasMessageContaining("NULL key is not supported for JSON_OBJECTAGG");
+        }
 
-    @Test
-    public void test_jsonArrayAgg_orderedByDifferentColumn() {
-        String name = createTable();
+        @Test
+        public void test_nullValueLiteral() {
+            assertJsonRowsAnyOrder("SELECT JSON_OBJECTAGG('k' VALUE NULL)", singletonList(new Row(json("{\"k\":null}"))));
+            // oracle returns {} in this case, but NULL is correct
+            assertJsonRowsAnyOrder("SELECT JSON_OBJECTAGG('k' VALUE NULL ABSENT ON NULL)", singletonList(new Row((Object) null)));
+            assertJsonRowsAnyOrder("SELECT JSON_OBJECTAGG('k' VALUE NULL ABSENT ON NULL) " +
+                    "FROM table(generate_series(1, 1)) " +
+                    "WHERE 1=2", singletonList(new Row((Object) null)));
+        }
 
-        assertRowsAnyOrder(
-                "SELECT JSON_ARRAYAGG(name ORDER BY distance ABSENT ON NULL) FROM " + name,
-                singletonList(
-                        new Row(json("[\"Alice\",\"Bob\",\"Alice\",\"Alice\"]"))
-                )
-        );
+        @Test
+        public void test_duplicateKey() {
+            TestBatchSqlConnector.create(sqlService, "m", asList("k", "v"), asList(VARCHAR, VARCHAR),
+                    asList(new String[]{"k", "v1"},
+                            new String[]{"k", "v2"}));
 
-        assertRowsAnyOrder(
-                "SELECT JSON_ARRAYAGG(name ORDER BY distance NULL ON NULL) FROM " + name,
-                singletonList(
-                        new Row(json("[\"Alice\",\"Bob\",\"Alice\",null,\"Alice\",null]"))
-                )
-        );
+            assertJsonRowsAnyOrder("SELECT JSON_OBJECTAGG(k VALUE v) FROM m", singletonList(new Row(json("{\"k\":\"v1\",\"k\":\"v2\"}"))));
+        }
 
-        assertRowsAnyOrder(
-                "SELECT JSON_ARRAYAGG(name ORDER BY distance) FROM " + name,
-                singletonList(
-                        new Row(json("[\"Alice\",\"Bob\",\"Alice\",\"Alice\"]"))
-                )
-        );
-    }
+        @Test
+        public void test_jsonObjectAgg() {
+            String name = createTable();
 
-    @Test
-    public void test_jsonArrayAgg_withGroupBy() {
-        String name = createTable();
+            assertJsonRowsAnyOrder(
+                    "SELECT name, JSON_OBJECTAGG(k VALUE v ABSENT ON NULL) FROM " + name + " WHERE name IS NOT NULL GROUP BY name",
+                    asList(
+                            new Row("Alice", json("{ \"department\" : \"dep1\", \"job\" : \"job1\", \"description\" : \"desc1\" }")),
+                            new Row("Bob", json("{ \"department\" : \"dep2\", \"job\" : \"job2\" }"))
+                    )
+            );
 
-        assertRowsAnyOrder(
-                "SELECT name, JSON_ARRAYAGG(distance ORDER BY distance) FROM " + name + " GROUP BY name",
-                asList(
-                        new Row("Alice", json("[1,4,7]")),
-                        new Row("Bob", json("[3]")),
-                        new Row(null, json("[6,8]"))
+            assertJsonRowsAnyOrder(
+                    "SELECT name, JSON_OBJECTAGG(k VALUE v NULL ON NULL) FROM " + name + " WHERE name IS NOT NULL GROUP BY name",
+                    asList(
+                            new Row("Alice", json("{ \"department\" : \"dep1\", \"job\" : \"job1\", \"description\" : \"desc1\" }")),
+                            new Row("Bob", json("{ \"department\" : \"dep2\", \"job\" : \"job2\", \"description\" : null }"))
+                    )
+            );
+        }
 
-                )
-        );
+        @Test
+        public void test_jsonObjectAgg_whenReturnsNull() {
+            String name = createTable();
 
-        assertRowsAnyOrder(
-                "SELECT name, JSON_ARRAYAGG(distance ORDER BY distance DESC) FROM " + name + " GROUP BY name",
-                asList(
-                        new Row("Alice", json("[7,4,1]")),
-                        new Row("Bob", json("[3]")),
-                        new Row(null, json("[8,6]"))
+            assertRowsAnyOrder(
+                    "SELECT name, JSON_OBJECTAGG(k VALUE v ABSENT ON NULL) FROM " + name + " WHERE name = 'Bob' AND k = 'description' GROUP BY name",
+                    asList(new Row("Bob", null))
+            );
+        }
 
-                )
-        );
-    }
+        private static String createTable() {
+            String name = randomName();
+            TestBatchSqlConnector.create(
+                    sqlService,
+                    name,
+                    asList("name", "k", "v"),
+                    asList(VARCHAR, VARCHAR, VARCHAR),
+                    asList(new String[]{"Alice", "department", "dep1"},
+                            new String[]{"Bob", "department", "dep2"},
+                            new String[]{"Alice", "job", "job1"},
+                            new String[]{null, "department", "dep2"},
+                            new String[]{"Bob", "job", "job2"},
+                            new String[]{null, "job", "job1"},
+                            new String[]{null, null, "desc2"},
+                            new String[]{"Bob", "description", null},
+                            new String[]{"Alice", "description", "desc1"})
+            );
+            return name;
+        }
 
-    @Test
-    public void test_jsonArrayAgg_multiple() {
-        String name = createTable();
+        void assertJsonRowsAnyOrder(String sql, Collection<Row> rows) {
+            for (Row row : rows) {
+                convertRow(row);
+            }
 
-        assertRowsAnyOrder(
-                "SELECT name, " +
-                        "JSON_ARRAYAGG(distance ORDER BY distance DESC), " +
-                        "JSON_ARRAYAGG(distance ORDER BY distance ASC) " +
-                        "FROM " + name + " " +
-                        "GROUP BY name",
-                asList(
-                        new Row("Alice", json("[7,4,1]"), json("[1,4,7]")),
-                        new Row("Bob", json("[3]"), json("[3]")),
-                        new Row(null, json("[8,6]"), json("[6,8]"))
+            List<Row> actualRows = new ArrayList<>();
+            try (SqlResult result = sqlService.execute(sql)) {
+                result.iterator().forEachRemaining(row -> actualRows.add(convertRow(new Row(row))));
+            }
+            assertThat(actualRows).containsExactlyInAnyOrderElementsOf(rows);
+        }
 
-                )
-        );
-    }
+        private static Row convertRow(Row row) {
+            Object[] rowObj = row.getValues();
+            for (int i = 0; i < rowObj.length; i++) {
+                if (rowObj[i] instanceof HazelcastJsonValue) {
+                    rowObj[i] = new JsonObjectWithRelaxedEquality((HazelcastJsonValue) rowObj[i]);
+                }
+            }
+            return row;
+        }
 
-    private static String createTable() {
-        String name = randomName();
-        TestBatchSqlConnector.create(
-                sqlService,
-                name,
-                asList("name", "distance"),
-                asList(VARCHAR, INTEGER),
-                asList(new String[]{"Alice", "1"},
-                        new String[]{"Bob", "3"},
-                        new String[]{"Alice", "4"},
-                        new String[]{null, "6"},
-                        new String[]{"Alice", "7"},
-                        new String[]{null, "8"})
-        );
-        return name;
+        /**
+         * A JSON value with equals method that returns true for objects with
+         * the same keys and values, but in any order.
+         */
+        private static class JsonObjectWithRelaxedEquality {
+            private final List<Map.Entry<String, JsonValue>> fields = new ArrayList<>();
+
+            JsonObjectWithRelaxedEquality(HazelcastJsonValue json) {
+                JsonObject jsonObject = (JsonObject) Json.parse(json.getValue());
+                jsonObject.iterator().forEachRemaining(m -> fields.add(entry(m.getName(), m.getValue())));
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                return o instanceof JsonObjectWithRelaxedEquality
+                        && SAME_ITEMS_ANY_ORDER.test(fields, ((JsonObjectWithRelaxedEquality) o).fields);
+            }
+
+            @Override
+            public String toString() {
+                return fields.toString();
+            }
+        }
     }
 }

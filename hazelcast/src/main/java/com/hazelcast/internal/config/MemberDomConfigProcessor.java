@@ -2435,6 +2435,13 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 } else {
                     mapStoreConfig.setWriteCoalescing(getBooleanValue(writeCoalescing));
                 }
+            } else if (matches("offload", nodeName)) {
+                String offload = getTextContent(n);
+                if (isNullOrEmpty(offload)) {
+                    mapStoreConfig.setOffload(MapStoreConfig.DEFAULT_OFFLOAD);
+                } else {
+                    mapStoreConfig.setOffload(getBooleanValue(offload));
+                }
             } else if (matches("properties", nodeName)) {
                 fillProperties(n, mapStoreConfig.getProperties());
             }

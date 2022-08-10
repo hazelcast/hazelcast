@@ -75,7 +75,9 @@ public class LocalMapStatsTest extends HazelcastTestSupport {
     }
 
     protected Config createMemberConfig() {
-        return getConfig().addMapConfig(new MapConfig()
+        Config config = getConfig();
+        config.getMetricsConfig().setEnabled(false);
+        return config.addMapConfig(new MapConfig()
                 .setName(mapWithObjectFormat)
                 .setInMemoryFormat(InMemoryFormat.OBJECT)
         );

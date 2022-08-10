@@ -1197,6 +1197,30 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testMapStoreConfig_offload_whenDefault() {
+        MapStoreConfig mapStoreConfig = getOffloadMapStoreConfig(MapStoreConfig.DEFAULT_OFFLOAD, true);
+
+        assertTrue(mapStoreConfig.isOffload());
+    }
+
+    @Override
+    @Test
+    public void testMapStoreConfig_offload_whenSetFalse() {
+        MapStoreConfig mapStoreConfig = getOffloadMapStoreConfig(false, false);
+
+        assertFalse(mapStoreConfig.isOffload());
+    }
+
+    @Override
+    @Test
+    public void testMapStoreConfig_offload_whenSetTrue() {
+        MapStoreConfig mapStoreConfig = getOffloadMapStoreConfig(true, false);
+
+        assertTrue(mapStoreConfig.isOffload());
+    }
+
+    @Override
+    @Test
     public void testMapStoreConfig_writeCoalescing_whenDefault() {
         MapStoreConfig mapStoreConfig = getWriteCoalescingMapStoreConfig(MapStoreConfig.DEFAULT_WRITE_COALESCING, true);
 
@@ -1230,6 +1254,22 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "<map name=\"mymap\">"
                 + "<map-store >"
                 + (useDefault ? "" : "<write-coalescing>" + value + "</write-coalescing>")
+                + "</map-store>"
+                + "</map>"
+                + HAZELCAST_END_TAG;
+    }
+
+    private MapStoreConfig getOffloadMapStoreConfig(boolean offload, boolean useDefault) {
+        String xml = getOffloadConfigXml(offload, useDefault);
+        Config config = buildConfig(xml);
+        return config.getMapConfig("mymap").getMapStoreConfig();
+    }
+
+    private String getOffloadConfigXml(boolean value, boolean useDefault) {
+        return HAZELCAST_START_TAG
+                + "<map name=\"mymap\">"
+                + "<map-store >"
+                + (useDefault ? "" : "<offload>" + String.valueOf(value) + "</offload>")
                 + "</map-store>"
                 + "</map>"
                 + HAZELCAST_END_TAG;
@@ -2461,6 +2501,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            <write-delay-seconds>42</write-delay-seconds>\n"
                 + "            <write-batch-size>42</write-batch-size>\n"
                 + "            <write-coalescing>true</write-coalescing>\n"
+                + "            <offload>false</offload>\n"
                 + "            <properties>\n"
                 + "                <property name=\"jdbc_url\">my.jdbc.com</property>\n"
                 + "            </properties>\n"
@@ -2548,6 +2589,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(42, mapStoreConfig.getWriteDelaySeconds());
         assertEquals(42, mapStoreConfig.getWriteBatchSize());
         assertTrue(mapStoreConfig.isWriteCoalescing());
+        assertFalse(mapStoreConfig.isOffload());
         assertEquals("com.hazelcast.examples.DummyStore", mapStoreConfig.getClassName());
         assertEquals(1, mapStoreConfig.getProperties().size());
         assertEquals("my.jdbc.com", mapStoreConfig.getProperties().getProperty("jdbc_url"));
