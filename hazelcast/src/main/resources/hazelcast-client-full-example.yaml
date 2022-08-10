@@ -952,3 +952,12 @@ hazelcast-client:
     enabled: false
     file-name: hazelcast.process
     format-pattern: $HZ_INSTANCE_TRACKING{product}:$HZ_INSTANCE_TRACKING{version}
+  # ===== HAZELCAST SQL CLIENT CONFIGURATION =====
+  #
+  # Configuration element's name is <sql>.
+  #
+  # It has the following sub-elements:
+  # * "resubmission-mode":
+  #     Sets the resubmission mode for failing queries. By default, it is set to NEVER.
+  sql:
+    resubmission-mode: RETRY_SELECTS

@@ -87,6 +87,14 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         addMutationObservers();
     }
 
+    public ValueComparator getValueComparator() {
+        return valueComparator;
+    }
+
+    public LockStore getLockStore() {
+        return lockStore;
+    }
+
     // Overridden in EE.
     protected void addMutationObservers() {
         // Add observer for event journal
@@ -121,7 +129,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         return getMapContainer().getMapConfig().getEvictionConfig().getEvictionPolicy();
     }
 
-    protected boolean persistenceEnabledFor(@Nonnull CallerProvenance provenance) {
+    public boolean persistenceEnabledFor(@Nonnull CallerProvenance provenance) {
         switch (provenance) {
             case WAN:
                 return mapContainer.isPersistWanReplicatedData();
@@ -236,7 +244,7 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
         stats.increaseHits(hits);
     }
 
-    protected void updateStatsOnRemove(long now) {
+    public void updateStatsOnRemove(long now) {
         stats.setLastUpdateTime(now);
     }
 

@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.internal.serialization.Data;
@@ -50,6 +51,13 @@ public abstract class ReadonlyKeyBasedMapOperation extends MapOperation
     @Override
     public final void setThreadId(long threadId) {
         this.threadId = threadId;
+    }
+
+    @Override
+    public State createState() {
+        return super.createState()
+                .setKey(dataKey)
+                .setThreadId(threadId);
     }
 
     @Override

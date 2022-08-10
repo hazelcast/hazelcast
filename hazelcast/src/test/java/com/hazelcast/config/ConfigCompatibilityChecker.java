@@ -1017,6 +1017,7 @@ public class ConfigCompatibilityChecker {
                     classNameOrImpl(c1.getFactoryClassName(), c1.getFactoryImplementation()),
                     classNameOrImpl(c2.getFactoryClassName(), c2.getFactoryImplementation()))
                 && nullSafeEqual(c1.getProperties(), c2.getProperties()))
+                && nullSafeEqual(c1.isOffload(), c2.isOffload())
                 && nullSafeEqual(c1.isWriteCoalescing(), c2.isWriteCoalescing())
                 && nullSafeEqual(c1.getWriteBatchSize(), c2.getWriteBatchSize())
                 && nullSafeEqual(c1.getWriteDelaySeconds(), c2.getWriteDelaySeconds())
@@ -1902,9 +1903,9 @@ public class ConfigCompatibilityChecker {
         }
     }
 
-    static class RestApiConfigChecker extends ConfigChecker<RestApiConfig> {
+    public static class RestApiConfigChecker extends ConfigChecker<RestApiConfig> {
         @Override
-        boolean check(RestApiConfig c1, RestApiConfig c2) {
+        public boolean check(RestApiConfig c1, RestApiConfig c2) {
             if (c1 == c2) {
                 return true;
             }
@@ -1916,9 +1917,9 @@ public class ConfigCompatibilityChecker {
         }
     }
 
-    static class MemcacheProtocolConfigChecker extends ConfigChecker<MemcacheProtocolConfig> {
+    public static class MemcacheProtocolConfigChecker extends ConfigChecker<MemcacheProtocolConfig> {
         @Override
-        boolean check(MemcacheProtocolConfig c1, MemcacheProtocolConfig c2) {
+        public boolean check(MemcacheProtocolConfig c1, MemcacheProtocolConfig c2) {
             if (c1 == c2) {
                 return true;
             }

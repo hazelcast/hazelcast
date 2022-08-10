@@ -63,7 +63,7 @@ public class LoadAllOperation extends MapOperation implements PartitionAwareOper
     }
 
     @Override
-    protected void afterRunInternal() {
+    public void afterRunInternal() {
         invalidateNearCache(keys);
         super.afterRunInternal();
     }

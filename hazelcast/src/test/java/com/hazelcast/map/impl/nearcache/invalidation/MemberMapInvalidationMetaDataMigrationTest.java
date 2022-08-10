@@ -148,15 +148,12 @@ public class MemberMapInvalidationMetaDataMigrationTest extends HazelcastTestSup
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
 
         final AtomicBoolean stop = new AtomicBoolean();
-        Thread shadow = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (!stop.get()) {
-                    HazelcastInstance instance = factory.newHazelcastInstance(config);
-                    waitAllForSafeState(instance);
-                    sleepSeconds(5);
-                    instance.shutdown();
-                }
+        Thread shadow = new Thread(() -> {
+            while (!stop.get()) {
+                HazelcastInstance instance = factory.newHazelcastInstance(config);
+                waitAllForSafeState(instance);
+                sleepSeconds(5);
+                instance.shutdown();
             }
         });
 

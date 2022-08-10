@@ -42,7 +42,8 @@ public enum ClientConfigSections {
     LABELS("client-labels", false),
     CLUSTER_NAME("cluster-name", false),
     METRICS("metrics", false),
-    INSTANCE_TRACKING("instance-tracking", false);
+    INSTANCE_TRACKING("instance-tracking", false),
+    SQL("sql", false);
 
     final boolean multipleOccurrence;
     private final String name;

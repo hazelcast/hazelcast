@@ -562,10 +562,25 @@
                                                 <xs:annotation>
                                                     <xs:documentation>
                                                         Setting write-coalescing is meaningful if you are using
-                                                        write-behind map-store. Otherwise it has no effect.
+                                                        write-behind map-store. Otherwise, it has no effect.
                                                         When write-coalescing is true, only the latest
                                                         store operation on a key in the write-delay-seconds
                                                         time-window will be reflected to the map-store.
+                                                    </xs:documentation>
+                                                </xs:annotation>
+                                            </xs:attribute>
+                                            <xs:attribute name="offload" type="parameterized-boolean"
+                                                          default="true">
+                                                <xs:annotation>
+                                                    <xs:documentation>
+                                                        Default value is true.
+                                                        MapStore or MapLoader implementations are executed by
+                                                        partition threads, by setting offload to true, Hazelcast
+                                                        makes these threads available for other cluster operations
+                                                        and offloads MapStore or MapLoader interacting parts of
+                                                        executions to a different thread pool, upon interaction finish,
+                                                        operations continue to work in the partition thread from
+                                                        the point they are offloaded.
                                                     </xs:documentation>
                                                 </xs:annotation>
                                             </xs:attribute>
@@ -1692,6 +1707,7 @@
                     <xs:element name="metrics" type="client-metrics" minOccurs="0"/>
                     <xs:element name="instance-tracking" type="instance-tracking" minOccurs="0"/>
                     <xs:element name="native-memory" type="native-memory" minOccurs="0"/>
+                    <xs:element name="sql" type="clientSql" minOccurs="0"/>
                 </xs:choice>
             </xs:extension>
         </xs:complexContent>
@@ -3795,6 +3811,7 @@
         <xs:all>
             <xs:element name="attributes" type="index-attributes"/>
             <xs:element name="bitmap-index-options" type="bitmap-index-options" minOccurs="0"/>
+            <xs:element name="btree-index" type="btree-index" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name"/>
         <xs:attribute name="type" type="index-type" default="SORTED"/>
@@ -3829,6 +3846,26 @@
             <xs:enumeration value="RAW"/>
         </xs:restriction>
     </xs:simpleType>
+
+    <xs:complexType name="btree-index">
+        <xs:all>
+            <xs:element name="page-size" type="memory-size" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Memory tier capacity, i.e., how much main memory should this tier consume at most.
+                        The default is 256 megabytes.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="memory-tier" type="memory-tier" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        Page size of the index B+ Tree. Default value is 16 kB.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
 
     <xs:complexType name="entry-listeners">
         <xs:sequence>
@@ -5600,6 +5637,33 @@
             </xs:annotation>
         </xs:attribute>
     </xs:complexType>
+
+    <xs:complexType name="clientSql">
+        <xs:annotation>
+            <xs:documentation>
+                Configures the sql client.
+            </xs:documentation>
+        </xs:annotation>
+        <xs:all>
+            <xs:element name="resubmission-mode" type="resubmission-mode" minOccurs="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The configuration when to retry query that fails with reasons:
+                        CONNECTION_PROBLEM, PARTITION_DISTRIBUTION, TOPOLOGY_CHANGE.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+        </xs:all>
+    </xs:complexType>
+
+    <xs:simpleType name="resubmission-mode">
+        <xs:restriction base="non-space-string">
+            <xs:enumeration value="NEVER"/>
+            <xs:enumeration value="RETRY_SELECTS"/>
+            <xs:enumeration value="RETRY_SELECTS_ALLOW_DUPLICATES"/>
+            <xs:enumeration value="RETRY_ALL"/>
+        </xs:restriction>
+    </xs:simpleType>
 
     <xs:complexType name="metrics">
         <xs:all>

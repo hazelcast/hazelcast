@@ -482,7 +482,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         );
 
         ExecutionContext executionContext = jetServiceBackend.getJobExecutionService().getExecutionContext(executionId);
-        executionContext.terminateExecution(null);
+        executionContext.terminateExecution(null, new CancellationException());
 
         // When
         CompletableFuture<Void> future = executionContext.beginExecution(jetServiceBackend.getTaskletExecutionService());

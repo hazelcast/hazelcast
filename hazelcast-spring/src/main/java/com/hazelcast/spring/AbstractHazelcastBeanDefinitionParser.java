@@ -19,6 +19,7 @@ package com.hazelcast.spring;
 import com.hazelcast.config.AbstractXmlConfigHelper;
 import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AutoDetectionConfig;
+import com.hazelcast.config.BTreeIndexConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.DiscoveryConfig;
@@ -38,7 +39,9 @@ import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.internal.config.DomConfigHelper;
 import com.hazelcast.internal.util.TriTuple;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.spring.config.ConfigFactory;
 import com.hazelcast.spring.context.SpringManagedContext;
@@ -655,12 +658,40 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                             columns.add(getTextContent(columnNode));
                         }
                     }
+                } else if ("btree-index".equals(cleanNodeName(columnsNode))) {
+                    BTreeIndexConfig treeIndexConfig = new BTreeIndexConfig();
+                    for (Node columnNode : childElements(columnsNode)) {
+                        if ("page-size".equals(cleanNodeName(columnNode))) {
+                            treeIndexConfig.setPageSize(parseCapacity(columnNode));
+                        }
+                        if ("memory-tier".equals(cleanNodeName(columnNode))) {
+                            Node capacityNode = searchForNode(columnNode, "capacity");
+                            treeIndexConfig.getMemoryTierConfig().setCapacity(parseCapacity(capacityNode));
+                        }
+                    }
+                    indexConfBuilder.addPropertyValue("bTreeIndexConfig", treeIndexConfig);
                 }
             }
+
 
             indexConfBuilder.addPropertyValue("attributes", columns);
 
             indexes.add(indexConfBuilder.getBeanDefinition());
+        }
+
+        private Node searchForNode(Node parentNode, String nodeCleanName) {
+            for (Node node : childElements(parentNode)) {
+                if (cleanNodeName(node).equals(nodeCleanName)) {
+                    return node;
+                }
+            }
+            throw new IllegalStateException("no node with name " + nodeCleanName + " found");
+        }
+
+        private Capacity parseCapacity(Node columnNode) {
+            String value = getAttribute(columnNode, "value");
+            String unit = getAttribute(columnNode, "unit");
+            return Capacity.of(Long.parseLong(value), MemoryUnit.valueOf(unit));
         }
 
         private void handleDiscoveryServiceProvider(Node node, BeanDefinitionBuilder discoveryConfigBuilder) {

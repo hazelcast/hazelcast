@@ -37,6 +37,8 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexProgram;
+import org.apache.calcite.util.ImmutableBitSet;
+import org.apache.calcite.util.ImmutableBitSet.Builder;
 import org.immutables.value.Value;
 
 import javax.annotation.Nullable;
@@ -197,7 +199,7 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
             List<Integer> windowEndIndexes,
             FunctionEx<ExpressionEvalContext, SlidingWindowPolicy> windowPolicyProvider
     ) {
-        Integer watermarkedField = findWatermarkedField(logicalAggregate, physicalInput);
+        Integer watermarkedField = findWatermarkedField(logicalAggregate, windowStartIndexes, windowEndIndexes, physicalInput);
         if (watermarkedField == null) {
             return null;
         }
@@ -220,14 +222,15 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
     }
 
     /**
-     * Extract watermarked column index
-     * (possibly) enforced by IMPOSE_ORDER.
+     * Extract watermarked column index (possibly) enforced by IMPOSE_ORDER.
      *
      * @return watermarked column index.
      */
     @Nullable
     private static Integer findWatermarkedField(
             AggregateLogicalRel logicalAggregate,
+            List<Integer> windowStartIndexes,
+            List<Integer> windowEndIndexes,
             RelNode input
     ) {
         // TODO: [viliam, sasha] besides watermark order, we can also use normal collation
@@ -236,6 +239,11 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
         if (watermarkedFields == null) {
             return null;
         }
-        return watermarkedFields.findFirst(logicalAggregate.getGroupSet());
+
+        Builder windowBoundIndexesBuilder = ImmutableBitSet.builder()
+                .addAll(windowStartIndexes)
+                .addAll(windowEndIndexes);
+        windowBoundIndexesBuilder.intersect(logicalAggregate.getGroupSet());
+        return watermarkedFields.findFirst(windowBoundIndexesBuilder.build());
     }
 }
