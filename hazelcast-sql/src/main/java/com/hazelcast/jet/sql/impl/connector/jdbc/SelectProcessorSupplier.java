@@ -82,7 +82,6 @@ public class SelectProcessorSupplier
                         PreparedStatement statement = connection.prepareStatement(query);
                         List<Object> arguments = evalContext.getArguments();
                         for (int j = 0; j < parameterPositions.length; j++) {
-                            // TODO is some conversion needed here? maybe for dates (the opposite of convertValue)
                             statement.setObject(j + 1, arguments.get(parameterPositions[j]));
                         }
                         try {

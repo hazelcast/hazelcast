@@ -38,6 +38,7 @@ import java.util.Collection;
 
 import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_EXTERNAL_DATASTORE_REF;
 import static java.util.Arrays.asList;
+import static org.assertj.core.util.Lists.newArrayList;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
@@ -72,7 +73,6 @@ public class AllTypesSelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 {"TIME", "TIME", "'23:59:59'", LocalTime.of(23, 59, 59)},
                 {"TIMESTAMP", "TIMESTAMP", "'2022-12-30 23:59:59'",
                         LocalDateTime.of(2022, 12, 30, 23, 59, 59)},
-
                 {"TIMESTAMP WITH TIME ZONE", "TIMESTAMP WITH TIME ZONE", "'2022-12-30 23:59:59 -05:00'",
                         OffsetDateTime.of(2022, 12, 30, 23, 59, 59, 0, ZoneOffset.ofHours(-5))},
         });
@@ -102,7 +102,12 @@ public class AllTypesSelectJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 + ")"
         );
 
-        assertRowsAnyOrder(mappingName, new Row(expected));
+        assertRowsAnyOrder("SELECT * FROM " + mappingName, new Row(expected));
+
+        assertRowsAnyOrder("SELECT * FROM " + mappingName + " WHERE table_column = ?",
+                newArrayList(expected),
+                new Row(expected)
+        );
     }
 
 }

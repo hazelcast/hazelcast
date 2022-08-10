@@ -84,7 +84,6 @@ public class UpdateProcessorSupplier
                         List<Object> arguments = evalContext.getArguments();
 
                         for (int j = 0; j < parameterPositions.length; j++) {
-                            // TODO is some conversion needed here? maybe for dates (the opposite of convertValue)
                             ps.setObject(j + 1, arguments.get(parameterPositions[j]));
                         }
                         for (int j = 0; j < row.getFieldCount(); j++) {

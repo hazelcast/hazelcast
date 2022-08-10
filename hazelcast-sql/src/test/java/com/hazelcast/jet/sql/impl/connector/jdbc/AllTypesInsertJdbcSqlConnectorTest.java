@@ -32,6 +32,9 @@ import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.Time;
 import java.sql.Timestamp;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.Collection;
@@ -51,33 +54,32 @@ public class AllTypesInsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     public String mappingType;
 
     @Parameterized.Parameter(2)
-    public String value;
+    public String sqlValue;
 
     @Parameterized.Parameter(3)
-    public Object expected;
+    public Object javaValue;
 
-    @Parameterized.Parameters(name = "type:{0}, mappingType:{1}, value:{2}, expected:{3}")
+    @Parameterized.Parameter(4)
+    public Object jdbcValue;
+
+    @Parameterized.Parameters(name = "type:{0}, mappingType:{1}, sqlValue:{2}, javaValue:{3}, jdbcValue:{4}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{
-                {"VARCHAR(10)", "VARCHAR", "'dummy'", "dummy"},
-                {"BOOLEAN", "BOOLEAN", "TRUE", true},
-                {"TINYINT", "TINYINT", "1", 1},
-                {"SMALLINT", "SMALLINT", "2", 2},
-                {"INTEGER", "INTEGER", "3", 3},
-                {"BIGINT", "BIGINT", "4", 4L},
-                {"DECIMAL (10,5)", "DECIMAL", "1.12345", new BigDecimal("1.12345")},
-                {"REAL", "REAL", "1.5", 1.5f},
-                {"DOUBLE", "DOUBLE", "1.8", 1.8},
-                {"DATE", "DATE", "'2022-12-30'", Date.valueOf("2022-12-30")},
-                {"TIME", "TIME", "'23:59:59'", Time.valueOf("23:59:59")},
+                {"VARCHAR(10)", "VARCHAR", "'dummy'", "dummy", "dummy"},
+                {"BOOLEAN", "BOOLEAN", "TRUE", true, true},
+                {"TINYINT", "TINYINT", "1", 1, 1},
+                {"SMALLINT", "SMALLINT", "2", 2, 2},
+                {"INTEGER", "INTEGER", "3", 3, 3},
+                {"BIGINT", "BIGINT", "4", 4L, 4L},
+                {"DECIMAL (10,5)", "DECIMAL", "1.12345", new BigDecimal("1.12345"), new BigDecimal("1.12345")},
+                {"REAL", "REAL", "1.5", 1.5f, 1.5f},
+                {"DOUBLE", "DOUBLE", "1.8", 1.8, 1.8},
+                {"DATE", "DATE", "'2022-12-30'", LocalDate.of(2022, 12, 30), Date.valueOf("2022-12-30")},
+                {"TIME", "TIME", "'23:59:59'", LocalTime.of(23, 59, 59), Time.valueOf("23:59:59")},
                 {"TIMESTAMP", "TIMESTAMP", "'2022-12-30 23:59:59'",
-                        Timestamp.valueOf("2022-12-30 23:59:59")},
-
-//                TODO fraction supports only millis precision?
-//                {"TIMESTAMP", "TIMESTAMP", "'2022-12-30 23:59:59.123456'",
-//                        Timestamp.valueOf("2022-12-30 23:59:59.123456")},
-
+                        LocalDateTime.of(2022, 12, 30, 23, 59, 59), Timestamp.valueOf("2022-12-30 23:59:59")},
                 {"TIMESTAMP WITH TIME ZONE", "TIMESTAMP WITH TIME ZONE", "'2022-12-30T23:59:59-05:00'",
+                        OffsetDateTime.of(2022, 12, 30, 23, 59, 59, 0, ZoneOffset.ofHours(-5)),
                         OffsetDateTime.of(2022, 12, 30, 23, 59, 59, 0, ZoneOffset.ofHours(-5))},
         });
     }
@@ -90,12 +92,13 @@ public class AllTypesInsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
     @Test
     public void insertRowWithAllTypes() throws Exception {
         String tableName = randomTableName();
-        createTable(tableName, "table_column " + type);
+        createTable(tableName, "id INT", "table_column " + type);
 
         String mappingName = "mapping_" + randomName();
         execute("CREATE MAPPING " + mappingName
                 + " EXTERNAL NAME " + tableName
                 + " ("
+                + "id INT, "
                 + "table_column " + mappingType
                 + ") "
                 + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
@@ -104,9 +107,13 @@ public class AllTypesInsertJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 + ")"
         );
 
-        execute("INSERT INTO " + mappingName + " VALUES(" + value + ")");
+        execute("INSERT INTO " + mappingName + " VALUES(0, " + sqlValue + ")");
+        execute("INSERT INTO " + mappingName + " VALUES(1, ?)", javaValue);
 
-        assertJdbcRowsAnyOrder(tableName, new Row(expected));
+        assertJdbcRowsAnyOrder(tableName,
+                new Row(0, jdbcValue),
+                new Row(1, jdbcValue)
+        );
     }
 
 

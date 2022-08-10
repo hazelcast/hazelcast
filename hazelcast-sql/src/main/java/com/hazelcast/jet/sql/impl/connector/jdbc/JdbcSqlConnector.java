@@ -64,7 +64,7 @@ public class JdbcSqlConnector implements SqlConnector {
 
     public static final String TYPE_NAME = "JDBC";
 
-    public static final String OPTION_EXTERNAL_DATASTORE_REF = "external-datastore-ref";
+    public static final String OPTION_EXTERNAL_DATASTORE_REF = "externalDataStoreRef";
     public static final String OPTION_JDBC_BATCH_LIMIT = "jdbc.batch-limit";
 
     public static final String JDBC_BATCH_LIMIT_DEFAULT_VALUE = "100";
@@ -225,7 +225,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 dialect,
                 schemaName,
                 mappingName,
-                new ConstantTableStatistics(0), // TODO Can I query the table for size?
+                new ConstantTableStatistics(0),
                 externalName,
                 externalDataStoreRef,
                 parseInt(options.getOrDefault(OPTION_JDBC_BATCH_LIMIT, JDBC_BATCH_LIMIT_DEFAULT_VALUE)),

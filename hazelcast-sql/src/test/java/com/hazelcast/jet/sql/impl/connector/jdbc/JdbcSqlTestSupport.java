@@ -171,8 +171,15 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
     /**
      * Assert the contents of a given table via Hazelcast SQL engine
      */
-    protected static void assertRowsAnyOrder(String tableName, Row... rows) {
-        assertRowsAnyOrder("SELECT * FROM " + tableName, Arrays.asList(rows));
+    protected static void assertRowsAnyOrder(String sql, Row... rows) {
+        assertRowsAnyOrder(sql, Arrays.asList(rows));
+    }
+
+    /**
+     * Assert the contents of a given table via Hazelcast SQL engine
+     */
+    protected static void assertRowsAnyOrder(String sql, List<Object> arguments, Row... rows) {
+        assertRowsAnyOrder(sql, arguments, Arrays.asList(rows));
     }
 
     /**
