@@ -3211,7 +3211,7 @@ public class Config {
         name = getBaseName(name);
         ExternalDataStoreConfig config = lookupByPattern(configPatternMatcher, externalDataStoreConfigs, name);
         if (config != null) {
-            return new ExternalDataStoreConfig(config);
+            return new ExternalDataStoreConfigReadOnly(config);
         }
         return new ExternalDataStoreConfigReadOnly(getExternalDataStoreConfig("default"));
     }
