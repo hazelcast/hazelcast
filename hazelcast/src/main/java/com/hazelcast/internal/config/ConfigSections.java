@@ -69,7 +69,9 @@ public enum ConfigSections {
     JET("jet", false),
     LOCAL_DEVICE("local-device", true),
     DYNAMIC_CONFIGURATION("dynamic-configuration", false),
-    INTEGRITY_CHECKER("integrity-checker", false);
+    INTEGRITY_CHECKER("integrity-checker", false),
+    JOIN("join", false),
+    TCP_IP("tcp-ip", false);
 
     final boolean multipleOccurrence;
     private final String name;

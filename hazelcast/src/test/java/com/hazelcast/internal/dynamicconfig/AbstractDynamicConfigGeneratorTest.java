@@ -18,6 +18,7 @@ package com.hazelcast.internal.dynamicconfig;
 
 import com.hazelcast.collection.QueueStore;
 import com.hazelcast.collection.QueueStoreFactory;
+import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.AwsConfig;
 import com.hazelcast.config.BTreeIndexConfig;
@@ -68,6 +69,7 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.RingbufferStoreConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SetConfig;
+import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WanAcknowledgeType;
@@ -99,6 +101,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -840,6 +843,37 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
         ConfigCompatibilityChecker.checkWanConfigs(
                 config.getWanReplicationConfigs(),
                 decConfig.getWanReplicationConfigs());
+    }
+
+    @Test
+    public void testRegularNetworkTcpIpMemberList() {
+        List<String> members = Arrays.asList("10.11.12.13", "10.11.12.14", "10.11.12.15", "10.11.12.16");
+        Config config = new Config();
+        TcpIpConfig tcpIpConfig = new TcpIpConfig()
+                .setEnabled(true)
+                .setMembers(members);
+
+        config.getNetworkConfig().getJoin().setTcpIpConfig(tcpIpConfig);
+        Config decConfig = getNewConfigViaGenerator(config);
+
+        List<String> actualMembers = decConfig.getNetworkConfig().getJoin().getTcpIpConfig().getMembers();
+        assertContainsAll(members, actualMembers);
+    }
+
+    @Test
+    public void testAdvancedNetworkTcpIpMemberList() {
+        List<String> members = Arrays.asList("10.11.12.13", "10.11.12.14", "10.11.12.15", "10.11.12.16");
+        Config config = new Config();
+        TcpIpConfig tcpIpConfig = new TcpIpConfig()
+                .setEnabled(true)
+                .setMembers(members);
+        AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
+        advancedNetworkConfig.setEnabled(true);
+        advancedNetworkConfig.getJoin().setTcpIpConfig(tcpIpConfig);
+        Config decConfig = getNewConfigViaGenerator(config);
+
+        List<String> actualMembers = decConfig.getAdvancedNetworkConfig().getJoin().getTcpIpConfig().getMembers();
+        assertContainsAll(members, actualMembers);
     }
 
     // UTILITY - GENERATOR

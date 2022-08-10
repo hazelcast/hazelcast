@@ -373,6 +373,17 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.tcp.join.port.try.count", 3);
 
     /**
+     * Specifies how long the address of a member that has previously joined the
+     * cluster will be retained/remembered in the TcpIpJoiner after it leaves the
+     * cluster. The remembered member addresses is used to discover other cluster
+     * by split-brain handler.
+     */
+    public static final HazelcastProperty TCP_PREVIOUSLY_JOINED_MEMBER_ADDRESS_RETENTION_DURATION
+            = new HazelcastProperty("hazelcast.tcp.join.previously.joined.member.address.retention.seconds",
+            14400, SECONDS);
+
+
+    /**
      * Allows explicitly control if the {@link java.net.MulticastSocket#setInterface(java.net.InetAddress)} method is called in
      * the Hazelcast multicast discovery service. This configuration may affect the multicast behavior on some platforms. The
      * default value is not specified here and in such case Hazelcast multicast service itself decides if the

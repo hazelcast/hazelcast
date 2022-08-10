@@ -35,6 +35,7 @@ import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -231,5 +232,10 @@ class EmptyConfigurationService implements ConfigurationService {
     @Override
     public void updateLicense(String licenseKey) {
         throw new IllegalStateException("Cannot update license while Hazelcast is starting.");
+    }
+
+    @Override
+    public void updateTcpIpConfigMemberList(List<String> memberList) {
+        throw new IllegalStateException("Cannot update the member list of TCP-IP join config while Hazelcast is starting.");
     }
 }

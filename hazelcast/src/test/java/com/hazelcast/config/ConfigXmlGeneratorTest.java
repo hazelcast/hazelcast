@@ -1478,7 +1478,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         return new InMemoryXmlConfig(xml);
     }
 
-    private static TcpIpConfig tcpIpConfig() {
+    public static TcpIpConfig tcpIpConfig() {
         return new TcpIpConfig()
                 .setEnabled(true)
                 .setConnectionTimeoutSeconds(10)
@@ -1486,7 +1486,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setRequiredMember("10.11.11.2");
     }
 
-    private static MulticastConfig multicastConfig() {
+    public static MulticastConfig multicastConfig() {
         return new MulticastConfig()
                 .setEnabled(true)
                 .setMulticastTimeoutSeconds(10)
@@ -1497,7 +1497,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setTrustedInterfaces(newHashSet("*"));
     }
 
-    private static void assertFailureDetectorConfigEquals(IcmpFailureDetectorConfig expected,
+    public static void assertFailureDetectorConfigEquals(IcmpFailureDetectorConfig expected,
                                                           IcmpFailureDetectorConfig actual) {
         assertEquals(expected.isEnabled(), actual.isEnabled());
         assertEquals(expected.getIntervalMilliseconds(), actual.getIntervalMilliseconds());

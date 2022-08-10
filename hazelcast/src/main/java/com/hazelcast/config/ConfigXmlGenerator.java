@@ -601,7 +601,7 @@ public class ConfigXmlGenerator {
         gen.open("join");
         autoDetectionConfigXmlGenerator(gen, join);
         multicastConfigXmlGenerator(gen, join);
-        tcpConfigXmlGenerator(gen, join);
+        tcpIpConfigXmlGenerator(gen, join);
         aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(join));
         discoveryStrategyConfigXmlGenerator(gen, join.getDiscoveryConfig());
         gen.close();
@@ -629,7 +629,7 @@ public class ConfigXmlGenerator {
         gen.open("join");
         autoDetectionConfigXmlGenerator(gen, join);
         multicastConfigXmlGenerator(gen, join);
-        tcpConfigXmlGenerator(gen, join);
+        tcpIpConfigXmlGenerator(gen, join);
         aliasedDiscoveryConfigsGenerator(gen, aliasedDiscoveryConfigsFrom(join));
         discoveryStrategyConfigXmlGenerator(gen, join.getDiscoveryConfig());
         gen.close();
@@ -695,7 +695,7 @@ public class ConfigXmlGenerator {
         gen.close();
     }
 
-    private String endpointConfigElementName(EndpointConfig endpointConfig) {
+    public static String endpointConfigElementName(EndpointConfig endpointConfig) {
         if (endpointConfig instanceof ServerSocketEndpointConfig) {
             switch (endpointConfig.getProtocolType()) {
                 case REST:
@@ -759,16 +759,19 @@ public class ConfigXmlGenerator {
         }
     }
 
-    private static void tcpConfigXmlGenerator(XmlGenerator gen, JoinConfig join) {
-        TcpIpConfig c = join.getTcpIpConfig();
-        gen.open("tcp-ip", "enabled", c.isEnabled(), "connection-timeout-seconds", c.getConnectionTimeoutSeconds())
-                .open("member-list");
-        for (String m : c.getMembers()) {
+    public static void tcpIpConfigXmlGenerator(XmlGenerator gen, JoinConfig join) {
+        TcpIpConfig tcpIpConfig = join.getTcpIpConfig();
+        gen.open("tcp-ip", "enabled", tcpIpConfig.isEnabled(),
+                "connection-timeout-seconds", tcpIpConfig.getConnectionTimeoutSeconds());
+        gen.open("member-list");
+        for (String m : tcpIpConfig.getMembers()) {
             gen.node("member", m);
         }
-        gen.close()
-                .node("required-member", c.getRequiredMember())
-                .close();
+        // </member-list>
+        gen.close();
+        gen.node("required-member", tcpIpConfig.getRequiredMember());
+        // </tcp-ip>
+        gen.close();
     }
 
     private static void interfacesConfigXmlGenerator(XmlGenerator gen, InterfacesConfig interfaces) {

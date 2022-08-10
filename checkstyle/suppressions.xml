@@ -115,6 +115,8 @@
     <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]config[\\/]Config"/>
     <suppress checks="FileLength"
               files="com[\\/]hazelcast[\\/]internal[\\/]dynamicconfig[\\/]DynamicConfigurationAwareConfig"/>
+    <suppress checks="FileLength"
+              files="com[\\/]hazelcast[\\/]internal[\\/]dynamicconfig[\\/]DynamicConfigYamlGenerator"/>
     <suppress checks="FanOutComplexity" files="com[\\/]hazelcast[\\/]config[\\/]ConfigXmlGenerator"/>
     <suppress checks="FanOutComplexity" files="com[\\/]hazelcast[\\/]client[\\/]config[\\/]ClientConfigXmlGenerator"/>
     <!-- couldn't change structure because of API -->

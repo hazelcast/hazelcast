@@ -24,6 +24,7 @@ import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.CollectionConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ConfigXmlGenerator;
 import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.DiscoveryConfig;
@@ -802,6 +803,10 @@ public final class DynamicConfigXmlGenerator {
             }
         }
         gen.close();
+    }
+
+    public static void tcpIpConfigXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, Config config) {
+        ConfigXmlGenerator.tcpIpConfigXmlGenerator(gen, ConfigAccessor.getActiveMemberNetworkConfig(config).getJoin());
     }
 
     public static String classNameOrImplClass(String className, Object impl) {
