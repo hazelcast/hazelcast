@@ -25,7 +25,7 @@ goals are:
 - Core API also available. Pipeline API nice to have.
 - different join types (`INNER` , `LEFT`/`RIGHT` `OUTER` `JOIN`s).
 
-The state of the join processor must be bounded (i.e. no support for stream-to-stream joins without a time bound)
+The state of the join processor must be bounded (i.e. no support for stream-to-stream joins without time bounds)
 and the latency must be minimal (i.e. emit the joined row as soon as the processor receives them).
 
 ### Functional Design
@@ -35,7 +35,7 @@ and the latency must be minimal (i.e. emit the joined row as soon as the process
 Semantically, the join operation, as specified by SQL, is easy to apply to streams: The query should output all items
 from the left input, joined with all items from the right input, which meet the join condition.
 
-For example, have `orders` and `deliveries` stream events (note, `Stream` type does not exist, used just for example):
+For example, consider `orders` and `deliveries` stream events (note, `Stream` type does not exist, used just for example):
 
 ```sql
 CREATE MAPPING orders (
@@ -97,8 +97,8 @@ least one such inequation for each input. If there are multiple inequations of
 this for either input, we'll use the lowest constant. If we can't convert the
 inequation into this form, we'll not use that part of the join condition for a
 time bound. Obviously, we'll apply the whole condition after joining. The point
-here is only to extract the part needed to bound the buffering time. If there's
-a disjunction (OR expression), we will not implement such query, even if all
+here is only to extract the part needed to curb the buffering time. If there's a
+disjunction (OR expression), we will not implement such query, even if all
 disjunct parts contain the needed time bounds.
 
 The "constant" is a time for which the processor has to buffer items from
@@ -126,7 +126,7 @@ reaches the value `10`, a buffered event from `i1` with `i1.time = 5` will never
 satisfy the join condition of `i1.time >= i2.time - 4` for any new non-late `i2`
 event we can possibly receive, because `5` is not greater than or equal to `10 -
 4`. Therefore, we can remove all events with `i1.time <= 5` from the buffer, and
-emit the watermark with time=6 to the output.
+emit the watermark with `time=6` to the output.
 
 The second condition allows the processor to remove items from the other buffer.
 
@@ -147,8 +147,8 @@ TDD](14-keyed-watermark-support.md).
 With keyed watermarks, a stream of events can have multiple watermarked fields,
 each watermark can have a different value.
 
-Since the individual time bounds must all be satisfied, if any of them isn't we
-can eliminate the item.
+Since the individual time bounds must all be satisfied (they were connected with
+AND in the join condition), if any of them isn't we can eliminate the item.
 
 ##### Implementation of multiple watermarks in the JOIN processor
 
@@ -157,7 +157,7 @@ received from the other input, and postpones watermarks for as long as it holds
 back the events. When it removes the event from the buffer, it can emit
 watermarks.
 
-We still don't know how to determine, when the processor can remove rows from
+We still don't know how to determine when the processor can remove rows from a
 buffer in case of multiple watermarks on either input. The processor can remove
 an event from the buffer, when any time-bound constraint is false.
 
@@ -174,9 +174,7 @@ timeA >= timeB - constant
 the `timeA`'s watermark key is the `outputWmKey`, the `timeB`'s watermark key is
 the `inputWmKey` and the `constant` is the `postponeTime`. We need to map each
 `outputWmKey` to a list, because for each key there can be multiple keys on the
-other side. For implementation reasons, we'll also add `0` `postponeTime` for
-self-reference. It will represent the canonicalized time bound of `timeA >=
-timeA - 0`.
+other side.
 
 ##### Example
 
@@ -323,9 +321,9 @@ defined watermark key.
 
 1. Perform query analysis, detect timestamp column from both input stream schemas
 2. Produce JOIN condition, timestamp extraction functions and postpone maps.
-3. Prepare a **watermark state** data structure (`long[][]`) - time limit for each watermark keys relation.
+3. Prepare a `wmState` data structure - time limit for each watermark keys relation.
 4. Prepare two buffers : `leftBuffer` to store input events from ordinal 0 and `rightBuffer` to store input events from ordinal 1.
-5. If a  watermark with key `key` is received:
+5. If a watermark with key `key` is received:
    1. Iterate the value of `postponeTimeMap` for the watermark's key and update the same input/output
       WM keys in the `wmState`, postponed by the `postponeTime`
    2. Compute new maximum for each output WM in the `wmState`.
@@ -338,8 +336,10 @@ defined watermark key.
    6. For each WM key, emit a new watermark as the minimum of value computed in step 5 and of the last received value for
       that WM key.
 6. If an event is received:
-   1. Store the event in left/right buffer.
-   2. For each event in the opposite buffer emit the joined event (if the whole join condition is `true`).
+   1. If the event is late according to any last received watermark, drop it.
+   2. If the event is out of bounds according to `wmState`, join it with nulls (if outer-joining) and stop processing it
+   3. Store the event in left/right buffer.
+   4. For each event in the opposite buffer emit the joined event (if the whole join condition is `true`).
 
 ### Questions
 
