@@ -126,9 +126,7 @@ public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
-        if (shouldIgnoreMismatchedWatermark(watermark, (byte) 0)) {
-            return true;
-        }
+        keyedWatermarkCheck(watermark);
         return wmFlatMapper.tryProcess(watermark);
     }
 

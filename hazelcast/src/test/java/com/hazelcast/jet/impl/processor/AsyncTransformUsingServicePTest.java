@@ -86,9 +86,9 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
                 .nonSharedService(pctx -> "foo");
         return ordered
                 ? AsyncTransformUsingServiceOrderedP.supplier(
-                serviceFactory, maxConcurrentOps, mapFn)
+                        serviceFactory, maxConcurrentOps, mapFn)
                 : AsyncTransformUsingServiceUnorderedP.supplier(
-                serviceFactory, maxConcurrentOps, mapFn, FunctionEx.identity());
+                        serviceFactory, maxConcurrentOps, mapFn, FunctionEx.identity());
     }
 
     @BeforeClass

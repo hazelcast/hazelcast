@@ -17,6 +17,8 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
+import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
@@ -80,6 +82,7 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.schema.IMapResolver;
@@ -109,7 +112,9 @@ import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.DropIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.ExplainStatementPlan;
@@ -437,7 +442,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             String query
     ) {
         PhysicalRel physicalRel = optimize(parameterMetadata, rel, context, isCreateJob);
-        boolean isQueryUnbounded = OptUtils.isUnbounded(physicalRel);
 
         List<Permission> permissions = extractPermissions(physicalRel);
 
@@ -511,26 +515,20 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         } else if (physicalRel instanceof TableModify) {
             checkDmlOperationWithView(physicalRel);
             Operation operation = ((TableModify) physicalRel).getOperation();
-            CreateDagVisitor visitor = traverseRel(
-                    physicalRel,
-                    parameterMetadata,
-                    isQueryUnbounded ? new WatermarkKeysAssigner(physicalRel) : null);
+            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(physicalRel, parameterMetadata);
             return new DmlPlan(
                     operation,
                     planKey,
                     parameterMetadata,
-                    visitor.getObjectKeys(),
-                    visitor.getDag(),
+                    dagAndKeys.f1(),
+                    dagAndKeys.f0(),
                     query,
-                    isQueryUnbounded,
+                    OptUtils.isUnbounded(physicalRel),
                     planExecutor,
                     permissions
             );
         } else {
-            CreateDagVisitor visitor = traverseRel(
-                    new RootRel(physicalRel),
-                    parameterMetadata,
-                    isQueryUnbounded ? new WatermarkKeysAssigner(physicalRel) : null);
+            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(new RootRel(physicalRel), parameterMetadata);
             SqlRowMetadata rowMetadata = createRowMetadata(
                     fieldNames,
                     physicalRel.schema(parameterMetadata).getTypes(),
@@ -539,10 +537,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             return new SelectPlan(
                     planKey,
                     parameterMetadata,
-                    visitor.getObjectKeys(),
-                    visitor.getDag(),
+                    dagAndKeys.f1(),
+                    dagAndKeys.f0(),
                     query,
-                    isQueryUnbounded,
+                    OptUtils.isUnbounded(physicalRel),
                     rowMetadata,
                     planExecutor,
                     permissions
@@ -655,22 +653,18 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return new SqlRowMetadata(columns);
     }
 
-    private CreateDagVisitor traverseRel(
+    private Tuple2<DAG, Set<PlanObjectKey>> createDag(
             PhysicalRel physicalRel,
-            QueryParameterMetadata parameterMetadata,
-            @Nullable WatermarkKeysAssigner watermarkKeysAssigner
+            QueryParameterMetadata parameterMetadata
     ) {
-        if (watermarkKeysAssigner != null) {
-            watermarkKeysAssigner.assignWatermarkKeys();
-            if (logger.isFineEnabled()) {
-                logger.fine("Watermark keys were assigned.");
-            }
-        }
+        WatermarkKeysAssigner wmKeysAssigner = new WatermarkKeysAssigner(physicalRel);
+        wmKeysAssigner.assignWatermarkKeys();
+        logger.finest("Watermark keys assigned");
 
-        CreateDagVisitor visitor = new CreateDagVisitor(nodeEngine, parameterMetadata, watermarkKeysAssigner);
+        CreateDagVisitor visitor = new CreateDagVisitor(nodeEngine, parameterMetadata, wmKeysAssigner);
         physicalRel.accept(visitor);
         visitor.optimizeFinishedDag();
-        return visitor;
+        return tuple2(visitor.getDag(), visitor.getObjectKeys());
     }
 
     private void checkDmlOperationWithView(PhysicalRel rel) {

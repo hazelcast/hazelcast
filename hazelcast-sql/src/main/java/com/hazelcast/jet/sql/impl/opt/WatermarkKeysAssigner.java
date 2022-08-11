@@ -50,12 +50,13 @@ import static java.util.Collections.emptySet;
  */
 public class WatermarkKeysAssigner {
     private final PhysicalRel root;
-    private final BottomUpWatermarkKeyAssignerVisitor visitor;
+    private final KeyAssignerVisitor visitor;
+    // Note: at the moment, no need to separate watermark keys without stream-to-stream join introduction.
     private byte keyCounter;
 
     public WatermarkKeysAssigner(PhysicalRel root) {
         this.root = root;
-        this.visitor = new BottomUpWatermarkKeyAssignerVisitor();
+        this.visitor = new KeyAssignerVisitor();
     }
 
     public void assignWatermarkKeys() {
@@ -70,10 +71,10 @@ public class WatermarkKeysAssigner {
      * Main watermark key assigner used to propagate keys
      * from bottom to top over whole rel tree.
      */
-    private class BottomUpWatermarkKeyAssignerVisitor extends RelVisitor {
+    private class KeyAssignerVisitor extends RelVisitor {
         private final Map<RelNode, Map<Integer, MutableByte>> relToWmKeyMapping = new HashMap<>();
 
-        BottomUpWatermarkKeyAssignerVisitor() {
+        KeyAssignerVisitor() {
         }
 
         public Map<RelNode, Map<Integer, MutableByte>> getRelToWmKeyMapping() {
@@ -135,6 +136,7 @@ public class WatermarkKeysAssigner {
                 }
 
                 relToWmKeyMapping.put(calc, calcRefByteMap);
+
             } else if (node instanceof UnionPhysicalRel) {
                 // Note: here, we want to find intersection of all input watermarked fields,
                 //  and assign same keys for intersected items.
@@ -196,6 +198,7 @@ public class WatermarkKeysAssigner {
                 Join join = (Join) node;
                 Map<Integer, MutableByte> refByteMap = relToWmKeyMapping.get(join.getLeft());
                 relToWmKeyMapping.put(node, refByteMap);
+
             } else if (node instanceof SlidingWindowAggregatePhysicalRel) {
                 SlidingWindowAggregatePhysicalRel swAgg = (SlidingWindowAggregatePhysicalRel) node;
                 Map<Integer, MutableByte> inputWmKeys = relToWmKeyMapping.get(swAgg.getInput());
@@ -213,10 +216,11 @@ public class WatermarkKeysAssigner {
                 }
 
                 relToWmKeyMapping.put(swAgg, refByteMap);
+
             } else if (node instanceof SlidingWindow) {
                 SlidingWindow sw = (SlidingWindow) node;
-
                 relToWmKeyMapping.put(sw, relToWmKeyMapping.get(sw.getInput()));
+
             } else if (node instanceof Aggregate) {
                 Aggregate agg = (Aggregate) node;
                 WatermarkedFields inputWmFields = OptUtils.metadataQuery(agg).extractWatermarkedFields(agg.getInput());
@@ -236,8 +240,10 @@ public class WatermarkKeysAssigner {
                     }
                 }
                 relToWmKeyMapping.put(agg, byteMap);
+
             } else if (node instanceof DropLateItemsPhysicalRel) {
                 relToWmKeyMapping.put(node, relToWmKeyMapping.get(node.getInput(0)));
+
             } else {
                 // watermark is not preserved for other rels -- break the chain.
                 return;

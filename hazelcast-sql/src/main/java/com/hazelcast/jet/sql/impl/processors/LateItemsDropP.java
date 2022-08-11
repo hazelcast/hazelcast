@@ -76,7 +76,9 @@ public class LateItemsDropP extends AbstractProcessor {
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
-        shouldIgnoreMismatchedWatermark(watermark, watermarkKey);
+        if (watermark.key() != watermarkKey) {
+            return true;
+        }
         currentWm = watermark.timestamp();
         return super.tryProcessWatermark(watermark);
     }
