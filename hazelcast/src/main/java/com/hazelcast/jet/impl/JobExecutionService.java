@@ -572,17 +572,12 @@ public class JobExecutionService implements DynamicMetricsProvider {
                           }
                           return terminalMetrics;
                       })
-                      .handle((metrics, e) -> completeExecution(execCtx, peel(e))
+                      .handleAsync((metrics, e) -> completeExecution(execCtx, peel(e))
                               .thenApply(ignored -> {
-                                  return metrics;
-                              })
-                              .whenComplete((m, ex) -> {
-                                  if (e != null) {
-                                      throw rethrow(e);
+                                  if (e == null) {
+                                    return metrics;
                                   }
-                                  if (ex != null) {
-                                      throw rethrow(ex);
-                                  }
+                                  throw rethrow(e);
                               })
                       )
                       .thenCompose(stage -> stage)
