@@ -16,8 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.internal.nio.BufferObjectDataInput;
-import com.hazelcast.internal.nio.BufferObjectDataOutput;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -56,8 +55,8 @@ public class ExternalDataStoreConfigTest extends HazelcastTestSupport {
                 .setClassName("some-class-name")
                 .setShared(false);
 
-        byte[] data = writeData(originalConfig);
-        ExternalDataStoreConfig deserializedCopy = readData(data);
+        Data data = serializationService.toData(originalConfig);
+        ExternalDataStoreConfig deserializedCopy = serializationService.toObject(data);
 
         assertThat(deserializedCopy).isEqualTo(originalConfig);
     }
@@ -73,23 +72,8 @@ public class ExternalDataStoreConfigTest extends HazelcastTestSupport {
                 .setClassName("some-class-name")
                 .setProperties(properties);
 
-        byte[] data = writeData(originalConfig);
-        ExternalDataStoreConfig deserializedCopy = readData(data);
-
+        Data data = serializationService.toData(originalConfig);
+        ExternalDataStoreConfig deserializedCopy = serializationService.toObject(data);
         assertThat(deserializedCopy).isEqualTo(originalConfig);
-    }
-
-    private ExternalDataStoreConfig readData(byte[] data) throws IOException {
-        BufferObjectDataInput objectDataInput = serializationService.createObjectDataInput(data);
-        ExternalDataStoreConfig deserializedCopy = new ExternalDataStoreConfig();
-        deserializedCopy.readData(objectDataInput);
-        return deserializedCopy;
-    }
-
-    private byte[] writeData(ExternalDataStoreConfig originalConfig) throws IOException {
-        BufferObjectDataOutput objectDataOutput = serializationService.createObjectDataOutput();
-        originalConfig.writeData(objectDataOutput);
-        byte[] data = objectDataOutput.toByteArray();
-        return data;
     }
 }
