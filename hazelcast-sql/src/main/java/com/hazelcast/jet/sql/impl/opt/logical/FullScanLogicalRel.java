@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
-import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.sql.impl.opt.FullScan;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -35,7 +35,7 @@ public class FullScanLogicalRel extends FullScan implements LogicalRel {
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
-            @Nullable FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
+            @Nullable BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
             int watermarkedColumnIndex
     ) {
         super(cluster, traitSet, table, eventTimePolicyProvider, watermarkedColumnIndex);
