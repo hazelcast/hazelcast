@@ -35,6 +35,7 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -400,6 +401,17 @@ public final class DynamicConfigXmlGenerator {
                     .close();
         }
     }
+
+    public static void externalDataStoreXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, Config config) {
+        for (ExternalDataStoreConfig externalDataStoreConfig : config.getExternalDataStoreConfigs().values()) {
+            gen.open("external-data-store", "name", externalDataStoreConfig.getName())
+                    .node("class-name", externalDataStoreConfig.getClassName())
+                    .node("shared", externalDataStoreConfig.isShared())
+                    .appendProperties(externalDataStoreConfig.getProperties())
+                    .close();
+        }
+    }
+
 
     public static void wanReplicationXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, Config config) {
         for (WanReplicationConfig wan : config.getWanReplicationConfigs().values()) {
