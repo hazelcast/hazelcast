@@ -39,6 +39,8 @@ import com.hazelcast.core.LifecycleEvent.LifecycleState;
 import com.hazelcast.core.LifecycleListener;
 import com.hazelcast.cp.event.CPGroupAvailabilityListener;
 import com.hazelcast.cp.event.CPMembershipListener;
+import com.hazelcast.cp.internal.CPMemberInfo;
+import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.instance.AddressPicker;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -795,9 +797,17 @@ public class Node {
         final Set<UUID> excludedMemberUuids = nodeExtension.getInternalHotRestartService().getExcludedMemberUuids();
 
         MemberImpl localMember = getLocalMember();
+        CPMemberInfo localCPMember = getLocalCPMember();
+        UUID cpMemberUUID = localCPMember != null ? localCPMember.getUuid() : null;
         return new JoinRequest(Packet.VERSION, buildInfo.getBuildNumber(), version, address,
                 localMember.getUuid(), localMember.isLiteMember(), createConfigCheck(), credentials,
-                localMember.getAttributes(), excludedMemberUuids, localMember.getAddressMap());
+                localMember.getAttributes(), excludedMemberUuids, localMember.getAddressMap(), cpMemberUUID);
+    }
+
+    private CPMemberInfo getLocalCPMember() {
+        RaftService raftService = nodeEngine.getService(RaftService.SERVICE_NAME);
+        CPMemberInfo localCPMember = raftService.getLocalCPMember();
+        return localCPMember;
     }
 
     public ConfigCheck createConfigCheck() {

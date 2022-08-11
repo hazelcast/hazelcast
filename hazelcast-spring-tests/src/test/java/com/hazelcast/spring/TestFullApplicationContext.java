@@ -135,7 +135,6 @@ import com.hazelcast.cp.lock.FencedLock;
 import com.hazelcast.crdt.pncounter.PNCounter;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
-import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.EdgeConfig;
 import com.hazelcast.jet.config.JetConfig;
@@ -158,7 +157,6 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
 import com.hazelcast.splitbrainprotection.impl.RecentlyActiveSplitBrainProtectionFunction;
-import com.hazelcast.spring.serialization.DummyCompactSerializable;
 import com.hazelcast.spring.serialization.DummyCompactSerializer;
 import com.hazelcast.spring.serialization.DummyDataSerializableFactory;
 import com.hazelcast.spring.serialization.DummyPortableFactory;
@@ -202,6 +200,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.MERGE_FIRST_RUN_DELAY
 import static com.hazelcast.spi.properties.ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static java.lang.Boolean.TRUE;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -415,6 +414,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(0, testMapStoreConfig.getWriteDelaySeconds());
         assertEquals(10, testMapStoreConfig.getWriteBatchSize());
         assertTrue(testMapStoreConfig.isWriteCoalescing());
+        assertFalse(testMapStoreConfig.isOffload());
         assertEquals(MapStoreConfig.InitialLoadMode.EAGER, testMapStoreConfig.getInitialLoadMode());
 
         // test that the testMapConfig has a nearCacheConfig and it is correct
@@ -1186,23 +1186,25 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
     @Test
     public void testCompactSerializationConfig() {
-        CompactSerializationConfig compactSerializationConfig = config.getSerializationConfig().getCompactSerializationConfig();
+        CompactSerializationConfig compactSerializationConfig = config.getSerializationConfig()
+                .getCompactSerializationConfig();
         assertTrue(compactSerializationConfig.isEnabled());
 
-        Map<String, TriTuple<String, String, String>> namedRegistrations = CompactSerializationConfigAccessor.getNamedRegistrations(compactSerializationConfig);
-        assertEquals(2, namedRegistrations.size());
+        List<String> serializerClassNames
+                = CompactSerializationConfigAccessor.getSerializerClassNames(compactSerializationConfig);
+        assertEquals(1, serializerClassNames.size());
+
+        List<String> compactSerializableClassNames
+                = CompactSerializationConfigAccessor.getCompactSerializableClassNames(compactSerializationConfig);
+        assertEquals(1, compactSerializableClassNames.size());
 
         String reflectivelySerializableClassName = DummyReflectiveSerializable.class.getName();
-        TriTuple<String, String, String> reflectiveClassRegistration = TriTuple.of(reflectivelySerializableClassName, reflectivelySerializableClassName, null);
-        TriTuple<String, String, String> actualReflectiveRegistration = namedRegistrations.get(reflectivelySerializableClassName);
-        assertEquals(reflectiveClassRegistration, actualReflectiveRegistration);
+        assertThat(compactSerializableClassNames)
+                .contains(reflectivelySerializableClassName);
 
-        String compactSerializableClassName = DummyCompactSerializable.class.getName();
         String compactSerializerClassName = DummyCompactSerializer.class.getName();
-        String typeName = "dummy";
-        TriTuple<String, String, String> explicitClassRegistration = TriTuple.of(compactSerializableClassName, typeName, compactSerializerClassName);
-        TriTuple<String, String, String> actualExplicitRegistration = namedRegistrations.get(typeName);
-        assertEquals(explicitClassRegistration, actualExplicitRegistration);
+        assertThat(serializerClassNames)
+                .contains(compactSerializerClassName);
     }
 
     @Test

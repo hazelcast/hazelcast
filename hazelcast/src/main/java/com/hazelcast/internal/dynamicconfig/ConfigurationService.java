@@ -36,6 +36,7 @@ import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
@@ -67,6 +68,12 @@ public interface ConfigurationService {
      * @param licenseKey new license key to set
      */
     void updateLicense(String licenseKey);
+
+    /**
+     * Update the member list of TCP-IP join config
+     * @param memberList a new member list to set
+     */
+    void updateTcpIpConfigMemberList(List<String> memberList);
 
     /**
      * Persists any dynamically changeable sub configuration to this member's

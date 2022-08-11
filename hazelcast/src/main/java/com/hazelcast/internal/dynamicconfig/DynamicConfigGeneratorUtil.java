@@ -33,6 +33,7 @@ import com.hazelcast.config.ReplicatedMapConfig;
 import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SetConfig;
+import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.internal.util.XmlUtil;
@@ -59,6 +60,7 @@ import static com.hazelcast.internal.config.ConfigSections.REPLICATED_MAP;
 import static com.hazelcast.internal.config.ConfigSections.RINGBUFFER;
 import static com.hazelcast.internal.config.ConfigSections.SCHEDULED_EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.SET;
+import static com.hazelcast.internal.config.ConfigSections.TCP_IP;
 import static com.hazelcast.internal.config.ConfigSections.TOPIC;
 import static com.hazelcast.internal.config.ConfigSections.WAN_REPLICATION;
 
@@ -239,6 +241,23 @@ public final class DynamicConfigGeneratorUtil {
                 Config::addPNCounterConfig,
                 DynamicConfigXmlGenerator::pnCounterXmlGenerator,
                 DynamicConfigYamlGenerator::pnCounterYamlGenerator
+        );
+    }
+
+    public static String tcpIpConfigGenerator(
+            TcpIpConfig subConfig, boolean configIsXml, int indent, boolean advancedNetwork
+    ) {
+        return configGenerator(subConfig, configIsXml, indent,
+                TCP_IP.getName(),
+                (config, tcpIpConfig) -> {
+                    if (advancedNetwork) {
+                        config.getAdvancedNetworkConfig().getJoin().setTcpIpConfig(tcpIpConfig);
+                    } else {
+                        config.getNetworkConfig().getJoin().setTcpIpConfig(tcpIpConfig);
+                    }
+                },
+                DynamicConfigXmlGenerator::tcpIpConfigXmlGenerator,
+                DynamicConfigYamlGenerator::tcpIpConfigYamlGenerator
         );
     }
 
