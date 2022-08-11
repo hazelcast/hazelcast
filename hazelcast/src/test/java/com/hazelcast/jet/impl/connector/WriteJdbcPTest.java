@@ -18,7 +18,9 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -186,6 +188,26 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
          ));
 
         instance().getJet().newJob(p).join();
+    }
+
+    @Test
+    public void testFailJob_withNonTransientExceptionNextChainCycle() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
+         .map(item -> entry(item, item.toString()))
+         .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
+                 () -> createDataSource(false),
+                 (stmt, item) -> {
+                     SQLException ex = new SQLException();
+                     SQLException next = new SQLException();
+                     ex.setNextException(next);
+                     next.setNextException(next); // Cycle for the last exception
+                     throw ex;
+                 }
+         ));
+
+        Job job = instance().getJet().newJob(p);
+        assertJobStatusEventually(job, JobStatus.RUNNING, 5);
     }
 
     @Test(expected = CompletionException.class, timeout = 5_000)

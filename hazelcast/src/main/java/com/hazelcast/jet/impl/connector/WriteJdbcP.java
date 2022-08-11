@@ -285,10 +285,10 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
     }
 
     private boolean isNonTransientException(SQLException e) {
+        SQLException next = e.getNextException();
         return e instanceof SQLNonTransientException
                 || e.getCause() instanceof SQLNonTransientException
-                || e.getNextException() instanceof SQLNonTransientException
-                || (e.getNextException() != null && isNonTransientException(e.getNextException()));
+                || (next != null && e != next && isNonTransientException(next));
     }
 
 }
