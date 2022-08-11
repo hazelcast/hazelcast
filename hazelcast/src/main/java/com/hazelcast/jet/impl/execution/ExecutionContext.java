@@ -288,11 +288,11 @@ public class ExecutionContext implements DynamicMetricsProvider {
         }
 
         return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]))
-                .thenApply(ignored -> {
+                .whenComplete(withTryCatch(logger, (ignored, e) -> {
                     tempDirectories.forEach((k, dir) -> {
                         try {
                             IOUtil.delete(dir);
-                        } catch (Exception e) {
+                        } catch (Exception ex) {
                             logger.warning("Failed to delete temporary directory " + dir);
                         }
                     });
@@ -300,8 +300,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
                     if (serializationService != null) {
                         serializationService.dispose();
                     }
-                    return null;
-                });
+                }));
     }
 
     /**
