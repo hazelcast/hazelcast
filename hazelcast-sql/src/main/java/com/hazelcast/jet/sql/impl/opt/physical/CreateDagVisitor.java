@@ -46,7 +46,6 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
-import com.hazelcast.jet.sql.impl.opt.WatermarkKeysAssigner;
 import com.hazelcast.jet.sql.impl.processors.LateItemsDropP;
 import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
@@ -98,17 +97,11 @@ public class CreateDagVisitor {
     private final NodeEngine nodeEngine;
     private final Address localMemberAddress;
     private final QueryParameterMetadata parameterMetadata;
-    private final WatermarkKeysAssigner watermarkKeysAssigner;
 
-    public CreateDagVisitor(
-            NodeEngine nodeEngine,
-            QueryParameterMetadata parameterMetadata,
-            @Nullable WatermarkKeysAssigner watermarkKeysAssigner
-    ) {
+    public CreateDagVisitor(NodeEngine nodeEngine, QueryParameterMetadata parameterMetadata) {
         this.nodeEngine = nodeEngine;
         this.localMemberAddress = nodeEngine.getThisAddress();
         this.parameterMetadata = parameterMetadata;
-        this.watermarkKeysAssigner = watermarkKeysAssigner;
     }
 
     public Vertex onValues(ValuesPhysicalRel rel) {

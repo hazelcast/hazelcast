@@ -181,9 +181,6 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
-        if (shouldIgnoreMismatchedWatermark(watermark, (byte) 0)) {
-            return super.tryProcessWatermark(watermark);
-        }
         if (!emitFromTraverser(currentTraverser)) {
             return false;
         }

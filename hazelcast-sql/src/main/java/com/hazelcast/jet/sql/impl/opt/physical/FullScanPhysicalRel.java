@@ -46,7 +46,7 @@ import static com.hazelcast.jet.impl.util.Util.toList;
 import static com.hazelcast.jet.sql.impl.opt.cost.CostUtils.TABLE_SCAN_CPU_MULTIPLIER;
 
 public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
-    private byte watermarkKey = -1;
+    private Byte watermarkKey;
 
     FullScanPhysicalRel(
             RelOptCluster cluster,
@@ -139,6 +139,9 @@ public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
     }
 
     public byte getWatermarkKey() {
+        if (watermarkKey == null) {
+            throw new IllegalStateException("not yet initialized");
+        }
         return watermarkKey;
     }
 

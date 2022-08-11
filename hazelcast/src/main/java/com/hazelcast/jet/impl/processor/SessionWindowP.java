@@ -187,7 +187,8 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark wm) {
-        if (shouldIgnoreMismatchedWatermark(wm, windowWatermarkKey)) {
+        // drop all watermarks except for the one we use for timestamps
+        if (wm.key() != windowWatermarkKey) {
             return true;
         }
         currentWatermark = wm.timestamp();

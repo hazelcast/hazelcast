@@ -59,7 +59,7 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
         HazelcastTable table = partitionedTable("map", asList(field(KEY, INT), field(VALUE, INT)), 1);
         List<QueryDataType> parameterTypes = asList(QueryDataType.INT, QueryDataType.INT);
 
-        final String sql = "(SELECT * FROM TABLE(IMPOSE_ORDER((SELECT __key, this FROM map), DESCRIPTOR(this), 1)))";
+        final String sql = "SELECT * FROM TABLE(IMPOSE_ORDER((SELECT __key, this FROM map), DESCRIPTOR(this), 1))";
 
         PhysicalRel optimizedPhysicalRel = optimizePhysical(sql, parameterTypes, table).getPhysical();
 
@@ -91,7 +91,7 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
         HazelcastTable table = partitionedTable("map", asList(field(KEY, INT), field(VALUE, INT)), 1);
         List<QueryDataType> parameterTypes = asList(QueryDataType.INT, QueryDataType.INT);
 
-        String sql = "(SELECT this, __key FROM TABLE(IMPOSE_ORDER((SELECT __key, this FROM map), DESCRIPTOR(this), 1)))";
+        String sql = "SELECT this, __key FROM TABLE(IMPOSE_ORDER((SELECT __key, this FROM map), DESCRIPTOR(this), 1))";
 
         PhysicalRel optimizedPhysicalRel = optimizePhysical(sql, parameterTypes, table).getPhysical();
 
@@ -147,7 +147,7 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
     }
 
     @Test
-    public void when_slidingWindowIsPresent_then_windowBoundsWereAdded() {
+    public void when_slidingWindowIsPresent_then_inputWatermarkedFieldWatermarked() {
         HazelcastTable table = partitionedTable("map", asList(field(KEY, INT), field(VALUE, INT)), 1);
         List<QueryDataType> parameterTypes = asList(QueryDataType.INT, QueryDataType.INT);
 
@@ -185,7 +185,7 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
     }
 
     @Test
-    public void when_upperRelsDoesntSupportWatermarks_then_justPartOfTreeIsWatermarked() {
+    public void when_upperRelsDoNotSupportWatermarks_then_justPartOfTreeIsWatermarked() {
         HazelcastTable table = partitionedTable("map", asList(field(KEY, INT), field(VALUE, INT)), 1);
         List<QueryDataType> parameterTypes = asList(QueryDataType.INT, QueryDataType.INT);
 
@@ -213,7 +213,7 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
         Map<Integer, MutableByte> map = keysAssigner.getWatermarkedFieldsKey(optimizedPhysicalRel);
         assertThat(map).isNull();
 
-        // Watermark key propagation chain was ripped on AggregateAccumulateByKeyPhysicalRel.
+        // Watermark key propagation chain was ripped on AggregateAccumulateByKeyPhysicalRel
         PhysicalRel aggAccumRel = optimizedPhysicalRel;
         while (!(aggAccumRel instanceof AggregateAccumulateByKeyPhysicalRel)) {
             aggAccumRel = (PhysicalRel) aggAccumRel.getInput(0);
@@ -222,7 +222,7 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
         map = keysAssigner.getWatermarkedFieldsKey(aggAccumRel);
         assertThat(map).isNull();
 
-        // Next rel after AggregateAccumulateByKeyPhysicalRel has watermark key.
+        // Next rel after AggregateAccumulateByKeyPhysicalRel has watermark key
         PhysicalRel nextRelContainsWm = (PhysicalRel) ((AggregateAccumulateByKeyPhysicalRel) aggAccumRel).getInput();
         assertThat(nextRelContainsWm).isInstanceOf(CalcPhysicalRel.class);
         map = keysAssigner.getWatermarkedFieldsKey(nextRelContainsWm);

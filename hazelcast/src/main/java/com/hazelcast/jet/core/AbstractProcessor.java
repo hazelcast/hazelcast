@@ -19,7 +19,6 @@ package com.hazelcast.jet.core;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.Traversers;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.CheckReturnValue;
 import javax.annotation.Nonnull;
@@ -580,6 +579,20 @@ public abstract class AbstractProcessor implements Processor {
         }
     }
 
+    /**
+     * Throws {@link UnsupportedOperationException} if watermark has non-zero
+     * key.
+     * <p>
+     * Supposed to be used by processors that don't function properly with keyed
+     * watermarks.
+     */
+    protected void keyedWatermarkCheck(Watermark watermark) {
+        if (watermark.key() != 0) {
+            throw new UnsupportedOperationException("Keyed watermarks are not supported for "
+                    + this.getClass().getName());
+        }
+    }
+
     // The processN methods contain repeated looping code in order to give an
     // easier job to the JIT compiler to optimize each case independently, and
     // to ensure that ordinal is dispatched on just once per process(ordinal,
@@ -619,15 +632,5 @@ public abstract class AbstractProcessor implements Processor {
         for (Object item; (item = inbox.peek()) != null && tryProcess(ordinal, item); ) {
             inbox.remove();
         }
-    }
-
-    /**
-     * Return {@code true} if watermark doesn't match given {@code matchingKey}.
-     * <p>
-     * Supposed to be used by processors that may work with multiple watermarks.
-     */
-    @PrivateApi
-    protected boolean shouldIgnoreMismatchedWatermark(Watermark watermark, byte matchingKey) {
-        return watermark.key() != matchingKey;
     }
 }
