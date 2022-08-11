@@ -77,7 +77,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-         .hasMessageContaining("external-datastore-ref must be set");
+         .hasMessageContaining("externalDataStoreRef must be set");
     }
 
     @Test
