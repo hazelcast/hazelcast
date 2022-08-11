@@ -24,6 +24,7 @@ import org.apache.calcite.rel.core.Calc;
 import org.apache.calcite.rel.rules.TransformationRule;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.util.Permutation;
 import org.immutables.value.Value;
 
 import java.util.List;
@@ -90,10 +91,11 @@ public class CalcDropLateItemsTransposeRule extends RelRule<RelRule.Config> impl
         RelNode input = dropRel.getInput();
 
         Calc newCalc = calc.copy(calc.getTraitSet(), input, calc.getProgram());
+        Permutation permutation = newCalc.getProgram().getPermutation();
         DropLateItemsLogicalRel newDropRel = dropRel.copy(
                 dropRel.getTraitSet(),
                 newCalc,
-                newCalc.getProgram().getSourceField(dropRel.wmField()));
+                permutation == null ? dropRel.wmField() : permutation.getSource(dropRel.wmField()));
 
         call.transformTo(newDropRel);
     }
