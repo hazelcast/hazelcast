@@ -144,10 +144,7 @@ public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
                 watermarkedColumnIndex());
     }
 
-    public byte getWatermarkKey() {
-        if (watermarkKey == null) {
-            throw new IllegalStateException("not yet initialized");
-        }
+    public Byte getWatermarkKey() {
         return watermarkKey;
     }
 
