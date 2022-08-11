@@ -89,7 +89,7 @@ public class ExternalDataStoreConfig implements IdentifiedDataSerializable, Name
 
 
     /**
-     * Returns the name of the MapStore implementation class
+     * Returns the name of the ExternalDataStoreFactory implementation class
      *
      * @return the name of the ExternalDataStoreFactory implementation class
      */
