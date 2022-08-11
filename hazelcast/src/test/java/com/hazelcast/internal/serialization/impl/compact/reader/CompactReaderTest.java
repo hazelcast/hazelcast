@@ -50,7 +50,7 @@ public class CompactReaderTest {
         SerializationConfig config = new SerializationConfig();
         config.getCompactSerializationConfig()
                 .setEnabled(true)
-                .register(Foo.class, "foo", new FooSerializer());
+                .addSerializer(new FooSerializer());
 
         SerializationService service = createSerializationService(config);
 
@@ -65,7 +65,7 @@ public class CompactReaderTest {
         SerializationConfig config = new SerializationConfig();
         config.getCompactSerializationConfig()
                 .setEnabled(true)
-                .register(Foo.class, "foo", new FooSerializer());
+                .addSerializer(new FooSerializer());
 
         SerializationService service = createSerializationService(config);
 
@@ -115,6 +115,18 @@ public class CompactReaderTest {
         @Override
         public void write(@Nonnull CompactWriter writer, @Nonnull Foo object) {
             writer.writeInt32("i", object.i);
+        }
+
+        @Nonnull
+        @Override
+        public String getTypeName() {
+            return "foo";
+        }
+
+        @Nonnull
+        @Override
+        public Class<Foo> getCompactClass() {
+            return Foo.class;
         }
     }
 }
