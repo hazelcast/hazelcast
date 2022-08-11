@@ -95,7 +95,6 @@ public class WatermarkKeysAssigner {
             // start with recursion to children
             super.visit(node, ordinal, parent);
 
-
             if (node instanceof FullScanPhysicalRel) {
                 assert node.getInputs().isEmpty() : "FullScan not a leaf";
                 FullScanPhysicalRel scan = (FullScanPhysicalRel) node;
