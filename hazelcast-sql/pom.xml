@@ -325,7 +325,6 @@
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                         <exclude>codegen/**</exclude>
                                         <exclude>**/package-info.java</exclude>
-                                        <exclude>org.apache.calcite.sql.validate.SqlValidatorImpl</exclude>
                                     </excludes>
                                 </filter>
                                 <filter>

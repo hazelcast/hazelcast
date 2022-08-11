@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.type;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -27,6 +28,7 @@ import java.io.Serializable;
 import static com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.createJavaMapping;
 import static com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.createJavaType;
 
+@Ignore
 @RunWith(HazelcastSerialClassRunner.class)
 public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
 
