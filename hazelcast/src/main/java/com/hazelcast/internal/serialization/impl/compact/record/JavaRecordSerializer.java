@@ -173,6 +173,9 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
     }
 
     private void populateReadersWriters(Class<?> clazz) {
+        // The top level class might not be Compact serializable
+        CompactUtil.verifyClassIsCompactSerializable(clazz);
+
         try {
             Object[] recordComponents = (Object[]) getRecordComponentsMethod.invoke(clazz);
             Class<?>[] componentTypes = new Class<?>[recordComponents.length];
@@ -626,6 +629,9 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                             compactWriter.writeArrayOfString(name, CompactUtil.enumArrayAsStringNameArray(values));
                         };
                     } else {
+                        // Elements of the array might not be Compact serializable
+                        CompactUtil.verifyFieldClassIsCompactSerializable(componentType, clazz);
+
                         componentReaders[i] = (compactReader, schema) -> {
                             if (!isFieldExist(schema, name, ARRAY_OF_COMPACT)) {
                                 return null;
@@ -636,6 +642,9 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                                 -> compactWriter.writeArrayOfCompact(name, (Object[]) componentGetter.invoke(object));
                     }
                 } else {
+                    // The nested field might not be Compact serializable
+                    CompactUtil.verifyFieldClassIsCompactSerializable(type, clazz);
+
                     componentReaders[i] = (compactReader, schema) -> {
                         if (!isFieldExist(schema, name, COMPACT)) {
                             return null;

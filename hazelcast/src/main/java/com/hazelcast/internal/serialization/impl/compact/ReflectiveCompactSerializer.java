@@ -192,7 +192,10 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
     }
 
     private void createFastReadWriteCaches(Class clazz) {
-        //get inherited fields as well
+        // The top level class might not be Compact serializable
+        CompactUtil.verifyClassIsCompactSerializable(clazz);
+
+        // get inherited fields as well
         List<Field> allFields = getAllFields(new LinkedList<>(), clazz);
         Writer[] writers = new Writer[allFields.size()];
         Reader[] readers = new Reader[allFields.size()];
@@ -548,6 +551,9 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
                         w.writeArrayOfString(name, CompactUtil.enumArrayAsStringNameArray(values));
                     };
                 } else {
+                    // Elements of the array might not be Compact serializable
+                    CompactUtil.verifyFieldClassIsCompactSerializable(componentType, clazz);
+
                     readers[index] = (reader, schema, o) -> {
                         if (isFieldExist(schema, name, ARRAY_OF_COMPACT)) {
                             field.set(o, reader.readArrayOfCompact(name, componentType));
@@ -556,6 +562,9 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
                     writers[index] = (w, o) -> w.writeArrayOfCompact(name, (Object[]) field.get(o));
                 }
             } else {
+                // The nested field might not be Compact serializable
+                CompactUtil.verifyFieldClassIsCompactSerializable(type, clazz);
+
                 readers[index] = (reader, schema, o) -> {
                     if (isFieldExist(schema, name, COMPACT)) {
                         field.set(o, reader.readCompact(name));
