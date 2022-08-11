@@ -22,28 +22,28 @@ import com.hazelcast.nio.serialization.compact.CompactWriter;
 
 import javax.annotation.Nonnull;
 
-public class EmployeeDTOSerializer implements CompactSerializer<EmployeeDTO> {
+public class SerializableEmployeeDTOSerializer implements CompactSerializer<SerializableEmployeeDTO> {
     @Nonnull
     @Override
-    public EmployeeDTO read(@Nonnull CompactReader in) {
-        return new EmployeeDTO(in.readInt32("age"), in.readInt64("id"));
+    public SerializableEmployeeDTO read(@Nonnull CompactReader reader) {
+        return new SerializableEmployeeDTO(reader.readString("name"), reader.readInt32("age"));
     }
 
     @Override
-    public void write(@Nonnull CompactWriter out, @Nonnull EmployeeDTO object) {
-        out.writeInt32("age", object.getAge());
-        out.writeInt64("id", object.getId());
+    public void write(@Nonnull CompactWriter writer, @Nonnull SerializableEmployeeDTO object) {
+        writer.writeString("name", object.getName());
+        writer.writeInt32("age", object.getAge());
     }
 
     @Nonnull
     @Override
     public String getTypeName() {
-        return "employee";
+        return SerializableEmployeeDTO.class.getName();
     }
 
     @Nonnull
     @Override
-    public Class<EmployeeDTO> getCompactClass() {
-        return EmployeeDTO.class;
+    public Class<SerializableEmployeeDTO> getCompactClass() {
+        return SerializableEmployeeDTO.class;
     }
 }

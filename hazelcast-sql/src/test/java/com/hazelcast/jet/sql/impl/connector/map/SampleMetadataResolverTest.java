@@ -158,7 +158,7 @@ public class SampleMetadataResolverTest {
     public void test_compact() {
         SerializationConfig serializationConfig = new SerializationConfig();
         serializationConfig.getCompactSerializationConfig().setEnabled(true)
-                .register(CompactClass.class, "type-name", new CompactClass.CompactClassSerializer());
+                .addSerializer(new CompactClass.CompactClassSerializer());
         InternalSerializationService ss = new DefaultSerializationServiceBuilder()
                 .setSchemaService(CompactTestUtil.createInMemorySchemaService())
                 .setConfig(serializationConfig)
@@ -305,6 +305,18 @@ public class SampleMetadataResolverTest {
             @Override
             public void write(@Nonnull CompactWriter out, @Nonnull CompactClass object) {
                 out.writeInt32("field", object.field);
+            }
+
+            @Nonnull
+            @Override
+            public String getTypeName() {
+                return "type-name";
+            }
+
+            @Nonnull
+            @Override
+            public Class<CompactClass> getCompactClass() {
+                return CompactClass.class;
             }
         }
     }

@@ -86,8 +86,8 @@ public class CompactStreamSerializerTest {
     @Test
     public void testAllTypesWithCustomSerializer() {
         CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.register(MainDTO.class, "main", new MainDTOSerializer());
-        compactSerializationConfig.register(InnerDTO.class, "inner", new InnerDTOSerializer());
+        compactSerializationConfig.addSerializer(new MainDTOSerializer());
+        compactSerializationConfig.addSerializer(new InnerDTOSerializer());
         compactSerializationConfig.setEnabled(true);
         SerializationService serializationService = new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
@@ -104,8 +104,8 @@ public class CompactStreamSerializerTest {
     @Test
     public void testReaderReturnsDefaultValues_whenDataIsMissing() {
         CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.register(MainDTO.class, "main", new MainDTOSerializer());
-        compactSerializationConfig.register(InnerDTO.class, "inner", new InnerDTOSerializer());
+        compactSerializationConfig.addSerializer(new MainDTOSerializer());
+        compactSerializationConfig.addSerializer(new InnerDTOSerializer());
         compactSerializationConfig.setEnabled(true);
         SerializationService serializationService = new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
@@ -116,7 +116,7 @@ public class CompactStreamSerializerTest {
         MainDTO actual = serializationService.toObject(data);
 
         assertEquals(1, actual.b);
-        assertEquals(false, actual.bool);
+        assertFalse(actual.bool);
         assertEquals(1, actual.s);
         assertEquals(1, actual.i);
         assertEquals(1, actual.l);
@@ -284,7 +284,7 @@ public class CompactStreamSerializerTest {
         SerializationConfig serializationConfig = new SerializationConfig();
         CompactSerializationConfig compactSerializationConfig = serializationConfig.getCompactSerializationConfig();
         compactSerializationConfig.setEnabled(true);
-        compactSerializationConfig.register(EmployeeDTO.class, "employee",
+        compactSerializationConfig.addSerializer(
                 new CompactSerializer<EmployeeDTO>() {
                     @Nonnull
                     @Override
@@ -297,8 +297,20 @@ public class CompactStreamSerializerTest {
                         out.writeInt32("a", object.getAge());
                         out.writeInt64("i", object.getId());
                     }
+
+                    @Nonnull
+                    @Override
+                    public String getTypeName() {
+                        return "employee";
+                    }
+
+                    @Nonnull
+                    @Override
+                    public Class<EmployeeDTO> getCompactClass() {
+                        return EmployeeDTO.class;
+                    }
                 });
-        compactSerializationConfig.register(EmployerDTO.class, "employer",
+        compactSerializationConfig.addSerializer(
                 new CompactSerializer<EmployerDTO>() {
                     @Nonnull
                     @Override
@@ -320,6 +332,18 @@ public class CompactStreamSerializerTest {
                         out.writeArrayOfInt64("ids", object.getIds());
                         out.writeCompact("s", object.getSingleEmployee());
                         out.writeArrayOfCompact("ss", object.getOtherEmployees());
+                    }
+
+                    @Nonnull
+                    @Override
+                    public String getTypeName() {
+                        return "employer";
+                    }
+
+                    @Nonnull
+                    @Override
+                    public Class<EmployerDTO> getCompactClass() {
+                        return EmployerDTO.class;
                     }
                 });
 
@@ -359,7 +383,7 @@ public class CompactStreamSerializerTest {
     public void testWithExplicitSerializer() {
         SerializationConfig serializationConfig = new SerializationConfig();
         serializationConfig.getCompactSerializationConfig().setEnabled(true)
-                .register(EmployeeDTO.class, "employee", new EmployeeDTOSerializer());
+                .addSerializer(new EmployeeDTOSerializer());
 
         SerializationService serializationService = new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService).setConfig(serializationConfig).build();
@@ -385,8 +409,8 @@ public class CompactStreamSerializerTest {
         Object object = serializationService.toObject(data);
         GenericRecord genericRecord = (GenericRecord) object;
 
-        assertTrue(expectedGenericRecord.equals(genericRecord));
-        assertTrue(genericRecord.equals(expectedGenericRecord));
+        assertEquals(expectedGenericRecord, genericRecord);
+        assertEquals(genericRecord, expectedGenericRecord);
         assertEquals(expectedGenericRecord.hashCode(), genericRecord.hashCode());
     }
 
@@ -394,7 +418,7 @@ public class CompactStreamSerializerTest {
     public void testOverridesJavaSerializationWhenRegisteredAsReflectivelySerializable() {
         SerializationConfig serializationConfig = new SerializationConfig();
         serializationConfig.getCompactSerializationConfig().setEnabled(true)
-                .register(ExternalizableEmployeeDTO.class);
+                .addClass(ExternalizableEmployeeDTO.class);
 
         SerializationService serializationService = new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService).setConfig(serializationConfig).build();
@@ -414,7 +438,7 @@ public class CompactStreamSerializerTest {
     public void testDeserializedToGenericRecordWhenClassNotFoundOnClassPath() {
         SerializationConfig serializationConfig = new SerializationConfig();
         serializationConfig.getCompactSerializationConfig().setEnabled(true)
-                .register(EmployeeDTO.class, "employee", new EmployeeDTOSerializer());
+                .addSerializer(new EmployeeDTOSerializer());
 
         SerializationService serializationService = new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
@@ -537,7 +561,7 @@ public class CompactStreamSerializerTest {
         SerializationConfig serializationConfig = new SerializationConfig();
         //Using this registration to mimic schema evolution. This is usage is not advised.
         serializationConfig.getCompactSerializationConfig().setEnabled(true)
-                .register(EmployeeDTO.class, EmployeeDTO.class.getName(), new CompactSerializer<EmployeeDTO>() {
+                .addSerializer(new CompactSerializer<EmployeeDTO>() {
                     @Nonnull
                     @Override
                     public EmployeeDTO read(@Nonnull CompactReader in) {
@@ -549,6 +573,18 @@ public class CompactStreamSerializerTest {
                         out.writeInt32("age", object.getAge());
                         out.writeInt64("id", object.getId());
                         out.writeString("surname", "sir");
+                    }
+
+                    @Nonnull
+                    @Override
+                    public String getTypeName() {
+                        return EmployeeDTO.class.getName();
+                    }
+
+                    @Nonnull
+                    @Override
+                    public Class<EmployeeDTO> getCompactClass() {
+                        return EmployeeDTO.class;
                     }
                 });
 
@@ -578,7 +614,7 @@ public class CompactStreamSerializerTest {
         SerializationConfig serializationConfig = new SerializationConfig();
         //Using this registration to mimic schema evolution. This is usage is not advised.
         serializationConfig.getCompactSerializationConfig().setEnabled(true)
-                .register(EmployeeDTO.class, EmployeeDTO.class.getName(), new CompactSerializer<EmployeeDTO>() {
+                .addSerializer(new CompactSerializer<EmployeeDTO>() {
                     @Nonnull
                     @Override
                     public EmployeeDTO read(@Nonnull CompactReader in) {
@@ -588,6 +624,18 @@ public class CompactStreamSerializerTest {
                     @Override
                     public void write(@Nonnull CompactWriter out, @Nonnull EmployeeDTO object) {
                         out.writeInt32("age", object.getAge());
+                    }
+
+                    @Nonnull
+                    @Override
+                    public String getTypeName() {
+                        return EmployeeDTO.class.getName();
+                    }
+
+                    @Nonnull
+                    @Override
+                    public Class<EmployeeDTO> getCompactClass() {
+                        return EmployeeDTO.class;
                     }
                 });
 

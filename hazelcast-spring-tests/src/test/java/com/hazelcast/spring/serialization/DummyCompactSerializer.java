@@ -33,4 +33,16 @@ public class DummyCompactSerializer implements CompactSerializer<DummyCompactSer
     public void write(@Nonnull CompactWriter out, @Nonnull DummyCompactSerializable object) {
 
     }
+
+    @Nonnull
+    @Override
+    public String getTypeName() {
+        return "dummy";
+    }
+
+    @Nonnull
+    @Override
+    public Class<DummyCompactSerializable> getCompactClass() {
+        return DummyCompactSerializable.class;
+    }
 }
