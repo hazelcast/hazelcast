@@ -36,13 +36,13 @@ import example.serialization.MainDTO;
 import example.serialization.MainDTOSerializer;
 import example.serialization.SameClassEmployeeDTOSerializer;
 import example.serialization.SameTypeNameEmployeeDTOSerializer;
+import example.serialization.SerializableEmployeeDTO;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.OptionalDouble;
 
@@ -205,7 +205,7 @@ public class CompactSerializationTest {
         SerializationConfig config = new SerializationConfig();
         config.getCompactSerializationConfig()
                 .setEnabled(true)
-                .setClasses(ExternalizableEmployeeDTO.class, SerializableFoo.class);
+                .setClasses(ExternalizableEmployeeDTO.class, SerializableEmployeeDTO.class);
 
         SerializationService service = createSerializationService(config);
 
@@ -214,7 +214,7 @@ public class CompactSerializationTest {
 
         assertFalse(externalizableEmployeeDTO.usedExternalizableSerialization());
 
-        Data data = service.toData(new SerializableFoo());
+        Data data = service.toData(new SerializableEmployeeDTO("John Doe", 42));
         assertTrue(data.isCompact());
     }
 
@@ -235,11 +235,11 @@ public class CompactSerializationTest {
         SerializationConfig config = new SerializationConfig();
         config.getCompactSerializationConfig()
                 .setEnabled(true)
-                .setClasses(SerializableFoo.class)
+                .setClasses(SerializableEmployeeDTO.class)
                 .setSerializers(new EmployeeDTOSerializer());
 
         SerializationService service = createSerializationService(config);
-        Data data = service.toData(new SerializableFoo());
+        Data data = service.toData(new SerializableEmployeeDTO("John Doe", 42));
         assertTrue(data.isCompact());
     }
 
@@ -250,7 +250,7 @@ public class CompactSerializationTest {
         config.getCompactSerializationConfig()
                 .setEnabled(true)
                 .setSerializers(serializer)
-                .setClasses(SerializableFoo.class);
+                .setClasses(SerializableEmployeeDTO.class);
 
         SerializationService service = createSerializationService(config);
         service.toObject(service.toData(new EmployeeDTO()));
@@ -352,11 +352,6 @@ public class CompactSerializationTest {
         private Foo(int bar) {
             this.bar = bar;
         }
-    }
-
-    // Not static by purpose to fail the test if Java Serialization is used
-    private class SerializableFoo implements Serializable {
-        private int i;
     }
 
     private static class DuplicateWritingSerializer implements CompactSerializer<Foo> {
