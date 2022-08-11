@@ -26,13 +26,12 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizePolicy;
-import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.spring.HazelcastClientBeanDefinitionParser;
 import com.hazelcast.spring.HazelcastConfigBeanDefinitionParser;
 import com.hazelcast.spring.HazelcastFailoverClientBeanDefinitionParser;
 
-import java.util.Map;
+import java.util.List;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.config.ConfigValidator.COMMONLY_SUPPORTED_EVICTION_POLICIES;
@@ -112,19 +111,18 @@ public final class ConfigFactory {
 
     public static CompactSerializationConfig newCompactSerializationConfig(
             boolean isEnabled,
-            Map<String, TriTuple<String, String, String>> registrations) {
+            List<String> serializerClassNames,
+            List<String> compactSerializableClassNames
+    ) {
         CompactSerializationConfig config = new CompactSerializationConfig();
         config.setEnabled(isEnabled);
 
-        for (TriTuple<String, String, String> registration : registrations.values()) {
-            String className = registration.element1;
-            String typeName = registration.element2;
-            String serializerName = registration.element3;
-            if (serializerName != null) {
-                CompactSerializationConfigAccessor.registerExplicitSerializer(config, className, typeName, serializerName);
-            } else {
-                CompactSerializationConfigAccessor.registerReflectiveSerializer(config, className);
-            }
+        for (String compactSerializableClassName : compactSerializableClassNames) {
+            CompactSerializationConfigAccessor.registerClass(config, compactSerializableClassName);
+        }
+
+        for (String serializerClassName : serializerClassNames) {
+            CompactSerializationConfigAccessor.registerSerializer(config, serializerClassName);
         }
 
         return config;

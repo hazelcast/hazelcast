@@ -38,7 +38,6 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.internal.config.DomConfigHelper;
-import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
@@ -63,7 +62,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
@@ -360,44 +358,41 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
                 compactSerializationConfigBuilder.addConstructorArgValue(value);
             }
 
-            ManagedMap<String, TriTuple<String, String, String>> registrations = new ManagedMap<>();
+            ManagedList<String> serializerClassNames = new ManagedList<>();
+            ManagedList<String> compactSerializableClassNames = new ManagedList<>();
             for (Node child : childElements(compactNode)) {
                 String name = cleanNodeName(child);
-                if ("registered-classes".equals(name)) {
-                    handleRegisteredClasses(child, registrations);
+                if ("serializers".equals(name)) {
+                    handleCompactSerializers(child, serializerClassNames);
+                } else if ("classes".equals(name)) {
+                    handleCompactSerializableClasses(child, compactSerializableClassNames);
                 }
             }
-            compactSerializationConfigBuilder.addConstructorArgValue(registrations);
+            compactSerializationConfigBuilder.addConstructorArgValue(serializerClassNames);
+            compactSerializationConfigBuilder.addConstructorArgValue(compactSerializableClassNames);
 
             BeanDefinition compactBeanDefinition = compactSerializationConfigBuilder.getBeanDefinition();
             serializationConfigBuilder.addPropertyValue("compactSerializationConfig", compactBeanDefinition);
         }
 
-        private void handleRegisteredClasses(Node registeredClasses,
-                                             Map<String, TriTuple<String, String, String>> registrations) {
-            for (Node node : childElements(registeredClasses)) {
+        private void handleCompactSerializers(Node compactSerializers, List<String> serializerClassNames) {
+            for (Node node : childElements(compactSerializers)) {
                 String nodeName = cleanNodeName(node);
-                if (!"class".equals(nodeName)) {
-                    continue;
+                if ("serializer".equals(nodeName)) {
+                    String serializerClassName = getTextContent(node);
+                    serializerClassNames.add(serializerClassName);
                 }
+            }
+        }
 
-                String className = getTextContent(node);
-                NamedNodeMap classAttributes = node.getAttributes();
-                Node typeNameNode = classAttributes.getNamedItem("type-name");
-                Node serializerNode = classAttributes.getNamedItem("serializer");
-                if (typeNameNode != null ^ serializerNode != null) {
-                    throw new InvalidConfigurationException("Either both 'type-name' and 'serializer' attributes "
-                            + "must be defined to register a class with an explicit serializer, "
-                            + "or no attributes should be defined to register a class to be used with "
-                            + "reflective compact serializer.");
-                }
-
-                String typeName = typeNameNode != null ? getTextContent(typeNameNode) : className;
-                String serializerName = serializerNode != null ? getTextContent(serializerNode) : null;
-
-                TriTuple<String, String, String> registration = TriTuple.of(className, typeName, serializerName);
-                if (registrations.put(typeName, registration) != null) {
-                    throw new InvalidConfigurationException("Found a duplicate type name registration for " + typeName);
+        private void handleCompactSerializableClasses(
+                Node compactSerializableClasses,
+                List<String> compactSerializableClassNames) {
+            for (Node node : childElements(compactSerializableClasses)) {
+                String nodeName = cleanNodeName(node);
+                if ("class".equals(nodeName)) {
+                    String compactSerializableClassName = getTextContent(node);
+                    compactSerializableClassNames.add(compactSerializableClassName);
                 }
             }
         }

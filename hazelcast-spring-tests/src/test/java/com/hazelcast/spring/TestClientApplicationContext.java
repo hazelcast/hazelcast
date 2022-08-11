@@ -64,12 +64,10 @@ import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.IAtomicReference;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.cp.ISemaphore;
-import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.map.IMap;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.security.Credentials;
-import com.hazelcast.spring.serialization.DummyCompactSerializable;
 import com.hazelcast.spring.serialization.DummyCompactSerializer;
 import com.hazelcast.spring.serialization.DummyReflectiveSerializable;
 import com.hazelcast.test.annotation.QuickTest;
@@ -95,6 +93,7 @@ import static com.hazelcast.config.NearCacheConfig.LocalUpdatePolicy.CACHE_ON_UP
 import static com.hazelcast.config.PersistentMemoryMode.MOUNTED;
 import static com.hazelcast.config.PersistentMemoryMode.SYSTEM_MEMORY;
 import static com.hazelcast.test.HazelcastTestSupport.assertContains;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -396,20 +395,21 @@ public class TestClientApplicationContext {
                 .getCompactSerializationConfig();
         assertTrue(compactSerializationConfig.isEnabled());
 
-        Map<String, TriTuple<String, String, String>> namedRegistrations = CompactSerializationConfigAccessor.getNamedRegistrations(compactSerializationConfig);
-        assertEquals(2, namedRegistrations.size());
+        List<String> serializerClassNames
+                = CompactSerializationConfigAccessor.getSerializerClassNames(compactSerializationConfig);
+        assertEquals(1, serializerClassNames.size());
+
+        List<String> compactSerializableClassNames
+                = CompactSerializationConfigAccessor.getCompactSerializableClassNames(compactSerializationConfig);
+        assertEquals(1, compactSerializableClassNames.size());
 
         String reflectivelySerializableClassName = DummyReflectiveSerializable.class.getName();
-        TriTuple<String, String, String> reflectiveClassRegistration = TriTuple.of(reflectivelySerializableClassName, reflectivelySerializableClassName, null);
-        TriTuple<String, String, String> actualReflectiveRegistration = namedRegistrations.get(reflectivelySerializableClassName);
-        assertEquals(reflectiveClassRegistration, actualReflectiveRegistration);
+        assertThat(compactSerializableClassNames)
+                .contains(reflectivelySerializableClassName);
 
-        String compactSerializableClassName = DummyCompactSerializable.class.getName();
         String compactSerializerClassName = DummyCompactSerializer.class.getName();
-        String typeName = "dummy";
-        TriTuple<String, String, String> explicitClassRegistration = TriTuple.of(compactSerializableClassName, typeName, compactSerializerClassName);
-        TriTuple<String, String, String> actualExplicitRegistration = namedRegistrations.get(typeName);
-        assertEquals(explicitClassRegistration, actualExplicitRegistration);
+        assertThat(serializerClassNames)
+                .contains(compactSerializerClassName);
     }
 
     @Test

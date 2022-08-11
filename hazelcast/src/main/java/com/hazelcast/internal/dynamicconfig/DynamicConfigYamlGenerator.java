@@ -35,6 +35,7 @@ import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.IcmpFailureDetectorConfig;
 import com.hazelcast.config.IndexConfig;
@@ -148,6 +149,7 @@ public class DynamicConfigYamlGenerator {
         wanReplicationYamlGenerator(root, config);
         networkConfigYamlGenerator(root, config);
         advancedNetworkConfigYamlGenerator(root, config);
+        externalDataStoreYamlGenerator(root, config);
         DumpSettings dumpSettings = DumpSettings.builder()
                 .setDefaultFlowStyle(FlowStyle.BLOCK)
                 .setIndicatorIndent(INDENT - 2)
@@ -658,6 +660,28 @@ public class DynamicConfigYamlGenerator {
         }
 
         parent.put("pn-counter", child);
+    }
+
+    public static void externalDataStoreYamlGenerator(Map<String, Object> parent, Config config) {
+        if (config.getExternalDataStoreConfigs().isEmpty()) {
+            return;
+        }
+
+        Map<String, Object> child = new LinkedHashMap<>();
+        for (ExternalDataStoreConfig externalDataStoreConfig : config.getExternalDataStoreConfigs().values()) {
+            Map<String, Object> subConfigAsMap = new LinkedHashMap<>();
+
+            addNonNullToMap(subConfigAsMap, "class-name",
+                    externalDataStoreConfig.getClassName());
+            addNonNullToMap(subConfigAsMap, "shared",
+                    externalDataStoreConfig.isShared());
+            addNonNullToMap(subConfigAsMap, "properties",
+                    getPropertiesAsMap(externalDataStoreConfig.getProperties()));
+
+            child.put(externalDataStoreConfig.getName(), subConfigAsMap);
+        }
+
+        parent.put("external-data-store", child);
     }
 
     public static void wanReplicationYamlGenerator(Map<String, Object> parent, Config config) {

@@ -110,7 +110,14 @@ public class PortableInternalGenericRecord extends PortableGenericRecord impleme
     @Override
     @Nonnull
     public FieldKind getFieldKind(@Nonnull String fieldName) {
-        return FieldTypeToFieldKind.toFieldKind(cd.getFieldType(fieldName));
+        FieldType fieldType;
+        try {
+            fieldType = cd.getFieldType(fieldName);
+        } catch (IllegalArgumentException ignored) {
+            // field does not exist
+            return FieldKind.NOT_AVAILABLE;
+        }
+        return FieldTypeToFieldKind.toFieldKind(fieldType);
     }
 
     @Override

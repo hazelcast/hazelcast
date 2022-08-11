@@ -46,6 +46,7 @@ import com.hazelcast.query.Predicate;
 import com.hazelcast.query.PredicateBuilder;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.security.impl.function.SecuredFunctions;
+import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import javax.jms.ConnectionFactory;
@@ -1047,7 +1048,6 @@ public final class Sources {
                 .build(SecuredFunctions.jsonReadFileFn(directory));
     }
 
-
     /**
      * A source to stream lines added to files in a directory. This is a
      * streaming source, it will watch directory and emit lines as they are
@@ -1326,6 +1326,59 @@ public final class Sources {
     ) {
         return batchFromProcessor("jdbcSource",
                 SourceProcessors.readJdbcP(newConnectionFn, resultSetFn, createOutputFn));
+    }
+
+    /**
+     * Returns a source which connects to the specified database using the given
+     * {@code externalDataStoreRef}, queries the database and creates a result set
+     * using the given {@code resultSetFn}. It creates output objects from the
+     * {@link ResultSet} using given {@code mapOutputFn} and emits them to
+     * downstream.
+     * <p>
+     * Example:
+     * <p>
+     * (Prerequisite) External dataStore configuration:
+     * <pre>{@code
+     *      Config config = smallInstanceConfig();
+     *      Properties properties = new Properties();
+     *      properties.put("jdbcUrl", jdbcUrl);
+     *      properties.put("username", username);
+     *      properties.put("password", password);
+     *      ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
+     *              .setName("my-jdbc-data-store")
+     *              .setClassName(JdbcDataStoreFactory.class.getName())
+     *              .setProperties(properties);
+     *      config.getExternalDataStoreConfigs().put(name, externalDataStoreConfig);
+     * }</pre>
+     * </p>
+     * <p>Pipeline configuration
+     * <pre>{@code
+     *     p.readFrom(Sources.jdbc(
+     *         ExternalDataStoreRef.externalDataStoreRef("my-jdbc-data-store"),
+     *         (con, parallelism, index) -> {
+     *              PreparedStatement stmt = con.prepareStatement("SELECT * FROM TABLE WHERE MOD(id, ?) = ?)");
+     *              stmt.setInt(1, parallelism);
+     *              stmt.setInt(2, index);
+     *              return stmt.executeQuery();
+     *         },
+     *         resultSet -> new Person(resultSet.getInt(1), resultSet.getString(2))))
+     * }</pre>
+     * </p>
+     * <p>
+     * <p>
+     * See also {@link Sources#jdbc(SupplierEx, ToResultSetFunction, FunctionEx)}.
+     *</p>
+     *
+     * @since 5.2
+     */
+    @Beta
+    public static <T> BatchSource<T> jdbc(
+            @Nonnull ExternalDataStoreRef externalDataStoreRef,
+            @Nonnull ToResultSetFunction resultSetFn,
+            @Nonnull FunctionEx<? super ResultSet, ? extends T> createOutputFn
+    ) {
+        return batchFromProcessor("jdbcSource",
+                SourceProcessors.readJdbcP(externalDataStoreRef, resultSetFn, createOutputFn));
     }
 
     /**

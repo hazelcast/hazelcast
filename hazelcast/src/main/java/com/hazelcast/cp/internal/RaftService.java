@@ -67,6 +67,7 @@ import com.hazelcast.cp.internal.raftop.metadata.GetRaftGroupOp;
 import com.hazelcast.cp.internal.raftop.metadata.RaftServicePreJoinOp;
 import com.hazelcast.cp.internal.raftop.metadata.RemoveCPMemberOp;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.diagnostics.MetricsPlugin;
 import com.hazelcast.internal.metrics.DynamicMetricsProvider;
@@ -579,7 +580,6 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     @Override
     public void memberAdded(MembershipServiceEvent event) {
         metadataGroupManager.broadcastActiveCPMembers();
-        updateMissingMembers();
     }
 
     @Override
@@ -618,9 +618,25 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         }
     }
 
+    // The node should be removed from missing CP members only if it has the same Address and CP UUID
+    public void removeFromMissingMembers(List<MemberInfo> membersInfo) {
+        if (skipUpdateMissingMembers()) {
+            return;
+        }
+
+        for (MemberInfo memberInfo : membersInfo) {
+            if (memberInfo.getCPMemberUUID() != null) {
+                CPMemberInfo cpMember = new CPMemberInfo(memberInfo.getCPMemberUUID(), memberInfo.getAddress());
+                if (missingMembers.remove(cpMember) != null) {
+                        logger.info(cpMember
+                                + " rejoins the CP Subsystem and will be not auto-removed.");
+                }
+            }
+        }
+    }
+
     void updateMissingMembers() {
-        if (config.getMissingCPMemberAutoRemovalSeconds() == 0 || config.isPersistenceEnabled()
-                || !metadataGroupManager.isDiscoveryCompleted() || (!isStartCompleted())) {
+        if (skipUpdateMissingMembers()) {
             return;
         }
 
@@ -633,13 +649,16 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
         for (CPMemberInfo cpMember : activeMembers) {
             if (clusterService.getMember(cpMember.getAddress()) == null) {
                 if (missingMembers.putIfAbsent(cpMember, Clock.currentTimeMillis()) == null) {
-                    logger.warning(cpMember + " is not present in the cluster. It will be auto-removed after "
-                            + config.getMissingCPMemberAutoRemovalSeconds() + " seconds.");
+                    logger.warning(cpMember + " is not present in the cluster. It will be auto-removed from the "
+                            + "CP Subsystem after " + config.getMissingCPMemberAutoRemovalSeconds() + " seconds.");
                 }
-            } else if (missingMembers.remove(cpMember) != null) {
-                logger.info(cpMember + " is removed from the missing members list as it is in the cluster.");
             }
         }
+    }
+
+    private boolean skipUpdateMissingMembers() {
+        return config.getMissingCPMemberAutoRemovalSeconds() == 0 || config.isPersistenceEnabled()
+                || !metadataGroupManager.isDiscoveryCompleted() || !isStartCompleted();
     }
 
     Collection<CPMemberInfo> getMissingMembers() {

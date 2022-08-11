@@ -67,6 +67,13 @@ public interface InternalGenericRecord extends GenericRecord {
 
     /**
      * @param fieldName the name of the field
+     * @return true if field exists in the schema/class definition. Note that
+     * returns true even if the field is null.
+     */
+    boolean hasField(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
      * @return the value of the field
      * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
      *                                         the type of the field does not match the one in the class definition/schema.
