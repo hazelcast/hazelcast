@@ -143,7 +143,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
     }
 
     @Override
-    public void write(@Nonnull CompactWriter compactWriter, @Nonnull Object object) {
+    public void write(@Nonnull CompactWriter writer, @Nonnull Object object) {
         Class<?> clazz = object.getClass();
         ComponentWriter[] componentWriters = writersCache.get(clazz);
         if (componentWriters == null) {
@@ -153,7 +153,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
 
         try {
             for (ComponentWriter componentWriter : componentWriters) {
-                componentWriter.writeComponent(compactWriter, object);
+                componentWriter.writeComponent(writer, object);
             }
         } catch (Exception e) {
             throw new HazelcastSerializationException("Failed to write the Java record", e);

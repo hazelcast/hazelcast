@@ -37,19 +37,19 @@ import javax.annotation.Nonnull;
 @Beta
 public interface CompactSerializer<T> {
     /**
-     * @param in reader to read fields of an object
+     * @param reader reader to read fields of an object
      * @return the object created as a result of read method
      * @throws HazelcastSerializationException in case of failure to read
      */
     @Nonnull
-    T read(@Nonnull CompactReader in);
+    T read(@Nonnull CompactReader reader);
 
     /**
-     * @param out    CompactWriter to serialize the fields onto
+     * @param writer CompactWriter to serialize the fields onto
      * @param object to be serialized.
      * @throws HazelcastSerializationException in case of failure to write
      */
-    void write(@Nonnull CompactWriter out, @Nonnull T object);
+    void write(@Nonnull CompactWriter writer, @Nonnull T object);
 
     /**
      * Returns the unique type name for the class {@link T}.

@@ -91,7 +91,14 @@ public class DeserializedPortableGenericRecord extends PortableGenericRecord {
     @Override
     @Nonnull
     public FieldKind getFieldKind(@Nonnull String fieldName) {
-        return FieldTypeToFieldKind.toFieldKind(classDefinition.getFieldType(fieldName));
+        FieldType fieldType;
+        try {
+            fieldType = classDefinition.getFieldType(fieldName);
+        } catch (IllegalArgumentException ignored) {
+            // field does not exist
+            return FieldKind.NOT_AVAILABLE;
+        }
+        return FieldTypeToFieldKind.toFieldKind(fieldType);
     }
 
     @Override

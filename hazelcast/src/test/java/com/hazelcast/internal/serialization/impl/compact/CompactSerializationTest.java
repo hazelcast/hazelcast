@@ -268,13 +268,13 @@ public class CompactSerializationTest {
     private static class IntegerSerializer implements CompactSerializer<Integer> {
         @Nonnull
         @Override
-        public Integer read(@Nonnull CompactReader in) {
-            return in.readInt32("field");
+        public Integer read(@Nonnull CompactReader reader) {
+            return reader.readInt32("field");
         }
 
         @Override
-        public void write(@Nonnull CompactWriter out, @Nonnull Integer object) {
-            out.writeInt32("field", object);
+        public void write(@Nonnull CompactWriter writer, @Nonnull Integer object) {
+            writer.writeInt32("field", object);
         }
 
         @Nonnull
@@ -306,14 +306,14 @@ public class CompactSerializationTest {
     private static class DuplicateWritingSerializer implements CompactSerializer<Foo> {
         @Nonnull
         @Override
-        public Foo read(@Nonnull CompactReader in) {
-            return new Foo(in.readInt32("bar"));
+        public Foo read(@Nonnull CompactReader reader) {
+            return new Foo(reader.readInt32("bar"));
         }
 
         @Override
-        public void write(@Nonnull CompactWriter out, @Nonnull Foo object) {
-            out.writeInt32("bar", object.bar);
-            out.writeInt32("bar", object.bar);
+        public void write(@Nonnull CompactWriter writer, @Nonnull Foo object) {
+            writer.writeInt32("bar", object.bar);
+            writer.writeInt32("bar", object.bar);
         }
 
         @Nonnull
