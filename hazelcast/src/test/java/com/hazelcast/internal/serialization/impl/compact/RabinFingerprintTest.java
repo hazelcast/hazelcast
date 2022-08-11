@@ -44,7 +44,7 @@ public class RabinFingerprintTest {
         writer.writeInt8("age", (byte) 0);
         writer.writeArrayOfTimestamp("times", null);
         Schema schema = writer.build();
-        assertEquals(-5445839760245891300L, schema.getSchemaId());
+        assertEquals(3662264393229655598L, schema.getSchemaId());
     }
 
     @Test

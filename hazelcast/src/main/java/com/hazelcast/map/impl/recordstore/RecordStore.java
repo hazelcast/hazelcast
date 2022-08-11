@@ -33,6 +33,7 @@ import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
+import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
@@ -666,4 +667,12 @@ public interface RecordStore<R extends Record> {
     default void afterOperation() {
         // no-op
     }
+
+    Set<MapOperation> getOffloadedOperations();
+
+    void incMapStoreOffloadedOperationsCount();
+
+    void decMapStoreOffloadedOperationsCount();
+
+    long getMapStoreOffloadedOperationsCount();
 }

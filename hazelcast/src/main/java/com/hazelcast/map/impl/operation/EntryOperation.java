@@ -30,6 +30,9 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.ExecutorStats;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.operation.steps.EntryOpSteps;
+import com.hazelcast.map.impl.operation.steps.engine.State;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
@@ -44,6 +47,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
+import com.hazelcast.wan.impl.CallerProvenance;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -139,8 +143,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * GOTCHA: This operation LOADS missing keys from map-store, in contrast with PartitionWideEntryOperation.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class
-EntryOperation extends LockAwareOperation
+public class EntryOperation extends LockAwareOperation
         implements BackupAwareOperation, BlockingOperation, MutatingOperation {
 
     private static final int SET_UNLOCK_FAST_RETRY_LIMIT = 10;
@@ -177,6 +180,8 @@ EntryOperation extends LockAwareOperation
         entryProcessor = (EntryProcessor) managedContext.initialize(entryProcessor);
     }
 
+    // FIXME: EntryOperationOffload loads with get from map-store
+    // TODO: EP no forced eviction for EP?
     @Override
     public CallStatus call() {
         if (shouldWait()) {
@@ -189,12 +194,35 @@ EntryOperation extends LockAwareOperation
         if (offload) {
             return new EntryOperationOffload(getCallerAddress());
         } else {
+            if (isMapStoreOffloadEnabled()) {
+                assert this != null;
+                return offloadOperation();
+            }
             response = operator(this, entryProcessor)
                     .operateOnKey(dataKey)
                     .doPostOperateOps()
                     .getResult();
             return RESPONSE;
         }
+    }
+
+    @Override
+    public State createState() {
+        return super.createState()
+                .setKey(dataKey)
+                .setCallerProvenance(CallerProvenance.NOT_WAN)
+                .setEntryProcessor(entryProcessor);
+    }
+
+    @Override
+    public Step getStartingStep() {
+        return EntryOpSteps.EP_START;
+    }
+
+    @Override
+    public void applyState(State state) {
+        super.applyState(state);
+        response = state.getOperator().getResult();
     }
 
     @Override

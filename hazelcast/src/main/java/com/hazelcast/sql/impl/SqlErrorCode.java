@@ -47,6 +47,9 @@ public final class SqlErrorCode {
     /** Object (mapping/table) not found. */
     public static final int OBJECT_NOT_FOUND = 1010;
 
+    /** Topology of a cluster has changed during query execution. */
+    public static final int TOPOLOGY_CHANGE = 1011;
+
     /** An error with data conversion or transformation. */
     public static final int DATA_EXCEPTION = 2000;
 

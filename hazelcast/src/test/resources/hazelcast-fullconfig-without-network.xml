@@ -314,6 +314,7 @@
             <!--         	<factory-class-name>com.hazelcast.examples.DummyStoreFactory</factory-class-name> -->
             <write-delay-seconds>0</write-delay-seconds>
             <write-batch-size>1</write-batch-size>
+            <offload>false</offload>
             <write-coalescing>true</write-coalescing>
             <properties>
                 <property name="dummy.property">value</property>
@@ -631,14 +632,12 @@
             </whitelist>
         </java-serialization-filter>
         <compact-serialization enabled="true">
-            <registered-classes>
-                <class>
-                    com.hazelcast.examples.DummyType
-                </class>
-                <class type-name="dummy" serializer="com.hazelcast.examples.DummyTypeSerializer">
-                    com.hazelcast.examples.DummyTypeWithSerializer
-                </class>
-            </registered-classes>
+            <serializers>
+                <serializer>com.hazelcast.examples.DummyTypeSerializer</serializer>
+            </serializers>
+            <classes>
+                <class>com.hazelcast.examples.DummyType</class>
+            </classes>
         </compact-serialization>
     </serialization>
 
@@ -1087,4 +1086,13 @@
     <sql>
         <statement-timeout-millis>0</statement-timeout-millis>
     </sql>
+
+    <external-data-store name="mysql-database">
+        <class-name>com.hazelcast.datastore.JdbcDataStoreFactory</class-name>
+        <properties>
+            <property name="jdbcUrl">jdbc:mysql://dummy:3306</property>
+        </properties>
+        <shared>false</shared>
+    </external-data-store>
+
 </hazelcast>

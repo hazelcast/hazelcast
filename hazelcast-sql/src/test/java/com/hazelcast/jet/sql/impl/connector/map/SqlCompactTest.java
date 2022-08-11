@@ -30,6 +30,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.compact.CompactReader;
@@ -94,18 +95,34 @@ public class SqlCompactTest extends SqlTestSupport {
         compactSerializationConfig.setEnabled(true);
         // registering this class to the member to see it does not affect any of the tests.
         // It has a different schema than all the tests
-        compactSerializationConfig.register(Person.class, PERSON_TYPE_NAME, new CompactSerializer<Person>() {
+        compactSerializationConfig.addSerializer(new CompactSerializer<Person>() {
             @Nonnull
             @Override
-            public Person read(@Nonnull CompactReader in) {
+            public Person read(@Nonnull CompactReader reader) {
                 Person person = new Person();
-                person.surname = in.readString("surname", "NotAssigned");
+                if (reader.getFieldKind("surname") == FieldKind.STRING) {
+                    person.surname = reader.readString("surname");
+                } else {
+                    person.surname = "NotAssigned";
+                }
                 return person;
             }
 
             @Override
-            public void write(@Nonnull CompactWriter out, @Nonnull Person person) {
-                out.writeString("surname", person.surname);
+            public void write(@Nonnull CompactWriter writer, @Nonnull Person person) {
+                writer.writeString("surname", person.surname);
+            }
+
+            @Nonnull
+            @Override
+            public String getTypeName() {
+                return PERSON_TYPE_NAME;
+            }
+
+            @Nonnull
+            @Override
+            public Class<Person> getCompactClass() {
+                return Person.class;
             }
         });
 

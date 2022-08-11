@@ -136,20 +136,19 @@ public interface GenericRecord {
     Set<String> getFieldNames();
 
     /**
-     * @param fieldName the name of the field
-     * @return field type for the given field name
-     * @throws IllegalArgumentException if the field name does not exist in the
-     *                                  schema/class definition
+     * Returns the kind of the field for the given field name.
+     * <p>
+     * If the field with the given name does not exist,
+     * {@link FieldKind#NOT_AVAILABLE} is returned.
+     * <p>
+     * This method can be used to check the existence of a field, which can be
+     * useful when the class is evolved.
+     *
+     * @param fieldName name of the field.
+     * @return kind of the field
      */
     @Nonnull
     FieldKind getFieldKind(@Nonnull String fieldName);
-
-    /**
-     * @param fieldName the name of the field
-     * @return true if field exists in the schema/class definition. Note that
-     * returns true even if the field is null.
-     */
-    boolean hasField(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field

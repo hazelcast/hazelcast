@@ -42,6 +42,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.HotRestartClusterDataRecoveryPolicy;
 import com.hazelcast.config.HotRestartConfig;
@@ -182,15 +183,16 @@ import static com.hazelcast.internal.config.ConfigSections.CARDINALITY_ESTIMATOR
 import static com.hazelcast.internal.config.ConfigSections.CLUSTER_NAME;
 import static com.hazelcast.internal.config.ConfigSections.CP_SUBSYSTEM;
 import static com.hazelcast.internal.config.ConfigSections.CRDT_REPLICATION;
-import static com.hazelcast.internal.config.ConfigSections.INTEGRITY_CHECKER;
 import static com.hazelcast.internal.config.ConfigSections.DURABLE_EXECUTOR_SERVICE;
 import static com.hazelcast.internal.config.ConfigSections.DYNAMIC_CONFIGURATION;
 import static com.hazelcast.internal.config.ConfigSections.EXECUTOR_SERVICE;
+import static com.hazelcast.internal.config.ConfigSections.EXTERNAL_DATA_STORE;
 import static com.hazelcast.internal.config.ConfigSections.FLAKE_ID_GENERATOR;
 import static com.hazelcast.internal.config.ConfigSections.HOT_RESTART_PERSISTENCE;
 import static com.hazelcast.internal.config.ConfigSections.IMPORT;
 import static com.hazelcast.internal.config.ConfigSections.INSTANCE_NAME;
 import static com.hazelcast.internal.config.ConfigSections.INSTANCE_TRACKING;
+import static com.hazelcast.internal.config.ConfigSections.INTEGRITY_CHECKER;
 import static com.hazelcast.internal.config.ConfigSections.JET;
 import static com.hazelcast.internal.config.ConfigSections.LICENSE_KEY;
 import static com.hazelcast.internal.config.ConfigSections.LIST;
@@ -378,6 +380,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             handleDynamicConfiguration(node);
         } else if (matches(INTEGRITY_CHECKER.getName(), nodeName)) {
             handleIntegrityChecker(node);
+        } else if (matches(EXTERNAL_DATA_STORE.getName(), nodeName)) {
+            handleExternalDataStores(node);
         } else {
             return true;
         }
@@ -2435,6 +2439,13 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
                 } else {
                     mapStoreConfig.setWriteCoalescing(getBooleanValue(writeCoalescing));
                 }
+            } else if (matches("offload", nodeName)) {
+                String offload = getTextContent(n);
+                if (isNullOrEmpty(offload)) {
+                    mapStoreConfig.setOffload(MapStoreConfig.DEFAULT_OFFLOAD);
+                } else {
+                    mapStoreConfig.setOffload(getBooleanValue(offload));
+                }
             } else if (matches("properties", nodeName)) {
                 fillProperties(n, mapStoreConfig.getProperties());
             }
@@ -3417,6 +3428,27 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
         boolean enabled = attrEnabled != null && getBooleanValue(getTextContent(attrEnabled));
         config.getIntegrityCheckerConfig().setEnabled(enabled);
     }
+
+    protected void handleExternalDataStores(Node node) {
+        String name = getAttribute(node, "name");
+        ExternalDataStoreConfig externalDataStoreConfig = ConfigUtils.getByNameOrNew(config.getExternalDataStoreConfigs(),
+                name, ExternalDataStoreConfig.class);
+        handleExternalDataStore(node, externalDataStoreConfig);
+    }
+
+    protected void handleExternalDataStore(Node node, ExternalDataStoreConfig externalDataStoreConfig) {
+        for (Node child : childElements(node)) {
+            String childName = cleanNodeName(child);
+            if (matches("class-name", childName)) {
+                externalDataStoreConfig.setClassName(getTextContent(child));
+            } else if (matches("properties", childName)) {
+                fillProperties(child, externalDataStoreConfig.getProperties());
+            } else if (matches("shared", childName)) {
+                externalDataStoreConfig.setShared(getBooleanValue(getTextContent(child)));
+            }
+        }
+    }
+
 
     protected void fillClusterLoginConfig(AbstractClusterLoginConfig<?> config, Node node) {
         for (Node child : childElements(node)) {
