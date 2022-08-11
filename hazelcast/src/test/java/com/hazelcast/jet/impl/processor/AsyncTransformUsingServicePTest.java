@@ -59,7 +59,7 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport {
+public class  AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport {
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
@@ -139,9 +139,9 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
                 .hazelcastInstance(instance())
                 .input(asList("a", "b", wm(10), wm(15, (byte) 1)))
                 .outputChecker((expected, actual) ->
-                        actual.equals(asList(wm(15, (byte) 1), "a-1", "a-2", "b-1", "b-2", wm(10)))
+                        actual.equals(asList("a-1", "a-2", "b-1", "b-2", wm(10), wm(15, (byte) 1)))
                                 || !ordered && actual.equals(
-                                asList(wm(15, (byte) 1), "b-1", "b-2", "a-1", "a-2", wm(10))))
+                                asList("b-1", "b-2", "a-1", "a-2", wm(10), wm(15, (byte) 1))))
                 .disableSnapshots()
                 .disableProgressAssertion()
                 .expectOutput(singletonList("<see code>"));
