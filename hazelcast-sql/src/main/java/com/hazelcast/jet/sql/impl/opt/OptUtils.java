@@ -415,6 +415,10 @@ public final class OptUtils {
         }
     }
 
+//    public static Map<Integer, Integer> computeCalcFieldMapping(RexProgram rexProgram) {
+//        rexProgram.getPermutation()
+//    }
+
     private static int findKeyIndex(Table table) {
         List<String> primaryKey = SqlConnectorUtil.getJetSqlConnector(table).getPrimaryKey(table);
         // just single field keys supported at the moment

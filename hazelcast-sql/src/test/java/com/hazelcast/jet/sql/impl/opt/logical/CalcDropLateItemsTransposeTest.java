@@ -43,6 +43,7 @@ import java.util.Set;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -64,9 +65,9 @@ public class CalcDropLateItemsTransposeTest extends OptimizerTestSupport {
         TestStreamSqlConnector.create(
                 instance().getSql(),
                 stream,
-                asList("a", "b"),
-                asList(INTEGER, TIMESTAMP),
-                row(1, timestamp(1L))
+                asList("a", "b", "c"),
+                asList(INTEGER, TIMESTAMP, VARCHAR),
+                row(1, timestamp(1L), "1")
         );
     }
 
@@ -96,13 +97,12 @@ public class CalcDropLateItemsTransposeTest extends OptimizerTestSupport {
                 )
         );
 
-        assertRowsEventuallyInAnyOrder(sql, ImmutableList.of(new Row(1, timestamp(1L))));
+        assertRowsEventuallyInAnyOrder(sql, ImmutableList.of(new Row(1, timestamp(1L), "1")));
     }
 
     @Test
     public void given_calcAndDropItemsRelTransposes_whenProjectPermutes_then_success() {
-        // TODO: optimizer support for stream tables and assertPlan(..)
-        String sql = "SELECT b, a FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(b), INTERVAL '0.001' SECOND))";
+        String sql = "SELECT c, a, b FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(b), INTERVAL '0.001' SECOND))";
 
         assertInstanceOf(TestAbstractSqlConnector.TestTable.class, resolver.getTables().get(0));
         HazelcastTable streamingTable = streamingTable(resolver.getTables().get(0), 1L);
@@ -144,9 +144,9 @@ public class CalcDropLateItemsTransposeTest extends OptimizerTestSupport {
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(RelMetadataQuery.instance());
         Set<Integer> wmIndexes = query.extractWatermarkedFields(logicalRel).getFieldIndexes();
         assertThat(wmIndexes.size()).isEqualTo(1);
-        assertThat(wmIndexes.iterator().next()).isEqualTo(0);
+        assertThat(wmIndexes.iterator().next()).isEqualTo(2);
 
-        assertRowsEventuallyInAnyOrder(sql, singletonList(new Row(timestamp(1L), 1)));
+        assertRowsEventuallyInAnyOrder(sql, singletonList(new Row("1", 1, timestamp(1L))));
     }
 
     private static HazelcastTable streamingTable(Table table, long rowCount) {

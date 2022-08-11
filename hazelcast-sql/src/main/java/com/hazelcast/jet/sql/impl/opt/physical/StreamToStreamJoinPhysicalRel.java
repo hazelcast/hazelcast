@@ -112,11 +112,6 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
         return rightTimeExtractors;
     }
 
-    /**
-     * SELECT * FROM ...
-     * JOIN ON b.1 BETWEEN a.1 AND a.1 + 1
-     * JOIN ON c.1 BETWEEN b.1 AND b.1 + 1
-     */
     public Map<Integer, Map<Integer, Long>> postponeTimeMap() {
         return postponeTimeMap;
     }

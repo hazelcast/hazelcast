@@ -135,14 +135,14 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         }
 
         if (!(predicate instanceof RexCall)) {
-            call.transformTo(fail(join, visitor.errorMessage));
+            call.transformTo(fail(join, visitor.errorMessage()));
             return;
         }
 
         predicate.accept(visitor);
 
         if (!visitor.isValid) {
-            call.transformTo(fail(join, visitor.errorMessage));
+            call.transformTo(fail(join, visitor.errorMessage()));
             return;
         }
         // endregion
@@ -236,7 +236,6 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
     @SuppressWarnings("CheckStyle")
     private static final class BoundsExtractorVisitor extends RexVisitorImpl<Void> {
         private final WatermarkedFields watermarkedFields;
-        private final String defaultErrorMessage = "Stream-to-stream JOIN condition must contain time boundness predicate";
         private String errorMessage = null;
 
         public Tuple3<Integer, Integer, Long> leftBound = null;
@@ -250,6 +249,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         }
 
         public String errorMessage() {
+            String defaultErrorMessage = "Stream-to-stream JOIN condition must contain time boundness predicate";
             return errorMessage == null ? defaultErrorMessage : errorMessage;
         }
 
@@ -268,7 +268,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
                         rightBound = tuple3(rightOp.getIndex(), leftOp.getIndex(), 0L);
                     } else {
                         isValid = false;
-                        errorMessage = "Time boundness or time equality condition are supported for stream-to-stream JOIN";
+                        errorMessage = "Only time bound / equality condition are supported for stream-to-stream JOIN";
                     }
                     return null;
                 case GREATER_THAN:

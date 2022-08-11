@@ -28,6 +28,7 @@ import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.rules.TransformationRule;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexProgram;
+import org.apache.calcite.util.Permutation;
 import org.immutables.value.Value;
 
 import java.util.List;
@@ -96,9 +97,11 @@ public final class CalcIntoScanLogicalRule extends RelRule<Config> implements Tr
                 scan.getCluster().getTypeFactory()
         );
 
-        int newWatermarkColumnIndex = scan.watermarkedColumnIndex() >= 0
-                ? program.getSourceField(scan.watermarkedColumnIndex())
-                : scan.watermarkedColumnIndex();
+        int wmColumnIndex = scan.watermarkedColumnIndex();
+        Permutation permutation = program.getPermutation();
+        int newWatermarkColumnIndex = wmColumnIndex >= 0
+                ? permutation == null ? wmColumnIndex : permutation.getSource(wmColumnIndex)
+                : wmColumnIndex;
 
         FullScanLogicalRel rel = new FullScanLogicalRel(
                 scan.getCluster(),

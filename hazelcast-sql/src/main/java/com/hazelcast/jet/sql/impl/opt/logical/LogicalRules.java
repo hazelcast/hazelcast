@@ -43,7 +43,6 @@ public final class LogicalRules {
                 CoreRules.PROJECT_TO_CALC,
                 SlidingWindowCalcSplitLogicalRule.STREAMING_FILTER_TRANSPOSE,
                 CalcDropLateItemsTransposeRule.INSTANCE,
-                CalcEliminateDropLateItemsRule.INSTANCE,
 
                 // Windowing rules
                 WatermarkRules.IMPOSE_ORDER_INSTANCE,

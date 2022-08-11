@@ -174,7 +174,7 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
         // TODO: TO_TIMESTAMP
         assertThatThrownBy(() ->
                         sqlService.execute("SELECT * FROM s1 JOIN s2 ON TO_TIMESTAMP_TZ(s2.b) = TO_TIMESTAMP_TZ(2)"),
-                "Time boundness or time equality condition are supported for stream-to-stream JOIN"
+                "Only time bound / equality condition are supported for stream-to-stream JOIN"
         );
     }
 
@@ -444,7 +444,6 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
     }
 
     @Test
-    // TODO: fix it, failing now.
     public void given_streamToStreamJoin_when_relTreeHasUnion_then_success() {
         String stream = "stream1";
         TestStreamSqlConnector.create(
