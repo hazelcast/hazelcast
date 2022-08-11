@@ -17,12 +17,12 @@
 package com.hazelcast.jet.sql.impl.expression.misc;
 
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
-import com.hazelcast.sql.SqlColumnType;
-import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionType;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes;
+import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.impl.SqlDataSerializerHook;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.CaseExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -102,7 +102,8 @@ public class CaseOperatorIntegrationTest extends ExpressionTestSupport {
 
         String sql = "select case else 2 end from map";
 
-        checkFailure0(sql, SqlErrorCode.PARSING, "Encountered \"case else\"");
+        checkFailure0(sql, SqlErrorCode.PARSING, "Encountered \"else\" at line 1, column 13.\n" +
+                "Was expecting one of:");
     }
 
     @Test

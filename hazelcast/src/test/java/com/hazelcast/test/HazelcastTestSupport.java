@@ -1035,6 +1035,16 @@ public abstract class HazelcastTestSupport {
         }
     }
 
+    public static void assertClusterSizeEventually(
+            int expectedSize,
+            Collection<HazelcastInstance> instances,
+            long timeout
+    ) {
+        for (HazelcastInstance instance : instances) {
+            assertClusterSizeEventually(expectedSize, instance, timeout);
+        }
+    }
+
     public static void assertClusterSizeEventually(int expectedSize, Collection<HazelcastInstance> instances) {
         for (HazelcastInstance instance : instances) {
             assertClusterSizeEventually(expectedSize, instance, ASSERT_TRUE_EVENTUALLY_TIMEOUT);

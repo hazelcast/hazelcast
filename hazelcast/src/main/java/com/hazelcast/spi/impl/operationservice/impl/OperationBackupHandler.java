@@ -41,7 +41,7 @@ import static java.lang.Math.min;
 /**
  * Responsible for creating a backups of an operation.
  */
-final class OperationBackupHandler {
+public final class OperationBackupHandler {
 
     private static final boolean ASSERTION_ENABLED = OperationBackupHandler.class.desiredAssertionStatus();
 
@@ -67,7 +67,7 @@ final class OperationBackupHandler {
      * @param op the Operation to backup.
      * @return the number of ACKS required to complete the invocation.
      */
-    int sendBackups(Operation op) {
+    public int sendBackups(Operation op) {
         if (!(op instanceof BackupAwareOperation)) {
             return 0;
         }

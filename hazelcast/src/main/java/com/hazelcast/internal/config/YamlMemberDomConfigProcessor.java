@@ -23,12 +23,12 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.ClassFilter;
 import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.LocalDeviceConfig;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
 import com.hazelcast.config.IndexConfig;
@@ -38,6 +38,7 @@ import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListConfig;
 import com.hazelcast.config.ListenerConfig;
+import com.hazelcast.config.LocalDeviceConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapPartitionLostListenerConfig;
 import com.hazelcast.config.MemberGroupConfig;
@@ -312,6 +313,16 @@ public class YamlMemberDomConfigProcessor extends MemberDomConfigProcessor {
             LocalDeviceConfig localDeviceConfig =
                     (LocalDeviceConfig) ConfigUtils.getByNameOrNew(config.getDeviceConfigs(), name, LocalDeviceConfig.class);
             handleLocalDeviceNode(deviceNode, localDeviceConfig);
+        }
+    }
+
+    @Override
+    protected void handleExternalDataStores(Node parentNode) {
+        for (Node deviceNode : childElements(parentNode)) {
+            String name = deviceNode.getNodeName();
+            ExternalDataStoreConfig externalDataStoreConfig = ConfigUtils.
+                    getByNameOrNew(config.getExternalDataStoreConfigs(), name, ExternalDataStoreConfig.class);
+            handleExternalDataStore(deviceNode, externalDataStoreConfig);
         }
     }
 

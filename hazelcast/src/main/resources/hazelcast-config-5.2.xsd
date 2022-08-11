@@ -78,6 +78,7 @@
                 <xs:element name="local-device" type="local-device" minOccurs="0" maxOccurs="unbounded"/>
                 <xs:element name="dynamic-configuration" type="dynamic-configuration" minOccurs="0"/>
                 <xs:element name="integrity-checker" type="integrity-checker" minOccurs="0" maxOccurs="1"/>
+                <xs:element name="external-data-store" type="external-data-store" minOccurs="0" maxOccurs="unbounded"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" default="default"/>
         </xs:complexType>
@@ -1978,6 +1979,22 @@
                         Setting this is meaningful if you are using write behind in MapStore. When write-coalescing is true,
                         only the latest store operation on a key in the write-delay-seconds time-window will be
                         reflected to MapStore. Default value is true.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="offload" type="xs:boolean" minOccurs="0" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        Default value is true.
+                        MapStore or MapLoader implementations are
+                        executed by a partition thread, by setting
+                        this to true, Hazelcast makes this thread
+                        available for other cluster operations and
+                        offloads MapStore or MapLoader interacting
+                        parts of executions to a different thread
+                        pool, upon interaction finish, operations
+                        continue to work in the partition thread
+                        from the point they are offloaded.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
@@ -6001,6 +6018,33 @@
             <xs:annotation>
                 <xs:documentation>
                     True to enable integrity checker, false otherwise.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="external-data-store">
+        <xs:all>
+            <xs:element name="class-name" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        The name of the class implementing ExternalDataStoreFactory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="shared" type="xs:boolean" minOccurs="0" default="false">
+                <xs:annotation>
+                    <xs:documentation>
+                        If true reuse an instance of JDBC pool or any other storage driver (e.g. kafka client) between jobs or instances of MapStore.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="properties" type="properties" minOccurs="0"/>
+        </xs:all>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the external data store configuration
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

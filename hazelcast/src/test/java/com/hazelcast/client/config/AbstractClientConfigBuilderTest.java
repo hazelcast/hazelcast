@@ -57,6 +57,8 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
+import static com.hazelcast.client.config.ClientSqlResubmissionMode.NEVER;
+import static com.hazelcast.client.config.ClientSqlResubmissionMode.RETRY_SELECTS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -420,6 +422,12 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
         assertEquals("com.sun.security.auth.module.Krb5LoginModule", loginModuleConfig.getClassName());
         assertEquals(LoginModuleUsage.REQUIRED, loginModuleConfig.getUsage());
         assertEquals("jduke@HAZELCAST.COM", loginModuleConfig.getProperties().get("principal"));
+    }
+
+    @Test
+    public void testSqlConfigs() {
+        assertEquals(RETRY_SELECTS, fullClientConfig.getSqlConfig().getResubmissionMode());
+        assertEquals(NEVER, defaultClientConfig.getSqlConfig().getResubmissionMode());
     }
 
     @Test(expected = HazelcastException.class)

@@ -40,13 +40,17 @@ public class MapStoreConfigHolder {
     private Data factoryImplementation;
     private Map<String, String> properties;
     private String initialLoadMode;
+    private boolean offload;
+    private boolean isOffloadExists;
 
     public MapStoreConfigHolder() {
     }
 
+    @SuppressWarnings("checkstyle:parameternumber")
     public MapStoreConfigHolder(boolean enabled, boolean writeCoalescing, int writeDelaySeconds, int writeBatchSize,
                                 String className, Data implementation, String factoryClassName,
-                                Data factoryImplementation, Map<String, String> properties, String initialLoadMode) {
+                                Data factoryImplementation, Map<String, String> properties,
+                                String initialLoadMode, boolean isOffloadExists, boolean offload) {
         this.enabled = enabled;
         this.writeCoalescing = writeCoalescing;
         this.className = className;
@@ -57,6 +61,8 @@ public class MapStoreConfigHolder {
         this.factoryImplementation = factoryImplementation;
         this.properties = properties;
         this.initialLoadMode = initialLoadMode;
+        this.offload = offload;
+        this.isOffloadExists = isOffloadExists;
     }
 
     public boolean isEnabled() {
@@ -65,6 +71,14 @@ public class MapStoreConfigHolder {
 
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
+    }
+
+    public boolean isOffload() {
+        return offload;
+    }
+
+    public void setOffload(boolean offload) {
+        this.offload = offload;
     }
 
     public boolean isWriteCoalescing() {
@@ -163,6 +177,9 @@ public class MapStoreConfigHolder {
         if (factoryImplementation != null) {
             config.setFactoryImplementation(factoryImplementation);
         }
+        if (isOffloadExists) {
+            config.setOffload(offload);
+        }
         return config;
     }
 
@@ -181,6 +198,7 @@ public class MapStoreConfigHolder {
         holder.setWriteBatchSize(config.getWriteBatchSize());
         holder.setWriteCoalescing(config.isWriteCoalescing());
         holder.setWriteDelaySeconds(config.getWriteDelaySeconds());
+        holder.setOffload(config.isOffload());
         return holder;
     }
 }

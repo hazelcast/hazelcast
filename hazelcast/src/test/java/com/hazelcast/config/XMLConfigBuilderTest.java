@@ -67,12 +67,12 @@ import java.util.Set;
 
 import static com.hazelcast.config.DynamicConfigurationConfig.DEFAULT_BACKUP_COUNT;
 import static com.hazelcast.config.DynamicConfigurationConfig.DEFAULT_BACKUP_DIR;
+import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_BLOCK_SIZE_IN_BYTES;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_DEVICE_BASE_DIR;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_DEVICE_NAME;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_READ_IO_THREAD_COUNT;
 import static com.hazelcast.config.LocalDeviceConfig.DEFAULT_WRITE_IO_THREAD_COUNT;
-import static com.hazelcast.config.EvictionPolicy.LRU;
 import static com.hazelcast.config.MaxSizePolicy.ENTRY_COUNT;
 import static com.hazelcast.config.MemoryTierConfig.DEFAULT_CAPACITY;
 import static com.hazelcast.config.PermissionConfig.PermissionType.CACHE;
@@ -84,6 +84,7 @@ import static com.hazelcast.config.WanQueueFullBehavior.THROW_EXCEPTION;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static java.io.File.createTempFile;
 import static java.nio.charset.StandardCharsets.US_ASCII;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -1197,6 +1198,30 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
 
     @Override
     @Test
+    public void testMapStoreConfig_offload_whenDefault() {
+        MapStoreConfig mapStoreConfig = getOffloadMapStoreConfig(MapStoreConfig.DEFAULT_OFFLOAD, true);
+
+        assertTrue(mapStoreConfig.isOffload());
+    }
+
+    @Override
+    @Test
+    public void testMapStoreConfig_offload_whenSetFalse() {
+        MapStoreConfig mapStoreConfig = getOffloadMapStoreConfig(false, false);
+
+        assertFalse(mapStoreConfig.isOffload());
+    }
+
+    @Override
+    @Test
+    public void testMapStoreConfig_offload_whenSetTrue() {
+        MapStoreConfig mapStoreConfig = getOffloadMapStoreConfig(true, false);
+
+        assertTrue(mapStoreConfig.isOffload());
+    }
+
+    @Override
+    @Test
     public void testMapStoreConfig_writeCoalescing_whenDefault() {
         MapStoreConfig mapStoreConfig = getWriteCoalescingMapStoreConfig(MapStoreConfig.DEFAULT_WRITE_COALESCING, true);
 
@@ -1230,6 +1255,22 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "<map name=\"mymap\">"
                 + "<map-store >"
                 + (useDefault ? "" : "<write-coalescing>" + value + "</write-coalescing>")
+                + "</map-store>"
+                + "</map>"
+                + HAZELCAST_END_TAG;
+    }
+
+    private MapStoreConfig getOffloadMapStoreConfig(boolean offload, boolean useDefault) {
+        String xml = getOffloadConfigXml(offload, useDefault);
+        Config config = buildConfig(xml);
+        return config.getMapConfig("mymap").getMapStoreConfig();
+    }
+
+    private String getOffloadConfigXml(boolean value, boolean useDefault) {
+        return HAZELCAST_START_TAG
+                + "<map name=\"mymap\">"
+                + "<map-store >"
+                + (useDefault ? "" : "<offload>" + String.valueOf(value) + "</offload>")
                 + "</map-store>"
                 + "</map>"
                 + HAZELCAST_END_TAG;
@@ -2461,6 +2502,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "            <write-delay-seconds>42</write-delay-seconds>\n"
                 + "            <write-batch-size>42</write-batch-size>\n"
                 + "            <write-coalescing>true</write-coalescing>\n"
+                + "            <offload>false</offload>\n"
                 + "            <properties>\n"
                 + "                <property name=\"jdbc_url\">my.jdbc.com</property>\n"
                 + "            </properties>\n"
@@ -2548,6 +2590,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(42, mapStoreConfig.getWriteDelaySeconds());
         assertEquals(42, mapStoreConfig.getWriteBatchSize());
         assertTrue(mapStoreConfig.isWriteCoalescing());
+        assertFalse(mapStoreConfig.isOffload());
         assertEquals("com.hazelcast.examples.DummyStore", mapStoreConfig.getClassName());
         assertEquals(1, mapStoreConfig.getProperties().size());
         assertEquals("my.jdbc.com", mapStoreConfig.getProperties().getProperty("jdbc_url"));
@@ -4376,6 +4419,39 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         Config config = buildConfig(xml);
 
         assertFalse(config.getIntegrityCheckerConfig().isEnabled());
+    }
+
+    @Override
+    @Test
+    public void testExternalDataStoreConfigs() {
+        String xml = HAZELCAST_START_TAG
+                + "    <external-data-store name=\"mysql-database\">\n"
+                + "        <class-name>com.hazelcast.datastore.JdbcDataStore</class-name>\n"
+                + "        <properties>\n"
+                + "            <property name=\"jdbcUrl\">jdbc:mysql://dummy:3306</property>\n"
+                + "            <property name=\"some.property\">dummy-value</property>\n"
+                + "        </properties>\n"
+                + "      <shared>true</shared>\n"
+                + "    </external-data-store>"
+                + "    <external-data-store name=\"other-database\">\n"
+                + "        <class-name>com.hazelcast.datastore.OtherDataStore</class-name>\n"
+                + "    </external-data-store>"
+                + HAZELCAST_END_TAG;
+
+        Map<String, ExternalDataStoreConfig> externalDataStoreConfigs = buildConfig(xml).getExternalDataStoreConfigs();
+
+        assertThat(externalDataStoreConfigs).hasSize(2);
+        assertThat(externalDataStoreConfigs).containsKey("mysql-database");
+        ExternalDataStoreConfig mysqlDataStoreConfig = externalDataStoreConfigs.get("mysql-database");
+        assertThat(mysqlDataStoreConfig.getClassName()).isEqualTo("com.hazelcast.datastore.JdbcDataStore");
+        assertThat(mysqlDataStoreConfig.getName()).isEqualTo("mysql-database");
+        assertThat(mysqlDataStoreConfig.isShared()).isTrue();
+        assertThat(mysqlDataStoreConfig.getProperty("jdbcUrl")).isEqualTo("jdbc:mysql://dummy:3306");
+        assertThat(mysqlDataStoreConfig.getProperty("some.property")).isEqualTo("dummy-value");
+
+        assertThat(externalDataStoreConfigs).containsKey("other-database");
+        ExternalDataStoreConfig otherDataStoreConfig = externalDataStoreConfigs.get("other-database");
+        assertThat(otherDataStoreConfig.getClassName()).isEqualTo("com.hazelcast.datastore.OtherDataStore");
     }
 
     @Override

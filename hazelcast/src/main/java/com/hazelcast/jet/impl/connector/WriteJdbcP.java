@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.function.BiConsumerEx;
-import com.hazelcast.function.SupplierEx;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.jet.JetException;
@@ -99,12 +99,12 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
     public static <T> ProcessorMetaSupplier metaSupplier(
             @Nullable String jdbcUrl,
             @Nonnull String updateQuery,
-            @Nonnull SupplierEx<? extends CommonDataSource> dataSourceSupplier,
+            @Nonnull FunctionEx<ProcessorMetaSupplier.Context, ? extends CommonDataSource> dataSourceSupplier,
             @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
             boolean exactlyOnce,
             int batchLimit
     ) {
-        checkSerializable(dataSourceSupplier, "newConnectionFn");
+        checkSerializable(dataSourceSupplier, "dataSourceSupplier");
         checkSerializable(bindFn, "bindFn");
         checkPositive(batchLimit, "batchLimit");
 
@@ -115,7 +115,7 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
 
                     @Override
                     public void init(@Nonnull Context context) {
-                        dataSource = dataSourceSupplier.get();
+                        dataSource = dataSourceSupplier.apply(context);
                     }
 
                     @Nonnull @Override

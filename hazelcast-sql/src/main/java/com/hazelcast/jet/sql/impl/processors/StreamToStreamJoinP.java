@@ -44,6 +44,9 @@ import static com.hazelcast.internal.util.CollectionUtil.hasNonEmptyIntersection
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
 import static java.lang.Long.MAX_VALUE;
 
+/**
+ * See {@code docs/design/sql/15-stream-to-stream-join.md}.
+ */
 public class StreamToStreamJoinP extends AbstractProcessor {
     // package-visible for tests
     final Object2LongHashMap<Byte> wmState = new Object2LongHashMap<>(Long.MIN_VALUE);

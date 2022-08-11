@@ -1178,6 +1178,15 @@ hazelcast:
   # It has the following sub-elements:
   # - "class-name":
   #     The name of your class implementing MapLoader and/or MapStore interface.
+  # - "<offload>":
+  #     Default value is true.
+  #     MapStore or MapLoader implementations are executed by
+  #     partition threads, by setting offload to true, Hazelcast
+  #     makes these threads available for other cluster operations
+  #     and offloads MapStore or MapLoader interacting parts of
+  #     executions to a different thread pool, upon interaction finish,
+  #     operations continue to work in the partition thread from
+  #     the point they are offloaded.
   # - "write-delay-seconds":
   #     Number of seconds to delay the storing of entries. If the value is 0, then it is write-through.
   #     Otherwise, it is write-behind so updates will be stored after this period. Its default value is 0.
@@ -1339,6 +1348,7 @@ hazelcast:
         enabled: true
         initial-mode: LAZY
         class-name: com.hazelcast.examples.DummyStore
+        offload: true
         write-delay-seconds: 60
         write-batch-size: 1000
         write-coalescing: true
@@ -3778,3 +3788,15 @@ hazelcast:
   # Integrity Checker is disabled by default.
   integrity-checker:
     enabled: false
+  #      ===== HAZELCAST EXTERNAL DATA STORE CONFIGURATION =====
+  #
+  #      Configuration element's name is <external-data-store>. Contains configuration of external data stores
+  #      used by map stores and jdbc sinks and sources.
+  external-data-store:
+    mysql-database:
+      class-name: com.hazelcast.datastore.JdbcDataStoreFactory
+      properties:
+        jdbcUrl: jdbc:mysql://dummy:3306
+      shared: false
+    other-database:
+      class-name: com.hazelcast.datastore.OtherDataStore
