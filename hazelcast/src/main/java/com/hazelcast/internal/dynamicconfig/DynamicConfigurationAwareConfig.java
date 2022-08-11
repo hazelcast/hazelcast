@@ -63,6 +63,7 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
 import com.hazelcast.internal.config.ExecutorConfigReadOnly;
+import com.hazelcast.internal.config.ExternalDataStoreConfigReadOnly;
 import com.hazelcast.internal.config.FlakeIdGeneratorConfigReadOnly;
 import com.hazelcast.internal.config.ListConfigReadOnly;
 import com.hazelcast.internal.config.MapConfigReadOnly;
@@ -1240,11 +1241,15 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public ExternalDataStoreConfig getExternalDataStoreConfig(String name) {
-        return (ExternalDataStoreConfig) configSearcher.getConfig(name, name, supplierFor(ExternalDataStoreConfig.class));
+        return getExternalDataStoreConfigInternal(name, name);
+    }
+
+    private ExternalDataStoreConfig getExternalDataStoreConfigInternal(String name, String fallbackName) {
+        return (ExternalDataStoreConfig) configSearcher.getConfig(name, fallbackName, supplierFor(ExternalDataStoreConfig.class));
     }
 
     @Override
     public ExternalDataStoreConfig findExternalDataStoreConfig(String name) {
-        return staticConfig.findExternalDataStoreConfig(name);
+        return new ExternalDataStoreConfigReadOnly(getExternalDataStoreConfigInternal(name, "default"));
     }
 }
