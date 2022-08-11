@@ -207,7 +207,6 @@ public class ExternalDataStoreConfig implements IdentifiedDataSerializable, Name
         name = in.readString();
         className = in.readString();
         shared = in.readBoolean();
-        properties.clear();
         int propertiesSize = in.readInt();
         for (int i = 0; i < propertiesSize; i++) {
             String key = in.readString();
