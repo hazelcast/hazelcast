@@ -26,6 +26,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE_TIME;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.NO_NEW_WM;
 import static java.util.Arrays.asList;
@@ -80,17 +81,37 @@ public class KeyedWatermarkCoalescer {
         }
     }
 
+    // never return IDLE_MESSAGE_TIME, but may return normal wm / NO_NEW_WM
     public List<Watermark> observeWm(int queueIndex, Watermark watermark) {
         WatermarkCoalescer c = coalescer(watermark.key());
+
+        if (watermark.equals(IDLE_MESSAGE)) {
+            boolean idleMessagePending = true;
+            List<Watermark> watermarks = new ArrayList<>();
+            for (Entry<Byte, WatermarkCoalescer> coalescerEntry : coalescers.entrySet()) {
+                long observedWm = coalescerEntry.getValue().observeWm(queueIndex, watermark.timestamp());
+                assert observedWm != IDLE_MESSAGE_TIME;
+                if (observedWm != NO_NEW_WM) {
+                    watermarks.add(new Watermark(observedWm, coalescerEntry.getKey()));
+                }
+                idleMessagePending &= coalescerEntry.getValue().idleMessagePending();
+            }
+
+            if (idleMessagePending) {
+                watermarks.add(IDLE_MESSAGE);
+            }
+            return watermarks;
+        }
+
         long newWmValue = c.observeWm(queueIndex, watermark.timestamp());
         if (newWmValue == NO_NEW_WM) {
             return c.idleMessagePending()
-                    ? singletonList(new Watermark(IDLE_MESSAGE_TIME, watermark.key()))
+                    ? singletonList(IDLE_MESSAGE)
                     : emptyList();
         }
         Watermark newWm = new Watermark(newWmValue, watermark.key());
         return c.idleMessagePending()
-                ? asList(newWm, new Watermark(IDLE_MESSAGE_TIME, watermark.key()))
+                ? asList(newWm, IDLE_MESSAGE)
                 : singletonList(newWm);
     }
 

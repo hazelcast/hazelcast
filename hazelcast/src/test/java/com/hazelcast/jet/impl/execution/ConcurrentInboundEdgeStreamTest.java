@@ -32,9 +32,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import static com.hazelcast.jet.core.JetTestSupport.IDLE_MESSAGE;
 import static com.hazelcast.jet.core.JetTestSupport.wm;
 import static com.hazelcast.jet.impl.execution.DoneItem.DONE_ITEM;
+import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.util.ProgressState.DONE;
 import static com.hazelcast.jet.impl.util.ProgressState.MADE_PROGRESS;
 import static com.hazelcast.jet.impl.util.ProgressState.NO_PROGRESS;

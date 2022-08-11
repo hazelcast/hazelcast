@@ -42,14 +42,11 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 public abstract class WatermarkCoalescer {
 
     public static final long IDLE_MESSAGE_TIME = Long.MAX_VALUE;
+    public static final Watermark IDLE_MESSAGE = new Watermark(Long.MAX_VALUE, (byte) 0);
 
     static final long NO_NEW_WM = Long.MIN_VALUE;
 
     private WatermarkCoalescer() {
-    }
-
-    public static Watermark createIdleMessage(byte wmKey) {
-        return new Watermark(IDLE_MESSAGE_TIME, wmKey);
     }
 
     /**
@@ -72,9 +69,9 @@ public abstract class WatermarkCoalescer {
      * Called after receiving a new watermark.
      *
      * @param queueIndex index of the queue on which the WM was received.
-     * @param wmValue    the watermark value, it can be {@link #IDLE_MESSAGE_TIME}
+     * @param wmValue    the watermark value, it can be {@link #IDLE_MESSAGE}
      * @return the watermark value to emit or {@link #NO_NEW_WM} if no
-     *      watermark should be forwarded. It can return {@link #IDLE_MESSAGE_TIME}
+     * watermark should be forwarded. It can not return {@link #IDLE_MESSAGE}
      */
     public abstract long observeWm(int queueIndex, long wmValue);
 
@@ -176,6 +173,8 @@ public abstract class WatermarkCoalescer {
             }
             if (wmValue != IDLE_MESSAGE_TIME) {
                 queueWm.set(wmValue);
+            } else {
+                return NO_NEW_WM;
             }
             return wmValue;
         }
@@ -285,7 +284,9 @@ public abstract class WatermarkCoalescer {
                     return topObservedWmLocal;
                 }
 
-                return notDoneInputCount != 0 ? IDLE_MESSAGE_TIME : NO_NEW_WM;
+                idleMessagePending = notDoneInputCount != 0;
+
+                return NO_NEW_WM;
             }
 
             // if the new lowest observed wm is larger than already emitted, emit it
