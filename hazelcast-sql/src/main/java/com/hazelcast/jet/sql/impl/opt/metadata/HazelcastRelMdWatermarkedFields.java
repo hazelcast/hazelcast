@@ -160,13 +160,17 @@ public final class HazelcastRelMdWatermarkedFields
     public WatermarkedFields extractWatermarkedFields(Union rel, RelMetadataQuery mq) {
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
         assert !rel.getInputs().isEmpty();
-        Set<Integer> wmFields = new HashSet<>(query.extractWatermarkedFields(rel.getInput(0)).getFieldIndexes());
-        for (int i = 1; i < rel.getInputs().size(); i++) {
+        Set<Integer> wmFields = new HashSet<>();
+        for (int i = 0; i < rel.getInputs().size(); i++) {
             WatermarkedFields wmFields2 = query.extractWatermarkedFields(rel.getInputs().get(i));
             if (wmFields2 == null) {
                 return null;
             }
-            wmFields.retainAll(wmFields2.getFieldIndexes());
+            if (i == 0) {
+                wmFields.addAll(wmFields2.getFieldIndexes());
+            } else {
+                wmFields.retainAll(wmFields2.getFieldIndexes());
+            }
         }
         return new WatermarkedFields(wmFields);
     }
