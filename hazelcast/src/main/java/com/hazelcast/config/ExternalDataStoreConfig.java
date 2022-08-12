@@ -89,18 +89,18 @@ public class ExternalDataStoreConfig implements IdentifiedDataSerializable, Name
 
 
     /**
-     * Returns the name of the ExternalDataStoreFactory implementation class
+     * Returns the name of the {@link ExternalDataStoreFactory} implementation class
      *
-     * @return the name of the ExternalDataStoreFactory implementation class
+     * @return the name of the {@link ExternalDataStoreFactory} implementation class
      */
     public String getClassName() {
         return className;
     }
 
     /**
-     * Sets the name for the ExternalDataStoreFactory implementation class
+     * Sets the name for the {@link ExternalDataStoreFactory} implementation class
      *
-     * @param className the name to set for the ExternalDataStoreFactory implementation class
+     * @param className the name to set for the {@link ExternalDataStoreFactory} implementation class
      */
     public ExternalDataStoreConfig setClassName(@Nonnull String className) {
         this.className = checkHasText(className, "Data store class name must contain text");
