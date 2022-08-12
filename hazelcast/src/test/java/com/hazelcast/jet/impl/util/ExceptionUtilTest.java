@@ -21,6 +21,7 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.TestProcessors.MockP;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,11 +33,14 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.ExecutionException;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.hasCauseOfType;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -98,5 +102,39 @@ public class ExceptionUtilTest extends JetTestSupport {
         } catch (Exception caught) {
             assertThat(caught.toString(), containsString(exc.toString()));
         }
+    }
+
+    @Test
+    public void when_findingCauseOfExistingType_then_true() {
+        Throwable throwable = new TargetNotMemberException("");
+        for (int i = 0; i < 10; i++) {
+            throwable = new Exception(throwable);
+        }
+        assertTrue(hasCauseOfType(throwable, TargetNotMemberException.class));
+    }
+
+    @Test
+    public void when_findingCauseOfNotExistingType_then_false() {
+        Throwable throwable = new Exception();
+        for (int i = 0; i < 10; i++) {
+            throwable = new Exception(throwable);
+        }
+        assertFalse(hasCauseOfType(throwable, TargetNotMemberException.class));
+    }
+
+    @Test
+    public void when_findingCauseInALoop_then_false() {
+        Throwable throwable = new Exception() {
+            @Override
+            public synchronized Throwable getCause() {
+                return this;
+            }
+        };
+        assertFalse(hasCauseOfType(throwable, TargetNotMemberException.class));
+    }
+
+    @Test
+    public void when_findingCauseForNull() {
+        assertFalse(hasCauseOfType(null, TargetNotMemberException.class));
     }
 }

@@ -75,6 +75,7 @@ import java.util.function.UnaryOperator;
 
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.EXECUTION;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.hasCauseOfType;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
@@ -628,7 +629,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                         .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, en.getKey())
                         .invoke();
                 future.whenComplete((r, t) -> {
-                    if (t instanceof TargetNotMemberException) {
+                    if (hasCauseOfType(t, TargetNotMemberException.class)) {
                         // if the target isn't a member, then all executions are unknown
                         r = executionIds;
                     } else if (t != null) {

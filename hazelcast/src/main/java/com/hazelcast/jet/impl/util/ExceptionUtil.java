@@ -213,4 +213,14 @@ public final class ExceptionUtil {
 
         throw e;
     }
+
+    /**
+     * Checks is cause of type {@code classToFind} exists in throwable {@code t}.
+     */
+    public static boolean hasCauseOfType(Throwable t, Class<?> classToFind) {
+        while (t != null && t.getCause() != t && !classToFind.isAssignableFrom(t.getClass())) {
+            t = t.getCause();
+        }
+        return t != null && classToFind.isAssignableFrom(t.getClass());
+    }
 }
