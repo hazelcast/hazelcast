@@ -27,7 +27,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIGINT;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.INTEGER;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP;
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.TIMESTAMP_WITH_TIME_ZONE;
@@ -228,53 +227,16 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
     }
 
     @Test
-    public void given_streamToStreamJoin_when_leftInputHasNonTemporalWatermarkedType_then_fail() {
-        String stream = "stream1";
-        TestStreamSqlConnector.create(
-                sqlService,
-                stream,
-                singletonList("a"),
-                singletonList(INTEGER),
-                row(0L));
+    public void given_streamToStreamJoin_when_nonTemporalWatermarkedType_then_pass() {
+        TestStreamSqlConnector.create(sqlService, "stream1", singletonList("a"), singletonList(INTEGER), row(42));
+        TestStreamSqlConnector.create(sqlService, "stream2", singletonList("a"), singletonList(INTEGER), row(43));
 
         sqlService.execute("CREATE VIEW s1 AS " +
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), 1))");
         sqlService.execute("CREATE VIEW s2 AS " +
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), 1))");
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(a), 1))");
 
-        assertThatThrownBy(() -> instance()
-                .getSql()
-                .execute("SELECT * FROM s1 JOIN s2 ON 1=1")
-        ).hasMessageContaining("Left input of stream-to-stream JOIN watermarked columns are not temporal");
-    }
-
-    @Test
-    public void given_streamToStreamJoin_when_rightInputHasNonTemporalWatermarkedType_then_fail() {
-        String stream1 = "stream1";
-        TestStreamSqlConnector.create(
-                sqlService,
-                stream1,
-                singletonList("a"),
-                singletonList(TIMESTAMP),
-                row(timestamp(0L)));
-
-        String stream2 = "stream2";
-        TestStreamSqlConnector.create(
-                sqlService,
-                stream2,
-                singletonList("b"),
-                singletonList(BIGINT),
-                row(0L));
-
-        sqlService.execute("CREATE VIEW s1 AS " +
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.001' SECOND))");
-        sqlService.execute("CREATE VIEW s2 AS " +
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), 1))");
-
-        assertThatThrownBy(() -> instance()
-                .getSql()
-                .execute("SELECT * FROM s1 JOIN s2 ON 1=1")
-        ).hasMessageContaining("Right input of stream-to-stream JOIN watermarked columns are not temporal");
+        assertTipOfStream("SELECT * FROM s1 JOIN s2 ON s1.a=s2.a", singletonList(new Row(42, 43)));
     }
 
     @Test
@@ -309,7 +271,6 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), INTERVAL '0.001' SECOND))");
         sqlService.execute("CREATE VIEW s3 AS " +
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream3, DESCRIPTOR(c), INTERVAL '0.001' SECOND))");
-
 
         assertTipOfStream(
                 "SELECT * FROM s1 " +
