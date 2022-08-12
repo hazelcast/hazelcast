@@ -16,6 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
+import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
+import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
@@ -24,7 +27,6 @@ import org.apache.calcite.rel.core.Calc;
 import org.apache.calcite.rel.rules.TransformationRule;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.util.Permutation;
 import org.immutables.value.Value;
 
 import java.util.List;
@@ -90,12 +92,14 @@ public class CalcDropLateItemsTransposeRule extends RelRule<RelRule.Config> impl
         DropLateItemsLogicalRel dropRel = call.rel(1);
         RelNode input = dropRel.getInput();
 
+        HazelcastRelMetadataQuery relMetadataQuery = OptUtils.metadataQuery(calc);
+        WatermarkedFields watermarkedFields = relMetadataQuery.extractWatermarkedFields(calc);
+
         Calc newCalc = calc.copy(calc.getTraitSet(), input, calc.getProgram());
-        Permutation permutation = newCalc.getProgram().getPermutation();
         DropLateItemsLogicalRel newDropRel = dropRel.copy(
                 dropRel.getTraitSet(),
                 newCalc,
-                permutation == null ? dropRel.wmField() : permutation.getSource(dropRel.wmField()));
+                watermarkedFields.findFirst());
 
         call.transformTo(newDropRel);
     }
