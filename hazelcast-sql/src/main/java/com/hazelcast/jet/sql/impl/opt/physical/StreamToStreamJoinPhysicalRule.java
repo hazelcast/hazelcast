@@ -21,13 +21,11 @@ import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.JoinLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
-import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.JoinRelType;
-import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
@@ -106,18 +104,8 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
             return;
         }
 
-        if (!watermarkedFieldsAreTemporalType(join.getLeft(), leftWmFields)) {
-            call.transformTo(fail(join, "Left input of stream-to-stream JOIN watermarked columns are not temporal"));
-            return;
-        }
-
         if (rightWmFields == null || rightWmFields.isEmpty()) {
             call.transformTo(fail(join, "Right input of stream-to-stream JOIN must contain watermarked columns"));
-            return;
-        }
-
-        if (!watermarkedFieldsAreTemporalType(join.getRight(), rightWmFields)) {
-            call.transformTo(fail(join, "Right input of stream-to-stream JOIN watermarked columns are not temporal"));
             return;
         }
 
@@ -219,21 +207,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         return leftFields.union(new WatermarkedFields(shiftedRightProps));
     }
 
-    /**
-     * Checks if all watermarked fields are temporal type.
-     */
-    @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    private boolean watermarkedFieldsAreTemporalType(RelNode node, WatermarkedFields fields) {
-        for (Integer idx : fields.getFieldIndexes()) {
-            RelDataType type = node.getRowType().getFieldList().get(idx).getType();
-            if (!HazelcastTypeUtils.isTemporalType(type)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    @SuppressWarnings("checkstyle:VisibilityModifier")
+    @SuppressWarnings("CheckStyle")
     private static final class BoundsExtractorVisitor extends RexVisitorImpl<Void> {
         public Tuple3<Integer, Integer, Long> leftBound;
         public Tuple3<Integer, Integer, Long> rightBound;
@@ -287,7 +261,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         }
 
         /**
-         * Extract time boundness from GTE/LTE calls represented as
+         * Extract time boundedness from GTE/LTE calls represented as
          * `$ref1 >= $ref2 + constant1` or `$ref1 <= $ref2 + constant2`.
          * <p>
          * It's needed to enlighten mathematical representation for group of canonical time-bound in-equations.
