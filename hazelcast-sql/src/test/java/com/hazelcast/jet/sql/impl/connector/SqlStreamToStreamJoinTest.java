@@ -454,4 +454,16 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 )
         );
     }
+
+    @Test
+    public void test_selfJoin() {
+        TestStreamSqlConnector.create(sqlService, "stream1", singletonList("a"), singletonList(TIMESTAMP_WITH_TIME_ZONE),
+                row(timestampTz(42L)));
+
+        sqlService.execute("CREATE VIEW s AS " +
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0' SECONDS))");
+
+        assertTipOfStream("SELECT * FROM s s1 JOIN s s2 ON s1.a=s2.a",
+                singletonList(new Row(timestamp(42L), timestamp(42L))));
+    }
 }
