@@ -105,7 +105,7 @@ public final class CalcIntoScanLogicalRule extends RelRule<Config> implements Tr
                 .filter(ref -> ref.getIndex() == wmColumnIndex)
                 .collect(Collectors.toList());
 
-        int newWatermarkColumnIndex = wmColumnIndex >= 0
+        int newWatermarkColumnIndex = wmColumnIndex >= 0 && !wmField.isEmpty()
                 ? newProjects.indexOf(wmField.get(0))
                 : wmColumnIndex;
 

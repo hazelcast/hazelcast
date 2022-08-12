@@ -39,6 +39,7 @@ public final class PhysicalRules {
                 WatermarkPhysicalRule.INSTANCE,
                 SlidingWindowPhysicalRule.INSTANCE,
                 DropLateItemsPhysicalRule.INSTANCE,
+                // DropLateItemEliminateRule.INSTANCE,
 
                 // Aggregate rules
                 AggregateBatchPhysicalRule.INSTANCE,

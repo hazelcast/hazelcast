@@ -658,8 +658,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             QueryParameterMetadata parameterMetadata
     ) {
         WatermarkKeysAssigner wmKeysAssigner = new WatermarkKeysAssigner(physicalRel);
-        wmKeysAssigner.assignWatermarkKeys();
-        logger.finest("Watermark keys assigned");
+        if (OptUtils.isUnbounded(physicalRel)) {
+            wmKeysAssigner.assignWatermarkKeys();
+            logger.finest("Watermark keys assigned");
+        }
 
         CreateDagVisitor visitor = new CreateDagVisitor(nodeEngine, parameterMetadata, wmKeysAssigner);
         physicalRel.accept(visitor);
