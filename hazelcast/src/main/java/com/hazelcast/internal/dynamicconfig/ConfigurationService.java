@@ -368,9 +368,9 @@ public interface ConfigurationService {
     ExternalDataStoreConfig findExternalDataStoreConfig(String name);
 
     /**
-     * Returns all registered external DataStore configurations.
+     * Returns all registered external DataStore configurations keyed by store's name.
      *
-     * @return registered DataStore configurations
+     * @return registered DataStore configurations keyed by store's name
      */
     Map<String, ExternalDataStoreConfig> getExternalDataStoreConfigs();
 }
