@@ -17,7 +17,7 @@
 package com.hazelcast.internal.serialization.impl.portable;
 
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
-import com.hazelcast.nio.serialization.AbstractGenericRecord;
+import com.hazelcast.internal.serialization.impl.AbstractGenericRecord;
 import com.hazelcast.nio.serialization.ClassDefinition;
 
 import javax.annotation.Nonnull;
