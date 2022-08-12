@@ -63,6 +63,7 @@ import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
 import com.hazelcast.internal.config.ExecutorConfigReadOnly;
+import com.hazelcast.internal.config.ExternalDataStoreConfigReadOnly;
 import com.hazelcast.internal.config.FlakeIdGeneratorConfigReadOnly;
 import com.hazelcast.internal.config.ListConfigReadOnly;
 import com.hazelcast.internal.config.MapConfigReadOnly;
@@ -1217,7 +1218,10 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Map<String, ExternalDataStoreConfig> getExternalDataStoreConfigs() {
-        return staticConfig.getExternalDataStoreConfigs();
+        Map<String, ExternalDataStoreConfig> staticConfigs = staticConfig.getExternalDataStoreConfigs();
+        Map<String, ExternalDataStoreConfig> dynamicConfigs = configurationService.getExternalDataStoreConfigs();
+
+        return aggregate(staticConfigs, dynamicConfigs);
     }
 
     @Override
@@ -1227,16 +1231,25 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     @Override
     public Config addExternalDataStoreConfig(ExternalDataStoreConfig externalDataStoreConfig) {
-        throw new UnsupportedOperationException("Unsupported operation");
+        boolean staticConfigDoesNotExist = checkStaticConfigDoesNotExist(staticConfig.getExternalDataStoreConfigs(),
+                externalDataStoreConfig.getName(), externalDataStoreConfig);
+        if (staticConfigDoesNotExist) {
+            configurationService.broadcastConfig(externalDataStoreConfig);
+        }
+        return this;
     }
 
     @Override
     public ExternalDataStoreConfig getExternalDataStoreConfig(String name) {
-        return staticConfig.getExternalDataStoreConfig(name);
+        return getExternalDataStoreConfigInternal(name, name);
+    }
+
+    private ExternalDataStoreConfig getExternalDataStoreConfigInternal(String name, String fallbackName) {
+        return (ExternalDataStoreConfig) configSearcher.getConfig(name, fallbackName, supplierFor(ExternalDataStoreConfig.class));
     }
 
     @Override
     public ExternalDataStoreConfig findExternalDataStoreConfig(String name) {
-        return staticConfig.findExternalDataStoreConfig(name);
+        return new ExternalDataStoreConfigReadOnly(getExternalDataStoreConfigInternal(name, "default"));
     }
 }

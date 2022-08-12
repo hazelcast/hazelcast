@@ -40,6 +40,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
@@ -874,6 +875,27 @@ public abstract class AbstractDynamicConfigGeneratorTest extends HazelcastTestSu
 
         List<String> actualMembers = decConfig.getAdvancedNetworkConfig().getJoin().getTcpIpConfig().getMembers();
         assertContainsAll(members, actualMembers);
+    }
+
+
+    // EXTERNAL DATA STORE
+
+    @Test
+    public void testExternalDataStore() {
+        Properties properties = new Properties();
+        properties.setProperty("prop1", "val1");
+        properties.setProperty("prop2", "val2");
+        ExternalDataStoreConfig expectedConfig = new ExternalDataStoreConfig()
+                .setName("some-name")
+                .setClassName("some-class-name")
+                .setProperties(properties);
+
+        Config config = new Config().addExternalDataStoreConfig(expectedConfig);
+
+        Config decConfig = getNewConfigViaGenerator(config);
+
+        ExternalDataStoreConfig actualConfig = decConfig.getExternalDataStoreConfig(expectedConfig.getName());
+        assertEquals(expectedConfig, actualConfig);
     }
 
     // UTILITY - GENERATOR
