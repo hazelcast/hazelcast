@@ -101,8 +101,10 @@ public class WatermarkKeysAssigner {
                 FullScanPhysicalRel scan = (FullScanPhysicalRel) node;
                 int idx = scan.watermarkedColumnIndex();
                 relToWmKeyMapping.computeIfAbsent(scan, key -> {
-                    scan.setWatermarkKey(WatermarkKeysAssigner.this.keyCounter);
-                    return Collections.singletonMap(idx, new MutableByte(keyCounter++));
+                    scan.setWatermarkKey(keyCounter);
+                    Map<Integer, MutableByte> res = Collections.singletonMap(idx, new MutableByte(keyCounter));
+                    keyCounter++;
+                    return res;
                 });
                 return;
             }

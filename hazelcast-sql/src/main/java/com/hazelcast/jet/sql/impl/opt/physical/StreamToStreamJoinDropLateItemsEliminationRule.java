@@ -16,38 +16,37 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.jet.sql.impl.opt.logical.CalcDropLateItemsTransposeRule;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
-import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.rules.TransformationRule;
 import org.immutables.value.Value;
 
-import java.util.Objects;
-
 import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
+import static org.apache.calcite.plan.volcano.HazelcastRelSubsetUtil.unwrapSubset;
 
 /**
- * Physical rule that drops {@link DropLateItemsPhysicalRel} for inputs
- * of {@link StreamToStreamJoinPhysicalRel}, specifically for {@link FullScanPhysicalRel}.
+ * Physical rule that drops {@link DropLateItemsPhysicalRel} for inputs of
+ * {@link StreamToStreamJoinPhysicalRel}.
  * <p>
  * Before:
  * <pre>
  * StreamToStreamJoin[...]
  *   DropLateItemsPhysicalRel[...]
- *     FullScanPhysicalRel[...]
+ *     input
  * </pre>
  * After:
  * <pre>
  *  StreamToStreamJoin[...]
- *    FullScanPhysicalRel[...]
+ *    input
  * </pre>
  * <p>
- *
- * Note: we are allowed to do that. Even if Calc would be present in rel tree,
- * such transformations are suppose to happen:
- * Calc & DropRel transposition -> Calc pushdown into FullScan
+ * This transformation is valid, because s2sj processor also drops late items.
+ * <p>
+ * If Calc is present between s2sj and drop-late-rel, the {@link CalcDropLateItemsTransposeRule}
+ * moves it out.
  */
 @Value.Enclosing
 public class StreamToStreamJoinDropLateItemsEliminationRule extends RelRule<RelRule.Config> implements TransformationRule {
@@ -81,12 +80,12 @@ public class StreamToStreamJoinDropLateItemsEliminationRule extends RelRule<RelR
         StreamToStreamJoinPhysicalRel join = call.rel(0);
         DropLateItemsPhysicalRel drop = call.rel(1);
 
-        RelNode leftInput = Objects.requireNonNull(((RelSubset) join.getLeft()).getBest());
-        RelNode rightInput = Objects.requireNonNull(((RelSubset) join.getRight()).getBest());
+        RelNode leftInput = join.getLeft();
+        RelNode rightInput = join.getRight();
 
         StreamToStreamJoinPhysicalRel newJoin;
 
-        if (drop.equals(leftInput)) {
+        if (drop == unwrapSubset(leftInput)) {
             newJoin = (StreamToStreamJoinPhysicalRel) join.copy(
                     join.getTraitSet(),
                     join.getCondition(),
@@ -95,7 +94,7 @@ public class StreamToStreamJoinDropLateItemsEliminationRule extends RelRule<RelR
                     join.getJoinType(),
                     join.isSemiJoinDone()
             );
-        } else if (drop.equals(rightInput)) {
+        } else if (drop == unwrapSubset(rightInput)) {
             newJoin = (StreamToStreamJoinPhysicalRel) join.copy(
                     join.getTraitSet(),
                     join.getCondition(),
@@ -105,7 +104,7 @@ public class StreamToStreamJoinDropLateItemsEliminationRule extends RelRule<RelR
                     join.isSemiJoinDone()
             );
         } else {
-            throw new AssertionError("Drop rel is not equal to left or right JOIN input rel.");
+            throw new AssertionError("Drop rel is neither left, nor right input of the Join rel");
         }
 
         call.transformTo(newJoin);

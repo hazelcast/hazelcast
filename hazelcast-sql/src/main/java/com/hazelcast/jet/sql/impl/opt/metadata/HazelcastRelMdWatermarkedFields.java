@@ -166,11 +166,11 @@ public final class HazelcastRelMdWatermarkedFields
              * Here, we need to detect watermarked RexInputRefs were within child relations schema
              * and pass them to Join relation to merge them correctly according to join rel schema.
              * <p>
-             * Example : consider join of two events with fields (a, b) v (c, d).
+             * Example: consider join of two events with fields (a, b) v (c, d).
              * 'a' and 'd' are watermarked.
              * <p>
-             * Then, we'll have : left_map {input_ref(a) -> 0}; right_map{input_ref(d) -> 3};
-             * In join relation we are able to merge {@link WatermarkedFields} in correct way.
+             * Then, we'll have: leftWmFields {input_ref(a) -> 0}; shiftedRightWmFields{input_ref(d) -> 3};
+             * We can merge these WmFields without conflicts.
              */
             RelNode left = RelRule.convert(rel.getLeft(), rel.getTraitSet().replace(Conventions.PHYSICAL));
             RelNode right = RelRule.convert(rel.getRight(), rel.getTraitSet().replace(Conventions.PHYSICAL));

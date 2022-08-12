@@ -63,7 +63,6 @@ import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.SingleRel;
-import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.rex.RexProgram;
 
 import javax.annotation.Nullable;
@@ -444,7 +443,6 @@ public class CreateDagVisitor {
 
         Map<Byte, ToLongFunctionEx<JetSqlRow>> leftExtractors = new HashMap<>();
         Map<Byte, ToLongFunctionEx<JetSqlRow>> rightExtractors = new HashMap<>();
-        List<RelDataTypeField> fieldList = rel.getRowType().getFieldList();
 
         // map watermarked timestamps extractors to enumerated wm keys
         for (Map.Entry<Integer, ToLongFunctionEx<JetSqlRow>> e : rel.leftTimeExtractors().entrySet()) {

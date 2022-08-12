@@ -135,7 +135,7 @@ public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
     @Override
     public RelWriter explainTerms(RelWriter pw) {
         return super.explainTerms(pw)
-                .itemIf("watermarkKey", watermarkKey, watermarkKey != null && watermarkKey >= 0);
+                .itemIf("watermarkKey", watermarkKey, watermarkKey != null);
     }
 
     @Override

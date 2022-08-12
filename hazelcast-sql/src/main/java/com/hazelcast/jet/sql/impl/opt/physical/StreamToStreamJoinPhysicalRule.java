@@ -75,7 +75,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
     }
 
     @SuppressWarnings("checkstyle:DeclarationOrder")
-    static final RelOptRule STREAM_TO_STREAM_JOIN_RULE = new StreamToStreamJoinPhysicalRule(DEFAULT);
+    static final RelOptRule INSTANCE = new StreamToStreamJoinPhysicalRule(DEFAULT);
 
     private StreamToStreamJoinPhysicalRule(StreamToStreamJoinPhysicalRule.Config config) {
         super(config);
