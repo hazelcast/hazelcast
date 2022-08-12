@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If an external data store configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("dcca150b318b08fe9a44f0b7471e3106")
+@Generated("0bf8b1bebbfe01a0dfeaf87a8e7d9d45")
 public final class DynamicConfigAddExternalDataStoreConfigCodec {
     //hex: 0x1B1100
     public static final int REQUEST_MESSAGE_TYPE = 1773824;
@@ -55,7 +55,7 @@ public final class DynamicConfigAddExternalDataStoreConfigCodec {
     public static class RequestParameters {
 
         /**
-         * Returns the name of this config. It must be unique.
+         * Name of this external data store, must be unique.
          */
         public java.lang.String name;
 

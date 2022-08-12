@@ -68,7 +68,7 @@ public class ExternalDataStoreConfig implements IdentifiedDataSerializable, Name
     }
 
     /**
-     * Sets the name of this config. It must be unique.
+     * Sets the name of this external data store, the name must be unique.
      *
      * @return this ExternalDataStoreConfig
      */
@@ -79,9 +79,9 @@ public class ExternalDataStoreConfig implements IdentifiedDataSerializable, Name
     }
 
     /**
-     * Returns the name of this config. It must be unique.
+     * Returns the name of this external data store.
      *
-     * @return the name of this config
+     * @return the name of this external data store
      */
     public String getName() {
         return name;
