@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
-import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
@@ -97,16 +96,6 @@ public class UnionDropLateItemsTransposeRule extends RelRule<RelRule.Config> imp
                 .stream()
                 .map(rel -> (RelSubset) rel)
                 .allMatch(rel -> rel.getBest() instanceof DropLateItemsLogicalRel);
-        System.err.println(match);
-        for (int i = 0; i < union.getInputs().size(); i++) {
-            RelSubset input = (RelSubset) union.getInput(i);
-            for (int j = 0; j < input.getRelList().size(); ++j) {
-                System.err.println(input.getRelList().get(j).getRelTypeName() +
-                        " -> " + input.getRelList().get(j).computeSelfCost(union.getCluster().getPlanner(), HazelcastRelMetadataQuery.instance()));
-            }
-            System.err.println("Best : " + input.getBest().getRelTypeName() + " -> " + input.getBest().computeSelfCost(union.getCluster().getPlanner(), HazelcastRelMetadataQuery.instance()));
-        }
-        System.err.println("------");
         return match;
     }
 

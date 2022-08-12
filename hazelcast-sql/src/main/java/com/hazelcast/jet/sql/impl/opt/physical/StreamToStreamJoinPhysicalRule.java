@@ -51,6 +51,7 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.metadataQuery;
 import static com.hazelcast.jet.sql.impl.opt.physical.StreamToStreamJoinPhysicalRule.Config.DEFAULT;
 
+@SuppressWarnings("checkstyle:LineLength")
 @Value.Enclosing
 public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config> {
     @Value.Immutable
@@ -232,16 +233,14 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         return true;
     }
 
-
-    @SuppressWarnings("CheckStyle")
+    @SuppressWarnings("checkstyle:VisibilityModifier")
     private static final class BoundsExtractorVisitor extends RexVisitorImpl<Void> {
-        private final WatermarkedFields watermarkedFields;
-        private String errorMessage = null;
-
-        public Tuple3<Integer, Integer, Long> leftBound = null;
-        public Tuple3<Integer, Integer, Long> rightBound = null;
-
+        public Tuple3<Integer, Integer, Long> leftBound;
+        public Tuple3<Integer, Integer, Long> rightBound;
         public boolean isValid = true;
+
+        private final WatermarkedFields watermarkedFields;
+        private String errorMessage;
 
         private BoundsExtractorVisitor(WatermarkedFields watermarkedFields) {
             super(true);

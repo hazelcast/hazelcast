@@ -26,6 +26,7 @@ import com.hazelcast.jet.sql.impl.opt.physical.DropLateItemsPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.JoinHashPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.JoinNestedLoopPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowAggregatePhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.StreamToStreamJoinPhysicalRel;
 import org.apache.calcite.linq4j.tree.Types;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.plan.hep.HepRelVertex;
@@ -159,7 +160,7 @@ public final class HazelcastRelMdWatermarkedFields
             // Nested-loop join and hash join iterate the left side and forward WM in it.
             // WM on the right side isn't forwarded.
             return query.extractWatermarkedFields(rel.getLeft());
-        } else {
+        } else if (rel instanceof StreamToStreamJoinPhysicalRel) {
             /*
              * Performs extraction of watermarked fields for stream to stream Join rel.
              * <p>
@@ -185,6 +186,8 @@ public final class HazelcastRelMdWatermarkedFields
                     .collect(Collectors.toSet());
 
             return leftWmFields.union(new WatermarkedFields(shiftedRightProps));
+        } else {
+            throw new RuntimeException("Unknown join rel: " + rel.getClass().getName());
         }
     }
 

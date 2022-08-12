@@ -496,6 +496,15 @@ public class CreateDagVisitor {
         Edge left = Edge.from(leftInput).to(joinVertex, 0);
         Edge right = Edge.from(rightInput).to(joinVertex, 1);
 
+        if (joinInfo.isEquiJoin()) {
+            left = left.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.leftEquiJoinIndices()));
+            right = right.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.rightEquiJoinIndices()));
+        }
+//        else {
+//                left = left.local();
+//            right = right.distributed().unicast();
+//        }
+
         dag.edge(left);
         dag.edge(right);
         // endregion
