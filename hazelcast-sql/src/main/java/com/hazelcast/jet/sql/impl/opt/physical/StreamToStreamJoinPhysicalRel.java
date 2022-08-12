@@ -39,8 +39,8 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
     private final WatermarkedFields rightWatermarkedFields;
     private final Map<Integer, Integer> jointRowToLeftInputMapping;
     private final Map<Integer, Integer> jointRowToRightInputMapping;
-    // Same postponeTimeMap as required by TDD, but with rex reference defined
-    // instead of Jet's watermark key, which will be computed on CreateDagVisitor level.
+    // Same postponeTimeMap as described in the TDD, but uses field indexes instead of WM keys,
+    // which are not assigned yet
     private final Map<Integer, Map<Integer, Long>> postponeTimeMap;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
