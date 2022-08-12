@@ -134,7 +134,7 @@ public class ExceptionUtilTest extends JetTestSupport {
     }
 
     @Test
-    public void when_findingCauseForNull() {
+    public void when_findingCauseForNull_then_false() {
         assertFalse(hasCauseOfType(null, TargetNotMemberException.class));
     }
 }
