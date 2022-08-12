@@ -15,10 +15,6 @@
  */
 
 /**
- * Package contains API for Compact Serializer
- */
-
-/**
  * This package contains APIs for the GenericRecords.
  */
 package com.hazelcast.nio.serialization.genericrecord;
