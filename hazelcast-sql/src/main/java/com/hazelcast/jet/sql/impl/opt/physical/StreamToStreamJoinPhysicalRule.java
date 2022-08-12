@@ -49,7 +49,7 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.metadataQuery;
 import static com.hazelcast.jet.sql.impl.opt.physical.StreamToStreamJoinPhysicalRule.Config.DEFAULT;
 
-@SuppressWarnings("checkstyle:LineLength")
+@SuppressWarnings({"checkstyle:LineLength", "checkstyle:VisibilityModifier"})
 @Value.Enclosing
 public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config> {
     @Value.Immutable
