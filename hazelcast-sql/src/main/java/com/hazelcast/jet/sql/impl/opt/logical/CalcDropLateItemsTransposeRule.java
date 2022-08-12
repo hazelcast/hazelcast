@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
-import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
@@ -30,6 +29,7 @@ import org.apache.calcite.rex.RexNode;
 import org.immutables.value.Value;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
@@ -93,13 +93,21 @@ public class CalcDropLateItemsTransposeRule extends RelRule<RelRule.Config> impl
         RelNode input = dropRel.getInput();
 
         HazelcastRelMetadataQuery relMetadataQuery = OptUtils.metadataQuery(calc);
-        WatermarkedFields watermarkedFields = relMetadataQuery.extractWatermarkedFields(calc);
+        List<RexNode> projects = calc.getProgram().expandList(calc.getProgram().getProjectList());
+        List<RexInputRef> dropLateIndex = projects.stream()
+                .filter(rex -> rex instanceof RexInputRef)
+                .map(rex -> (RexInputRef) rex)
+                .filter(ref -> ref.getIndex() == dropRel.wmField())
+                .collect(Collectors.toList());
+
+        assert !dropLateIndex.isEmpty();
+        int sourceIndex = projects.indexOf(dropLateIndex.get(0));
 
         Calc newCalc = calc.copy(calc.getTraitSet(), input, calc.getProgram());
         DropLateItemsLogicalRel newDropRel = dropRel.copy(
                 dropRel.getTraitSet(),
                 newCalc,
-                watermarkedFields.findFirst());
+                sourceIndex);
 
         call.transformTo(newDropRel);
     }

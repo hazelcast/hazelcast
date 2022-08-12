@@ -17,8 +17,6 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
-import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import org.apache.calcite.plan.RelOptRule;
@@ -28,11 +26,13 @@ import org.apache.calcite.plan.RelRule.Config;
 import org.apache.calcite.rel.core.Calc;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.rules.TransformationRule;
+import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexProgram;
 import org.immutables.value.Value;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
@@ -99,11 +99,14 @@ public final class CalcIntoScanLogicalRule extends RelRule<Config> implements Tr
         );
 
         int wmColumnIndex = scan.watermarkedColumnIndex();
-        HazelcastRelMetadataQuery relMetadataQuery = OptUtils.metadataQuery(calc);
-        WatermarkedFields watermarkedFields = relMetadataQuery.extractWatermarkedFields(calc);
+        List<RexInputRef> wmField = newProjects.stream()
+                .filter(rex -> rex instanceof RexInputRef)
+                .map(rex -> (RexInputRef) rex)
+                .filter(ref -> ref.getIndex() == wmColumnIndex)
+                .collect(Collectors.toList());
 
         int newWatermarkColumnIndex = wmColumnIndex >= 0
-                ? watermarkedFields.findFirst()
+                ? newProjects.indexOf(wmField.get(0))
                 : wmColumnIndex;
 
         FullScanLogicalRel rel = new FullScanLogicalRel(
