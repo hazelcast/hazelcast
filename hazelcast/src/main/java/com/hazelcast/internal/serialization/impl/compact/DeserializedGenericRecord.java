@@ -115,7 +115,7 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     public FieldKind getFieldKind(@Nonnull String fieldName) {
         FieldDescriptor field = schema.getField(fieldName);
         if (field == null) {
-            throw new IllegalArgumentException("Field name " + fieldName + " does not exist in the schema");
+            return FieldKind.NOT_AVAILABLE;
         }
         return field.getKind();
     }

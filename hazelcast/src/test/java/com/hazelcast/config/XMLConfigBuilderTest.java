@@ -85,6 +85,7 @@ import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static java.io.File.createTempFile;
 import static java.nio.charset.StandardCharsets.US_ASCII;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -3067,69 +3068,169 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
-    public void testCompactSerialization_explicitSerializationRegistration() {
+    public void testCompactSerialization_serializerRegistration() {
         String xml = HAZELCAST_START_TAG
                 + "    <serialization>\n"
                 + "        <compact-serialization enabled=\"true\">\n"
-                + "            <registered-classes>\n"
-                + "                <class type-name=\"obj\" serializer=\"example.serialization.EmployeeDTOSerializer\">"
-                + "                    example.serialization.EmployeeDTO\n"
-                + "                </class>\n"
-                + "            </registered-classes>\n"
+                + "            <serializers>\n"
+                + "                <serializer>example.serialization.SerializableEmployeeDTOSerializer</serializer>\n"
+                + "            </serializers>\n"
                 + "        </compact-serialization>\n"
                 + "    </serialization>\n"
                 + HAZELCAST_END_TAG;
 
-        Config config = buildConfig(xml);
-        CompactTestUtil.verifyExplicitSerializerIsUsed(config.getSerializationConfig());
+        SerializationConfig config = buildConfig(xml).getSerializationConfig();
+        CompactTestUtil.verifyExplicitSerializerIsUsed(config);
     }
 
     @Override
-    public void testCompactSerialization_reflectiveSerializerRegistration() {
+    public void testCompactSerialization_classRegistration() {
         String xml = HAZELCAST_START_TAG
                 + "    <serialization>\n"
                 + "        <compact-serialization enabled=\"true\">\n"
-                + "            <registered-classes>\n"
+                + "            <classes>\n"
                 + "                <class>example.serialization.ExternalizableEmployeeDTO</class>\n"
-                + "            </registered-classes>\n"
+                + "            </classes>\n"
                 + "        </compact-serialization>\n"
                 + "    </serialization>\n"
                 + HAZELCAST_END_TAG;
 
-        Config config = buildConfig(xml);
-        CompactTestUtil.verifyReflectiveSerializerIsUsed(config.getSerializationConfig());
+        SerializationConfig config = buildConfig(xml).getSerializationConfig();
+        CompactTestUtil.verifyReflectiveSerializerIsUsed(config);
     }
 
     @Override
-    public void testCompactSerialization_registrationWithJustTypeName() {
+    public void testCompactSerialization_serializerAndClassRegistration() {
         String xml = HAZELCAST_START_TAG
                 + "    <serialization>\n"
                 + "        <compact-serialization enabled=\"true\">\n"
-                + "            <registered-classes>\n"
-                + "                <class type-name=\"employee\">example.serialization.EmployeeDTO</class>\n"
-                + "            </registered-classes>\n"
+                + "            <serializers>\n"
+                + "                <serializer>example.serialization.SerializableEmployeeDTOSerializer</serializer>\n"
+                + "            </serializers>\n"
+                + "            <classes>\n"
+                + "                <class>example.serialization.ExternalizableEmployeeDTO</class>\n"
+                + "            </classes>\n"
                 + "        </compact-serialization>\n"
                 + "    </serialization>\n"
                 + HAZELCAST_END_TAG;
 
-        buildConfig(xml);
+        SerializationConfig config = buildConfig(xml).getSerializationConfig();
+        CompactTestUtil.verifyExplicitSerializerIsUsed(config);
+        CompactTestUtil.verifyReflectiveSerializerIsUsed(config);
     }
 
     @Override
-    public void testCompactSerialization_registrationWithJustSerializer() {
+    public void testCompactSerialization_duplicateSerializerRegistration() {
         String xml = HAZELCAST_START_TAG
                 + "    <serialization>\n"
                 + "        <compact-serialization enabled=\"true\">\n"
-                + "            <registered-classes>\n"
-                + "                <class serializer=\"example.serialization.EmployeeDTOSerializer\">\n"
-                + "                    example.serialization.EmployeeDTO\n"
-                + "                </class>\n"
-                + "            </registered-classes>\n"
+                + "            <serializers>\n"
+                + "                <serializer>example.serialization.EmployeeDTOSerializer</serializer>\n"
+                + "                <serializer>example.serialization.EmployeeDTOSerializer</serializer>\n"
+                + "            </serializers>\n"
                 + "        </compact-serialization>\n"
                 + "    </serialization>\n"
                 + HAZELCAST_END_TAG;
 
-        buildConfig(xml);
+        SerializationConfig config = buildConfig(xml).getSerializationConfig();
+        assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Duplicate");
+    }
+
+    @Override
+    public void testCompactSerialization_duplicateClassRegistration() {
+        String xml = HAZELCAST_START_TAG
+                + "    <serialization>\n"
+                + "        <compact-serialization enabled=\"true\">\n"
+                + "            <classes>\n"
+                + "                <class>example.serialization.ExternalizableEmployeeDTO</class>\n"
+                + "                <class>example.serialization.ExternalizableEmployeeDTO</class>\n"
+                + "            </classes>\n"
+                + "        </compact-serialization>\n"
+                + "    </serialization>\n"
+                + HAZELCAST_END_TAG;
+
+        SerializationConfig config = buildConfig(xml).getSerializationConfig();
+        assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Duplicate");
+    }
+
+    @Override
+    public void testCompactSerialization_registrationsWithDuplicateClasses() {
+        String xml = HAZELCAST_START_TAG
+                + "    <serialization>\n"
+                + "        <compact-serialization enabled=\"true\">\n"
+                + "            <serializers>\n"
+                + "                <serializer>example.serialization.EmployeeDTOSerializer</serializer>\n"
+                + "                <serializer>example.serialization.SameClassEmployeeDTOSerializer</serializer>\n"
+                + "            </serializers>\n"
+                + "        </compact-serialization>\n"
+                + "    </serialization>\n"
+                + HAZELCAST_END_TAG;
+
+        SerializationConfig config = buildConfig(xml).getSerializationConfig();
+        assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Duplicate")
+                .hasMessageContaining("class");
+    }
+
+    @Override
+    public void testCompactSerialization_registrationsWithDuplicateTypeNames() {
+        String xml = HAZELCAST_START_TAG
+                + "    <serialization>\n"
+                + "        <compact-serialization enabled=\"true\">\n"
+                + "            <serializers>\n"
+                + "                <serializer>example.serialization.EmployeeDTOSerializer</serializer>\n"
+                + "                <serializer>example.serialization.SameTypeNameEmployeeDTOSerializer</serializer>\n"
+                + "            </serializers>\n"
+                + "        </compact-serialization>\n"
+                + "    </serialization>\n"
+                + HAZELCAST_END_TAG;
+
+        SerializationConfig config = buildConfig(xml).getSerializationConfig();
+        assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Duplicate")
+                .hasMessageContaining("type name");
+    }
+
+    @Override
+    public void testCompactSerialization_withInvalidSerializer() {
+        String xml = HAZELCAST_START_TAG
+                + "    <serialization>\n"
+                + "        <compact-serialization enabled=\"true\">\n"
+                + "            <serializers>\n"
+                + "                <serializer>does.not.exist.FooSerializer</serializer>\n"
+                + "            </serializers>\n"
+                + "        </compact-serialization>\n"
+                + "    </serialization>\n"
+                + HAZELCAST_END_TAG;
+
+        SerializationConfig config = buildConfig(xml).getSerializationConfig();
+        assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Cannot create an instance");
+    }
+
+    @Override
+    public void testCompactSerialization_withInvalidCompactSerializableClass() {
+        String xml = HAZELCAST_START_TAG
+                + "    <serialization>\n"
+                + "        <compact-serialization enabled=\"true\">\n"
+                + "            <classes>\n"
+                + "                <class>does.not.exist.Foo</class>\n"
+                + "            </classes>\n"
+                + "        </compact-serialization>\n"
+                + "    </serialization>\n"
+                + HAZELCAST_END_TAG;
+
+        SerializationConfig config = buildConfig(xml).getSerializationConfig();
+        assertThatThrownBy(() -> CompactTestUtil.verifySerializationServiceBuilds(config))
+                .isInstanceOf(InvalidConfigurationException.class)
+                .hasMessageContaining("Cannot load");
     }
 
     @Override

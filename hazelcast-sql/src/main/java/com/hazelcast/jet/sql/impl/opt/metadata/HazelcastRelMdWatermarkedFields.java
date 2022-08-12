@@ -37,7 +37,6 @@ import org.apache.calcite.rel.metadata.MetadataHandler;
 import org.apache.calcite.rel.metadata.ReflectiveRelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
-import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.util.Util;
@@ -88,18 +87,10 @@ public final class HazelcastRelMdWatermarkedFields
     @SuppressWarnings("unused")
     public WatermarkedFields extractWatermarkedFields(SlidingWindow rel, RelMetadataQuery mq) {
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
-        WatermarkedFields inputWatermarkedFields = query.extractWatermarkedFields(rel.getInput());
-
-        if (inputWatermarkedFields == null
-                || !inputWatermarkedFields.getFieldIndexes().contains(rel.orderingFieldIndex())) {
-            // if there's no watermarked field in the input to a window function, or if the field used to
-            // calculate window bounds isn't watermarked, the window bounds aren't watermarked either
-            return inputWatermarkedFields;
-        }
-
-        RexBuilder rexBuilder = rel.getCluster().getRexBuilder();
-        return inputWatermarkedFields.union(new WatermarkedFields(
-                ImmutableSet.of(rel.windowStartIndex(), rel.windowEndIndex())));
+        // TODO also add watermark to window start and end, under a different key, but it needs
+        //  to be supported by the processor. It's not really needed as when we're doing aggregation,
+        //  the rule removes this rel, but would be needed for future cases
+        return query.extractWatermarkedFields(rel.getInput());
     }
 
     @SuppressWarnings("unused")
@@ -169,13 +160,17 @@ public final class HazelcastRelMdWatermarkedFields
     public WatermarkedFields extractWatermarkedFields(Union rel, RelMetadataQuery mq) {
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
         assert !rel.getInputs().isEmpty();
-        Set<Integer> wmFields = new HashSet<>(query.extractWatermarkedFields(rel.getInput(0)).getFieldIndexes());
-        for (int i = 1; i < rel.getInputs().size(); i++) {
+        Set<Integer> wmFields = new HashSet<>();
+        for (int i = 0; i < rel.getInputs().size(); i++) {
             WatermarkedFields wmFields2 = query.extractWatermarkedFields(rel.getInputs().get(i));
             if (wmFields2 == null) {
                 return null;
             }
-            wmFields.retainAll(wmFields2.getFieldIndexes());
+            if (i == 0) {
+                wmFields.addAll(wmFields2.getFieldIndexes());
+            } else {
+                wmFields.retainAll(wmFields2.getFieldIndexes());
+            }
         }
         return new WatermarkedFields(wmFields);
     }

@@ -1159,7 +1159,7 @@ public final class FieldOperations {
     }
 
     public static boolean isArrayKind(FieldKind fieldKind) {
-        return fieldKind.getId() % 2 != 0;
+        return fieldKind.getId() % 2 != 1;
     }
 
     public static FieldKind getSingleKind(FieldKind fieldKind) {

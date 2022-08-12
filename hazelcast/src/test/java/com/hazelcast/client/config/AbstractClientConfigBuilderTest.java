@@ -530,15 +530,29 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     public abstract void testCompactSerialization();
 
     @Test
-    public abstract void testCompactSerialization_explicitSerializationRegistration();
+    public abstract void testCompactSerialization_serializerRegistration();
 
     @Test
-    public abstract void testCompactSerialization_reflectiveSerializerRegistration();
+    public abstract void testCompactSerialization_classRegistration();
 
-    @Test(expected = InvalidConfigurationException.class)
-    public abstract void testCompactSerialization_registrationWithJustTypeName();
+    @Test
+    public abstract void testCompactSerialization_serializerAndClassRegistration();
 
-    @Test(expected = InvalidConfigurationException.class)
-    public abstract void testCompactSerialization_registrationWithJustSerializer();
+    @Test
+    public abstract void testCompactSerialization_duplicateSerializerRegistration();
 
+    @Test
+    public abstract void testCompactSerialization_duplicateClassRegistration();
+
+    @Test
+    public abstract void testCompactSerialization_registrationsWithDuplicateClasses();
+
+    @Test
+    public abstract void testCompactSerialization_registrationsWithDuplicateTypeNames();
+
+    @Test
+    public abstract void testCompactSerialization_withInvalidSerializer();
+
+    @Test
+    public abstract void testCompactSerialization_withInvalidCompactSerializableClass();
 }
