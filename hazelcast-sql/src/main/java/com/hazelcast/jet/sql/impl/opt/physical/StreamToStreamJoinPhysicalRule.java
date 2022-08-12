@@ -49,7 +49,6 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.metadataQuery;
 import static com.hazelcast.jet.sql.impl.opt.physical.StreamToStreamJoinPhysicalRule.Config.DEFAULT;
 
-@SuppressWarnings({"checkstyle:LineLength", "checkstyle:VisibilityModifier"})
 @Value.Enclosing
 public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config> {
     @Value.Immutable
@@ -209,9 +208,9 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
 
     @SuppressWarnings("CheckStyle")
     private static final class BoundsExtractorVisitor extends RexVisitorImpl<Void> {
-        public Tuple3<Integer, Integer, Long> leftBound;
-        public Tuple3<Integer, Integer, Long> rightBound;
-        public boolean isValid = true;
+        private Tuple3<Integer, Integer, Long> leftBound;
+        private Tuple3<Integer, Integer, Long> rightBound;
+        private boolean isValid = true;
 
         private final WatermarkedFields watermarkedFields;
         private String errorMessage;
@@ -276,7 +275,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
          * [right_wm_key -> [left_wm_key -> right_bound]]
          * </pre>
          * <p>
-         * <a href=https://github.com/Fly-Style/hazelcast/blob/feat/5.2/stream-to-stream-join-design/docs/design/sql/15-stream-to-stream-join.md#implementation-of-multiple-watermarks-in-the-join-processor>Read more.</a>
+         * <a href="https://github.com/hazelcast/hazelcast/blob/master/docs/design/sql/15-stream-to-stream-join.md">Read more</a>
          *
          * @return Tuple [ref1_index, ref2_index, bound]
          */
