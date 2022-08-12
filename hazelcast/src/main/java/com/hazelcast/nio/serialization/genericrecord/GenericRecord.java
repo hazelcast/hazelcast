@@ -511,6 +511,10 @@ public interface GenericRecord {
     OffsetDateTime[] getArrayOfTimestampWithTimezone(@Nonnull String fieldName);
 
     /**
+     * For {@link com.hazelcast.config.CompactSerializationConfig Compact}
+     * objects, it is not allowed write an array containing different item
+     * types or a {@link HazelcastSerializationException} will be thrown.
+     *
      * @param fieldName the name of the field
      * @return the value of the field
      * @throws HazelcastSerializationException if the field name does not exist
