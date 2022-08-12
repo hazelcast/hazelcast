@@ -35,7 +35,6 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@SuppressWarnings("resource")
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlStreamToStreamJoinTest extends SqlTestSupport {
@@ -48,7 +47,7 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
     }
 
     @Test
-    public void given_streamToStreamJoin_when_joinIsContinuous_then_success() {
+    public void test_joinIsContinuous() {
         String stream = "stream1";
         TestStreamSqlConnector.create(
                 sqlService,
@@ -89,7 +88,7 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
     }
 
     @Test
-    public void given_streamToStreamJoin_when_joinHasTimestampBounds_then_success() {
+    public void test_joinHasTimestampBounds() {
         String stream = "stream1";
         TestStreamSqlConnector.create(
                 sqlService,
@@ -119,7 +118,7 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
     }
 
     @Test
-    public void given_streamToStreamJoin_when_joinIsEquijoin_then_success() {
+    public void test_joinIsEquiJoin() {
         String stream = "stream1";
         TestStreamSqlConnector.create(
                 sqlService,
@@ -148,7 +147,7 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
     }
 
     @Test
-    public void given_streamToStreamJoin_when_joinIsEquijoinBetweenFunctions_then_fail() {
+    public void when_joinIsEquiJoinBetweenFunctions_then_fail() {
         String stream = "stream1";
         TestStreamSqlConnector.create(
                 sqlService,
@@ -178,7 +177,7 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
     }
 
     @Test
-    public void given_streamToStreamJoin_when_additionalJoinConditionApplies_then_success() {
+    public void test_additionalJoinConditionApplies() {
         String stream = "stream1";
         TestStreamSqlConnector.create(
                 sqlService,
@@ -227,7 +226,7 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
     }
 
     @Test
-    public void given_streamToStreamJoin_when_nonTemporalWatermarkedType_then_pass() {
+    public void test_nonTemporalWatermarkedType() {
         TestStreamSqlConnector.create(sqlService, "stream1", singletonList("a"), singletonList(INTEGER), row(42));
         TestStreamSqlConnector.create(sqlService, "stream2", singletonList("a"), singletonList(INTEGER), row(43));
 
@@ -240,7 +239,7 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
     }
 
     @Test
-    public void given_streamToStreamJoin_when_joinHasDoubledTimestampBounds_then_success() {
+    public void test_joinHasDoubledTimestampBounds() {
         String stream1 = "stream1";
         TestStreamSqlConnector.create(
                 sqlService,
@@ -281,7 +280,7 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
     }
 
     @Test
-    public void given_streamToStreamJoin_when_joinHasTripledTimestampBounds_then_success() {
+    public void test_joinHasTripledTimestampBounds() {
         String stream1 = "stream1";
         TestStreamSqlConnector.create(
                 sqlService,
@@ -338,7 +337,7 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
     }
 
     @Test
-    public void given_streamToStreamJoin_when_calcReordersFields_then_success() {
+    public void test_calcReordersFields() {
         String stream = "stream1";
         TestStreamSqlConnector.create(
                 sqlService,
@@ -368,7 +367,7 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
     }
 
     @Test
-    public void given_streamToStreamJoin_when_calcHasParent_then_success() {
+    public void test_calcHasParent() {
         String stream = "stream1";
         TestStreamSqlConnector.create(
                 sqlService,
@@ -405,7 +404,7 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
     }
 
     @Test
-    public void given_streamToStreamJoin_when_relTreeHasUnion_then_success() {
+    public void test_relTreeHasUnion() {
         String stream = "stream1";
         TestStreamSqlConnector.create(
                 sqlService,
@@ -455,5 +454,4 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 )
         );
     }
-
 }
