@@ -19,11 +19,11 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
 import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.row.JetSqlRow;
-import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
@@ -31,12 +31,8 @@ import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rex.RexNode;
 
-import java.time.temporal.TemporalAccessor;
 import java.util.HashMap;
 import java.util.Map;
-
-import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
-import static java.time.temporal.ChronoField.MILLI_OF_SECOND;
 
 public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
     private final WatermarkedFields leftWatermarkedFields;
@@ -91,10 +87,7 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
     public Map<Integer, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors() {
         Map<Integer, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors = new HashMap<>();
         for (Integer i : leftWatermarkedFields.getFieldIndexes()) {
-            QueryDataType dataType = toHazelcastType(getLeft().getRowType().getFieldList().get(i).getType());
-            assert dataType.getTypeFamily().isTemporal() : "Field " + i + " is not temporal! Can't extract timestamp!";
-
-            leftTimeExtractors.put(i, row -> ((TemporalAccessor) row.getRow().get(i)).getLong(MILLI_OF_SECOND));
+            leftTimeExtractors.put(i, row -> WindowUtils.extractMillis(row.getRow().get(i)));
         }
 
         return leftTimeExtractors;
@@ -103,10 +96,7 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
     public Map<Integer, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors() {
         Map<Integer, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors = new HashMap<>();
         for (Integer i : rightWatermarkedFields.getFieldIndexes()) {
-            QueryDataType dataType = toHazelcastType(getRight().getRowType().getFieldList().get(i).getType());
-            assert dataType.getTypeFamily().isTemporal() : "Field " + i + " is not temporal! Can't extract timestamp!";
-
-            rightTimeExtractors.put(i, row -> ((TemporalAccessor) row.getRow().get(i)).getLong(MILLI_OF_SECOND));
+            rightTimeExtractors.put(i, row -> WindowUtils.extractMillis(row.getRow().get(i)));
         }
 
         return rightTimeExtractors;

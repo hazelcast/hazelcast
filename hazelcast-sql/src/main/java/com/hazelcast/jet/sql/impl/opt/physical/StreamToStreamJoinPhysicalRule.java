@@ -86,9 +86,9 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         JoinLogicalRel join = call.rel(0);
 
         JoinRelType joinType = join.getJoinType();
-        if (!(joinType == JoinRelType.INNER || joinType.isOuterJoin())) {
+        if (joinType != JoinRelType.INNER && joinType != JoinRelType.LEFT && joinType != JoinRelType.RIGHT) {
             call.transformTo(
-                    fail(join, "Stream to stream JOIN supports INNER and LEFT/RIGHT OUTER JOIN types."));
+                    fail(join, "Stream to stream JOIN supports INNER and LEFT/RIGHT OUTER JOIN types"));
         }
 
         RexBuilder rb = join.getCluster().getRexBuilder();
@@ -96,31 +96,31 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         RelNode left = RelRule.convert(join.getLeft(), join.getTraitSet().replace(PHYSICAL));
         RelNode right = RelRule.convert(join.getRight(), join.getTraitSet().replace(PHYSICAL));
 
-        WatermarkedFields leftFields = metadataQuery(left).extractWatermarkedFields(left);
-        WatermarkedFields rightFields = metadataQuery(right).extractWatermarkedFields(right);
+        WatermarkedFields leftWmFields = metadataQuery(left).extractWatermarkedFields(left);
+        WatermarkedFields rightWmFields = metadataQuery(right).extractWatermarkedFields(right);
 
         // region checks
-        if (leftFields == null || leftFields.isEmpty()) {
+        if (leftWmFields == null || leftWmFields.isEmpty()) {
             call.transformTo(fail(join, "Left input of stream-to-stream JOIN must contain watermarked columns"));
             return;
         }
 
-        if (!watermarkedFieldsAreTemporalTypeCheck(join.getLeft(), leftFields)) {
+        if (!watermarkedFieldsAreTemporalType(join.getLeft(), leftWmFields)) {
             call.transformTo(fail(join, "Left input of stream-to-stream JOIN watermarked columns are not temporal"));
             return;
         }
 
-        if (rightFields == null || rightFields.isEmpty()) {
+        if (rightWmFields == null || rightWmFields.isEmpty()) {
             call.transformTo(fail(join, "Right input of stream-to-stream JOIN must contain watermarked columns"));
             return;
         }
 
-        if (!watermarkedFieldsAreTemporalTypeCheck(join.getRight(), rightFields)) {
+        if (!watermarkedFieldsAreTemporalType(join.getRight(), rightWmFields)) {
             call.transformTo(fail(join, "Right input of stream-to-stream JOIN watermarked columns are not temporal"));
             return;
         }
 
-        WatermarkedFields watermarkedFields = watermarkedFields(join, leftFields, rightFields);
+        WatermarkedFields watermarkedFields = watermarkedFields(join, leftWmFields, rightWmFields);
         if (watermarkedFields.isEmpty()) {
             call.transformTo(fail(join, "Stream-to-stream JOIN must contain watermarked columns"));
             return;
@@ -169,8 +169,8 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
                         RelRule.convert(call.rel(2), call.rel(2).getTraitSet().replace(PHYSICAL)),
                         join.getCondition(),
                         join.getJoinType(),
-                        leftFields,
-                        rightFields,
+                        leftWmFields,
+                        rightWmFields,
                         leftInputToJointRowMapping,
                         rightInputToJointRowMapping,
                         postponeMap
@@ -222,9 +222,9 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
      * Checks if all watermarked fields are temporal type.
      */
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
-    private boolean watermarkedFieldsAreTemporalTypeCheck(RelNode input, WatermarkedFields fields) {
+    private boolean watermarkedFieldsAreTemporalType(RelNode node, WatermarkedFields fields) {
         for (Integer idx : fields.getFieldIndexes()) {
-            RelDataType type = input.getRowType().getFieldList().get(idx).getType();
+            RelDataType type = node.getRowType().getFieldList().get(idx).getType();
             if (!HazelcastTypeUtils.isTemporalType(type)) {
                 return false;
             }
