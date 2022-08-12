@@ -16,14 +16,7 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.nio.serialization.DataSerializable;
-
-import java.io.IOException;
-import java.io.Serializable;
-
-public class MutableByte implements DataSerializable, Serializable {
+public class MutableByte {
     private byte value;
 
     public MutableByte(byte value) {
@@ -45,15 +38,5 @@ public class MutableByte implements DataSerializable, Serializable {
     @Override
     public String toString() {
         return "MutableByte{value=" + value + '}';
-    }
-
-    @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeByte(value);
-    }
-
-    @Override
-    public void readData(ObjectDataInput in) throws IOException {
-        this.value = in.readByte();
     }
 }

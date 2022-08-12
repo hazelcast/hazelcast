@@ -399,8 +399,8 @@ public class CreateDagVisitor {
 
     public Vertex onDropLateItems(DropLateItemsPhysicalRel rel) {
         Expression<?> timestampExpression = rel.timestampExpression();
-        MutableByte key = watermarkKeysAssigner.getWatermarkedFieldsKey(rel).get(rel.wmField());
-        SupplierEx<Processor> lateItemsDropPSupplier = () -> new LateItemsDropP(key.getValue(), timestampExpression);
+        byte key = watermarkKeysAssigner.getWatermarkedFieldsKey(rel).get(rel.wmField()).getValue();
+        SupplierEx<Processor> lateItemsDropPSupplier = () -> new LateItemsDropP(key, timestampExpression);
         Vertex vertex = dag.newUniqueVertex("Drop-Late-Items", lateItemsDropPSupplier);
 
         connectInput(rel.getInput(), vertex, null);
