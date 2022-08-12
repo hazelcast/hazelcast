@@ -20,7 +20,7 @@ import com.hazelcast.internal.json.JsonEscape;
 import com.hazelcast.internal.serialization.impl.compact.DefaultCompactWriter;
 import com.hazelcast.nio.serialization.AbstractGenericRecord;
 import com.hazelcast.nio.serialization.FieldKind;
-import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
