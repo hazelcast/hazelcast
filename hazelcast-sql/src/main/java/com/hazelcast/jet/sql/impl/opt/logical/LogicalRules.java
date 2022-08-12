@@ -44,9 +44,11 @@ public final class LogicalRules {
                 SlidingWindowCalcSplitLogicalRule.STREAMING_FILTER_TRANSPOSE,
                 CalcDropLateItemsTransposeRule.INSTANCE,
 
-                // Windowing rules
+                // Watermark rules
                 WatermarkRules.IMPOSE_ORDER_INSTANCE,
                 WatermarkRules.WATERMARK_INTO_SCAN_INSTANCE,
+
+                // Windowing rules
                 FunctionLogicalRules.WINDOW_FUNCTION_INSTANCE,
                 SlidingWindowDropLateItemsMergeRule.INSTANCE,
 

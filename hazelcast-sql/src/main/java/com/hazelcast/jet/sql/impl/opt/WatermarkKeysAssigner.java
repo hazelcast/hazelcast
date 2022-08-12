@@ -51,7 +51,6 @@ import static java.util.Collections.emptySet;
 public class WatermarkKeysAssigner {
     private final PhysicalRel root;
     private final KeyAssignerVisitor visitor;
-    // Note: at the moment, no need to separate watermark keys without stream-to-stream join introduction.
     private byte keyCounter;
 
     public WatermarkKeysAssigner(PhysicalRel root) {
@@ -101,12 +100,10 @@ public class WatermarkKeysAssigner {
                 assert node.getInputs().isEmpty() : "FullScan not a leaf";
                 FullScanPhysicalRel scan = (FullScanPhysicalRel) node;
                 int idx = scan.watermarkedColumnIndex();
-                if (idx >= 0) {
-                    relToWmKeyMapping.computeIfAbsent(scan, key -> {
-                        scan.setWatermarkKey(WatermarkKeysAssigner.this.keyCounter);
-                        return Collections.singletonMap(idx, new MutableByte(keyCounter++));
-                    });
-                }
+                relToWmKeyMapping.computeIfAbsent(scan, key -> {
+                    scan.setWatermarkKey(WatermarkKeysAssigner.this.keyCounter);
+                    return Collections.singletonMap(idx, new MutableByte(keyCounter++));
+                });
                 return;
             }
 
