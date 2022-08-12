@@ -332,10 +332,6 @@ public class DefaultCompactWriter implements CompactWriter {
         writeArrayOfVariableSize(fieldName, ARRAY_OF_STRING, values, ObjectDataOutput::writeString);
     }
 
-    interface Writer<T> {
-        void write(BufferObjectDataOutput out, T value) throws IOException;
-    }
-
     protected <T> void writeArrayOfVariableSize(@Nonnull String fieldName, @Nonnull FieldKind fieldKind,
                                                 @Nullable T[] values, @Nonnull Writer<T> writer) {
         if (values == null) {
@@ -425,12 +421,16 @@ public class DefaultCompactWriter implements CompactWriter {
     @Override
     public <T> void writeArrayOfCompact(@Nonnull String fieldName, @Nullable T[] value) {
         writeArrayOfVariableSize(fieldName, ARRAY_OF_COMPACT, value,
-                (out, val) -> serializer.writeObject(out, val, includeSchemaOnBinary));
+                new SingleTypeCompactArrayItemWriter<>(
+                        (out, val) -> serializer.writeObject(out, val, includeSchemaOnBinary))
+        );
     }
 
     public void writeArrayOfGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord[] value) {
         writeArrayOfVariableSize(fieldName, ARRAY_OF_COMPACT, value,
-                (out, val) -> serializer.writeGenericRecord(out, (CompactGenericRecord) val, includeSchemaOnBinary));
+                new SingleSchemaCompactArrayItemWriter(
+                        (out, val) -> serializer.writeGenericRecord(out, (CompactGenericRecord) val, includeSchemaOnBinary))
+        );
     }
 
     @Override
@@ -521,6 +521,74 @@ public class DefaultCompactWriter implements CompactWriter {
             }
             out.writeBooleanBit(position, index, v);
             index++;
+        }
+    }
+
+    interface Writer<T> {
+        void write(BufferObjectDataOutput out, T value) throws IOException;
+    }
+
+    /**
+     * Checks that the Compact serializable array items that are written are of
+     * a single type.
+     */
+    private static final class SingleTypeCompactArrayItemWriter<T> implements Writer<T> {
+
+        private final Writer<T> delegate;
+        private Class<?> clazz;
+
+        private SingleTypeCompactArrayItemWriter(Writer<T> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void write(BufferObjectDataOutput out, T value) throws IOException {
+            Class<?> clazz = value.getClass();
+            if (this.clazz == null) {
+                this.clazz = clazz;
+            }
+
+            if (!this.clazz.equals(clazz)) {
+                throw new HazelcastSerializationException("It is not allowed to "
+                        + "serialize an array of Compact serializable objects "
+                        + "containing different item types. Expected array item "
+                        + "type: " + this.clazz + ", current item type: " + clazz);
+            }
+
+            delegate.write(out, value);
+        }
+    }
+
+
+    /**
+     * Checks that the Compact serializable GenericRecord array items that are
+     * written are of a single schema.
+     */
+    private static final class SingleSchemaCompactArrayItemWriter implements Writer<GenericRecord> {
+
+        private final Writer<GenericRecord> delegate;
+        private Schema schema;
+
+        private SingleSchemaCompactArrayItemWriter(Writer<GenericRecord> delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public void write(BufferObjectDataOutput out, GenericRecord value) throws IOException {
+            Schema schema = ((CompactGenericRecord) value).getSchema();
+            if (this.schema == null) {
+                this.schema = schema;
+            }
+
+            if (this.schema.getSchemaId() != schema.getSchemaId()) {
+                throw new HazelcastSerializationException("It is not allowed to "
+                        + "serialize an array of Compact serializable "
+                        + "GenericRecord objects containing different schemas. "
+                        + "Expected array item schema: " + this.schema + ", "
+                        + "current schema: " + schema);
+            }
+
+            delegate.write(out, value);
         }
     }
 }

@@ -21,6 +21,8 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.nio.serialization.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
@@ -305,6 +307,47 @@ public class CompactSerializationTest {
                 .hasStackTraceContaining("which uses this class in its fields");
     }
 
+    @Test
+    public void testWritingArrayOfCompactGenericRecordField_withDifferentSchemas() {
+        SerializationConfig config = new SerializationConfig();
+        config.getCompactSerializationConfig()
+                .setEnabled(true);
+
+        SerializationService service = createSerializationService(config);
+
+        GenericRecord itemType1 = GenericRecordBuilder.compact("item-type-1").build();
+        GenericRecord itemType2 = GenericRecordBuilder.compact("item-type-2").build();
+
+        GenericRecord record = GenericRecordBuilder.compact("foo")
+                .setArrayOfGenericRecord("bar", new GenericRecord[]{itemType1, itemType2})
+                .build();
+
+        assertThatThrownBy(() -> {
+            service.toData(record);
+        }).isInstanceOf(HazelcastSerializationException.class)
+                .hasStackTraceContaining("array of Compact serializable GenericRecord objects containing different schemas");
+    }
+
+    @Test
+    public void testWritingArrayOfCompactGenericField_withDifferentItemTypes() {
+        SerializationConfig config = new SerializationConfig();
+        config.getCompactSerializationConfig()
+                .setEnabled(true);
+
+        SerializationService service = createSerializationService(config);
+
+        SomeCompactObject[] objects = new SomeCompactObject[2];
+        objects[0] = new SomeCompactObjectImpl();
+        objects[1] = new SomeOtherCompactObjectImpl();
+
+        WithCompactArrayField object = new WithCompactArrayField(objects);
+
+        assertThatThrownBy(() -> {
+            service.toData(object);
+        }).isInstanceOf(HazelcastSerializationException.class)
+                .hasStackTraceContaining("array of Compact serializable objects containing different item types");
+    }
+
     private SerializationService createSerializationService(SerializationConfig config) {
         config.getCompactSerializationConfig().setEnabled(true);
         return new DefaultSerializationServiceBuilder()
@@ -378,5 +421,22 @@ public class CompactSerializationTest {
         public Class<Foo> getCompactClass() {
             return Foo.class;
         }
+    }
+
+    private static class WithCompactArrayField {
+        private SomeCompactObject[] compactObjects;
+
+        private WithCompactArrayField(SomeCompactObject[] compactObjects) {
+            this.compactObjects = compactObjects;
+        }
+    }
+
+    private interface SomeCompactObject {
+    }
+
+    private static class SomeCompactObjectImpl implements SomeCompactObject {
+    }
+
+    private static class SomeOtherCompactObjectImpl implements SomeCompactObject {
     }
 }
