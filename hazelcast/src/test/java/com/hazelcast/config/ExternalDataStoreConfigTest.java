@@ -29,7 +29,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.IOException;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -40,7 +39,7 @@ public class ExternalDataStoreConfigTest extends HazelcastTestSupport {
     private final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
     @Test
-    public void testEqualsAndHashCode() {
+    public void test_equals_and_hashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(ExternalDataStoreConfig.class)
                 .usingGetClass()
@@ -49,7 +48,7 @@ public class ExternalDataStoreConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void should_serialize_with_empty_properties() throws IOException {
+    public void should_serialize_with_empty_properties() {
         ExternalDataStoreConfig originalConfig = new ExternalDataStoreConfig()
                 .setName("some-name")
                 .setClassName("some-class-name")
@@ -62,7 +61,7 @@ public class ExternalDataStoreConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void should_serialize_with_NON_empty_properties() throws IOException {
+    public void should_serialize_with_NON_empty_properties() {
 
         Properties properties = new Properties();
         properties.setProperty("prop1", "val1");
@@ -75,5 +74,23 @@ public class ExternalDataStoreConfigTest extends HazelcastTestSupport {
         Data data = serializationService.toData(originalConfig);
         ExternalDataStoreConfig deserializedCopy = serializationService.toObject(data);
         assertThat(deserializedCopy).isEqualTo(originalConfig);
+    }
+
+    @Test
+    public void should_work_with_set_getProperty() {
+
+        ExternalDataStoreConfig config = new ExternalDataStoreConfig()
+                .setName("some-name")
+                .setClassName("some-class-name")
+                .setProperty("prop1", "val1")
+                .setProperty("prop2", "val2");
+
+        assertThat(config.getProperty("prop1")).isEqualTo("val1");
+        assertThat(config.getProperty("prop2")).isEqualTo("val2");
+
+        Properties expectedProperties = new Properties();
+        expectedProperties.setProperty("prop1", "val1");
+        expectedProperties.setProperty("prop2", "val2");
+        assertThat(config.getProperties()).isEqualTo(expectedProperties);
     }
 }

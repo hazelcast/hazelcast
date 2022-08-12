@@ -130,23 +130,36 @@ public class ExternalDataStoreConfig implements IdentifiedDataSerializable, Name
     }
 
     /**
-     * Returns all the properties
+     * Returns all the properties of a datastore
      *
-     * @return all the properties
+     * @return all the properties of a datastore
      */
     public Properties getProperties() {
         return properties;
     }
 
     /**
-     * Returns single the property
+     * Returns a single property of a datastore
      *
-     * @param key the property key
+     * @param key the property key of a datastore
      * @return property value or null if the given key doesn't exist
      */
     @Nullable
     public String getProperty(String key) {
         return properties.getProperty(key);
+    }
+
+    /**
+     * Sets a single property. See {@link ExternalDataStoreConfig#setProperties(Properties)}
+     *
+     * @param key   the property key
+     * @param value the property value
+     * @return this ExternalDataStoreConfig
+     */
+    public ExternalDataStoreConfig setProperty(String key, String value) {
+        properties.setProperty(key, value);
+        return this;
+
     }
 
     /**
