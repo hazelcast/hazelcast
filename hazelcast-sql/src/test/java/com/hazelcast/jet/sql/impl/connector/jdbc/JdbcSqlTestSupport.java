@@ -53,9 +53,12 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
     protected static SqlService sqlService;
 
     public static void initialize(TestDatabaseProvider provider) {
+        initialize(provider, smallInstanceConfig());
+    }
+
+    public static void initialize(TestDatabaseProvider provider, Config config) {
         databaseProvider = provider;
         dbConnectionUrl = databaseProvider.createDatabase(JdbcSqlTestSupport.class.getName());
-        Config config = smallInstanceConfig();
         Properties properties = new Properties();
         properties.setProperty("jdbcUrl", dbConnectionUrl);
         config.addExternalDataStoreConfig(
@@ -122,7 +125,7 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
         }
     }
 
-    static void insertItems(String tableName, int count) throws SQLException {
+    public static void insertItems(String tableName, int count) throws SQLException {
         try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
              Statement stmt = conn.createStatement()
         ) {
@@ -134,7 +137,7 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
 
     protected static void createMapping(String tableName) {
         execute(
-                "CREATE MAPPING " + tableName + " ("
+                "CREATE MAPPING \"" + tableName + "\" ("
                         + " id INT, "
                         + " name VARCHAR "
                         + ") "
@@ -147,8 +150,8 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
 
     protected static void createMapping(String tableName, String mappingName) {
         execute(
-                "CREATE MAPPING " + mappingName
-                        + " EXTERNAL NAME " + tableName
+                "CREATE MAPPING \"" + mappingName + "\""
+                        + " EXTERNAL NAME \"" + tableName + "\""
                         + " ("
                         + " id INT, "
                         + " name VARCHAR "
