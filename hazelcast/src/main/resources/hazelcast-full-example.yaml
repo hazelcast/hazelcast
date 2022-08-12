@@ -2124,6 +2124,19 @@ hazelcast:
   #     and throw a Serialization Exception with the error definition.
   # * "java-serialization-filter":
   #     Allows to configure blacklisting and whitelisting for deserialized classes when Java serialization is used.
+  # * "compact-serialization":
+  #     Contains configuration attributes for the compact serialization.
+  #
+  #     It has the following sub-attributes:
+  #     * "enabled":
+  #       Enables/disables the Compact serialization.
+  #     * "serializers":
+  #       List of fully qualified class names of the Compact serializers.
+  #     * "classes:
+  #       List of fully qualified names of the classes to be serialized
+  #       with the reflective Compact serializer. It is meant to be used
+  #       to serialize classes that are serializable with other mechanisms
+  #       like Java serialization with Compact serialization.
   #
   serialization:
     portable-version: 0
@@ -2158,11 +2171,10 @@ hazelcast:
           - java
     compact-serialization:
       enabled: true
-      registered-classes:
+      serializers:
+        - serializer: com.hazelcast.examples.DummyTypeSerializer
+      classes:
         - class: com.hazelcast.examples.DummyType
-        - class: com.hazelcast.examples.DummyTypeWithSerializer
-          type-name: dummy
-          serializer: com.hazelcast.examples.DummyTypeSerializer
   #
   # ===== HAZELCAST HIGH-DENSITY MEMORY STORE CONFIGURATION =====
   #
@@ -3788,3 +3800,15 @@ hazelcast:
   # Integrity Checker is disabled by default.
   integrity-checker:
     enabled: false
+  #      ===== HAZELCAST EXTERNAL DATA STORE CONFIGURATION =====
+  #
+  #      Configuration element's name is <external-data-store>. Contains configuration of external data stores
+  #      used by map stores and jdbc sinks and sources.
+  external-data-store:
+    mysql-database:
+      class-name: com.hazelcast.datastore.JdbcDataStoreFactory
+      properties:
+        jdbcUrl: jdbc:mysql://dummy:3306
+      shared: false
+    other-database:
+      class-name: com.hazelcast.datastore.OtherDataStore

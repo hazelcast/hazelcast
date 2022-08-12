@@ -17,7 +17,7 @@
 package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.function.BiConsumerEx;
-import com.hazelcast.function.SupplierEx;
+import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.jet.JetException;
@@ -79,7 +79,7 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
     private boolean supportsBatch;
     private int batchCount;
 
-    private WriteJdbcP(
+    public WriteJdbcP(
             @Nonnull String updateQuery,
             @Nonnull CommonDataSource dataSource,
             @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
@@ -99,12 +99,12 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
     public static <T> ProcessorMetaSupplier metaSupplier(
             @Nullable String jdbcUrl,
             @Nonnull String updateQuery,
-            @Nonnull SupplierEx<? extends CommonDataSource> dataSourceSupplier,
+            @Nonnull FunctionEx<ProcessorMetaSupplier.Context, ? extends CommonDataSource> dataSourceSupplier,
             @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
             boolean exactlyOnce,
             int batchLimit
     ) {
-        checkSerializable(dataSourceSupplier, "newConnectionFn");
+        checkSerializable(dataSourceSupplier, "dataSourceSupplier");
         checkSerializable(bindFn, "bindFn");
         checkPositive(batchLimit, "batchLimit");
 
@@ -115,7 +115,7 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
 
                     @Override
                     public void init(@Nonnull Context context) {
-                        dataSource = dataSourceSupplier.get();
+                        dataSource = dataSourceSupplier.apply(context);
                     }
 
                     @Nonnull @Override
@@ -170,9 +170,7 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
             idleCount = 0;
             inbox.clear();
         } catch (SQLException e) {
-            if (e instanceof SQLNonTransientException
-                    || e.getCause() instanceof SQLNonTransientException
-                    || snapshotUtility.usesTransactionLifecycle()) {
+            if (isNonTransientException(e) || snapshotUtility.usesTransactionLifecycle()) {
                 throw ExceptionUtil.rethrow(e);
             } else {
                 logger.warning("Exception during update", e);
@@ -222,12 +220,13 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
             supportsBatch = connection.getMetaData().supportsBatchUpdates();
             statement = connection.prepareStatement(updateQuery);
         } catch (SQLException e) {
-            if (snapshotUtility.usesTransactionLifecycle()) {
+            if (isNonTransientException(e) || snapshotUtility.usesTransactionLifecycle()) {
                 throw ExceptionUtil.rethrow(e);
+            } else {
+                logger.warning("Exception when connecting and preparing the statement", e);
+                idleCount++;
+                return false;
             }
-            logger.warning("Exception when connecting and preparing the statement", e);
-            idleCount++;
-            return false;
         }
         return true;
     }
@@ -284,4 +283,12 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
             logger.warning("Exception when closing " + closeable + ", ignoring it: " + e, e);
         }
     }
+
+    private boolean isNonTransientException(SQLException e) {
+        SQLException next = e.getNextException();
+        return e instanceof SQLNonTransientException
+                || e.getCause() instanceof SQLNonTransientException
+                || (next != null && e != next && isNonTransientException(next));
+    }
+
 }

@@ -40,12 +40,16 @@ import static java.util.Collections.unmodifiableSet;
 
 public class JoinRequest extends JoinMessage {
 
+    // RU_COMPAT 5.1
+    private static final String VERSION_5_2_0 = "5.2.0";
+
     private Credentials credentials;
     private int tryCount;
     private Map<String, String> attributes;
     private Set<UUID> excludedMemberUuids = Collections.emptySet();
     // see Member.getAddressMap
     private Map<EndpointQualifier, Address> addresses;
+    private UUID cpMemberUUID;
 
     public JoinRequest() {
     }
@@ -53,7 +57,7 @@ public class JoinRequest extends JoinMessage {
     @SuppressWarnings("checkstyle:parameternumber")
     public JoinRequest(byte packetVersion, int buildNumber, MemberVersion version, Address address, UUID uuid,
                        boolean liteMember, ConfigCheck config, Credentials credentials, Map<String, String> attributes,
-                       Set<UUID> excludedMemberUuids, Map<EndpointQualifier, Address> addresses) {
+                       Set<UUID> excludedMemberUuids, Map<EndpointQualifier, Address> addresses, UUID cpMemberUUID) {
         super(packetVersion, buildNumber, version, address, uuid, liteMember, config);
         this.credentials = credentials;
         this.attributes = attributes;
@@ -61,6 +65,15 @@ public class JoinRequest extends JoinMessage {
             this.excludedMemberUuids = unmodifiableSet(new HashSet<>(excludedMemberUuids));
         }
         this.addresses = addresses;
+        this.cpMemberUUID = cpMemberUUID;
+    }
+
+    @SuppressWarnings("checkstyle:parameternumber")
+    public JoinRequest(byte packetVersion, int buildNumber, MemberVersion version, Address address, UUID uuid,
+                       boolean liteMember, ConfigCheck config, Credentials credentials, Map<String, String> attributes,
+                       Set<UUID> excludedMemberUuids, Map<EndpointQualifier, Address> addresses) {
+        this(packetVersion, buildNumber, version, address, uuid, liteMember, config, credentials, attributes,
+                excludedMemberUuids, addresses, null);
     }
 
     public Credentials getCredentials() {
@@ -84,7 +97,7 @@ public class JoinRequest extends JoinMessage {
     }
 
     public MemberInfo toMemberInfo() {
-        return new MemberInfo(address, uuid, attributes, liteMember, memberVersion, addresses);
+        return new MemberInfo(address, uuid, cpMemberUUID, attributes, liteMember, memberVersion, addresses);
     }
 
     @Override
@@ -107,6 +120,12 @@ public class JoinRequest extends JoinMessage {
 
         this.excludedMemberUuids = unmodifiableSet(excludedMemberUuids);
         this.addresses = readMap(in);
+        // RU_COMPAT 5.1
+        MemberVersion current = MemberVersion.of(VERSION_5_2_0);
+        if (MemberVersion.MAJOR_MINOR_VERSION_COMPARATOR.compare(this.memberVersion, current) >= 0) {
+            // member is at least 5.2, we expect cpMemberUuid exists in the incoming packet
+            cpMemberUUID = UUIDSerializationUtil.readUUID(in);
+        }
     }
 
     @Override
@@ -124,6 +143,7 @@ public class JoinRequest extends JoinMessage {
             UUIDSerializationUtil.writeUUID(out, uuid);
         }
         writeMap(addresses, out);
+        UUIDSerializationUtil.writeUUID(out, cpMemberUUID);
     }
 
     @Override
@@ -134,6 +154,7 @@ public class JoinRequest extends JoinMessage {
                 + ", memberVersion=" + memberVersion
                 + ", address=" + address
                 + ", uuid='" + uuid + "'"
+                + ", cpMemberUUID='" + cpMemberUUID + "'"
                 + ", liteMember=" + liteMember
                 + ", credentials=" + credentials
                 + ", memberCount=" + getMemberCount()

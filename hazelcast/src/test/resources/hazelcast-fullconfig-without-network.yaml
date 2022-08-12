@@ -619,11 +619,10 @@ hazelcast:
           - com.
     compact-serialization:
       enabled: true
-      registered-classes:
+      serializers:
+        - serializer: com.hazelcast.examples.DummyTypeSerializer
+      classes:
         - class: com.hazelcast.examples.DummyType
-        - class: com.hazelcast.examples.DummyTypeWithSerializer
-          type-name: dummy
-          serializer: com.hazelcast.examples.DummyTypeSerializer
 
   native-memory:
     allocator-type: STANDARD
@@ -1015,3 +1014,10 @@ hazelcast:
 
   sql:
     statement-timeout-millis: 0
+
+  external-data-store:
+    mysql-database:
+      class-name: com.hazelcast.datastore.JdbcDataStoreFactory
+      properties:
+        jdbcUrl: jdbc:mysql://dummy:3306
+      shared: false
