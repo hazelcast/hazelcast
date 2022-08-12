@@ -17,6 +17,8 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
+import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import org.apache.calcite.plan.RelOptRule;
@@ -28,7 +30,6 @@ import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.rules.TransformationRule;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexProgram;
-import org.apache.calcite.util.Permutation;
 import org.immutables.value.Value;
 
 import java.util.List;
@@ -98,9 +99,11 @@ public final class CalcIntoScanLogicalRule extends RelRule<Config> implements Tr
         );
 
         int wmColumnIndex = scan.watermarkedColumnIndex();
-        Permutation permutation = program.getPermutation();
+        HazelcastRelMetadataQuery relMetadataQuery = OptUtils.metadataQuery(calc);
+        WatermarkedFields watermarkedFields = relMetadataQuery.extractWatermarkedFields(calc);
+
         int newWatermarkColumnIndex = wmColumnIndex >= 0
-                ? permutation == null ? wmColumnIndex : permutation.getSource(wmColumnIndex)
+                ? watermarkedFields.findFirst()
                 : wmColumnIndex;
 
         FullScanLogicalRel rel = new FullScanLogicalRel(

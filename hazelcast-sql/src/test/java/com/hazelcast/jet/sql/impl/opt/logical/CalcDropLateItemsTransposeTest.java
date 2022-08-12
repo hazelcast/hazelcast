@@ -102,7 +102,7 @@ public class CalcDropLateItemsTransposeTest extends OptimizerTestSupport {
 
     @Test
     public void given_calcAndDropItemsRelTransposes_whenProjectPermutes_then_success() {
-        String sql = "SELECT c, a, b FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(b), INTERVAL '0.001' SECOND))";
+        String sql = "SELECT c, a, b, c FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(b), INTERVAL '0.001' SECOND))";
 
         assertInstanceOf(TestAbstractSqlConnector.TestTable.class, resolver.getTables().get(0));
         HazelcastTable streamingTable = streamingTable(resolver.getTables().get(0), 1L);
@@ -146,7 +146,7 @@ public class CalcDropLateItemsTransposeTest extends OptimizerTestSupport {
         assertThat(wmIndexes.size()).isEqualTo(1);
         assertThat(wmIndexes.iterator().next()).isEqualTo(2);
 
-        assertRowsEventuallyInAnyOrder(sql, singletonList(new Row("1", 1, timestamp(1L))));
+        assertRowsEventuallyInAnyOrder(sql, singletonList(new Row("1", 1, timestamp(1L), "1")));
     }
 
     private static HazelcastTable streamingTable(Table table, long rowCount) {
