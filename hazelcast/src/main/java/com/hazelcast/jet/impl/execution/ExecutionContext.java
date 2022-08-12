@@ -313,7 +313,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
 
         synchronized (executionLock) {
             if (mode == null) {
-                cancellationFuture.cancel(true);
+                cancellationFuture.completeExceptionally(cause);
             } else {
                 cancellationFuture.completeExceptionally(new JobTerminateRequestedException(mode));
             }

@@ -78,7 +78,7 @@ import static com.hazelcast.jet.impl.JetServiceBackend.SERVICE_NAME;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.EXECUTION;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.jobIdAndExecutionId;
@@ -577,7 +577,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                                   if (e == null) {
                                     return metrics;
                                   }
-                                  throw rethrow(e);
+                                  throw sneakyThrow(e);
                               })
                       )
                       .thenCompose(stage -> stage)
