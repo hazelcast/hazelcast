@@ -19,6 +19,8 @@ package com.hazelcast.jet.impl.execution;
 import java.util.concurrent.CancellationException;
 
 public class ExecutionCancellationException extends CancellationException {
+    private static final long serialVersionUID = 1L;
+
     private final Throwable cause;
 
     public ExecutionCancellationException(Throwable cause) {
