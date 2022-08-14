@@ -165,7 +165,6 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
     }
 
     private NodeEngineImpl nodeEngine() {
-        assert instance != null : "instance must be set";
         return instance.node.nodeEngine;
     }
 
