@@ -22,9 +22,9 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.datastore.ExternalDataStoreFactory;
 import com.hazelcast.datastore.JdbcDataStoreFactory;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
-import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.internal.util.executor.ManagedExecutorService;
+import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapLoaderLifecycleSupport;
 import com.hazelcast.map.MapStore;
@@ -135,7 +135,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
         logger = instance.getLoggingService().getLogger(GenericMapStore.class);
 
-        setHazelcastInstance(instance);
+        this.instance = Util.getHazelcastInstanceImpl(instance);
         this.properties = new GenericMapStoreProperties(properties, mapName);
         sql = instance.getSql();
 
@@ -161,15 +161,6 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
         MapConfig mapConfig = instance.getConfig().findMapConfig(mapName);
         if (!mapConfig.getMapStoreConfig().isOffload()) {
             throw new HazelcastException("Config for GenericMapStore must have `offload` property set to true");
-        }
-    }
-
-    private void setHazelcastInstance(HazelcastInstance instance) {
-        if (instance instanceof HazelcastInstanceProxy) {
-            HazelcastInstanceProxy proxy = (HazelcastInstanceProxy) instance;
-            this.instance = proxy.getOriginal();
-        } else {
-            this.instance = (HazelcastInstanceImpl) instance;
         }
     }
 
