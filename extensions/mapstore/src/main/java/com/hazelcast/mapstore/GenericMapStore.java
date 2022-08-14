@@ -177,15 +177,15 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
                 logger.fine("Discovered following mapping columns: " + mappingColumns);
             }
 
-            try (SqlResult ignored = sql.execute(
+            sql.execute(
                     "CREATE MAPPING \"" + mapping + "\" "
                             + "EXTERNAL NAME \"" + properties.tableName + "\" "
                             + (mappingColumns != null ? " ( " + mappingColumns + " ) " : "")
                             + "TYPE " + deriveMappingType() + " "
                             + "OPTIONS ("
                             + "    '" + OPTION_EXTERNAL_DATASTORE_REF + "' = '" + properties.externalDataStoreRef + "' "
-                            + ")")) {
-            }
+                            + ")"
+            ).close();
 
             if (!properties.hasColumns()) {
                 columnMetadataList = loadMetadataFromMapping(mapping).getColumns();
@@ -239,14 +239,14 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
     }
 
     private void createMapping(String mappingName, String tableName, String externalDataStoreRef) {
-        try (SqlResult ignored = sql.execute(
+        sql.execute(
                 "CREATE MAPPING \"" + mappingName + "\""
                         + " EXTERNAL NAME \"" + tableName + "\" "
                         + " TYPE " + deriveMappingType()
                         + " OPTIONS ("
                         + "    '" + OPTION_EXTERNAL_DATASTORE_REF + "' = '" + externalDataStoreRef + "' "
-                        + ")")) {
-        }
+                        + ")"
+        ).close();
     }
 
     private SqlRowMetadata loadMetadataFromMapping(String mapping) {
@@ -494,8 +494,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
                 Object tmp = params[idPos];
                 params[idPos] = params[params.length - 1];
                 params[params.length - 1] = tmp;
-                try (SqlResult ignored = sql.execute(queries.storeUpdate(), params)) {
-                }
+                sql.execute(queries.storeUpdate(), params).close();
             } else {
                 throw e;
             }
@@ -515,8 +514,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
     public void delete(K key) {
         awaitInitFinished();
 
-        try (SqlResult ignored = sql.execute(queries.delete(), key)) {
-        }
+        sql.execute(queries.delete(), key).close();
     }
 
     @Override
@@ -527,8 +525,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
             return;
         }
 
-        try (SqlResult ignored = sql.execute(queries.deleteAll(keys.size()), keys.toArray())) {
-        }
+        sql.execute(queries.deleteAll(keys.size()), keys.toArray()).close();
     }
 
     /**
@@ -539,8 +536,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
     }
 
     private void dropMapping(String mappingName) {
-        try (SqlResult ignored = sql.execute("DROP MAPPING \"" + mappingName + "\"")) {
-        }
+        sql.execute("DROP MAPPING \"" + mappingName + "\"").close();
     }
 
     /**
