@@ -108,6 +108,10 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         HazelcastInstance client = client();
         IMap<Integer, Person> map = client.getMap(tableName);
 
+        assertJdbcRowsAnyOrder(tableName,
+                new Row(0, "name-0")
+        );
+
         map.put(0, new Person(0, "updated"));
 
         assertJdbcRowsAnyOrder(tableName,
