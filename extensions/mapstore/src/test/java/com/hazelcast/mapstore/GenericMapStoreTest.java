@@ -16,7 +16,6 @@
 
 package com.hazelcast.mapstore;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastException;
@@ -63,13 +62,9 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
 
     private HazelcastInstance hz;
 
-
     @BeforeClass
     public static void beforeClass() throws Exception {
-        Config config = smallInstanceConfig();
-        config.getSerializationConfig().getCompactSerializationConfig().setEnabled(true);
-
-        initialize(new H2DatabaseProvider(), config);
+        initialize(new H2DatabaseProvider());
     }
 
     @Before

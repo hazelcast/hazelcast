@@ -22,12 +22,11 @@ import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
 import com.hazelcast.nio.serialization.GenericRecord;
 import com.hazelcast.nio.serialization.GenericRecordBuilder;
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
-import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -51,7 +50,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParametrizedRunner.class)
-@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class AllTypesGenericMapStoreTest extends JdbcSqlTestSupport {
 
@@ -149,11 +148,6 @@ public class AllTypesGenericMapStoreTest extends JdbcSqlTestSupport {
 
         mapStore = new GenericMapStore<>();
         mapStore.init(instance(), properties, tableName);
-    }
-
-    @After
-    public void tearDownMapStore() {
-        mapStore.destroy();
     }
 
     @Test

@@ -488,7 +488,9 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
         }
         try (SqlResult ignored = sql.execute(queries.storeInsert(), params)) {
         } catch (Exception e) {
-            if (e.getMessage().contains("Unique index or primary key violation")) {
+            if (e.getMessage() != null && (e.getMessage().contains("Unique index or primary key violation") ||
+                    e.getMessage().contains("ERROR: duplicate key value violates unique constraint") ||
+                    e.getMessage().contains("Duplicate entry"))) {
                 Object tmp = params[idPos];
                 params[idPos] = params[params.length - 1];
                 params[params.length - 1] = tmp;
