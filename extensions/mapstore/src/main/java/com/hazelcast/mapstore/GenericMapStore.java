@@ -64,7 +64,7 @@ import static java.util.stream.Stream.of;
 
 /**
  * GenericMapStore is an implementation of {@link MapStore} built
- * on to of Hazelcast SQL engine.
+ * on top of Hazelcast SQL engine.
  * <p>
  * It works with any SQL connector supporting SELECT, INSERT, UPDATE and DELETE statements.
  * <p>
