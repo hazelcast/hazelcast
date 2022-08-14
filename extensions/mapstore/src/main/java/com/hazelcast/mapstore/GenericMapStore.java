@@ -342,8 +342,46 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
                     builder.setString(column.getName(), row.getObject(i));
                     break;
 
+                case BOOLEAN:
+                    builder.setBoolean(column.getName(), row.getObject(i));
+                    break;
+
+                case TINYINT:
+                case SMALLINT:
                 case INTEGER:
                     builder.setInt32(column.getName(), row.getObject(i));
+                    break;
+
+                case BIGINT:
+                    builder.setInt64(column.getName(), row.getObject(i));
+                    break;
+
+                case DECIMAL:
+                    builder.setDecimal(column.getName(), row.getObject(i));
+                    break;
+
+                case REAL:
+                    builder.setFloat32(column.getName(), row.getObject(i));
+                    break;
+
+                case DOUBLE:
+                    builder.setFloat64(column.getName(), row.getObject(i));
+                    break;
+
+                case DATE:
+                    builder.setDate(column.getName(), row.getObject(i));
+                    break;
+
+                case TIME:
+                    builder.setTime(column.getName(), row.getObject(i));
+                    break;
+
+                case TIMESTAMP:
+                    builder.setTimestamp(column.getName(), row.getObject(i));
+                    break;
+
+                case TIMESTAMP_WITH_TIME_ZONE:
+                    builder.setTimestampWithTimezone(column.getName(), row.getObject(i));
                     break;
 
                 default:
@@ -406,8 +444,52 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
                     params[i] = value.getString(cm.getName());
                     break;
 
+                case BOOLEAN:
+                    params[i] = value.getBoolean(cm.getName());
+                    break;
+
+                case TINYINT:
+                    params[i] = value.getInt8(cm.getName());
+                    break;
+
+                case SMALLINT:
+                    params[i] = value.getInt16(cm.getName());
+                    break;
+
                 case INTEGER:
                     params[i] = value.getInt32(cm.getName());
+                    break;
+
+                case BIGINT:
+                    params[i] = value.getInt64(cm.getName());
+                    break;
+
+                case REAL:
+                    params[i] = value.getFloat32(cm.getName());
+                    break;
+
+                case DOUBLE:
+                    params[i] = value.getFloat64(cm.getName());
+                    break;
+
+                case DATE:
+                    params[i] = value.getDate(cm.getName());
+                    break;
+
+                case TIME:
+                    params[i] = value.getTime(cm.getName());
+                    break;
+
+                case TIMESTAMP:
+                    params[i] = value.getTimestamp(cm.getName());
+                    break;
+
+                case TIMESTAMP_WITH_TIME_ZONE:
+                    params[i] = value.getTimestampWithTimezone(cm.getName());
+                    break;
+
+                case DECIMAL:
+                    params[i] = value.getDecimal(cm.getName());
                     break;
 
                 default:
