@@ -126,7 +126,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
     private long initTimeoutMillis;
 
     private Exception initFailure; // uses initFinished latch to ensure visibility
-    private List<SqlColumnMetadata> columnMetadata;
+    private List<SqlColumnMetadata> columnMetadataList;
     private final CountDownLatch initFinished = new CountDownLatch(1);
 
     @Override
@@ -188,9 +188,9 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
             }
 
             if (!properties.hasColumns()) {
-                columnMetadata = loadMetadataFromMapping(mapping).getColumns();
+                columnMetadataList = loadMetadataFromMapping(mapping).getColumns();
             }
-            queries = new Queries(mapping, properties.idColumn, columnMetadata);
+            queries = new Queries(mapping, properties.idColumn, columnMetadataList);
         } catch (Exception e) {
             if (e.getMessage() != null && e.getMessage().startsWith("Mapping or view already exists:")) {
                 readExistingMapping();
@@ -225,7 +225,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
         String tempMapping = "temp_mapping_" + UuidUtil.newUnsecureUuidString();
         createMapping(tempMapping, tableName, externalDataStoreRef);
         SqlRowMetadata rowMetadata = loadMetadataFromMapping(tempMapping);
-        columnMetadata = rowMetadata.getColumns();
+        columnMetadataList = rowMetadata.getColumns();
         dropMapping(tempMapping);
 
         return Stream.concat(of(properties.idColumn), properties.columns.stream())
@@ -263,8 +263,8 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
                 if (name.equals(this.mapping)) {
                     SqlRowMetadata rowMetadata = loadMetadataFromMapping(name);
                     validateColumns(rowMetadata);
-                    columnMetadata = rowMetadata.getColumns();
-                    queries = new Queries(name, properties.idColumn, columnMetadata);
+                    columnMetadataList = rowMetadata.getColumns();
+                    queries = new Queries(name, properties.idColumn, columnMetadataList);
                     initFinished.countDown();
                     return;
                 }
@@ -419,71 +419,71 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
     }
 
     @Override
-    public void store(K key, GenericRecord value) {
+    public void store(K key, GenericRecord record) {
         awaitInitFinished();
 
         int idPos = -1;
-        Object[] params = new Object[columnMetadata.size()];
-        for (int i = 0; i < columnMetadata.size(); i++) {
-            SqlColumnMetadata cm = columnMetadata.get(i);
-            if (cm.getName().equals(properties.idColumn)) {
+        Object[] params = new Object[columnMetadataList.size()];
+        for (int i = 0; i < columnMetadataList.size(); i++) {
+            SqlColumnMetadata columnMetadata = columnMetadataList.get(i);
+            if (columnMetadata.getName().equals(properties.idColumn)) {
                 idPos = i;
             }
-            switch (cm.getType()) {
+            switch (columnMetadata.getType()) {
                 case VARCHAR:
-                    params[i] = value.getString(cm.getName());
+                    params[i] = record.getString(columnMetadata.getName());
                     break;
 
                 case BOOLEAN:
-                    params[i] = value.getBoolean(cm.getName());
+                    params[i] = record.getBoolean(columnMetadata.getName());
                     break;
 
                 case TINYINT:
-                    params[i] = value.getInt8(cm.getName());
+                    params[i] = record.getInt8(columnMetadata.getName());
                     break;
 
                 case SMALLINT:
-                    params[i] = value.getInt16(cm.getName());
+                    params[i] = record.getInt16(columnMetadata.getName());
                     break;
 
                 case INTEGER:
-                    params[i] = value.getInt32(cm.getName());
+                    params[i] = record.getInt32(columnMetadata.getName());
                     break;
 
                 case BIGINT:
-                    params[i] = value.getInt64(cm.getName());
+                    params[i] = record.getInt64(columnMetadata.getName());
                     break;
 
                 case REAL:
-                    params[i] = value.getFloat32(cm.getName());
+                    params[i] = record.getFloat32(columnMetadata.getName());
                     break;
 
                 case DOUBLE:
-                    params[i] = value.getFloat64(cm.getName());
+                    params[i] = record.getFloat64(columnMetadata.getName());
                     break;
 
                 case DATE:
-                    params[i] = value.getDate(cm.getName());
+                    params[i] = record.getDate(columnMetadata.getName());
                     break;
 
                 case TIME:
-                    params[i] = value.getTime(cm.getName());
+                    params[i] = record.getTime(columnMetadata.getName());
                     break;
 
                 case TIMESTAMP:
-                    params[i] = value.getTimestamp(cm.getName());
+                    params[i] = record.getTimestamp(columnMetadata.getName());
                     break;
 
                 case TIMESTAMP_WITH_TIME_ZONE:
-                    params[i] = value.getTimestampWithTimezone(cm.getName());
+                    params[i] = record.getTimestampWithTimezone(columnMetadata.getName());
                     break;
 
                 case DECIMAL:
-                    params[i] = value.getDecimal(cm.getName());
+                    params[i] = record.getDecimal(columnMetadata.getName());
                     break;
 
                 default:
-                    throw new HazelcastException("Column type " + cm.getType() + " not supported");
+                    throw new HazelcastException("Column type " + columnMetadata.getType() + " not supported");
             }
         }
         try (SqlResult ignored = sql.execute(queries.storeInsert(), params)) {
