@@ -189,17 +189,21 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
      * Assert the contents of a given table directly via JDBC
      */
     protected static void assertJdbcRowsAnyOrder(String tableName, Row... rows) {
-        List<Row> actualRows = jdbcRows(tableName);
+        List<Row> actualRows = jdbcRowsTable(tableName);
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(Arrays.asList(rows));
     }
 
+    protected static List<Row> jdbcRowsTable(String tableName) {
+        return jdbcRows("SELECT * FROM " + tableName);
+    }
+
     @Nonnull
-    protected static List<Row> jdbcRows(String tableName) {
+    protected static List<Row> jdbcRows(String query) {
         List<Row> rows = new ArrayList<>();
         try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
              Statement stmt = conn.createStatement()
         ) {
-            stmt.execute("SELECT * FROM " + tableName);
+            stmt.execute(query);
             ResultSet resultSet = stmt.getResultSet();
             while (resultSet.next()) {
                 Object[] values = new Object[resultSet.getMetaData().getColumnCount()];

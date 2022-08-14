@@ -97,7 +97,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
         map.put(42, new Person(42, "name-42"));
 
-        assertThat(jdbcRows(tableName)).containsOnly(
+        assertJdbcRowsAnyOrder(tableName,
                 new Row(0, "name-0"),
                 new Row(42, "name-42")
         );
@@ -110,7 +110,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
         map.put(0, new Person(0, "updated"));
 
-        assertThat(jdbcRows(tableName)).containsOnly(
+        assertJdbcRowsAnyOrder(tableName,
                 new Row(0, "updated")
         );
     }
@@ -120,10 +120,10 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         HazelcastInstance client = client();
         IMap<Integer, Person> map = client.getMap(tableName);
 
-        assertThat(jdbcRows(tableName)).hasSize(1);
+        assertThat(jdbcRowsTable(tableName)).hasSize(1);
 
         map.remove(0);
 
-        assertThat(jdbcRows(tableName)).isEmpty();
+        assertThat(jdbcRowsTable(tableName)).isEmpty();
     }
 }

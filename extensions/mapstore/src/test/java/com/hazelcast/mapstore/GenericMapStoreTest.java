@@ -398,8 +398,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
                                                    .build();
         mapStore.store(0, person);
 
-        List<Row> rows = jdbcRows(mapName);
-        assertThat(rows).contains(
+        assertJdbcRowsAnyOrder(mapName,
                 new Row(0, "name-0")
         );
     }
@@ -415,8 +414,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
                                                    .build();
         mapStore.store(0, person);
 
-        List<Row> rows = jdbcRows(mapName);
-        assertThat(rows).contains(
+        assertJdbcRowsAnyOrder(mapName,
                 new Row(0, "name-0")
         );
     }
@@ -433,7 +431,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
                                                    .build();
         mapStore.store(0, person);
 
-        assertThat(jdbcRows(mapName)).containsOnly(
+        assertJdbcRowsAnyOrder(mapName,
                 new Row(0, "updated")
         );
     }
@@ -455,7 +453,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
                                                    .build();
         mapStore.store(0, person);
 
-        assertThat(jdbcRows(mapName)).containsOnly(
+        assertJdbcRowsAnyOrder(mapName,
                 new Row(0, "updated")
         );
     }
@@ -473,7 +471,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         people.put(0, person);
         mapStore.storeAll(people);
 
-        assertThat(jdbcRows(mapName)).contains(
+        assertJdbcRowsAnyOrder(mapName,
                 new Row(0, "name-0")
         );
     }
@@ -485,7 +483,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
 
         mapStore.storeAll(emptyMap());
 
-        assertThat(jdbcRows(mapName)).isEmpty();
+        assertThat(jdbcRowsTable(mapName)).isEmpty();
     }
 
     @Test
@@ -496,7 +494,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         GenericMapStore<Integer> mapStore = createMapStore();
         mapStore.delete(0);
 
-        assertThat(jdbcRows(mapName)).containsOnly(
+        assertJdbcRowsAnyOrder(mapName,
                 new Row(1, "name-1")
         );
     }
@@ -513,7 +511,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         GenericMapStore<Integer> mapStore = createMapStore(properties, hz);
         mapStore.delete(0);
 
-        assertThat(jdbcRows(mapName)).containsOnly(
+        assertJdbcRowsAnyOrder(mapName,
                 new Row(1, "name-1")
         );
     }
@@ -526,8 +524,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         GenericMapStore<Integer> mapStore = createMapStore();
         mapStore.deleteAll(newArrayList(0, 1));
 
-        List<Row> rows = jdbcRows(mapName);
-        assertThat(rows).containsOnly(
+        assertJdbcRowsAnyOrder(mapName,
                 new Row(2, "name-2")
         );
     }
@@ -544,7 +541,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         GenericMapStore<Integer> mapStore = createMapStore(properties, hz);
         mapStore.deleteAll(newArrayList(0));
 
-        assertThat(jdbcRows(mapName)).containsOnly(
+        assertJdbcRowsAnyOrder(mapName,
                 new Row(1, "name-1")
         );
     }
@@ -557,7 +554,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         GenericMapStore<Integer> mapStore = createMapStore();
         mapStore.deleteAll(newArrayList());
 
-        assertThat(jdbcRows(mapName)).containsOnly(
+        assertJdbcRowsAnyOrder(mapName,
                 new Row(0, "name-0")
         );
     }
