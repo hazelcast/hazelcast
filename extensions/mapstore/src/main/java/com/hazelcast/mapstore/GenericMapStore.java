@@ -230,9 +230,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
         return Stream.concat(of(properties.idColumn), properties.columns.stream())
                      .distinct() // avoid duplicate id column if present in columns property
-                     .map((columnName) -> {
-                         return validateColumn(rowMetadata.findColumn(columnName), columnName);
-                     })
+                     .map((columnName) -> validateColumn(rowMetadata.findColumn(columnName), columnName))
                      .map(rowMetadata::getColumn)
                      .map(columnMetadata1 -> columnMetadata1.getName() + " " + columnMetadata1.getType())
                      .collect(Collectors.joining(", "));
@@ -278,9 +276,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
     private void validateColumns(SqlRowMetadata rowMetadata) {
         Stream.concat(of(properties.idColumn), properties.columns.stream())
               .distinct() // avoid duplicate id column if present in columns property
-              .forEach((columnName) -> {
-                  validateColumn(rowMetadata.findColumn(columnName), columnName);
-              });
+              .forEach((columnName) -> validateColumn(rowMetadata.findColumn(columnName), columnName));
     }
 
     private int validateColumn(int column, String columnName) {
@@ -411,6 +407,8 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
         SqlResult keysResult = sql.execute(queries.loadAllKeys());
 
+        // The contract for loadAllKeys says that if iterator implements Closable
+        // then it will be closed when the iteration is over
         return () -> new MappingClosingIterator<>(
                 keysResult.iterator(),
                 (SqlRow row) -> row.getObject(properties.idColumn),

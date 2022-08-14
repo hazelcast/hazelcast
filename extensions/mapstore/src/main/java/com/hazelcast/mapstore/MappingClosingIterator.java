@@ -16,17 +16,18 @@
 
 package com.hazelcast.mapstore;
 
+import java.io.Closeable;
 import java.util.Iterator;
 import java.util.function.Function;
 
 /**
  * Iterator providing mapping for the iterated objects from type T to R and
- * also implementing {@link AutoCloseable}.
+ * also implementing {@link Closeable}.
  *
  * @param <T> type of the items in the original iterator
  * @param <R> type of the mapped iterator
  */
-class MappingClosingIterator<T, R> implements Iterator<R>, AutoCloseable {
+class MappingClosingIterator<T, R> implements Iterator<R>, Closeable {
 
     private final Iterator<T> iterator;
     private final Function<T, R> mapFn;
