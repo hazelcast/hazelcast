@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCacheConfigCodec
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddCardinalityEstimatorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddDurableExecutorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExecutorConfigCodec;
+import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddExternalDataStoreConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddFlakeIdGeneratorConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddListConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.DynamicConfigAddMapConfigCodec;
@@ -102,6 +103,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.client.impl.protocol.util.PropertiesUtil.toMap;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 /**
@@ -1127,7 +1129,11 @@ public class ClientDynamicClusterConfig extends Config {
 
     @Override
     public Config addExternalDataStoreConfig(ExternalDataStoreConfig externalDataStoreConfig) {
-        throw new UnsupportedOperationException(UNSUPPORTED_ERROR_MESSAGE);
+        ClientMessage request = DynamicConfigAddExternalDataStoreConfigCodec.encodeRequest(
+                externalDataStoreConfig.getName(), externalDataStoreConfig.getClassName(),
+                externalDataStoreConfig.isShared(), toMap(externalDataStoreConfig.getProperties()));
+        invoke(request);
+        return this;
     }
 
     @Override

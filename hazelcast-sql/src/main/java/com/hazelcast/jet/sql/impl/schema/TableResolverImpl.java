@@ -136,7 +136,12 @@ public class TableResolverImpl implements TableResolver {
         Map<String, String> options = mapping.options();
 
         SqlConnector connector = connectorCache.forType(type);
-        List<MappingField> resolvedFields = connector.resolveAndValidateFields(nodeEngine, options, mapping.fields());
+        List<MappingField> resolvedFields = connector.resolveAndValidateFields(
+                nodeEngine,
+                options,
+                mapping.fields(),
+                mapping.externalName()
+        );
         return new Mapping(
                 mapping.name(),
                 mapping.externalName(),

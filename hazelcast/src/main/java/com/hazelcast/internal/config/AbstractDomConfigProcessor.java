@@ -197,8 +197,20 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
 
         for (Node child : childElements(node)) {
             String name = cleanNodeName(child);
-            if (matches("registered-classes", name)) {
+            if (matches("serializers", name)) {
+                fillCompactSerializers(child, compactSerializationConfig);
+            } else if (matches("classes", name)) {
                 fillCompactSerializableClasses(child, compactSerializationConfig);
+            }
+        }
+    }
+
+    protected void fillCompactSerializers(Node node, CompactSerializationConfig compactSerializationConfig) {
+        for (Node child : childElements(node)) {
+            String name = cleanNodeName(child);
+            if (matches("serializer", name)) {
+                String serializerClassName = getTextContent(child);
+                CompactSerializationConfigAccessor.registerSerializer(compactSerializationConfig, serializerClassName);
             }
         }
     }
@@ -207,29 +219,10 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
         for (Node child : childElements(node)) {
             String name = cleanNodeName(child);
             if (matches("class", name)) {
-                String className = getTextContent(child);
-                Node typeNameNode = getNamedItemNode(child, "type-name");
-                String typeName = typeNameNode != null ? getTextContent(typeNameNode) : null;
-                Node serializerClassNameNode = getNamedItemNode(child, "serializer");
-                String serializerClassName = serializerClassNameNode != null
-                        ? getTextContent(serializerClassNameNode) : null;
-                registerCompactSerializableClass(compactSerializationConfig, className, typeName, serializerClassName);
+                String compactSerializableClassName = getTextContent(child);
+                CompactSerializationConfigAccessor.registerClass(compactSerializationConfig,
+                        compactSerializableClassName);
             }
-        }
-    }
-
-    protected void registerCompactSerializableClass(CompactSerializationConfig compactSerializationConfig,
-                                                    String className, String typeName, String serializerClassName) {
-        if (typeName != null && serializerClassName != null) {
-            CompactSerializationConfigAccessor.registerExplicitSerializer(compactSerializationConfig, className,
-                    typeName, serializerClassName);
-        } else if (typeName == null && serializerClassName == null) {
-            CompactSerializationConfigAccessor.registerReflectiveSerializer(compactSerializationConfig, className);
-        } else {
-            throw new InvalidConfigurationException("Either both 'type-name' and 'serializer' attributes "
-                    + "must be defined to register a class with an explicit serializer, "
-                    + "or no attributes should be defined to register a class to be used with "
-                    + "reflective compact serializer.");
         }
     }
 

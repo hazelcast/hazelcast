@@ -61,7 +61,8 @@ public class SessionWindowP_failoverTest {
                 singletonList((ToLongFunctionEx<Entry<?, Long>>) Entry::getValue),
                 singletonList(entryKey()),
                 aggrOp,
-                KeyedWindowResult::new);
+                KeyedWindowResult::new,
+                (byte) 0);
 
         Outbox outbox = new TestOutbox(128);
         Context context = new TestProcessorContext()

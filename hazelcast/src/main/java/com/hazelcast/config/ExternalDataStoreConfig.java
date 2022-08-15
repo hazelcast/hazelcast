@@ -17,14 +17,19 @@
 package com.hazelcast.config;
 
 import com.hazelcast.datastore.ExternalDataStoreFactory;
+import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.MapStore;
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.Objects;
 import java.util.Properties;
 
@@ -41,7 +46,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * @since 5.2
  */
 @Beta
-public class ExternalDataStoreConfig implements NamedConfig {
+public class ExternalDataStoreConfig implements IdentifiedDataSerializable, NamedConfig {
 
     private String name;
     private String className;
@@ -62,30 +67,40 @@ public class ExternalDataStoreConfig implements NamedConfig {
         this.name = checkNotNull(name, "Name must not be null");
     }
 
+    /**
+     * Sets the name of this external data store, the name must be unique.
+     *
+     * @return this ExternalDataStoreConfig
+     */
     @Override
     public ExternalDataStoreConfig setName(String name) {
         this.name = checkNotNull(name, "Name must not be null");
         return this;
     }
 
+    /**
+     * Returns the name of this external data store.
+     *
+     * @return the name of this external data store
+     */
     public String getName() {
         return name;
     }
 
 
     /**
-     * Returns the name of the MapStore implementation class
+     * Returns the name of the {@link ExternalDataStoreFactory} implementation class
      *
-     * @return the name of the MapStore implementation class
+     * @return the name of the {@link ExternalDataStoreFactory} implementation class
      */
     public String getClassName() {
         return className;
     }
 
     /**
-     * Sets the name for the MapStore implementation class
+     * Sets the name for the {@link ExternalDataStoreFactory} implementation class
      *
-     * @param className the name to set for the MapStore implementation class
+     * @param className the name to set for the {@link ExternalDataStoreFactory} implementation class
      */
     public ExternalDataStoreConfig setClassName(@Nonnull String className) {
         this.className = checkHasText(className, "Data store class name must contain text");
@@ -115,23 +130,36 @@ public class ExternalDataStoreConfig implements NamedConfig {
     }
 
     /**
-     * Returns all the properties
+     * Returns all the properties of a datastore
      *
-     * @return all the properties
+     * @return all the properties of a datastore
      */
     public Properties getProperties() {
         return properties;
     }
 
     /**
-     * Returns single the property
+     * Returns a single property of a datastore
      *
-     * @param key the property key
+     * @param key the property key of a datastore
      * @return property value or null if the given key doesn't exist
      */
     @Nullable
     public String getProperty(String key) {
         return properties.getProperty(key);
+    }
+
+    /**
+     * Sets a single property. See {@link ExternalDataStoreConfig#setProperties(Properties)}
+     *
+     * @param key   the property key
+     * @param value the property value
+     * @return this ExternalDataStoreConfig
+     */
+    public ExternalDataStoreConfig setProperty(String key, String value) {
+        properties.setProperty(key, value);
+        return this;
+
     }
 
     /**
@@ -173,5 +201,40 @@ public class ExternalDataStoreConfig implements NamedConfig {
                 + ", shared=" + shared
                 + ", properties=" + properties
                 + '}';
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        out.writeString(name);
+        out.writeString(className);
+        out.writeBoolean(shared);
+        out.writeInt(properties.size());
+        for (String key : properties.stringPropertyNames()) {
+            out.writeString(key);
+            out.writeString(properties.getProperty(key));
+        }
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        name = in.readString();
+        className = in.readString();
+        shared = in.readBoolean();
+        int propertiesSize = in.readInt();
+        for (int i = 0; i < propertiesSize; i++) {
+            String key = in.readString();
+            String value = in.readString();
+            properties.setProperty(key, value);
+        }
+    }
+
+    @Override
+    public int getFactoryId() {
+        return ConfigDataSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return ConfigDataSerializerHook.EXTERNAL_DATA_STORE_CONFIG;
     }
 }

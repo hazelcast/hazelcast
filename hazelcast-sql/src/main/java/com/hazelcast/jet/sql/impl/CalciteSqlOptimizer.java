@@ -17,6 +17,8 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.cluster.memberselector.MemberSelectors;
+import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
@@ -41,6 +43,7 @@ import com.hazelcast.jet.sql.impl.connector.map.MetadataResolver;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.WatermarkKeysAssigner;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
@@ -84,6 +87,7 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.optimizer.OptimizationTask;
 import com.hazelcast.sql.impl.optimizer.PlanKey;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.optimizer.SqlOptimizer;
 import com.hazelcast.sql.impl.optimizer.SqlPlan;
 import com.hazelcast.sql.impl.schema.IMapResolver;
@@ -113,7 +117,9 @@ import java.security.Permission;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.DropIndexPlan;
 import static com.hazelcast.jet.sql.impl.SqlPlanImpl.ExplainStatementPlan;
@@ -537,20 +543,20 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         } else if (physicalRel instanceof TableModify) {
             checkDmlOperationWithView(physicalRel);
             Operation operation = ((TableModify) physicalRel).getOperation();
-            CreateDagVisitor visitor = traverseRel(physicalRel, parameterMetadata);
+            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(physicalRel, parameterMetadata);
             return new DmlPlan(
                     operation,
                     planKey,
                     parameterMetadata,
-                    visitor.getObjectKeys(),
-                    visitor.getDag(),
+                    dagAndKeys.f1(),
+                    dagAndKeys.f0(),
                     query,
                     OptUtils.isUnbounded(physicalRel),
                     planExecutor,
                     permissions
             );
         } else {
-            CreateDagVisitor visitor = traverseRel(new RootRel(physicalRel), parameterMetadata);
+            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(new RootRel(physicalRel), parameterMetadata);
             SqlRowMetadata rowMetadata = createRowMetadata(
                     fieldNames,
                     physicalRel.schema(parameterMetadata).getTypes(),
@@ -559,8 +565,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             return new SelectPlan(
                     planKey,
                     parameterMetadata,
-                    visitor.getObjectKeys(),
-                    visitor.getDag(),
+                    dagAndKeys.f1(),
+                    dagAndKeys.f0(),
                     query,
                     OptUtils.isUnbounded(physicalRel),
                     rowMetadata,
@@ -675,14 +681,18 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return new SqlRowMetadata(columns);
     }
 
-    private CreateDagVisitor traverseRel(
+    private Tuple2<DAG, Set<PlanObjectKey>> createDag(
             PhysicalRel physicalRel,
             QueryParameterMetadata parameterMetadata
     ) {
-        CreateDagVisitor visitor = new CreateDagVisitor(this.nodeEngine, parameterMetadata);
+        WatermarkKeysAssigner wmKeysAssigner = new WatermarkKeysAssigner(physicalRel);
+        wmKeysAssigner.assignWatermarkKeys();
+        logger.finest("Watermark keys assigned");
+
+        CreateDagVisitor visitor = new CreateDagVisitor(nodeEngine, parameterMetadata);
         physicalRel.accept(visitor);
         visitor.optimizeFinishedDag();
-        return visitor;
+        return tuple2(visitor.getDag(), visitor.getObjectKeys());
     }
 
     private void checkDmlOperationWithView(PhysicalRel rel) {
