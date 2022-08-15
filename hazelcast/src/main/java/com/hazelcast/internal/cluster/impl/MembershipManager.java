@@ -17,6 +17,8 @@
 package com.hazelcast.internal.cluster.impl;
 
 import com.hazelcast.cluster.ClusterState;
+import com.hazelcast.cluster.Joiner;
+import com.hazelcast.cluster.impl.TcpIpJoiner;
 import com.hazelcast.core.Member;
 import com.hazelcast.core.MembershipEvent;
 import com.hazelcast.hotrestart.InternalHotRestartService;
@@ -755,6 +757,10 @@ public class MembershipManager {
         node.getPartitionService().memberRemoved(deadMember);
         nodeEngine.onMemberLeft(deadMember);
         node.getNodeExtension().onMemberListChange();
+        Joiner joiner = node.getJoiner();
+        if (joiner != null && joiner.getClass() == TcpIpJoiner.class) {
+            ((TcpIpJoiner) joiner).onMemberRemoved(deadMember);
+        }
     }
 
     void sendMembershipEvents(Collection<MemberImpl> currentMembers, Collection<MemberImpl> newMembers, boolean sortMembers) {
@@ -764,7 +770,10 @@ public class MembershipManager {
                 // sync calls
                 node.getPartitionService().memberAdded(newMember);
                 node.getNodeExtension().onMemberListChange();
-
+                Joiner joiner = node.getJoiner();
+                if (joiner != null && joiner.getClass() == TcpIpJoiner.class) {
+                    ((TcpIpJoiner) joiner).onMemberAdded(newMember);
+                }
                 // async events
                 eventMembers.add(newMember);
                 if (sortMembers) {
