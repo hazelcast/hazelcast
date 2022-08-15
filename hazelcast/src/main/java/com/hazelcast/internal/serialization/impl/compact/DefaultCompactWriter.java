@@ -420,17 +420,11 @@ public class DefaultCompactWriter implements CompactWriter {
 
     @Override
     public <T> void writeArrayOfCompact(@Nonnull String fieldName, @Nullable T[] value) {
-        writeArrayOfVariableSize(fieldName, ARRAY_OF_COMPACT, value,
-                new SingleTypeCompactArrayItemWriter<>(
-                        (out, val) -> serializer.writeObject(out, val, includeSchemaOnBinary))
-        );
+        writeArrayOfVariableSize(fieldName, ARRAY_OF_COMPACT, value, new SingleTypeCompactArrayItemWriter<>());
     }
 
     public void writeArrayOfGenericRecord(@Nonnull String fieldName, @Nullable GenericRecord[] value) {
-        writeArrayOfVariableSize(fieldName, ARRAY_OF_COMPACT, value,
-                new SingleSchemaCompactArrayItemWriter(
-                        (out, val) -> serializer.writeGenericRecord(out, (CompactGenericRecord) val, includeSchemaOnBinary))
-        );
+        writeArrayOfVariableSize(fieldName, ARRAY_OF_COMPACT, value, new SingleSchemaCompactArrayItemWriter());
     }
 
     @Override
@@ -532,14 +526,9 @@ public class DefaultCompactWriter implements CompactWriter {
      * Checks that the Compact serializable array items that are written are of
      * a single type.
      */
-    private static final class SingleTypeCompactArrayItemWriter<T> implements Writer<T> {
+    private final class SingleTypeCompactArrayItemWriter<T> implements Writer<T> {
 
-        private final Writer<T> delegate;
         private Class<?> clazz;
-
-        private SingleTypeCompactArrayItemWriter(Writer<T> delegate) {
-            this.delegate = delegate;
-        }
 
         @Override
         public void write(BufferObjectDataOutput out, T value) throws IOException {
@@ -555,7 +544,7 @@ public class DefaultCompactWriter implements CompactWriter {
                         + "type: " + this.clazz + ", current item type: " + clazz);
             }
 
-            delegate.write(out, value);
+            serializer.writeObject(out, value, includeSchemaOnBinary);
         }
     }
 
@@ -564,18 +553,14 @@ public class DefaultCompactWriter implements CompactWriter {
      * Checks that the Compact serializable GenericRecord array items that are
      * written are of a single schema.
      */
-    private static final class SingleSchemaCompactArrayItemWriter implements Writer<GenericRecord> {
+    private final class SingleSchemaCompactArrayItemWriter implements Writer<GenericRecord> {
 
-        private final Writer<GenericRecord> delegate;
         private Schema schema;
-
-        private SingleSchemaCompactArrayItemWriter(Writer<GenericRecord> delegate) {
-            this.delegate = delegate;
-        }
 
         @Override
         public void write(BufferObjectDataOutput out, GenericRecord value) throws IOException {
-            Schema schema = ((CompactGenericRecord) value).getSchema();
+            CompactGenericRecord record = (CompactGenericRecord) value;
+            Schema schema = record.getSchema();
             if (this.schema == null) {
                 this.schema = schema;
             }
@@ -588,7 +573,7 @@ public class DefaultCompactWriter implements CompactWriter {
                         + "current schema: " + schema);
             }
 
-            delegate.write(out, value);
+            serializer.writeGenericRecord(out, record, includeSchemaOnBinary);
         }
     }
 }
