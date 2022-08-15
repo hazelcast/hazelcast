@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.serialization;
+package com.hazelcast.nio.serialization.genericrecord;
 
 import com.hazelcast.internal.serialization.impl.compact.DeserializedGenericRecordBuilder;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecordBuilder;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
