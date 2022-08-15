@@ -28,6 +28,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
+
 import javax.annotation.Nonnull;
 
 /**
@@ -216,6 +218,17 @@ public interface IPartitionService extends CoreService {
     default PartitionIdSet getPartitionIdSet(Collection<Object> keys) {
         PartitionIdSet partitionIds = new PartitionIdSet(getPartitionCount());
         keys.forEach(o -> partitionIds.add(getPartitionId(o)));
+        return partitionIds;
+    }
+
+    /**
+     * Gets a PartitionIdSet from a collection of partition key data objects
+     * @param keysData the stream of key data to map to an id set
+     * @return the mapped id set
+     */
+    default PartitionIdSet getPartitionIdSet(Stream<Data> keysData) {
+        PartitionIdSet partitionIds = new PartitionIdSet(getPartitionCount());
+        keysData.forEach(o -> partitionIds.add(getPartitionId(o)));
         return partitionIds;
     }
 }

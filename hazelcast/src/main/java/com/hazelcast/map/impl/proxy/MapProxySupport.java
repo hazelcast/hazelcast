@@ -693,7 +693,9 @@ abstract class MapProxySupport<K, V>
                 operationService.invokeOnPartitions(
                         SERVICE_NAME,
                         operation,
-                        partitionService.getPartitionIdSet(partitionPredicate.getPartitionKeys())
+                        partitionService.getPartitionIdSet(
+                            partitionPredicate.getPartitionKeys().stream().map(k -> toDataWithStrategy(k))
+                        )
                 );
             } else {
                 OperationFactory operation = operationProvider
@@ -1295,7 +1297,9 @@ abstract class MapProxySupport<K, V>
                 results = operationService.invokeOnPartitions(
                         SERVICE_NAME,
                         operation,
-                        partitionService.getPartitionIdSet(partitionPredicate.getPartitionKeys())
+                        partitionService.getPartitionIdSet(
+                            partitionPredicate.getPartitionKeys().stream().map(k -> toDataWithStrategy(k))
+                        )
                 );
             } else {
                 OperationFactory operation = operationProvider.createPartitionWideEntryWithPredicateOperationFactory(
@@ -1393,7 +1397,9 @@ abstract class MapProxySupport<K, V>
 
         if (predicate instanceof PartitionPredicate) {
             PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
-            PartitionIdSet partitionIds = partitionService.getPartitionIdSet(partitionPredicate.getPartitionKeys());
+            PartitionIdSet partitionIds = partitionService.getPartitionIdSet(
+                partitionPredicate.getPartitionKeys().stream().map(k -> toDataWithStrategy(k))
+            );
             final Target t = target;
             boolean allAlwaysFalsePredicate = partitionIds.stream().allMatch(
                 partitionId -> t.mode() == TargetMode.LOCAL_NODE && !partitionService.isPartitionOwner(partitionId)
