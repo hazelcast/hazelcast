@@ -216,6 +216,10 @@ public final class TypesUtils {
     }
 
     public static TypeKind formatToTypeKind(String format) {
+        if (format == null || format.isEmpty()) {
+            return TypeKind.NONE;
+        }
+
         switch (format) {
             case SqlConnector.JAVA_FORMAT:
                 return TypeKind.JAVA;
@@ -225,7 +229,6 @@ public final class TypesUtils {
                 return TypeKind.COMPACT;
             default:
                 return TypeKind.NONE;
-
         }
     }
 
