@@ -255,6 +255,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
         out.writeInt(type.getId());
         writeNullableList(attributes, out);
         out.writeObject(bitmapIndexOptions);
+        out.writeObject(bTreeIndexConfig);
     }
 
     @Override
@@ -263,6 +264,7 @@ public class IndexConfig implements IdentifiedDataSerializable {
         type = IndexType.getById(in.readInt());
         attributes = readNullableList(in);
         bitmapIndexOptions = in.readObject();
+        bTreeIndexConfig = in.readObject();
     }
 
     @Override

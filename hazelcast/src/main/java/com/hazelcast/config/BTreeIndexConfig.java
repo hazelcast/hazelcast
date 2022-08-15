@@ -17,6 +17,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.memory.Capacity;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -90,13 +91,16 @@ public class BTreeIndexConfig implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeObject(pageSize);
+        out.writeLong(pageSize.getValue());
+        out.writeString(pageSize.getUnit().name());
         out.writeObject(memoryTierConfig);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        pageSize = in.readObject();
+        long size = in.readLong();
+        MemoryUnit unit = MemoryUnit.valueOf(in.readString());
+        pageSize = Capacity.of(size, unit);
         memoryTierConfig = in.readObject();
     }
 
