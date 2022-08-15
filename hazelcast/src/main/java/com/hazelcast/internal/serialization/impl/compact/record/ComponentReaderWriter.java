@@ -16,13 +16,21 @@
 
 package com.hazelcast.internal.serialization.impl.compact.record;
 
+import com.hazelcast.internal.serialization.impl.compact.Schema;
+import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
 
 /**
- * Writes a single component of the record object to writer.
+ * Reads or writes a single component of the record object to reader/writer.
  */
-@FunctionalInterface
-public interface ComponentWriter {
+public interface ComponentReaderWriter {
+
+    /**
+     * @param compactReader to read the component from.
+     * @param schema to validate expected and actual types.
+     * @return a single component of the record object.
+     */
+    Object readComponent(CompactReader compactReader, Schema schema);
 
     /**
      * @param compactWriter to write the component to.

@@ -35,7 +35,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
+import java.util.LinkedList;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -193,7 +193,7 @@ public class RecordSerializationTest extends HazelcastTestSupport {
     @Test
     public void testSerializingRecordReflectively_withUnsupportedFieldType() {
         assertThatThrownBy(() -> {
-            service.toData(new RecordWithUnsupportedField(new ArrayList<>()));
+            service.toData(new RecordWithUnsupportedField(new LinkedList<>()));
         }).isInstanceOf(HazelcastSerializationException.class)
                 .hasStackTraceContaining("cannot be serialized with zero configuration Compact serialization")
                 .hasStackTraceContaining("which uses this class in its fields");
@@ -202,15 +202,15 @@ public class RecordSerializationTest extends HazelcastTestSupport {
     @Test
     public void testSerializingRecordReflectively_withUnsupportedArrayItemType() {
         assertThatThrownBy(() -> {
-            service.toData(new RecordWithUnsupportedArrayField(new ArrayList[0]));
+            service.toData(new RecordWithUnsupportedArrayField(new LinkedList[0]));
         }).isInstanceOf(HazelcastSerializationException.class)
                 .hasStackTraceContaining("cannot be serialized with zero configuration Compact serialization")
                 .hasStackTraceContaining("which uses this class in its fields");
     }
 
-    private record RecordWithUnsupportedField(ArrayList<String> list) {
+    private record RecordWithUnsupportedField(LinkedList<String> list) {
     }
 
-    private record RecordWithUnsupportedArrayField(ArrayList<String>[] lists) {
+    private record RecordWithUnsupportedArrayField(LinkedList<String>[] lists) {
     }
 }
