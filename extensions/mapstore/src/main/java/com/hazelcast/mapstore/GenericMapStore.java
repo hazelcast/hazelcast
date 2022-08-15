@@ -113,6 +113,10 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
     static final String MAPPING_NAME_COLUMN = "name";
 
+    static final String H2_PK_VIOLATION = "Unique index or primary key violation";
+    static final String PG_PK_VIOLATION = "ERROR: duplicate key value violates unique constraint";
+    static final String MYSQL_PK_VIOLATION = "Duplicate entry";
+
     private ILogger logger;
 
     private HazelcastInstanceImpl instance;
@@ -486,9 +490,9 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
         }
         try (SqlResult ignored = sql.execute(queries.storeInsert(), params)) {
         } catch (Exception e) {
-            if (e.getMessage() != null && (e.getMessage().contains("Unique index or primary key violation") ||
-                    e.getMessage().contains("ERROR: duplicate key value violates unique constraint") ||
-                    e.getMessage().contains("Duplicate entry"))) {
+            if (e.getMessage() != null && (e.getMessage().contains(H2_PK_VIOLATION) ||
+                    e.getMessage().contains(PG_PK_VIOLATION) ||
+                    e.getMessage().contains(MYSQL_PK_VIOLATION))) {
                 Object tmp = params[idPos];
                 params[idPos] = params[params.length - 1];
                 params[params.length - 1] = tmp;
