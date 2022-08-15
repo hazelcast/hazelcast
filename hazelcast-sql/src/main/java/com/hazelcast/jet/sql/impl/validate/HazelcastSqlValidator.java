@@ -183,20 +183,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     @Override
     public void validateInsert(final SqlInsert insert) {
         super.validateInsert(insert);
-        final RelDataType rowType = Objects.requireNonNull(getCatalogReader()
-                .getTable(((SqlIdentifier) insert.getTargetTable()).names))
-                .getRowType();
-
-        for (final RelDataTypeField field : rowType.getFieldList()) {
-            final RelDataType fieldType = field.getType();
-            if (!isHzObjectType(fieldType)) {
-                continue;
-            }
-
-            if (containsCycles(extractHzObjectType(fieldType), new HashSet<>())) {
-                throw QueryException.error("Upserts are not supported for cyclic data type columns");
-            }
-        }
+        validateUpsertRowType((SqlIdentifier) insert.getTargetTable());
     }
 
     private boolean containsCycles(final HazelcastObjectType type, final Set<String> discovered) {
@@ -351,6 +338,25 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
                 return call.getOperator().acceptCall(this, call);
             }
         });
+
+        validateUpsertRowType((SqlIdentifier) update.getTargetTable());
+    }
+
+    private void validateUpsertRowType(SqlIdentifier table) {
+        final RelDataType rowType = Objects.requireNonNull(getCatalogReader()
+                        .getTable((table).names))
+                .getRowType();
+
+        for (final RelDataTypeField field : rowType.getFieldList()) {
+            final RelDataType fieldType = field.getType();
+            if (!isHzObjectType(fieldType)) {
+                continue;
+            }
+
+            if (containsCycles(extractHzObjectType(fieldType), new HashSet<>())) {
+                throw QueryException.error("Upserts are not supported for cyclic data type columns");
+            }
+        }
     }
 
     @Override

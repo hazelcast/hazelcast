@@ -65,6 +65,22 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
         assertThatThrownBy(() -> client().getSql().execute("INSERT INTO tableD VALUES (1, ?)"))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessageContaining("Upserts are not supported for cyclic data type columns");
+
+        assertThatThrownBy(() -> client().getSql().execute("UPDATE tableA SET this = ? WHERE __key = 1"))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("Upserts are not supported for cyclic data type columns");
+
+        assertThatThrownBy(() -> client().getSql().execute("UPDATE tableB SET this = ? WHERE __key = 1"))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("Upserts are not supported for cyclic data type columns");
+
+        assertThatThrownBy(() -> client().getSql().execute("UPDATE tableC SET this = ? WHERE __key = 1"))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("Upserts are not supported for cyclic data type columns");
+
+        assertThatThrownBy(() -> client().getSql().execute("UPDATE tableD SET this = ? WHERE __key = 1"))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("Upserts are not supported for cyclic data type columns");
     }
 
     @Test
