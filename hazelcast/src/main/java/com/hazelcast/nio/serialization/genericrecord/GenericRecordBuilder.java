@@ -1084,6 +1084,10 @@ public interface GenericRecordBuilder {
      * Subclasses should also be created as `GenericRecord`.
      * <p>
      * Array items can not be null.
+     * <p>
+     * For {@link com.hazelcast.config.CompactSerializationConfig Compact}
+     * objects, it is not allowed write an array containing different item
+     * types or a {@link HazelcastSerializationException} will be thrown.
      *
      * @param fieldName name of the field as it is defined in its schema/class
      *                  definition. It should be composed of only alphanumeric
