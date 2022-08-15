@@ -85,7 +85,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void whenMapStoreInitOnMasterNotCalled_thenMapStoreInitOnNonMasterShouldFail() throws Exception {
+    public void whenMapStoreInitCalledOnNonMaster_thenInitAndLoadValue() throws Exception {
         createTable(mapName);
         insertItems(mapName, 1);
 
@@ -95,7 +95,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void givenMappingExists_whenMapStoreInit_thenThrowException() throws Exception {
+    public void givenValidMappingExists_whenMapStoreInit_thenInitAndLoadRecord() throws Exception {
         createTable(mapName);
         insertItems(mapName, 1);
         createMapping(mapName, MAPPING_PREFIX + mapName);
@@ -458,16 +458,22 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         createTable(mapName);
         GenericMapStore<Integer> mapStore = createMapStore();
 
-        GenericRecord person = GenericRecordBuilder.compact("Person")
-                                                   .setInt32("id", 0)
-                                                   .setString("name", "name-0")
-                                                   .build();
         Map<Integer, GenericRecord> people = new HashMap<>();
-        people.put(0, person);
+        for (int i = 0; i < 5; i++) {
+            GenericRecord person = GenericRecordBuilder.compact("Person")
+                                                       .setInt32("id", i)
+                                                       .setString("name", "name-" + i)
+                                                       .build();
+            people.put(i, person);
+        }
         mapStore.storeAll(people);
 
         assertJdbcRowsAnyOrder(mapName,
-                new Row(0, "name-0")
+                new Row(0, "name-0"),
+                new Row(1, "name-1"),
+                new Row(2, "name-2"),
+                new Row(3, "name-3"),
+                new Row(4, "name-4")
         );
     }
 
