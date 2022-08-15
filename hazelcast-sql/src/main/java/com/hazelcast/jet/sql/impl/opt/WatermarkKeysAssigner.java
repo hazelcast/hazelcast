@@ -101,7 +101,7 @@ public class WatermarkKeysAssigner {
                 FullScanPhysicalRel scan = (FullScanPhysicalRel) node;
                 int idx = scan.watermarkedColumnIndex();
                 if (relToWmKeyMapping.containsKey(scan)) {
-                    throw new UnsupportedOperationException("Stream-to-stream self JOINs are not supported yet.");
+                    throw new UnsupportedOperationException("The same scan used twice in the execution plan");
                 }
                 scan.setWatermarkKey(keyCounter);
                 Map<Integer, MutableByte> res = Collections.singletonMap(idx, new MutableByte(keyCounter));

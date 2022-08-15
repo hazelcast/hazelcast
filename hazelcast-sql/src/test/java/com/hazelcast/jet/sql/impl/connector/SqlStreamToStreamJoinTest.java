@@ -42,7 +42,7 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
 
     @BeforeClass
     public static void setUpClass() {
-        initialize(1, null);
+        initialize(3, null);
         sqlService = instance().getSql();
     }
 
@@ -78,9 +78,8 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 "SELECT * FROM s1 JOIN s2 ON s2.b BETWEEN s1.a AND s1.a + INTERVAL '0.002' SECOND ",
                 asList(
                         new Row(timestampTz(0L), timestampTz(1L)),
-                        new Row(timestampTz(1L), timestampTz(1L)),
-//                            new Row(timestampTz(2L), timestampTz(1L)), // TODO: understand why
                         new Row(timestampTz(0L), timestampTz(2L)),
+                        new Row(timestampTz(1L), timestampTz(1L)),
                         new Row(timestampTz(1L), timestampTz(2L)),
                         new Row(timestampTz(2L), timestampTz(2L))
                 )
@@ -228,14 +227,14 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
     @Test
     public void test_nonTemporalWatermarkedType() {
         TestStreamSqlConnector.create(sqlService, "stream1", singletonList("a"), singletonList(INTEGER), row(42));
-        TestStreamSqlConnector.create(sqlService, "stream2", singletonList("a"), singletonList(INTEGER), row(43));
+        TestStreamSqlConnector.create(sqlService, "stream2", singletonList("a"), singletonList(INTEGER), row(42));
 
         sqlService.execute("CREATE VIEW s1 AS " +
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), 1))");
         sqlService.execute("CREATE VIEW s2 AS " +
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(a), 1))");
 
-        assertTipOfStream("SELECT * FROM s1 JOIN s2 ON s1.a=s2.a", singletonList(new Row(42, 43)));
+        assertTipOfStream("SELECT * FROM s1 JOIN s2 ON s1.a=s2.a", singletonList(new Row(42, 42)));
     }
 
     @Test
@@ -467,6 +466,6 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM s s1 JOIN s s2 ON s1.a=s2.a"))
                 .hasCauseInstanceOf(UnsupportedOperationException.class)
-                .hasMessageContaining("Stream-to-stream self JOINs are not supported yet");
+                .hasMessageContaining("The same scan used twice in the execution plan");
     }
 }
