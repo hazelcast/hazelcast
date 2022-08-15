@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+    <suppress>
+        <notes><![CDATA[
+      False positive. The hazelcast:hazelcast component vulnerabilities are related to Hazelcast IMDG version and not the integration - hazelcast-gcp.
+      ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.hazelcast/hazelcast-gcp@.*$</packageUrl>
+        <cpe>cpe:/a:hazelcast:hazelcast</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+      False positive. The hazelcast:hazelcast component vulnerabilities are related to Hazelcast IMDG version and not the integration - hazelcast-azure.
+      ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.hazelcast/hazelcast-azure@.*$</packageUrl>
+        <cpe>cpe:/a:hazelcast:hazelcast</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+      False positive. The hazelcast:hazelcast component vulnerabilities are related to Hazelcast IMDG version and not the integration - hazelcast-hibernate.
+      ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.hazelcast/hazelcast-hibernate.*$</packageUrl>
+        <cpe>cpe:/a:hazelcast:hazelcast</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+      False positive. The hazelcast:hazelcast component vulnerabilities are related to Hazelcast IMDG version and not the integration - hazelcast-wm.
+      ]]></notes>
+        <packageUrl regex="true">^pkg:maven/com\.hazelcast/hazelcast-wm@.*$</packageUrl>
+        <cpe>cpe:/a:hazelcast:hazelcast</cpe>
+    </suppress>
+    <suppress>
+        <notes><![CDATA[
+        False positive - these log4j CVEs have the fixes present in the version 1.2.17.redhat-00008.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:maven/log4j/log4j@.*$</packageUrl>
+        <cve>CVE-2020-9488</cve>
+        <cve>CVE-2020-9493</cve>
+        <cve>CVE-2022-23307</cve>
+    </suppress>
+</suppressions>
