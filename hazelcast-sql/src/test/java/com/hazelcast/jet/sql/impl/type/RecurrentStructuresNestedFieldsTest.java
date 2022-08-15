@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.sql.impl.type;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -27,14 +27,44 @@ import java.io.Serializable;
 
 import static com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.createJavaMapping;
 import static com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.createJavaType;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@Ignore
 @RunWith(HazelcastSerialClassRunner.class)
 public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
         initializeWithClient(2, null, null);
+    }
+
+    @Test
+    public void test_cyclicTypeUpsertsValidationError() {
+        createJavaType("FCA", FullyConnectedA.class, "name VARCHAR", "b FCB", "c FCC");
+        createJavaType("FCB", FullyConnectedB.class, "name VARCHAR", "a FCA", "c FCC");
+        createJavaType("FCC", FullyConnectedC.class, "name VARCHAR", "a FCA", "b FCB");
+        createJavaMapping("tableA", FullyConnectedA.class, "this FCA");
+        createJavaMapping("tableB", FullyConnectedB.class, "this FCB");
+        createJavaMapping("tableC", FullyConnectedC.class, "this FCC");
+
+        createJavaType("DualGraph", DualPathGraph.class,
+                "name VARCHAR", "\"left\" DualGraph", "\"right\" DualGraph");
+        createJavaMapping("tableD", DualPathGraph.class, "this DualGraph");
+
+        assertThatThrownBy(() -> client().getSql().execute("INSERT INTO tableA VALUES (1, ?)"))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("Upserts are not supported for cyclic data type columns");
+
+        assertThatThrownBy(() -> client().getSql().execute("INSERT INTO tableB VALUES (1, ?)"))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("Upserts are not supported for cyclic data type columns");
+
+        assertThatThrownBy(() -> client().getSql().execute("INSERT INTO tableC VALUES (1, ?)"))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("Upserts are not supported for cyclic data type columns");
+
+        assertThatThrownBy(() -> client().getSql().execute("INSERT INTO tableD VALUES (1, ?)"))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessageContaining("Upserts are not supported for cyclic data type columns");
     }
 
     @Test
@@ -59,9 +89,9 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
         createJavaMapping("tableB", FullyConnectedB.class, "this FCB");
         createJavaMapping("tableC", FullyConnectedC.class, "this FCC");
 
-        client().getSql().execute("INSERT INTO tableA VALUES (1, ?)", a);
-        client().getSql().execute("INSERT INTO tableB VALUES (1, ?)", b);
-        client().getSql().execute("INSERT INTO tableC VALUES (1, ?)", c);
+        client().getMap("tableA").put(1L, a);
+        client().getMap("tableB").put(1L, b);
+        client().getMap("tableC").put(1L, c);
 
         assertRowsAnyOrder(client(), "SELECT (this).b.c.a.name, tableA.this.c.a.name FROM tableA",
                 rows(2, "A1", "A1"));
@@ -94,7 +124,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
         c2.setA(a1);
 
         createJavaMapping("test", FullyConnectedA.class, "this FCA");
-        client().getSql().execute("INSERT INTO test VALUES (1, ?)", a1);
+        client().getMap("test").put(1L, a1);
 
         assertRowsAnyOrder(client(),
                 "SELECT "
@@ -139,7 +169,7 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
         a5.setRight(a3);
 
         createJavaMapping("test", DualPathGraph.class, "this DualGraph");
-        client().getSql().execute("INSERT INTO test VALUES (1, ?)", a1);
+        client().getMap("test").put(1L, a1);
 
         assertRowsAnyOrder(client(), "SELECT "
                         + "(this).name, "
