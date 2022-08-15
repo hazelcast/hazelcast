@@ -16,6 +16,7 @@
 
 package com.hazelcast.nio.serialization.compact;
 
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
@@ -252,6 +253,9 @@ public interface CompactWriter {
 
     /**
      * Writes an array of nested compact objects.
+     * <p>
+     * It is not allowed to write an array containing different item types or
+     * a {@link HazelcastSerializationException} will be thrown.
      *
      * @param fieldName name of the field.
      * @param value     to be written.
