@@ -100,12 +100,13 @@ public class WatermarkKeysAssigner {
                 assert node.getInputs().isEmpty() : "FullScan not a leaf";
                 FullScanPhysicalRel scan = (FullScanPhysicalRel) node;
                 int idx = scan.watermarkedColumnIndex();
-                relToWmKeyMapping.computeIfAbsent(scan, key -> {
-                    scan.setWatermarkKey(keyCounter);
-                    Map<Integer, MutableByte> res = Collections.singletonMap(idx, new MutableByte(keyCounter));
-                    keyCounter++;
-                    return res;
-                });
+                if (relToWmKeyMapping.containsKey(scan)) {
+                    throw new UnsupportedOperationException("Stream-to-stream self JOINs are not supported yet.");
+                }
+                scan.setWatermarkKey(keyCounter);
+                Map<Integer, MutableByte> res = Collections.singletonMap(idx, new MutableByte(keyCounter));
+                relToWmKeyMapping.put(scan, res);
+                keyCounter++;
                 return;
             }
 
@@ -137,9 +138,6 @@ public class WatermarkKeysAssigner {
                 relToWmKeyMapping.put(calc, calcRefByteMap);
 
             } else if (node instanceof UnionPhysicalRel) {
-                // Note: here, we want to find intersection of all input watermarked fields,
-                //  and assign same keys for intersected items.
-                // TODO: test it.
                 UnionPhysicalRel union = (UnionPhysicalRel) node;
                 assert !union.getInputs().isEmpty();
 

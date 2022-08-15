@@ -486,9 +486,6 @@ public class CreateDagVisitor {
                         rel.getRight().getRowType().getFieldCount())
         );
 
-        // TODO: clarify it.
-        joinVertex.localParallelism(1);
-
         // region DAG
         Vertex leftInput = ((PhysicalRel) rel.getLeft()).accept(this);
         Vertex rightInput = ((PhysicalRel) rel.getRight()).accept(this);
@@ -499,11 +496,10 @@ public class CreateDagVisitor {
         if (joinInfo.isEquiJoin()) {
             left = left.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.leftEquiJoinIndices()));
             right = right.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.rightEquiJoinIndices()));
+        } else {
+            left = left.local();
+            right = right.distributed().broadcast();
         }
-//        else {
-//                left = left.local();
-//            right = right.distributed().unicast();
-//        }
 
         dag.edge(left);
         dag.edge(right);
