@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.serialization;
+package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.json.JsonEscape;
-import com.hazelcast.internal.serialization.impl.FieldOperations;
-import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
+import com.hazelcast.nio.serialization.FieldKind;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
