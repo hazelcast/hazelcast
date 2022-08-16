@@ -86,8 +86,8 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
                     fail(join, "Stream to stream JOIN supports INNER and LEFT/RIGHT OUTER JOIN types"));
         }
 
-        RelNode left = RelRule.convert(join.getLeft(), join.getTraitSet().replace(PHYSICAL));
-        RelNode right = RelRule.convert(join.getRight(), join.getTraitSet().replace(PHYSICAL));
+        RelNode left = RelRule.convert(join.getLeft(), join.getLeft().getTraitSet().replace(PHYSICAL));
+        RelNode right = RelRule.convert(join.getRight(), join.getRight().getTraitSet().replace(PHYSICAL));
 
         WatermarkedFields wmFields = watermarkedFields(join,
                 metadataQuery(left).extractWatermarkedFields(left),
@@ -131,30 +131,14 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
                             "difference between time values of the joined tables in both directions"));
         }
 
-        Map<Integer, Integer> leftInputToJoinedRowMapping = new HashMap<>();
-        Map<Integer, Integer> rightInputToJoinedRowMapping = new HashMap<>();
-
-        // calculate field refs mapping from joined row to input rows to
-        int i;
-        for (i = 0; i < left.getRowType().getFieldList().size(); ++i) {
-            leftInputToJoinedRowMapping.put(i, i);
-        }
-        for (int j = 0; j < right.getRowType().getFieldList().size(); ++j) {
-            rightInputToJoinedRowMapping.put(i++, j);
-        }
-
         call.transformTo(
                 new StreamToStreamJoinPhysicalRel(
                         join.getCluster(),
                         join.getTraitSet().replace(PHYSICAL),
-                        RelRule.convert(call.rel(1), call.rel(1).getTraitSet().replace(PHYSICAL)),
-                        RelRule.convert(call.rel(2), call.rel(2).getTraitSet().replace(PHYSICAL)),
+                        left,
+                        right,
                         join.getCondition(),
                         join.getJoinType(),
-                        metadataQuery(left).extractWatermarkedFields(left),
-                        metadataQuery(right).extractWatermarkedFields(right),
-                        leftInputToJoinedRowMapping,
-                        rightInputToJoinedRowMapping,
                         postponeTimeMap
                 )
         );
