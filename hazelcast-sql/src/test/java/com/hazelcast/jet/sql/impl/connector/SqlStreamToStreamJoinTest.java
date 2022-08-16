@@ -87,14 +87,14 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_leftStreamToStreamJoin() {
+    public void test_leftStreamToStreamJoinWithTimeBounds() {
         String stream = "stream1";
         TestStreamSqlConnector.create(
                 sqlService,
                 stream,
                 singletonList("a"),
                 singletonList(TIMESTAMP_WITH_TIME_ZONE),
-                row(timestampTz(1L)),
+                row(timestampTz(0L)),
                 row(timestampTz(2L)),
                 row(timestampTz(3L)),
                 row(timestampTz(4L)),
@@ -107,7 +107,6 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 stream2,
                 singletonList("b"),
                 singletonList(TIMESTAMP_WITH_TIME_ZONE),
-                row(timestampTz(0L)),
                 row(timestampTz(2L)),
                 row(timestampTz(5L)),
                 row(timestampTz(6L)),
@@ -116,24 +115,25 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
         );
 
         sqlService.execute("CREATE VIEW s1 AS " +
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.001' SECOND))");
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.002' SECOND))");
         sqlService.execute("CREATE VIEW s2 AS " +
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), INTERVAL '0.001' SECOND))");
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), INTERVAL '0.002' SECOND))");
 
         assertRowsEventuallyInAnyOrder(
-                "SELECT * FROM s1 LEFT JOIN s2 ON s1.a=s2.b ",
+                "SELECT * FROM s1 LEFT JOIN s2 ON s2.b BETWEEN s1.a AND s1.a + INTERVAL '0.001' SECOND ",
                 asList(
-                        new Row(timestampTz(1L), null),
+                        new Row(timestampTz(0L), null),
                         new Row(timestampTz(2L), timestampTz(2L)),
                         new Row(timestampTz(3L), null),
-                        new Row(timestampTz(4L), null),
-                        new Row(timestampTz(5L), timestampTz(5L))
+                        new Row(timestampTz(4L), timestampTz(5L)),
+                        new Row(timestampTz(5L), timestampTz(5L)),
+                        new Row(timestampTz(5L), timestampTz(6L))
                 )
         );
     }
 
     @Test
-    public void test_rightStreamToStreamJoin() {
+    public void test_rightStreamToStreamJoinWithEquiJoin() {
         String stream = "stream1";
         TestStreamSqlConnector.create(
                 sqlService,
@@ -163,9 +163,9 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
         );
 
         sqlService.execute("CREATE VIEW s1 AS " +
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.001' SECOND))");
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.003' SECOND))");
         sqlService.execute("CREATE VIEW s2 AS " +
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), INTERVAL '0.001' SECOND))");
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), INTERVAL '0.003' SECOND))");
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM s1 RIGHT JOIN s2 ON s1.a=s2.b",

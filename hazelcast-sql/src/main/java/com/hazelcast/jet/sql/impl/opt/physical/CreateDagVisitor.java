@@ -37,6 +37,7 @@ import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
+import com.hazelcast.jet.core.processor.DiagnosticProcessors;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
@@ -484,38 +485,19 @@ public class CreateDagVisitor {
 
         Vertex joinVertex = dag.newUniqueVertex(
                 "Stream-Stream Join",
-                StreamToStreamJoinP.supplier(
-                        joinInfo,
-                        leftExtractors,
-                        rightExtractors,
-                        postponeTimeMap,
-                        rel.getLeft().getRowType().getFieldCount(),
-                        rel.getRight().getRowType().getFieldCount())
-        );
+                DiagnosticProcessors.peekInputP(
+                        DiagnosticProcessors.peekOutputP(
+                                StreamToStreamJoinP.supplier(
+                                        joinInfo,
+                                        leftExtractors,
+                                        rightExtractors,
+                                        postponeTimeMap,
+                                        rel.getLeft().getRowType().getFieldCount(),
+                                        rel.getRight().getRowType().getFieldCount())
+                        )));
 
         // region DAG
-        Vertex leftInput = ((PhysicalRel) rel.getLeft()).accept(this);
-        Vertex rightInput = ((PhysicalRel) rel.getRight()).accept(this);
-
-        Edge left = Edge.from(leftInput).to(joinVertex, 0);
-        Edge right = Edge.from(rightInput).to(joinVertex, 1);
-
-        if (joinInfo.isEquiJoin()) {
-            left = left.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.leftEquiJoinIndices()));
-            right = right.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.rightEquiJoinIndices()));
-        } else if (joinInfo.isLeftOuter()) {
-            left = left.unicast().local();
-            right = right.distributed().broadcast();
-        } else if (joinInfo.isRightOuter()) {
-            left = left.distributed().broadcast();
-            right = right.unicast().local();
-        } else {
-            left = left.local();
-            right = right.distributed().broadcast();
-        }
-
-        dag.edge(left);
-        dag.edge(right);
+        connectStreamToStreamJoinInput(joinInfo, rel.getLeft(), rel.getRight(), joinVertex);
         // endregion
 
         return joinVertex;
@@ -669,6 +651,35 @@ public class CreateDagVisitor {
             left = left.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.leftEquiJoinIndices()));
             right = right.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.rightEquiJoinIndices()));
         }
+        dag.edge(left);
+        dag.edge(right);
+    }
+
+    private void connectStreamToStreamJoinInput(
+            JetJoinInfo joinInfo,
+            RelNode leftInputRel,
+            RelNode rightInputRel,
+            Vertex joinVertex
+    ) {
+        Vertex leftInput = ((PhysicalRel) leftInputRel).accept(this);
+        Vertex rightInput = ((PhysicalRel) rightInputRel).accept(this);
+
+        Edge left = Edge.from(leftInput).to(joinVertex, 0);
+        Edge right = Edge.from(rightInput).to(joinVertex, 1);
+        if (joinInfo.isRightOuter()) {
+            left = left.distributed().broadcast().priority();
+            right = right.unicast();
+        } else {
+            // Default strategy which also applies to
+            left = left.unicast();
+            right = right.distributed().broadcast();
+        }
+
+        if (joinInfo.isEquiJoin()) {
+            left = left.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.leftEquiJoinIndices()));
+            right = right.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.rightEquiJoinIndices()));
+        }
+
         dag.edge(left);
         dag.edge(right);
     }
