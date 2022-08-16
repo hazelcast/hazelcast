@@ -491,17 +491,6 @@ public class CreateDagVisitor {
                         postponeTimeMap,
                         rel.getLeft().getRowType().getFieldCount(),
                         rel.getRight().getRowType().getFieldCount()));
-//        DiagnosticProcessors.peekInputP(
-//                DiagnosticProcessors.peekOutputP(
-//                        new StreamToStreamJoinProcessorSupplier(
-//                                joinInfo,
-//                                leftExtractors,
-//                                rightExtractors,
-//                                postponeTimeMap,
-//                                rel.getLeft().getRowType().getFieldCount(),
-//                                rel.getRight().getRowType().getFieldCount())
-//                ))).localParallelism(1);
-
         // region DAG
         connectStreamToStreamJoinInput(joinInfo, rel.getLeft(), rel.getRight(), joinVertex);
         // endregion

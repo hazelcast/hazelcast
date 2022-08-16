@@ -34,7 +34,6 @@ import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -44,6 +43,7 @@ import java.util.Objects;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
+import static java.util.Collections.singletonMap;
 
 /**
  * Traverse a relational tree and assign watermark keys.
@@ -100,7 +100,7 @@ public class WatermarkKeysAssigner {
                 assert node.getInputs().isEmpty() : "FullScan not a leaf";
                 FullScanPhysicalRel scan = (FullScanPhysicalRel) node;
                 scan.setWatermarkKey(keyCounter);
-                Map<Integer, MutableByte> res = Collections.singletonMap(scan.watermarkedColumnIndex(), new MutableByte(keyCounter));
+                Map<Integer, MutableByte> res = singletonMap(scan.watermarkedColumnIndex(), new MutableByte(keyCounter));
                 Map<Integer, MutableByte> oldValue = relToWmKeyMapping.put(scan, res);
                 if (oldValue != null) {
                     // Calcite, thanks to the MEMO structure, can use the same rel in multiple
