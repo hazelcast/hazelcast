@@ -21,6 +21,7 @@ import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.query.impl.IndexUtils;
 
 import java.io.IOException;
@@ -43,7 +44,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * @see com.hazelcast.config.IndexType
  * @see com.hazelcast.config.MapConfig#setIndexConfigs(List)
  */
-public class IndexConfig implements IdentifiedDataSerializable {
+public class IndexConfig implements IdentifiedDataSerializable, Versioned {
     /** Default index type. */
     public static final IndexType DEFAULT_TYPE = IndexType.SORTED;
 
