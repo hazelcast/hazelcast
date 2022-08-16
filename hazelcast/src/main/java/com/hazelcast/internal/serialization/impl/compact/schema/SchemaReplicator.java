@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.compact.schema;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -65,6 +66,9 @@ public class SchemaReplicator {
      * Clears the local state of the replicator.
      */
     public void clear() {
+        for (CompletableFuture<Void> future : inFlightOperations.values()) {
+            future.completeExceptionally(new HazelcastException("The state of the SchemaReplicator is being cleared."));
+        }
         inFlightOperations.clear();
         replications.clear();
     }
@@ -203,7 +207,12 @@ public class SchemaReplicator {
         }
 
         SchemaReplication existing = replications.get(schemaId);
-        assert existing != null;
+        if (existing == null) {
+            // Can only happen after the #clear is called. At this point, we
+            // shouldn't be marking the schema as replicated, as either we
+            // are about to shut down, or healing from the split-brain.
+            return;
+        }
         existing.setStatus(SchemaReplicationStatus.REPLICATED);
     }
 

@@ -203,6 +203,10 @@ public final class CompactTestUtil {
         }
     }
 
+    /**
+     * Can only return the schemas for classes that are serialized with
+     * reflective serializer.
+     */
     public static Collection<Schema> getSchemasFor(Class<?>... classes) {
         ReflectiveCompactSerializer serializer = new ReflectiveCompactSerializer();
         ArrayList<Schema> schemas = new ArrayList<>(classes.length);

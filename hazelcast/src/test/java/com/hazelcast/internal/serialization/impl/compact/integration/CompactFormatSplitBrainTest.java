@@ -85,7 +85,7 @@ public class CompactFormatSplitBrainTest extends HazelcastTestSupport {
         fillEmployeeMapUsing(instance1);
         fillNodeMapUsing(instance1);
 
-        healCluster();
+        mergeCluster();
 
         assertEmployeeMapSizeUsing(instance5);
         assertNodeMapSizeUsing(instance5);
@@ -104,7 +104,7 @@ public class CompactFormatSplitBrainTest extends HazelcastTestSupport {
         fillEmployeeMapUsing(instance5);
         fillNodeMapUsing(instance5);
 
-        healCluster();
+        mergeCluster();
 
         assertEmployeeMapSizeUsing(instance1);
         assertNodeMapSizeUsing(instance1);
@@ -126,7 +126,7 @@ public class CompactFormatSplitBrainTest extends HazelcastTestSupport {
         fillNodeMapUsing(instance1);
         fillNodeMapUsing(instance5);
 
-        healCluster();
+        mergeCluster();
 
         assertEmployeeMapSizeUsing(instance1);
         assertNodeMapSizeUsing(instance5);
@@ -147,7 +147,7 @@ public class CompactFormatSplitBrainTest extends HazelcastTestSupport {
         // Tha data is only available in the smaller cluster
         fillNodeMapUsing(instance5);
 
-        healCluster();
+        mergeCluster();
 
         assertEmployeeMapSizeUsing(instance5);
         assertNodeMapSizeUsing(instance1);
@@ -171,7 +171,7 @@ public class CompactFormatSplitBrainTest extends HazelcastTestSupport {
         assertClusterSizeEventually(2, instance4, instance5);
     }
 
-    private void healCluster() {
+    private void mergeCluster() {
         for (HazelcastInstance splitAInstance : splitA) {
             for (HazelcastInstance splitBInstance : splitB) {
                 SplitBrainTestSupport.unblockCommunicationBetween(splitAInstance, splitBInstance);

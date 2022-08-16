@@ -23,7 +23,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import java.io.IOException;
 
 /**
- * Sent from the coordinator member to participants node so that they
+ * Sent from the coordinator member to participant nodes so that they
  * will mark the schema in their local as prepared, after putting it to their
  * in-memory registry and HotRestart data (if enabled).
  */

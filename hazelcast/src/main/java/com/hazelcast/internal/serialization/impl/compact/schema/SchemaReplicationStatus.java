@@ -22,9 +22,8 @@ package com.hazelcast.internal.serialization.impl.compact.schema;
  */
 public enum SchemaReplicationStatus {
     /**
-     * The schema is available in the in-memory registry of the member,
-     * persisted to the HotRestart (if enabled), and replicated in the
-     * WAN clusters (if enabled, only for the initiator node).
+     * The schema is available in the in-memory registry of the member and
+     * persisted to the HotRestart (if enabled).
      */
     PREPARED(0),
 
