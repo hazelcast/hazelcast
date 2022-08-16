@@ -257,6 +257,8 @@ public class IndexConfig implements IdentifiedDataSerializable, Versioned {
         out.writeInt(type.getId());
         writeNullableList(attributes, out);
         out.writeObject(bitmapIndexOptions);
+
+        // RU_COMPAT 5.1
         if (out.getVersion().isGreaterOrEqual(Versions.V5_2)) {
             out.writeObject(bTreeIndexConfig);
         }
@@ -268,6 +270,8 @@ public class IndexConfig implements IdentifiedDataSerializable, Versioned {
         type = IndexType.getById(in.readInt());
         attributes = readNullableList(in);
         bitmapIndexOptions = in.readObject();
+
+        // RU_COMPAT 5.1
         if (in.getVersion().isGreaterOrEqual(Versions.V5_2)) {
             bTreeIndexConfig = in.readObject();
         }
