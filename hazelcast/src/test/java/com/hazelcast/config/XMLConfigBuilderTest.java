@@ -4503,11 +4503,13 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         String xml = HAZELCAST_START_TAG
                 + "<sql>\n"
                 + "  <statement-timeout-millis>30</statement-timeout-millis>\n"
+                + "  <user-defined-types-enabled>true</user-defined-types-enabled>\n"
                 + "</sql>"
                 + HAZELCAST_END_TAG;
         Config config = new InMemoryXmlConfig(xml);
         SqlConfig sqlConfig = config.getSqlConfig();
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
+        assertTrue(sqlConfig.isUserDefinedTypesEnabled());
     }
 
     @Override

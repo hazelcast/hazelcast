@@ -3221,6 +3221,8 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             String nodeName = cleanNodeName(child);
             if (matches("statement-timeout-millis", nodeName)) {
                 sqlConfig.setStatementTimeoutMillis(Long.parseLong(getTextContent(child)));
+            } else if (matches("user-defined-types-enabled", nodeName)) {
+                sqlConfig.setUserDefinedTypesEnabled(getBooleanValue(getTextContent(child)));
             }
         }
     }

@@ -1076,6 +1076,7 @@
 
             <hz:sql>
                 <hz:statement-timeout-millis>30</hz:statement-timeout-millis>
+                <hz:user-defined-types-enabled>false</hz:user-defined-types-enabled>
             </hz:sql>
 
             <hz:jet enabled="true" resource-upload-enabled="true">

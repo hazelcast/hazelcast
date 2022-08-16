@@ -808,6 +808,9 @@ hazelcast:
     # set, then the value of this parameter will be used. Zero value means no
     # timeout. Negative values are prohibited.
     statement-timeout-millis: 0
+    # Enables or disables User Defined Types support in SQL, this includes ability to execute
+    # CREATE TYPE statements. Disabled by default due to experimental nature of UDTs.
+    user-defined-types-enabled: false
 
   jet:
     # Specifies whether if the jet is enabled or not in this member

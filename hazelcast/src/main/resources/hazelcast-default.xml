@@ -510,6 +510,7 @@
 
     <sql>
         <statement-timeout-millis>0</statement-timeout-millis>
+        <user-defined-types-enabled>false</user-defined-types-enabled>
     </sql>
 
     <jet enabled="false" resource-upload-enabled="false">

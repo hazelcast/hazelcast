@@ -2258,6 +2258,8 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                             "statementTimeoutMillis",
                             getLongValue("statement-timeout-millis", value)
                     );
+                } else if ("user-defined-types-enabled".equals(nodeName)) {
+                    sqlConfigBuilder.addPropertyValue("userDefinedTypesEnabled", getBooleanValue(value));
                 }
             }
 
