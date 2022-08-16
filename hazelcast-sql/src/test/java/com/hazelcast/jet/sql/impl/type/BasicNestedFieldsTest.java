@@ -201,29 +201,21 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
 
     @Test
     public void test_deepUpdate() {
-        createJavaType("AType", A.class, "name VARCHAR", "b BType");
-        createJavaType("BType", B.class, "name VARCHAR", "c CType");
-        createJavaType("CType", C.class, "name VARCHAR", "a AType");
+        initDefault();
+        execute("UPDATE test SET this = ("
+                + "(this).id, "
+                + "(this).name, "
+                + "("
+                + "(this).organization.id, "
+                + "(this).organization.name, "
+                + "("
+                + "(this).organization.office.id,"
+                + "'new-office-name'"
+                + ")))"
+                + "WHERE __key = 1");
 
-        final A a = new A("a");
-        final B b = new B("b");
-        final C c = new C("c");
-
-        a.b = b;
-        b.c = c;
-        c.a = a;
-
-        createJavaMapping("public", A.class, "this AType");
-
-        IMap<Long, A> map = client().getMap("public");
-        map.put(1L, a);
-
-        execute("UPDATE public SET this = (((public.this, 'c_2'), 'b_2'), 'a_2')");
-        assertRowsAnyOrder(client(), "SELECT "
-                + "public.public.this.name, "
-                + "public.public.this.b.name, "
-                + "public.public.this.b.c.name "
-                + "FROM public", rows(3, "a_2", "b_2", "c_2"));
+        assertRowsAnyOrder("SELECT (this).organization.office.name FROM test WHERE __key = 1",
+                rows(1, "new-office-name"));
     }
 
     @Test
