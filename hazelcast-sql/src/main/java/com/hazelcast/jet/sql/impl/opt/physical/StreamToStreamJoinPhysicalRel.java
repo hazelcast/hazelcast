@@ -59,15 +59,14 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
         RexNode predicate = analyzeCondition().getRemaining(getCluster().getRexBuilder());
         Expression<Boolean> nonEquiCondition = filter(schema(parameterMetadata), predicate, parameterMetadata);
 
-        RexNode equiJoinCondition = analyzeCondition().getEquiCondition(left, right, getCluster().getRexBuilder());
-        Expression<Boolean> equiCondition = filter(schema(parameterMetadata), equiJoinCondition, parameterMetadata);
+        Expression<Boolean> condition = filter(schema(parameterMetadata), getCondition(), parameterMetadata);
 
         return new JetJoinInfo(
                 getJoinType(),
                 analyzeCondition().leftKeys.toIntArray(),
                 analyzeCondition().rightKeys.toIntArray(),
                 nonEquiCondition,
-                equiCondition
+                condition
         );
     }
 
