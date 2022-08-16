@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -255,7 +256,9 @@ public class IndexConfig implements IdentifiedDataSerializable {
         out.writeInt(type.getId());
         writeNullableList(attributes, out);
         out.writeObject(bitmapIndexOptions);
-        out.writeObject(bTreeIndexConfig);
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_2)) {
+            out.writeObject(bTreeIndexConfig);
+        }
     }
 
     @Override
@@ -264,7 +267,9 @@ public class IndexConfig implements IdentifiedDataSerializable {
         type = IndexType.getById(in.readInt());
         attributes = readNullableList(in);
         bitmapIndexOptions = in.readObject();
-        bTreeIndexConfig = in.readObject();
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_2)) {
+            bTreeIndexConfig = in.readObject();
+        }
     }
 
     @Override
