@@ -37,8 +37,8 @@ import java.util.Map;
 public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
     private final WatermarkedFields leftWatermarkedFields;
     private final WatermarkedFields rightWatermarkedFields;
-    private final Map<Integer, Integer> jointRowToLeftInputMapping;
-    private final Map<Integer, Integer> jointRowToRightInputMapping;
+    private final Map<Integer, Integer> joinedRowToLeftInputMapping;
+    private final Map<Integer, Integer> joinedRowToRightInputMapping;
     // Same postponeTimeMap as described in the TDD, but uses field indexes instead of WM keys,
     // which are not assigned yet
     private final Map<Integer, Map<Integer, Long>> postponeTimeMap;
@@ -53,8 +53,8 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
             JoinRelType joinType,
             WatermarkedFields leftWatermarkedFields,
             WatermarkedFields rightWatermarkedFields,
-            Map<Integer, Integer> jointRowToLeftInputMapping,
-            Map<Integer, Integer> jointRowToRightInputMapping,
+            Map<Integer, Integer> joinedRowToLeftInputMapping,
+            Map<Integer, Integer> joinedRowToRightInputMapping,
             Map<Integer, Map<Integer, Long>> postponeTimeMap
     ) {
         super(cluster, traitSet, left, right, condition, joinType);
@@ -62,8 +62,8 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
         this.leftWatermarkedFields = leftWatermarkedFields;
         this.rightWatermarkedFields = rightWatermarkedFields;
 
-        this.jointRowToLeftInputMapping = jointRowToLeftInputMapping;
-        this.jointRowToRightInputMapping = jointRowToRightInputMapping;
+        this.joinedRowToLeftInputMapping = joinedRowToLeftInputMapping;
+        this.joinedRowToRightInputMapping = joinedRowToRightInputMapping;
 
         this.postponeTimeMap = postponeTimeMap;
     }
@@ -106,12 +106,12 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
         return postponeTimeMap;
     }
 
-    public Map<Integer, Integer> jointRowToLeftInputMapping() {
-        return jointRowToLeftInputMapping;
+    public Map<Integer, Integer> joinedRowToLeftInputMapping() {
+        return joinedRowToLeftInputMapping;
     }
 
-    public Map<Integer, Integer> jointRowToRightInputMapping() {
-        return jointRowToRightInputMapping;
+    public Map<Integer, Integer> joinedRowToRightInputMapping() {
+        return joinedRowToRightInputMapping;
     }
 
     @Override
@@ -137,8 +137,8 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
                 joinType,
                 leftWatermarkedFields,
                 rightWatermarkedFields,
-                jointRowToLeftInputMapping,
-                jointRowToRightInputMapping,
+                joinedRowToLeftInputMapping,
+                joinedRowToRightInputMapping,
                 postponeTimeMap
         );
     }

@@ -171,24 +171,24 @@ public class WatermarkKeysAssigner {
                     throw QueryException.error("Right input of stream-to-stream JOIN doesn't contain watermarks");
                 }
 
-                Map<Integer, Integer> jointToLeftInputMapping = join.jointRowToLeftInputMapping();
-                Map<Integer, Integer> jointToRightInputMapping = join.jointRowToRightInputMapping();
+                Map<Integer, Integer> joinedToLeftInputMapping = join.joinedRowToLeftInputMapping();
+                Map<Integer, Integer> joinedToRightInputMapping = join.joinedRowToRightInputMapping();
 
-                Map<Integer, MutableByte> jointRefByteMap = new HashMap<>();
-                for (Map.Entry<Integer, Integer> entry : jointToLeftInputMapping.entrySet()) {
+                Map<Integer, MutableByte> joinedRefByteMap = new HashMap<>();
+                for (Map.Entry<Integer, Integer> entry : joinedToLeftInputMapping.entrySet()) {
                     if (leftRefByteMap.get(entry.getValue()) != null) {
-                        jointRefByteMap.put(entry.getKey(), leftRefByteMap.get(entry.getValue()));
+                        joinedRefByteMap.put(entry.getKey(), leftRefByteMap.get(entry.getValue()));
                     }
                 }
 
-                for (Map.Entry<Integer, Integer> entry : jointToRightInputMapping.entrySet()) {
+                for (Map.Entry<Integer, Integer> entry : joinedToRightInputMapping.entrySet()) {
                     if (rightRefByteMap.get(entry.getValue()) != null) {
-                        jointRefByteMap.put(entry.getKey(), rightRefByteMap.get(entry.getValue()));
+                        joinedRefByteMap.put(entry.getKey(), rightRefByteMap.get(entry.getValue()));
                     }
                 }
 
-                assert leftRefByteMap.size() + rightRefByteMap.size() == jointRefByteMap.size();
-                relToWmKeyMapping.put(join, jointRefByteMap);
+                assert leftRefByteMap.size() + rightRefByteMap.size() == joinedRefByteMap.size();
+                relToWmKeyMapping.put(join, joinedRefByteMap);
             } else if (node instanceof Join) {
                 // Hash Join and Nested Loop Join just forward watermarks from left input.
                 Join join = (Join) node;

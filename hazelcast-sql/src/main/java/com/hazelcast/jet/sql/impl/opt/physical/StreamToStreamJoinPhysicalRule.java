@@ -25,7 +25,6 @@ import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.JoinRelType;
-import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
@@ -87,8 +86,6 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
                     fail(join, "Stream to stream JOIN supports INNER and LEFT/RIGHT OUTER JOIN types"));
         }
 
-        RexBuilder rb = join.getCluster().getRexBuilder();
-
         RelNode left = RelRule.convert(join.getLeft(), join.getTraitSet().replace(PHYSICAL));
         RelNode right = RelRule.convert(join.getRight(), join.getTraitSet().replace(PHYSICAL));
 
@@ -99,12 +96,14 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         // a postponeTimeMap just like the one described in the TDD, but we don't use WM keys, but field indexes here
         Map<Integer, Map<Integer, Long>> postponeTimeMap = new HashMap<>();
 
+        // extract time bounds from the join condition
         for (RexNode conjunction : RelOptUtil.conjunctions(join.getCondition())) {
             tryExtractTimeBound(conjunction, wmFields.getFieldIndexes(), postponeTimeMap);
         }
 
+        // check that there is at least one bound for the left time, involving right time, and one for
+        // right time, involving left time
         int leftColumns = join.getLeft().getRowType().getFieldCount();
-
         boolean foundLeft = false;
         boolean foundRight = false;
         for (Entry<Integer, Map<Integer, Long>> enOuter : postponeTimeMap.entrySet()) {
@@ -132,16 +131,16 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
                             "difference between time values of the joined tables in both directions"));
         }
 
-        Map<Integer, Integer> leftInputToJointRowMapping = new HashMap<>();
-        Map<Integer, Integer> rightInputToJointRowMapping = new HashMap<>();
+        Map<Integer, Integer> leftInputToJoinedRowMapping = new HashMap<>();
+        Map<Integer, Integer> rightInputToJoinedRowMapping = new HashMap<>();
 
-        // calculate field refs mapping from joint row to input rows to
+        // calculate field refs mapping from joined row to input rows to
         int i;
         for (i = 0; i < left.getRowType().getFieldList().size(); ++i) {
-            leftInputToJointRowMapping.put(i, i);
+            leftInputToJoinedRowMapping.put(i, i);
         }
         for (int j = 0; j < right.getRowType().getFieldList().size(); ++j) {
-            rightInputToJointRowMapping.put(i++, j);
+            rightInputToJoinedRowMapping.put(i++, j);
         }
 
         call.transformTo(
@@ -154,8 +153,8 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
                         join.getJoinType(),
                         metadataQuery(left).extractWatermarkedFields(left),
                         metadataQuery(right).extractWatermarkedFields(right),
-                        leftInputToJointRowMapping,
-                        rightInputToJointRowMapping,
+                        leftInputToJoinedRowMapping,
+                        rightInputToJoinedRowMapping,
                         postponeTimeMap
                 )
         );
@@ -321,7 +320,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
     /**
      * Extracts all watermarked fields represented in JOIN relation row type.
      *
-     * @return left, right input and joint watermarked fields from rel tree
+     * @return left, right input and joined watermarked fields from rel tree
      */
     private WatermarkedFields watermarkedFields(
             JoinLogicalRel join,
