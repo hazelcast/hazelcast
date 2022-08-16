@@ -158,7 +158,12 @@ public class CreateDagVisitor {
     public Vertex onUpdate(UpdatePhysicalRel rel) {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
 
-        Vertex vertex = getJetSqlConnector(table).updateProcessor(dag, table, rel.updates(parameterMetadata));
+        Vertex vertex = getJetSqlConnector(table).updateProcessor(
+                dag,
+                table,
+                rel.updatesAsRex(),
+                rel.updates(parameterMetadata)
+        );
         connectInput(rel.getInput(), vertex, null);
         return vertex;
     }
@@ -172,7 +177,8 @@ public class CreateDagVisitor {
     }
 
     public Vertex onFullScan(FullScanPhysicalRel rel) {
-        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        HazelcastTable hazelcastTable = rel.getTable().unwrap(HazelcastTable.class);
+        Table table = hazelcastTable.getTarget();
         collectObjectKeys(table);
 
         BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> policyProvider = rel.eventTimePolicyProvider();
@@ -180,6 +186,7 @@ public class CreateDagVisitor {
         return getJetSqlConnector(table).fullScanReader(
                 dag,
                 table,
+                hazelcastTable,
                 rel.filter(parameterMetadata),
                 rel.projection(parameterMetadata),
                 policyProvider != null

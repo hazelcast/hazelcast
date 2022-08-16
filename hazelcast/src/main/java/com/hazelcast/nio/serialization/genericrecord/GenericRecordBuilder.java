@@ -14,10 +14,13 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.serialization;
+package com.hazelcast.nio.serialization.genericrecord;
 
 import com.hazelcast.internal.serialization.impl.compact.DeserializedGenericRecordBuilder;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecordBuilder;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
@@ -1081,6 +1084,10 @@ public interface GenericRecordBuilder {
      * Subclasses should also be created as `GenericRecord`.
      * <p>
      * Array items can not be null.
+     * <p>
+     * For {@link com.hazelcast.config.CompactSerializationConfig Compact}
+     * objects, it is not allowed write an array containing different item
+     * types or a {@link HazelcastSerializationException} will be thrown.
      *
      * @param fieldName name of the field as it is defined in its schema/class
      *                  definition. It should be composed of only alphanumeric

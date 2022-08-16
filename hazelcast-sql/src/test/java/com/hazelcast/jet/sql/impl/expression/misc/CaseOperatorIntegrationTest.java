@@ -28,7 +28,12 @@ import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonMode;
 import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
+import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -44,6 +49,8 @@ import java.time.ZonedDateTime;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
+@RunWith(HazelcastSerialClassRunner.class)
 public class CaseOperatorIntegrationTest extends ExpressionTestSupport {
 
     @Test
@@ -64,35 +71,35 @@ public class CaseOperatorIntegrationTest extends ExpressionTestSupport {
     public void nested() {
         put(1);
 
-        checkValue0("select \n"
-                + "case 1 \n"
-                + "when \n"
-                + "       case when 2 = 2 then 1 end \n"
-                + "then 100 \n"
-                + "else 2 \n"
-                + "end \n"
+        checkValue0("select "
+                + "case 1 "
+                + "when "
+                + "       case when 2 = 2 then 1 end "
+                + "then 100 "
+                + "else 2 "
+                + "end "
                 + "from map", SqlColumnType.TINYINT, (byte) 100);
 
-        checkValue0("select \n"
-                + "case 1 \n"
-                + "when 1 then \n"
-                + "       case when 2 = 2 then 100 end \n"
-                + "else 2 \n"
-                + "end \n"
+        checkValue0("select "
+                + "case 1 "
+                + "when 1 then "
+                + "       case when 2 = 2 then 100 end "
+                + "else 2 "
+                + "end "
                 + "from map", SqlColumnType.TINYINT, (byte) 100);
 
-        checkValue0("select \n"
-                + "case 1 \n"
-                + "when 100 then 1 \n"
-                + "else \n"
-                + "       case when 2 = 2 then 100 end \n"
-                + "end \n"
+        checkValue0("select "
+                + "case 1 "
+                + "when 100 then 1 "
+                + "else "
+                + "       case when 2 = 2 then 100 end "
+                + "end "
                 + "from map", SqlColumnType.TINYINT, (byte) 100);
 
-        checkValue0("select t.* from \n"
+        checkValue0("select t.* from "
                 + "(select case 1 when 1 then 100 end from map) as t", SqlColumnType.TINYINT, (byte) 100);
 
-        checkValue0("select this from map \n"
+        checkValue0("select this from map "
                 + "where 100 = case this when 1 then 100 end", SqlColumnType.INTEGER, 1);
     }
 
@@ -102,8 +109,9 @@ public class CaseOperatorIntegrationTest extends ExpressionTestSupport {
 
         String sql = "select case else 2 end from map";
 
-        checkFailure0(sql, SqlErrorCode.PARSING, "Encountered \"else\" at line 1, column 13.\n" +
-                "Was expecting one of:");
+        checkFailure0(sql, SqlErrorCode.PARSING, "Encountered \"else\" at line 1, column 13."
+                + System.lineSeparator()
+                + "Was expecting one of:");
     }
 
     @Test
@@ -147,21 +155,21 @@ public class CaseOperatorIntegrationTest extends ExpressionTestSupport {
         put(1);
 
         checkValue0(
-                "select case this \n"
-                        + "when 1 then " + Byte.MAX_VALUE + " \n"
-                        + "when 2 then " + Short.MAX_VALUE + " \n"
-                        + "when 3 then " + Integer.MAX_VALUE + " \n"
-                        + "else " + Long.MAX_VALUE + " \n"
+                "select case this "
+                        + "when 1 then " + Byte.MAX_VALUE + " "
+                        + "when 2 then " + Short.MAX_VALUE + " "
+                        + "when 3 then " + Integer.MAX_VALUE + " "
+                        + "else " + Long.MAX_VALUE + " "
                         + "end from map",
                 SqlColumnType.BIGINT,
                 (long) Byte.MAX_VALUE);
 
         LocalDateTime dateTime = LocalDateTime.of(2021, 1, 1, 10, 0, 0);
         checkValue0(
-                "select case this \n"
-                        + "when 1 then CAST('2021-01-01T10:00' AS TIMESTAMP) \n"
-                        + "when 2 then CAST('2021-01-01' AS DATE) \n"
-                        + "else CAST('2021-01-01T10:00+00:00' as TIMESTAMP WITH TIME ZONE) \n"
+                "select case this "
+                        + "when 1 then CAST('2021-01-01T10:00' AS TIMESTAMP) "
+                        + "when 2 then CAST('2021-01-01' AS DATE) "
+                        + "else CAST('2021-01-01T10:00+00:00' as TIMESTAMP WITH TIME ZONE) "
                         + "end from map",
                 SqlColumnType.TIMESTAMP_WITH_TIME_ZONE,
                 OffsetDateTime.of(dateTime, ZoneId.systemDefault().getRules().getOffset(dateTime)));
@@ -264,11 +272,11 @@ public class CaseOperatorIntegrationTest extends ExpressionTestSupport {
 
     @Test
     public void dateTimeLiterals() {
-        String sql = "select case\n"
-                + "        when true\n"
-                + "            then this\n"
-                + "            else '%s'\n"
-                + "        end\n"
+        String sql = "select case"
+                + "        when true"
+                + "            then this "
+                + "            else '%s'"
+                + "        end "
                 + "from map";
 
         LocalDate date = LocalDate.now();

@@ -119,7 +119,8 @@ public final class IndexUtils {
             name = null;
         }
 
-        IndexConfig normalizedConfig = buildNormalizedConfig(mapName, config.getType(), name, normalizedAttributeNames);
+        IndexConfig normalizedConfig =
+            buildNormalizedConfig(mapName, config.getType(), name, normalizedAttributeNames, config.getBTreeIndexConfig());
 
         if (config.getType() == IndexType.BITMAP) {
             String uniqueKey = config.getBitmapIndexOptions().getUniqueKey();
@@ -135,7 +136,8 @@ public final class IndexUtils {
     }
 
     private static IndexConfig buildNormalizedConfig(String mapName, IndexType indexType, String indexName,
-                                                     List<String> normalizedAttributeNames) {
+                                                     List<String> normalizedAttributeNames,
+                                                     BTreeIndexConfig btreeIndexConfig) {
         IndexConfig newConfig = new IndexConfig().setType(indexType);
 
         StringBuilder nameBuilder = indexName == null
@@ -154,6 +156,8 @@ public final class IndexUtils {
         }
 
         newConfig.setName(indexName);
+
+        newConfig.setBTreeIndexConfig(new BTreeIndexConfig(btreeIndexConfig));
 
         return newConfig;
     }

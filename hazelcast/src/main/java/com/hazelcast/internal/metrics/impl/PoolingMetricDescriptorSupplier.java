@@ -52,7 +52,7 @@ class PoolingMetricDescriptorSupplier implements Supplier<MetricDescriptorImpl> 
         allCreated = new ArrayList<>(reusableData.getAllCreatedLastSize() + LAST_SIZE_INCREMENT);
         pool = reusableData.getPool();
         poolPtr = reusableData.getPoolPtr();
-        for (int i = 0; i < poolPtr; i++) {
+        for (int i = 0; i <= poolPtr; i++) {
             pool[i].setSupplier(this);
             allCreated.add(pool[i]);
         }
