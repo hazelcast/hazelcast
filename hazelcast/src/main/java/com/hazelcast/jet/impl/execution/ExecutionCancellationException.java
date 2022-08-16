@@ -24,6 +24,7 @@ public class ExecutionCancellationException extends CancellationException {
     private final Throwable cause;
 
     public ExecutionCancellationException(Throwable cause) {
+        super(cause.getMessage());
         this.cause = cause;
     }
 
