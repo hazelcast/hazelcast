@@ -191,7 +191,6 @@ public class WatermarkKeysAssigner {
                 relToWmKeyMapping.put(join, jointRefByteMap);
             } else if (node instanceof Join) {
                 // Hash Join and Nested Loop Join just forward watermarks from left input.
-                // TODO the above not true for s2s join - see TODO in HazelcastRelMdWatermarkedFields
                 Join join = (Join) node;
                 Map<Integer, MutableByte> refByteMap = relToWmKeyMapping.get(join.getLeft());
                 relToWmKeyMapping.put(node, refByteMap);

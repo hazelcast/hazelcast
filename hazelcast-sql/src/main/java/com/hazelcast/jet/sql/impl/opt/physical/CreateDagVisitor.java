@@ -496,6 +496,12 @@ public class CreateDagVisitor {
         if (joinInfo.isEquiJoin()) {
             left = left.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.leftEquiJoinIndices()));
             right = right.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.rightEquiJoinIndices()));
+        } else if (joinInfo.isLeftOuter()) {
+            left = left.unicast().local();
+            right = right.distributed().broadcast();
+        } else if (joinInfo.isRightOuter()) {
+            left = left.distributed().broadcast();
+            right = right.unicast().local();
         } else {
             left = left.local();
             right = right.distributed().broadcast();

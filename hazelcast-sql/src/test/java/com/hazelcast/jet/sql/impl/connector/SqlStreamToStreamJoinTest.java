@@ -87,6 +87,91 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_leftStreamToStreamJoin() {
+        String stream = "stream1";
+        TestStreamSqlConnector.create(
+                sqlService,
+                stream,
+                singletonList("a"),
+                singletonList(TIMESTAMP_WITH_TIME_ZONE),
+                row(timestampTz(1L)),
+                row(timestampTz(2L)),
+                row(timestampTz(3L)),
+                row(timestampTz(4L)),
+                row(timestampTz(5L))
+        );
+
+        String stream2 = "stream2";
+        TestStreamSqlConnector.create(
+                sqlService,
+                stream2,
+                singletonList("b"),
+                singletonList(TIMESTAMP_WITH_TIME_ZONE),
+                row(timestampTz(0L)),
+                row(timestampTz(2L)),
+                row(timestampTz(5L)),
+                row(timestampTz(6L)),
+                row(timestampTz(7L)),
+                row(timestampTz(10L))
+        );
+
+        sqlService.execute("CREATE VIEW s1 AS " +
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.001' SECOND))");
+        sqlService.execute("CREATE VIEW s2 AS " +
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), INTERVAL '0.001' SECOND))");
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM s1 LEFT JOIN s2 ON s1.a=s2.b ",
+                asList(
+                        new Row(timestampTz(1L), null),
+                        new Row(timestampTz(2L), timestampTz(2L)),
+                        new Row(timestampTz(3L), null),
+                        new Row(timestampTz(4L), null),
+                        new Row(timestampTz(5L), timestampTz(5L))
+                )
+        );
+    }
+
+    @Test
+    public void test_rightStreamToStreamJoin() {
+        String stream = "stream1";
+        TestStreamSqlConnector.create(
+                sqlService,
+                stream,
+                singletonList("a"),
+                singletonList(TIMESTAMP_WITH_TIME_ZONE),
+                row(timestampTz(0L)),
+                row(timestampTz(4L)),
+                row(timestampTz(8L)),
+                row(timestampTz(10L))
+        );
+
+        String stream2 = "stream2";
+        TestStreamSqlConnector.create(
+                sqlService,
+                stream2,
+                singletonList("b"),
+                singletonList(TIMESTAMP_WITH_TIME_ZONE),
+                row(timestampTz(1L)),
+                row(timestampTz(4L)),
+                row(timestampTz(9L))
+        );
+
+        sqlService.execute("CREATE VIEW s1 AS " +
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.001' SECOND))");
+        sqlService.execute("CREATE VIEW s2 AS " +
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), INTERVAL '0.001' SECOND))");
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM s1 RIGHT JOIN s2 ON s1.a=s2.b",
+                asList(
+                        new Row(null, timestampTz(1L)),
+                        new Row(timestampTz(4L), timestampTz(4L))
+                )
+        );
+    }
+
+    @Test
     public void test_joinHasTimestampBounds() {
         String stream = "stream1";
         TestStreamSqlConnector.create(
