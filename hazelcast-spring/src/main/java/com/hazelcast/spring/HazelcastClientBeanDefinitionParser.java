@@ -32,7 +32,6 @@ import com.hazelcast.client.config.ProxyFactoryConfig;
 import com.hazelcast.client.config.SocketOptions;
 import com.hazelcast.client.util.RandomLB;
 import com.hazelcast.client.util.RoundRobinLB;
-import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.CredentialsFactoryConfig;
 import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.InMemoryFormat;
@@ -335,11 +334,6 @@ public class HazelcastClientBeanDefinitionParser extends AbstractHazelcastBeanDe
             clientNetworkConfig.addPropertyValue("addresses", members);
 
             configBuilder.addPropertyValue("networkConfig", clientNetworkConfig.getBeanDefinition());
-        }
-
-        private void handleAliasedDiscoveryStrategy(Node node, BeanDefinitionBuilder builder, String name) {
-            AliasedDiscoveryConfig config = AliasedDiscoveryConfigUtils.newConfigFor(name);
-            fillAttributesForAliasedDiscoveryStrategy(config, node, builder, name);
         }
 
         private void handleSSLConfig(Node node, BeanDefinitionBuilder networkConfigBuilder) {
