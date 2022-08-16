@@ -23,6 +23,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -545,8 +546,8 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
         );
     }
 
-    // TODO: support self JOIN.
     @Test
+    @Ignore // https://github.com/hazelcast/hazelcast/issues/21984
     public void test_selfJoin() {
         TestStreamSqlConnector.create(
                 sqlService, "stream1", singletonList("a"), singletonList(TIMESTAMP_WITH_TIME_ZONE),

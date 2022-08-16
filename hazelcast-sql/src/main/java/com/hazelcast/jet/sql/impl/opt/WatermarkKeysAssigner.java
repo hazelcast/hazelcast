@@ -99,13 +99,14 @@ public class WatermarkKeysAssigner {
             if (node instanceof FullScanPhysicalRel) {
                 assert node.getInputs().isEmpty() : "FullScan not a leaf";
                 FullScanPhysicalRel scan = (FullScanPhysicalRel) node;
-                int idx = scan.watermarkedColumnIndex();
-                if (relToWmKeyMapping.containsKey(scan)) {
+                scan.setWatermarkKey(keyCounter);
+                Map<Integer, MutableByte> res = Collections.singletonMap(scan.watermarkedColumnIndex(), new MutableByte(keyCounter));
+                Map<Integer, MutableByte> oldValue = relToWmKeyMapping.put(scan, res);
+                if (oldValue != null) {
+                    // Calcite, thanks to the MEMO structure, can use the same rel in multiple
+                    // places in the tree. We don't support this for now, we need to rework it to use a different key.
                     throw new UnsupportedOperationException("The same scan used twice in the execution plan");
                 }
-                scan.setWatermarkKey(keyCounter);
-                Map<Integer, MutableByte> res = Collections.singletonMap(idx, new MutableByte(keyCounter));
-                relToWmKeyMapping.put(scan, res);
                 keyCounter++;
                 return;
             }

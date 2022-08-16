@@ -39,7 +39,6 @@ public final class PhysicalRules {
                 WatermarkPhysicalRule.INSTANCE,
                 SlidingWindowPhysicalRule.INSTANCE,
                 DropLateItemsPhysicalRule.INSTANCE,
-                // DropLateItemEliminateRule.INSTANCE,
 
                 // Aggregate rules
                 AggregateBatchPhysicalRule.INSTANCE,
@@ -54,7 +53,7 @@ public final class PhysicalRules {
                 // Join rules
                 JoinPhysicalRule.INSTANCE,
                 StreamToStreamJoinPhysicalRule.INSTANCE,
-                StreamToStreamJoinDropLateItemsEliminationRule.INSTANCE,
+                StreamToStreamJoinDropLateItemsEliminateRule.INSTANCE,
                 JoinValidationRule.INSTANCE,
 
                 // Union rules

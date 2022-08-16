@@ -49,12 +49,12 @@ import static org.apache.calcite.plan.volcano.HazelcastRelSubsetUtil.unwrapSubse
  * moves it out.
  */
 @Value.Enclosing
-public class StreamToStreamJoinDropLateItemsEliminationRule extends RelRule<RelRule.Config> implements TransformationRule {
+public class StreamToStreamJoinDropLateItemsEliminateRule extends RelRule<RelRule.Config> implements TransformationRule {
 
     @Value.Immutable
     public interface Config extends RelRule.Config {
-        Config DEFAULT = ImmutableStreamToStreamJoinDropLateItemsEliminationRule.Config.builder()
-                .description(StreamToStreamJoinDropLateItemsEliminationRule.class.getSimpleName())
+        Config DEFAULT = ImmutableStreamToStreamJoinDropLateItemsEliminateRule.Config.builder()
+                .description(StreamToStreamJoinDropLateItemsEliminateRule.class.getSimpleName())
                 .operandSupplier(b0 -> b0
                         .operand(StreamToStreamJoinPhysicalRel.class)
                         .trait(PHYSICAL)
@@ -65,13 +65,13 @@ public class StreamToStreamJoinDropLateItemsEliminationRule extends RelRule<RelR
 
         @Override
         default RelOptRule toRule() {
-            return new StreamToStreamJoinDropLateItemsEliminationRule(this);
+            return new StreamToStreamJoinDropLateItemsEliminateRule(this);
         }
     }
 
-    public static final RelOptRule INSTANCE = new StreamToStreamJoinDropLateItemsEliminationRule(Config.DEFAULT);
+    public static final RelOptRule INSTANCE = new StreamToStreamJoinDropLateItemsEliminateRule(Config.DEFAULT);
 
-    protected StreamToStreamJoinDropLateItemsEliminationRule(Config config) {
+    protected StreamToStreamJoinDropLateItemsEliminateRule(Config config) {
         super(config);
     }
 

@@ -658,6 +658,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             QueryParameterMetadata parameterMetadata
     ) {
         WatermarkKeysAssigner wmKeysAssigner = new WatermarkKeysAssigner(physicalRel);
+        // we should assign watermark keys also for bounded jobs, but due to the
+        // issue in key assigner we only do it for unbounded
+        // See https://github.com/hazelcast/hazelcast/issues/21984
         if (OptUtils.isUnbounded(physicalRel)) {
             wmKeysAssigner.assignWatermarkKeys();
             logger.finest("Watermark keys assigned");
