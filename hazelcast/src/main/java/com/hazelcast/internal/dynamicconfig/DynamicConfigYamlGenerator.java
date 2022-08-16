@@ -86,10 +86,6 @@ import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.internal.util.CollectionUtil;
 import com.hazelcast.memory.Capacity;
-import org.snakeyaml.engine.v2.api.Dump;
-import org.snakeyaml.engine.v2.api.DumpSettings;
-import org.snakeyaml.engine.v2.common.FlowStyle;
-
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -98,15 +94,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-
-import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
-import static com.hazelcast.config.ConfigXmlGenerator.MASK_FOR_SENSITIVE_DATA;
-import static com.hazelcast.config.ConfigXmlGenerator.endpointConfigElementName;
-import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
-import static com.hazelcast.internal.config.ConfigSections.LICENSE_KEY;
-import static com.hazelcast.internal.dynamicconfig.DynamicConfigXmlGenerator.classNameOrImplClass;
-import static com.hazelcast.internal.util.StringUtil.isNullOrEmpty;
-import static java.lang.Boolean.TRUE;
+import org.snakeyaml.engine.v2.api.Dump;
+import org.snakeyaml.engine.v2.api.DumpSettings;
+import org.snakeyaml.engine.v2.common.FlowStyle;
 
 /**
  * YAML counterpart of {@link ConfigXmlGenerator}. Note that this class isn't
@@ -119,7 +109,7 @@ public class DynamicConfigYamlGenerator {
 
     private static final int INDENT = 2;
     private static final boolean DEFAULT_MASK_SENSITIVE_FIELDS = false;
-    private static boolean maskSensitiveFields = DEFAULT_MASK_SENSITIVE_FIELDS;
+    private static volatile boolean maskSensitiveFields = DEFAULT_MASK_SENSITIVE_FIELDS;
 
     String generate(Config config, boolean isMask) {
         maskSensitiveFields = isMask;
