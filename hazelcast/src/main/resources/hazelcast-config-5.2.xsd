@@ -6031,10 +6031,11 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="shared" type="xs:boolean" minOccurs="0" default="false">
+            <xs:element name="shared" type="xs:boolean" minOccurs="0" default="true">
                 <xs:annotation>
                     <xs:documentation>
-                        If true reuse an instance of JDBC pool or any other storage driver (e.g. kafka client) between jobs or instances of MapStore.
+                        If true reuse an instance of JDBC pool or any other storage driver (e.g. kafka client) between jobs or
+                        instances of MapStore.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

@@ -14,10 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.nio.serialization;
+package com.hazelcast.nio.serialization.genericrecord;
 
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.map.IMap;
+import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.nio.serialization.FieldKind;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.nio.serialization.Portable;
+import com.hazelcast.nio.serialization.PortableFactory;
 import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
