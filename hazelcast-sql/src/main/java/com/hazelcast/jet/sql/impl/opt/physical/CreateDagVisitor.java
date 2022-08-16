@@ -37,7 +37,6 @@ import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
-import com.hazelcast.jet.core.processor.DiagnosticProcessors;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
@@ -485,16 +484,24 @@ public class CreateDagVisitor {
 
         Vertex joinVertex = dag.newUniqueVertex(
                 "Stream-Stream Join",
-                DiagnosticProcessors.peekInputP(
-                        DiagnosticProcessors.peekOutputP(
-                                StreamToStreamJoinP.supplier(
-                                        joinInfo,
-                                        leftExtractors,
-                                        rightExtractors,
-                                        postponeTimeMap,
-                                        rel.getLeft().getRowType().getFieldCount(),
-                                        rel.getRight().getRowType().getFieldCount())
-                        )));
+                StreamToStreamJoinP.supplier(
+                        joinInfo,
+                        leftExtractors,
+                        rightExtractors,
+                        postponeTimeMap,
+                        rel.getLeft().getRowType().getFieldCount(),
+                        rel.getRight().getRowType().getFieldCount())
+        );
+//        DiagnosticProcessors.peekInputP(
+//                DiagnosticProcessors.peekOutputP(
+//                        StreamToStreamJoinP.supplier(
+//                                joinInfo,
+//                                leftExtractors,
+//                                rightExtractors,
+//                                postponeTimeMap,
+//                                rel.getLeft().getRowType().getFieldCount(),
+//                                rel.getRight().getRowType().getFieldCount())
+//                )));
 
         // region DAG
         connectStreamToStreamJoinInput(joinInfo, rel.getLeft(), rel.getRight(), joinVertex);
@@ -667,7 +674,7 @@ public class CreateDagVisitor {
         Edge left = Edge.from(leftInput).to(joinVertex, 0);
         Edge right = Edge.from(rightInput).to(joinVertex, 1);
         if (joinInfo.isRightOuter()) {
-            left = left.distributed().broadcast().priority();
+            left = left.distributed().broadcast();
             right = right.unicast();
         } else {
             // Default strategy which also applies to
