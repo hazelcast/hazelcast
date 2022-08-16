@@ -16,13 +16,12 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.JoinLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.metadata.WatermarkedFields;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
+import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.JoinRelType;
@@ -31,19 +30,18 @@ import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.rex.RexVisitorImpl;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.type.SqlTypeName;
 import org.immutables.value.Value;
 
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
-import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.metadataQuery;
@@ -94,48 +92,45 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         RelNode left = RelRule.convert(join.getLeft(), join.getTraitSet().replace(PHYSICAL));
         RelNode right = RelRule.convert(join.getRight(), join.getTraitSet().replace(PHYSICAL));
 
-        WatermarkedFields leftWmFields = metadataQuery(left).extractWatermarkedFields(left);
-        WatermarkedFields rightWmFields = metadataQuery(right).extractWatermarkedFields(right);
+        WatermarkedFields wmFields = watermarkedFields(join,
+                metadataQuery(left).extractWatermarkedFields(left),
+                metadataQuery(right).extractWatermarkedFields(right));
 
-        // region checks
-        if (leftWmFields == null || leftWmFields.isEmpty()) {
-            call.transformTo(fail(join, "Left input of stream-to-stream JOIN must contain watermarked columns"));
-            return;
+        // a postponeTimeMap just like the one described in the TDD, but we don't use WM keys, but field indexes here
+        Map<Integer, Map<Integer, Long>> postponeTimeMap = new HashMap<>();
+
+        for (RexNode conjunction : RelOptUtil.conjunctions(join.getCondition())) {
+            tryExtractTimeBound(conjunction, wmFields.getFieldIndexes(), postponeTimeMap);
         }
 
-        if (rightWmFields == null || rightWmFields.isEmpty()) {
-            call.transformTo(fail(join, "Right input of stream-to-stream JOIN must contain watermarked columns"));
-            return;
+        int leftColumns = join.getLeft().getRowType().getFieldCount();
+
+        boolean foundLeft = false;
+        boolean foundRight = false;
+        for (Entry<Integer, Map<Integer, Long>> enOuter : postponeTimeMap.entrySet()) {
+            for (Iterator<Entry<Integer, Long>> innerIterator = enOuter.getValue().entrySet().iterator(); innerIterator.hasNext(); ) {
+                Entry<Integer, Long> enInner = innerIterator.next();
+                if (enOuter.getKey() < leftColumns) {
+                    if (enInner.getKey() < leftColumns) {
+                        innerIterator.remove();
+                        continue;
+                    }
+                    foundLeft = true;
+                } else {
+                    if (enInner.getKey() >= leftColumns) {
+                        innerIterator.remove();
+                        continue;
+                    }
+                    foundRight = true;
+                }
+            }
         }
 
-        WatermarkedFields watermarkedFields = watermarkedFields(join, leftWmFields, rightWmFields);
-        if (watermarkedFields.isEmpty()) {
-            call.transformTo(fail(join, "Stream-to-stream JOIN must contain watermarked columns"));
-            return;
+        if (!foundLeft || !foundRight) {
+            call.transformTo(
+                    fail(join, "A stream-to-stream join must have a join condition constraining the maximum " +
+                            "difference between time values of the joined tables in both directions"));
         }
-
-        BoundsExtractorVisitor visitor = new BoundsExtractorVisitor(watermarkedFields);
-        RexNode predicate;
-        if (join.analyzeCondition().isEqui()) {
-            predicate = join.getCondition();
-        } else {
-            predicate = join.analyzeCondition().getRemaining(rb);
-        }
-
-        if (!(predicate instanceof RexCall)) {
-            call.transformTo(fail(join, visitor.errorMessage()));
-            return;
-        }
-
-        predicate.accept(visitor);
-
-        if (!visitor.isValid) {
-            call.transformTo(fail(join, visitor.errorMessage()));
-            return;
-        }
-        // endregion
-
-        Map<Integer, Map<Integer, Long>> postponeMap = assemblePostponeTimeMap(visitor);
 
         Map<Integer, Integer> leftInputToJointRowMapping = new HashMap<>();
         Map<Integer, Integer> rightInputToJointRowMapping = new HashMap<>();
@@ -157,13 +152,156 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
                         RelRule.convert(call.rel(2), call.rel(2).getTraitSet().replace(PHYSICAL)),
                         join.getCondition(),
                         join.getJoinType(),
-                        leftWmFields,
-                        rightWmFields,
+                        metadataQuery(left).extractWatermarkedFields(left),
+                        metadataQuery(right).extractWatermarkedFields(right),
                         leftInputToJointRowMapping,
                         rightInputToJointRowMapping,
-                        postponeMap
+                        postponeTimeMap
                 )
         );
+    }
+
+    /**
+     * Add one time bound from the condition to the `postponeTimeMap`, if the
+     * condition represents a time bound. It checks if the referenced fields are
+     * watermarked, but doesn't check, if they are from a different side of the
+     * join.
+     */
+    // package-visible for test
+    static void tryExtractTimeBound(
+            RexNode condition,
+            Set<Integer> wmFieldIndexes,
+            Map<Integer, Map<Integer, Long>> postponeTimeMap
+    ) {
+        /*
+        The canonical form is:
+            timeA >= timeB - constant
+
+        We allow any form of the expression with addends moved in any order, such as:
+            timeA - timeB + constant >= 0
+            timeA + constant >= timeB
+            timeB <= timeA + constant
+
+        All of the above expressions are equivalent.
+
+        We also allow multiple constants:
+            timeA + constant1 >= timeB + constant2
+
+        In the algorithm below we move all the addends to the left side of the comparison
+        operator, and we look for one field with positive sign, one with negative sign, and we
+        add all the constants. We ignore edge cases, such as `-timeA + timeB`, which is not
+        defined, because we don't have `+` operator for instants, nor a unary `-`. But we
+        can putatively reorder them to have `timeB - timeA`. We also sum all the constants.
+        We ignore cases when we hit an overflow: SQL doesn't prescribe the execution order
+        of expressions in cases when `a + b - c` would overflow, but `a - c + b` won't, we are
+        still allowed to do such transformation (at least I surmise this to be the case ;-).
+        Anyway, when using simple expressions with one field with positive sign on either
+        side, and one constant, these edge cases do not happen.
+         */
+
+        boolean isGt;
+        boolean isLt;
+
+        switch (condition.getKind()) {
+            case EQUALS:
+                isGt = true;
+                isLt = true;
+                break;
+
+            case GREATER_THAN:
+            case GREATER_THAN_OR_EQUAL:
+                isGt = true;
+                isLt = false;
+                break;
+
+            case LESS_THAN:
+            case LESS_THAN_OR_EQUAL:
+                isGt = false;
+                isLt = true;
+                break;
+
+            case IS_NOT_DISTINCT_FROM:
+                // We don't support IS NOT DISTINCT FROM, because in that case we should join rows
+                // where the timestamp is null on both sides, and that doesn't allow us to use the time bound,
+                // we would have to buffer those rows forever.
+                return;
+
+            case BETWEEN:
+                // BETWEEN should have been converted to `a >= b AND a <= c` at this point, but if it isn't,
+                // rather report it
+                throw new RuntimeException("Unexpected BETWEEN");
+
+            default:
+                return;
+        }
+
+        Integer[] positiveField = {null};
+        Integer[] negativeField = {null};
+        long[] constantsSum = {0};
+
+        if (!addAddends(((RexCall) condition).getOperands().get(0), positiveField, negativeField, constantsSum, false)
+                || !addAddends(((RexCall) condition).getOperands().get(1), positiveField, negativeField, constantsSum, true)) {
+            return;
+        }
+
+        if (positiveField[0] == null || negativeField[0] == null) {
+            // a field is not on both sides
+            return;
+        }
+
+        if (!wmFieldIndexes.contains(positiveField[0]) || !wmFieldIndexes.contains(negativeField[0])) {
+            // some used field isn't watermarked
+            return;
+        }
+
+        if (isLt) {
+            postponeTimeMap
+                    .computeIfAbsent(positiveField[0], x -> new HashMap<>())
+                    .merge(negativeField[0], constantsSum[0], Long::min);
+        }
+
+        if (isGt) {
+            postponeTimeMap
+                    .computeIfAbsent(negativeField[0], x -> new HashMap<>())
+                    .merge(positiveField[0], -constantsSum[0], Long::min);
+        }
+    }
+
+    private static boolean addAddends(RexNode expr, Integer[] positiveField, Integer[] negativeField, long[] constantsSum, boolean inverse) {
+        if (expr instanceof RexLiteral) {
+            RexLiteral literal = (RexLiteral) expr;
+            if (!SqlTypeName.DAY_INTERVAL_TYPES.contains(literal.getTypeName())
+                    && !SqlTypeName.INT_TYPES.contains(literal.getTypeName())) {
+                return false;
+            }
+
+            Long value = literal.getValueAs(Long.class);
+            if (value == null) {
+                return false;
+            }
+            constantsSum[0] += (inverse ? 1 : -1) * value;
+            return true;
+        }
+
+        if (expr instanceof RexInputRef) {
+            Integer[] field = inverse ? positiveField : negativeField;
+            if (field[0] != null) {
+                return false;
+            }
+            field[0] = ((RexInputRef) expr).getIndex();
+            return true;
+        }
+
+        if (expr.getKind() == SqlKind.PLUS || expr.getKind() == SqlKind.MINUS) {
+            // if this is a subtraction, inverse the 2nd operand
+            boolean secondOperandInverse = expr.getKind() == SqlKind.MINUS ? !inverse : inverse;
+
+            List<RexNode> operands = ((RexCall) expr).getOperands();
+            return addAddends(operands.get(0), positiveField, negativeField, constantsSum, inverse)
+                    && addAddends(operands.get(1), positiveField, negativeField, constantsSum, secondOperandInverse);
+        }
+
+        return false;
     }
 
     private MustNotExecutePhysicalRel fail(RelNode node, String message) {
@@ -175,19 +313,6 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         );
     }
 
-    private Map<Integer, Map<Integer, Long>> assemblePostponeTimeMap(BoundsExtractorVisitor visitor) {
-        Map<Integer, Map<Integer, Long>> postponeMap = new HashMap<>();
-
-        Map<Integer, Long> leftBoundMap = new HashMap<>();
-        leftBoundMap.put(visitor.leftBound.f1(), visitor.leftBound.f2());
-        postponeMap.put(visitor.leftBound.f0(), leftBoundMap);
-
-        Map<Integer, Long> rightBoundMap = new HashMap<>();
-        rightBoundMap.put(visitor.rightBound.f1(), visitor.rightBound.f2());
-        postponeMap.put(visitor.rightBound.f0(), rightBoundMap);
-        return postponeMap;
-    }
-
     /**
      * Extracts all watermarked fields represented in JOIN relation row type.
      *
@@ -196,7 +321,8 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
     private WatermarkedFields watermarkedFields(
             JoinLogicalRel join,
             WatermarkedFields leftFields,
-            WatermarkedFields rightFields) {
+            WatermarkedFields rightFields
+    ) {
         final int offset = join.getLeft().getRowType().getFieldList().size();
         Set<Integer> shiftedRightProps = rightFields.getFieldIndexes()
                 .stream()
@@ -204,166 +330,5 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
                 .collect(Collectors.toSet());
 
         return leftFields.union(new WatermarkedFields(shiftedRightProps));
-    }
-
-    @SuppressWarnings("CheckStyle")
-    private static final class BoundsExtractorVisitor extends RexVisitorImpl<Void> {
-        private Tuple3<Integer, Integer, Long> leftBound;
-        private Tuple3<Integer, Integer, Long> rightBound;
-        private boolean isValid = true;
-
-        private final WatermarkedFields watermarkedFields;
-        private String errorMessage;
-
-        private BoundsExtractorVisitor(WatermarkedFields watermarkedFields) {
-            super(true);
-            this.watermarkedFields = watermarkedFields;
-        }
-
-        public String errorMessage() {
-            String defaultErrorMessage = "Stream-to-stream JOIN condition must contain time boundness predicate";
-            return errorMessage == null ? defaultErrorMessage : errorMessage;
-        }
-
-        // Note: we're expecting equality or `a BETWEEN b and c` call here. Anything else will be rejected.
-        @Override
-        public Void visitCall(RexCall call) {
-            switch (call.getKind()) {
-                case AND:
-                    return super.visitCall(call);
-                case EQUALS:
-                    List<RexNode> operands = call.getOperands();
-                    if (operands.get(0) instanceof RexInputRef && operands.get(1) instanceof RexInputRef) {
-                        RexInputRef leftOp = (RexInputRef) operands.get(0);
-                        RexInputRef rightOp = (RexInputRef) operands.get(1);
-                        leftBound = tuple3(leftOp.getIndex(), rightOp.getIndex(), 0L);
-                        rightBound = tuple3(rightOp.getIndex(), leftOp.getIndex(), 0L);
-                    } else {
-                        isValid = false;
-                        errorMessage = "Only time bound / equality condition are supported for stream-to-stream JOIN";
-                    }
-                    return null;
-                case GREATER_THAN:
-                case GREATER_THAN_OR_EQUAL:
-                    // We assume that right operand is left bound
-                    leftBound = extractBoundFromComparisonCall(call, watermarkedFields, true);
-                    break;
-                case LESS_THAN:
-                case LESS_THAN_OR_EQUAL:
-                    // We assume that right operand is right bound
-                    rightBound = extractBoundFromComparisonCall(call, watermarkedFields, false);
-                    break;
-                default:
-                    return null;
-            }
-            return super.visitCall(call);
-        }
-
-        /**
-         * Extract time boundedness from GTE/LTE calls represented as
-         * `$ref1 >= $ref2 + constant1` or `$ref1 <= $ref2 + constant2`.
-         * <p>
-         * It's needed to enlighten mathematical representation for group of canonical time-bound in-equations.
-         * Long story short, we reduce existing bounds to such in-equations system:
-         * <pre>
-         * right.time >= left.time - left_bound
-         * left.time >= right.time - right_bound
-         * </pre>
-         * Then, we represent this in-equations system as so-called 'postpone map':
-         * <pre>
-         * [left_wm_key -> [right_wm_key -> left_bound]]
-         * [right_wm_key -> [left_wm_key -> right_bound]]
-         * </pre>
-         * <p>
-         * <a href="https://github.com/hazelcast/hazelcast/blob/master/docs/design/sql/15-stream-to-stream-join.md">Read more</a>
-         *
-         * @return Tuple [ref1_index, ref2_index, bound]
-         */
-        private Tuple3<Integer, Integer, Long> extractBoundFromComparisonCall(
-                RexCall call,
-                WatermarkedFields wmFields,
-                boolean isLeft
-        ) {
-            assert call.getOperands().get(0) instanceof RexInputRef;
-            RexInputRef leftOp = (RexInputRef) call.getOperands().get(0);
-            RexNode rightOp = call.getOperands().get(1);
-
-            Tuple3<Integer, Integer, Long> boundToReturn = null;
-
-            if (rightOp instanceof RexCall) {
-                Tuple2<Integer, Long> timeBound = extractTimeBoundFromBinaryOp((RexCall) rightOp, wmFields);
-                boundToReturn = isValid ? tuple3(leftOp.getIndex(), timeBound.f0(), timeBound.f1()) : null;
-            } else if (rightOp instanceof RexInputRef) {
-                RexInputRef rightIRef = (RexInputRef) rightOp;
-                boundToReturn = tuple3(leftOp.getIndex(), rightIRef.getIndex(), 0L);
-            } else {
-                isValid = false;
-            }
-            if (isValid && isLeft) {
-                boundToReturn = tuple3(boundToReturn.f1(), boundToReturn.f0(), -boundToReturn.f2());
-            }
-
-            return boundToReturn;
-        }
-
-        /**
-         * Extract time boundness from PLUS/MINUS calls represented as `$ref + constant`.
-         */
-        private Tuple2<Integer, Long> extractTimeBoundFromBinaryOp(
-                RexCall call,
-                WatermarkedFields watermarkedFields) {
-            if (!(call.isA(SqlKind.PLUS) || call.isA(SqlKind.MINUS))) {
-                isValid = false;
-                return tuple2(null, 0L);
-            }
-
-            // Assuming only `$ref + constant interval literal` support.
-            Tuple2<RexNode, RexNode> operands = tuple2(call.getOperands().get(0), call.getOperands().get(1));
-
-            RexInputRef inputRef = null;
-            RexLiteral literal = null;
-            // Note: straightforward way : `$ref + constant interval literal`
-            if (operands.f0() instanceof RexInputRef) {
-                inputRef = (RexInputRef) operands.f0();
-                if (!watermarkedFields.getFieldIndexes().contains(inputRef.getIndex())) {
-                    isValid = false;
-                    return tuple2(null, 0L);
-                }
-            } else if (operands.f0() instanceof RexLiteral) {
-                // Note: opposite way : `constant + $ref`
-                literal = (RexLiteral) operands.f0();
-            }
-
-            if (operands.f1() instanceof RexLiteral) {
-                literal = (RexLiteral) operands.f1();
-            } else if (operands.f1() instanceof RexInputRef) {
-                if (inputRef == null) {
-                    inputRef = (RexInputRef) operands.f1();
-                } else {
-                    // It means situation $ref_1 + $ref_2
-                    // we don't support non-constants within bounds equations.
-                    isValid = false;
-                    return tuple2(null, 0L);
-                }
-            }
-
-            // if input ref is not watermarked -- invalid.
-            if (inputRef == null) {
-                isValid = false;
-                return tuple2(null, 0L);
-            }
-
-            if (literal == null || !SqlTypeName.INTERVAL_TYPES.contains(literal.getTypeName())) {
-                isValid = false;
-                return tuple2(null, 0L);
-            }
-
-            Long literalValue = literal.getValueAs(Long.class);
-            if (call.isA(SqlKind.MINUS)) {
-                literalValue *= -1;
-            }
-
-            return tuple2(inputRef.getIndex(), literalValue);
-        }
     }
 }
