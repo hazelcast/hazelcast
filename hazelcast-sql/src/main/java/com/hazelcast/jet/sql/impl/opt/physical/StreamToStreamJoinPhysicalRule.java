@@ -108,17 +108,17 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         boolean foundLeft = false;
         boolean foundRight = false;
         for (Entry<Integer, Map<Integer, Long>> enOuter : postponeTimeMap.entrySet()) {
-            for (Iterator<Entry<Integer, Long>> innerIterator = enOuter.getValue().entrySet().iterator(); innerIterator.hasNext(); ) {
-                Entry<Integer, Long> enInner = innerIterator.next();
+            for (Iterator<Entry<Integer, Long>> innerIt = enOuter.getValue().entrySet().iterator(); innerIt.hasNext(); ) {
+                Entry<Integer, Long> enInner = innerIt.next();
                 if (enOuter.getKey() < leftColumns) {
                     if (enInner.getKey() < leftColumns) {
-                        innerIterator.remove();
+                        innerIt.remove();
                         continue;
                     }
                     foundLeft = true;
                 } else {
                     if (enInner.getKey() >= leftColumns) {
-                        innerIterator.remove();
+                        innerIt.remove();
                         continue;
                     }
                     foundRight = true;
@@ -267,7 +267,12 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         }
     }
 
-    private static boolean addAddends(RexNode expr, Integer[] positiveField, Integer[] negativeField, long[] constantsSum, boolean inverse) {
+    private static boolean addAddends(
+            RexNode expr,
+            Integer[] positiveField,
+            Integer[] negativeField,
+            long[] constantsSum,
+            boolean inverse) {
         if (expr instanceof RexLiteral) {
             RexLiteral literal = (RexLiteral) expr;
             if (!SqlTypeName.DAY_INTERVAL_TYPES.contains(literal.getTypeName())

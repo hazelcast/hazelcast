@@ -141,9 +141,14 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 singletonList("a"),
                 singletonList(TIMESTAMP_WITH_TIME_ZONE),
                 row(timestampTz(0L)),
-                row(timestampTz(4L)),
-                row(timestampTz(8L)),
-                row(timestampTz(10L))
+                row(timestampTz(9L)),
+                row(timestampTz(20L)),
+                row(timestampTz(30L)),
+                row(timestampTz(40L)),
+                row(timestampTz(50L)),
+                row(timestampTz(60L)),
+                row(timestampTz(70L)),
+                row(timestampTz(80L))
         );
 
         String stream2 = "stream2";
@@ -152,9 +157,9 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 stream2,
                 singletonList("b"),
                 singletonList(TIMESTAMP_WITH_TIME_ZONE),
-                row(timestampTz(1L)),
-                row(timestampTz(4L)),
-                row(timestampTz(9L))
+                row(timestampTz(10L)),
+                row(timestampTz(40L)),
+                row(timestampTz(90L))
         );
 
         sqlService.execute("CREATE VIEW s1 AS " +
@@ -165,8 +170,9 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM s1 RIGHT JOIN s2 ON s1.a=s2.b",
                 asList(
-                        new Row(null, timestampTz(1L)),
-                        new Row(timestampTz(4L), timestampTz(4L))
+                        new Row(null, timestampTz(10L)),
+                        new Row(timestampTz(40L), timestampTz(40L)),
+                        new Row(null, timestampTz(90L))
                 )
         );
     }
