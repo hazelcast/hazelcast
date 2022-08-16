@@ -26,13 +26,11 @@ import org.apache.calcite.plan.RelRule.Config;
 import org.apache.calcite.rel.core.Calc;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.rules.TransformationRule;
-import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexProgram;
 import org.immutables.value.Value;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
@@ -98,23 +96,12 @@ public final class CalcIntoScanLogicalRule extends RelRule<Config> implements Tr
                 scan.getCluster().getTypeFactory()
         );
 
-        int wmColumnIndex = scan.watermarkedColumnIndex();
-        List<RexInputRef> wmField = newProjects.stream()
-                .filter(rex -> rex instanceof RexInputRef)
-                .map(rex -> (RexInputRef) rex)
-                .filter(ref -> ref.getIndex() == wmColumnIndex)
-                .collect(Collectors.toList());
-
-        int newWatermarkColumnIndex = wmColumnIndex >= 0 && !wmField.isEmpty()
-                ? newProjects.indexOf(wmField.get(0))
-                : wmColumnIndex;
-
         FullScanLogicalRel rel = new FullScanLogicalRel(
                 scan.getCluster(),
                 OptUtils.toLogicalConvention(scan.getTraitSet()),
                 convertedTable,
                 scan.eventTimePolicyProvider(),
-                newWatermarkColumnIndex
+                OptUtils.getTargetField(program, scan.watermarkedColumnIndex())
         );
         call.transformTo(rel);
     }
