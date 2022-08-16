@@ -142,23 +142,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         }
     }
 
-    public static StreamToStreamJoinProcessorSupplier supplier(
-            JetJoinInfo joinInfo,
-            Map<Byte, ToLongFunctionEx<JetSqlRow>> leftExtractors,
-            Map<Byte, ToLongFunctionEx<JetSqlRow>> rightExtractors,
-            Map<Byte, Map<Byte, Long>> postponeTimeMap,
-            int leftInputFieldsCount,
-            int rightInputFieldsCount) {
-        return new StreamToStreamJoinProcessorSupplier(
-                joinInfo,
-                leftExtractors,
-                rightExtractors,
-                postponeTimeMap,
-                leftInputFieldsCount,
-                rightInputFieldsCount
-        );
-    }
-
     @Override
     protected void init(@Nonnull Context context) throws Exception {
         this.evalContext = ExpressionEvalContext.from(context);
@@ -385,7 +368,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         return joinedRow;
     }
 
-    private static final class StreamToStreamJoinProcessorSupplier implements ProcessorSupplier, DataSerializable {
+    public static final class StreamToStreamJoinProcessorSupplier implements ProcessorSupplier, DataSerializable {
         private JetJoinInfo joinInfo;
         private Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors;
         private Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors;
@@ -397,12 +380,14 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         private StreamToStreamJoinProcessorSupplier() {
         }
 
-        private StreamToStreamJoinProcessorSupplier(final JetJoinInfo joinInfo,
-                                                    final Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors,
-                                                    final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors,
-                                                    final Map<Byte, Map<Byte, Long>> postponeTimeMap,
-                                                    final int leftInputColumnCount,
-                                                    final int rightInputColumnCount) {
+        public StreamToStreamJoinProcessorSupplier(
+                final JetJoinInfo joinInfo,
+                final Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors,
+                final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors,
+                final Map<Byte, Map<Byte, Long>> postponeTimeMap,
+                final int leftInputColumnCount,
+                final int rightInputColumnCount
+        ) {
             this.joinInfo = joinInfo;
             this.leftTimeExtractors = leftTimeExtractors;
             this.rightTimeExtractors = rightTimeExtractors;

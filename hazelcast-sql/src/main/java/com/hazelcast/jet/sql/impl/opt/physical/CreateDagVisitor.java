@@ -50,7 +50,7 @@ import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.jet.sql.impl.opt.WatermarkKeysAssigner;
 import com.hazelcast.jet.sql.impl.processors.LateItemsDropP;
 import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
-import com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP;
+import com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinProcessorSupplier;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -453,20 +453,20 @@ public class CreateDagVisitor {
         Map<Byte, ToLongFunctionEx<JetSqlRow>> rightExtractors = new HashMap<>();
 
         // map watermarked timestamps extractors to enumerated wm keys
+        Map<Integer, MutableByte> refByteMap = watermarkKeysAssigner.getWatermarkedFieldsKey(rel.getLeft());
         for (Map.Entry<Integer, ToLongFunctionEx<JetSqlRow>> e : rel.leftTimeExtractors().entrySet()) {
-            Map<Integer, MutableByte> refByteMap = watermarkKeysAssigner.getWatermarkedFieldsKey(rel.getLeft());
             Byte wmKey = refByteMap.get(e.getKey()).getValue();
             leftExtractors.put(wmKey, e.getValue());
         }
 
+        refByteMap = watermarkKeysAssigner.getWatermarkedFieldsKey(rel.getRight());
         for (Map.Entry<Integer, ToLongFunctionEx<JetSqlRow>> e : rel.rightTimeExtractors().entrySet()) {
-            Map<Integer, MutableByte> refByteMap = watermarkKeysAssigner.getWatermarkedFieldsKey(rel.getRight());
             Byte wmKey = refByteMap.get(e.getKey()).getValue();
             rightExtractors.put(wmKey, e.getValue());
         }
 
         // map field descriptors to enumerated watermark keys
-        Map<Integer, MutableByte> refByteMap = watermarkKeysAssigner.getWatermarkedFieldsKey(rel);
+        refByteMap = watermarkKeysAssigner.getWatermarkedFieldsKey(rel);
         Map<Byte, Map<Byte, Long>> postponeTimeMap = new HashMap<>();
         for (Entry<Integer, Map<Integer, Long>> entry : rel.postponeTimeMap().entrySet()) {
             Map<Byte, Long> map = new HashMap<>();
@@ -484,14 +484,13 @@ public class CreateDagVisitor {
 
         Vertex joinVertex = dag.newUniqueVertex(
                 "Stream-Stream Join",
-                StreamToStreamJoinP.supplier(
+                new StreamToStreamJoinProcessorSupplier(
                         joinInfo,
                         leftExtractors,
                         rightExtractors,
                         postponeTimeMap,
                         rel.getLeft().getRowType().getFieldCount(),
-                        rel.getRight().getRowType().getFieldCount())
-        );
+                        rel.getRight().getRowType().getFieldCount()));
 //        DiagnosticProcessors.peekInputP(
 //                DiagnosticProcessors.peekOutputP(
 //                        StreamToStreamJoinP.supplier(
@@ -673,18 +672,16 @@ public class CreateDagVisitor {
 
         Edge left = Edge.from(leftInput).to(joinVertex, 0);
         Edge right = Edge.from(rightInput).to(joinVertex, 1);
-        if (joinInfo.isRightOuter()) {
-            left = left.distributed().broadcast();
-            right = right.unicast();
-        } else {
-            // Default strategy which also applies to
-            left = left.unicast();
-            right = right.distributed().broadcast();
-        }
-
         if (joinInfo.isEquiJoin()) {
             left = left.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.leftEquiJoinIndices()));
             right = right.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.rightEquiJoinIndices()));
+        } else if (joinInfo.isRightOuter()) {
+            left = left.distributed().broadcast();
+            right = right.unicast();
+        } else {
+            // this strategy applies to left and inner joins non-equi joins
+            left = left.unicast();
+            right = right.distributed().broadcast();
         }
 
         dag.edge(left);

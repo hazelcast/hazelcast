@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.opt.metadata;
 
 import com.google.common.collect.ImmutableSet;
-import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.FullScan;
 import com.hazelcast.jet.sql.impl.opt.SlidingWindow;
 import com.hazelcast.jet.sql.impl.opt.logical.DropLateItemsLogicalRel;
@@ -28,7 +27,6 @@ import com.hazelcast.jet.sql.impl.opt.physical.JoinNestedLoopPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowAggregatePhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.StreamToStreamJoinPhysicalRel;
 import org.apache.calcite.linq4j.tree.Types;
-import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.plan.hep.HepRelVertex;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.rel.RelNode;
@@ -161,23 +159,11 @@ public final class HazelcastRelMdWatermarkedFields
             // WM on the right side isn't forwarded.
             return query.extractWatermarkedFields(rel.getLeft());
         } else if (rel instanceof StreamToStreamJoinPhysicalRel) {
-            /*
-             * Performs extraction of watermarked fields for stream to stream Join rel.
-             * <p>
-             * Here, we need to detect watermarked RexInputRefs were within child relations schema
-             * and pass them to Join relation to merge them correctly according to join rel schema.
-             * <p>
-             * Example: consider join of two events with fields (a, b) v (c, d).
-             * 'a' and 'd' are watermarked.
-             * <p>
-             * Then, we'll have: leftWmFields {input_ref(a) -> 0}; shiftedRightWmFields{input_ref(d) -> 3};
-             * We can merge these WmFields without conflicts.
-             */
-            RelNode left = RelRule.convert(rel.getLeft(), rel.getTraitSet().replace(Conventions.PHYSICAL));
-            RelNode right = RelRule.convert(rel.getRight(), rel.getTraitSet().replace(Conventions.PHYSICAL));
-
-            WatermarkedFields leftWmFields = query.extractWatermarkedFields(left);
-            WatermarkedFields rightWmFields = query.extractWatermarkedFields(right);
+            // Stream-to-stream join forwards all watermarks from both inputs. The fields
+            // of the right input are shifted by the number of fields in the left input, so we
+            // merge the WM indices this way.
+            WatermarkedFields leftWmFields = query.extractWatermarkedFields(rel.getLeft());
+            WatermarkedFields rightWmFields = query.extractWatermarkedFields(rel.getRight());
 
             final int offset = rel.getLeft().getRowType().getFieldList().size();
             Set<Integer> shiftedRightProps = rightWmFields.getFieldIndexes()

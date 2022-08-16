@@ -27,6 +27,7 @@ import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Join;
+import org.apache.calcite.rel.core.JoinInfo;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rex.RexNode;
 
@@ -56,36 +57,35 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
     }
 
     public JetJoinInfo joinInfo(QueryParameterMetadata parameterMetadata) {
-        RexNode predicate = analyzeCondition().getRemaining(getCluster().getRexBuilder());
+        JoinInfo joinInfo = analyzeCondition();
+        RexNode predicate = joinInfo.getRemaining(getCluster().getRexBuilder());
         Expression<Boolean> nonEquiCondition = filter(schema(parameterMetadata), predicate, parameterMetadata);
 
         Expression<Boolean> condition = filter(schema(parameterMetadata), getCondition(), parameterMetadata);
 
         return new JetJoinInfo(
                 getJoinType(),
-                analyzeCondition().leftKeys.toIntArray(),
-                analyzeCondition().rightKeys.toIntArray(),
+                joinInfo.leftKeys.toIntArray(),
+                joinInfo.rightKeys.toIntArray(),
                 nonEquiCondition,
                 condition
         );
     }
 
     public Map<Integer, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors() {
-        Map<Integer, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors = new HashMap<>();
-        for (Integer i : metadataQuery(this).extractWatermarkedFields(getLeft()).getFieldIndexes()) {
-            leftTimeExtractors.put(i, row -> WindowUtils.extractMillis(row.getRow().get(i)));
-        }
-
-        return leftTimeExtractors;
+        return timeExtractors(getLeft());
     }
 
     public Map<Integer, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors() {
-        Map<Integer, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors = new HashMap<>();
-        for (Integer i : metadataQuery(this).extractWatermarkedFields(getRight()).getFieldIndexes()) {
-            rightTimeExtractors.put(i, row -> WindowUtils.extractMillis(row.getRow().get(i)));
-        }
+        return timeExtractors(getRight());
+    }
 
-        return rightTimeExtractors;
+    private Map<Integer, ToLongFunctionEx<JetSqlRow>> timeExtractors(RelNode input) {
+        Map<Integer, ToLongFunctionEx<JetSqlRow>> timeExtractors = new HashMap<>();
+        for (Integer i : metadataQuery(this).extractWatermarkedFields(input).getFieldIndexes()) {
+            timeExtractors.put(i, row -> WindowUtils.extractMillis(row.getRow().get(i)));
+        }
+        return timeExtractors;
     }
 
     public Map<Integer, Map<Integer, Long>> postponeTimeMap() {
