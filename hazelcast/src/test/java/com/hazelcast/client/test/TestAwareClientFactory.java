@@ -17,8 +17,10 @@
 package com.hazelcast.client.test;
 
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.HazelcastClientUtil;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientNetworkConfig;
+import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.test.TestAwareInstanceFactory;
@@ -63,6 +65,29 @@ public class TestAwareClientFactory extends TestAwareInstanceFactory {
             networkConfig.addAddress("127.0.0.1:" + getPort(member, EndpointQualifier.CLIENT));
         }
         HazelcastInstance hz = HazelcastClient.newHazelcastClient(config);
+        getOrInitInstances(perMethodClients).add(hz);
+        return hz;
+    }
+
+    /**
+     * {@link TestAwareClientFactory#newHazelcastClient(ClientConfig)} with custom {@link AddressProvider}.
+     */
+    public HazelcastInstance newHazelcastClient(ClientConfig config, AddressProvider addressProvider) {
+        if (config == null) {
+            config = new ClientConfig();
+        }
+        if (DEFAULT_CLUSTER_NAME.equals(config.getClusterName())) {
+            config.setClusterName(getTestMethodName());
+        }
+        List<HazelcastInstance> members = getOrInitInstances(perMethodMembers);
+        if (members.isEmpty()) {
+            throw new IllegalStateException("Members have to be created first");
+        }
+        ClientNetworkConfig networkConfig = config.getNetworkConfig();
+        for (HazelcastInstance member : members) {
+            networkConfig.addAddress("127.0.0.1:" + getPort(member, EndpointQualifier.CLIENT));
+        }
+        HazelcastInstance hz = HazelcastClientUtil.newHazelcastClient(config, addressProvider);
         getOrInitInstances(perMethodClients).add(hz);
         return hz;
     }
