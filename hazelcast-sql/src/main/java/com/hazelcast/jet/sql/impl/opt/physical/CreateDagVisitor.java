@@ -37,7 +37,6 @@ import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
-import com.hazelcast.jet.core.processor.DiagnosticProcessors;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
@@ -485,13 +484,13 @@ public class CreateDagVisitor {
 
         Vertex joinVertex = dag.newUniqueVertex(
                 "Stream-Stream Join",
-                DiagnosticProcessors.peekInputP(new StreamToStreamJoinProcessorSupplier(
+                new StreamToStreamJoinProcessorSupplier(
                         joinInfo,
                         leftExtractors,
                         rightExtractors,
                         postponeTimeMap,
                         rel.getLeft().getRowType().getFieldCount(),
-                        rel.getRight().getRowType().getFieldCount())));
+                        rel.getRight().getRowType().getFieldCount()));
 
         connectStreamToStreamJoinInput(joinInfo, rel.getLeft(), rel.getRight(), joinVertex);
 
