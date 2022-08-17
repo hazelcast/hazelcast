@@ -46,6 +46,7 @@ import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -143,25 +144,26 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
         PhysicalRel optimizedPhysicalRel = optimizePhysical(sql, parameterTypes, table).getPhysical();
 
         assertPlan(optimizedPhysicalRel, plan(
-                planRow(1, DropLateItemsPhysicalRel.class),
-                planRow(0, UnionPhysicalRel.class),
+                planRow(0, DropLateItemsPhysicalRel.class),
+                planRow(1, UnionPhysicalRel.class),
                 planRow(2, FullScanPhysicalRel.class),
                 planRow(2, FullScanPhysicalRel.class)
         ));
 
         WatermarkKeysAssigner keysAssigner = new WatermarkKeysAssigner(optimizedPhysicalRel);
-        keysAssigner.assignWatermarkKeys();
+        assertThatThrownBy(() -> keysAssigner.assignWatermarkKeys())
+                .hasMessageContaining("The same scan used twice in the execution plan");
 
-        assertThat(optimizedPhysicalRel.getInput(0)).isInstanceOf(UnionPhysicalRel.class);
-
-        UnionPhysicalRel unionRel = (UnionPhysicalRel) optimizedPhysicalRel.getInput(0);
-
-        // Watermark key was propagated to UnionPhysicalRel
-        Map<Integer, MutableByte> map = keysAssigner.getWatermarkedFieldsKey(unionRel);
-        assertThat(map).isNotNull();
-        assertThat(map).isNotEmpty();
-        assertThat(map.get(1)).isNotNull(); // 2nd field (this) is watermarked, that's why we have index 1.
-        assertThat(map.get(1).getValue()).isEqualTo((byte) 0);
+//        assertThat(optimizedPhysicalRel.getInput(0)).isInstanceOf(UnionPhysicalRel.class);
+//
+//        UnionPhysicalRel unionRel = (UnionPhysicalRel) optimizedPhysicalRel.getInput(0);
+//
+//        // Watermark key was propagated to UnionPhysicalRel
+//        Map<Integer, MutableByte> map = keysAssigner.getWatermarkedFieldsKey(unionRel);
+//        assertThat(map).isNotNull();
+//        assertThat(map).isNotEmpty();
+//        assertThat(map.get(1)).isNotNull(); // 2nd field (this) is watermarked, that's why we have index 1.
+//        assertThat(map.get(1).getValue()).isEqualTo((byte) 0);
     }
 
     @Ignore("Doesn't work with views ...")
