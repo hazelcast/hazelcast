@@ -16,17 +16,18 @@
 
 package com.hazelcast.jet.sql.impl.validate.operators.predicate;
 
-import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
 import com.hazelcast.jet.sql.impl.validate.param.NumericPrecedenceParameterConverter;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
+import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
+
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.OBJECT;
 
 public final class HazelcastComparisonPredicateUtils {
     private HazelcastComparisonPredicateUtils() {
@@ -112,8 +113,7 @@ public final class HazelcastComparisonPredicateUtils {
                         highType,
                         lowOperandNode -> callBinding.getCall().setOperand(lowIndex, lowOperandNode));
 
-        if (valid && highHZType.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)
-                && !lowHZType.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
+        if (valid && highHZType.getTypeFamily() == OBJECT && lowHZType.getTypeFamily() != OBJECT) {
             valid = false;
         }
 
@@ -122,9 +122,7 @@ public final class HazelcastComparisonPredicateUtils {
             if (!highHZType.getObjectTypeName().equals(lowHZType.getObjectTypeName())) {
                 valid = false;
             }
-            if (!highHZType.getObjectTypeKind().equals(lowHZType.getObjectTypeKind())) {
-                valid = false;
-            }
+            assert highHZType.getObjectTypeKind().equals(lowHZType.getObjectTypeKind());
         }
 
         // Types cannot be converted to each other.

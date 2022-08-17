@@ -187,19 +187,14 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
     }
 
     private boolean containsCycles(final HazelcastObjectType type, final Set<String> discovered) {
-        if (discovered.contains(type.getTypeName())) {
+        if (!discovered.add(type.getTypeName())) {
             return true;
         }
 
-        discovered.add(type.getTypeName());
-
         for (final RelDataTypeField field : type.getFieldList()) {
             final RelDataType fieldType = field.getType();
-            if (!isHzObjectType(fieldType)) {
-                continue;
-            }
-
-            if (containsCycles(extractHzObjectType(fieldType), discovered)) {
+            if (isHzObjectType(fieldType)
+                    && containsCycles(extractHzObjectType(fieldType), discovered)) {
                 return true;
             }
         }
@@ -344,7 +339,7 @@ public class HazelcastSqlValidator extends SqlValidatorImplBridge {
 
     private void validateUpsertRowType(SqlIdentifier table) {
         final RelDataType rowType = Objects.requireNonNull(getCatalogReader()
-                        .getTable((table).names))
+                        .getTable(table.names))
                 .getRowType();
 
         for (final RelDataTypeField field : rowType.getFieldList()) {

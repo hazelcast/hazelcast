@@ -342,22 +342,22 @@ public final class OptUtils {
         }
 
         if (sqlTypeName == SqlTypeName.OTHER) {
-            return convertCustomType(fieldType, typeFactory);
+            return convertOtherType(fieldType);
         } else if (fieldType.isCustomType()) {
-            return convertUserDefinedType(fieldType, typeFactory);
+            return convertCustomType(fieldType, typeFactory);
         } else {
             RelDataType relType = typeFactory.createSqlType(sqlTypeName);
             return typeFactory.createTypeWithNullability(relType, true);
         }
     }
 
-    private static RelDataType convertUserDefinedType(QueryDataType fieldType, RelDataTypeFactory typeFactory) {
+    private static RelDataType convertCustomType(QueryDataType fieldType, RelDataTypeFactory typeFactory) {
         final Map<String, RelDataType> dataTypeMap = new HashMap<>();
-        convertUserDefinedTypeRecursively(fieldType, typeFactory, dataTypeMap);
+        convertCustomTypeRecursively(fieldType, typeFactory, dataTypeMap);
         return dataTypeMap.get(fieldType.getObjectTypeName());
     }
 
-    private static void convertUserDefinedTypeRecursively(
+    private static void convertCustomTypeRecursively(
             QueryDataType type,
             RelDataTypeFactory typeFactory,
             Map<String, RelDataType> typeMap
@@ -378,7 +378,7 @@ public final class OptUtils {
             if (fieldType.isCustomType()) {
                 fieldRelDataType = typeMap.get(fieldType.getObjectTypeName());
                 if (fieldRelDataType == null) {
-                    convertUserDefinedTypeRecursively(fieldType, typeFactory, typeMap);
+                    convertCustomTypeRecursively(fieldType, typeFactory, typeMap);
                     fieldRelDataType = typeMap.get(fieldType.getObjectTypeName());
                 }
             } else {
@@ -395,7 +395,7 @@ public final class OptUtils {
     }
 
 
-    private static RelDataType convertCustomType(QueryDataType fieldType, RelDataTypeFactory typeFactory) {
+    private static RelDataType convertOtherType(QueryDataType fieldType) {
         switch (fieldType.getTypeFamily()) {
             case JSON:
                 return HazelcastJsonType.create(true);

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
+import com.google.common.collect.ImmutableSet;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
@@ -28,7 +29,6 @@ import com.hazelcast.sql.impl.schema.type.TypeKind;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -42,6 +42,9 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FOR
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE_PREFIX;
+import static com.hazelcast.sql.impl.schema.type.TypeKind.COMPACT;
+import static com.hazelcast.sql.impl.schema.type.TypeKind.JAVA;
+import static com.hazelcast.sql.impl.schema.type.TypeKind.PORTABLE;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Stream.concat;
@@ -54,16 +57,10 @@ public class KvMetadataResolvers {
 
     // A string of characters (excluding a `.`), optionally prefixed with "__key." or "this."
     private static final Pattern EXT_NAME_PATTERN = Pattern.compile("((" + KEY + "|" + VALUE + ")\\.)?[^.]+");
-    private static final Set<TypeKind> NESTED_FIELDS_SUPPORTED_FORMATS = new HashSet<>();
+    private static final Set<TypeKind> NESTED_FIELDS_SUPPORTED_FORMATS = ImmutableSet.of(JAVA, PORTABLE, COMPACT);
 
     private final Map<String, KvMetadataResolver> keyResolvers;
     private final Map<String, KvMetadataResolver> valueResolvers;
-
-    static {
-        NESTED_FIELDS_SUPPORTED_FORMATS.add(TypeKind.JAVA);
-        NESTED_FIELDS_SUPPORTED_FORMATS.add(TypeKind.PORTABLE);
-        NESTED_FIELDS_SUPPORTED_FORMATS.add(TypeKind.COMPACT);
-    }
 
     public KvMetadataResolvers(KvMetadataResolver... resolvers) {
         this(resolvers, resolvers);
