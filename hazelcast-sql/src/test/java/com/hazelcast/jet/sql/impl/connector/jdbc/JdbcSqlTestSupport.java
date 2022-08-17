@@ -66,7 +66,6 @@ public abstract class JdbcSqlTestSupport extends SqlTestSupport {
                         .setClassName(JdbcDataStoreFactory.class.getName())
                         .setProperties(properties)
         );
-        config.getSerializationConfig().getCompactSerializationConfig().setEnabled(true);
         initialize(2, config);
         sqlService = instance().getSql();
     }

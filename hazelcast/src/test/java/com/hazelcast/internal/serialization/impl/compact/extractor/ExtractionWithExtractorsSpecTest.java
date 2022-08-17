@@ -17,7 +17,6 @@
 package com.hazelcast.internal.serialization.impl.compact.extractor;
 
 import com.hazelcast.config.AttributeConfig;
-import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.query.Predicates;
@@ -83,7 +82,6 @@ public class ExtractionWithExtractorsSpecTest extends AbstractExtractionTest {
         tattoosCount.setName("tattoosCount");
         tattoosCount.setExtractorClassName("com.hazelcast.internal.serialization.impl.compact.extractor.ExtractionWithExtractorsSpecTest$LimbTattoosCountExtractor");
         mapConfig.addAttributeConfig(tattoosCount);
-        config.getSerializationConfig().setCompactSerializationConfig(new CompactSerializationConfig().setEnabled(true));
     }
 
     @Parameterized.Parameters(name = "{index}: {0}")

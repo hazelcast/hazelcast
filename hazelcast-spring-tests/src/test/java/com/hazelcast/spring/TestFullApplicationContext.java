@@ -1189,7 +1189,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testCompactSerializationConfig() {
         CompactSerializationConfig compactSerializationConfig = config.getSerializationConfig()
                 .getCompactSerializationConfig();
-        assertTrue(compactSerializationConfig.isEnabled());
 
         List<String> serializerClassNames
                 = CompactSerializationConfigAccessor.getSerializerClassNames(compactSerializationConfig);

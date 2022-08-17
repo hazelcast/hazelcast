@@ -83,7 +83,6 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
             FilteringClassLoader classLoader = new FilteringClassLoader(excludes, null);
             config.setClassLoader(classLoader);
         }
-        config.getSerializationConfig().getCompactSerializationConfig().setEnabled(true);
         return config;
     }
 

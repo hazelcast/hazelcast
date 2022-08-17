@@ -75,11 +75,7 @@ public class CompactSchemaReplicationBouncingTest extends HazelcastTestSupport {
     }
 
     public Config getConfig() {
-        Config config = smallInstanceConfig();
-        config.getSerializationConfig()
-                .getCompactSerializationConfig()
-                .setEnabled(true);
-        return config;
+        return smallInstanceConfig();
     }
 
     static class NewSchemaRegisterer implements Runnable {

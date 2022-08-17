@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.serialization.impl.compact.schema;
 
-import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.internal.services.CoreService;
@@ -83,10 +82,6 @@ public class MemberSchemaService implements
     @Nullable
     @Override
     public Schema get(long schemaId) {
-        if (!nodeEngine.getClusterService().getClusterVersion().isEqualTo(Versions.V5_2)) {
-            throw new UnsupportedOperationException("The BETA compact format can only be used with 5.2 cluster");
-        }
-
         return schemas.get(schemaId);
     }
 
@@ -102,10 +97,6 @@ public class MemberSchemaService implements
      * @param schema to replicate.
      */
     public CompletableFuture<Void> putAsync(Schema schema) {
-        if (!nodeEngine.getClusterService().getClusterVersion().isEqualTo(Versions.V5_2)) {
-            throw new UnsupportedOperationException("The BETA compact format can only be used with 5.2 cluster");
-        }
-
         return replicator.replicate(schema);
     }
 

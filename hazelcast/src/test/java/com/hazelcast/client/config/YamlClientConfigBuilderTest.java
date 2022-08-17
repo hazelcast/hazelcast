@@ -680,24 +680,11 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
     }
 
     @Override
-    public void testCompactSerialization() {
-        String yaml = ""
-                + "hazelcast-client:\n"
-                + "    serialization:\n"
-                + "        compact-serialization:\n"
-                + "            enabled: true\n";
-
-        SerializationConfig config = buildConfig(yaml).getSerializationConfig();
-        assertTrue(config.getCompactSerializationConfig().isEnabled());
-    }
-
-    @Override
     public void testCompactSerialization_serializerRegistration() {
         String yaml = ""
                 + "hazelcast-client:\n"
                 + "    serialization:\n"
                 + "        compact-serialization:\n"
-                + "            enabled: true\n"
                 + "            serializers:\n"
                 + "                - serializer: example.serialization.SerializableEmployeeDTOSerializer\n";
 
@@ -711,7 +698,6 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
                 + "hazelcast-client:\n"
                 + "    serialization:\n"
                 + "        compact-serialization:\n"
-                + "            enabled: true\n"
                 + "            classes:\n"
                 + "                - class: example.serialization.ExternalizableEmployeeDTO\n";
 
@@ -725,7 +711,6 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
                 + "hazelcast-client:\n"
                 + "    serialization:\n"
                 + "        compact-serialization:\n"
-                + "            enabled: true\n"
                 + "            serializers:\n"
                 + "                - serializer: example.serialization.SerializableEmployeeDTOSerializer\n"
                 + "            classes:\n"
@@ -742,7 +727,6 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
                 + "hazelcast-client:\n"
                 + "    serialization:\n"
                 + "        compact-serialization:\n"
-                + "            enabled: true\n"
                 + "            serializers:\n"
                 + "                - serializer: example.serialization.EmployeeDTOSerializer\n"
                 + "                - serializer: example.serialization.EmployeeDTOSerializer\n";
@@ -759,7 +743,6 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
                 + "hazelcast-client:\n"
                 + "    serialization:\n"
                 + "        compact-serialization:\n"
-                + "            enabled: true\n"
                 + "            classes:\n"
                 + "                - class: example.serialization.ExternalizableEmployeeDTO\n"
                 + "                - class: example.serialization.ExternalizableEmployeeDTO\n";
@@ -776,7 +759,6 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
                 + "hazelcast-client:\n"
                 + "    serialization:\n"
                 + "        compact-serialization:\n"
-                + "            enabled: true\n"
                 + "            serializers:\n"
                 + "                - serializer: example.serialization.EmployeeDTOSerializer\n"
                 + "                - serializer: example.serialization.SameClassEmployeeDTOSerializer\n";
@@ -794,7 +776,6 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
                 + "hazelcast-client:\n"
                 + "    serialization:\n"
                 + "        compact-serialization:\n"
-                + "            enabled: true\n"
                 + "            serializers:\n"
                 + "                - serializer: example.serialization.EmployeeDTOSerializer\n"
                 + "                - serializer: example.serialization.SameTypeNameEmployeeDTOSerializer\n";
@@ -812,7 +793,6 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
                 + "hazelcast-client:\n"
                 + "    serialization:\n"
                 + "        compact-serialization:\n"
-                + "            enabled: true\n"
                 + "            serializers:\n"
                 + "                - serializer: does.not.exist.FooSerializer\n";
 
@@ -828,7 +808,6 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
                 + "hazelcast-client:\n"
                 + "    serialization:\n"
                 + "        compact-serialization:\n"
-                + "            enabled: true\n"
                 + "            classes:\n"
                 + "                - class: does.not.exist.Foo\n";
 

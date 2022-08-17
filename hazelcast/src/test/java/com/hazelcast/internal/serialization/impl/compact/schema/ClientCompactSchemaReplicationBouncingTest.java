@@ -32,10 +32,6 @@ public class ClientCompactSchemaReplicationBouncingTest extends CompactSchemaRep
 
     protected DriverFactory getDriverFactory() {
         ClientConfig config = new ClientConfig();
-        config.getSerializationConfig()
-                .getCompactSerializationConfig()
-                .setEnabled(true);
-
         return new MultiSocketClientDriverFactory(config);
     }
 

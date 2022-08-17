@@ -3256,13 +3256,8 @@
         "compact-serialization": {
           "type": "object",
           "additionalProperties": false,
-          "description": "Contains configuration elements and attributes for the compact serialization. This feature is in the BETA status and any schema definition related to it might change in the future without a prior notice, until the feature is promoted to the stable status.",
+          "description": "Contains configuration elements and attributes for the compact serialization.",
           "properties": {
-            "enabled": {
-              "type": "boolean",
-              "default": false,
-              "description": "Enables/disables the compact serialization."
-            },
             "serializers": {
               "type": "array",
               "description": "Contains the Compact serializers to be registered.",

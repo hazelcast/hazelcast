@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.serialization.impl.compact.schema;
 
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -30,10 +29,6 @@ public class ClientCompactSchemaReplicationSingleMemberTest extends CompactSchem
 
     @Override
     protected HazelcastInstance getDriver() {
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getSerializationConfig()
-                .getCompactSerializationConfig()
-                .setEnabled(true);
-        return factory.newHazelcastClient(clientConfig);
+        return factory.newHazelcastClient();
     }
 }

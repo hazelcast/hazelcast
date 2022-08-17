@@ -393,7 +393,6 @@ public class TestClientApplicationContext {
         CompactSerializationConfig compactSerializationConfig = clientWithCompactSerialization.getClientConfig()
                 .getSerializationConfig()
                 .getCompactSerializationConfig();
-        assertTrue(compactSerializationConfig.isEnabled());
 
         List<String> serializerClassNames
                 = CompactSerializationConfigAccessor.getSerializerClassNames(compactSerializationConfig);

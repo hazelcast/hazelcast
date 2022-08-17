@@ -126,7 +126,6 @@ public class AllTypesGenericMapStoreTest extends JdbcSqlTestSupport {
     @BeforeClass
     public static void beforeClass() {
         Config config = smallInstanceConfig();
-        config.getSerializationConfig().getCompactSerializationConfig().setEnabled(true);
 
         initialize(new H2DatabaseProvider(), config);
     }

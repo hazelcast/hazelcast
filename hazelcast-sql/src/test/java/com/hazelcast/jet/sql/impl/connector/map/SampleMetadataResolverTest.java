@@ -157,7 +157,7 @@ public class SampleMetadataResolverTest {
     @Test
     public void test_compact() {
         SerializationConfig serializationConfig = new SerializationConfig();
-        serializationConfig.getCompactSerializationConfig().setEnabled(true)
+        serializationConfig.getCompactSerializationConfig()
                 .addSerializer(new CompactClass.CompactClassSerializer());
         InternalSerializationService ss = new DefaultSerializationServiceBuilder()
                 .setSchemaService(CompactTestUtil.createInMemorySchemaService())
@@ -186,7 +186,6 @@ public class SampleMetadataResolverTest {
     @Test
     public void test_compactRecord() {
         SerializationConfig serializationConfig = new SerializationConfig();
-        serializationConfig.getCompactSerializationConfig().setEnabled(true);
         InternalSerializationService ss = new DefaultSerializationServiceBuilder()
                 .setSchemaService(CompactTestUtil.createInMemorySchemaService())
                 .setConfig(serializationConfig)

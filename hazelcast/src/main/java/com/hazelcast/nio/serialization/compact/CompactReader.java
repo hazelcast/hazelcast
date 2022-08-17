@@ -18,7 +18,6 @@ package com.hazelcast.nio.serialization.compact;
 
 import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -52,9 +51,8 @@ import java.time.OffsetDateTime;
  * }
  * }</pre>
  *
- * @since Hazelcast 5.0 as BETA
+ * @since 5.2
  */
-@Beta
 public interface CompactReader {
 
     /**

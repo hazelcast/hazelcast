@@ -359,13 +359,6 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             compactSerializationConfigBuilder.getBeanDefinition().setBeanClass(ConfigFactory.class);
             compactSerializationConfigBuilder.setFactoryMethod("newCompactSerializationConfig");
 
-            NamedNodeMap attributes = compactNode.getAttributes();
-            Node enabledNode = attributes.getNamedItem("enabled");
-            if (enabledNode != null) {
-                String value = getTextContent(enabledNode);
-                compactSerializationConfigBuilder.addConstructorArgValue(value);
-            }
-
             ManagedList<String> serializerClassNames = new ManagedList<>();
             ManagedList<String> compactSerializableClassNames = new ManagedList<>();
             for (Node child : childElements(compactNode)) {

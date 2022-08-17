@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -64,11 +63,9 @@ public class CompactWithSchemaStreamSerializerTest {
 
     private InternalSerializationService createSerializationService() {
         SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
-        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.setEnabled(true);
         return new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                .setConfig(new SerializationConfig())
                 .build();
     }
 

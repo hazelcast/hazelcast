@@ -120,12 +120,10 @@ public final class ConfigFactory {
     }
 
     public static CompactSerializationConfig newCompactSerializationConfig(
-            boolean isEnabled,
             List<String> serializerClassNames,
             List<String> compactSerializableClassNames
     ) {
         CompactSerializationConfig config = new CompactSerializationConfig();
-        config.setEnabled(isEnabled);
 
         for (String compactSerializableClassName : compactSerializableClassNames) {
             CompactSerializationConfigAccessor.registerClass(config, compactSerializableClassName);
