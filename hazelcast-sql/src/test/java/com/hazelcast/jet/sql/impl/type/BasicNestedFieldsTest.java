@@ -510,7 +510,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
 
         // TODO https://github.com/hazelcast/hazelcast/issues/22000
         assertThatThrownBy(() -> testInstance().getSql().execute("select 1 from test where to_row((this).organization.office)=(3, 'office1')").iterator().next())
-                .hasMessageContaining("com.hazelcast.sql.impl.expression.RowValue cannot be cast to java.lang.Comparable");
+                .hasMessageContaining("com.hazelcast.sql.impl.expression.RowValue cannot be cast to");
 
         // without TO_ROW function it fails - TODO can we support this too?
         assertThatThrownBy(() -> testInstance().getSql().execute("select 1 from test where (this).organization.office=(3, 'office1')").iterator().next())

@@ -200,8 +200,8 @@ public class TableResolverImpl implements TableResolver {
         return tableStorage.typeNames();
     }
 
-    public List<Type> getTypes() {
-        return new ArrayList<>(tableStorage.getAllTypes());
+    public Collection<Type> getTypes() {
+        return tableStorage.getAllTypes();
     }
 
     public void createType(Type type, boolean replace, boolean ifNotExists) {
