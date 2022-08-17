@@ -365,10 +365,12 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
         for (PartitionContainer partitionContainer : partitionContainers) {
             Collection<RecordStore> allRecordStores = partitionContainer.getAllRecordStores();
             for (RecordStore recordStore : allRecordStores) {
-                if (recordStore.getMapContainer().getMapConfig().getMapStoreConfig().isEnabled()) {
-                    MutableLong count = offloaded.computeIfAbsent(recordStore.getName(), s -> new MutableLong());
-                    count.value += recordStore.getMapStoreOffloadedOperationsCount();
+                if (!recordStore.getMapContainer().getMapConfig().isStatisticsEnabled()) {
+                    continue;
                 }
+
+                MutableLong count = offloaded.computeIfAbsent(recordStore.getName(), s -> new MutableLong());
+                count.value += recordStore.getMapStoreOffloadedOperationsCount();
             }
         }
 

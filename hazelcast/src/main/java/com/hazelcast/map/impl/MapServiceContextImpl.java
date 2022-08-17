@@ -148,6 +148,7 @@ class MapServiceContextImpl implements MapServiceContext {
      * @see {@link MapKeyLoader#DEFAULT_LOADED_KEY_LIMIT_PER_NODE}
      */
     private final Semaphore nodeWideLoadedKeyLimiter;
+    private final boolean forceOffloadEnabled;
 
     private MapService mapService;
 
@@ -179,8 +180,21 @@ class MapServiceContextImpl implements MapServiceContext {
         this.nodeWideLoadedKeyLimiter = new Semaphore(checkPositive(PROP_LOADED_KEY_LIMITER_PER_NODE,
                 nodeEngine.getProperties().getInteger(LOADED_KEY_LIMITER_PER_NODE)));
         this.logger = nodeEngine.getLogger(getClass());
+        this.forceOffloadEnabled = nodeEngine.getProperties()
+                .getBoolean(FORCE_OFFLOAD_ALL_OPERATIONS);
+        if (this.forceOffloadEnabled) {
+            logger.info("Force offload is enabled for all maps. This "
+                    + "means all map operations will run as if they have map-store configured. "
+                    + "The intended usage for this flag is testing purposes.");
+        }
     }
 
+    @Override
+    public boolean isForceOffloadEnabled() {
+        return forceOffloadEnabled;
+    }
+
+    @Override
     public ExecutorStats getOffloadedEntryProcessorExecutorStats() {
         return offloadedExecutorStats;
     }
