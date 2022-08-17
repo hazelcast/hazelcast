@@ -37,6 +37,7 @@ import com.hazelcast.jet.core.SlidingWindowPolicy;
 import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
+import com.hazelcast.jet.core.processor.DiagnosticProcessors;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
@@ -484,16 +485,15 @@ public class CreateDagVisitor {
 
         Vertex joinVertex = dag.newUniqueVertex(
                 "Stream-Stream Join",
-                new StreamToStreamJoinProcessorSupplier(
+                DiagnosticProcessors.peekInputP(new StreamToStreamJoinProcessorSupplier(
                         joinInfo,
                         leftExtractors,
                         rightExtractors,
                         postponeTimeMap,
                         rel.getLeft().getRowType().getFieldCount(),
-                        rel.getRight().getRowType().getFieldCount()));
-        // region DAG
+                        rel.getRight().getRowType().getFieldCount())));
+
         connectStreamToStreamJoinInput(joinInfo, rel.getLeft(), rel.getRight(), joinVertex);
-        // endregion
 
         return joinVertex;
     }
@@ -664,10 +664,10 @@ public class CreateDagVisitor {
 
         if (joinInfo.isRightOuter()) {
             left = left.distributed().broadcast();
-            right = right.unicast();
+            right = right.unicast().local();
         } else {
             // this strategy applies to left and inner joins non-equi joins
-            left = left.unicast();
+            left = left.unicast().local();
             right = right.distributed().broadcast();
         }
 

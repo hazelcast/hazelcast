@@ -28,6 +28,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
@@ -219,6 +220,7 @@ public class SqlUnionTest extends SqlTestSupport {
     }
 
     @Test
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/21984")
     public void watermarkedStreamUnionAllTest() {
         String name = createTable(
                 row(timestampTz(10L), 1),

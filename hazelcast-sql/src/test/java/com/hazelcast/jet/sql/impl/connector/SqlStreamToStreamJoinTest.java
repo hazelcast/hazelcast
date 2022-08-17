@@ -134,22 +134,18 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_rightStreamToStreamJoinWithEquiJoin() {
+    public void test_rightStreamToStreamJoinWithTimeBounds() {
         String stream = "stream1";
         TestStreamSqlConnector.create(
                 sqlService,
                 stream,
                 singletonList("a"),
                 singletonList(TIMESTAMP_WITH_TIME_ZONE),
-                row(timestampTz(0L)),
-                row(timestampTz(9L)),
-                row(timestampTz(20L)),
-                row(timestampTz(30L)),
-                row(timestampTz(40L)),
-                row(timestampTz(50L)),
-                row(timestampTz(60L)),
-                row(timestampTz(70L)),
-                row(timestampTz(80L))
+                row(timestampTz(2L)),
+                row(timestampTz(5L)),
+                row(timestampTz(6L)),
+                row(timestampTz(7L)),
+                row(timestampTz(10L))
         );
 
         String stream2 = "stream2";
@@ -158,22 +154,27 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 stream2,
                 singletonList("b"),
                 singletonList(TIMESTAMP_WITH_TIME_ZONE),
-                row(timestampTz(10L)),
-                row(timestampTz(40L)),
-                row(timestampTz(90L))
+                row(timestampTz(0L)),
+                row(timestampTz(2L)),
+                row(timestampTz(3L)),
+                row(timestampTz(4L)),
+                row(timestampTz(5L))
         );
 
         sqlService.execute("CREATE VIEW s1 AS " +
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.003' SECOND))");
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.002' SECOND))");
         sqlService.execute("CREATE VIEW s2 AS " +
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), INTERVAL '0.003' SECOND))");
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), INTERVAL '0.002' SECOND))");
 
         assertRowsEventuallyInAnyOrder(
-                "SELECT * FROM s1 RIGHT JOIN s2 ON s1.a=s2.b",
+                "SELECT * FROM s1 RIGHT JOIN s2 ON s1.a BETWEEN s2.b AND s2.b + INTERVAL '0.001' SECOND ",
                 asList(
-                        new Row(null, timestampTz(10L)),
-                        new Row(timestampTz(40L), timestampTz(40L)),
-                        new Row(null, timestampTz(90L))
+                        new Row(null, timestampTz(0L)),
+                        new Row(timestampTz(2L), timestampTz(2L)),
+                        new Row(null, timestampTz(3L)),
+                        new Row(timestampTz(5L), timestampTz(4L)),
+                        new Row(timestampTz(5L), timestampTz(5L)),
+                        new Row(timestampTz(6L), timestampTz(5L))
                 )
         );
     }
