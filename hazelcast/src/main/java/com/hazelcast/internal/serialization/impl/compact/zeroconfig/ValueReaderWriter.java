@@ -14,21 +14,30 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.serialization.impl.compact.record;
+package com.hazelcast.internal.serialization.impl.compact.zeroconfig;
 
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.nio.serialization.compact.CompactReader;
+import com.hazelcast.nio.serialization.compact.CompactWriter;
 
 /**
- * Reads a single component of the record object and returns it.
+ * Subclasses of this class are expected to read or write values directly from
+ * the Compact reader and writers, using the provided field name.
+ * <p>
+ * It is expected that the Reflective and Record serializers will re-use those
+ * subclasses to avoid code duplication.
+ *
+ * @param <T> Type of the value to read/write
  */
-@FunctionalInterface
-public interface ComponentReader {
+public abstract class ValueReaderWriter<T> {
 
-    /**
-     * @param compactReader to read the component from.
-     * @param schema to validate expected and actual types.
-     * @return a single component of the record object.
-     */
-    Object readComponent(CompactReader compactReader, Schema schema);
+    protected final String fieldName;
+
+    protected ValueReaderWriter(String fieldName) {
+        this.fieldName = fieldName;
+    }
+
+    public abstract T read(CompactReader reader, Schema schema);
+
+    public abstract void write(CompactWriter writer, T value);
 }

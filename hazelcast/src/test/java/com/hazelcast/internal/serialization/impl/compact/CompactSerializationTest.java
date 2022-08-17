@@ -45,8 +45,18 @@ import org.junit.runner.RunWith;
 
 import javax.annotation.Nonnull;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.OptionalDouble;
+import java.util.Set;
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -323,6 +333,55 @@ public class CompactSerializationTest {
                 .hasStackTraceContaining("array of Compact serializable objects containing different item types");
     }
 
+    @Test
+    public void testSerializingClassReflectively_withCollectionTypes_whenCollectionsHasUnsupportedGenericTypes() {
+        SerializationConfig config = new SerializationConfig();
+        SerializationService service = createSerializationService(config);
+
+        assertThatThrownBy(() -> {
+            service.toData(new ClassWithUnsupportedArrayListField());
+        }).isInstanceOf(HazelcastSerializationException.class)
+                .hasStackTraceContaining("UUID")
+                .hasStackTraceContaining("cannot be serialized with zero configuration Compact serialization")
+                .hasStackTraceContaining("which uses this class in its fields");
+
+        assertThatThrownBy(() -> {
+            service.toData(new ClassWithUnsupportedHashSetField());
+        }).isInstanceOf(HazelcastSerializationException.class)
+                .hasStackTraceContaining("UUID")
+                .hasStackTraceContaining("cannot be serialized with zero configuration Compact serialization")
+                .hasStackTraceContaining("which uses this class in its fields");
+
+        assertThatThrownBy(() -> {
+            service.toData(new ClassWithUnsupportedHashMapField());
+        }).isInstanceOf(HazelcastSerializationException.class)
+                .hasStackTraceContaining("UUID")
+                .hasStackTraceContaining("cannot be serialized with zero configuration Compact serialization")
+                .hasStackTraceContaining("which uses this class in its fields");
+    }
+
+    @Test
+    public void testSerializingClassReflectively_withCollectionTypes() {
+        SerializationConfig config = new SerializationConfig();
+        SerializationService service = createSerializationService(config);
+        ClassWithCollectionFields object = new ClassWithCollectionFields(
+                new ArrayList<>(Arrays.asList("a", "b", "c", null)),
+                new ArrayList<>(Arrays.asList(1, 2, 3, null, -42)),
+                new HashSet<>(Arrays.asList(null, true, false)),
+                new HashSet<>(Arrays.asList(BigDecimal.ONE, BigDecimal.TEN, null)),
+                new HashMap<Long, Float>() {{
+                    put(1L, 42F);
+                }},
+                new HashMap<Byte, Double>() {{
+                    put((byte) 0, 42D);
+                }}
+        );
+
+        Data data = service.toData(object);
+        ClassWithCollectionFields deserialized = service.toObject(data);
+        assertEquals(object, deserialized);
+    }
+
     private SerializationService createSerializationService(SerializationConfig config) {
         return new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
@@ -356,11 +415,69 @@ public class CompactSerializationTest {
     }
 
     private static class ClassWithUnsupportedField {
-        private ArrayList<String> list;
+        private LinkedList<String> list;
     }
 
     private static class ClassWithUnsupportedArrayField {
-        private ArrayList<String>[] lists;
+        private LinkedList<String>[] lists;
+    }
+
+    private static class ClassWithCollectionFields {
+        private List<String> stringList;
+        private ArrayList<Integer> integerArrayList;
+        private Set<Boolean> booleanSet;
+        private HashSet<BigDecimal> decimalHashSet;
+        private Map<Long, Float> longFloatMap;
+        private HashMap<Byte, Double> byteDoubleHashMap;
+
+        private ClassWithCollectionFields(List<String> stringList,
+                                         ArrayList<Integer> integerArrayList,
+                                         Set<Boolean> booleanSet,
+                                         HashSet<BigDecimal> decimalHashSet,
+                                         Map<Long, Float> longFloatMap,
+                                         HashMap<Byte, Double> byteDoubleHashMap) {
+            this.stringList = stringList;
+            this.integerArrayList = integerArrayList;
+            this.booleanSet = booleanSet;
+            this.decimalHashSet = decimalHashSet;
+            this.longFloatMap = longFloatMap;
+            this.byteDoubleHashMap = byteDoubleHashMap;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            ClassWithCollectionFields that = (ClassWithCollectionFields) o;
+            return Objects.equals(stringList, that.stringList)
+                    && Objects.equals(integerArrayList, that.integerArrayList)
+                    && Objects.equals(booleanSet, that.booleanSet)
+                    && Objects.equals(decimalHashSet, that.decimalHashSet)
+                    && Objects.equals(longFloatMap, that.longFloatMap)
+                    && Objects.equals(byteDoubleHashMap, that.byteDoubleHashMap);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(stringList, integerArrayList, booleanSet,
+                    decimalHashSet, longFloatMap, byteDoubleHashMap);
+        }
+    }
+
+    private static class ClassWithUnsupportedArrayListField {
+        private ArrayList<UUID> list;
+    }
+
+    private static class ClassWithUnsupportedHashSetField {
+        private HashSet<UUID> set;
+    }
+
+    private static class ClassWithUnsupportedHashMapField {
+        private HashMap<UUID, Long> map;
     }
 
     private static class Foo {
