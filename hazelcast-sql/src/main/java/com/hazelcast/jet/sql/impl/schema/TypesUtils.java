@@ -250,6 +250,10 @@ public final class TypesUtils {
             type = tablesStorage.getType(typeName);
         }
 
+        if (type == null) {
+            throw QueryException.error("Encountered type '" + typeName + "', which doesn't exist");
+        }
+
         // At this point the `convertedType` lacks fields. We put it to the `seen` map for the purpose of resolving
         // cyclic references, we'll add the fields later below.
         convertedType = toQueryDataTypeRef(type);

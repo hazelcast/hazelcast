@@ -19,8 +19,6 @@ package com.hazelcast.client.impl.protocol.codec.builtin;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.sql.impl.expression.RowValue;
 
-import java.nio.charset.StandardCharsets;
-
 public final class HazelcastRowValueCodec {
     private HazelcastRowValueCodec() { }
 
@@ -29,7 +27,6 @@ public final class HazelcastRowValueCodec {
     }
 
     public static String decode(ClientMessage.ForwardFrameIterator iterator) {
-        final String r = new String(iterator.next().content, StandardCharsets.UTF_8);
-        return r;
+        return StringCodec.decode(iterator);
     }
 }

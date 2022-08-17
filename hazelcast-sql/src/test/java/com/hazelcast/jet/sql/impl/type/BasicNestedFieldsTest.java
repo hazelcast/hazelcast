@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.type;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.AllTypesValue;
 import com.hazelcast.map.IMap;
+import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -41,6 +42,7 @@ import static java.lang.String.format;
 import static java.time.Instant.ofEpochMilli;
 import static java.time.ZoneId.systemDefault;
 import static java.time.ZoneOffset.UTC;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class BasicNestedFieldsTest extends SqlTestSupport {
@@ -415,6 +417,21 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         assertRowsAnyOrder(client(), "SELECT TO_ROW(this) FROM test", rows(1, "[[1, user1, [[2, organization1, [[3, office1]]]]]]"));
     }
 
+    @Test
+    public void test_missingType() {
+        // we create UserType, that has OrganizationType field, but we don't create OrganizationType
+        client().getSql().execute(format("CREATE TYPE UserType (id BIGINT, name VARCHAR, organization OrganizationType) "
+                + "OPTIONS ('format'='java', 'javaClass'='%s')", User.class.getName()));
+
+        assertThatThrownBy(() -> execute("CREATE MAPPING test (__key BIGINT, this UserType) "
+                + "TYPE IMap OPTIONS ("
+                + "'keyFormat'='bigint', "
+                + "'valueFormat'='java', "
+                + "'valueJavaClass'='" + User.class.getName() + "')"))
+                .hasMessage("Encountered type 'OrganizationType', which doesn't exist")
+                .isInstanceOf(HazelcastSqlException.class);
+    }
+
     private User initDefault() {
         client().getSql().execute(format("CREATE TYPE UserType (id BIGINT, name VARCHAR, organization OrganizationType) "
                 + "OPTIONS ('format'='java', 'javaClass'='%s')", User.class.getName()));
@@ -437,7 +454,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         return user;
     }
 
-    static void createJavaType(String name, Class<?> typeClass, String ...columns) {
+    static void createJavaType(String name, Class<?> typeClass, String... columns) {
         final String sql = "CREATE TYPE " + name
                 + "(" + String.join(",", columns) + ")"
                 + "OPTIONS ("
@@ -448,7 +465,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         execute(sql);
     }
 
-    static void createJavaMapping(String name, Class<?> javaClass, String ...columns) {
+    static void createJavaMapping(String name, Class<?> javaClass, String... columns) {
         final String sql = "CREATE MAPPING " + name
                 + "("
                 + "__key BIGINT,"
