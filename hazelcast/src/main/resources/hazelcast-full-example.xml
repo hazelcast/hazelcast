@@ -3733,14 +3733,10 @@
         It has the following sub-elements:
         * <statement-timeout-millis>
             Defines the timeout in milliseconds that is applied to queries without an explicit timeout.
-        * <user-defined-types-enabled>
-            Enables or disables User Defined Types support in SQL, this includes ability to execute
-            CREATE TYPE statements.
 
     -->
     <sql>
         <statement-timeout-millis>0</statement-timeout-millis>
-        <user-defined-types-enabled>false</user-defined-types-enabled>
     </sql>
 
 

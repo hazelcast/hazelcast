@@ -1606,7 +1606,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testSqlConfig() {
         SqlConfig sqlConfig = config.getSqlConfig();
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
-        assertFalse(sqlConfig.isUserDefinedTypesEnabled());
     }
 
     @Test

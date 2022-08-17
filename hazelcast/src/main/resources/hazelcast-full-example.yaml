@@ -3637,13 +3637,9 @@ hazelcast:
   # It has the following sub-elements:
   #     * "statement-timeout-millis":
   #         Defines the timeout in milliseconds that is applied to queries without an explicit timeout.
-  #     * "user-defined-types-enabled":
-  #         Enables or disables User Defined Types support in SQL, this includes ability to execute
-  #         CREATE TYPE statements. Disabled by default due to experimental nature of UDTs.
   #
   sql:
     statement-timeout-millis: 0
-    user-defined-types-enabled: false
 
   #  ===== HAZELCAST JET CONFIGURATION =====
   #

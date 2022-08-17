@@ -33,9 +33,6 @@ public class SqlConfig {
     /** Timeout in milliseconds that is applied to statements without an explicit timeout. */
     private long statementTimeoutMillis = DEFAULT_STATEMENT_TIMEOUT_MILLIS;
 
-    /** Enable or disable User Defined Types, turned off by default due to Experimental nature of UDTs. */
-    private boolean userDefinedTypesEnabled;
-
     /**
      * Gets the timeout in milliseconds that is applied to statements without an explicit timeout.
      *
@@ -67,34 +64,10 @@ public class SqlConfig {
         return this;
     }
 
-    /**
-     * Returns {true} if User Defined Types are enabled for usage. UDT support is an experimental feature with
-     * limited support. CREATE TYPE command that is required to define UDTs can only be used if UDTs are enabled.
-     *
-     * @return {true} if UDTs are enabled.
-     * @since 5.2
-     */
-    public boolean isUserDefinedTypesEnabled() {
-        return userDefinedTypesEnabled;
-    }
-
-    /**
-     * Setting this flag to {true} enables User Defined Types and usage of CREATE TYPE command.
-     *
-     * @param userDefinedTypesEnabled to enable or disable User Defined Types functionality.
-     * @return this config instance
-     * @since 5.2
-     */
-    public SqlConfig setUserDefinedTypesEnabled(final boolean userDefinedTypesEnabled) {
-        this.userDefinedTypesEnabled = userDefinedTypesEnabled;
-        return this;
-    }
-
     @Override
     public String toString() {
         return "SqlConfig{"
             + "statementTimeoutMillis=" + statementTimeoutMillis
-            + ",userDefinedTypesEnabled=" + userDefinedTypesEnabled
             + '}';
     }
 
@@ -107,12 +80,11 @@ public class SqlConfig {
             return false;
         }
         SqlConfig sqlConfig = (SqlConfig) o;
-        return statementTimeoutMillis == sqlConfig.statementTimeoutMillis
-                && userDefinedTypesEnabled == sqlConfig.userDefinedTypesEnabled;
+        return statementTimeoutMillis == sqlConfig.statementTimeoutMillis;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(statementTimeoutMillis, userDefinedTypesEnabled);
+        return Objects.hash(statementTimeoutMillis);
     }
 }

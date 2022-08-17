@@ -4216,12 +4216,10 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         String yaml = ""
                 + "hazelcast:\n"
                 + "  sql:\n"
-                + "    statement-timeout-millis: 30\n"
-                + "    user-defined-types-enabled: true\n";
+                + "    statement-timeout-millis: 30\n";
         Config config = buildConfig(yaml);
         SqlConfig sqlConfig = config.getSqlConfig();
         assertEquals(30L, sqlConfig.getStatementTimeoutMillis());
-        assertTrue(sqlConfig.isUserDefinedTypesEnabled());
     }
 
     @Override

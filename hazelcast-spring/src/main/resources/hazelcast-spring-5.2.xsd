@@ -5761,14 +5761,6 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="user-defined-types-enabled" type="xs:boolean" minOccurs="0" default="false">
-                <xs:annotation>
-                    <xs:documentation>
-                        Enables or disables User Defined Types support in SQL, this includes ability to execute
-                        CREATE TYPE statements. Disabled by default due to experimental nature of UDTs.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:element>
         </xs:all>
     </xs:complexType>
 

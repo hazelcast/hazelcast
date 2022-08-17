@@ -41,8 +41,7 @@ public class SqlConfigTest extends HazelcastTestSupport {
     @Test
     public void testNonEmpty() {
         SqlConfig config = new SqlConfig()
-                .setStatementTimeoutMillis(30L)
-                .setUserDefinedTypesEnabled(true);
+                .setStatementTimeoutMillis(30L);
 
         assertEquals(30L, config.getStatementTimeoutMillis());
     }

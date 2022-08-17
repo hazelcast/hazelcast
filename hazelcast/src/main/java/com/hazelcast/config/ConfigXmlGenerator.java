@@ -1035,7 +1035,6 @@ public class ConfigXmlGenerator {
         SqlConfig sqlConfig = config.getSqlConfig();
         gen.open("sql")
                 .node("statement-timeout-millis", sqlConfig.getStatementTimeoutMillis())
-                .node("user-defined-types-enabled", sqlConfig.isUserDefinedTypesEnabled())
                 .close();
     }
 
