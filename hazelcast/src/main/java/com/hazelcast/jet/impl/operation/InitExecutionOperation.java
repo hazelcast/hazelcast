@@ -90,13 +90,13 @@ public class InitExecutionOperation extends AsyncJobOperation {
                 caller);
 
         ExecutionPlan plan = deserializePlan(serializedPlan);
+
         if (isLightJob) {
-            return service.getJobExecutionService().runLightJob(jobId(), executionId, caller,
+            return service.getJobExecutionService().runLightJob(jobId(), executionId, getCallerAddress(),
                     coordinatorMemberListVersion, participants, plan);
         } else {
-            service.getJobExecutionService().initExecution(jobId(), executionId, caller,
+            return service.getJobExecutionService().initExecution(jobId(), executionId, getCallerAddress(),
                     coordinatorMemberListVersion, participants, plan);
-            return CompletableFuture.completedFuture(null);
         }
     }
 

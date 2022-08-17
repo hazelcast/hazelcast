@@ -49,6 +49,16 @@ public class ProcessorSupplierFromSimpleSupplier implements ProcessorSupplier, I
         PermissionsUtil.checkPermission(simpleSupplier, context);
     }
 
+    @Override
+    public boolean initIsCooperative() {
+        return true;
+    }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
+
     @Nonnull @Override
     public Collection<? extends Processor> get(int count) {
         return Stream.generate(simpleSupplier).limit(count).collect(Collectors.toList());

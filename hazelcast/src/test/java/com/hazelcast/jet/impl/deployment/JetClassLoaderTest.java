@@ -112,7 +112,7 @@ public class JetClassLoaderTest extends JetTestSupport {
 
         assertClassLoaders(TargetP.classLoaders);
 
-        assertClassLoaderForAllMethodsChecked(Processor.class, TargetP.classLoaders);
+        assertClassLoaderForAllMethodsChecked();
     }
 
     /**
@@ -152,7 +152,7 @@ public class JetClassLoaderTest extends JetTestSupport {
         private volatile boolean received = false;
         private volatile boolean restored = false;
 
-        private static Map<String, List<ClassLoader>> classLoaders = new HashMap<>();
+        private static final Map<String, List<ClassLoader>> classLoaders = new HashMap<>();
 
         private void putClassLoader(String methodName) {
             List<ClassLoader> cls = classLoaders.computeIfAbsent(methodName, (key) -> new ArrayList<>());
@@ -255,6 +255,7 @@ public class JetClassLoaderTest extends JetTestSupport {
     public void when_processorSupplierCalled_then_contextClassLoaderSet() {
         DAG dag = new DAG();
         dag.newVertex("v", new LeakClassLoaderPS()).localParallelism(1);
+        dag.newVertex("v2", new LeakClassLoaderPS().withBlock()).localParallelism(1);
 
         Config config = smallInstanceWithResourceUploadConfig();
         HazelcastInstance instance = createHazelcastInstance(config);
@@ -269,7 +270,23 @@ public class JetClassLoaderTest extends JetTestSupport {
 
     private static class LeakClassLoaderPS implements ProcessorSupplier {
 
-        private static Map<String, List<ClassLoader>> classLoaders = new HashMap<>();
+        private static final Map<String, List<ClassLoader>> classLoaders = new HashMap<>();
+        private volatile boolean blocks = false;
+
+        LeakClassLoaderPS withBlock() {
+            this.blocks = true;
+            return this;
+        }
+
+        @Override
+        public boolean initIsCooperative() {
+            return !blocks;
+        }
+
+        @Override
+        public boolean closeIsCooperative() {
+            return !blocks;
+        }
 
         @Override
         public void init(@Nonnull Context context) throws Exception {
@@ -312,7 +329,7 @@ public class JetClassLoaderTest extends JetTestSupport {
 
     private static class LeakClassLoaderPMS implements ProcessorMetaSupplier {
 
-        private static Map<String, List<ClassLoader>> classLoaders = new HashMap<>();
+        private static final Map<String, List<ClassLoader>> classLoaders = new HashMap<>();
 
         @Override
         public void init(@Nonnull Context context) throws Exception {
@@ -337,19 +354,16 @@ public class JetClassLoaderTest extends JetTestSupport {
         }
     }
 
-    private void assertClassLoaderForAllMethodsChecked(
-            Class<?> clazz,
-            Map<String, List<ClassLoader>> classLoaders) {
-
+    private void assertClassLoaderForAllMethodsChecked() {
         // Future-proof against Processor API additions
-        Method[] methods = clazz.getMethods();
+        Method[] methods = Processor.class.getMethods();
         for (Method method : methods) {
             if (Modifier.isStatic(method.getModifiers())) {
                 continue;
             }
 
             String name = method.getName();
-            assertThat(classLoaders)
+            assertThat(TargetP.classLoaders)
                     .describedAs("method " + name + " not called")
                     .containsKey(name);
         }
