@@ -1189,7 +1189,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testCompactSerializationConfig() {
         CompactSerializationConfig compactSerializationConfig = config.getSerializationConfig()
                 .getCompactSerializationConfig();
-        assertTrue(compactSerializationConfig.isEnabled());
 
         List<String> serializerClassNames
                 = CompactSerializationConfigAccessor.getSerializerClassNames(compactSerializationConfig);
@@ -1550,6 +1549,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertTrue(cpSubsystemConfig.isFailOnIndeterminateOperationState());
         assertFalse(cpSubsystemConfig.isPersistenceEnabled());
         assertEquals(new File("/custom-dir").getAbsolutePath(), cpSubsystemConfig.getBaseDir().getAbsolutePath());
+        assertEquals(-1, cpSubsystemConfig.getCPMemberPriority());
         RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();
         assertEquals(500, raftAlgorithmConfig.getLeaderElectionTimeoutInMillis());
         assertEquals(100, raftAlgorithmConfig.getLeaderHeartbeatPeriodInMillis());

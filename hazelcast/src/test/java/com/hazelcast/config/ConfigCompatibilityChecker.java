@@ -730,7 +730,8 @@ public class ConfigCompatibilityChecker {
                             && c1.isFailOnIndeterminateOperationState() == c2.isFailOnIndeterminateOperationState())
                             && c1.isPersistenceEnabled() == c2.isPersistenceEnabled()
                             && c1.getBaseDir().getAbsoluteFile().equals(c2.getBaseDir().getAbsoluteFile())
-                            && c1.getDataLoadTimeoutSeconds() == c2.getDataLoadTimeoutSeconds();
+                            && c1.getDataLoadTimeoutSeconds() == c2.getDataLoadTimeoutSeconds()
+                            && c1.getCPMemberPriority() == c2.getCPMemberPriority();
 
             if (!cpSubsystemConfigValuesEqual) {
                 return false;

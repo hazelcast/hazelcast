@@ -17,7 +17,6 @@
 package com.hazelcast.nio.serialization;
 
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
-import com.hazelcast.spi.annotation.Beta;
 
 /**
  * FieldKind for {@link com.hazelcast.config.CompactSerializationConfig Compact} and {@link Portable} formats.
@@ -27,9 +26,8 @@ import com.hazelcast.spi.annotation.Beta;
  * {@link FieldType} is the old API for Portable only and only meant to be used with
  * {@link ClassDefinition#getFieldType(String)} API.
  *
- * @since Hazelcast 5.0 as BETA. The final version will not be backward compatible with the Beta.
+ * @since Hazelcast 5.2
  */
-@Beta
 public enum FieldKind {
 
     /**

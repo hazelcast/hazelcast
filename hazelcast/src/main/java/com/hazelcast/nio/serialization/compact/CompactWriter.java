@@ -17,7 +17,6 @@
 package com.hazelcast.nio.serialization.compact;
 
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -30,9 +29,8 @@ import java.time.OffsetDateTime;
 /**
  * Provides means of writing compact serialized fields to the binary data.
  *
- * @since Hazelcast 5.0 as BETA
+ * @since 5.2
  */
-@Beta
 public interface CompactWriter {
 
     /**

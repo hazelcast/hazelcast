@@ -388,9 +388,6 @@ public abstract class AbstractConfigBuilderTest extends HazelcastTestSupport {
     public abstract void testJavaSerializationFilter();
 
     @Test
-    public abstract void testCompactSerialization();
-
-    @Test
     public abstract void testCompactSerialization_serializerRegistration();
 
     @Test

@@ -63,8 +63,6 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     private final SchemaService schemaService;
     private final ManagedContext managedContext;
     private final ClassLoader classLoader;
-    //Should be deleted with removing Beta tags
-    private final boolean isEnabled;
 
     public CompactStreamSerializer(CompactSerializationConfig compactSerializationConfig,
                                    ManagedContext managedContext, SchemaService schemaService,
@@ -72,7 +70,6 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         this.managedContext = managedContext;
         this.schemaService = schemaService;
         this.classLoader = classLoader;
-        this.isEnabled = compactSerializationConfig.isEnabled();
         registerSerializers(compactSerializationConfig);
         registerDeclarativeConfigSerializers(compactSerializationConfig);
         registerDeclarativeConfigClasses(compactSerializationConfig);
@@ -262,11 +259,6 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
         Schema schema = getOrReadSchema(in, false);
         BufferObjectDataInput input = (BufferObjectDataInput) in;
         return new CompactInternalGenericRecord(this, input, schema, null, false);
-    }
-
-    //Should be deleted with removing Beta tags
-    public boolean isEnabled() {
-        return isEnabled;
     }
 
     private void registerSerializers(CompactSerializationConfig compactSerializationConfig) {

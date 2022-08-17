@@ -231,7 +231,6 @@ public class MetadataCompactResolverTest {
 
     private static InternalSerializationService createSerializationService() {
         SerializationConfig serializationConfig = new SerializationConfig();
-        serializationConfig.getCompactSerializationConfig().setEnabled(true);
         return new DefaultSerializationServiceBuilder().setSchemaService(CompactTestUtil.createInMemorySchemaService())
                 .setConfig(serializationConfig).build();
     }

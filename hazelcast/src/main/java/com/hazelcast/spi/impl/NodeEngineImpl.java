@@ -175,10 +175,11 @@ public class NodeEngineImpl implements NodeEngine {
             checkMapMergePolicies(node);
 
             this.tenantControlService = new TenantControlServiceImpl(this);
+
             serviceManager.registerService(OperationServiceImpl.SERVICE_NAME, operationService);
             serviceManager.registerService(OperationParker.SERVICE_NAME, operationParker);
             serviceManager.registerService(UserCodeDeploymentService.SERVICE_NAME, userCodeDeploymentService);
-            serviceManager.registerService(MemberSchemaService.SERVICE_NAME, node.memberSchemaService);
+            serviceManager.registerService(MemberSchemaService.SERVICE_NAME, node.getSchemaService());
             serviceManager.registerService(ConfigurationService.SERVICE_NAME, configurationService);
             serviceManager.registerService(TenantControlServiceImpl.SERVICE_NAME, tenantControlService);
         } catch (Throwable e) {
@@ -575,6 +576,11 @@ public class NodeEngineImpl implements NodeEngine {
         if (diagnostics != null) {
             diagnostics.shutdown();
         }
+    }
+
+    @Override
+    public MemberSchemaService getSchemaService() {
+        return node.getSchemaService();
     }
 
     @Nonnull

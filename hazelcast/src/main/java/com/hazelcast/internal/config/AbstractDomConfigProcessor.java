@@ -189,12 +189,6 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
 
     protected void handleCompactSerialization(Node node, SerializationConfig serializationConfig) {
         CompactSerializationConfig compactSerializationConfig = serializationConfig.getCompactSerializationConfig();
-        Node enabledNode = getNamedItemNode(node, "enabled");
-        if (enabledNode != null) {
-            boolean enabled = getBooleanValue(getTextContent(enabledNode));
-            compactSerializationConfig.setEnabled(enabled);
-        }
-
         for (Node child : childElements(node)) {
             String name = cleanNodeName(child);
             if (matches("serializers", name)) {

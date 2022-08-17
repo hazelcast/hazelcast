@@ -23,7 +23,6 @@ import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -79,9 +78,8 @@ import java.util.Set;
  * {@link com.hazelcast.config.CompactSerializationConfig Compact} serializable
  * objects.
  *
- * @since 4.1
+ * @since 5.2
  */
-@Beta
 public interface GenericRecord {
 
     /**

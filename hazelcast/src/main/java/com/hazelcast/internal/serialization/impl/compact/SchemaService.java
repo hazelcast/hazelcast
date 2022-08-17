@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
+import javax.annotation.Nullable;
+
 /**
  * Service to put and get metadata to cluster.
  * <p>
@@ -32,7 +34,7 @@ public interface SchemaService {
      *     <li>searching the cluster.</li>
      * </ul>
      */
-    Schema get(long schemaId);
+    @Nullable Schema get(long schemaId);
 
     /**
      * Puts the schema with the given id to the cluster.

@@ -23,6 +23,10 @@ public class NodeDTO implements Comparable<NodeDTO> {
     private NodeDTO child;
     private int id;
 
+    // Needed for CompactTestUtil#getSchemasFor
+    public NodeDTO() {
+    }
+
     public NodeDTO(NodeDTO child, int id) {
         this.child = child;
         this.id = id;

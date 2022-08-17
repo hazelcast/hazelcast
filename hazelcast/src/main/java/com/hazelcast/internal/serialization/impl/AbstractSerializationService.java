@@ -594,7 +594,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         }
 
         //6-Compact serializer
-        if (serializer == null && compactStreamSerializer.isEnabled()) {
+        if (serializer == null) {
             serializer = getCompactSerializer(includeSchema);
         }
 
@@ -614,8 +614,8 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     private SerializerAdapter lookupDefaultSerializer(Class type, boolean includeSchema) {
-        if (compactStreamSerializer.isEnabled()
-                && (CompactGenericRecord.class.isAssignableFrom(type) || compactStreamSerializer.isRegisteredAsCompact(type))) {
+        if ((CompactGenericRecord.class.isAssignableFrom(type)
+                || compactStreamSerializer.isRegisteredAsCompact(type))) {
             return getCompactSerializer(includeSchema);
         }
         if (DataSerializable.class.isAssignableFrom(type)) {

@@ -44,6 +44,7 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.util.LinkedList;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.spi.properties.ClusterProperty.GENERIC_OPERATION_THREAD_COUNT;
@@ -229,6 +230,8 @@ public class OperationServiceImpl_BasicTest extends HazelcastTestSupport {
     }
 
     private static class NonSerializableResponse {
+        // Add a field non-supported field type to make it not serializable by Compact
+        private LinkedList<String> list;
     }
 
     private static class NonSerializableResponseOperation extends Operation {
