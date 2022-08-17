@@ -36,7 +36,7 @@ public class HazelcastObjectUpsertTarget implements UpsertTarget {
             case JAVA:
                 return value -> this.object = convertRowToJavaType(value, queryDataType);
             default:
-                throw QueryException.error("TypeKind " + typeKind + " does not support top level Nested Types.");
+                throw QueryException.error("TypeKind " + typeKind + " does not support top-level custom types");
         }
     }
 

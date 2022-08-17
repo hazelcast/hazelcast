@@ -225,7 +225,7 @@ public final class TypesUtils {
     }
 
     public static TypeKind formatToTypeKind(String format) {
-        if (format == null || format.isEmpty()) {
+        if (format == null) {
             return TypeKind.NONE;
         }
 
@@ -286,29 +286,5 @@ public final class TypesUtils {
 
     private static boolean isUserClass(Class<?> clazz) {
         return !clazz.isPrimitive() && !clazz.getPackage().getName().startsWith("java.");
-    }
-
-    public static class PortableTypeIdentifier {
-        private final Integer factoryId;
-        private final Integer classId;
-        private final Integer version;
-
-        public PortableTypeIdentifier(final Integer factoryId, final Integer classId, final Integer version) {
-            this.factoryId = factoryId;
-            this.classId = classId;
-            this.version = version;
-        }
-
-        public Integer getFactoryId() {
-            return factoryId;
-        }
-
-        public Integer getClassId() {
-            return classId;
-        }
-
-        public Integer getVersion() {
-            return version;
-        }
     }
 }

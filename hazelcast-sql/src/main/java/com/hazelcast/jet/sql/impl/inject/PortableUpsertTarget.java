@@ -61,7 +61,6 @@ class PortableUpsertTarget implements UpsertTarget {
             return FAILING_TOP_LEVEL_INJECTOR;
         }
 
-
         int fieldIndex = classDefinition.hasField(path) ? classDefinition.getField(path).getIndex() : -1;
 
         if (type.isCustomType() && type.getObjectTypeKind() == QueryDataType.OBJECT_TYPE_KIND_PORTABLE) {
