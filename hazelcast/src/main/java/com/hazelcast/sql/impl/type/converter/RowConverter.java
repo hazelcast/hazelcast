@@ -19,6 +19,9 @@ package com.hazelcast.sql.impl.type.converter;
 import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 
+/**
+ * Converter for {@link RowValue} type.
+ */
 public class RowConverter extends Converter {
     public static final RowConverter INSTANCE = new RowConverter();
 

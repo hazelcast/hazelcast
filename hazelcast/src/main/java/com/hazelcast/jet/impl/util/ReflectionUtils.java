@@ -284,14 +284,10 @@ public final class ReflectionUtils {
             return null;
         }
 
-        final boolean accessible = field.isAccessible();
-        field.setAccessible(true);
         try {
             return field.get(obj);
         } catch (IllegalAccessException ignored) {
             return null;
-        } finally {
-            field.setAccessible(accessible);
         }
     }
 

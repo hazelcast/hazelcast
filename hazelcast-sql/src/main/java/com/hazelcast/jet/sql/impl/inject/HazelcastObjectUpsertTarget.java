@@ -21,13 +21,13 @@ import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nullable;
+import javax.annotation.concurrent.NotThreadSafe;
 
 import static com.hazelcast.jet.sql.impl.inject.UpsertTargetUtils.convertRowToJavaType;
 
-public class HazelcastObjectUpsertTarget implements UpsertTarget {
+@NotThreadSafe
+class HazelcastObjectUpsertTarget implements UpsertTarget {
     private Object object;
-
-    public HazelcastObjectUpsertTarget() { }
 
     @Override
     public UpsertInjector createInjector(@Nullable final String path, final QueryDataType queryDataType) {
@@ -41,9 +41,7 @@ public class HazelcastObjectUpsertTarget implements UpsertTarget {
     }
 
     @Override
-    public void init() {
-
-    }
+    public void init() { }
 
     @Override
     public Object conclude() {
