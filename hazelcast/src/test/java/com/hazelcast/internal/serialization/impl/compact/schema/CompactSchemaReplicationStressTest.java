@@ -119,20 +119,11 @@ public class CompactSchemaReplicationStressTest extends HazelcastTestSupport {
     }
 
     private ClientConfig getClientConfig() {
-        ClientConfig config = new ClientConfig();
-        config.getSerializationConfig()
-                .getCompactSerializationConfig()
-                .setEnabled(true);
-
-        return config;
+        return new ClientConfig();
     }
 
     private Config getMemberConfig() {
-        Config config = new Config();
-        config.getSerializationConfig()
-                .getCompactSerializationConfig()
-                .setEnabled(true);
-        return config;
+        return new Config();
     }
 
     private enum DriverType {

@@ -77,11 +77,7 @@ public class CompactSchemaReplicationTestBase extends HazelcastTestSupport {
 
     @Override
     public Config getConfig() {
-        Config config = smallInstanceConfig();
-        config.getSerializationConfig()
-                .getCompactSerializationConfig()
-                .setEnabled(true);
-        return config;
+        return smallInstanceConfig();
     }
 
     protected void fillMapUsing(HazelcastInstance instance) {

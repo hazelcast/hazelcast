@@ -47,7 +47,6 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         dbConnectionUrl = databaseProvider.createDatabase(JdbcSqlTestSupport.class.getName());
 
         Config config = smallInstanceConfig();
-        config.getSerializationConfig().getCompactSerializationConfig().setEnabled(true);
         // Need to set filtering class loader so the members don't deserialize into class but into GenericRecord
         config.setClassLoader(new FilteringClassLoader(newArrayList("org.example"), null));
 
@@ -59,7 +58,6 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getSerializationConfig().getCompactSerializationConfig().setEnabled(true);
 
         initializeWithClient(2, config, clientConfig);
         sqlService = instance().getSql();

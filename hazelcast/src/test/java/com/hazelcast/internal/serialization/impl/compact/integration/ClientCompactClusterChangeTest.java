@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.serialization.impl.compact.integration;
 
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -64,21 +63,11 @@ public class ClientCompactClusterChangeTest extends HazelcastTestSupport {
     }
 
     protected Config getMemberConfig() {
-        Config config = smallInstanceConfig();
-        config.getSerializationConfig()
-                .getCompactSerializationConfig()
-                .setEnabled(true);
-
-        return config;
+        return smallInstanceConfig();
     }
 
     private HazelcastInstance getClient() {
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getSerializationConfig()
-                .getCompactSerializationConfig()
-                .setEnabled(true);
-
-        return factory.newHazelcastClient(clientConfig);
+        return factory.newHazelcastClient();
     }
 
     @Test

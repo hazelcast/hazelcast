@@ -142,7 +142,6 @@ public class CompactSerializationTest {
         MainDTOSerializer mainDTOSerializer = spy(new MainDTOSerializer());
 
         config.getCompactSerializationConfig()
-                .setEnabled(true)
                 .setSerializers(innerDTOSerializer, mainDTOSerializer);
 
         SerializationService service = createSerializationService(config);
@@ -189,7 +188,6 @@ public class CompactSerializationTest {
 
         EmployeeDTOSerializer serializer = spy(new EmployeeDTOSerializer());
         config.getCompactSerializationConfig()
-                .setEnabled(true)
                 .addSerializer(serializer)
                 .setSerializers(new InnerDTOSerializer(), new MainDTOSerializer());
 
@@ -206,7 +204,6 @@ public class CompactSerializationTest {
     public void testSetClasses() {
         SerializationConfig config = new SerializationConfig();
         config.getCompactSerializationConfig()
-                .setEnabled(true)
                 .setClasses(ExternalizableEmployeeDTO.class, SerializableEmployeeDTO.class);
 
         SerializationService service = createSerializationService(config);
@@ -236,7 +233,6 @@ public class CompactSerializationTest {
     public void testSetSerializers_whenThereAreClassRegistrations() {
         SerializationConfig config = new SerializationConfig();
         config.getCompactSerializationConfig()
-                .setEnabled(true)
                 .setClasses(SerializableEmployeeDTO.class)
                 .setSerializers(new EmployeeDTOSerializer());
 
@@ -250,7 +246,6 @@ public class CompactSerializationTest {
         SerializationConfig config = new SerializationConfig();
         EmployeeDTOSerializer serializer = spy(new EmployeeDTOSerializer());
         config.getCompactSerializationConfig()
-                .setEnabled(true)
                 .setSerializers(serializer)
                 .setClasses(SerializableEmployeeDTO.class);
 
@@ -263,11 +258,7 @@ public class CompactSerializationTest {
 
     @Test
     public void testSerializingClassReflectively_whenTheClassIsNotSupported() {
-        SerializationConfig config = new SerializationConfig();
-        config.getCompactSerializationConfig()
-                .setEnabled(true);
-
-        SerializationService service = createSerializationService(config);
+        SerializationService service = createSerializationService(new SerializationConfig());
 
         // OptionalDouble is a class that does not implement the Serializable interface
         // from the java.util package, which is not allowed to be serialized
@@ -281,11 +272,7 @@ public class CompactSerializationTest {
 
     @Test
     public void testSerializingClassReflectively_withUnsupportedFieldType() {
-        SerializationConfig config = new SerializationConfig();
-        config.getCompactSerializationConfig()
-                .setEnabled(true);
-
-        SerializationService service = createSerializationService(config);
+        SerializationService service = createSerializationService(new SerializationConfig());
         assertThatThrownBy(() -> {
             service.toData(new ClassWithUnsupportedField());
         }).isInstanceOf(HazelcastSerializationException.class)
@@ -295,11 +282,7 @@ public class CompactSerializationTest {
 
     @Test
     public void testSerializingClassReflectively_withUnsupportedArrayItemType() {
-        SerializationConfig config = new SerializationConfig();
-        config.getCompactSerializationConfig()
-                .setEnabled(true);
-
-        SerializationService service = createSerializationService(config);
+        SerializationService service = createSerializationService(new SerializationConfig());
         assertThatThrownBy(() -> {
             service.toData(new ClassWithUnsupportedArrayField());
         }).isInstanceOf(HazelcastSerializationException.class)
@@ -309,11 +292,7 @@ public class CompactSerializationTest {
 
     @Test
     public void testWritingArrayOfCompactGenericRecordField_withDifferentSchemas() {
-        SerializationConfig config = new SerializationConfig();
-        config.getCompactSerializationConfig()
-                .setEnabled(true);
-
-        SerializationService service = createSerializationService(config);
+        SerializationService service = createSerializationService(new SerializationConfig());
 
         GenericRecord itemType1 = GenericRecordBuilder.compact("item-type-1").build();
         GenericRecord itemType2 = GenericRecordBuilder.compact("item-type-2").build();
@@ -330,11 +309,7 @@ public class CompactSerializationTest {
 
     @Test
     public void testWritingArrayOfCompactGenericField_withDifferentItemTypes() {
-        SerializationConfig config = new SerializationConfig();
-        config.getCompactSerializationConfig()
-                .setEnabled(true);
-
-        SerializationService service = createSerializationService(config);
+        SerializationService service = createSerializationService(new SerializationConfig());
 
         SomeCompactObject[] objects = new SomeCompactObject[2];
         objects[0] = new SomeCompactObjectImpl();
@@ -349,7 +324,6 @@ public class CompactSerializationTest {
     }
 
     private SerializationService createSerializationService(SerializationConfig config) {
-        config.getCompactSerializationConfig().setEnabled(true);
         return new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
                 .setConfig(config)

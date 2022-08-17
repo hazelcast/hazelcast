@@ -189,9 +189,6 @@ public class CompactFormatSplitBrainTest extends HazelcastTestSupport {
         config.getMapConfig("nodeMap")
                 .getMergePolicyConfig()
                 .setPolicy(PutIfAbsentMergePolicy.class.getName());
-        config.getSerializationConfig()
-                .getCompactSerializationConfig()
-                .setEnabled(true);
         config.setProperty(ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS.getName(), "1");
         config.setProperty(ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS.getName(), "1");
         return config;

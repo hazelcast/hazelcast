@@ -126,10 +126,7 @@ public class YamlClientDomConfigProcessor extends ClientDomConfigProcessor {
         CompactSerializationConfig compactSerializationConfig = serializationConfig.getCompactSerializationConfig();
         for (Node child : childElements(node)) {
             String name = cleanNodeName(child);
-            if (matches("enabled", name)) {
-                boolean enabled = getBooleanValue(getTextContent(child));
-                compactSerializationConfig.setEnabled(enabled);
-            } else if (matches("serializers", name)) {
+            if (matches("serializers", name)) {
                 fillCompactSerializers(child, compactSerializationConfig);
             } else if (matches("classes", name)) {
                 fillCompactSerializableClasses(child, compactSerializationConfig);

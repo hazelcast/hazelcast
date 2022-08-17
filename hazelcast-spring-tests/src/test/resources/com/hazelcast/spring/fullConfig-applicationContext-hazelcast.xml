@@ -646,7 +646,7 @@
                         <hz:package>com.acme.app.subpkg</hz:package>
                     </hz:whitelist>
                 </hz:java-serialization-filter>
-                <hz:compact-serialization enabled="true">
+                <hz:compact-serialization>
                     <hz:serializers>
                         <hz:serializer>com.hazelcast.spring.serialization.DummyCompactSerializer</hz:serializer>
                     </hz:serializers>

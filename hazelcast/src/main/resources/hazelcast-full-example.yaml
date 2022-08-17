@@ -2170,7 +2170,6 @@ hazelcast:
           - com.hazelcast.
           - java
     compact-serialization:
-      enabled: true
       serializers:
         - serializer: com.hazelcast.examples.DummyTypeSerializer
       classes:

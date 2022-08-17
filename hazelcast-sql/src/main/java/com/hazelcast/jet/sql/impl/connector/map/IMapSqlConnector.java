@@ -90,13 +90,6 @@ public class IMapSqlConnector implements SqlConnector {
             MetadataJsonResolver.INSTANCE
     );
 
-    private static final KvMetadataResolvers METADATA_RESOLVERS_WITHOUT_COMPACT = new KvMetadataResolvers(
-            KvMetadataJavaResolver.INSTANCE,
-            MetadataPortableResolver.INSTANCE,
-            MetadataCompactDisabledResolver.INSTANCE,
-            MetadataJsonResolver.INSTANCE
-    );
-
     @Override
     public String typeName() {
         return TYPE_NAME;
@@ -115,11 +108,7 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull List<MappingField> userFields,
             @Nonnull String externalName
     ) {
-        if (nodeEngine.getConfig().getSerializationConfig().getCompactSerializationConfig().isEnabled()) {
-            return METADATA_RESOLVERS_WITH_COMPACT.resolveAndValidateFields(userFields, options, nodeEngine);
-        } else {
-            return METADATA_RESOLVERS_WITHOUT_COMPACT.resolveAndValidateFields(userFields, options, nodeEngine);
-        }
+        return METADATA_RESOLVERS_WITH_COMPACT.resolveAndValidateFields(userFields, options, nodeEngine);
     }
 
     @Nonnull

@@ -94,10 +94,6 @@ public class CompactSchemaReplicationSingleMemberTest extends HazelcastTestSuppo
 
     @Override
     protected Config getConfig() {
-        Config config = smallInstanceConfig();
-        config.getSerializationConfig()
-                .getCompactSerializationConfig()
-                .setEnabled(true);
-        return config;
+        return smallInstanceConfig();
     }
 }

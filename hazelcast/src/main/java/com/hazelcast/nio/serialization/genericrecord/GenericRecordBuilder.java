@@ -21,7 +21,6 @@ import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecordB
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Portable;
-import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -33,8 +32,9 @@ import java.time.OffsetDateTime;
 
 /**
  * Interface for creating {@link GenericRecord} instances.
+ *
+ * @since 5.2
  */
-@Beta
 public interface GenericRecordBuilder {
 
     /**
@@ -73,9 +73,7 @@ public interface GenericRecordBuilder {
      *
      * @param typeName of the schema
      * @return GenericRecordBuilder for Compact format
-     * @since 5.0
      */
-    @Beta
     @Nonnull
     static GenericRecordBuilder compact(String typeName) {
         return new DeserializedGenericRecordBuilder(typeName);
