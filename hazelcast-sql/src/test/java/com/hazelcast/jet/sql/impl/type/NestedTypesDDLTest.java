@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.type;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.sql.HazelcastSqlException;
@@ -26,6 +27,7 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 
+import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -36,7 +38,10 @@ public class NestedTypesDDLTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(2, null);
+        Config config = smallInstanceConfig()
+                .setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
+
+        initialize(2, config);
         storage = new TypesStorage(getNodeEngineImpl(instance()));
     }
 

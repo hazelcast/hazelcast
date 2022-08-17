@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.type;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.SqlTestSupport;
@@ -27,6 +28,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -39,7 +41,10 @@ public class PortableNestedFieldsTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initialize(2, null);
+        Config config = smallInstanceConfig()
+                .setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
+
+        initialize(2, config);
         serializationService = Util.getSerializationService(instance());
         officeType = new ClassDefinitionBuilder(1, 3)
                 .addLongField("id")

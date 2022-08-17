@@ -23,6 +23,8 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
+
 @RunWith(HazelcastSerialClassRunner.class)
 public class CompactNestedFieldsTest extends SqlTestSupport {
 
@@ -31,6 +33,8 @@ public class CompactNestedFieldsTest extends SqlTestSupport {
         final Config config = new Config();
         config.getJetConfig().setEnabled(true);
         config.getSerializationConfig().getCompactSerializationConfig().setEnabled(true);
+        config.setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
+
         initializeWithClient(3, config, null);
     }
 

@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.type;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.AllTypesValue;
@@ -46,6 +47,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Objects;
 
+import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static java.lang.String.format;
 import static java.time.Instant.ofEpochMilli;
 import static java.time.ZoneId.systemDefault;
@@ -70,7 +72,9 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() {
-        initializeWithClient(3, null, null);
+        Config config = smallInstanceConfig()
+                .setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
+        initializeWithClient(3, config, null);
     }
 
     private HazelcastInstance testInstance() {

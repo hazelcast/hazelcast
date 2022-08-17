@@ -63,6 +63,7 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
@@ -107,6 +108,7 @@ import static com.hazelcast.jet.impl.util.Util.getSerializationService;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFORMATION;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
+import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static com.hazelcast.sql.impl.expression.ExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static java.util.Collections.emptyIterator;
@@ -471,7 +473,12 @@ public class PlanExecutor {
     }
 
     SqlResult execute(CreateTypePlan plan) {
-        final TypesStorage typesStorage = new TypesStorage(getNodeEngine(hazelcastInstance));
+        NodeEngineImpl nodeEngine = getNodeEngine(hazelcastInstance);
+        if (!nodeEngine.getProperties().getBoolean(SQL_CUSTOM_TYPES_ENABLED)) {
+            throw QueryException.error("Experimental feature of creating custom types isn't enabled. To enable, set "
+                    + SQL_CUSTOM_TYPES_ENABLED + " to true");
+        }
+        final TypesStorage typesStorage = new TypesStorage(nodeEngine);
         final String format = plan.options().get(SqlConnector.OPTION_FORMAT);
         final Type type;
 
