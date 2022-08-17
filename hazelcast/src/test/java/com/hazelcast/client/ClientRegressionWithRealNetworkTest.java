@@ -93,7 +93,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
     public void testClientConnectionBeforeServerReady() {
         ExecutorService executorService = Executors.newFixedThreadPool(2);
         executorService.submit(() -> {
-            factory.newHazelcastInstance(null);
+            factory.newHazelcastInstance(new Config());
         });
 
         CountDownLatch clientLatch = new CountDownLatch(1);
@@ -220,7 +220,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
     }
 
     private void testOperationsContinueWhenClientDisconnected(ClientConnectionStrategyConfig.ReconnectMode reconnectMode) {
-        HazelcastInstance instance1 = factory.newHazelcastInstance(null);
+        HazelcastInstance instance1 = factory.newHazelcastInstance(new Config());
         ClientConfig clientConfig = new ClientConfig();
         clientConfig.getConnectionStrategyConfig().setReconnectMode(reconnectMode);
         AtomicBoolean waitFlag = new AtomicBoolean();
@@ -252,7 +252,8 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "3");
         HazelcastInstance client = factory.newHazelcastClient(clientConfig, addressProvider);
 
-        HazelcastInstance instance2 = factory.newHazelcastInstance(null);
+
+        HazelcastInstance instance2 = factory.newHazelcastInstance(new Config());
 
         warmUpPartitions(instance1, instance2);
         String keyOwnedBy2 = generateKeyOwnedBy(instance2);
