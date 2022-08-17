@@ -31,9 +31,13 @@ public class RowConverter extends Converter {
         return RowValue.class;
     }
 
-    // TODO: OBJECT conversion?
     @Override
     public Object convertToSelf(final Converter converter, final Object val) {
-        return (RowValue) val;
+        return converter.asRow(val);
+    }
+
+    @Override
+    public String asVarchar(Object val) {
+        return val.toString();
     }
 }

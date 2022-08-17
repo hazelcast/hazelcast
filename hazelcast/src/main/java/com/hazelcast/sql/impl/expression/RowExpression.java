@@ -24,6 +24,11 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * An expression that creates a RowValue from a list of expressions.
+ * <p>
+ * (1, 2) - a row with two values. Each value can be an expression.
+ */
 public class RowExpression extends VariExpressionWithType<RowValue> implements IdentifiedDataSerializable {
 
     public RowExpression() { }

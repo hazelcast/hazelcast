@@ -23,6 +23,7 @@ import com.hazelcast.jet.sql.impl.connector.map.model.AllTypesValue;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.RowValue;
@@ -48,6 +49,7 @@ import java.util.Date;
 import java.util.Objects;
 
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
+import static com.hazelcast.sql.SqlColumnType.OBJECT;
 import static java.lang.String.format;
 import static java.time.Instant.ofEpochMilli;
 import static java.time.ZoneId.systemDefault;
@@ -114,6 +116,8 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
                 + "test.this.organization, "
                 + "test.this.organization.office "
                 + "FROM test";
+        SqlResult res = testInstance().getSql().execute(sql);
+        assertEquals(OBJECT, res.getRowMetadata().getColumn(0).getType());
         assertRowsAnyOrder(testInstance(), sql, rows(2, organization, office));
     }
 
@@ -498,6 +502,19 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
                 + "'valueJavaClass'='" + User.class.getName() + "')"))
                 .hasMessage("Encountered type 'OrganizationType', which doesn't exist")
                 .isInstanceOf(HazelcastSqlException.class);
+    }
+
+    @Test
+    public void test_rowComparison() {
+        initDefault();
+
+        // TODO https://github.com/hazelcast/hazelcast/issues/22000
+        assertThatThrownBy(() -> testInstance().getSql().execute("select 1 from test where to_row((this).organization.office)=(3, 'office1')").iterator().next())
+                .hasMessageContaining("class com.hazelcast.sql.impl.expression.RowValue cannot be cast to class java.lang.Comparable");
+
+        // without TO_ROW function it fails - TODO can we support this too?
+        assertThatThrownBy(() -> testInstance().getSql().execute("select 1 from test where (this).organization.office=(3, 'office1')").iterator().next())
+                .hasMessage("From line 1, column 27 to line 1, column 66: Cannot apply '=' operator to [OBJECT, ROW] (consider adding an explicit CAST)");
     }
 
     private User initDefault() {

@@ -31,6 +31,12 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * A class stored in the SQL catalog to represent a type created using the
+ * CREATE TYPE command.
+ * <p>
+ * It can represent a java class, or a portable/compact type, see {@link #kind}.
+ */
 public class Type implements IdentifiedDataSerializable, Serializable {
     private String name;
     private TypeKind kind = TypeKind.JAVA;

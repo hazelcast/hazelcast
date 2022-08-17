@@ -16,8 +16,6 @@
 
 package com.hazelcast.sql.impl.schema.type;
 
-import java.util.Arrays;
-
 public enum TypeKind {
     NONE(0),
     JAVA(1),
@@ -35,6 +33,6 @@ public enum TypeKind {
     }
 
     public static TypeKind of(int value) {
-        return Arrays.stream(values()).filter(v -> v.value == value).findFirst().orElse(null);
+        return TypeKind.values()[value];
     }
 }

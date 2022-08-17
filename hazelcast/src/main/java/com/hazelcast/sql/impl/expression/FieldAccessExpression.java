@@ -32,6 +32,11 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
 
+/**
+ * An expression backing the DOT operator for extracting field from a struct type.
+ * <p>
+ * {@code ref.field} - extracts `field` from `ref`.
+ */
 public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSerializable {
     private QueryDataType type;
     private String name;

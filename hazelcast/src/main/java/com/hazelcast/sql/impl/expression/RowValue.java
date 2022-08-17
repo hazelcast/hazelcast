@@ -27,6 +27,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+/**
+ * A value of a ROW type (ROW is a SQL struct). It contains values, but not the
+ * field names - names are part of the type, the value doesn't reference the
+ * type.
+ */
 public class RowValue implements Serializable, IdentifiedDataSerializable {
     private List<Object> values;
 
