@@ -164,7 +164,6 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
             } else {
                 EmployeeDTO employeeDTO = (EmployeeDTO) map.get(i);
                 assertEquals(employeeDTO.getAge(), 1000 + i);
-
             }
         }
     }
@@ -190,21 +189,4 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
             return null;
         }
     }
-
-    @Test
-    public void testClusterRestart() {
-        EmployeeDTO employeeDTO = new EmployeeDTO(30, 102310312);
-        IMap<Integer, EmployeeDTO> map = instance1.getMap("test");
-        map.put(1, employeeDTO);
-
-        restartCluster();
-
-        map.put(1, employeeDTO);
-        assertEquals(employeeDTO, map.get(1));
-        // Perform a query to make sure that the schema is available on the cluster
-        assertEquals(1, map.values(Predicates.sql("age == 30")).size());
-    }
-
-    protected abstract void restartCluster();
-
 }

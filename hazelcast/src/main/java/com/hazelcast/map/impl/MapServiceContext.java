@@ -75,8 +75,6 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
 
     Data toData(Object object);
 
-    Data toDataWithSchema(Object object);
-
     MapContainer getMapContainer(String mapName);
 
     MapContainer getExistingMapContainer(String mapName);

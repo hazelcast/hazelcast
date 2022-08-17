@@ -17,47 +17,51 @@
 package com.hazelcast.internal.serialization.impl.compact.schema;
 
 import com.hazelcast.internal.serialization.impl.compact.Schema;
-import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
-import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
 
 /**
- * Puts the schema to the local registry of this member if it is absent.
+ * A simple class that holds the status of the replication for a
+ * schema.
  */
-public class SendSchemaOperation extends Operation implements IdentifiedDataSerializable {
+public final class SchemaReplication implements IdentifiedDataSerializable {
 
     private Schema schema;
+    private volatile SchemaReplicationStatus status;
 
-    public SendSchemaOperation() {
+    public SchemaReplication() {
     }
 
-    public SendSchemaOperation(Schema schema) {
+    public SchemaReplication(Schema schema, SchemaReplicationStatus status) {
         this.schema = schema;
+        this.status = status;
+    }
+
+    public Schema getSchema() {
+        return schema;
+    }
+
+    public void setStatus(SchemaReplicationStatus status) {
+        this.status = status;
+    }
+
+    public SchemaReplicationStatus getStatus() {
+        return status;
     }
 
     @Override
-    public void run() {
-        MemberSchemaService schemaService = getService();
-        schemaService.putLocal(schema);
-    }
-
-    @Override
-    protected void writeInternal(ObjectDataOutput out) throws IOException {
+    public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(schema);
+        out.writeInt(status.getId());
     }
 
     @Override
-    protected void readInternal(ObjectDataInput in) throws IOException {
+    public void readData(ObjectDataInput in) throws IOException {
         schema = in.readObject();
-    }
-
-    @Override
-    public String getServiceName() {
-        return SchemaService.SERVICE_NAME;
+        status = SchemaReplicationStatus.fromId(in.readInt());
     }
 
     @Override
@@ -67,7 +71,6 @@ public class SendSchemaOperation extends Operation implements IdentifiedDataSeri
 
     @Override
     public int getClassId() {
-        return SchemaDataSerializerHook.SEND_SCHEMA_OPERATION;
+        return SchemaDataSerializerHook.SCHEMA_REPLICATION;
     }
-
 }
