@@ -75,6 +75,9 @@ public class QueueDestroyTest extends HazelcastTestSupport {
                 q.add(j);
             }
             q.destroy();
+            if (qService.getStatsMap().size() > 0) {
+                assertEquals("", qService.getStatsMap().keySet().iterator().next());
+            }
             assertEquals(0, qService.getStatsMap().size());
         }
     }
