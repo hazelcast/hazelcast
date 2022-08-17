@@ -661,16 +661,19 @@ public class CreateDagVisitor {
 
         Edge left = Edge.from(leftInput).to(joinVertex, 0);
         Edge right = Edge.from(rightInput).to(joinVertex, 1);
-        if (joinInfo.isEquiJoin()) {
-            left = left.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.leftEquiJoinIndices()));
-            right = right.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.rightEquiJoinIndices()));
-        } else if (joinInfo.isRightOuter()) {
+
+        if (joinInfo.isRightOuter()) {
             left = left.distributed().broadcast();
             right = right.unicast();
         } else {
             // this strategy applies to left and inner joins non-equi joins
             left = left.unicast();
             right = right.distributed().broadcast();
+        }
+
+        if (joinInfo.isEquiJoin()) {
+            left = left.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.leftEquiJoinIndices()));
+            right = right.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.rightEquiJoinIndices()));
         }
 
         dag.edge(left);

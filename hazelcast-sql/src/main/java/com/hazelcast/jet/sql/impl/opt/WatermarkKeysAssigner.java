@@ -99,6 +99,9 @@ public class WatermarkKeysAssigner {
             if (node instanceof FullScanPhysicalRel) {
                 assert node.getInputs().isEmpty() : "FullScan not a leaf";
                 FullScanPhysicalRel scan = (FullScanPhysicalRel) node;
+                if (scan.watermarkedColumnIndex() < 0) {
+                    return;
+                }
                 scan.setWatermarkKey(keyCounter);
                 Map<Integer, MutableByte> res = singletonMap(scan.watermarkedColumnIndex(), new MutableByte(keyCounter));
                 Map<Integer, MutableByte> oldValue = relToWmKeyMapping.put(scan, res);
