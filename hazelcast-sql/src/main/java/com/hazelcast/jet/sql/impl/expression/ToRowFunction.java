@@ -19,6 +19,8 @@ package com.hazelcast.jet.sql.impl.expression;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.RowValue;
@@ -27,9 +29,11 @@ import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.util.ArrayList;
-import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Set;
+
+import static java.util.Collections.newSetFromMap;
 
 public class ToRowFunction extends UniExpressionWithType<RowValue> implements IdentifiedDataSerializable {
 
@@ -44,36 +48,26 @@ public class ToRowFunction extends UniExpressionWithType<RowValue> implements Id
     }
 
     @Override
-    public int getFactoryId() {
-        return JetSqlSerializerHook.F_ID;
-    }
-
-    @Override
-    public int getClassId() {
-        return JetSqlSerializerHook.TO_ROW;
-    }
-
-    @Override
     public RowValue eval(final Row row, final ExpressionEvalContext context) {
         final Object object = this.operand.eval(row, context);
         final QueryDataType queryDataType = operand.getType();
 
-        return convert(object, queryDataType, new HashSet<>());
+        return convert(object, queryDataType, newSetFromMap(new IdentityHashMap<>()));
     }
 
-    private RowValue convert(final Object obj, final QueryDataType dataType, final Set<Integer> foundObjects) {
+    private RowValue convert(final Object obj, final QueryDataType dataType, final Set<Object> seenObjects) {
         // TODO: Compact and Portable support
-        foundObjects.add(System.identityHashCode(obj));
+        if (!seenObjects.add(obj)) {
+            throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "Cycle detected in row value");
+        }
 
         final List<Object> fieldValues = new ArrayList<>();
         for (final QueryDataType.QueryDataTypeField field : dataType.getObjectFields()) {
             final Object fieldValue = ReflectionUtils.getFieldValue(field.getName(), obj);
             if (!field.getDataType().isCustomType() || fieldValue == null) {
                 fieldValues.add(fieldValue);
-                continue;
-            }
-            if (!foundObjects.contains(System.identityHashCode(fieldValue))) {
-                    fieldValues.add(convert(fieldValue, field.getDataType(), foundObjects));
+            } else {
+                fieldValues.add(convert(fieldValue, field.getDataType(), seenObjects));
             }
         }
         return new RowValue(fieldValues);
@@ -82,5 +76,15 @@ public class ToRowFunction extends UniExpressionWithType<RowValue> implements Id
     @Override
     public QueryDataType getType() {
         return QueryDataType.ROW;
+    }
+
+    @Override
+    public int getFactoryId() {
+        return JetSqlSerializerHook.F_ID;
+    }
+
+    @Override
+    public int getClassId() {
+        return JetSqlSerializerHook.TO_ROW;
     }
 }

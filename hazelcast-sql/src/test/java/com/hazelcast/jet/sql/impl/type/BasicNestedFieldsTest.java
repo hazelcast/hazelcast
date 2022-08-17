@@ -20,6 +20,7 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.AllTypesValue;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -186,6 +187,30 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         map.put(1L, a);
 
         assertRowsAnyOrder(client(), "SELECT (this).b.c.a.name FROM test", rows(1, "a"));
+    }
+
+    @Test
+    public void when_circularlyRecurrentTypesCycle_then_toRowFails() {
+        createJavaType("AType", A.class, "name VARCHAR", "b BType");
+        createJavaType("BType", B.class, "name VARCHAR", "c CType");
+        createJavaType("CType", C.class, "name VARCHAR", "a AType");
+
+        final A a = new A("a");
+        final B b = new B("b");
+        final C c = new C("c");
+
+        a.b = b;
+        b.c = c;
+        c.a = a;
+
+        createJavaMapping("test", A.class, "this AType");
+        IMap<Long, A> map = client().getMap("test");
+        map.put(1L, a);
+
+        assertThatThrownBy(() -> assertRowsAnyOrder(client(), "SELECT to_row(this) FROM test", rows(1, "a")))
+                .hasMessageEndingWith("Cycle detected in row value")
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasFieldOrPropertyWithValue("code", SqlErrorCode.DATA_EXCEPTION);
     }
 
     @Test
