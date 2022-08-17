@@ -16,15 +16,22 @@
 
 package com.hazelcast.jet.sql.impl.type;
 
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.AllTypesValue;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlColumnType;
+import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.sql.impl.expression.RowValue;
+import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -43,14 +50,31 @@ import static java.lang.String.format;
 import static java.time.Instant.ofEpochMilli;
 import static java.time.ZoneId.systemDefault;
 import static java.time.ZoneOffset.UTC;
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.junit.runners.Parameterized.Parameter;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 public class BasicNestedFieldsTest extends SqlTestSupport {
+
+    @Parameters(name = "useClient:{0}")
+    public static Object[] parameters() {
+        return new Object[]{false, true};
+    }
+
+    @Parameter
+    public boolean useClient;
 
     @BeforeClass
     public static void beforeClass() {
         initializeWithClient(3, null, null);
+    }
+
+    private HazelcastInstance testInstance() {
+        return useClient ? client() : instance();
     }
 
     @Test
@@ -63,7 +87,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
                 + "test.this.organization.office.name AS office_name, "
                 + "test.this.organization.office.id AS office_id "
                 + "FROM test";
-        assertRowsAnyOrder(client(), sql, rows(4, "user1", "organization1", "office1", 3L));
+        assertRowsAnyOrder(testInstance(), sql, rows(4, "user1", "organization1", "office1", 3L));
     }
 
     @Test
@@ -73,7 +97,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
                 + "ABS((this).id) * 2 AS C1, "
                 + "FLOOR(CAST(((this).organization).id AS REAL) * 5.0 / 2.0) AS c2"
                 + " FROM test";
-        assertRowsAnyOrder(client(), sql, rows(2, 2L, 5.0f));
+        assertRowsAnyOrder(testInstance(), sql, rows(2, 2L, 5.0f));
     }
 
     @Test
@@ -86,7 +110,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
                 + "test.this.organization, "
                 + "test.this.organization.office "
                 + "FROM test";
-        assertRowsAnyOrder(client(), sql, rows(2, organization, office));
+        assertRowsAnyOrder(testInstance(), sql, rows(2, organization, office));
     }
 
     @Test
@@ -100,7 +124,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
                 + "test.this.organization.office "
                 + "FROM test WHERE test.this.organization.office = ?";
 
-        assertRowsAnyOrder(client(), sql, Collections.singletonList(office),
+        assertRowsAnyOrder(testInstance(), sql, Collections.singletonList(office),
                 rows(2, organization, office));
     }
 
@@ -120,7 +144,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         execute("INSERT INTO test (__key, this) VALUES (?, ?)",
                 2L, new User(2L, "user2", user.organization));
 
-        assertRowsAnyOrder(client(), "SELECT test.this.organization, test.this.organization.office FROM test WHERE __key = 2",
+        assertRowsAnyOrder(testInstance(), "SELECT test.this.organization, test.this.organization.office FROM test WHERE __key = 2",
                 rows(2, organization, office));
     }
 
@@ -131,7 +155,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         final User newUser = new User(1L, "new-name", oldUser.organization);
 
         execute("UPDATE test SET this = ? WHERE __key = 1", newUser);
-        assertRowsAnyOrder(client(), "SELECT test.this.id, test.this.name, test.this.organization FROM test WHERE __key = 1",
+        assertRowsAnyOrder(testInstance(), "SELECT test.this.id, test.this.name, test.this.organization FROM test WHERE __key = 1",
                 rows(3, 1L, "new-name", oldUser.organization));
     }
 
@@ -150,9 +174,9 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         fourth.other = first;
 
         createJavaMapping("test", SelfRef.class,  "this SelfRefType");
-        client().getMap("test").put(1L, first);
+        testInstance().getMap("test").put(1L, first);
 
-        assertRowsAnyOrder(client(), "SELECT "
+        assertRowsAnyOrder(testInstance(), "SELECT "
                         + "test.this.name, "
                         + "test.this.other.name, "
                         + "test.this.other.other.name, "
@@ -183,10 +207,10 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         c.a = a;
 
         createJavaMapping("test", A.class, "this AType");
-        IMap<Long, A> map = client().getMap("test");
+        IMap<Long, A> map = testInstance().getMap("test");
         map.put(1L, a);
 
-        assertRowsAnyOrder(client(), "SELECT (this).b.c.a.name FROM test", rows(1, "a"));
+        assertRowsAnyOrder(testInstance(), "SELECT (this).b.c.a.name FROM test", rows(1, "a"));
     }
 
     @Test
@@ -204,10 +228,10 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         c.a = a;
 
         createJavaMapping("test", A.class, "this AType");
-        IMap<Long, A> map = client().getMap("test");
+        IMap<Long, A> map = testInstance().getMap("test");
         map.put(1L, a);
 
-        assertThatThrownBy(() -> assertRowsAnyOrder(client(), "SELECT to_row(this) FROM test", rows(1, "a")))
+        assertThatThrownBy(() -> assertRowsAnyOrder(testInstance(), "SELECT to_row(this) FROM test", rows(1, "a")))
                 .hasMessageEndingWith("Cycle detected in row value")
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasFieldOrPropertyWithValue("code", SqlErrorCode.DATA_EXCEPTION);
@@ -218,7 +242,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         initDefault();
         execute("INSERT INTO test VALUES (2, " +
                 "(2, 'user2', (2, 'organization2', (2, 'office2'))))");
-        assertRowsAnyOrder(client(), "SELECT "
+        assertRowsAnyOrder(testInstance(), "SELECT "
                         + "test.this.name, "
                         + "test.this.organization.name, "
                         + "test.this.organization.office.name "
@@ -250,15 +274,15 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         createType("NestedType", NestedPOJO.class);
         createJavaMapping("test", RegularPOJO.class, "name VARCHAR", "child NestedType");
 
-        client().getMap("test")
+        testInstance().getMap("test")
                 .put(1L, new RegularPOJO("parentPojo", new NestedPOJO(1L, "childPojo")));
 
-        assertRowsAnyOrder(client(), "SELECT name, (child).name FROM test", rows(2,
+        assertRowsAnyOrder(testInstance(), "SELECT name, (child).name FROM test", rows(2,
                 "parentPojo",
                 "childPojo"
         ));
 
-        assertRowsAnyOrder(client(), "SELECT child FROM test", rows(1, new NestedPOJO(1L, "childPojo")));
+        assertRowsAnyOrder(testInstance(), "SELECT child FROM test", rows(1, new NestedPOJO(1L, "childPojo")));
     }
 
     @Test
@@ -272,13 +296,13 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
                 + "TYPE IMap "
                 + "OPTIONS ('keyFormat'='bigint', 'valueFormat'='java', 'valueJavaClass'='%s')", RegularPOJO.class.getName()));
 
-        client().getMap("test")
+        testInstance().getMap("test")
                 .put(1L, new RegularPOJO("parentPojo", new NestedPOJO(1L, "childPojo")));
 
-        assertRowsAnyOrder(client(), "SELECT parentName, (childObj).name FROM (SELECT * FROM test)", rows(2,
+        assertRowsAnyOrder(testInstance(), "SELECT parentName, (childObj).name FROM (SELECT * FROM test)", rows(2,
                 "parentPojo", "childPojo"
         ));
-        assertRowsAnyOrder(client(), "SELECT childObj FROM test", rows(1, new NestedPOJO(1L, "childPojo")));
+        assertRowsAnyOrder(testInstance(), "SELECT childObj FROM test", rows(1, new NestedPOJO(1L, "childPojo")));
     }
 
     @Test
@@ -288,11 +312,11 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
 
         execute("INSERT INTO test (__key, name, child) "
                 + "VALUES (1, 'parent', (1, 'child'))");
-        assertRowsAnyOrder(client(), "SELECT name, test.child.name FROM test",
+        assertRowsAnyOrder(testInstance(), "SELECT name, test.child.name FROM test",
                 rows(2, "parent", "child"));
 
         execute("UPDATE test SET child = (2, 'child2')");
-        assertRowsAnyOrder(client(), "SELECT test.child.id, test.child.name FROM test",
+        assertRowsAnyOrder(testInstance(), "SELECT test.child.id, test.child.name FROM test",
                 rows(2, 2L, "child2"));
     }
 
@@ -328,7 +352,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         execute("INSERT INTO test (__key, name, child) VALUES (1, 'parent', "
                 + allTypesValueRowLiteral + ")");
 
-        assertRowsAnyOrder(client(), "SELECT "
+        assertRowsAnyOrder(testInstance(), "SELECT "
                 + "test.child.bigDecimal,"
                 + "test.child.bigInteger,"
                 + "test.child.byte0,"
@@ -381,17 +405,17 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
     @Test
     public void test_compoundAliases() {
         initDefault();
-        assertRowsAnyOrder(client(), "SELECT ((org).office).name FROM " +
+        assertRowsAnyOrder(testInstance(), "SELECT ((org).office).name FROM " +
                         "(SELECT (this).organization as org FROM (SELECT * FROM test))",
                 rows(1, "office1"));
-        assertRowsAnyOrder(client(), "SELECT (((this).organization).office).name FROM (SELECT * FROM test)",
+        assertRowsAnyOrder(testInstance(), "SELECT (((this).organization).office).name FROM (SELECT * FROM test)",
                 rows(1, "office1"));
     }
 
     @Test
     public void test_newDotOperatorSyntax() {
         initDefault();
-        assertRowsAnyOrder(client(), "SELECT (((this).organization).office).name FROM test",
+        assertRowsAnyOrder(testInstance(), "SELECT (((this).organization).office).name FROM test",
                 rows(1, "office1"));
     }
 
@@ -406,19 +430,19 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
 
         execute("INSERT INTO test2 VALUES (1, (1, 'user2', (1, 'organization2', (1, 'office2'))))");
 
-        assertRowsAnyOrder(client(), "SELECT (((t1.this).organization).office).name, (((t2.this).organization).office).name "
+        assertRowsAnyOrder(testInstance(), "SELECT (((t1.this).organization).office).name, (((t2.this).organization).office).name "
                         + "FROM test AS t1 JOIN test2 AS t2 ON t1.__key = t2.__key",
                 rows(2, "office1", "office2"));
 
-        assertRowsAnyOrder(client(), "SELECT (((this).organization).office).name "
+        assertRowsAnyOrder(testInstance(), "SELECT (((this).organization).office).name "
                         + "FROM (SELECT t1.this FROM test AS t1 JOIN test2 AS t2 ON t1.__key = t2.__key)",
                 rows(1, "office1"));
 
-        assertRowsAnyOrder(client(), "SELECT (((this).organization).office).name "
+        assertRowsAnyOrder(testInstance(), "SELECT (((this).organization).office).name "
                         + "FROM (SELECT t2.this FROM test AS t1 JOIN test2 AS t2 ON t1.__key = t2.__key)",
                 rows(1, "office2"));
 
-        assertRowsAnyOrder(client(), "SELECT (((this1).organization).office).name, (((this2).organization).office).name "
+        assertRowsAnyOrder(testInstance(), "SELECT (((this1).organization).office).name, (((this2).organization).office).name "
                         + "FROM (SELECT t1.this as this1, t2.this AS this2 FROM test AS t1 JOIN test2 AS t2 ON t1.__key = t2.__key)",
                 rows(2, "office1", "office2"));
     }
@@ -429,7 +453,7 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         createJavaMapping("test2", User.class, "this UserType");
         execute("INSERT INTO test2 VALUES (1, (1, 'user2', (1, 'organization2', (1, 'office2'))))");
 
-        assertRowsAnyOrder(client(), "SELECT t1.this.organization.office.name, t2.this.organization.office.name "
+        assertRowsAnyOrder(testInstance(), "SELECT t1.this.organization.office.name, t2.this.organization.office.name "
                         + "FROM test AS t1 JOIN test2 AS t2 "
                         + "ON ABS(t1.this.id) = t2.this.id AND t1.this.id = t2.this.id",
                 rows(2, "office1", "office2"));
@@ -439,13 +463,28 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
     public void test_basicToRow() {
         initDefault();
 
-        assertRowsAnyOrder(client(), "SELECT TO_ROW(this) FROM test", rows(1, "[[1, user1, [[2, organization1, [[3, office1]]]]]]"));
+        boolean found = false;
+        for (SqlRow r : testInstance().getSql().execute("SELECT TO_ROW(this) FROM test")) {
+            assertEquals(1, r.getMetadata().getColumnCount());
+            assertEquals(SqlColumnType.ROW, r.getMetadata().getColumn(0).getType());
+            // TODO https://github.com/hazelcast/hazelcast/issues/21998
+            Object expectedValue = useClient ? "[[1, user1, [[2, organization1, [[3, office1]]]]]]" :
+                    new RowValue(asList(1L, "user1",
+                            new RowValue(asList(2L, "organization1",
+                                    new RowValue(asList(3L, "office1"))))));
+            assertEquals(expectedValue, r.getObject(0));
+            found = true;
+        }
+
+        if (!found) {
+            fail("no row returned");
+        }
     }
 
     @Test
     public void test_missingType() {
         // we create UserType, that has OrganizationType field, but we don't create OrganizationType
-        client().getSql().execute(format("CREATE TYPE UserType (id BIGINT, name VARCHAR, organization OrganizationType) "
+        testInstance().getSql().execute(format("CREATE TYPE UserType (id BIGINT, name VARCHAR, organization OrganizationType) "
                 + "OPTIONS ('format'='java', 'javaClass'='%s')", User.class.getName()));
 
         assertThatThrownBy(() -> execute("CREATE MAPPING test (__key BIGINT, this UserType) "
@@ -458,13 +497,13 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
     }
 
     private User initDefault() {
-        client().getSql().execute(format("CREATE TYPE UserType (id BIGINT, name VARCHAR, organization OrganizationType) "
+        testInstance().getSql().execute(format("CREATE TYPE UserType (id BIGINT, name VARCHAR, organization OrganizationType) "
                 + "OPTIONS ('format'='java', 'javaClass'='%s')", User.class.getName()));
-        client().getSql().execute(format("CREATE TYPE OrganizationType (id BIGINT, name VARCHAR, office OfficeType) "
+        testInstance().getSql().execute(format("CREATE TYPE OrganizationType (id BIGINT, name VARCHAR, office OfficeType) "
                 + "OPTIONS ('format'='java', 'javaClass'='%s')", Organization.class.getName()));
-        client().getSql().execute(format("CREATE TYPE OfficeType (id BIGINT, name VARCHAR) "
+        testInstance().getSql().execute(format("CREATE TYPE OfficeType (id BIGINT, name VARCHAR) "
                 + "OPTIONS ('format'='java', 'javaClass'='%s')", Office.class.getName()));
-        final IMap<Long, User> testMap = client().getMap("test");
+        final IMap<Long, User> testMap = testInstance().getMap("test");
         execute("CREATE MAPPING test (__key BIGINT, this UserType) "
                 + "TYPE IMap OPTIONS ("
                 + "'keyFormat'='bigint', "
@@ -479,7 +518,11 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         return user;
     }
 
-    static void createJavaType(String name, Class<?> typeClass, String... columns) {
+    private void createJavaType(String name, Class<?> typeClass, String... columns) {
+        createJavaType(testInstance(), name, typeClass, columns);
+    }
+
+    static void createJavaType(HazelcastInstance inst, String name, Class<?> typeClass, String... columns) {
         final String sql = "CREATE TYPE " + name
                 + "(" + String.join(",", columns) + ")"
                 + "OPTIONS ("
@@ -487,10 +530,14 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
                 + format("'javaClass'='%s'", typeClass.getName())
                 + ")";
 
-        execute(sql);
+        execute(inst, sql);
     }
 
-    static void createJavaMapping(String name, Class<?> javaClass, String... columns) {
+    private void createJavaMapping(String name, Class<?> javaClass, String... columns) {
+        createJavaMapping(testInstance(), name, javaClass, columns);
+    }
+
+    static void createJavaMapping(HazelcastInstance inst, String name, Class<?> javaClass, String... columns) {
         final String sql = "CREATE MAPPING " + name
                 + "("
                 + "__key BIGINT,"
@@ -503,11 +550,15 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
                 + format("'valueJavaClass'='%s'", javaClass.getName())
                 + ")";
 
-        execute(sql);
+        execute(inst, sql);
     }
 
-    static void execute(String sql, Object... args) {
-        client().getSql().execute(sql, args);
+    void execute(String sql, Object... args) {
+        execute(testInstance(), sql, args);
+    }
+
+    static void execute(HazelcastInstance inst, String sql, Object... args) {
+        inst.getSql().execute(sql, args);
     }
 
     public static class A implements Serializable {

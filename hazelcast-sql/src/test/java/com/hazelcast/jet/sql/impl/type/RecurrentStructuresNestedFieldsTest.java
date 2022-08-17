@@ -25,8 +25,6 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 
-import static com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.createJavaMapping;
-import static com.hazelcast.jet.sql.impl.type.BasicNestedFieldsTest.createJavaType;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -199,6 +197,14 @@ public class RecurrentStructuresNestedFieldsTest extends SqlTestSupport {
                         + " FROM test",
                 rows(8, "A1", "A2", "A3", "A4", "A5", "A1", "A4", "A3"));
 
+    }
+
+    private void createJavaType(String name, Class<?> typeClass, String... columns) {
+        BasicNestedFieldsTest.createJavaType(client(), name, typeClass, columns);
+    }
+
+    private void createJavaMapping(String name, Class<?> javaClass, String... columns) {
+        BasicNestedFieldsTest.createJavaMapping(client(), name, javaClass, columns);
     }
 
     public static class FullyConnectedA implements Serializable {
