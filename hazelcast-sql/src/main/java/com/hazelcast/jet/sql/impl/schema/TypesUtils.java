@@ -38,16 +38,17 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 public final class TypesUtils {
-    private TypesUtils() { }
+    private TypesUtils() {
+    }
 
-    public static QueryDataType convertTypeToQueryDataType(final Type rootType, final TypesStorage typesStorage) {
-        return convertTypeToQueryDataTypeInt(rootType.getName(), rootType, typesStorage, new HashMap<>());
+    public static QueryDataType convertTypeToQueryDataType(final Type rootType, final TablesStorage tablesStorage) {
+        return convertTypeToQueryDataTypeInt(rootType.getName(), rootType, tablesStorage, new HashMap<>());
     }
 
     public static Type convertPortableClassToType(
             final String name,
             final ClassDefinition classDef,
-            final TypesStorage typesStorage
+            final TableResolverImpl tableResolver
     ) {
         final Type type = new Type();
         type.setName(name);
@@ -64,11 +65,19 @@ public final class TypesUtils {
 
             final QueryDataType queryDataType;
             if (portableField.getType().equals(FieldType.PORTABLE)) {
-                queryDataType = toQueryDataTypeRef(typesStorage.getTypeByPortableClass(
-                        portableField.getFactoryId(),
-                        portableField.getClassId(),
-                        portableField.getVersion()
-                ));
+                queryDataType = toQueryDataTypeRef(tableResolver.getTypes()
+                                .stream()
+                                .filter(t -> t.getKind().equals(TypeKind.PORTABLE))
+                                .filter(t -> t.getPortableFactoryId().equals(portableField.getFactoryId()))
+                                .filter(t -> t.getPortableClassId().equals(portableField.getClassId()))
+                                .filter(t -> t.getPortableVersion().equals(portableField.getVersion()))
+                                .findFirst()
+                                .orElseThrow(() -> QueryException.error("Type with Portable IDs " + encodePortableId(
+                                                portableField.getFactoryId(),
+                                                portableField.getClassId(),
+                                                portableField.getVersion()
+                                ) + " does not exist.")));
+
             } else {
                 queryDataType = resolvePortableFieldType(portableField.getType());
             }
@@ -195,12 +204,12 @@ public final class TypesUtils {
     public static void enrichMappingFieldType(
             final TypeKind mappingTypeKind,
             final MappingField field,
-            final TypesStorage typesStorage
+            final TablesStorage tablesStorage
     ) {
         if (!field.type().isCustomType()) {
             return;
         }
-        final Type type = typesStorage.getType(field.type().getObjectTypeName());
+        final Type type = tablesStorage.getType(field.type().getObjectTypeName());
         if (type == null) {
             throw QueryException.error("Non existing type found in the mapping: "
                     + field.type().getObjectTypeName());
@@ -211,7 +220,7 @@ public final class TypesUtils {
                     + type.getKind() + "] with " + mappingTypeKind + " mapping.");
         }
 
-        final QueryDataType resolved = convertTypeToQueryDataType(type, typesStorage);
+        final QueryDataType resolved = convertTypeToQueryDataType(type, tablesStorage);
         field.setType(resolved);
     }
 

@@ -195,6 +195,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     private final IMapResolver iMapResolver;
     private final List<TableResolver> tableResolvers;
     private final PlanExecutor planExecutor;
+    private final TablesStorage tablesStorage;
 
     private final ILogger logger;
 
@@ -202,16 +203,16 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         this.nodeEngine = nodeEngine;
 
         this.iMapResolver = new MetadataResolver(nodeEngine);
+        this.tablesStorage = new TablesStorage(nodeEngine);
 
-        TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine);
+        TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine, this.tablesStorage);
         this.tableResolvers = singletonList(tableResolverImpl);
         this.planExecutor = new PlanExecutor(tableResolverImpl, nodeEngine.getHazelcastInstance(), resultRegistry);
 
         this.logger = nodeEngine.getLogger(getClass());
     }
 
-    private static TableResolverImpl mappingCatalog(NodeEngine nodeEngine) {
-        TablesStorage tablesStorage = new TablesStorage(nodeEngine);
+    private static TableResolverImpl mappingCatalog(NodeEngine nodeEngine, TablesStorage tablesStorage) {
         SqlConnectorCache connectorCache = new SqlConnectorCache(nodeEngine);
         return new TableResolverImpl(nodeEngine, tablesStorage, connectorCache);
     }
@@ -226,6 +227,10 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     @Override
     public List<TableResolver> tableResolvers() {
         return tableResolvers;
+    }
+
+    public TablesStorage tablesStorage() {
+        return tablesStorage;
     }
 
     @Override

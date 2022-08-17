@@ -21,10 +21,9 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.extract.HazelcastJsonQueryTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.HazelcastJsonUpsertTargetDescriptor;
-import com.hazelcast.jet.sql.impl.schema.TypesStorage;
-import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableField;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -56,8 +55,7 @@ final class MetadataJsonResolver implements KvMetadataResolver {
             boolean isKey,
             List<MappingField> userFields,
             Map<String, String> options,
-            InternalSerializationService serializationService,
-            TypesStorage typesStorage
+            InternalSerializationService serializationService
     ) {
         if (userFields.isEmpty()) {
             throw QueryException.error("Column list is required for JSON format");
@@ -78,8 +76,7 @@ final class MetadataJsonResolver implements KvMetadataResolver {
             boolean isKey,
             List<MappingField> resolvedFields,
             Map<String, String> options,
-            InternalSerializationService serializationService,
-            TypesStorage typesStorage
+            InternalSerializationService serializationService
     ) {
         Map<QueryPath, MappingField> externalFieldsByPath = extractFields(resolvedFields, isKey);
 

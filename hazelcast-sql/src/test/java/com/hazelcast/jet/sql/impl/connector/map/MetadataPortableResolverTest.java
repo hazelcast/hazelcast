@@ -70,8 +70,7 @@ public class MetadataPortableResolverTest {
                         (key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID), "2",
                         (key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION), "3"
                 ),
-                new DefaultSerializationServiceBuilder().build(),
-                null // TODO: fix portable nested types support?
+                new DefaultSerializationServiceBuilder().build()
         );
 
         assertThat(resolvedFields).containsExactly(field("field", QueryDataType.INT, prefix + ".field"));
@@ -110,7 +109,7 @@ public class MetadataPortableResolverTest {
         );
 
         // TODO: fix portable nested types support?
-        Stream<MappingField> resolvedFields = INSTANCE.resolveAndValidateFields(key, emptyList(), options, ss, null);
+        Stream<MappingField> resolvedFields = INSTANCE.resolveAndValidateFields(key, emptyList(), options, ss);
 
         assertThat(resolvedFields).containsExactly(
                 field("string", QueryDataType.VARCHAR, prefix + ".string"),
@@ -162,7 +161,7 @@ public class MetadataPortableResolverTest {
         );
 
         // TODO: fix portable nested types support?
-        Stream<MappingField> resolvedFields = INSTANCE.resolveAndValidateFields(key, fields, options, ss, null);
+        Stream<MappingField> resolvedFields = INSTANCE.resolveAndValidateFields(key, fields, options, ss);
 
         assertThat(resolvedFields).containsExactlyElementsOf(fields);
     }
@@ -186,7 +185,7 @@ public class MetadataPortableResolverTest {
 
         // TODO: fix portable nested types support?
         //noinspection ResultOfMethodCallIgnored
-        assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(key, fields, options, ss, null).collect(toList()))
+        assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(key, fields, options, ss).collect(toList()))
                 .isInstanceOf(QueryException.class)
                 .hasMessageContaining("Cannot derive Portable type for '" + QueryDataTypeFamily.OBJECT + "'");
     }
@@ -213,8 +212,7 @@ public class MetadataPortableResolverTest {
                 key,
                 singletonList(field("renamed_field", QueryDataType.INT, prefix + ".field")),
                 options,
-                ss,
-                null // TODO: fix portable nested types support?
+                ss
         );
 
         assertThat(resolvedFields).containsExactly(
@@ -245,8 +243,7 @@ public class MetadataPortableResolverTest {
                 key,
                 singletonList(field("field2", QueryDataType.VARCHAR, prefix + ".field2")),
                 options,
-                ss,
-                null // TODO: fix portable nested types support?
+                ss
         );
 
         assertThat(resolvedFields).containsExactly(
@@ -276,8 +273,7 @@ public class MetadataPortableResolverTest {
                 key,
                 singletonList(field("field", QueryDataType.VARCHAR, prefix + ".field")),
                 options,
-                ss,
-                null // TODO: fix portable nested types support?
+                ss
         )).isInstanceOf(QueryException.class)
           .hasMessageContaining("Mismatch between declared and resolved type: field");
     }
@@ -314,8 +310,7 @@ public class MetadataPortableResolverTest {
                         field("intArrayField", QueryDataType.OBJECT, prefix + ".intArrayField"),
                         field("nestedPortableField", QueryDataType.OBJECT, prefix + ".nestedPortableField")),
                 options,
-                ss,
-                null // TODO: fix portable nested types support?
+                ss
         );
     }
 
@@ -344,8 +339,7 @@ public class MetadataPortableResolverTest {
                         field("field2", QueryDataType.VARCHAR, prefix + ".field")
                 ),
                 options,
-                ss,
-                null // TODO: fix portable nested types support?
+                ss
         )).isInstanceOf(QueryException.class)
           .hasMessageMatching("Duplicate external name: (__key|this).field");
     }
@@ -378,8 +372,7 @@ public class MetadataPortableResolverTest {
                         (key ? OPTION_KEY_CLASS_ID : OPTION_VALUE_CLASS_ID), "2",
                         (key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION), "3"
                 ),
-                new DefaultSerializationServiceBuilder().build(),
-                null // TODO: fix portable nested types support?
+                new DefaultSerializationServiceBuilder().build()
         );
 
         assertThat(metadata.getFields()).containsExactly(
@@ -446,8 +439,7 @@ public class MetadataPortableResolverTest {
                 key,
                 singletonList(field("field", QueryDataType.INT, prefix + ".field")),
                 options,
-                ss,
-                null // TODO: fix portable nested types support?
+                ss
         );
 
         assertThat(metadata.getFields()).containsExactly(

@@ -59,7 +59,7 @@ public class KvMetadataJavaResolverTest {
                 (key ? OPTION_KEY_CLASS : OPTION_VALUE_CLASS), int.class.getName()
         );
 
-        Stream<MappingField> fields = INSTANCE.resolveAndValidateFields(key, emptyList(), options, null, null);
+        Stream<MappingField> fields = INSTANCE.resolveAndValidateFields(key, emptyList(), options, null);
 
         assertThat(fields).containsExactly(field(path, QueryDataType.INT, QueryPath.create(path).toString()));
     }
@@ -79,7 +79,6 @@ public class KvMetadataJavaResolverTest {
                 key,
                 singletonList(field("renamed_field", QueryDataType.INT, path)),
                 options,
-                null,
                 null
         )).isInstanceOf(QueryException.class)
                 .hasMessageMatching("Cannot rename field: '" + path + '\'');
@@ -100,7 +99,6 @@ public class KvMetadataJavaResolverTest {
                 key,
                 singletonList(field(path, QueryDataType.VARCHAR, path)),
                 options,
-                null,
                 null
         )).isInstanceOf(QueryException.class)
                 .hasMessageMatching("Mismatch between declared and resolved type for field '(__key|this)'");
@@ -121,7 +119,6 @@ public class KvMetadataJavaResolverTest {
                 key,
                 singletonList(field("field", QueryDataType.INT, prefix + ".field")),
                 options,
-                null,
                 null
         )).isInstanceOf(QueryException.class)
                 .hasMessage("The field '" + prefix + "' is of type INTEGER, you can't map '" + prefix + ".field' too");
@@ -142,7 +139,6 @@ public class KvMetadataJavaResolverTest {
                 key,
                 singletonList(field(path, QueryDataType.INT, path)),
                 options,
-                null,
                 null
         );
 
@@ -164,7 +160,7 @@ public class KvMetadataJavaResolverTest {
                 (key ? OPTION_KEY_CLASS : OPTION_VALUE_CLASS), Type.class.getName()
         );
 
-        Stream<MappingField> fields = INSTANCE.resolveAndValidateFields(key, emptyList(), options, null, null);
+        Stream<MappingField> fields = INSTANCE.resolveAndValidateFields(key, emptyList(), options, null);
 
         assertThat(fields).containsExactly(field("field", QueryDataType.INT, prefix + ".field"));
     }
@@ -184,7 +180,6 @@ public class KvMetadataJavaResolverTest {
                 key,
                 singletonList(field("renamed_field", QueryDataType.INT, prefix + ".field")),
                 options,
-                null,
                 null
         );
 
@@ -206,7 +201,6 @@ public class KvMetadataJavaResolverTest {
                 key,
                 singletonList(field("field2", QueryDataType.VARCHAR, prefix + ".field2")),
                 options,
-                null,
                 null
         );
 
@@ -228,7 +222,6 @@ public class KvMetadataJavaResolverTest {
                 key,
                 singletonList(field("field", QueryDataType.VARCHAR, prefix + ".field")),
                 options,
-                null,
                 null
         )).isInstanceOf(QueryException.class)
                 .hasMessageContaining("Mismatch between declared and resolved type for field 'field'");
@@ -249,7 +242,6 @@ public class KvMetadataJavaResolverTest {
                 key,
                 singletonList(field("field", QueryDataType.INT, "extField")),
                 options,
-                null,
                 null
         );
         assertThat(metadata.getFields()).containsExactly(
@@ -281,7 +273,6 @@ public class KvMetadataJavaResolverTest {
                         field("field2", QueryDataType.VARCHAR, prefix + ".field")
                 ),
                 options,
-                null,
                 null
         )).isInstanceOf(QueryException.class)
                 .hasMessageMatching("Duplicate external name: (__key|this).field");
@@ -302,7 +293,6 @@ public class KvMetadataJavaResolverTest {
                 key,
                 singletonList(field("field", QueryDataType.INT, prefix + ".field")),
                 options,
-                null,
                 null
         );
 

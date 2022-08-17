@@ -21,7 +21,6 @@ import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
 import com.hazelcast.jet.sql.impl.inject.PortableUpsertTargetDescriptor;
-import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.jet.sql.impl.schema.TypesUtils;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
@@ -73,22 +72,20 @@ final class MetadataPortableResolver implements KvMetadataResolver {
             boolean isKey,
             List<MappingField> userFields,
             Map<String, String> options,
-            InternalSerializationService serializationService,
-            TypesStorage typesStorage
+            InternalSerializationService serializationService
     ) {
         Map<QueryPath, MappingField> userFieldsByPath = extractFields(userFields, isKey);
         ClassDefinition classDefinition = findClassDefinition(isKey, options, serializationService);
 
         return userFields.isEmpty()
-                ? resolveFields(isKey, classDefinition, serializationService, typesStorage)
+                ? resolveFields(isKey, classDefinition, serializationService)
                 : resolveAndValidateFields(isKey, userFieldsByPath, classDefinition);
     }
 
     Stream<MappingField> resolveFields(
             boolean isKey,
             @Nullable ClassDefinition clazz,
-            InternalSerializationService ss,
-            TypesStorage typesStorage
+            InternalSerializationService ss
     ) {
         if (clazz == null || clazz.getFieldCount() == 0) {
             // ClassDefinition does not exist, or it is empty, map the whole value
@@ -138,8 +135,7 @@ final class MetadataPortableResolver implements KvMetadataResolver {
             boolean isKey,
             List<MappingField> resolvedFields,
             Map<String, String> options,
-            InternalSerializationService serializationService,
-            TypesStorage typesStorage
+            InternalSerializationService serializationService
     ) {
         Map<QueryPath, MappingField> fieldsByPath = extractFields(resolvedFields, isKey);
         ClassDefinition clazz = resolveClassDefinition(isKey, options, fieldsByPath.values(), serializationService);

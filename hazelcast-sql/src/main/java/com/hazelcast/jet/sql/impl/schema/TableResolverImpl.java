@@ -187,15 +187,37 @@ public class TableResolverImpl implements TableResolver {
         }
     }
 
+    @Nonnull
+    public Collection<String> getViewNames() {
+        return tableStorage.viewNames();
+    }
+
+    // endregion
+
+    // region type
+
+    public Collection<String> getTypeNames() {
+        return tableStorage.typeNames();
+    }
+
+    public List<Type> getTypes() {
+        return new ArrayList<>(tableStorage.getAllTypes());
+    }
+
+    public void createType(Type type, boolean replace, boolean ifNotExists) {
+        if (ifNotExists) {
+            tableStorage.putIfAbsent(type.getName(), type);
+        } else if (replace) {
+            tableStorage.put(type.getName(), type);
+        } else if (!tableStorage.putIfAbsent(type.getName(), type)) {
+            throw QueryException.error("Type already exists: " + type.getName());
+        }
+    }
+
     public void removeType(String name, boolean ifExists) {
         if (tableStorage.removeType(name) == null && !ifExists) {
             throw QueryException.error("Type does not exist: " + name);
         }
-    }
-
-    @Nonnull
-    public Collection<String> getViewNames() {
-        return tableStorage.viewNames();
     }
 
     // endregion

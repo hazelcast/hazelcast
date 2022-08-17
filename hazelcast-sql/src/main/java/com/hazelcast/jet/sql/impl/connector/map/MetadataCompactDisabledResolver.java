@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl.connector.map;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadataResolver;
-import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.schema.MappingField;
 
@@ -46,8 +45,7 @@ final class MetadataCompactDisabledResolver implements KvMetadataResolver {
             boolean isKey,
             List<MappingField> userFields,
             Map<String, String> options,
-            InternalSerializationService serializationService,
-            TypesStorage typesStorage
+            InternalSerializationService serializationService
     ) {
         throw QueryException.error("Compact serialization is disabled in the config");
     }
@@ -57,8 +55,7 @@ final class MetadataCompactDisabledResolver implements KvMetadataResolver {
             boolean isKey,
             List<MappingField> resolvedFields,
             Map<String, String> options,
-            InternalSerializationService serializationService,
-            TypesStorage typesStorage
+            InternalSerializationService serializationService
     ) {
         throw QueryException.error("Compact serialization is disabled in the config");
     }

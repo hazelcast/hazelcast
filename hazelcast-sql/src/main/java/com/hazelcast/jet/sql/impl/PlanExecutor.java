@@ -52,7 +52,6 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.TypeDefinitionColumn;
-import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.jet.sql.impl.schema.TypesUtils;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.EntryRemovingProcessor;
@@ -314,8 +313,7 @@ public class PlanExecutor {
                 rows = jetServiceBackend.getJobRepository().getActiveJobNames().stream();
                 break;
             case TYPES:
-                rows = new TypesStorage(getNodeEngine(hazelcastInstance)).getAllTypes().stream()
-                        .map(Type::getName);
+                rows = catalog.getTypeNames().stream();
                 break;
             default:
                 throw new AssertionError("Unsupported SHOW statement target");
@@ -478,7 +476,6 @@ public class PlanExecutor {
             throw QueryException.error("Experimental feature of creating custom types isn't enabled. To enable, set "
                     + SQL_CUSTOM_TYPES_ENABLED + " to true");
         }
-        final TypesStorage typesStorage = new TypesStorage(nodeEngine);
         final String format = plan.options().get(SqlConnector.OPTION_FORMAT);
         final Type type;
 
@@ -501,7 +498,7 @@ public class PlanExecutor {
                     .lookupClassDefinition(factoryId, classId, version);
 
             if (existingClassDef != null) {
-                type = TypesUtils.convertPortableClassToType(plan.name(), existingClassDef, typesStorage);
+                type = TypesUtils.convertPortableClassToType(plan.name(), existingClassDef, catalog);
             } else {
                 if (plan.columns().isEmpty()) {
                     throw QueryException.error("The given FactoryID/ClassID/Version combination not known to the member. " +
@@ -535,7 +532,6 @@ public class PlanExecutor {
                 throw QueryException.error("Compact Type Name must not be empty for Compact-based Types.");
             }
             type.setCompactTypeName(compactTypeName);
-            // TODO: maybe preemptively distribute schema here through MemberSchemaService.put?
         } else if (SqlConnector.JAVA_FORMAT.equals(format)) {
             final Class<?> typeClass;
             try {
@@ -550,13 +546,7 @@ public class PlanExecutor {
             throw QueryException.error("Unsupported type format: " + format);
         }
 
-        if (plan.ifNotExists()) {
-            typesStorage.register(plan.name(), type, true);
-        } else if (plan.replace()) {
-            typesStorage.register(plan.name(), type, false);
-        } else if (!typesStorage.register(plan.name(), type, true)) {
-            throw QueryException.error("Type already exists: " + plan.name());
-        }
+        catalog.createType(type, plan.replace(), plan.ifNotExists());
 
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }

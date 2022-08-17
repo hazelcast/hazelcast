@@ -50,7 +50,6 @@ public class KvMetadataJsonResolverTest {
                 key,
                 singletonList(field("field", QueryDataType.INT, prefix + ".field")),
                 emptyMap(),
-                null,
                 null
         );
 
@@ -67,7 +66,6 @@ public class KvMetadataJsonResolverTest {
                 key,
                 singletonList(field("field", QueryDataType.INT, "extField")),
                 emptyMap(),
-                null,
                 null
         );
         assertThat(metadata.getFields()).containsExactly(
@@ -94,7 +92,6 @@ public class KvMetadataJsonResolverTest {
                         field("field2", QueryDataType.VARCHAR, prefix + ".field")
                 ),
                 emptyMap(),
-                null,
                 null
         )).isInstanceOf(QueryException.class)
           .hasMessageMatching("Duplicate external name: (__key|this).field");
@@ -110,7 +107,6 @@ public class KvMetadataJsonResolverTest {
                 key,
                 singletonList(field("field", QueryDataType.INT, prefix + ".field")),
                 emptyMap(),
-                null,
                 null
         );
 

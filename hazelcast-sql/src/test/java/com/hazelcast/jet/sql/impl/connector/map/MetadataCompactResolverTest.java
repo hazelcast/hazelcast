@@ -69,7 +69,7 @@ public class MetadataCompactResolverTest {
                 ImmutableMap.of((key ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME), "testAll");
 
         // TODO: fix compact nested types support?
-        assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(key, emptyList(), options, ss, null))
+        assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(key, emptyList(), options, ss))
                 .hasMessageContaining("Column list is required for Compact format");
     }
 
@@ -87,7 +87,7 @@ public class MetadataCompactResolverTest {
         List<MappingField> fields = asList(field("object", QueryDataType.OBJECT, prefix + ".object"));
 
         // TODO: fix compact nested types support?
-        assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(key, fields, options, ss, null).collect(Collectors.toList()))
+        assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(key, fields, options, ss).collect(Collectors.toList()))
                 .isInstanceOf(QueryException.class)
                 .hasMessageContaining("Cannot derive Compact type for '" + QueryDataTypeFamily.OBJECT + "'");
     }
@@ -119,8 +119,7 @@ public class MetadataCompactResolverTest {
                 field("timestampTz", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, prefix + ".timestampTz")
         );
 
-        // TODO: fix compact nested types support?
-        Stream<MappingField> resolvedFields = MetadataCompactResolver.INSTANCE.resolveAndValidateFields(key, fields, options, ss, null);
+        Stream<MappingField> resolvedFields = MetadataCompactResolver.INSTANCE.resolveAndValidateFields(key, fields, options, ss);
 
         assertThat(resolvedFields).containsExactlyElementsOf(fields);
     }
@@ -137,7 +136,7 @@ public class MetadataCompactResolverTest {
 
         // TODO: fix compact nested types support?
         assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(key,
-                singletonList(field("field", QueryDataType.INT, prefix + ".field")), options, ss, null))
+                singletonList(field("field", QueryDataType.INT, prefix + ".field")), options, ss))
                 .hasMessageMatching("Unable to resolve table metadata\\. Missing '(key|value)CompactTypeName' option");
     }
 
@@ -159,9 +158,7 @@ public class MetadataCompactResolverTest {
                         field("field2", QueryDataType.VARCHAR, prefix + ".field")
                 ),
                 options,
-                ss,
-                // TODO: fix compact nested types support?
-                null
+                ss
         )).isInstanceOf(QueryException.class)
                 .hasMessageMatching("Duplicate external name: (__key|this).field");
     }
@@ -190,8 +187,7 @@ public class MetadataCompactResolverTest {
                         field("timestampTz", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, prefix + ".timestampTz")
                 ),
                 ImmutableMap.of((key ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME), "test"),
-                createSerializationService(),
-                null // TODO: fix compact nested types support?
+                createSerializationService()
         );
 
         assertThat(metadata.getFields()).containsExactly(

@@ -18,7 +18,8 @@ package com.hazelcast.jet.sql.impl.type;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.jet.sql.SqlTestSupport;
-import com.hazelcast.jet.sql.impl.schema.TypesStorage;
+import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
+import com.hazelcast.jet.sql.impl.schema.TablesStorage;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
@@ -34,7 +35,7 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class NestedTypesDDLTest extends SqlTestSupport {
-    private static TypesStorage storage;
+    private static TablesStorage storage;
 
     @BeforeClass
     public static void beforeClass() {
@@ -42,7 +43,7 @@ public class NestedTypesDDLTest extends SqlTestSupport {
                 .setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
 
         initialize(2, config);
-        storage = new TypesStorage(getNodeEngineImpl(instance()));
+        storage = ((CalciteSqlOptimizer) getNodeEngineImpl(instance()).getSqlService().getOptimizer()).tablesStorage();
     }
 
     @Test

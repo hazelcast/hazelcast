@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.schema.MappingField;
@@ -46,17 +45,14 @@ public interface KvMetadataResolver {
             boolean isKey,
             List<MappingField> userFields,
             Map<String, String> options,
-            InternalSerializationService serializationService,
-            // TODO: TS is a part of the type system, therefore it should be wired in every test most likely
-            TypesStorage typesStorage
+            InternalSerializationService serializationService
     );
 
     KvMetadata resolveMetadata(
             boolean isKey,
             List<MappingField> resolvedFields,
             Map<String, String> options,
-            InternalSerializationService serializationService,
-            TypesStorage typesStorage
+            InternalSerializationService serializationService
     );
 
     static Map<QueryPath, MappingField> extractFields(List<MappingField> fields, boolean isKey) {

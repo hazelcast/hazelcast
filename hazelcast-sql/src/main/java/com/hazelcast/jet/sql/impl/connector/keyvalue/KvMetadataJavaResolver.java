@@ -21,7 +21,6 @@ import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.jet.sql.impl.inject.HazelcastObjectUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.PojoUpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.inject.PrimitiveUpsertTargetDescriptor;
-import com.hazelcast.jet.sql.impl.schema.TypesStorage;
 import com.hazelcast.sql.impl.FieldsUtil;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.extract.GenericQueryTargetDescriptor;
@@ -71,24 +70,22 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             boolean isKey,
             List<MappingField> userFields,
             Map<String, String> options,
-            InternalSerializationService serializationService,
-            TypesStorage typesStorage
+            InternalSerializationService serializationService
     ) {
         Class<?> clazz = loadClass(isKey, options);
-        return resolveFields(isKey, userFields, clazz, typesStorage);
+        return resolveFields(isKey, userFields, clazz);
     }
 
     public Stream<MappingField> resolveFields(
             boolean isKey,
             List<MappingField> userFields,
-            Class<?> clazz,
-            TypesStorage typesStorage
+            Class<?> clazz
     ) {
         QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(clazz);
         if (!type.getTypeFamily().equals(QueryDataTypeFamily.OBJECT) || type.isCustomType()) {
             return resolvePrimitiveSchema(isKey, userFields, type);
         } else {
-            return resolveObjectSchema(isKey, userFields, clazz, typesStorage);
+            return resolveObjectSchema(isKey, userFields, clazz);
         }
     }
 
@@ -141,15 +138,14 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
     private Stream<MappingField> resolveObjectSchema(
             boolean isKey,
             List<MappingField> userFields,
-            Class<?> clazz,
-            TypesStorage typesStorage
+            Class<?> clazz
     ) {
         return userFields.isEmpty()
-                ? resolveObjectFields(isKey, clazz, typesStorage)
-                : resolveAndValidateObjectFields(isKey, userFields, clazz, typesStorage);
+                ? resolveObjectFields(isKey, clazz)
+                : resolveAndValidateObjectFields(isKey, userFields, clazz);
     }
 
-    private Stream<MappingField> resolveObjectFields(boolean isKey, Class<?> clazz, TypesStorage typesStorage) {
+    private Stream<MappingField> resolveObjectFields(boolean isKey, Class<?> clazz) {
         Map<String, Class<?>> fieldsInClass = FieldsUtil.resolveClass(clazz);
         if (fieldsInClass.isEmpty()) {
             // we didn't find any non-object fields in the class, map the whole value (e.g. in java.lang.Object)
@@ -169,8 +165,7 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
     private Stream<MappingField> resolveAndValidateObjectFields(
             boolean isKey,
             List<MappingField> userFields,
-            Class<?> clazz,
-            TypesStorage typesStorage
+            Class<?> clazz
     ) {
         Map<QueryPath, MappingField> userFieldsByPath = extractFields(userFields, isKey);
         for (Entry<String, Class<?>> classField : FieldsUtil.resolveClass(clazz).entrySet()) {
@@ -193,18 +188,16 @@ public final class KvMetadataJavaResolver implements KvMetadataResolver {
             boolean isKey,
             List<MappingField> resolvedFields,
             Map<String, String> options,
-            InternalSerializationService serializationService,
-            TypesStorage typesStorage
+            InternalSerializationService serializationService
     ) {
         Class<?> clazz = loadClass(isKey, options);
-        return resolveMetadata(isKey, resolvedFields, clazz, typesStorage);
+        return resolveMetadata(isKey, resolvedFields, clazz);
     }
 
     public KvMetadata resolveMetadata(
             boolean isKey,
             List<MappingField> resolvedFields,
-            Class<?> clazz,
-            TypesStorage typesStorage
+            Class<?> clazz
     ) {
         QueryDataType type = QueryDataTypeUtils.resolveTypeForClass(clazz);
         Map<QueryPath, MappingField> fields = extractFields(resolvedFields, isKey);

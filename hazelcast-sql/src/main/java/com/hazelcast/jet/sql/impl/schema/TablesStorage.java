@@ -186,6 +186,14 @@ public class TablesStorage {
                 .collect(Collectors.toList());
     }
 
+    Collection<String> typeNames() {
+        return mergedStorage().values()
+                .stream()
+                .filter(t -> t instanceof Type)
+                .map(t -> ((Type) t).getName())
+                .collect(Collectors.toList());
+    }
+
     void registerListener(EntryListener<String, Object> listener) {
         if (!nodeEngine.getLocalMember().isLiteMember()) {
             newStorage().addEntryListener(listener, false);

@@ -21,14 +21,13 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.sql.impl.inject.UpsertInjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTarget;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
-import com.hazelcast.jet.sql.impl.schema.TypesStorage;
-import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.extract.QueryExtractor;
 import com.hazelcast.sql.impl.extract.QueryTarget;
 import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
+import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import javax.annotation.Nullable;
@@ -49,8 +48,7 @@ public class KvMetadataNullResolver implements KvMetadataResolver {
     public Stream<MappingField> resolveAndValidateFields(
             boolean isKey, List<MappingField> userFields,
             Map<String, String> options,
-            InternalSerializationService serializationService,
-            TypesStorage typesStorage
+            InternalSerializationService serializationService
     ) {
         return Stream.empty();
     }
@@ -60,8 +58,7 @@ public class KvMetadataNullResolver implements KvMetadataResolver {
             boolean isKey,
             List<MappingField> resolvedFields,
             Map<String, String> options,
-            InternalSerializationService serializationService,
-            TypesStorage typesStorage
+            InternalSerializationService serializationService
     ) {
         return new KvMetadata(emptyList(), NullQueryTargetDescriptor.INSTANCE, NullUpsertTargetDescriptor.INSTANCE);
     }

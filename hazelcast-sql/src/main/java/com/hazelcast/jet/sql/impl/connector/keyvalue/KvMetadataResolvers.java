@@ -17,8 +17,9 @@
 package com.hazelcast.jet.sql.impl.connector.keyvalue;
 
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.jet.sql.impl.schema.TypesStorage;
+import com.hazelcast.jet.sql.impl.schema.TablesStorage;
 import com.hazelcast.jet.sql.impl.schema.TypesUtils;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryException;
@@ -92,8 +93,8 @@ public class KvMetadataResolvers {
             NodeEngine nodeEngine
     ) {
         final InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
-        final TypesStorage typesStorage = new TypesStorage(nodeEngine);
-
+        final TablesStorage tablesStorage = ((CalciteSqlOptimizer) nodeEngine.getSqlService().getOptimizer())
+                .tablesStorage();
         // normalize and validate the names and external names
         for (MappingField field : userFields) {
             String name = field.name();
@@ -119,22 +120,22 @@ public class KvMetadataResolvers {
         }
 
         Stream<MappingField> keyFields = findMetadataResolver(options, true)
-                .resolveAndValidateFields(true, userFields, options, ss, typesStorage)
+                .resolveAndValidateFields(true, userFields, options, ss)
                 .filter(field -> !field.name().equals(KEY) || field.externalName().equals(KEY));
         Stream<MappingField> valueFields = findMetadataResolver(options, false)
-                .resolveAndValidateFields(false, userFields, options, ss, typesStorage)
+                .resolveAndValidateFields(false, userFields, options, ss)
                 .filter(field -> !field.name().equals(VALUE) || field.externalName().equals(VALUE));
 
         final TypeKind keyKind = TypesUtils.formatToTypeKind(getFormat(options, true));
         if (NESTED_FIELDS_SUPPORTED_FORMATS.contains(keyKind)) {
             keyFields = keyFields
-                    .peek(mappingField -> TypesUtils.enrichMappingFieldType(keyKind, mappingField, typesStorage));
+                    .peek(mappingField -> TypesUtils.enrichMappingFieldType(keyKind, mappingField, tablesStorage));
         }
 
         final TypeKind valueKind = TypesUtils.formatToTypeKind(getFormat(options, false));
         if (NESTED_FIELDS_SUPPORTED_FORMATS.contains(valueKind)) {
             valueFields = valueFields
-                    .peek(mappingField -> TypesUtils.enrichMappingFieldType(valueKind, mappingField, typesStorage));
+                    .peek(mappingField -> TypesUtils.enrichMappingFieldType(valueKind, mappingField, tablesStorage));
         }
 
         Map<String, MappingField> fields = concat(keyFields, valueFields)
@@ -155,11 +156,11 @@ public class KvMetadataResolvers {
             boolean isKey,
             List<MappingField> resolvedFields,
             Map<String, String> options,
-            InternalSerializationService serializationService,
-            TypesStorage typesStorage
+            InternalSerializationService serializationService
     ) {
         KvMetadataResolver resolver = findMetadataResolver(options, isKey);
-        return requireNonNull(resolver.resolveMetadata(isKey, resolvedFields, options, serializationService, typesStorage));
+        // TODO: enhance types
+        return requireNonNull(resolver.resolveMetadata(isKey, resolvedFields, options, serializationService));
     }
 
     private KvMetadataResolver findMetadataResolver(Map<String, String> options, boolean isKey) {
