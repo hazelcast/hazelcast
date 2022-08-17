@@ -258,8 +258,8 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
             boolean inverse) {
         if (expr instanceof RexLiteral) {
             RexLiteral literal = (RexLiteral) expr;
-            if (!SqlTypeName.DAY_INTERVAL_TYPES.contains(literal.getTypeName())
-                    && !SqlTypeName.INT_TYPES.contains(literal.getTypeName())) {
+            if (!SqlTypeName.DAY_INTERVAL_TYPES.contains(literal.getType().getSqlTypeName())
+                    && !SqlTypeName.INT_TYPES.contains(literal.getType().getSqlTypeName())) {
                 return false;
             }
 
