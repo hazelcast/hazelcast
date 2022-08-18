@@ -44,7 +44,7 @@ final class JoinLogicalRule extends ConverterRule {
 
         // We convert every RIGHT JOIN to LEFT JOIN to use already
         // implemented LEFT JOIN operators.
-        if (join.getJoinType() == JoinRelType.RIGHT) {
+        if (OptUtils.isBounded(join) && join.getJoinType() == JoinRelType.RIGHT) {
             return JoinCommuteRule.swap(join, true);
         }
 

@@ -111,27 +111,6 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
     }
 
     @Test
-    public void test_outerJoinNullRowEmittedAfterWatermark() {
-        postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 1L));
-        postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
-
-        SupplierEx<Processor> supplier = createProcessor(1, 1);
-
-        TestSupport.verifyProcessor(supplier)
-                .disableSnapshots()
-                .expectExactOutput(
-                        in(0, wm(-2L, (byte) 0)),
-                        out(wm(-2L, (byte) 0)),
-                        in(ordinal0, jetRow(0L)),
-                        in(1, wm(0L, (byte) 1)),
-                        out(wm(0L, (byte) 1)),
-                        in(0, wm(0L, (byte) 0)),
-                        out(isLeft ? jetRow(0L, null) : jetRow(null, 0L)),
-                        out(wm(0L, (byte) 0))
-                );
-    }
-
-    @Test
     public void test_rowContainsMultipleColumns() {
         postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 0L));
         postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
