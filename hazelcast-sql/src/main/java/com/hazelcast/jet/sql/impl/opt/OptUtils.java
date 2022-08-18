@@ -28,6 +28,8 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.schema.JetTable;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastJsonType;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastObjectType;
+import com.hazelcast.jet.sql.impl.validate.types.HazelcastObjectTypeReference;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -67,9 +69,11 @@ import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
 
@@ -338,14 +342,60 @@ public final class OptUtils {
         }
 
         if (sqlTypeName == SqlTypeName.OTHER) {
-            return convertCustomType(fieldType);
+            return convertOtherType(fieldType);
+        } else if (fieldType.isCustomType()) {
+            return convertCustomType(fieldType, typeFactory);
         } else {
             RelDataType relType = typeFactory.createSqlType(sqlTypeName);
             return typeFactory.createTypeWithNullability(relType, true);
         }
     }
 
-    private static RelDataType convertCustomType(QueryDataType fieldType) {
+    private static RelDataType convertCustomType(QueryDataType fieldType, RelDataTypeFactory typeFactory) {
+        final Map<String, RelDataType> dataTypeMap = new HashMap<>();
+        convertCustomTypeRecursively(fieldType, typeFactory, dataTypeMap);
+        return dataTypeMap.get(fieldType.getObjectTypeName());
+    }
+
+    private static void convertCustomTypeRecursively(
+            QueryDataType type,
+            RelDataTypeFactory typeFactory,
+            Map<String, RelDataType> typeMap
+    ) {
+        if (typeMap.get(type.getObjectTypeName()) != null) {
+            return;
+        }
+
+        final List<HazelcastObjectType.Field> fields = new ArrayList<>();
+        final HazelcastObjectTypeReference typeRef = new HazelcastObjectTypeReference();
+        typeMap.put(type.getObjectTypeName(), typeRef);
+
+        for (int i = 0; i < type.getObjectFields().size(); i++) {
+            final String fieldName = type.getObjectFields().get(i).getName();
+            final QueryDataType fieldType = type.getObjectFields().get(i).getDataType();
+
+            RelDataType fieldRelDataType;
+            if (fieldType.isCustomType()) {
+                fieldRelDataType = typeMap.get(fieldType.getObjectTypeName());
+                if (fieldRelDataType == null) {
+                    convertCustomTypeRecursively(fieldType, typeFactory, typeMap);
+                    fieldRelDataType = typeMap.get(fieldType.getObjectTypeName());
+                }
+            } else {
+                fieldRelDataType = typeFactory.createTypeWithNullability(
+                        typeFactory.createSqlType(HazelcastTypeUtils.toCalciteType(fieldType)),
+                        true
+                );
+            }
+
+            fields.add(new HazelcastObjectType.Field(fieldName, i, fieldRelDataType));
+        }
+
+        typeRef.setOriginal(new HazelcastObjectType(type.getObjectTypeName(), fields));
+    }
+
+
+    private static RelDataType convertOtherType(QueryDataType fieldType) {
         switch (fieldType.getTypeFamily()) {
             case JSON:
                 return HazelcastJsonType.create(true);

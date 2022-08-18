@@ -123,8 +123,17 @@ public class IMapSqlConnector implements SqlConnector {
     ) {
         InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
 
-        KvMetadata keyMetadata = METADATA_RESOLVERS_WITH_COMPACT.resolveMetadata(true, resolvedFields, options, ss);
-        KvMetadata valueMetadata = METADATA_RESOLVERS_WITH_COMPACT.resolveMetadata(false, resolvedFields, options, ss);
+        KvMetadata keyMetadata = METADATA_RESOLVERS_WITH_COMPACT.resolveMetadata(
+                true,
+                resolvedFields,
+                options, ss
+        );
+        KvMetadata valueMetadata = METADATA_RESOLVERS_WITH_COMPACT.resolveMetadata(
+                false,
+                resolvedFields,
+                options,
+                ss
+        );
         List<TableField> fields = concat(keyMetadata.getFields().stream(), valueMetadata.getFields().stream())
                 .collect(toList());
 
