@@ -92,8 +92,7 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     }
 
     public boolean canBeSerializedAsCompact(Class<?> clazz) {
-        return serializationService.serializerForClass(clazz, false) instanceof CompactStreamSerializerAdapter
-                || serializationService.serializerForClass(clazz, false) instanceof CompactStreamSerializerAdapter;
+        return serializationService.serializerForClass(clazz, false) instanceof CompactStreamSerializerAdapter;
     }
 
     @Override
