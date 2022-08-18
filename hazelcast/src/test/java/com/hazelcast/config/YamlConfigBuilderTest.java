@@ -1339,6 +1339,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(EvictionPolicy.LFU, getNearCacheEvictionPolicy("lfuNearCache", config));
         assertEquals(EvictionPolicy.LRU, getNearCacheEvictionPolicy("lruNearCache", config));
         assertEquals(EvictionPolicy.NONE, getNearCacheEvictionPolicy("noneNearCache", config));
+        assertEquals(EvictionPolicy.RANDOM, getNearCacheEvictionPolicy("randomNearCache", config));
         assertEquals(EvictionPolicy.FIFO, getNearCacheEvictionPolicy("fifoNearCache", config));
     }
 
