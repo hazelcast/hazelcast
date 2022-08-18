@@ -71,8 +71,8 @@ public final class JoinPhysicalRule extends RelRule<RelRule.Config> {
         RelNode rightInput = call.rel(2);
 
         if (OptUtils.isUnbounded(rightInput)) {
-            // This rule doesn't support joining of streaming data on the right side. Stream
-            // can be on the left side.
+            // This rule doesn't support joining of streaming data on the right side.
+            // Stream can be on the left side.
             return;
         }
 

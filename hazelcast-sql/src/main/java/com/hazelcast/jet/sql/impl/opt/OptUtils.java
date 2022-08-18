@@ -50,6 +50,7 @@ import org.apache.calcite.plan.volcano.HazelcastRelSubsetUtil;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.prepare.RelOptTableImpl;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.Calc;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.logical.LogicalTableScan;
 import org.apache.calcite.rel.type.RelDataType;
@@ -58,6 +59,7 @@ import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
+import org.apache.calcite.rex.RexProgram;
 import org.apache.calcite.rex.RexShuttle;
 import org.apache.calcite.rex.RexUtil;
 import org.apache.calcite.rex.RexVisitor;
@@ -541,5 +543,37 @@ public final class OptUtils {
             res.add(inlineExpression(inlinedExpressions, expr));
         }
         return res;
+    }
+
+    /**
+     * Return the index at which a {@link Calc} program projects the input's
+     * field at index {@code inputFieldIndex}. If the program doesn't project
+     * that field directly, returns -1. If it projects it multiple times,
+     * returns the first occurrence.
+     * <p>
+     * For example, if the input has fields `a, b, c` and the projection is `c,
+     * a, b+1`, then:
+     * <ul>
+     *     <li>getTargetField(0) = 1
+     *     <li>getTargetField(1) = -1
+     *     <li>getTargetField(2) = 0
+     * </ul>
+     *
+     * The method is named analogously to {@link
+     * RexProgram#getSourceField(int)}, which finds the opposite mapping.
+     *
+     * @param calcProgram     The calc program (the projection)
+     * @param inputFieldIndex The index of the input field
+     * @return The position of the input field in the output, or -1, if it's not in the output.
+     */
+    public static int getTargetField(RexProgram calcProgram, int inputFieldIndex) {
+        for (int i = 0; i < calcProgram.getProjectList().size(); i++) {
+            int expressionIndex = calcProgram.getProjectList().get(i).getIndex();
+            RexNode expr = calcProgram.getExprList().get(expressionIndex);
+            if (expr instanceof RexInputRef && ((RexInputRef) expr).getIndex() == inputFieldIndex) {
+                return i;
+            }
+        }
+        return -1;
     }
 }
