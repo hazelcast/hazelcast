@@ -64,8 +64,9 @@ public final class MembersView implements IdentifiedDataSerializable {
         list.addAll(source.getMembers());
         int newVersion = max(source.version, source.size());
         for (MemberInfo newMember : newMembers) {
-            MemberInfo m = new MemberInfo(newMember.getAddress(), newMember.getUuid(), newMember.getAttributes(),
-                    newMember.isLiteMember(), newMember.getVersion(), ++newVersion, newMember.getAddressMap());
+            MemberInfo m = new MemberInfo(newMember.getAddress(), newMember.getUuid(), newMember.getCPMemberUUID(),
+                    newMember.getAttributes(), newMember.isLiteMember(), newMember.getVersion(), ++newVersion,
+                    newMember.getAddressMap());
             list.add(m);
         }
 

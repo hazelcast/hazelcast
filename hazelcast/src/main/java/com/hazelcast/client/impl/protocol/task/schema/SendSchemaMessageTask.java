@@ -40,7 +40,7 @@ public class SendSchemaMessageTask extends AbstractAsyncMessageTask<Schema, Void
     }
 
     @Override
-    protected CompletableFuture processInternal() {
+    protected CompletableFuture<Void> processInternal() {
         MemberSchemaService memberSchemaService = getService(getServiceName());
         return memberSchemaService.putAsync(parameters);
     }

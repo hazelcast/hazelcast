@@ -58,6 +58,8 @@ import static com.hazelcast.wan.impl.CallerProvenance.NOT_WAN;
  * Operator for single key processing logic of {@link
  * EntryProcessor} and backup entry processor related operations.
  */
+
+@SuppressWarnings("checkstyle:methodcount")
 public final class EntryOperator {
 
     private final boolean shouldClone;
@@ -152,6 +154,10 @@ public final class EntryOperator {
         return this;
     }
 
+    public boolean isDidMatchPredicate() {
+        return didMatchPredicate;
+    }
+
     public LockAwareLazyMapEntry getEntry() {
         return entry;
     }
@@ -172,19 +178,31 @@ public final class EntryOperator {
         }
 
         Boolean locked = recordStore.isLocked(dataKey);
+        init(dataKey, clonedOrRawOldValue(), null, null, null, locked, UNSET);
+        return operateOnKeyValueInternal();
+    }
 
-        return operateOnKeyValueInternal(dataKey, clonedOrRawOldValue(), locked);
+    public boolean checkCanProceed() {
+        if (belongsAnotherPartition(dataKey)) {
+            return false;
+        }
+
+        // predicated entry processors can only be applied to existing entries
+        // so if we have a predicate and somehow(due to expiration or split-brain healing)
+        // we found value null, we should skip that entry.
+        if (predicate != null && oldValue == null) {
+            return false;
+        }
+
+        return true;
     }
 
     public EntryOperator operateOnKeyValue(Data dataKey, Object oldValue) {
-        return operateOnKeyValueInternal(dataKey, oldValue, null);
+        init(dataKey, oldValue, null, null, null, null, UNSET);
+        return operateOnKeyValueInternal();
     }
 
-    private EntryOperator operateOnKeyValueInternal(Data dataKey,
-                                                    Object oldValue,
-                                                    Boolean locked) {
-        init(dataKey, oldValue, null, null, null, locked, UNSET);
-
+    public EntryOperator operateOnKeyValueInternal() {
         if (outOfPredicateScope(entry)) {
             this.didMatchPredicate = false;
             return this;
@@ -196,6 +214,7 @@ public final class EntryOperator {
         if (readOnly && entryWasModified()) {
             throwModificationInReadOnlyException();
         }
+
         return this;
     }
 
@@ -244,6 +263,11 @@ public final class EntryOperator {
                 throw new IllegalArgumentException("Unexpected event found:" + eventType);
         }
 
+        doPostOperateOps0();
+        return this;
+    }
+
+    public void doPostOperateOps0() {
         if (wanReplicationEnabled) {
             publishWanReplicationEvent();
         }
@@ -256,24 +280,31 @@ public final class EntryOperator {
         }
 
         mapOperation.evict(dataKey);
-        return this;
     }
 
     private void onAddedOrUpdated() {
-        Object newValue = inMemoryFormat == OBJECT
-                ? entry.getValue() : entry.getByPrioritizingDataValue();
+        Object newValue = extractNewValue();
         if (backup) {
             recordStore.putBackup(dataKey, newValue, entry.getNewTtl(), UNSET, UNSET, NOT_WAN);
         } else {
             recordStore.setWithUncountedAccess(dataKey, newValue, entry.getNewTtl(), UNSET);
-            if (mapOperation.isPostProcessing(recordStore)) {
-                Record record = recordStore.getRecord(dataKey);
-                newValue = record == null ? null : record.getValue();
-                entry.setValueByInMemoryFormat(inMemoryFormat, newValue);
-            }
-            mapServiceContext.interceptAfterPut(mapContainer.getInterceptorRegistry(), newValue);
-            stats.incrementPutLatencyNanos(Timer.nanosElapsed(startTimeNanos));
+            onAddedOrUpdated0(newValue);
         }
+    }
+
+    public void onAddedOrUpdated0(Object newValue) {
+        if (mapOperation.isPostProcessingOrHasInterceptor(recordStore)) {
+            Record record = recordStore.getRecord(dataKey);
+            newValue = record == null ? null : record.getValue();
+            entry.setValueByInMemoryFormat(inMemoryFormat, newValue);
+        }
+        mapServiceContext.interceptAfterPut(mapContainer.getInterceptorRegistry(), newValue);
+        stats.incrementPutLatencyNanos(Timer.nanosElapsed(startTimeNanos));
+    }
+
+    public Object extractNewValue() {
+        return inMemoryFormat == OBJECT
+                ? entry.getValue() : entry.getByPrioritizingDataValue();
     }
 
     private void onRemove() {
@@ -281,17 +312,21 @@ public final class EntryOperator {
             recordStore.removeBackup(dataKey, NOT_WAN);
         } else {
             recordStore.delete(dataKey, NOT_WAN);
-            mapServiceContext.interceptAfterRemove(mapContainer.getInterceptorRegistry(), oldValue);
-            stats.incrementRemoveLatencyNanos(Timer.nanosElapsed(startTimeNanos));
+            onRemove0();
         }
     }
 
-    private Object clonedOrRawOldValue() {
+    public void onRemove0() {
+        mapServiceContext.interceptAfterRemove(mapContainer.getInterceptorRegistry(), oldValue);
+        stats.incrementRemoveLatencyNanos(Timer.nanosElapsed(startTimeNanos));
+    }
+
+    public Object clonedOrRawOldValue() {
         return shouldClone ? ss.toObject(ss.toData(oldValue)) : oldValue;
     }
 
     // Needed for MultipleEntryOperation.
-    private boolean belongsAnotherPartition(Data key) {
+    public boolean belongsAnotherPartition(Data key) {
         return partitionService.getPartitionId(key) != partitionId;
     }
 
@@ -305,7 +340,7 @@ public final class EntryOperator {
         return predicate == Predicates.alwaysFalse() || !predicate.apply(entry);
     }
 
-    private void findModificationType(LazyMapEntry mapEntry) {
+    public void findModificationType(LazyMapEntry mapEntry) {
         if (!mapEntry.isModified()
                 || (oldValue == null && mapEntry.hasNullValue())) {
             // read only
@@ -321,7 +356,7 @@ public final class EntryOperator {
         eventType = oldValue == null ? ADDED : UPDATED;
     }
 
-    private void onTouched() {
+    public void onTouched() {
         // updates access time if record exists
         Record record = recordStore.getRecord(dataKey);
         if (record != null) {
@@ -329,7 +364,7 @@ public final class EntryOperator {
         }
     }
 
-    private void process(ExtendedMapEntry entry) {
+    public void process(ExtendedMapEntry entry) {
         if (backup) {
             backupProcessor.process(entry);
             return;

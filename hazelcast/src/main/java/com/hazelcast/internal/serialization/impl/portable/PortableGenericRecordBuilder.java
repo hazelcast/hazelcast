@@ -19,8 +19,8 @@ package com.hazelcast.internal.serialization.impl.portable;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.FieldDefinition;
 import com.hazelcast.nio.serialization.FieldType;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import javax.annotation.Nonnull;

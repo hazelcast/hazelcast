@@ -28,6 +28,7 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
+import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -144,7 +145,12 @@ public class CreateDagVisitor {
     public Vertex onUpdate(UpdatePhysicalRel rel) {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
 
-        Vertex vertex = getJetSqlConnector(table).updateProcessor(dag, table, rel.updates(parameterMetadata));
+        Vertex vertex = getJetSqlConnector(table).updateProcessor(
+                dag,
+                table,
+                rel.updatesAsRex(),
+                rel.updates(parameterMetadata)
+        );
         connectInput(rel.getInput(), vertex, null);
         return vertex;
     }
@@ -158,15 +164,21 @@ public class CreateDagVisitor {
     }
 
     public Vertex onFullScan(FullScanPhysicalRel rel) {
-        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        HazelcastTable hazelcastTable = rel.getTable().unwrap(HazelcastTable.class);
+        Table table = hazelcastTable.getTarget();
         collectObjectKeys(table);
 
+        BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> policyProvider = rel.eventTimePolicyProvider();
+        Byte watermarkKey = rel.getWatermarkKey();
         return getJetSqlConnector(table).fullScanReader(
                 dag,
                 table,
+                hazelcastTable,
                 rel.filter(parameterMetadata),
                 rel.projection(parameterMetadata),
-                rel.eventTimePolicyProvider()
+                policyProvider != null
+                        ? context -> policyProvider.apply(context, watermarkKey)
+                        : null
         );
     }
 

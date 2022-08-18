@@ -412,6 +412,8 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
                 context.commitTransaction();
             } catch (TransactionException e) {
                 context.rollbackTransaction();
+            } catch (Throwable t) {
+                // ignore other commit time exceptions.
             }
         }
 

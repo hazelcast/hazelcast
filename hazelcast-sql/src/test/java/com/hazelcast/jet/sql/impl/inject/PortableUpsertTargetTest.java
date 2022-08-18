@@ -22,7 +22,7 @@ import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecordBuilder;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
-import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import junitparams.JUnitParamsRunner;

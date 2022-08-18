@@ -25,8 +25,9 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.util.FilteringClassLoader;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.FieldKind;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -42,7 +43,7 @@ import java.util.List;
 
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createCompactGenericRecord;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createMainDTO;
-import static com.hazelcast.nio.serialization.GenericRecordBuilder.compact;
+import static com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder.compact;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -55,11 +56,9 @@ public class GenericRecordTest {
 
     @Test
     public void testGenericRecordToStringValidJson() throws IOException {
-        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.setEnabled(true);
         InternalSerializationService serializationService = new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                .setConfig(new SerializationConfig())
                 .build();
 
         MainDTO expectedDTO = createMainDTO();
@@ -137,11 +136,9 @@ public class GenericRecordTest {
     }
 
     private SerializationService createSerializationService() {
-        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.setEnabled(true);
         return new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                .setConfig(new SerializationConfig())
                 .build();
     }
 
@@ -215,17 +212,21 @@ public class GenericRecordTest {
     }
 
     @Test
-    public void testGetFieldKindThrowsExceptionWhenFieldDoesNotExist() throws IOException {
-        GenericRecord record = compact("test").build();
-        assertThatThrownBy(() -> record.getFieldKind("doesNotExist"))
-                .isInstanceOf(IllegalArgumentException.class);
+    public void testGetFieldKind() throws IOException {
+        GenericRecord record = compact("test")
+                .setString("s", "s")
+                .build();
 
-        InternalSerializationService serializationService = (InternalSerializationService) createSerializationService();
-        Data data = serializationService.toData(record);
+        assertEquals(FieldKind.STRING, record.getFieldKind("s"));
+        assertEquals(FieldKind.NOT_AVAILABLE, record.getFieldKind("ss"));
 
-        InternalGenericRecord internalGenericRecord = serializationService.readAsInternalGenericRecord(data);
-        assertThatThrownBy(() -> internalGenericRecord.getFieldKind("doesNotExist"))
-                .isInstanceOf(IllegalArgumentException.class);
+        SerializationService service = createSerializationService();
+        Data data = service.toData(record);
+        InternalGenericRecord internalGenericRecord
+                = ((InternalSerializationService) service).readAsInternalGenericRecord(data);
+
+        assertEquals(FieldKind.STRING, internalGenericRecord.getFieldKind("s"));
+        assertEquals(FieldKind.NOT_AVAILABLE, internalGenericRecord.getFieldKind("ss"));
     }
 
     private void assertSetterThrows(GenericRecordBuilder builder, String fieldName, int value, String errorMessage) {
