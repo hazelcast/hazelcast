@@ -23,6 +23,7 @@ import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.internal.serialization.impl.AbstractSerializationService;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.compact.record.JavaRecordSerializer;
 import com.hazelcast.internal.util.TriTuple;
@@ -58,15 +59,18 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
     private final Map<Class, CompactSerializableRegistration> classToRegistrationMap = new ConcurrentHashMap<>();
     private final Map<String, CompactSerializableRegistration> typeNameToRegistrationMap = new ConcurrentHashMap<>();
     private final Map<Class, Schema> classToSchemaMap = new ConcurrentHashMap<>();
-    private final ReflectiveCompactSerializer reflectiveSerializer = new ReflectiveCompactSerializer();
-    private final JavaRecordSerializer javaRecordSerializer = new JavaRecordSerializer();
+    private final ReflectiveCompactSerializer reflectiveSerializer = new ReflectiveCompactSerializer(this);
+    private final JavaRecordSerializer javaRecordSerializer = new JavaRecordSerializer(this);
     private final SchemaService schemaService;
     private final ManagedContext managedContext;
     private final ClassLoader classLoader;
+    private final AbstractSerializationService serializationService;
 
-    public CompactStreamSerializer(CompactSerializationConfig compactSerializationConfig,
+    public CompactStreamSerializer(AbstractSerializationService serializationService,
+                                   CompactSerializationConfig compactSerializationConfig,
                                    ManagedContext managedContext, SchemaService schemaService,
                                    ClassLoader classLoader) {
+        this.serializationService = serializationService;
         this.managedContext = managedContext;
         this.schemaService = schemaService;
         this.classLoader = classLoader;
@@ -85,6 +89,10 @@ public class CompactStreamSerializer implements StreamSerializer<Object> {
 
     public Collection<Class> getCompactSerializableClasses() {
         return classToRegistrationMap.keySet();
+    }
+
+    public boolean canBeSerializedAsCompact(Class<?> clazz) {
+        return serializationService.serializerForClass(clazz, false) instanceof CompactStreamSerializerAdapter;
     }
 
     @Override

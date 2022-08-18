@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.compact.record;
 
+import com.hazelcast.internal.serialization.impl.compact.CompactStreamSerializer;
 import com.hazelcast.internal.serialization.impl.compact.CompactUtil;
 import com.hazelcast.internal.serialization.impl.compact.DefaultCompactReader;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
@@ -43,11 +44,12 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
     private final Method getTypeMethod;
     private final Method getNameMethod;
     private final Method getGenericTypeMethod;
-
+    private final CompactStreamSerializer compactStreamSerializer;
     private final Map<Class<?>, JavaRecordReader> readersCache = new ConcurrentHashMap<>();
     private final Map<Class<?>, ComponentReaderWriter[]> readerWritersCache = new ConcurrentHashMap<>();
 
-    public JavaRecordSerializer() {
+    public JavaRecordSerializer(CompactStreamSerializer compactStreamSerializer) {
+        this.compactStreamSerializer = compactStreamSerializer;
         Method isRecordMethod;
         Method getRecordComponentsMethod;
         Method getTypeMethod;
@@ -154,7 +156,7 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
                 Method componentGetter = clazz.getDeclaredMethod(name);
                 componentGetter.setAccessible(true);
                 componentReaderWriters[i] = new ComponentReaderWriterAdapter(
-                        ValueReaderWriters.readerWriterFor(clazz, type, genericType, name),
+                        ValueReaderWriters.readerWriterFor(compactStreamSerializer, clazz, type, genericType, name),
                         componentGetter
                 );
             }

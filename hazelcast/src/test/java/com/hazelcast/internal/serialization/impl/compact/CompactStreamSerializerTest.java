@@ -456,24 +456,8 @@ public class CompactStreamSerializerTest {
     }
 
     @Test
-    public void testFieldOrder() throws IOException {
-        EmployeeDTO employeeDTO = new EmployeeDTO(30, 102310312);
-        long[] ids = new long[2];
-        ids[0] = 22;
-        ids[1] = 44;
-
-        EmployeeDTO[] employeeDTOS = new EmployeeDTO[5];
-        for (int j = 0; j < employeeDTOS.length; j++) {
-            employeeDTOS[j] = new EmployeeDTO(20 + j, j * 100);
-        }
-
-        SchemaWriter writer = new SchemaWriter("typeName");
-
-        ReflectiveCompactSerializer reflectiveCompactSerializer = new ReflectiveCompactSerializer();
-        EmployerDTO employerDTO = new EmployerDTO("nbss", 40, HIRING, ids, employeeDTO, employeeDTOS);
-        reflectiveCompactSerializer.write(writer, employerDTO);
-
-        Schema schema = writer.build();
+    public void testFieldOrder() {
+        Schema schema = CompactTestUtil.getSchemasFor(EmployerDTO.class).iterator().next();
 
         assertEquals(0, schema.getField("zcode").getOffset());
         assertEquals(-1, schema.getField("zcode").getIndex());
@@ -495,15 +479,8 @@ public class CompactStreamSerializerTest {
     }
 
     @Test
-    public void testFieldOrderFixedSize() throws IOException {
-        EmployeeDTO employeeDTO = new EmployeeDTO(30, 102310312);
-
-        SchemaWriter writer = new SchemaWriter("typeName");
-
-        ReflectiveCompactSerializer reflectiveCompactSerializer = new ReflectiveCompactSerializer();
-        reflectiveCompactSerializer.write(writer, employeeDTO);
-
-        Schema schema = writer.build();
+    public void testFieldOrderFixedSize() {
+        Schema schema = CompactTestUtil.getSchemasFor(EmployeeDTO.class).iterator().next();
 
         assertEquals(schema.getField("id").getOffset(), 0);
         assertEquals(schema.getField("id").getIndex(), -1);

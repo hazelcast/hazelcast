@@ -382,6 +382,28 @@ public class CompactSerializationTest {
         assertEquals(object, deserialized);
     }
 
+    @Test
+    public void testReflectiveSerializer_withFieldsWithOtherSerializationMechanisms() {
+        SerializationConfig config = new SerializationConfig();
+        SerializationService service = createSerializationService(config);
+
+        assertThatThrownBy(() -> {
+            service.toData(new UsesSerializableClassAsField(new SerializableEmployeeDTO("John Doe", 42)));
+        }).isInstanceOf(HazelcastSerializationException.class)
+                .hasStackTraceContaining("cannot be serialized with zero configuration Compact serialization")
+                .hasStackTraceContaining("can be serialized with another serialization mechanism.");
+    }
+
+    @Test
+    public void testReflectiveSerializer_withFieldsWithOtherSerializationMechanisms_whenCompactOverridesIt() {
+        SerializationConfig config = new SerializationConfig();
+        config.getCompactSerializationConfig().addClass(SerializableEmployeeDTO.class);
+        SerializationService service = createSerializationService(config);
+
+        Data data = service.toData(new UsesSerializableClassAsField(new SerializableEmployeeDTO("John Doe", 42)));
+        assertTrue(data.isCompact());
+    }
+
     private SerializationService createSerializationService(SerializationConfig config) {
         return new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
@@ -529,5 +551,13 @@ public class CompactSerializationTest {
     }
 
     private static class SomeOtherCompactObjectImpl implements SomeCompactObject {
+    }
+
+    private static class UsesSerializableClassAsField {
+        private SerializableEmployeeDTO serializableClass;
+
+        private UsesSerializableClassAsField(SerializableEmployeeDTO serializableClass) {
+            this.serializableClass = serializableClass;
+        }
     }
 }

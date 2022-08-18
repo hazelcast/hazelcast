@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.compact.zeroconfig;
 
+import com.hazelcast.internal.serialization.impl.compact.CompactStreamSerializer;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
@@ -51,6 +52,7 @@ import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.enum
 import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.enumFromStringName;
 import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.isFieldExist;
 import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.verifyFieldClassIsCompactSerializable;
+import static com.hazelcast.internal.serialization.impl.compact.CompactUtil.verifyFieldClassShouldBeSerializedAsCompact;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_COMPACT;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DATE;
@@ -175,24 +177,28 @@ public final class ValueReaderWriters {
      * @param fieldName   Name of the field
      * @return Appropriate reader for the given {@code type}
      */
-    public static ValueReaderWriter<?> readerWriterFor(Class<?> clazz, Class<?> type, Type genericType, String fieldName) {
+    public static ValueReaderWriter<?> readerWriterFor(CompactStreamSerializer compactStreamSerializer, Class<?> clazz,
+                                                       Class<?> type, Type genericType, String fieldName) {
         if (type.isArray()) {
             Class<?> componentType = type.getComponentType();
-            return createReaderWriterForArray(clazz, componentType, fieldName);
+            return createReaderWriterForArray(compactStreamSerializer, clazz, componentType, fieldName);
         } else if (isList(type)) {
             Class<?> componentType = getSingleComponentType(genericType);
-            ValueReaderWriter readerWriter = createReaderWriterForArray(clazz, componentType, fieldName);
+            ValueReaderWriter readerWriter = createReaderWriterForArray(compactStreamSerializer, clazz,
+                    componentType, fieldName);
             return new ArrayListReaderWriter(fieldName, componentType, readerWriter);
         } else if (isSet(type)) {
             Class<?> componentType = getSingleComponentType(genericType);
-            ValueReaderWriter readerWriter = createReaderWriterForArray(clazz, componentType, fieldName);
+            ValueReaderWriter readerWriter = createReaderWriterForArray(compactStreamSerializer, clazz,
+                    componentType, fieldName);
             return new HashSetReaderWriter(fieldName, componentType, readerWriter);
         } else if (isMap(type)) {
             BiTuple<Class<?>, Class<?>> componentTypes = getTupleComponentTypes(genericType);
             ValueReaderWriter keyReaderWriter
-                    = createReaderWriterForArray(clazz, componentTypes.element1, fieldName + "!keys");
+                    = createReaderWriterForArray(compactStreamSerializer,
+                    clazz, componentTypes.element1, fieldName + "!keys");
             ValueReaderWriter valueReaderWriter
-                    = createReaderWriterForArray(clazz, componentTypes.element2, fieldName + "!values");
+                    = createReaderWriterForArray(compactStreamSerializer, clazz, componentTypes.element2, fieldName + "!values");
             return new HashMapReaderWriter(fieldName, componentTypes.element1,
                     componentTypes.element2, keyReaderWriter, valueReaderWriter);
         } else if (type.isEnum()) {
@@ -206,10 +212,13 @@ public final class ValueReaderWriters {
 
         // The nested field might not be Compact serializable
         verifyFieldClassIsCompactSerializable(type, clazz);
+        verifyFieldClassShouldBeSerializedAsCompact(compactStreamSerializer, type, clazz);
         return new CompactReaderWriter(fieldName);
     }
 
-    private static ValueReaderWriter createReaderWriterForArray(Class<?> clazz, Class<?> componentType, String fieldName) {
+    private static ValueReaderWriter createReaderWriterForArray(CompactStreamSerializer compactStreamSerializer,
+                                                                Class<?> clazz, Class<?> componentType,
+                                                                String fieldName) {
         if (componentType.isEnum()) {
             return new EnumArrayReaderWriter(fieldName, (Class<? extends Enum>) componentType);
         }
@@ -221,6 +230,7 @@ public final class ValueReaderWriters {
 
         // Elements of the array might not be Compact serializable
         verifyFieldClassIsCompactSerializable(componentType, clazz);
+        verifyFieldClassShouldBeSerializedAsCompact(compactStreamSerializer, componentType, clazz);
         return new CompactArrayReaderWriter(fieldName, componentType);
     }
 
