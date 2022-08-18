@@ -24,7 +24,7 @@ import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecordBuilder;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
@@ -157,7 +157,7 @@ public class SampleMetadataResolverTest {
     @Test
     public void test_compact() {
         SerializationConfig serializationConfig = new SerializationConfig();
-        serializationConfig.getCompactSerializationConfig().setEnabled(true)
+        serializationConfig.getCompactSerializationConfig()
                 .addSerializer(new CompactClass.CompactClassSerializer());
         InternalSerializationService ss = new DefaultSerializationServiceBuilder()
                 .setSchemaService(CompactTestUtil.createInMemorySchemaService())
@@ -186,7 +186,6 @@ public class SampleMetadataResolverTest {
     @Test
     public void test_compactRecord() {
         SerializationConfig serializationConfig = new SerializationConfig();
-        serializationConfig.getCompactSerializationConfig().setEnabled(true);
         InternalSerializationService ss = new DefaultSerializationServiceBuilder()
                 .setSchemaService(CompactTestUtil.createInMemorySchemaService())
                 .setConfig(serializationConfig)

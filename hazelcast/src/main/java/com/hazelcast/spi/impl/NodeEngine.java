@@ -26,6 +26,7 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -280,4 +281,6 @@ public interface NodeEngine {
      * <b>Note:</b> CoreServices will be placed at the beginning of the list.
      */
     <S> Collection<S> getServices(Class<S> serviceClass);
+
+    MemberSchemaService getSchemaService();
 }

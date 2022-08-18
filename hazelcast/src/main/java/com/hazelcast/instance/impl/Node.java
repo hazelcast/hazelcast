@@ -155,7 +155,6 @@ public class Node {
     public final DiscoveryService discoveryService;
     public final TextCommandService textCommandService;
     public final LoggingServiceImpl loggingService;
-    public final MemberSchemaService memberSchemaService;
     public final Server server;
 
     /**
@@ -169,6 +168,7 @@ public class Node {
     private final ILogger logger;
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
     private final NodeShutdownHookThread shutdownHookThread;
+    private final MemberSchemaService schemaService;
     private final InternalSerializationService serializationService;
     private final InternalSerializationService compatibilitySerializationService;
     private final ClassLoader configClassLoader;
@@ -246,7 +246,7 @@ public class Node {
             nodeExtension.beforeStart();
             nodeExtension.logInstanceTrackingMetadata();
 
-            memberSchemaService = new MemberSchemaService();
+            schemaService = nodeExtension.createSchemaService();
             serializationService = nodeExtension.createSerializationService();
             compatibilitySerializationService = nodeExtension.createCompatibilitySerializationService();
             securityContext = config.getSecurityConfig().isEnabled() ? nodeExtension.getSecurityContext() : null;
@@ -418,6 +418,10 @@ public class Node {
 
     public InternalSerializationService getCompatibilitySerializationService() {
         return compatibilitySerializationService;
+    }
+
+    public MemberSchemaService getSchemaService() {
+        return schemaService;
     }
 
     public ClusterServiceImpl getClusterService() {

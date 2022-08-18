@@ -172,7 +172,7 @@ public class KafkaSqlConnector implements SqlConnector {
                 )
         );
         // set the parallelism to match that of the kafka sink - see https://github.com/hazelcast/hazelcast/issues/20507
-        // TODO eliminate the project vertex altogether and do the projecting in the sink directly
+        // TODO: eliminate the project vertex altogether and do the projecting in the sink directly
         vStart.localParallelism(1);
 
         Vertex vEnd = dag.newUniqueVertex(

@@ -26,8 +26,8 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.nio.serialization.FieldKind;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -43,7 +43,7 @@ import java.util.List;
 
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createCompactGenericRecord;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createMainDTO;
-import static com.hazelcast.nio.serialization.GenericRecordBuilder.compact;
+import static com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder.compact;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -56,11 +56,9 @@ public class GenericRecordTest {
 
     @Test
     public void testGenericRecordToStringValidJson() throws IOException {
-        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.setEnabled(true);
         InternalSerializationService serializationService = new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                .setConfig(new SerializationConfig())
                 .build();
 
         MainDTO expectedDTO = createMainDTO();
@@ -138,11 +136,9 @@ public class GenericRecordTest {
     }
 
     private SerializationService createSerializationService() {
-        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.setEnabled(true);
         return new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                .setConfig(new SerializationConfig())
                 .build();
     }
 

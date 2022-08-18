@@ -25,6 +25,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.metrics.JobMetrics;
@@ -32,13 +33,14 @@ import com.hazelcast.jet.core.metrics.Measurement;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.function.RunnableEx;
 import com.hazelcast.jet.impl.TerminationMode.ActionAfterTerminate;
-import com.hazelcast.jet.impl.deployment.JetDelegatingClassLoader;
 import com.hazelcast.jet.impl.exception.ExecutionNotFoundException;
 import com.hazelcast.jet.impl.exception.JetDisabledException;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
 import com.hazelcast.jet.impl.execution.init.ExecutionPlan;
+import com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
 import com.hazelcast.jet.impl.operation.GetLocalJobMetricsOperation;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
@@ -69,6 +71,8 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -77,6 +81,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.function.Functions.entryKey;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
@@ -99,7 +104,6 @@ import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_GRACEFUL;
 import static com.hazelcast.jet.impl.TerminationMode.RESTART_GRACEFUL;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
-import static com.hazelcast.jet.impl.execution.init.ExecutionPlanBuilder.createExecutionPlans;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isRestartableException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
@@ -109,8 +113,10 @@ import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.jet.impl.util.Util.doWithClassLoader;
 import static com.hazelcast.jet.impl.util.Util.formatJobDuration;
 import static com.hazelcast.jet.impl.util.Util.toList;
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.JOB_OFFLOADABLE_EXECUTOR;
 import static java.util.Collections.emptyList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static java.util.concurrent.CompletableFuture.runAsync;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.stream.Collectors.partitioningBy;
 import static java.util.stream.Collectors.toMap;
@@ -123,6 +129,7 @@ public class MasterJobContext {
 
     public static final int SNAPSHOT_RESTORE_EDGE_PRIORITY = Integer.MIN_VALUE;
     public static final String SNAPSHOT_VERTEX_PREFIX = "__snapshot_";
+
 
     private static final int COLLECT_METRICS_RETRY_DELAY_MILLIS = 100;
     private static final Runnable NO_OP = () -> { };
@@ -194,57 +201,75 @@ public class MasterJobContext {
      * If there was a membership change and the partition table is not completely
      * fixed yet, reschedules the job restart.
      */
-    void tryStartJob(Supplier<Long> executionIdSupplier) {
-        mc.coordinationService().submitToCoordinatorThread(() -> {
-            executionStartTime = System.currentTimeMillis();
-            try {
-                JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
-                jobExecRec.markExecuted();
-                Tuple2<DAG, ClassLoader> dagAndClassloader = resolveDagAndCL(executionIdSupplier);
-                if (dagAndClassloader == null) {
-                    return;
-                }
-                DAG dag = dagAndClassloader.f0();
-                assert dag != null;
-                ClassLoader classLoader = dagAndClassloader.f1();
-                // must call this before rewriteDagWithSnapshotRestore()
-                String dotRepresentation = dag.toDotString(defaultParallelism, defaultQueueSize);
-                long snapshotId = jobExecRec.snapshotId();
-                String snapshotName = mc.jobConfig().getInitialSnapshotName();
-                String mapName =
-                        snapshotId >= 0 ? jobExecRec.successfulSnapshotDataMapName(mc.jobId())
-                                : snapshotName != null ? EXPORTED_SNAPSHOTS_PREFIX + snapshotName
-                                : null;
-                if (mapName != null) {
-                    rewriteDagWithSnapshotRestore(dag, snapshotId, mapName, snapshotName);
-                } else {
-                    logger.info("Didn't find any snapshot to restore for " + mc.jobIdString());
-                }
-                MembersView membersView = Util.getMembersView(mc.nodeEngine());
-                logger.info("Start executing " + mc.jobIdString()
-                        + ", execution graph in DOT format:\n" + dotRepresentation
-                        + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.");
-                logger.fine("Building execution plan for " + mc.jobIdString());
-                Util.doWithClassLoader(classLoader, () ->
-                        mc.setExecutionPlanMap(createExecutionPlans(mc.nodeEngine(), membersView.getMembers(),
-                                dag, mc.jobId(), mc.executionId(), mc.jobConfig(), jobExecRec.ongoingSnapshotId(),
-                                false, mc.jobRecord().getSubject())));
 
-                logger.fine("Built execution plans for " + mc.jobIdString());
-                Set<MemberInfo> participants = mc.executionPlanMap().keySet();
-                Version coordinatorVersion = mc.nodeEngine().getLocalMember().getVersion().asVersion();
-                Function<ExecutionPlan, Operation> operationCtor = plan ->
-                        new InitExecutionOperation(mc.jobId(), mc.executionId(), membersView.getVersion(), coordinatorVersion,
-                                participants, mc.nodeEngine().getSerializationService().toData(plan), false);
-                mc.invokeOnParticipants(operationCtor, this::onInitStepCompleted, null, false);
-            } catch (Throwable e) {
-                finalizeJob(e);
-            }
-        });
+    void tryStartJob(Supplier<Long> executionIdSupplier) {
+        JobCoordinationService coordinator = mc.coordinationService();
+        MembersView membersView = Util.getMembersView(mc.nodeEngine());
+
+        mc.coordinationService()
+          .submitToCoordinatorThread(() -> {
+              try {
+                  executionStartTime = System.currentTimeMillis();
+                  JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
+                  jobExecRec.markExecuted();
+                  DAG dag = resolveDag(executionIdSupplier);
+                  if (dag == null) {
+                      return;
+                  }
+                  // must call this before rewriteDagWithSnapshotRestore()
+                  String dotRepresentation = dag.toDotString(defaultParallelism, defaultQueueSize);
+                  long snapshotId = jobExecRec.snapshotId();
+                  String snapshotName = mc.jobConfig().getInitialSnapshotName();
+                  String mapName =
+                          snapshotId >= 0 ? jobExecRec.successfulSnapshotDataMapName(mc.jobId())
+                                  : snapshotName != null ? EXPORTED_SNAPSHOTS_PREFIX + snapshotName
+                                  : null;
+                  if (mapName != null) {
+                      rewriteDagWithSnapshotRestore(dag, snapshotId, mapName, snapshotName);
+                  } else {
+                      logger.info("Didn't find any snapshot to restore for " + mc.jobIdString());
+                  }
+                  logger.info("Start executing " + mc.jobIdString()
+                          + ", execution graph in DOT format:\n" + dotRepresentation
+                          + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.");
+                  logger.fine("Building execution plan for " + mc.jobIdString());
+
+                  createExecutionPlans(dag, membersView)
+                          .thenCompose(plans -> coordinator.submitToCoordinatorThread(
+                                  () -> initExecution(membersView, plans)
+                          ))
+                          .whenComplete((r, e) -> {
+                              if (e != null) {
+                                  finalizeJob(peel(e));
+                              }
+                          });
+              } catch (Throwable e) {
+                  finalizeJob(e);
+              }
+          });
+    }
+
+    private CompletableFuture<Map<MemberInfo, ExecutionPlan>> createExecutionPlans(
+            DAG dag,
+            MembersView membersView) {
+        return ExecutionPlanBuilder.createExecutionPlans(mc.nodeEngine(), membersView.getMembers(),
+                dag, mc.jobId(), mc.executionId(), mc.jobConfig(), mc.jobExecutionRecord().ongoingSnapshotId(),
+                false, mc.jobRecord().getSubject());
+    }
+
+    private void initExecution(MembersView membersView, Map<MemberInfo, ExecutionPlan> executionPlanMap) {
+        mc.setExecutionPlanMap(executionPlanMap);
+        logger.fine("Built execution plans for " + mc.jobIdString());
+        Set<MemberInfo> participants = mc.executionPlanMap().keySet();
+        Version coordinatorVersion = mc.nodeEngine().getLocalMember().getVersion().asVersion();
+        Function<ExecutionPlan, Operation> operationCtor = plan ->
+                new InitExecutionOperation(mc.jobId(), mc.executionId(), membersView.getVersion(), coordinatorVersion,
+                        participants, mc.nodeEngine().getSerializationService().toData(plan), false);
+        mc.invokeOnParticipants(operationCtor, this::onInitStepCompleted, null, false);
     }
 
     @Nullable
-    private Tuple2<DAG, ClassLoader> resolveDagAndCL(Supplier<Long> executionIdSupplier) {
+    private DAG resolveDag(Supplier<Long> executionIdSupplier) {
         mc.lock();
         try {
             if (isCancelled()) {
@@ -304,7 +329,7 @@ public class MasterJobContext {
             mc.setExecutionId(executionIdSupplier.get());
             mc.snapshotContext().onExecutionStarted();
             executionCompletionFuture = new CompletableFuture<>();
-            return tuple2(dag, classLoader);
+            return dag;
         } finally {
             mc.unlock();
         }
@@ -633,15 +658,18 @@ public class MasterJobContext {
 
     void finalizeJob(@Nullable Throwable failure) {
         mc.coordinationService().submitToCoordinatorThread(() -> {
-            final Runnable nonSynchronizedAction;
             mc.lock();
+            JobStatus status = mc.jobStatus();
+            if (status == COMPLETED || status == FAILED) {
+                logIgnoredCompletion(failure, status);
+            }
+            mc.unlock();
+          })
+          .thenComposeAsync(r -> completeVertices(failure))
+          .thenCompose(ignored -> mc.coordinationService().submitToCoordinatorThread(() -> {
+            final Runnable nonSynchronizedAction;
             try {
-                JobStatus status = mc.jobStatus();
-                if (status == COMPLETED || status == FAILED) {
-                    logIgnoredCompletion(failure, status);
-                    return;
-                }
-                completeVertices(failure);
+                mc.lock();
                 mc.getJetServiceBackend().getJobClassLoaderService().tryRemoveClassloadersForJob(mc.jobId(), COORDINATOR);
 
                 ActionAfterTerminate terminationModeAction = failure instanceof JobTerminateRequestedException
@@ -699,7 +727,7 @@ public class MasterJobContext {
             }
             executionCompletionFuture.complete(null);
             nonSynchronizedAction.run();
-        });
+        }));
     }
 
     /**
@@ -773,25 +801,32 @@ public class MasterJobContext {
         }
     }
 
-    private void completeVertices(@Nullable Throwable failure) {
+    private CompletableFuture<Void> completeVertices(@Nullable Throwable failure) {
         if (vertices != null) {
+            ExecutorService offloadExecutor =
+                    mc.nodeEngine().getExecutionService().getExecutor(JOB_OFFLOADABLE_EXECUTOR);
+            List<CompletableFuture<Void>> futures = new ArrayList<>(vertices.size());
             JobClassLoaderService classLoaderService = mc.getJetServiceBackend().getJobClassLoaderService();
-            JetDelegatingClassLoader jobCl = classLoaderService.getClassLoader(mc.jobId());
-            doWithClassLoader(jobCl, () -> {
-                for (Vertex v : vertices) {
+            for (Vertex v : vertices) {
+                ProcessorMetaSupplier processorMetaSupplier = v.getMetaSupplier();
+                RunnableEx closeAction = () -> {
                     try {
                         ClassLoader processorCl = classLoaderService.getProcessorClassLoader(mc.jobId(), v.getName());
                         doWithClassLoader(
                                 processorCl,
-                                () -> v.getMetaSupplier().close(failure)
+                                () -> processorMetaSupplier.close(failure)
                         );
                     } catch (Throwable e) {
                         logger.severe(mc.jobIdString()
-                                      + " encountered an exception in ProcessorMetaSupplier.close(), ignoring it", e);
+                                + " encountered an exception in ProcessorMetaSupplier.close(), ignoring it", e);
                     }
-                }
-            });
+                };
+                Executor executor = processorMetaSupplier.closeIsCooperative() ? CALLER_RUNS : offloadExecutor;
+                futures.add(runAsync(closeAction, executor));
+            }
+            return CompletableFuture.allOf(futures.toArray(new CompletableFuture[0]));
         }
+        return completedFuture(null);
     }
 
     void resumeJob(Supplier<Long> executionIdSupplier) {

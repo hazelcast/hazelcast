@@ -24,13 +24,16 @@ import com.hazelcast.jet.sql.impl.opt.physical.DropLateItemsPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.StreamToStreamJoinPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.UnionPhysicalRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.apache.calcite.rel.RelNode;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -43,6 +46,7 @@ import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -91,27 +95,41 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
         HazelcastTable table = partitionedTable("map", asList(field(KEY, INT), field(VALUE, INT)), 1);
         List<QueryDataType> parameterTypes = asList(QueryDataType.INT, QueryDataType.INT);
 
-        String sql = "SELECT this, __key FROM TABLE(IMPOSE_ORDER((SELECT __key, this FROM map), DESCRIPTOR(this), 1))";
+        final String sql = "SELECT window_end FROM " +
+                "TABLE(HOP(" +
+                "  (SELECT * FROM TABLE(IMPOSE_ORDER((SELECT __key, this FROM map), DESCRIPTOR(__key), 1))), " +
+                "DESCRIPTOR(__key), 2, 1)) " +
+                "GROUP BY window_start, window_end, __key, this";
 
         PhysicalRel optimizedPhysicalRel = optimizePhysical(sql, parameterTypes, table).getPhysical();
 
         assertPlan(optimizedPhysicalRel, plan(
                 planRow(0, CalcPhysicalRel.class),
-                planRow(1, DropLateItemsPhysicalRel.class),
-                planRow(2, FullScanPhysicalRel.class)
+                planRow(1, AggregateCombineByKeyPhysicalRel.class),
+                planRow(2, AggregateAccumulateByKeyPhysicalRel.class),
+                planRow(3, CalcPhysicalRel.class),
+                planRow(4, SlidingWindowPhysicalRel.class),
+                planRow(5, FullScanPhysicalRel.class)
         ));
 
         WatermarkKeysAssigner keysAssigner = new WatermarkKeysAssigner(optimizedPhysicalRel);
         keysAssigner.assignWatermarkKeys();
 
         assertThat(optimizedPhysicalRel).isInstanceOf(CalcPhysicalRel.class);
-
-        // Watermark key was propagated to CalcPhysicalRel
+        // upper-level calc should not contain any w-marked field
         Map<Integer, MutableByte> map = keysAssigner.getWatermarkedFieldsKey(optimizedPhysicalRel);
+        assertThat(map).isNull();
+
+        RelNode rel = optimizedPhysicalRel.getInput(0);
+        while (!(rel instanceof CalcPhysicalRel)) {
+            rel = rel.getInput(0);
+        }
+
+        assertThat(rel).isInstanceOf(CalcPhysicalRel.class);
+        map = keysAssigner.getWatermarkedFieldsKey(rel);
         assertThat(map).isNotNull();
-        assertThat(map).isNotEmpty();
-        assertThat(map.get(0)).isNotNull();
-        assertThat(map.get(0).getValue()).isEqualTo((byte) 0);
+        assertThat(map.size()).isEqualTo(1);
+        assertThat(map.get(2).getValue()).isEqualTo((byte) 0);
     }
 
     @Test
@@ -133,13 +151,48 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
         ));
 
         WatermarkKeysAssigner keysAssigner = new WatermarkKeysAssigner(optimizedPhysicalRel);
+        assertThatThrownBy(() -> keysAssigner.assignWatermarkKeys())
+                .hasMessageContaining("The same scan used twice in the execution plan");
+
+//        assertThat(optimizedPhysicalRel.getInput(0)).isInstanceOf(UnionPhysicalRel.class);
+//
+//        UnionPhysicalRel unionRel = (UnionPhysicalRel) optimizedPhysicalRel.getInput(0);
+//
+//        // Watermark key was propagated to UnionPhysicalRel
+//        Map<Integer, MutableByte> map = keysAssigner.getWatermarkedFieldsKey(unionRel);
+//        assertThat(map).isNotNull();
+//        assertThat(map).isNotEmpty();
+//        assertThat(map.get(1)).isNotNull(); // 2nd field (this) is watermarked, that's why we have index 1.
+//        assertThat(map.get(1).getValue()).isEqualTo((byte) 0);
+    }
+
+    @Ignore("Doesn't work with views ...")
+    @Test
+    public void when_streamToStreamJoinIsPresent_then_keyWasPropagated() {
+        HazelcastTable table = partitionedTable("map", asList(field(KEY, INT), field(VALUE, INT)), 1);
+        List<QueryDataType> parameterTypes = asList(QueryDataType.INT, QueryDataType.INT);
+
+        String sql =
+                " SELECT * FROM TABLE(IMPOSE_ORDER((SELECT __key, this FROM map), DESCRIPTOR(this), 1)) AS s1 " +
+                        " JOIN " +
+                        " (SELECT * FROM TABLE(IMPOSE_ORDER((SELECT __key, this FROM map), DESCRIPTOR(this), 1))) AS s2 " +
+                        " ON s1.this = s2.this";
+
+        PhysicalRel optimizedPhysicalRel = optimizePhysical(sql, parameterTypes, table).getPhysical();
+
+        assertPlan(optimizedPhysicalRel, plan(
+                planRow(0, StreamToStreamJoinPhysicalRel.class),
+                planRow(2, FullScanPhysicalRel.class),
+                planRow(2, FullScanPhysicalRel.class)
+        ));
+
+        WatermarkKeysAssigner keysAssigner = new WatermarkKeysAssigner(optimizedPhysicalRel);
         keysAssigner.assignWatermarkKeys();
 
-        PhysicalRel unionRel = (PhysicalRel) optimizedPhysicalRel.getInput(0);
-        assertThat(unionRel).isInstanceOf(UnionPhysicalRel.class);
+        assertThat(optimizedPhysicalRel).isInstanceOf(StreamToStreamJoinPhysicalRel.class);
 
         // Watermark key was propagated to UnionPhysicalRel
-        Map<Integer, MutableByte> map = keysAssigner.getWatermarkedFieldsKey(unionRel);
+        Map<Integer, MutableByte> map = keysAssigner.getWatermarkedFieldsKey(optimizedPhysicalRel);
         assertThat(map).isNotNull();
         assertThat(map).isNotEmpty();
         assertThat(map.get(1)).isNotNull(); // 2nd field (this) is watermarked, that's why we have index 1.

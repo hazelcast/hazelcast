@@ -527,9 +527,6 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     public abstract void testPersistentMemoryDirectoryConfiguration_SystemMemoryModeThrows();
 
     @Test
-    public abstract void testCompactSerialization();
-
-    @Test
     public abstract void testCompactSerialization_serializerRegistration();
 
     @Test

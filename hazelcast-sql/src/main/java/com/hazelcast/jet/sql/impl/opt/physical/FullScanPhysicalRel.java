@@ -35,6 +35,7 @@ import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.metadata.RelMdUtil;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexNode;
@@ -54,7 +55,6 @@ public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
             RelOptTable table,
             @Nullable BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
             int watermarkedColumnIndex
-
     ) {
         super(cluster, traitSet, table, eventTimePolicyProvider, watermarkedColumnIndex);
     }
@@ -133,6 +133,12 @@ public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
     }
 
     @Override
+    public RelWriter explainTerms(RelWriter pw) {
+        return super.explainTerms(pw)
+                .itemIf("watermarkKey", watermarkKey, watermarkKey != null);
+    }
+
+    @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
         return new FullScanPhysicalRel(getCluster(), traitSet, getTable(), eventTimePolicyProvider(),
                 watermarkedColumnIndex());
@@ -144,5 +150,10 @@ public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
 
     public void setWatermarkKey(byte watermarkKey) {
         this.watermarkKey = watermarkKey;
+    }
+
+    public List<RexNode> getProjects() {
+        HazelcastTable table = getTable().unwrap(HazelcastTable.class);
+        return table.getProjects();
     }
 }

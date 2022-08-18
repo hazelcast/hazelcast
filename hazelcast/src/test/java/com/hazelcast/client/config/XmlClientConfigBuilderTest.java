@@ -686,22 +686,10 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
     }
 
     @Override
-    public void testCompactSerialization() {
-        String xml = HAZELCAST_CLIENT_START_TAG
-                + "    <serialization>\n"
-                + "        <compact-serialization enabled=\"true\" />\n"
-                + "    </serialization>\n"
-                + HAZELCAST_CLIENT_END_TAG;
-
-        SerializationConfig config = buildConfig(xml).getSerializationConfig();
-        assertTrue(config.getCompactSerializationConfig().isEnabled());
-    }
-
-    @Override
     public void testCompactSerialization_serializerRegistration() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <serialization>\n"
-                + "        <compact-serialization enabled=\"true\">\n"
+                + "        <compact-serialization>\n"
                 + "            <serializers>\n"
                 + "                <serializer>example.serialization.SerializableEmployeeDTOSerializer</serializer>\n"
                 + "            </serializers>\n"
@@ -717,7 +705,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
     public void testCompactSerialization_classRegistration() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <serialization>\n"
-                + "        <compact-serialization enabled=\"true\">\n"
+                + "        <compact-serialization>\n"
                 + "            <classes>\n"
                 + "                <class>example.serialization.ExternalizableEmployeeDTO</class>\n"
                 + "            </classes>\n"
@@ -733,7 +721,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
     public void testCompactSerialization_serializerAndClassRegistration() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <serialization>\n"
-                + "        <compact-serialization enabled=\"true\">\n"
+                + "        <compact-serialization>\n"
                 + "            <serializers>\n"
                 + "                <serializer>example.serialization.SerializableEmployeeDTOSerializer</serializer>\n"
                 + "            </serializers>\n"
@@ -753,7 +741,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
     public void testCompactSerialization_duplicateSerializerRegistration() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <serialization>\n"
-                + "        <compact-serialization enabled=\"true\">\n"
+                + "        <compact-serialization>\n"
                 + "            <serializers>\n"
                 + "                <serializer>example.serialization.EmployeeDTOSerializer</serializer>\n"
                 + "                <serializer>example.serialization.EmployeeDTOSerializer</serializer>\n"
@@ -772,7 +760,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
     public void testCompactSerialization_duplicateClassRegistration() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <serialization>\n"
-                + "        <compact-serialization enabled=\"true\">\n"
+                + "        <compact-serialization>\n"
                 + "            <classes>\n"
                 + "                <class>example.serialization.ExternalizableEmployeeDTO</class>\n"
                 + "                <class>example.serialization.ExternalizableEmployeeDTO</class>\n"
@@ -791,7 +779,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
     public void testCompactSerialization_registrationsWithDuplicateClasses() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <serialization>\n"
-                + "        <compact-serialization enabled=\"true\">\n"
+                + "        <compact-serialization>\n"
                 + "            <serializers>\n"
                 + "                <serializer>example.serialization.EmployeeDTOSerializer</serializer>\n"
                 + "                <serializer>example.serialization.SameClassEmployeeDTOSerializer</serializer>\n"
@@ -811,7 +799,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
     public void testCompactSerialization_registrationsWithDuplicateTypeNames() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <serialization>\n"
-                + "        <compact-serialization enabled=\"true\">\n"
+                + "        <compact-serialization>\n"
                 + "            <serializers>\n"
                 + "                <serializer>example.serialization.EmployeeDTOSerializer</serializer>\n"
                 + "                <serializer>example.serialization.SameTypeNameEmployeeDTOSerializer</serializer>\n"
@@ -831,7 +819,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
     public void testCompactSerialization_withInvalidSerializer() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <serialization>\n"
-                + "        <compact-serialization enabled=\"true\">\n"
+                + "        <compact-serialization>\n"
                 + "            <serializers>\n"
                 + "                <serializer>does.not.exist.FooSerializer</serializer>\n"
                 + "            </serializers>\n"
@@ -849,7 +837,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
     public void testCompactSerialization_withInvalidCompactSerializableClass() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "    <serialization>\n"
-                + "        <compact-serialization enabled=\"true\">\n"
+                + "        <compact-serialization>\n"
                 + "            <classes>\n"
                 + "                <class>does.not.exist.Foo</class>\n"
                 + "            </classes>\n"

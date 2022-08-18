@@ -19,7 +19,6 @@ package com.hazelcast.config;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.PortableFactory;
-import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import java.nio.ByteOrder;
@@ -519,9 +518,8 @@ public class SerializationConfig {
     /**
      * @param compactSerializationConfig config for the compact serialization format
      * @return configured {@link com.hazelcast.config.SerializerConfig} for chaining
-     * @since 5.0
+     * @since 5.2
      */
-    @Beta
     public SerializationConfig setCompactSerializationConfig(@Nonnull CompactSerializationConfig compactSerializationConfig) {
         checkNotNull(compactSerializationConfig, "compactSerializationConfig");
         this.compactSerializationConfig = compactSerializationConfig;
@@ -530,9 +528,8 @@ public class SerializationConfig {
 
     /**
      * @return compact serialization config
-     * @since 5.0
+     * @since 5.2
      */
-    @Beta
     public CompactSerializationConfig getCompactSerializationConfig() {
         return compactSerializationConfig;
     }

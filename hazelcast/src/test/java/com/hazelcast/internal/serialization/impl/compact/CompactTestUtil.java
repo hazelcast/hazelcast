@@ -17,11 +17,12 @@
 package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import example.serialization.ExternalizableEmployeeDTO;
 import example.serialization.InnerDTO;
 import example.serialization.MainDTO;
@@ -34,12 +35,20 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.internal.util.phonehome.TestUtil.getNode;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public final class CompactTestUtil {
 
@@ -187,5 +196,34 @@ public final class CompactTestUtil {
                 .setSchemaService(CompactTestUtil.createInMemorySchemaService())
                 .setConfig(serializationConfig)
                 .build();
+    }
+
+    public static void assertSchemasAvailable(Collection<HazelcastInstance> instances, Class<?>... classes) {
+        Collection<Schema> expectedSchemas = getSchemasFor(classes);
+        for (HazelcastInstance instance : instances) {
+            Collection<Schema> schemas = getNode(instance).getSchemaService().getAllSchemas();
+            assertThat(schemas, containsInAnyOrder(expectedSchemas.toArray()));
+        }
+    }
+
+    /**
+     * Can only return the schemas for classes that are serialized with
+     * reflective serializer.
+     */
+    public static Collection<Schema> getSchemasFor(Class<?>... classes) {
+        CompactStreamSerializer compactStreamSerializer = mock(CompactStreamSerializer.class);
+        when(compactStreamSerializer.canBeSerializedAsCompact(any())).thenReturn(true);
+        ReflectiveCompactSerializer serializer = new ReflectiveCompactSerializer(compactStreamSerializer);
+        ArrayList<Schema> schemas = new ArrayList<>(classes.length);
+        for (Class<?> clazz : classes) {
+            SchemaWriter writer = new SchemaWriter(clazz.getName());
+            try {
+                serializer.write(writer, clazz.getDeclaredConstructor().newInstance());
+            } catch (Throwable t) {
+                throw new RuntimeException(t);
+            }
+            schemas.add(writer.build());
+        }
+        return schemas;
     }
 }

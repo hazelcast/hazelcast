@@ -20,8 +20,8 @@ import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
@@ -34,7 +34,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.nio.serialization.GenericRecordBuilder.compact;
+import static com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder.compact;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
@@ -92,7 +92,6 @@ public class CompactNullablePrimitiveInteroperabilityTest {
     private SerializationService createSerializationServiceWithASerializer() {
         CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
         compactSerializationConfig.addSerializer(new ASerializer());
-        compactSerializationConfig.setEnabled(true);
         return new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
                 .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
@@ -100,11 +99,9 @@ public class CompactNullablePrimitiveInteroperabilityTest {
     }
 
     private SerializationService createSerializationService() {
-        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.setEnabled(true);
         return new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                .setConfig(new SerializationConfig())
                 .build();
     }
 

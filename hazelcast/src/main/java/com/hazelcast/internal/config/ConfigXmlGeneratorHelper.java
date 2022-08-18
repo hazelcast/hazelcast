@@ -45,15 +45,7 @@ public final class ConfigXmlGeneratorHelper {
      * configuration.
      */
     public static void compactSerialization(XmlGenerator gen, CompactSerializationConfig config) {
-        if (!config.isEnabled()) {
-            // We don't want to output any configuration if it is not enabled by
-            // default during the BETA period. This check should be removed
-            // when we remove the enabled option after the BETA period.
-            // TODO: remove before 5.2
-            return;
-        }
-
-        gen.open("compact-serialization", "enabled", config.isEnabled());
+        gen.open("compact-serialization");
         Map<String, TriTuple<Class, String, CompactSerializer>> registrations = getRegistrations(config);
 
         List<String> programmaticSerializerClassNames

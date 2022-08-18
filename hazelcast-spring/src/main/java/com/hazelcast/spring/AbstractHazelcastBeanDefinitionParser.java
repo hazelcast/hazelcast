@@ -62,6 +62,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import static com.hazelcast.internal.config.DomConfigHelper.childElements;
 import static com.hazelcast.internal.config.DomConfigHelper.cleanNodeName;
@@ -202,17 +203,24 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             }
         }
 
-        protected void fillAttributesForAliasedDiscoveryStrategy(AliasedDiscoveryConfig config, Node node,
-                                                                 BeanDefinitionBuilder builder, String name) {
+        protected void handleAliasedDiscoveryStrategy(Node node, BeanDefinitionBuilder builder, String name) {
             NamedNodeMap attributes = node.getAttributes();
+            Map<String, String> properties = new ManagedMap<>();
             if (attributes != null) {
                 for (int i = 0; i < attributes.getLength(); i++) {
                     Node attribute = attributes.item(i);
-                    config.setProperty(attribute.getNodeName(), attribute.getNodeValue());
+                    properties.put(attribute.getNodeName(), attribute.getNodeValue());
                 }
             }
+            BeanDefinitionBuilder discoveryConfigBuilder = createBeanBuilder(AliasedDiscoveryConfig.class);
+            discoveryConfigBuilder.getBeanDefinition().setBeanClass(ConfigFactory.class);
+            discoveryConfigBuilder.setFactoryMethod("newAliasedDiscoveryConfig");
+
+            discoveryConfigBuilder.addConstructorArgValue(name);
+            discoveryConfigBuilder.addConstructorArgValue(properties);
+
             String propertyName = String.format("%sConfig", name);
-            builder.addPropertyValue(propertyName, config);
+            builder.addPropertyValue(propertyName, discoveryConfigBuilder.getBeanDefinition());
         }
 
         protected ManagedList parseListeners(Node node, Class listenerConfigClass) {
@@ -350,13 +358,6 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             BeanDefinitionBuilder compactSerializationConfigBuilder = createBeanBuilder(CompactSerializationConfig.class);
             compactSerializationConfigBuilder.getBeanDefinition().setBeanClass(ConfigFactory.class);
             compactSerializationConfigBuilder.setFactoryMethod("newCompactSerializationConfig");
-
-            NamedNodeMap attributes = compactNode.getAttributes();
-            Node enabledNode = attributes.getNamedItem("enabled");
-            if (enabledNode != null) {
-                String value = getTextContent(enabledNode);
-                compactSerializationConfigBuilder.addConstructorArgValue(value);
-            }
 
             ManagedList<String> serializerClassNames = new ManagedList<>();
             ManagedList<String> compactSerializableClassNames = new ManagedList<>();

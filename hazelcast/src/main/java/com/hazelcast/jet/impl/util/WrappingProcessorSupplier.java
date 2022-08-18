@@ -35,6 +35,7 @@ import static com.hazelcast.jet.impl.util.Util.toList;
  * with one that will wrap its processors using {@code wrapperSupplier}.
  */
 public final class WrappingProcessorSupplier implements ProcessorSupplier, IdentifiedDataSerializable {
+
     private ProcessorSupplier wrapped;
     private FunctionEx<Processor, Processor> wrapperSupplier;
 
@@ -58,6 +59,16 @@ public final class WrappingProcessorSupplier implements ProcessorSupplier, Ident
     @Override
     public void init(@Nonnull Context context) throws Exception {
         wrapped.init(context);
+    }
+
+    @Override
+    public boolean initIsCooperative() {
+        return wrapped.initIsCooperative();
+    }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return wrapped.closeIsCooperative();
     }
 
     @Override

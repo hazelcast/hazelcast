@@ -606,23 +606,12 @@
                     <xs:annotation>
                         <xs:documentation>
                             Contains configuration elements and attributes for the compact serialization.
-
-                            This feature is in the BETA status and any schema definition related
-                            to it might change in the future without a prior notice, until the feature
-                            is promoted to the stable status.
                         </xs:documentation>
                     </xs:annotation>
                     <xs:all>
                         <xs:element name="serializers" type="compact-serializers" minOccurs="0"/>
                         <xs:element name="classes" type="compact-serializable-classes" minOccurs="0"/>
                     </xs:all>
-                    <xs:attribute name="enabled" type="xs:boolean" default="false">
-                        <xs:annotation>
-                            <xs:documentation>
-                                Enables/disables the compact serialization.
-                            </xs:documentation>
-                        </xs:annotation>
-                    </xs:attribute>
                 </xs:complexType>
             </xs:element>
         </xs:all>

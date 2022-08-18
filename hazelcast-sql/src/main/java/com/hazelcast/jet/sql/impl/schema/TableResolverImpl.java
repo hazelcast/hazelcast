@@ -32,6 +32,7 @@ import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
+import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
 
 import javax.annotation.Nonnull;
@@ -95,7 +96,7 @@ public class TableResolverImpl implements TableResolver {
         // we skip events originating from local member to avoid double processing
         nodeEngine.getHazelcastInstance().getLifecycleService().addLifecycleListener(event -> {
             if (event.getState() == LifecycleEvent.LifecycleState.STARTED) {
-                this.tableStorage.registerListener(new TablesStorage.EntryListenerAdapter() {
+                this.tableStorage.initializeWithListener(new TablesStorage.EntryListenerAdapter() {
                     @Override
                     public void entryUpdated(EntryEvent<String, Object> event) {
                         if (!event.getMember().localMember()) {
@@ -193,6 +194,34 @@ public class TableResolverImpl implements TableResolver {
 
     // endregion
 
+    // region type
+
+    public Collection<String> getTypeNames() {
+        return tableStorage.typeNames();
+    }
+
+    public Collection<Type> getTypes() {
+        return tableStorage.getAllTypes();
+    }
+
+    public void createType(Type type, boolean replace, boolean ifNotExists) {
+        if (ifNotExists) {
+            tableStorage.putIfAbsent(type.getName(), type);
+        } else if (replace) {
+            tableStorage.put(type.getName(), type);
+        } else if (!tableStorage.putIfAbsent(type.getName(), type)) {
+            throw QueryException.error("Type already exists: " + type.getName());
+        }
+    }
+
+    public void removeType(String name, boolean ifExists) {
+        if (tableStorage.removeType(name) == null && !ifExists) {
+            throw QueryException.error("Type does not exist: " + name);
+        }
+    }
+
+    // endregion
+
     @Nonnull
     @Override
     public List<List<String>> getDefaultSearchPaths() {
@@ -219,6 +248,9 @@ public class TableResolverImpl implements TableResolver {
             } else if (o instanceof View) {
                 tables.add(toTable((View) o));
                 views.add((View) o);
+            } else if (o instanceof Type) {
+                // Types are not tables
+                continue;
             } else {
                 throw new RuntimeException("Unexpected: " + o);
             }

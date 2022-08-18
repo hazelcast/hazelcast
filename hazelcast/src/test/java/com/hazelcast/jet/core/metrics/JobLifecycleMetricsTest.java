@@ -22,6 +22,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.core.TestProcessors;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -29,6 +30,7 @@ import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -62,6 +64,11 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
         config.getMetricsConfig().setCollectionFrequencySeconds(1);
 
         hzInstances = createHazelcastInstances(config, MEMBER_COUNT);
+    }
+
+    @After
+    public void after() {
+        TestProcessors.assertNoErrorsInProcessors();
     }
 
     @Test

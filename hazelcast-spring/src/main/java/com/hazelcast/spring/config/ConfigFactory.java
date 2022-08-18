@@ -18,6 +18,7 @@ package com.hazelcast.spring.config;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.config.ClientFailoverConfig;
+import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.CompactSerializationConfigAccessor;
 import com.hazelcast.config.Config;
@@ -26,12 +27,14 @@ import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizePolicy;
+import com.hazelcast.internal.config.AliasedDiscoveryConfigUtils;
 import com.hazelcast.spi.eviction.EvictionPolicyComparator;
 import com.hazelcast.spring.HazelcastClientBeanDefinitionParser;
 import com.hazelcast.spring.HazelcastConfigBeanDefinitionParser;
 import com.hazelcast.spring.HazelcastFailoverClientBeanDefinitionParser;
 
 import java.util.List;
+import java.util.Map;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.config.ConfigValidator.COMMONLY_SUPPORTED_EVICTION_POLICIES;
@@ -109,13 +112,18 @@ public final class ConfigFactory {
         return evictionConfig;
     }
 
+    @SuppressWarnings("rawtypes")
+    public static AliasedDiscoveryConfig newAliasedDiscoveryConfig(String tag, Map<String, String> properties) {
+        AliasedDiscoveryConfig config = AliasedDiscoveryConfigUtils.newConfigFor(tag);
+        properties.forEach(config::setProperty);
+        return config;
+    }
+
     public static CompactSerializationConfig newCompactSerializationConfig(
-            boolean isEnabled,
             List<String> serializerClassNames,
             List<String> compactSerializableClassNames
     ) {
         CompactSerializationConfig config = new CompactSerializationConfig();
-        config.setEnabled(isEnabled);
 
         for (String compactSerializableClassName : compactSerializableClassNames) {
             CompactSerializationConfigAccessor.registerClass(config, compactSerializableClassName);

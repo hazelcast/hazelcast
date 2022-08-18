@@ -51,7 +51,6 @@
         },
         "allow-override-default-serializers": true,
         "compact-serialization": {
-          "enabled": true,
           "serializers": [
             {
               "serializer": "com.hazelcast.examples.DummyTypeSerializer"

@@ -2170,7 +2170,7 @@
                 <prefix>java</prefix>
             </whitelist>
         </java-serialization-filter>
-        <compact-serialization enabled="true">
+        <compact-serialization>
             <serializers>
                 <serializer>com.hazelcast.examples.DummyTypeSerializer</serializer>
             </serializers>
@@ -3504,6 +3504,9 @@
             Timeout duration for CP members to restore their data from disk.
             A CP member fails its startup if it cannot complete its CP data restore
             process in the configured duration.
+        * <cp-member-priority>:
+            The CP member priority. The CP groups' leadership will be eventually
+            transferred to members with higher priorities within the CP group.
 
         * <raft-algorithm>:
             These parameters tune specific parameters of Hazelcast’s Raft consensus
@@ -3581,6 +3584,7 @@
         <persistence-enabled>true</persistence-enabled>
         <base-dir>custom-cp-dir</base-dir>
         <data-load-timeout-seconds>30</data-load-timeout-seconds>
+        <cp-member-priority>1</cp-member-priority>
         <raft-algorithm>
             <leader-election-timeout-in-millis>2000</leader-election-timeout-in-millis>
             <leader-heartbeat-period-in-millis>5000</leader-heartbeat-period-in-millis>

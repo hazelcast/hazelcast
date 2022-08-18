@@ -23,8 +23,7 @@ import com.hazelcast.internal.serialization.impl.compact.DeserializedGenericReco
 import com.hazelcast.internal.serialization.impl.portable.DeserializedPortableGenericRecord;
 import com.hazelcast.internal.serialization.impl.portable.PortableGenericRecord;
 import com.hazelcast.internal.serialization.impl.portable.PortableInternalGenericRecord;
-import com.hazelcast.nio.serialization.AbstractGenericRecord;
-import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 

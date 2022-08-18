@@ -3058,24 +3058,11 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
-    public void testCompactSerialization() {
-        String yaml = ""
-                + "hazelcast:\n"
-                + "    serialization:\n"
-                + "        compact-serialization:\n"
-                + "            enabled: true\n";
-
-        Config config = buildConfig(yaml);
-        assertTrue(config.getSerializationConfig().getCompactSerializationConfig().isEnabled());
-    }
-
-    @Override
     public void testCompactSerialization_serializerRegistration() {
         String yaml = ""
                 + "hazelcast:\n"
                 + "    serialization:\n"
                 + "        compact-serialization:\n"
-                + "            enabled: true\n"
                 + "            serializers:\n"
                 + "                - serializer: example.serialization.SerializableEmployeeDTOSerializer\n";
 
@@ -3089,7 +3076,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "hazelcast:\n"
                 + "    serialization:\n"
                 + "        compact-serialization:\n"
-                + "            enabled: true\n"
                 + "            classes:\n"
                 + "                - class: example.serialization.ExternalizableEmployeeDTO\n";
 
@@ -3103,7 +3089,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "hazelcast:\n"
                 + "    serialization:\n"
                 + "        compact-serialization:\n"
-                + "            enabled: true\n"
                 + "            serializers:\n"
                 + "                - serializer: example.serialization.SerializableEmployeeDTOSerializer\n"
                 + "            classes:\n"
@@ -3120,7 +3105,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "hazelcast:\n"
                 + "    serialization:\n"
                 + "        compact-serialization:\n"
-                + "            enabled: true\n"
                 + "            serializers:\n"
                 + "                - serializer: example.serialization.EmployeeDTOSerializer\n"
                 + "                - serializer: example.serialization.EmployeeDTOSerializer\n";
@@ -3137,7 +3121,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "hazelcast:\n"
                 + "    serialization:\n"
                 + "        compact-serialization:\n"
-                + "            enabled: true\n"
                 + "            classes:\n"
                 + "                - class: example.serialization.ExternalizableEmployeeDTO\n"
                 + "                - class: example.serialization.ExternalizableEmployeeDTO\n";
@@ -3154,7 +3137,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "hazelcast:\n"
                 + "    serialization:\n"
                 + "        compact-serialization:\n"
-                + "            enabled: true\n"
                 + "            serializers:\n"
                 + "                - serializer: example.serialization.EmployeeDTOSerializer\n"
                 + "                - serializer: example.serialization.SameClassEmployeeDTOSerializer\n";
@@ -3172,7 +3154,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "hazelcast:\n"
                 + "    serialization:\n"
                 + "        compact-serialization:\n"
-                + "            enabled: true\n"
                 + "            serializers:\n"
                 + "                - serializer: example.serialization.EmployeeDTOSerializer\n"
                 + "                - serializer: example.serialization.SameTypeNameEmployeeDTOSerializer\n";
@@ -3190,7 +3171,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "hazelcast:\n"
                 + "    serialization:\n"
                 + "        compact-serialization:\n"
-                + "            enabled: true\n"
                 + "            serializers:\n"
                 + "                - serializer: does.not.exist.FooSerializer\n";
 
@@ -3206,7 +3186,6 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "hazelcast:\n"
                 + "    serialization:\n"
                 + "        compact-serialization:\n"
-                + "            enabled: true\n"
                 + "            classes:\n"
                 + "                - class: does.not.exist.Foo\n";
 
@@ -4163,6 +4142,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    persistence-enabled: true\n"
                 + "    base-dir: /mnt/cp-data\n"
                 + "    data-load-timeout-seconds: 30\n"
+                + "    cp-member-priority: -1\n"
                 + "    raft-algorithm:\n"
                 + "      leader-election-timeout-in-millis: 500\n"
                 + "      leader-heartbeat-period-in-millis: 100\n"
@@ -4194,6 +4174,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(cpSubsystemConfig.isPersistenceEnabled());
         assertEquals(new File("/mnt/cp-data").getAbsoluteFile(), cpSubsystemConfig.getBaseDir().getAbsoluteFile());
         assertEquals(30, cpSubsystemConfig.getDataLoadTimeoutSeconds());
+        assertEquals(-1, cpSubsystemConfig.getCPMemberPriority());
         RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();
         assertEquals(500, raftAlgorithmConfig.getLeaderElectionTimeoutInMillis());
         assertEquals(100, raftAlgorithmConfig.getLeaderHeartbeatPeriodInMillis());

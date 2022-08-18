@@ -64,6 +64,11 @@ class DynamicCPSubsystemConfig extends CPSubsystemConfig {
     }
 
     @Override
+    public CPSubsystemConfig setCPMemberPriority(int cpMemberPriority) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public RaftAlgorithmConfig getRaftAlgorithmConfig() {
         return new DynamicRaftAlgorithmConfig(super.getRaftAlgorithmConfig());
     }

@@ -17,7 +17,6 @@
 package com.hazelcast.nio.serialization.compact;
 
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
-import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 
@@ -32,9 +31,8 @@ import javax.annotation.Nonnull;
  * methods must be consistent with each other.
  *
  * @param <T> Type of the serialized/deserialized class
- * @since Hazelcast 5.0 as BETA
+ * @since 5.2
  */
-@Beta
 public interface CompactSerializer<T> {
     /**
      * @param reader reader to read fields of an object

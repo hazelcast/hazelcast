@@ -485,7 +485,6 @@ hazelcast-client:
           - "["
           - com.
     compact-serialization:
-      enabled: true
       serializers:
         - serializer: com.hazelcast.examples.DummyTypeSerializer
       classes:

@@ -544,7 +544,7 @@
                 <prefix>com.</prefix>
             </whitelist>
         </java-serialization-filter>
-        <compact-serialization enabled="true">
+        <compact-serialization>
             <serializers>
                 <serializer>com.hazelcast.examples.DummyTypeSerializer</serializer>
             </serializers>

@@ -82,6 +82,7 @@ import com.hazelcast.internal.nio.ClassLoaderUtil;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.server.tcp.ChannelInitializerFunction;
@@ -117,7 +118,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Function;
-import java.util.function.Supplier;
 
 import static com.hazelcast.config.ConfigAccessor.getActiveMemberNetworkConfig;
 import static com.hazelcast.config.InstanceTrackingConfig.InstanceTrackingProperties.LICENSED;
@@ -337,6 +337,11 @@ public class DefaultNodeExtension implements NodeExtension {
         return createSerializationService(true);
     }
 
+    @Override
+    public MemberSchemaService createSchemaService() {
+        return new MemberSchemaService();
+    }
+
     /**
      * Creates a serialization service. The {@code isCompatibility} parameter defines
      * whether the serialization format used by the service will conform to the
@@ -367,13 +372,8 @@ public class DefaultNodeExtension implements NodeExtension {
                     .setPartitioningStrategy(partitioningStrategy)
                     .setHazelcastInstance(hazelcastInstance)
                     .setVersion(version)
-                    .setSchemaService(node.memberSchemaService)
-                    .setNotActiveExceptionSupplier(new Supplier<RuntimeException>() {
-                        @Override
-                        public RuntimeException get() {
-                            return new HazelcastInstanceNotActiveException();
-                        }
-                    })
+                    .setSchemaService(node.getSchemaService())
+                    .setNotActiveExceptionSupplier(HazelcastInstanceNotActiveException::new)
                     .isCompatibility(isCompatibility)
                     .build();
         } catch (Exception e) {

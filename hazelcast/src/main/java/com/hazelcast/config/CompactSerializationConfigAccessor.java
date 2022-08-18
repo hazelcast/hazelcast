@@ -18,7 +18,6 @@ package com.hazelcast.config;
 
 import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
-import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import java.util.List;
@@ -40,7 +39,6 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * Also, it enables us to access registered classes using the programmatic API,
  * without providing a public API on the {@link CompactSerializationConfig}.
  */
-@Beta
 @PrivateApi
 public final class CompactSerializationConfigAccessor {
 

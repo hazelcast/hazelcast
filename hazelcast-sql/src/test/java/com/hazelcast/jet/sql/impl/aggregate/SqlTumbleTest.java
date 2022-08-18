@@ -26,6 +26,7 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -443,6 +444,7 @@ public class SqlTumbleTest extends SqlTestSupport {
         );
     }
 
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/21984")
     @Test
     public void test_countWithUnionAsInput() {
         String name = createTable(

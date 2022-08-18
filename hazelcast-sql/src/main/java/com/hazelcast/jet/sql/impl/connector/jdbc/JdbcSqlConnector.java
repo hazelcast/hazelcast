@@ -54,7 +54,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import static com.hazelcast.sql.impl.type.QueryDataTypeUtils.resolveTypeForClass;
 import static java.lang.Integer.parseInt;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toList;
@@ -95,12 +94,14 @@ public class JdbcSqlConnector implements SqlConnector {
         if (userFields.isEmpty()) {
             for (DbField dbField : dbFields.values()) {
                 try {
-                    Class<?> columnClass = Class.forName(dbField.className);
-                    MappingField mappingField = new MappingField(dbField.columnName(), resolveTypeForClass(columnClass));
-                    mappingField.setPrimaryKey(dbField.primaryKey());
+                    MappingField mappingField = new MappingField(
+                            dbField.columnName,
+                            resolveType(dbField.columnTypeName)
+                    );
+                    mappingField.setPrimaryKey(dbField.primaryKey);
                     resolvedFields.add(mappingField);
-                } catch (ClassNotFoundException e) {
-                    throw new IllegalStateException("Could not load column class " + dbField.className, e);
+                } catch (IllegalArgumentException e) {
+                    throw new IllegalStateException("Could not load column class " + dbField.columnTypeName, e);
                 }
             }
         } else {
@@ -112,7 +113,7 @@ public class JdbcSqlConnector implements SqlConnector {
                     }
                     validateType(f, dbField);
                     MappingField mappingField = new MappingField(f.name(), f.type(), f.externalName());
-                    mappingField.setPrimaryKey(dbField.primaryKey());
+                    mappingField.setPrimaryKey(dbField.primaryKey);
                     resolvedFields.add(mappingField);
                 } else {
                     DbField dbField = dbFields.get(f.name());
@@ -121,7 +122,7 @@ public class JdbcSqlConnector implements SqlConnector {
                     }
                     validateType(f, dbField);
                     MappingField mappingField = new MappingField(f.name(), f.type());
-                    mappingField.setPrimaryKey(dbField.primaryKey());
+                    mappingField.setPrimaryKey(dbField.primaryKey);
                     resolvedFields.add(mappingField);
                 }
             }
@@ -157,8 +158,11 @@ public class JdbcSqlConnector implements SqlConnector {
                 Map<String, DbField> fields = new HashMap<>();
                 for (int i = 1; i <= metaData.getColumnCount(); i++) {
                     String columnName = metaData.getColumnName(i);
-                    fields.put(columnName, new DbField(metaData.getColumnClassName(i),
-                            columnName, pkColumns.contains(columnName)));
+                    fields.put(columnName,
+                            new DbField(metaData.getColumnTypeName(i),
+                                    columnName,
+                                    pkColumns.contains(columnName)
+                            ));
                 }
                 return fields;
             }
@@ -181,15 +185,10 @@ public class JdbcSqlConnector implements SqlConnector {
     }
 
     private void validateType(MappingField field, DbField dbField) {
-        try {
-            Class<?> columnClassType = Class.forName(dbField.className());
-            QueryDataType type = resolveTypeForClass(columnClassType);
-            if (!field.type().equals(type) && !type.getConverter().canConvertTo(field.type().getTypeFamily())) {
-                throw new IllegalStateException("type " + field.type().getTypeFamily() + " of field " + field.name()
-                        + " does not match db type " + type.getTypeFamily());
-            }
-        } catch (ClassNotFoundException e) {
-            throw new HazelcastException("Could not validate type for dbField " + dbField, e);
+        QueryDataType type = resolveType(dbField.columnTypeName);
+        if (!field.type().equals(type) && !type.getConverter().canConvertTo(field.type().getTypeFamily())) {
+            throw new IllegalStateException("type " + field.type().getTypeFamily() + " of field " + field.name()
+                    + " does not match db type " + type.getTypeFamily());
         }
     }
 
@@ -356,34 +355,87 @@ public class JdbcSqlConnector implements SqlConnector {
         );
     }
 
+    /**
+     * Using {@link ResultSetMetaData#getColumnTypeName(int)} seems more
+     * reliable than {@link ResultSetMetaData#getColumnClassName(int)},
+     * which doesn't allow to distinguish between timestamp and timestamp
+     * with time zone, or between tinyint/smallint and int for some JDBC drivers.
+     */
+    @SuppressWarnings("ReturnCount")
+    private QueryDataType resolveType(String columnTypeName) {
+        switch (columnTypeName.toUpperCase()) {
+            case "BOOLEAN":
+            case "BOOL":
+            case "BIT":
+                return QueryDataType.BOOLEAN;
+
+            case "VARCHAR":
+            case "CHARACTER VARYING":
+                return QueryDataType.VARCHAR;
+
+            case "TINYINT":
+                return QueryDataType.TINYINT;
+
+            case "SMALLINT":
+            case "INT2":
+                return QueryDataType.SMALLINT;
+
+            case "INT":
+            case "INT4":
+            case "INTEGER":
+                return QueryDataType.INT;
+
+            case "INT8":
+            case "BIGINT":
+                return QueryDataType.BIGINT;
+
+            case "DECIMAL":
+            case "NUMERIC":
+                return QueryDataType.DECIMAL;
+
+            case "REAL":
+            case "FLOAT":
+            case "FLOAT4":
+                return QueryDataType.REAL;
+
+            case "DOUBLE":
+            case "DOUBLE PRECISION":
+            case "FLOAT8":
+                return QueryDataType.DOUBLE;
+
+            case "DATE":
+                return QueryDataType.DATE;
+
+            case "TIME":
+                return QueryDataType.TIME;
+
+            case "TIMESTAMP":
+                return QueryDataType.TIMESTAMP;
+
+            case "TIMESTAMP WITH TIME ZONE":
+                return QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
+
+            default:
+                throw new IllegalArgumentException("Unknown column type: " + columnTypeName);
+        }
+    }
+
     private static class DbField {
 
-        private final String className;
-        private final String columnName;
-        private final boolean primaryKey;
+        final String columnTypeName;
+        final String columnName;
+        final boolean primaryKey;
 
-        DbField(String className, String columnName, boolean primaryKey) {
-            this.className = requireNonNull(className);
+        DbField(String columnTypeName, String columnName, boolean primaryKey) {
+            this.columnTypeName = requireNonNull(columnTypeName);
             this.columnName = requireNonNull(columnName);
             this.primaryKey = primaryKey;
-        }
-
-        public String className() {
-            return className;
-        }
-
-        public String columnName() {
-            return columnName;
-        }
-
-        public boolean primaryKey() {
-            return primaryKey;
         }
 
         @Override
         public String toString() {
             return "DbField{" +
-                    "className='" + className + '\'' +
+                    "columnTypeName='" + columnTypeName + '\'' +
                     ", columnName='" + columnName + '\'' +
                     ", primaryKey=" + primaryKey +
                     '}';
