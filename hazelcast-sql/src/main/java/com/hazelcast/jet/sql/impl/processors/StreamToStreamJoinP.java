@@ -118,6 +118,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             // using MIN_VALUE + 1 because Object2LongHashMap uses MIN_VALUE as a missing value, and it cannot be used as a value
             wmState.put(wmKey, Long.MIN_VALUE + 1);
             lastEmittedWm.put(wmKey, Long.MIN_VALUE + 1);
+            lastReceivedWm.put(wmKey, Long.MIN_VALUE + 1);
         }
 
         // no key must be on both sides
@@ -227,14 +228,9 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             return processPendingOutput();
         }
 
-        System.err.println(" -> " + watermark);
-
         assert wmState.containsKey(watermark.key()) : "unexpected watermark key: " + watermark.key();
-//        if (wmState.get(watermark.key()) >= watermark.timestamp()) {
-//            return processPendingOutput();
-//        }
-        assert wmState.get(watermark.key()) < watermark.timestamp() : "non-monotonic watermark: " + watermark
-                + " when state is " + wmState.get(watermark.key());
+        assert lastReceivedWm.get(watermark.key()) < watermark.timestamp() : "non-monotonic watermark: " + watermark
+                + " when state is " + lastReceivedWm.get(watermark.key());
 
         lastReceivedWm.put((Byte) watermark.key(), watermark.timestamp());
 
@@ -290,13 +286,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             if (newLimit > oldLimit) {
                 wmState.put(entry.getKey(), newLimit);
                 modified = true;
-            }
-        }
-        if (modified) {
-            for (Entry<Byte, Map<Byte, Long>> longEntry : postponeTimeMap.entrySet()) {
-                for (Map.Entry<Byte, Long> entry : postponeTimeMap.get(longEntry.getKey()).entrySet()) {
-                    System.err.println(entry.getKey() + " -> " + longEntry.getKey() + " = " + wmState.get(entry.getKey()));
-                }
             }
         }
         return modified;
