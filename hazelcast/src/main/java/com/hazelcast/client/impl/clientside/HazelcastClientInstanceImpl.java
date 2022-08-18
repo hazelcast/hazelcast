@@ -869,7 +869,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return clientExtension.getJet();
     }
 
-    public void onClusterChange() {
+    public void onTryNextCluster() {
         ILogger logger = loggingService.getLogger(HazelcastInstance.class);
         logger.info("Resetting local state of the client, because of a cluster change.");
 
@@ -884,7 +884,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         connectionManager.reset();
     }
 
-    public void onClusterConnect() {
+    public void onClusterIdChange() {
         ILogger logger = loggingService.getLogger(HazelcastInstance.class);
         logger.info("Clearing local state of the client, because of a cluster restart.");
 
