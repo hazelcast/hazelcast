@@ -39,9 +39,8 @@ import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -80,7 +79,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private Iterator<JetSqlRow> iterator;
     private JetSqlRow currItem;
 
-    private final Set<JetSqlRow> unusedEventsTracker = Collections.newSetFromMap(new IdentityHashMap<>());
+    private final Set<JetSqlRow> unusedEventsTracker = new HashSet<>();
 
     private final Queue<Object> pendingOutput = new ArrayDeque<>();
     private JetSqlRow emptyLeftRow;
@@ -207,10 +206,15 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             if (preparedOutput == null) {
                 continue;
             }
-            if (ordinal == 1 - outerJoinSide) {
+
+            if (ordinal == outerJoinSide) {
                 // mark opposite-side item as used
+                unusedEventsTracker.remove(currItem);
+            } else if (ordinal == 1 - outerJoinSide) {
+                // mark current item as used
                 unusedEventsTracker.remove(oppositeBufferItem);
             }
+
             if (!tryEmit(preparedOutput)) {
                 pendingOutput.add(preparedOutput);
                 return false;

@@ -43,7 +43,7 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
 
     @BeforeClass
     public static void setUpClass() {
-        initialize(1, null);
+        initialize(3, null);
         sqlService = instance().getSql();
     }
 
@@ -271,8 +271,6 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 stream,
                 asList("a", "b"),
                 asList(TIMESTAMP, INTEGER),
-                row(timestamp(7L), 7),
-                row(timestamp(8L), 8),
                 row(timestamp(9L), 9),
                 row(timestamp(11L), 11),
                 row(timestamp(12L), 12),
@@ -287,16 +285,17 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 stream2,
                 asList("x", "y"),
                 asList(TIMESTAMP, INTEGER),
+                row(timestamp(9L), 9),
                 row(timestamp(10L), 10),
                 row(timestamp(11L), 11),
                 row(timestamp(12L), 12),
                 row(timestamp(13L), 13),
                 row(timestamp(14L), 14),
-                row(timestamp(25L), 25)
+                row(timestamp(15L), 15)
         );
 
         sqlService.execute("CREATE VIEW s1 AS " +
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.001' SECOND))");
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.002' SECOND))");
         sqlService.execute("CREATE VIEW s2 AS " +
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(x), INTERVAL '0.002' SECOND))");
 
@@ -304,11 +303,11 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 "SELECT b, y FROM s1" +
                         " JOIN s2 ON s2.x BETWEEN s1.a AND s1.a + INTERVAL '0.002' SECOND WHERE b % 2 = 0 ",
                 asList(
-                        new Row(8, 10),
                         new Row(12, 12),
                         new Row(12, 13),
                         new Row(12, 14),
-                        new Row(14, 14)
+                        new Row(14, 14),
+                        new Row(14, 15)
                 )
         );
     }
