@@ -223,13 +223,17 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
                 + "        eviction-policy: NONE\n"
                 + "    random:\n"
                 + "      eviction:\n"
-                + "        eviction-policy: RANDOM";
+                + "        eviction-policy: RANDOM\n"
+                + "    fifo:\n"
+                + "      eviction:\n"
+                + "        eviction-policy: FIFO";
 
         ClientConfig clientConfig = buildConfig(yaml);
         assertEquals(EvictionPolicy.LFU, getNearCacheEvictionPolicy("lfu", clientConfig));
         assertEquals(EvictionPolicy.LRU, getNearCacheEvictionPolicy("lru", clientConfig));
         assertEquals(EvictionPolicy.NONE, getNearCacheEvictionPolicy("none", clientConfig));
         assertEquals(EvictionPolicy.RANDOM, getNearCacheEvictionPolicy("random", clientConfig));
+        assertEquals(EvictionPolicy.FIFO, getNearCacheEvictionPolicy("fifo", clientConfig));
     }
 
     @Override

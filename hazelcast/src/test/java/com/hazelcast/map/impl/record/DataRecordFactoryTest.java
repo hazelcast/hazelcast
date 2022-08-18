@@ -51,6 +51,8 @@ public class DataRecordFactoryTest extends AbstractRecordFactoryTest<Data> {
                 {false, EvictionPolicy.LRU, CacheDeserializedValues.ALWAYS, CachedSimpleRecordWithLRUEviction.class},
                 {false, EvictionPolicy.RANDOM, CacheDeserializedValues.NEVER, SimpleRecord.class},
                 {false, EvictionPolicy.RANDOM, CacheDeserializedValues.ALWAYS, CachedSimpleRecord.class},
+                {false, EvictionPolicy.FIFO, CacheDeserializedValues.NEVER, SimpleRecordWithFIFOEviction.class},
+                {false, EvictionPolicy.FIFO, CacheDeserializedValues.ALWAYS, CachedSimpleRecordWithFIFOEviction.class},
         });
     }
 

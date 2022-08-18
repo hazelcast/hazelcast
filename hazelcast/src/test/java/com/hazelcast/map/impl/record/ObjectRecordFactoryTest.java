@@ -50,6 +50,8 @@ public class ObjectRecordFactoryTest extends AbstractRecordFactoryTest<Object> {
                 {false, EvictionPolicy.LRU, CacheDeserializedValues.ALWAYS, SimpleRecordWithLRUEviction.class},
                 {false, EvictionPolicy.RANDOM, CacheDeserializedValues.NEVER, SimpleRecord.class},
                 {false, EvictionPolicy.RANDOM, CacheDeserializedValues.ALWAYS, SimpleRecord.class},
+                {false, EvictionPolicy.FIFO, CacheDeserializedValues.NEVER, SimpleRecordWithFIFOEviction.class},
+                {false, EvictionPolicy.FIFO, CacheDeserializedValues.ALWAYS, SimpleRecordWithFIFOEviction.class},
         });
     }
 

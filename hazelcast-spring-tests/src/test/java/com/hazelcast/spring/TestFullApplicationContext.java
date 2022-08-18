@@ -354,7 +354,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertNotNull(config);
         long mapConfigSize = config.getMapConfigs()
                 .keySet().stream().filter(name -> !name.startsWith(INTERNAL_JET_OBJECTS_PREFIX)).count();
-        assertEquals(27, mapConfigSize);
+        assertEquals(29, mapConfigSize);
 
         MapConfig testMapConfig = config.getMapConfig("testMap");
         assertNotNull(testMapConfig);
@@ -1447,6 +1447,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(EvictionPolicy.LRU, config.getMapConfig("lruEvictionMap").getEvictionConfig().getEvictionPolicy());
         assertEquals(EvictionPolicy.NONE, config.getMapConfig("noneEvictionMap").getEvictionConfig().getEvictionPolicy());
         assertEquals(EvictionPolicy.RANDOM, config.getMapConfig("randomEvictionMap").getEvictionConfig().getEvictionPolicy());
+        assertEquals(EvictionPolicy.FIFO, config.getMapConfig("fifoEvictionMap").getEvictionConfig().getEvictionPolicy());
     }
 
     @Test
@@ -1455,6 +1456,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(EvictionPolicy.LRU, getNearCacheEvictionPolicy("lruNearCacheEvictionMap", config));
         assertEquals(EvictionPolicy.RANDOM, getNearCacheEvictionPolicy("randomNearCacheEvictionMap", config));
         assertEquals(EvictionPolicy.NONE, getNearCacheEvictionPolicy("noneNearCacheEvictionMap", config));
+        assertEquals(EvictionPolicy.FIFO, getNearCacheEvictionPolicy("fifoNearCacheEvictionMap", config));
     }
 
     private EvictionPolicy getNearCacheEvictionPolicy(String mapName, Config config) {

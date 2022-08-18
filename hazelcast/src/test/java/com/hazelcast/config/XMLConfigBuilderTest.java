@@ -1050,6 +1050,9 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "<map name=\"randomMap\">"
                 + "       <eviction eviction-policy=\"RANDOM\"/>\n"
                 + "    </map>\n"
+                + "<map name=\"fifoMap\">"
+                + "       <eviction eviction-policy=\"FIFO\"/>\n"
+                + "    </map>\n"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
@@ -1058,6 +1061,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(EvictionPolicy.LFU, config.getMapConfig("lfuMap").getEvictionConfig().getEvictionPolicy());
         assertEquals(EvictionPolicy.NONE, config.getMapConfig("noneMap").getEvictionConfig().getEvictionPolicy());
         assertEquals(EvictionPolicy.RANDOM, config.getMapConfig("randomMap").getEvictionConfig().getEvictionPolicy());
+        assertEquals(EvictionPolicy.FIFO, config.getMapConfig("fifoMap").getEvictionConfig().getEvictionPolicy());
     }
 
     @Override
@@ -1341,6 +1345,11 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "      <eviction eviction-policy=\"RANDOM\"/>"
                 + "    </near-cache>"
                 + "  </map>"
+                + "  <map name=\"fifoNearCache\">"
+                + "    <near-cache>"
+                + "      <eviction eviction-policy=\"FIFO\"/>"
+                + "    </near-cache>"
+                + "  </map>"
                 + HAZELCAST_END_TAG;
 
         Config config = buildConfig(xml);
@@ -1348,6 +1357,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(EvictionPolicy.LRU, getNearCacheEvictionPolicy("lruNearCache", config));
         assertEquals(EvictionPolicy.NONE, getNearCacheEvictionPolicy("noneNearCache", config));
         assertEquals(EvictionPolicy.RANDOM, getNearCacheEvictionPolicy("randomNearCache", config));
+        assertEquals(EvictionPolicy.FIFO, getNearCacheEvictionPolicy("fifoNearCache", config));
     }
 
     private EvictionPolicy getNearCacheEvictionPolicy(String mapName, Config config) {

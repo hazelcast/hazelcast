@@ -182,6 +182,9 @@
         <hz:near-cache name="noneNearCacheEviction">
             <hz:eviction eviction-policy="NONE"/>
         </hz:near-cache>
+        <hz:near-cache name="fifoNearCacheEviction">
+            <hz:eviction eviction-policy="FIFO"/>
+        </hz:near-cache>
 
         <hz:near-cache name="preloader">
             <hz:preloader enabled="true" directory="/tmp/preloader"

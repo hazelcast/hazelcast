@@ -226,4 +226,73 @@ public class EvictionPolicyEvaluatorTest extends HazelcastTestSupport {
             assertEquals(expectedEvictedRecordValue, evictedRecord.getValue());
         }
     }
+
+    @Test
+    public void test_firstInFirstOutEntry_isSelected_when_evictionPolicy_is_FIFO() {
+        test_evictionPolicyFIFO(false);
+    }
+
+    @Test
+    public void test_expiredEntry_hasMorePriority_than_firstInFirstOutEntry_toBeEvicted_when_evictionPolicy_is_FIFO() {
+        test_evictionPolicyFIFO(true);
+    }
+
+    private void test_evictionPolicyFIFO(boolean useExpiredEntry) {
+        final int recordCount = 100;
+        final int expectedEvictedRecordValue = recordCount / 2;
+        final int expectedExpiredRecordValue = useExpiredEntry ? recordCount / 4 : -1;
+
+        EvictionConfiguration evictionConfig = new EvictionConfiguration() {
+            @Override
+            public EvictionStrategyType getEvictionStrategyType() {
+                return null;
+            }
+
+            @Override
+            public EvictionPolicy getEvictionPolicy() {
+                return EvictionPolicy.FIFO;
+            }
+
+            @Override
+            public String getComparatorClassName() {
+                return null;
+            }
+
+            @Override
+            public EvictionPolicyComparator getComparator() {
+                return null;
+            }
+        };
+
+        EvictionPolicyEvaluator evictionPolicyEvaluator = getEvictionPolicyEvaluator(evictionConfig, null);
+        List<EvictionCandidate<Integer, CacheObjectRecord>> records
+                = new ArrayList<EvictionCandidate<Integer, CacheObjectRecord>>();
+
+        long baseTime = System.currentTimeMillis();
+        for (int i = 0; i < recordCount; i++) {
+            long creationTime = baseTime + (i * 100);
+            CacheObjectRecord record = new CacheObjectRecord(i, creationTime, Long.MAX_VALUE);
+            if (i == expectedEvictedRecordValue) {
+                // The record in the middle will be minimum creation time
+                // So, it will be selected for eviction
+                record.setCreationTime(1);
+            } else if (i == expectedExpiredRecordValue) {
+                record.setExpirationTime(System.currentTimeMillis());
+            } else {
+                record.setCreationTime(creationTime);
+            }
+            records.add(new SimpleEvictionCandidate<>(i, record));
+        }
+
+        EvictionCandidate<Integer, CacheObjectRecord> evictionCandidate = evictionPolicyEvaluator.evaluate(records);
+        assertNotNull(evictionCandidate);
+
+        CacheObjectRecord evictedRecord = evictionCandidate.getEvictable();
+        assertNotNull(evictedRecord);
+        if (useExpiredEntry) {
+            assertEquals(expectedExpiredRecordValue, evictedRecord.getValue());
+        } else {
+            assertEquals(expectedEvictedRecordValue, evictedRecord.getValue());
+        }
+    }
 }

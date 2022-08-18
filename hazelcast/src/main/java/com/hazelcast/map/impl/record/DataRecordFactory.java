@@ -71,6 +71,10 @@ public class DataRecordFactory implements RecordFactory<Data> {
                 return new CachedSimpleRecord(valueData);
             }
 
+            if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.FIFO) {
+                return new CachedSimpleRecordWithFIFOEviction(valueData);
+            }
+
             return new CachedDataRecordWithStats(valueData);
         }
 
@@ -94,6 +98,10 @@ public class DataRecordFactory implements RecordFactory<Data> {
 
             if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.RANDOM) {
                 return new SimpleRecord<>(valueData);
+            }
+
+            if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.FIFO) {
+                return new SimpleRecordWithFIFOEviction<>(valueData);
             }
 
             return new DataRecordWithStats(valueData);

@@ -1090,6 +1090,7 @@ hazelcast:
   #   * LRU: Least recently used entries will be removed.
   #   * LFU: Least frequently used entries will be removed.
   #   * RANDOM: Randomly selected entries will be removed.
+  #   * FIFO: First created entries will be removed.
   # * "merge-policy":
   # Policy that specifies how the map entries in the small cluster will merge with the bigger cluster after a
   # split-brain syndrome. Its default values is "com.hazelcast.spi.merge.PutIfAbsentMergePolicy". Available

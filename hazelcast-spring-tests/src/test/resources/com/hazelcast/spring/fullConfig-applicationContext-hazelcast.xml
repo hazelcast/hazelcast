@@ -422,6 +422,9 @@
             <hz:map name="randomEvictionMap">
                 <hz:eviction eviction-policy="RANDOM"/>
             </hz:map>
+            <hz:map name="fifoEvictionMap">
+                <hz:eviction eviction-policy="FIFO"/>
+            </hz:map>
 
             <hz:map name="lfuNearCacheEvictionMap">
                 <hz:near-cache>
@@ -441,6 +444,11 @@
             <hz:map name="noneNearCacheEvictionMap">
                 <hz:near-cache>
                     <hz:eviction eviction-policy="NONE"/>
+                </hz:near-cache>
+            </hz:map>
+            <hz:map name="fifoNearCacheEvictionMap">
+                <hz:near-cache>
+                    <hz:eviction eviction-policy="FIFO"/>
                 </hz:near-cache>
             </hz:map>
 

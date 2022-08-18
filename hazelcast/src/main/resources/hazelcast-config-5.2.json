@@ -1027,7 +1027,8 @@
             "LRU",
             "LFU",
             "NONE",
-            "RANDOM"
+            "RANDOM",
+            "FIFO"
           ],
           "default": "NONE"
         },

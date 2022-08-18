@@ -68,6 +68,10 @@ public class ObjectRecordFactory implements RecordFactory<Object> {
                 return new SimpleRecord<>(objectValue);
             }
 
+            if (mapConfig.getEvictionConfig().getEvictionPolicy() == EvictionPolicy.FIFO) {
+                return new SimpleRecordWithFIFOEviction<>(objectValue);
+            }
+
             return new ObjectRecordWithStats(objectValue);
         }
 

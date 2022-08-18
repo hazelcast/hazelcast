@@ -107,6 +107,23 @@ public enum RecordReaderWriter {
             record.setHits(in.readInt());
             return record;
         }
+    },
+
+    SIMPLE_DATA_RECORD_WITH_FIFO_EVICTION_READER_WRITER(TypeId.SIMPLE_DATA_RECORD_WITH_FIFO_EVICTION_TYPE_ID) {
+        void writeRecord(ObjectDataOutput out, Record record, Data dataValue) throws IOException {
+            writeData(out, dataValue);
+            out.writeInt(record.getVersion());
+            out.writeInt(record.getRawCreationTime());
+        }
+
+        @Override
+        public Record readRecord(ObjectDataInput in) throws IOException {
+            Record record = new SimpleRecordWithFIFOEviction();
+            record.setValue(readData(in));
+            record.setVersion(in.readInt());
+            record.setRawCreationTime(in.readInt());
+            return record;
+        }
     };
 
     private byte id;
@@ -124,6 +141,7 @@ public enum RecordReaderWriter {
         private static final byte SIMPLE_DATA_RECORD_TYPE_ID = 3;
         private static final byte SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_TYPE_ID = 4;
         private static final byte SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_TYPE_ID = 5;
+        private static final byte SIMPLE_DATA_RECORD_WITH_FIFO_EVICTION_TYPE_ID = 6;
     }
 
     public static RecordReaderWriter getById(int id) {
@@ -136,6 +154,8 @@ public enum RecordReaderWriter {
                 return SIMPLE_DATA_RECORD_WITH_LRU_EVICTION_READER_WRITER;
             case TypeId.SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_TYPE_ID:
                 return SIMPLE_DATA_RECORD_WITH_LFU_EVICTION_READER_WRITER;
+            case TypeId.SIMPLE_DATA_RECORD_WITH_FIFO_EVICTION_TYPE_ID:
+                return SIMPLE_DATA_RECORD_WITH_FIFO_EVICTION_READER_WRITER;
             default:
                 throw new IllegalArgumentException("Not known RecordReaderWriter type-id: " + id);
         }

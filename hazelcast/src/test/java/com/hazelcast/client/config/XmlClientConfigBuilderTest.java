@@ -280,12 +280,16 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
                 + "<near-cache name=\"random\">"
                 + "  <eviction eviction-policy=\"RANDOM\"/>"
                 + "</near-cache>"
+                + "<near-cache name=\"fifo\">"
+                + "  <eviction eviction-policy=\"FIFO\"/>"
+                + "</near-cache>"
                 + HAZELCAST_CLIENT_END_TAG;
         ClientConfig clientConfig = buildConfig(xml);
         assertEquals(EvictionPolicy.LFU, getNearCacheEvictionPolicy("lfu", clientConfig));
         assertEquals(EvictionPolicy.LRU, getNearCacheEvictionPolicy("lru", clientConfig));
         assertEquals(EvictionPolicy.NONE, getNearCacheEvictionPolicy("none", clientConfig));
         assertEquals(EvictionPolicy.RANDOM, getNearCacheEvictionPolicy("random", clientConfig));
+        assertEquals(EvictionPolicy.FIFO, getNearCacheEvictionPolicy("fifo", clientConfig));
     }
 
     @Override

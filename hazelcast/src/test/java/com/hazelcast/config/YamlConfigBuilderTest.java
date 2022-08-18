@@ -1033,7 +1033,10 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + ""
                 + "    randomMap:\n"
                 + "        eviction:\n"
-                + "             eviction-policy: RANDOM\n";
+                + "             eviction-policy: RANDOM\n"
+                + "    fifoMap:\n"
+                + "        eviction:\n"
+                + "             eviction-policy: FIFO\n";
 
         Config config = buildConfig(yaml);
 
@@ -1041,6 +1044,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(EvictionPolicy.LFU, config.getMapConfig("lfuMap").getEvictionConfig().getEvictionPolicy());
         assertEquals(EvictionPolicy.NONE, config.getMapConfig("noneMap").getEvictionConfig().getEvictionPolicy());
         assertEquals(EvictionPolicy.RANDOM, config.getMapConfig("randomMap").getEvictionConfig().getEvictionPolicy());
+        assertEquals(EvictionPolicy.FIFO, config.getMapConfig("fifoMap").getEvictionConfig().getEvictionPolicy());
     }
 
     @Override
@@ -1325,13 +1329,17 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "    randomNearCache:\n"
                 + "      near-cache:\n"
                 + "        eviction:\n"
-                + "          eviction-policy: RANDOM\n";
+                + "          eviction-policy: RANDOM\n"
+                + "    fifoNearCache:\n"
+                + "      near-cache:\n"
+                + "        eviction:\n"
+                + "          eviction-policy: FIFO\n";
 
         Config config = buildConfig(yaml);
         assertEquals(EvictionPolicy.LFU, getNearCacheEvictionPolicy("lfuNearCache", config));
         assertEquals(EvictionPolicy.LRU, getNearCacheEvictionPolicy("lruNearCache", config));
         assertEquals(EvictionPolicy.NONE, getNearCacheEvictionPolicy("noneNearCache", config));
-        assertEquals(EvictionPolicy.RANDOM, getNearCacheEvictionPolicy("randomNearCache", config));
+        assertEquals(EvictionPolicy.FIFO, getNearCacheEvictionPolicy("fifoNearCache", config));
     }
 
     private EvictionPolicy getNearCacheEvictionPolicy(String mapName, Config config) {

@@ -419,6 +419,7 @@ public class TestClientApplicationContext {
         assertEquals(EvictionPolicy.LRU, getNearCacheEvictionPolicy("lruNearCacheEviction", config));
         assertEquals(EvictionPolicy.RANDOM, getNearCacheEvictionPolicy("randomNearCacheEviction", config));
         assertEquals(EvictionPolicy.NONE, getNearCacheEvictionPolicy("noneNearCacheEviction", config));
+        assertEquals(EvictionPolicy.FIFO, getNearCacheEvictionPolicy("fifoNearCacheEviction", config));
     }
 
     @Test

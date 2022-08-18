@@ -392,6 +392,7 @@ public class EnumCompatibilityTest {
         mappings.put(EvictionPolicy.LFU, "LFU");
         mappings.put(EvictionPolicy.NONE, "NONE");
         mappings.put(EvictionPolicy.RANDOM, "RANDOM");
+        mappings.put(EvictionPolicy.FIFO, "FIFO");
         verifyCompatibility(EvictionPolicy.values(), EvictionPolicy::name, mappings);
     }
 

@@ -146,6 +146,11 @@ public class NearCacheRecordStoreTest extends NearCacheRecordStoreTestSupport {
     }
 
     @Test
+    public void evictionTriggeredAndHandledSuccessfullyWithEntryCountMaxSizePolicyAndFIFOEvictionPolicy() {
+        doEvictionWithEntryCountMaxSizePolicy(inMemoryFormat, EvictionPolicy.FIFO);
+    }
+
+    @Test
     public void evictionTriggeredAndHandledSuccessfullyWithEntryCountMaxSizePolicyAndDefaultEvictionPolicy() {
         doEvictionWithEntryCountMaxSizePolicy(inMemoryFormat, null);
     }
