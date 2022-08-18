@@ -18,6 +18,7 @@ package com.hazelcast.client.statistics;
 
 import com.hazelcast.cache.ICache;
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.ClientEndpoint;
 import com.hazelcast.client.impl.ClientEngineImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
@@ -31,6 +32,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ICacheManager;
 import com.hazelcast.instance.BuildInfoProvider;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -43,6 +45,7 @@ import org.junit.runner.RunWith;
 import javax.cache.CacheManager;
 import javax.cache.spi.CachingProvider;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +56,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.cache.CacheTestSupport.createServerCachingProvider;
 import static com.hazelcast.client.impl.statistics.ClientStatisticsService.split;
 import static com.hazelcast.client.impl.statistics.ClientStatisticsService.unescapeSpecialCharacters;
+import static com.hazelcast.instance.impl.TestUtil.getNode;
 import static com.hazelcast.test.Accessors.getClientEngineImpl;
 import static java.lang.String.format;
 import static org.junit.Assert.assertArrayEquals;
@@ -188,6 +192,39 @@ public class ClientStatisticsTest extends ClientTestSupport {
         waitForFirstStatisticsCollection(client, clientEngine);
 
         getStats(client, clientEngine);
+    }
+
+    @Test
+    public void testStatisticsSentImmediatelyOnClusterChange() {
+        HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
+
+        ClientConfig clientConfig = new ClientConfig()
+                // add IMap and ICache with Near Cache config
+                .addNearCacheConfig(new NearCacheConfig(MAP_NAME))
+                .addNearCacheConfig(new NearCacheConfig(CACHE_NAME));
+
+        clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
+        // set the collection frequency to something really high to test that statistics are sent on cluster change
+        clientConfig.getMetricsConfig()
+                .setCollectionFrequencySeconds(1000);
+
+        HazelcastInstance clientInstance = hazelcastFactory.newHazelcastClient(clientConfig);
+        HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(clientInstance);
+
+        ReconnectListener reconnectListener = new ReconnectListener();
+        client.getLifecycleService().addLifecycleListener(reconnectListener);
+
+        hazelcastInstance.getLifecycleService().terminate();
+        Node hazelcastNode = getNode(hazelcastFactory.newHazelcastInstance());
+
+        assertOpenEventually(reconnectListener.reconnectedLatch);
+
+        // Statistics should be sent in some time that is shorter than the period
+        assertTrueEventually(() -> {
+            Collection<ClientEndpoint> endpoints = hazelcastNode.getClientEngine().getEndpointManager().getEndpoints();
+            ClientEndpoint[] endpointArray = endpoints.toArray(new ClientEndpoint[0]);
+            assertNotNull("Statistics are not sent on cluster change", endpointArray[0].getClientStatistics());
+        }, 120);
     }
 
     @Test
