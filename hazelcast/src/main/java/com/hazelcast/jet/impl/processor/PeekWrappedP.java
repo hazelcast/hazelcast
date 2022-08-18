@@ -109,6 +109,19 @@ public final class PeekWrappedP<T> extends ProcessorWrapper {
         return false;
     }
 
+    @Override
+    public boolean tryProcessWatermark(int ordinal, @Nonnull Watermark watermark) {
+        if (peekInput && !peekedWatermarkLogged) {
+            logger.info("Input from ordinal " + ordinal + " : " + watermark);
+            peekedWatermarkLogged = true;
+        }
+        if (super.tryProcessWatermark(ordinal, watermark)) {
+            peekedWatermarkLogged = false;
+            return true;
+        }
+        return false;
+    }
+
     private class LoggingInbox implements Inbox {
 
         private Inbox wrappedInbox;

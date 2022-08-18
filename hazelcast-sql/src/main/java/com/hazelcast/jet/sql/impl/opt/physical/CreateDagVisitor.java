@@ -492,7 +492,7 @@ public class CreateDagVisitor {
                         rel.getLeft().getRowType().getFieldCount(),
                         rel.getRight().getRowType().getFieldCount()));
 
-        connectStreamToStreamJoinInput(joinInfo, rel.getLeft(), rel.getRight(), joinVertex);
+        connectStreamToStreamJoinInput(joinInfo, rel.getLeft(), rel.getRight(), joinVertex.localParallelism(1));
 
         return joinVertex;
     }
