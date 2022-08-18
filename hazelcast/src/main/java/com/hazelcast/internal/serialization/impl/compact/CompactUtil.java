@@ -198,6 +198,20 @@ public final class CompactUtil {
                 + "its fields, consider writing a CompactSerializer for it.");
     }
 
+    public static void verifyFieldClassShouldBeSerializedAsCompact(CompactStreamSerializer compactStreamSerializer,
+                                                                   Class<?> fieldClass, Class<?> clazz) {
+        if (compactStreamSerializer.canBeSerializedAsCompact(fieldClass)) {
+            return;
+        }
+
+        throw new HazelcastSerializationException("The '" + fieldClass + "' "
+                + "cannot be serialized with zero configuration Compact "
+                + "serialization because this type can be serialized with another "
+                + "serialization mechanism. If you want to serialize "
+                + "'" + clazz + "' which uses this class in its fields, consider"
+                + "overriding that serialization mechanism.");
+    }
+
     private static boolean canBeSerializedAsCompact(Class<?> clazz) {
         Package classPackage = clazz.getPackage();
         if (classPackage == null) {

@@ -125,7 +125,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         this.allowOverrideDefaultSerializers = builder.allowOverrideDefaultSerializers;
         CompactSerializationConfig compactSerializationCfg = builder.compactSerializationConfig == null
                 ? new CompactSerializationConfig() : builder.compactSerializationConfig;
-        compactStreamSerializer = new CompactStreamSerializer(compactSerializationCfg,
+        compactStreamSerializer = new CompactStreamSerializer(this, compactSerializationCfg,
                 managedContext, builder.schemaService, classLoader);
         this.compactWithSchemaSerializerAdapter = new CompactWithSchemaStreamSerializerAdapter(compactStreamSerializer);
         this.compactSerializerAdapter = new CompactStreamSerializerAdapter(compactStreamSerializer);
@@ -570,7 +570,10 @@ public abstract class AbstractSerializationService implements InternalSerializat
             return nullSerializerAdapter;
         }
         final Class type = object.getClass();
+        return serializerForClass(type, includeSchema);
+    }
 
+    public SerializerAdapter serializerForClass(Class type, boolean includeSchema) {
         //2-Default serializers, Dataserializable, Compact, Portable, primitives, arrays, String and
         // some helper Java types(BigInteger etc)
         SerializerAdapter serializer = lookupDefaultSerializer(type, includeSchema);

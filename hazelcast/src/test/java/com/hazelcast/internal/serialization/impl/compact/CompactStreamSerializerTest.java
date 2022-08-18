@@ -66,6 +66,9 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -469,7 +472,9 @@ public class CompactStreamSerializerTest {
 
         SchemaWriter writer = new SchemaWriter("typeName");
 
-        ReflectiveCompactSerializer reflectiveCompactSerializer = new ReflectiveCompactSerializer();
+        CompactStreamSerializer compactStreamSerializer = mock(CompactStreamSerializer.class);
+        when(compactStreamSerializer.canBeSerializedAsCompact(any())).thenReturn(true);
+        ReflectiveCompactSerializer reflectiveCompactSerializer = new ReflectiveCompactSerializer(compactStreamSerializer);
         EmployerDTO employerDTO = new EmployerDTO("nbss", 40, HIRING, ids, employeeDTO, employeeDTOS);
         reflectiveCompactSerializer.write(writer, employerDTO);
 
@@ -500,7 +505,9 @@ public class CompactStreamSerializerTest {
 
         SchemaWriter writer = new SchemaWriter("typeName");
 
-        ReflectiveCompactSerializer reflectiveCompactSerializer = new ReflectiveCompactSerializer();
+        CompactStreamSerializer compactStreamSerializer = mock(CompactStreamSerializer.class);
+        when(compactStreamSerializer.canBeSerializedAsCompact(any())).thenReturn(true);
+        ReflectiveCompactSerializer reflectiveCompactSerializer = new ReflectiveCompactSerializer(compactStreamSerializer);
         reflectiveCompactSerializer.write(writer, employeeDTO);
 
         Schema schema = writer.build();

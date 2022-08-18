@@ -46,6 +46,9 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public final class CompactTestUtil {
 
@@ -208,7 +211,9 @@ public final class CompactTestUtil {
      * reflective serializer.
      */
     public static Collection<Schema> getSchemasFor(Class<?>... classes) {
-        ReflectiveCompactSerializer serializer = new ReflectiveCompactSerializer();
+        CompactStreamSerializer compactStreamSerializer = mock(CompactStreamSerializer.class);
+        when(compactStreamSerializer.canBeSerializedAsCompact(any())).thenReturn(true);
+        ReflectiveCompactSerializer serializer = new ReflectiveCompactSerializer(compactStreamSerializer);
         ArrayList<Schema> schemas = new ArrayList<>(classes.length);
         for (Class<?> clazz : classes) {
             SchemaWriter writer = new SchemaWriter(clazz.getName());

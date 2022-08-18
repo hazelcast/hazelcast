@@ -67,6 +67,11 @@ import static java.util.stream.Collectors.toList;
 public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
 
     private final Map<Class, ReaderWriter[]> readerWritersCache = new ConcurrentHashMap<>();
+    private final CompactStreamSerializer compactStreamSerializer;
+
+    public ReflectiveCompactSerializer(CompactStreamSerializer compactStreamSerializer) {
+        this.compactStreamSerializer = compactStreamSerializer;
+    }
 
     @Override
     public void write(@Nonnull CompactWriter writer, @Nonnull T object) {
@@ -291,7 +296,8 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
             } else {
                 // For anything else, rely on value reader writers to re-use the code we have
                 readerWriters[index] = new ReaderWriterAdapter(
-                        ValueReaderWriters.readerWriterFor(clazz, type, field.getGenericType(), name),
+                        ValueReaderWriters.readerWriterFor(compactStreamSerializer, clazz, type,
+                                field.getGenericType(), name),
                         field
                 );
             }
