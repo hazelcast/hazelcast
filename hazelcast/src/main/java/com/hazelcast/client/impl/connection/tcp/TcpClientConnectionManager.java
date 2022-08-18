@@ -441,7 +441,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                                                                      CandidateClusterContext nextContext) {
         currentContext.destroy();
 
-        client.onTryNextCluster();
+        client.onNextCluster();
 
         nextContext.start();
 
@@ -957,7 +957,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             if (clusterIdChanged) {
                 checkClientStateOnClusterIdChange(connection, switchingToNextCluster);
                 logger.warning("Switching from current cluster: " + this.clusterId + " to new cluster: " + newClusterId);
-                client.onClusterIdChange();
+                client.onConnectionToNewCluster();
             }
             checkClientState(connection, switchingToNextCluster);
 

@@ -869,13 +869,13 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return clientExtension.getJet();
     }
 
-    public void onTryNextCluster() {
+    public void onNextCluster() {
         ILogger logger = loggingService.getLogger(HazelcastInstance.class);
         logger.info("Resetting local state of the client, because of a cluster change.");
 
         dispose(onClusterChangeDisposables);
         //reset the member list version
-        clusterService.onClusterChange();
+        clusterService.onNextCluster();
         //clear partition service
         partitionService.reset();
         //close all the connections, consequently waiting invocations get TargetDisconnectedException
@@ -884,13 +884,15 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         connectionManager.reset();
     }
 
-    public void onClusterIdChange() {
+    public void onConnectionToNewCluster() {
         ILogger logger = loggingService.getLogger(HazelcastInstance.class);
         logger.info("Clearing local state of the client, because of a cluster restart.");
 
         dispose(onClusterChangeDisposables);
         clusterService.onClusterConnect();
-        clientStatisticsService.onClusterConnect();
+        // Send statistics to the new cluster immediately to make clientVersion, isEnterprise and other fields
+        // available in Management Center as soon as possible. They are currently sent as part of client statistics.
+        clientStatisticsService.onConnectionToNewCluster();
     }
 
     public void waitForInitialMembershipEvents() {

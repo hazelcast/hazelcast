@@ -108,7 +108,7 @@ public class ClientStatisticsService {
         logger.info("Client statistics is enabled with period " + periodSeconds + " seconds.");
     }
 
-    public void onClusterConnect() {
+    public void onConnectionToNewCluster() {
         client.getTaskScheduler().schedule(this::collectAndSendStats, 0, SECONDS);
     }
 
