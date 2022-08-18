@@ -128,7 +128,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
     public void testClientConnectionBeforeServerReady() {
         ExecutorService executorService = Executors.newFixedThreadPool(2);
         int port = getRandomAvailablePort();
-        executorService.submit( () -> {
+        executorService.submit(() -> {
             Hazelcast.newHazelcastInstance(getCustomConfig(port));
         });
 
