@@ -39,8 +39,9 @@ import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -79,7 +80,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private Iterator<JetSqlRow> iterator;
     private JetSqlRow currItem;
 
-    private final Set<JetSqlRow> unusedEventsTracker = new HashSet<>();
+    private final Set<JetSqlRow> unusedEventsTracker = Collections.newSetFromMap(new IdentityHashMap<>());
 
     private final Queue<Object> pendingOutput = new ArrayDeque<>();
     private JetSqlRow emptyLeftRow;
