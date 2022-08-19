@@ -152,6 +152,7 @@ public abstract class WatermarkCoalescer {
     private static final class SingleInputImpl extends WatermarkCoalescer {
 
         private final Counter queueWm = SwCounter.newSwCounter(Long.MIN_VALUE);
+        private boolean idleMessagePending;
 
         @Override
         public long queueDone(int queueIndex) {
@@ -171,17 +172,22 @@ public abstract class WatermarkCoalescer {
                 throw new JetException("Watermarks not monotonically increasing on queue: " +
                         "last one=" + queueWm + ", new one=" + wmValue);
             }
-            if (wmValue != IDLE_MESSAGE_TIME) {
-                queueWm.set(wmValue);
-            } else {
+            if (wmValue == IDLE_MESSAGE_TIME) {
+                idleMessagePending = true;
                 return NO_NEW_WM;
+            } else {
+                queueWm.set(wmValue);
+                return wmValue;
             }
-            return wmValue;
         }
 
         @Override
         public boolean idleMessagePending() {
-            return false;
+            try {
+                return idleMessagePending;
+            } finally {
+                idleMessagePending = false;
+            }
         }
 
         @Override
