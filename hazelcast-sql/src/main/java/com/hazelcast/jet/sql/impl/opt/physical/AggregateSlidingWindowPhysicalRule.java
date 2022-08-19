@@ -129,7 +129,7 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
         // -SlidingWindowAggregatePhysicalRel(group=[$0], EXPR$1=[AVG($1)])
         // --Calc(rowType=[timestamp, field1])
         //
-        // The group=[$0] we pass to SlidingWindowAggregatePhysicalRel' superclass isn't correct,
+        // The group=[$0] we pass to SlidingWindowAggregatePhysicalRel's superclass isn't correct,
         // but it works for us for now - the superclass uses it only to calculate the output type.
         // And the timestamp and the window bound have the same type.
 
@@ -204,9 +204,6 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
             return null;
         }
 
-        RexNode timestampExpression = logicalAggregate.getCluster().getRexBuilder().makeInputRef(
-                physicalInput, watermarkedField);
-
         return new SlidingWindowAggregatePhysicalRel(
                 physicalInput.getCluster(),
                 physicalInput.getTraitSet(),
@@ -214,7 +211,7 @@ public final class AggregateSlidingWindowPhysicalRule extends AggregateAbstractP
                 logicalAggregate.getGroupSet(),
                 logicalAggregate.getGroupSets(),
                 logicalAggregate.getAggCallList(),
-                timestampExpression,
+                watermarkedField,
                 windowPolicyProvider,
                 logicalAggregate.containsDistinctCall() ? 1 : 2,
                 windowStartIndexes,

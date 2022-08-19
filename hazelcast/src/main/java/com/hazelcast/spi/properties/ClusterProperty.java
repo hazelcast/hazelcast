@@ -42,6 +42,8 @@ import com.hazelcast.query.impl.predicates.QueryOptimizerFactory;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Function;
@@ -51,9 +53,6 @@ import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 
 /**
  * Defines the name and default value for Hazelcast properties.
@@ -1779,6 +1778,16 @@ public final class ClusterProperty {
      */
     public static final HazelcastProperty SECURITY_RECOMMENDATIONS = new HazelcastProperty(
             "hazelcast.security.recommendations");
+
+    /**
+     * Enable experimental support for accessing nested fields by using custom
+     * types in SQL. The feature is unstable in 5.2, this property will be
+     * removed once the feature is stable.
+     *
+     * @since 5.2
+     */
+    public static final HazelcastProperty SQL_CUSTOM_TYPES_ENABLED = new HazelcastProperty(
+            "hazelcast.sql.experimental.custom.types.enabled", false);
 
     private ClusterProperty() {
     }

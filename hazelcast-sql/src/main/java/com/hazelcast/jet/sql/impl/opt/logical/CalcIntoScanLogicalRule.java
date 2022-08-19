@@ -101,7 +101,7 @@ public final class CalcIntoScanLogicalRule extends RelRule<Config> implements Tr
                 OptUtils.toLogicalConvention(scan.getTraitSet()),
                 convertedTable,
                 scan.eventTimePolicyProvider(),
-                scan.watermarkedColumnIndex()
+                OptUtils.getTargetField(program, scan.watermarkedColumnIndex())
         );
         call.transformTo(rel);
     }

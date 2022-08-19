@@ -58,6 +58,16 @@ public class MetaSupplierFromProcessorSupplier implements ProcessorMetaSupplier,
     }
 
     @Override
+    public boolean initIsCooperative() {
+        return true;
+    }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
+
+    @Override
     public int preferredLocalParallelism() {
         return preferredLocalParallelism;
     }

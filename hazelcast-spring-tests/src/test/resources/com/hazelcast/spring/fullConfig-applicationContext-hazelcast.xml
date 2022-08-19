@@ -89,9 +89,9 @@
                               tag="TAG-NAME=HZLCAST001"/>
                     <hz:kubernetes enabled="false"
                                    namespace="MY-KUBERNETES-NAMESPACE"
-                                   service-name="MY-SERVICE-NAME"
+                                   service-name="${kubernetes.service.name}"
                                    service-label-name="MY-SERVICE-LABEL-NAME"
-                                   service-label-value="MY-SERVICE-LABEL-VALUE"/>
+                                   service-label-value="${kubernetes.service.label}"/>
                     <hz:eureka enabled="false"
                                self-registration="true"
                                namespace="hazelcast"/>
@@ -165,9 +165,9 @@
                               tag="TAG-NAME=HZLCAST001"/>
                     <hz:kubernetes enabled="false"
                                    namespace="MY-KUBERNETES-NAMESPACE"
-                                   service-name="MY-SERVICE-NAME"
+                                   service-name="${kubernetes.service.name}"
                                    service-label-name="MY-SERVICE-LABEL-NAME"
-                                   service-label-value="MY-SERVICE-LABEL-VALUE"/>
+                                   service-label-value="${kubernetes.service.label}"/>
                     <hz:eureka enabled="false"
                                self-registration="true"
                                namespace="hazelcast"/>
@@ -646,7 +646,7 @@
                         <hz:package>com.acme.app.subpkg</hz:package>
                     </hz:whitelist>
                 </hz:java-serialization-filter>
-                <hz:compact-serialization enabled="true">
+                <hz:compact-serialization>
                     <hz:serializers>
                         <hz:serializer>com.hazelcast.spring.serialization.DummyCompactSerializer</hz:serializer>
                     </hz:serializers>
@@ -1028,6 +1028,7 @@
                 <hz:persistence-enabled>false</hz:persistence-enabled>
                 <hz:base-dir>/custom-dir</hz:base-dir>
                 <hz:data-load-timeout-seconds>30</hz:data-load-timeout-seconds>
+                <hz:cp-member-priority>-1</hz:cp-member-priority>
                 <hz:raft-algorithm>
                     <hz:leader-election-timeout-in-millis>500</hz:leader-election-timeout-in-millis>
                     <hz:leader-heartbeat-period-in-millis>100</hz:leader-heartbeat-period-in-millis>
@@ -1118,6 +1119,13 @@
                 </hz:properties>
             </hz:auditlog>
             <hz:integrity-checker enabled="false"/>
+            <hz:external-data-store name="${external.datastore.name}">
+                <hz:class-name>com.hazelcast.datastore.JdbcDataStoreFactory</hz:class-name>
+                <hz:properties>
+                    <hz:property name="jdbcUrl">${external.datastore.url}</hz:property>
+                </hz:properties>
+                <hz:shared>false</hz:shared>
+            </hz:external-data-store>
         </hz:config>
     </hz:hazelcast>
 

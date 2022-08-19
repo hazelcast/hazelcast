@@ -21,6 +21,7 @@ import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
@@ -357,4 +358,19 @@ public interface ConfigurationService {
      * @return registered FlakeIdGenerator configurations
      */
     Map<String, FlakeIdGeneratorConfig> getFlakeIdGeneratorConfigs();
+
+    /**
+     * Finds existing external DataStore config.
+     *
+     * @param name name of the config
+     * @return External DataStore config or {@code null} when requested configuration does not exist
+     */
+    ExternalDataStoreConfig findExternalDataStoreConfig(String name);
+
+    /**
+     * Returns all registered external DataStore configurations keyed by store's name.
+     *
+     * @return registered DataStore configurations keyed by store's name
+     */
+    Map<String, ExternalDataStoreConfig> getExternalDataStoreConfigs();
 }

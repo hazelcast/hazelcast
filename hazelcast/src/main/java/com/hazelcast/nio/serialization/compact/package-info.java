@@ -15,6 +15,6 @@
  */
 
 /**
- * Package contains API for Compact Serializer
+ * This package contains APIs for the Compact Serialization.
  */
 package com.hazelcast.nio.serialization.compact;

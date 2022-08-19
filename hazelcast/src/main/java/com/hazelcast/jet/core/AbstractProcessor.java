@@ -525,7 +525,7 @@ public abstract class AbstractProcessor implements Processor {
      * over all output items that should be emitted. The {@link
      * #tryProcess(Object)} method obtains and passes the traverser to {@link
      * #emitFromTraverser(int, Traverser)}.
-     *
+     * <p>
      * Example:
      * <pre>
      * public static class SplitWordsP extends AbstractProcessor {
@@ -583,7 +583,8 @@ public abstract class AbstractProcessor implements Processor {
      * Throws {@link UnsupportedOperationException} if watermark has non-zero
      * key.
      * <p>
-     * Supposed to be used by processors that don't work with keyed watermarks.
+     * Supposed to be used by processors that don't function properly with keyed
+     * watermarks.
      */
     protected void keyedWatermarkCheck(Watermark watermark) {
         if (watermark.key() != 0) {

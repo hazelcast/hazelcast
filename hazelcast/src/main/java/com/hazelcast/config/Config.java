@@ -3126,7 +3126,7 @@ public class Config {
     }
 
     /**
-     * Adds an external data store configurations.
+     * Adds an external data store configuration.
      * <p>
      * <p>
      * Example:

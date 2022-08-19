@@ -20,7 +20,6 @@ import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
-import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import java.util.List;
@@ -60,10 +59,8 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * On the first two methods listed above, reflection is not utilized. Instead,
  * the given serializer is used to serialize/deserialize users objects.
  *
- * @since Hazelcast 5.0 as BETA. The final version will not be backward
- * compatible with the Beta. Do not use BETA version in production
+ * @since 5.2
  */
-@Beta
 public class CompactSerializationConfig {
 
     // Package-private to access those via CompactSerializationConfigAccessor
@@ -71,8 +68,6 @@ public class CompactSerializationConfig {
     final Map<Class, TriTuple<Class, String, CompactSerializer>> classToRegistration;
     final List<String> serializerClassNames;
     final List<String> compactSerializableClassNames;
-
-    private boolean enabled;
 
     public CompactSerializationConfig() {
         this.typeNameToRegistration = new ConcurrentHashMap<>();
@@ -86,7 +81,6 @@ public class CompactSerializationConfig {
         this.classToRegistration = new ConcurrentHashMap<>(config.classToRegistration);
         this.serializerClassNames = new CopyOnWriteArrayList<>(config.serializerClassNames);
         this.compactSerializableClassNames = new CopyOnWriteArrayList<>(config.compactSerializableClassNames);
-        this.enabled = config.enabled;
     }
 
     /**
@@ -178,31 +172,6 @@ public class CompactSerializationConfig {
         return this;
     }
 
-    /**
-     * This method will only be available during @Beta.
-     *
-     * @return true if compact serialization is enable.
-     */
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    /**
-     * Enables the Compact Format. The Compact Format will be disabled by
-     * default during the Beta period. It will be enabled by default after the
-     * Beta. Note that this method will be deleted after the Beta.
-     * <p>
-     * The final version will not be backward compatible with the Beta. Do not
-     * use BETA version in production
-     *
-     * @param enabled Enables the Compact Format when set to true
-     * @return configured {@link CompactSerializationConfig} for chaining
-     */
-    public CompactSerializationConfig setEnabled(boolean enabled) {
-        this.enabled = enabled;
-        return this;
-    }
-
     private void register0(Class clazz, String typeName, CompactSerializer explicitSerializer) {
         TriTuple<Class, String, CompactSerializer> registration = TriTuple.of(clazz, typeName, explicitSerializer);
         TriTuple<Class, String, CompactSerializer> oldRegistration = typeNameToRegistration.putIfAbsent(typeName, registration);
@@ -242,8 +211,7 @@ public class CompactSerializationConfig {
             return false;
         }
         CompactSerializationConfig that = (CompactSerializationConfig) o;
-        return enabled == that.enabled
-                && Objects.equals(typeNameToRegistration, that.typeNameToRegistration)
+        return Objects.equals(typeNameToRegistration, that.typeNameToRegistration)
                 && Objects.equals(classToRegistration, that.classToRegistration)
                 && Objects.equals(serializerClassNames, that.serializerClassNames)
                 && Objects.equals(compactSerializableClassNames, that.compactSerializableClassNames);
@@ -251,7 +219,7 @@ public class CompactSerializationConfig {
 
     @Override
     public int hashCode() {
-        return Objects.hash(enabled, typeNameToRegistration, classToRegistration,
+        return Objects.hash(typeNameToRegistration, classToRegistration,
                 serializerClassNames, compactSerializableClassNames);
     }
 }

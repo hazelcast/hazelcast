@@ -34,6 +34,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
 
 import java.util.Collection;
@@ -48,10 +49,10 @@ import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 public class TablesStorage {
+    static final String CATALOG_MAP_NAME = "__sql.catalog";
+
     private static final int MAX_CHECK_ATTEMPTS = 5;
     private static final long SLEEP_MILLIS = 100;
-
-    private static final String CATALOG_MAP_NAME = "__sql.catalog";
 
     private final NodeEngine nodeEngine;
     private final Object mergingMutex = new Object();
@@ -80,6 +81,14 @@ public class TablesStorage {
         }
     }
 
+    void put(String name, Type type) {
+        newStorage().put(name, type);
+        if (useOldStorage()) {
+            oldStorage().put(name, type);
+            awaitMappingOnAllMembers(name, type);
+        }
+    }
+
     boolean putIfAbsent(String name, Mapping mapping) {
         Object previousNew = newStorage().putIfAbsent(name, mapping);
         Object previousOld = null;
@@ -98,11 +107,44 @@ public class TablesStorage {
         return previousNew == null && previousOld == null;
     }
 
+    boolean putIfAbsent(String name, Type type) {
+        Object previousNew = newStorage().putIfAbsent(name, type);
+        Object previousOld = null;
+        if (useOldStorage()) {
+            previousOld = oldStorage().putIfAbsent(name, type);
+        }
+        return previousNew == null && previousOld == null;
+    }
+
     Mapping removeMapping(String name) {
         Mapping removedNew = (Mapping) newStorage().remove(name);
         Mapping removedOld = null;
         if (useOldStorage()) {
             removedOld = (Mapping) oldStorage().remove(name);
+        }
+        return removedNew == null ? removedOld : removedNew;
+    }
+
+    public Collection<Type> getAllTypes() {
+        return mergedStorage().values().stream()
+                .filter(o -> o instanceof Type)
+                .map(o -> (Type) o)
+                .collect(Collectors.toList());
+    }
+
+    public Type getType(final String name) {
+        Object obj = mergedStorage().get(name);
+        if (obj instanceof Type) {
+            return (Type) obj;
+        }
+        return null;
+    }
+
+    public Type removeType(String name) {
+        Type removedNew = (Type) newStorage().remove(name);
+        Type removedOld = null;
+        if (useOldStorage()) {
+            removedOld = (Type) oldStorage().remove(name);
         }
         return removedNew == null ? removedOld : removedNew;
     }
@@ -144,10 +186,26 @@ public class TablesStorage {
                 .collect(Collectors.toList());
     }
 
-    void registerListener(EntryListener<String, Object> listener) {
+    Collection<String> typeNames() {
+        return mergedStorage().values()
+                .stream()
+                .filter(t -> t instanceof Type)
+                .map(t -> ((Type) t).getName())
+                .collect(Collectors.toList());
+    }
+
+    void initializeWithListener(EntryListener<String, Object> listener) {
+        boolean useOldStorage = useOldStorage();
+
+        if (!useOldStorage) {
+            storageMovedToNew = true;
+        }
+
         if (!nodeEngine.getLocalMember().isLiteMember()) {
             newStorage().addEntryListener(listener, false);
-            oldStorage().addEntryListener(listener);
+            if (useOldStorage) {
+                oldStorage().addEntryListener(listener);
+            }
         }
     }
 

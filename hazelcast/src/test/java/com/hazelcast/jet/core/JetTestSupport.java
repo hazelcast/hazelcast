@@ -63,6 +63,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
@@ -70,6 +71,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.impl.JetServiceBackend.SERVICE_NAME;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
+import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE_TIME;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -80,6 +83,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public abstract class JetTestSupport extends HazelcastTestSupport {
+
+    public static final Watermark IDLE_MESSAGE = new Watermark(IDLE_MESSAGE_TIME);
 
     public static final SerializationService TEST_SS = new DefaultSerializationServiceBuilder().build();
 
@@ -424,6 +429,12 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
                 } catch (JobNotFoundException e) {
                     SUPPORT_LOGGER.fine("Job " + job.getIdString() + " is gone.");
                     return;
+                } catch (CompletionException e) {
+                    if (e.getCause() instanceof JobNotFoundException) {
+                        SUPPORT_LOGGER.fine("Job " + job.getIdString() + " is gone.");
+                        return;
+                    }
+                    throw rethrow(e.getCause());
                 } catch (Exception ignored) {
                     // This can be CancellationException or any other job failure. We don't care,
                     // we're supposed to rid the cluster of the job and that's what we have.
@@ -486,6 +497,17 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     public static void assertJobExecuting(Job job, HazelcastInstance instance) {
         ExecutionContext execCtx = getJetServiceBackend(instance).getJobExecutionService().getExecutionContext(job.getId());
         assertNotNull("Job should be executing on member " + instance + ", but is not", execCtx);
+    }
+
+    /**
+     * Asserts that the {@code job} is already visible by {@linkplain JetService#getJob} methods.
+     * @param client Hazelcast Instance used to query the cluster
+     * @param jobToCheck job to be checked for visibility
+     * @param jobName job name, for better assertion message
+     */
+    public static void assertJobVisible(HazelcastInstance client, Job jobToCheck, String jobName) {
+        assertTrueEventually(jobName + " not found",
+                () -> assertNotNull(client.getJet().getJob(jobToCheck.getId())));
     }
 
     /**

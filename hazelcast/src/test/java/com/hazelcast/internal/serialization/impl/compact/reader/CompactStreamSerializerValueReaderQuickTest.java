@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.serialization.impl.compact.reader;
 
-import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -373,7 +372,6 @@ public class CompactStreamSerializerValueReaderQuickTest extends HazelcastTestSu
     public GenericRecordQueryReader reader(Car car) throws IOException {
         SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
         SerializationConfig serializationConfig = new SerializationConfig();
-        serializationConfig.setCompactSerializationConfig(new CompactSerializationConfig().setEnabled(true));
         InternalSerializationService ss = new DefaultSerializationServiceBuilder()
                 .setConfig(serializationConfig)
                 .setSchemaService(schemaService).build();

@@ -35,6 +35,7 @@ import org.junit.runner.RunWith;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -433,7 +434,6 @@ public class SmallClusterTest extends ExecutorServiceTestSupport {
     }
 
     private static class NonSerializableResponseCallable implements Callable<Object>, Serializable {
-
         @Override
         public Object call() throws Exception {
             return new NonSerializableResponse();
@@ -441,6 +441,7 @@ public class SmallClusterTest extends ExecutorServiceTestSupport {
     }
 
     private static class NonSerializableResponse {
-
+        // Add a field non-supported field type to make it not serializable by Compact
+        private LinkedList<String> list;
     }
 }

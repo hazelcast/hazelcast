@@ -48,7 +48,6 @@
         },
         "allow-override-default-serializers": "Yes",
         "compact-serialization": {
-          "enabled": "NO",
           "extra-property": 3,
           "serializers": [
             {
@@ -168,13 +167,6 @@
             "message": "4 schema violations found"
           },
           {
-            "schemaLocation": "#/definitions/Serialization/properties/compact-serialization/properties/enabled",
-            "pointerToViolation": "#/hazelcast/serialization/compact-serialization/enabled",
-            "causingExceptions": [],
-            "keyword": "type",
-            "message": "expected type: Boolean, found: String"
-          },
-          {
             "schemaLocation": "#/definitions/Serialization/properties/compact-serialization/properties/serializers",
             "pointerToViolation": "#/hazelcast/serialization/compact-serialization/serializers",
             "causingExceptions": [
@@ -217,7 +209,7 @@
             "message": "4 schema violations found"
           }
         ],
-        "message": "10 schema violations found"
+        "message": "9 schema violations found"
       },
       {
         "schemaLocation": "#/definitions/Serialization/properties/data-serializable-factories",
@@ -444,6 +436,6 @@
         "message": "expected type: Boolean, found: String"
       }
     ],
-    "message": "38 schema violations found"
+    "message": "37 schema violations found"
   }
 }

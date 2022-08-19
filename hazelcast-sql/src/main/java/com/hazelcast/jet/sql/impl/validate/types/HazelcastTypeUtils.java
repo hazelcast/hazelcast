@@ -39,6 +39,7 @@ import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_YEAR_MONTH;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 import static org.apache.calcite.sql.type.SqlTypeName.OTHER;
 import static org.apache.calcite.sql.type.SqlTypeName.UNKNOWN;
+import static org.apache.calcite.sql.type.SqlTypeName.ROW;
 
 /**
  * Provides utilities to map from Calcite's {@link SqlTypeName} to {@link
@@ -97,6 +98,8 @@ public final class HazelcastTypeUtils {
 
         CALCITE_TO_HZ.put(SqlTypeName.MAP, QueryDataType.MAP);
         HZ_TO_CALCITE.put(QueryDataTypeFamily.JSON, OTHER);
+        HZ_TO_CALCITE.put(QueryDataTypeFamily.ROW, ROW);
+        CALCITE_TO_HZ.put(ROW, QueryDataType.ROW);
     }
 
     private HazelcastTypeUtils() {
@@ -121,7 +124,42 @@ public final class HazelcastTypeUtils {
             return QueryDataType.JSON;
         }
 
+        if (typeFamily instanceof HazelcastObjectType) {
+            return convertHazelcastObjectType(relDataType);
+        }
+
         throw new IllegalArgumentException("Unexpected SQL type: " + relDataType);
+    }
+
+    private static QueryDataType convertHazelcastObjectType(final RelDataType relDataType) {
+        final HazelcastObjectType hazelcastObjectType = extractHzObjectType(relDataType);
+
+        final Map<String, QueryDataType> typeMap = new HashMap<>();
+        traverseHzObjectType(hazelcastObjectType, typeMap);
+
+        return typeMap.get(hazelcastObjectType.getTypeName());
+    }
+
+    private static void traverseHzObjectType(final HazelcastObjectType source, Map<String, QueryDataType> discovered) {
+        if (discovered.containsKey(source.getTypeName())) {
+            return;
+        }
+        final QueryDataType current = new QueryDataType(source.getTypeName());
+        discovered.put(current.getObjectTypeName(), current);
+
+        for (final RelDataTypeField field : source.getFieldList()) {
+            final QueryDataType fieldType;
+            if (field.getType() instanceof HazelcastObjectType || field.getType() instanceof HazelcastObjectTypeReference) {
+                final HazelcastObjectType fieldRelDataType = extractHzObjectType(field.getType());
+                if (!discovered.containsKey(fieldRelDataType.getTypeName())) {
+                    traverseHzObjectType(fieldRelDataType, discovered);
+                }
+                fieldType = discovered.get(fieldRelDataType.getTypeName());
+            } else {
+                fieldType = HazelcastTypeUtils.toHazelcastType(field.getType());
+            }
+            current.getObjectFields().add(field.getIndex(), new QueryDataType.QueryDataTypeField(field.getName(), fieldType));
+        }
     }
 
     public static QueryDataType toHazelcastTypeFromSqlTypeName(SqlTypeName sqlTypeName) {
@@ -166,6 +204,16 @@ public final class HazelcastTypeUtils {
 
     public static boolean isJsonType(RelDataType type) {
         return SqlTypeName.OTHER.equals(type.getSqlTypeName()) && HazelcastJsonType.FAMILY.equals(type.getFamily());
+    }
+
+    public static boolean isHzObjectType(final RelDataType type) {
+        return type instanceof HazelcastObjectType || type instanceof HazelcastObjectTypeReference;
+    }
+
+    public static HazelcastObjectType extractHzObjectType(final RelDataType relDataType) {
+        return relDataType instanceof HazelcastObjectTypeReference
+                ? (HazelcastObjectType) ((HazelcastObjectTypeReference) relDataType).getOriginal()
+                : (HazelcastObjectType) relDataType;
     }
 
     /**
@@ -327,13 +375,19 @@ public final class HazelcastTypeUtils {
             return true;
         }
 
-        if (sourceType.isStruct() || targetType.isStruct()) {
-            if (sourceType.getSqlTypeName() != SqlTypeName.ROW) {
-                throw new IllegalArgumentException("Unexpected source type: " + sourceType);
+        if (isStruct(sourceType) || isStruct(targetType)) {
+            // if one of them isn't a struct
+            if (!isStruct(sourceType) || !isStruct(targetType)) {
+                return false;
             }
-            if (targetType.getSqlTypeName() != SqlTypeName.ROW) {
-                throw new IllegalArgumentException("Unexpected target type: " + targetType);
+
+            // ROW source can be converted to target type
+            // TODO: target type can be ROW in some expressions?
+            if ((sourceType.getSqlTypeName() != targetType.getSqlTypeName())
+                    && !(targetType.getSqlTypeName().equals(ROW) || sourceType.getSqlTypeName().equals(ROW))) {
+                return false;
             }
+
             int n = targetType.getFieldCount();
             if (sourceType.getFieldCount() != n) {
                 return false;
@@ -352,6 +406,10 @@ public final class HazelcastTypeUtils {
         QueryDataType queryTo = toHazelcastType(targetType);
 
         return queryFrom.getConverter().canConvertTo(queryTo.getTypeFamily());
+    }
+
+    private static boolean isStruct(RelDataType relDataType) {
+        return relDataType.isStruct() && relDataType.getFieldCount() > 0;
     }
 
     public static boolean hasParameters(SqlCallBinding binding) {

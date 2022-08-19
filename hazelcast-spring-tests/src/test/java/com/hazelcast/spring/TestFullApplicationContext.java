@@ -48,6 +48,7 @@ import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.GcpConfig;
 import com.hazelcast.config.GlobalSerializerConfig;
@@ -1188,7 +1189,6 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testCompactSerializationConfig() {
         CompactSerializationConfig compactSerializationConfig = config.getSerializationConfig()
                 .getCompactSerializationConfig();
-        assertTrue(compactSerializationConfig.isEnabled());
 
         List<String> serializerClassNames
                 = CompactSerializationConfigAccessor.getSerializerClassNames(compactSerializationConfig);
@@ -1549,6 +1549,7 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertTrue(cpSubsystemConfig.isFailOnIndeterminateOperationState());
         assertFalse(cpSubsystemConfig.isPersistenceEnabled());
         assertEquals(new File("/custom-dir").getAbsolutePath(), cpSubsystemConfig.getBaseDir().getAbsolutePath());
+        assertEquals(-1, cpSubsystemConfig.getCPMemberPriority());
         RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();
         assertEquals(500, raftAlgorithmConfig.getLeaderElectionTimeoutInMillis());
         assertEquals(100, raftAlgorithmConfig.getLeaderHeartbeatPeriodInMillis());
@@ -1630,5 +1631,15 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testIntegrityCheckerConfig() {
         final IntegrityCheckerConfig integrityCheckerConfig = config.getIntegrityCheckerConfig();
         assertFalse(integrityCheckerConfig.isEnabled());
+    }
+
+    @Test
+    public void testExternalDataStoreConfig() {
+        ExternalDataStoreConfig externalDataStoreConfig = config.getExternalDataStoreConfig("my-data-store");
+        assertNotNull(externalDataStoreConfig);
+        assertEquals("my-data-store", externalDataStoreConfig.getName());
+        assertEquals("com.hazelcast.datastore.JdbcDataStoreFactory", externalDataStoreConfig.getClassName());
+        assertFalse(externalDataStoreConfig.isShared());
+        assertEquals("jdbc:mysql://dummy:3306", externalDataStoreConfig.getProperty("jdbcUrl"));
     }
 }

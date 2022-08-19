@@ -2465,6 +2465,11 @@
           "default": 120,
           "description": "Timeout duration for CP members to restore their data from disk. CP member fails its startup if it cannot complete its CP data restore rocess in the configured duration."
         },
+        "cp-member-priority": {
+          "type": "integer",
+          "default": 0,
+          "description": "The CP member priority. The CP groups' leadership will be eventually transferred to members with higher priorities within the CP group."
+        },
         "raft-algorithm": {
           "type": "object",
           "additionalProperties": false,
@@ -3256,13 +3261,8 @@
         "compact-serialization": {
           "type": "object",
           "additionalProperties": false,
-          "description": "Contains configuration elements and attributes for the compact serialization. This feature is in the BETA status and any schema definition related to it might change in the future without a prior notice, until the feature is promoted to the stable status.",
+          "description": "Contains configuration elements and attributes for the compact serialization.",
           "properties": {
-            "enabled": {
-              "type": "boolean",
-              "default": false,
-              "description": "Enables/disables the compact serialization."
-            },
             "serializers": {
               "type": "array",
               "description": "Contains the Compact serializers to be registered.",

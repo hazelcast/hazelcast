@@ -1396,6 +1396,7 @@
                         <xs:element name="jet" type="jet" minOccurs="0" maxOccurs="1"/>
                         <xs:element name="local-device" type="local-device" minOccurs="0" maxOccurs="unbounded"/>
                         <xs:element name="integrity-checker" type="integrity-checker" minOccurs="0" maxOccurs="1"/>
+                        <xs:element name="external-data-store" type="external-data-store" minOccurs="0" maxOccurs="unbounded"/>
                     </xs:choice>
                 </xs:extension>
             </xs:complexContent>
@@ -1530,23 +1531,12 @@
             <xs:annotation>
                 <xs:documentation>
                     Contains configuration elements and attributes for the compact serialization.
-
-                    This feature is in the BETA status and any schema definition related
-                    to it might change in the future without a prior notice, until the feature
-                    is promoted to the stable status.
                 </xs:documentation>
             </xs:annotation>
             <xs:all>
                 <xs:element name="serializers" type="compact-serializers" minOccurs="0"/>
                 <xs:element name="classes" type="compact-serializable-classes" minOccurs="0"/>
             </xs:all>
-            <xs:attribute name="enabled" type="xs:boolean" default="false">
-                <xs:annotation>
-                    <xs:documentation>
-                        Enables/disables the compact serialization.
-                    </xs:documentation>
-                </xs:annotation>
-            </xs:attribute>
         </xs:complexType>
     </xs:element>
 
@@ -5375,6 +5365,14 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="cp-member-priority" type="xs:integer" minOccurs="0" default="0">
+                <xs:annotation>
+                    <xs:documentation>
+                        The CP member priority. The CP groups' leadership will be eventually
+                        transferred to members with higher priorities within the CP group.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
             <xs:element name="raft-algorithm" type="raft-algorithm" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
@@ -6211,6 +6209,34 @@
             <xs:annotation>
                 <xs:documentation>
                     Specifies whether the Integrity Checker is enabled or not. Values can be true or false.
+                </xs:documentation>
+            </xs:annotation>
+        </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="external-data-store">
+        <xs:all>
+            <xs:element name="class-name" type="xs:string">
+                <xs:annotation>
+                    <xs:documentation>
+                        The name of the class implementing ExternalDataStoreFactory.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="shared" type="xs:boolean" minOccurs="0" default="true">
+                <xs:annotation>
+                    <xs:documentation>
+                        If true reuse an instance of JDBC pool or any other storage driver (e.g. kafka client) between jobs or
+                        instances of MapStore.
+                    </xs:documentation>
+                </xs:annotation>
+            </xs:element>
+            <xs:element name="properties" type="properties" minOccurs="0"/>
+        </xs:all>
+        <xs:attribute name="name" type="xs:string" use="required">
+            <xs:annotation>
+                <xs:documentation>
+                    Name of the external data store configuration
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
