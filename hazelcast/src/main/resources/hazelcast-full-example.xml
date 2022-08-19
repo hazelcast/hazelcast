@@ -1717,7 +1717,7 @@
         Full-flush invalidation means the invalidation of events for all entries when clear is called.
         The default value is false.
     -->
-    <cache name="default">
+    <cache name="*">
         <key-type class-name="java.lang.Object"/>
         <value-type class-name="java.lang.Object"/>
         <statistics-enabled>false</statistics-enabled>

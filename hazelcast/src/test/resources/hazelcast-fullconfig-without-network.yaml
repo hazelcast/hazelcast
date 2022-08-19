@@ -502,7 +502,7 @@ hazelcast:
         class-name: PutIfAbsentMergePolicy
 
   cache:
-    default:
+    "*":
       key-type:
         class-name: java.lang.Object
       value-type:

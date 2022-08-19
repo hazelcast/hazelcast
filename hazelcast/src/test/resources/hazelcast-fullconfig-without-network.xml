@@ -525,7 +525,7 @@
         <merge-policy batch-size="100">PutIfAbsentMergePolicy</merge-policy>
     </ringbuffer>
 
-    <cache name="default">
+    <cache name="*">
         <key-type class-name="java.lang.Object"/>
         <value-type class-name="java.lang.String"/>
         <statistics-enabled>false</statistics-enabled>

@@ -1717,7 +1717,7 @@ hazelcast:
   # The default value is false.
   #
   cache:
-    default:
+    "*":
       key-type:
         class-name: java.lang.Object
       value-type:
