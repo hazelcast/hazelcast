@@ -335,7 +335,9 @@ public class JobExecutionService implements DynamicMetricsProvider {
                 jobId, executionId, coordinator, coordinatorMemberListVersion, participants);
 
         Set<Address> addresses = participants.stream().map(MemberInfo::getAddress).collect(toSet());
-        return execCtx.initialize(coordinator, addresses, plan)
+        ClassLoader jobCl = jobClassloaderService.getClassLoader(jobId);
+        return  doWithClassLoader(jobCl,
+                () -> execCtx.initialize(coordinator, addresses, plan))
                 .thenAccept(r -> {
                     // initial log entry with all of jobId, jobName, executionId
                     logger.info("Execution plan for jobId=" + idToString(jobId)
