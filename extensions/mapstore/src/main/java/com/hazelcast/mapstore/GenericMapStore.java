@@ -292,9 +292,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
     @Override
     public void destroy() {
-        if (isMaster()) {
-            dropMapping(mapping);
-        }
+        dropMapping(mapping);
     }
 
     @Override
@@ -530,15 +528,8 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
         sql.execute(queries.deleteAll(keys.size()), keys.toArray()).close();
     }
 
-    /**
-     * Returns true if the instance where the MapStore is instantiated is master
-     */
-    private boolean isMaster() {
-        return nodeEngine().getClusterService().isMaster();
-    }
-
     private void dropMapping(String mappingName) {
-        sql.execute("DROP MAPPING \"" + mappingName + "\"").close();
+        sql.execute("DROP MAPPING IF EXISTS \"" + mappingName + "\"").close();
     }
 
     /**
