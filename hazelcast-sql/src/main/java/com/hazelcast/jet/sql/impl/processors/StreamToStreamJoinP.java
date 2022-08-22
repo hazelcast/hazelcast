@@ -40,7 +40,6 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
@@ -59,7 +58,7 @@ import static java.lang.Long.MAX_VALUE;
  */
 public class StreamToStreamJoinP extends AbstractProcessor {
     // package-visible for tests
-    final Map<Byte, Long> wmState = new HashMap<>();
+    final Object2LongHashMap<Byte> wmState = new Object2LongHashMap<>(Long.MIN_VALUE);
     final Object2LongHashMap<Byte> lastReceivedWm = new Object2LongHashMap<>(Long.MIN_VALUE);
     final Object2LongHashMap<Byte> lastEmittedWm = new Object2LongHashMap<>(Long.MIN_VALUE);
 
