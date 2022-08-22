@@ -46,9 +46,11 @@ import org.jline.utils.InfoCmp;
 
 import java.io.IOError;
 import java.io.PrintWriter;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
@@ -57,6 +59,7 @@ import static com.hazelcast.client.console.HazelcastCommandLine.getClusterMetada
 import static com.hazelcast.client.console.HazelcastCommandLine.getHazelcastClientInstanceImpl;
 import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
+import static com.hazelcast.internal.util.StringUtil.startsWithIgnoreCase;
 import static com.hazelcast.internal.util.StringUtil.trim;
 
 @SuppressWarnings({
@@ -68,6 +71,8 @@ import static com.hazelcast.internal.util.StringUtil.trim;
 public final class SqlConsole {
     private static final int PRIMARY_COLOR = AttributedStyle.YELLOW;
     private static final int SECONDARY_COLOR = 12;
+
+    private static final int EXPLAIN_QUERY_OUTPUT_CAPACITY = 100;
 
     private SqlConsole() { }
 
@@ -187,13 +192,18 @@ public final class SqlConsole {
             int[] colWidths = determineColumnWidths(rowMetadata);
             Alignment[] alignments = determineAlignments(rowMetadata);
 
-            // this is a result with rows. Print the header and rows, watch for concurrent cancellation
-            printMetadataInfo(rowMetadata, colWidths, alignments, out);
-
+            boolean isExplainQuery = startsWithIgnoreCase(command, "explain");
             int rowCount = 0;
-            for (SqlRow row : sqlResult) {
-                rowCount++;
-                printRow(row, colWidths, alignments, out);
+            if (isExplainQuery) {
+                // Explain query result will be handled differently
+                rowCount = printExplain(rowMetadata, sqlResult, colWidths, alignments, out);
+            } else {
+                // this is a result with rows. Print the header and rows, watch for concurrent cancellation
+                printMetadataInfo(rowMetadata, colWidths, alignments, out);
+                for (SqlRow row : sqlResult) {
+                    rowCount++;
+                    printRow(row, colWidths, alignments, out);
+                }
             }
 
             // bottom line after all the rows
@@ -222,6 +232,38 @@ public final class SqlConsole {
             out.println(unexpectedErrorPrompt);
             e.printStackTrace(out);
         }
+    }
+
+    private static int printExplain(
+            SqlRowMetadata rowMetadata,
+            SqlResult sqlResult,
+            int[] colWidths,
+            Alignment[] alignments,
+            PrintWriter out
+    ) {
+        assert rowMetadata.getColumnCount() == 1 : "Explain query must produce only one column";
+        assert colWidths.length == 1 : "Explain query must produce only one column";
+
+        List<SqlRow> rows = new ArrayList<>(EXPLAIN_QUERY_OUTPUT_CAPACITY);
+        sqlResult.iterator().forEachRemaining(rows::add);
+
+        int maxLength = 0;
+
+        // One pass to compute max length for explain query rows
+        for (SqlRow row : rows) {
+            String columnValue = row.getObject(0);
+            maxLength = Math.max(maxLength, columnValue.length());
+        }
+        colWidths[0] = Math.max(maxLength, colWidths[0]);
+
+        printMetadataInfo(rowMetadata, colWidths, alignments, out);
+
+        // Second pass to print the rows
+        for (SqlRow row : rows) {
+            printRow(row, colWidths, alignments, out);
+        }
+
+        return rows.size();
     }
 
     private static String sqlStartingPrompt(HazelcastInstance hz) {
