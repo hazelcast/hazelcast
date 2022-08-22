@@ -200,7 +200,6 @@ public abstract class TestAbstractSqlConnector implements SqlConnector {
             return new TestDataGenerator(rows, predicate, projection, evalContext, eventTimePolicy, streaming);
         };
 
-//        ProcessorMetaSupplier pms = DiagnosticProcessors.peekOutputP(createProcessorSupplier(createContextFn));
         ProcessorMetaSupplier pms = createProcessorSupplier(createContextFn);
         return dag.newUniqueVertex(table.toString(), pms);
     }

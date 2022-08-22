@@ -99,7 +99,7 @@ public final class PeekWrappedP<T> extends ProcessorWrapper {
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
         if (peekInput && !peekedWatermarkLogged) {
-            logger.info("Input: " + watermark);
+            logger.info("Input coalesced WM: " + watermark);
             peekedWatermarkLogged = true;
         }
         if (super.tryProcessWatermark(watermark)) {
@@ -112,7 +112,7 @@ public final class PeekWrappedP<T> extends ProcessorWrapper {
     @Override
     public boolean tryProcessWatermark(int ordinal, @Nonnull Watermark watermark) {
         if (peekInput && !peekedWatermarkLogged) {
-            logger.info("Input from ordinal " + ordinal + " : " + watermark);
+            logger.info("Input edge WM, ordinal= " + ordinal + ", wm=" + watermark);
             peekedWatermarkLogged = true;
         }
         if (super.tryProcessWatermark(ordinal, watermark)) {
