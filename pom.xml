@@ -103,7 +103,7 @@
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
         <jline.version>3.21.0</jline.version>
         <jms.api.version>2.0.1</jms.api.version>
-        <json-surfer.version>0.11-SNAPSHOT</json-surfer.version>
+        <json-surfer.version>0.11</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
         <kafka.version>2.8.1</kafka.version>
