@@ -30,7 +30,7 @@
     <parent>
         <groupId>com.hazelcast.jet</groupId>
         <artifactId>hazelcast-jet-extensions</artifactId>
-        <version>5.2-BETA-1-SNAPSHOT</version>
+        <version>5.2-BETA-1</version>
     </parent>
 
     <build>
@@ -56,7 +56,7 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-sql</artifactId>
-            <version>5.2-BETA-1-SNAPSHOT</version>
+            <version>5.2-BETA-1</version>
             <scope>provided</scope>
         </dependency>
 
@@ -64,7 +64,7 @@
         <dependency>
             <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-sql</artifactId>
-            <version>5.2-BETA-1-SNAPSHOT</version>
+            <version>5.2-BETA-1</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
