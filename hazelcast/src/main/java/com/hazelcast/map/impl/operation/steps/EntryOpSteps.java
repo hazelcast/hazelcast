@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.operation.steps;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.operation.EntryOffloadableSetUnlockOperation;
 import com.hazelcast.map.impl.operation.EntryOperation;
 import com.hazelcast.map.impl.operation.EntryOperator;
 import com.hazelcast.map.impl.operation.steps.engine.State;
@@ -27,7 +28,6 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.StaticParams;
 
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
-import static com.hazelcast.map.impl.record.Record.UNSET;
 
 public enum EntryOpSteps implements Step<State> {
 
@@ -35,8 +35,8 @@ public enum EntryOpSteps implements Step<State> {
         @Override
         public void runStep(State state) {
             EntryOperator operator = operator(state.getOperation(), state.getEntryProcessor());
-            operator.init(state.getKey(), null, null,
-                    null, null, null, UNSET);
+            operator.init(state.getKey(), state.getOldValue(), state.getNewValue(),
+                    null, state.getModificationTypeForEP(), null, state.getTtl());
             state.setEntryOperator(operator);
 
             if (operator.belongsAnotherPartition(state.getKey())) {
@@ -99,23 +99,27 @@ public enum EntryOpSteps implements Step<State> {
             MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
 
             EntryOperator entryOperator = state.getOperator();
-            entryOperator.init(state.getKey(), state.getOldValue(),
-                    null, null, null, recordStore.isLocked(state.getKey()), state.getTtl());
+            // If result is ready, EP can be null as
+            // in EntryOffloadableSetUnlockOperation
+            if (entryOperator.getEntryProcessor() != null) {
+                entryOperator.init(state.getKey(), state.getOldValue(),
+                        null, null, null, recordStore.isLocked(state.getKey()), state.getTtl());
 
-            Object clonedOldValue = entryOperator.clonedOrRawOldValue();
+                Object clonedOldValue = entryOperator.clonedOrRawOldValue();
 
-            entryOperator.init(state.getKey(), clonedOldValue,
-                    null, null, null, recordStore.isLocked(state.getKey()), state.getTtl());
+                entryOperator.init(state.getKey(), clonedOldValue,
+                        null, null, null, recordStore.isLocked(state.getKey()), state.getTtl());
 
-            if (!entryOperator.checkCanProceed()) {
-                entryOperator.onTouched();
-                state.setStopExecution(true);
-                return;
-            }
-            entryOperator.operateOnKeyValueInternal();
+                if (!entryOperator.checkCanProceed()) {
+                    entryOperator.onTouched();
+                    state.setStopExecution(true);
+                    return;
+                }
+                entryOperator.operateOnKeyValueInternal();
 
-            if (!entryOperator.isDidMatchPredicate()) {
-                return;
+                if (!entryOperator.isDidMatchPredicate()) {
+                    return;
+                }
             }
 
             EntryEventType eventType = entryOperator.getEventType();
@@ -126,7 +130,7 @@ public enum EntryOpSteps implements Step<State> {
                 switch (eventType) {
                     case ADDED:
                     case UPDATED:
-                        state.setStaticPutParams(StaticParams.SET_WTH_NO_ACCESS_PARAMS);
+                        state.setStaticPutParams(StaticParams.SET_WITH_NO_ACCESS_PARAMS);
                         if (eventType == EntryEventType.UPDATED) {
                             entryOperator.onTouched();
                         }
@@ -142,6 +146,10 @@ public enum EntryOpSteps implements Step<State> {
                     default:
                         throw new IllegalArgumentException("Unexpected event found:" + eventType);
                 }
+            }
+
+            if (state.isUnlockNeededForEP()) {
+                ((EntryOffloadableSetUnlockOperation) state.getOperation()).unlockKey();
             }
         }
 

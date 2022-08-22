@@ -126,9 +126,15 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
                 .setImplementation(new MapStoreAdapter() {
                     @Override
                     public Object load(Object key) {
-                        sleepSeconds(100);
+                        sleepAtLeastSeconds(1000);
                         // just returns a random number
                         return System.currentTimeMillis();
+                    }
+
+                    @Override
+                    public void store(Object key, Object value) {
+                        sleepAtLeastSeconds(1000);
+                        super.store(key, value);
                     }
                 });
 
@@ -142,13 +148,25 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void slow_map_store_of_offloaded_entry_processor_does_not_block_partitions() {
+    public void get_with_offloaded_entry_processor_does_not_block_partition_when_map_store_is_slow() {
         IMap<Long, Long> mapWithSlowMapStore = instances[1].getMap(MAP_WITH_SLOW_MAP_STORE_NAME);
         IMap<Long, Long> map = instances[1].getMap(MAP_NAME);
         int partitionCount = Accessors.getPartitionService(instances[1]).getPartitionCount();
 
-        for (int i = 0; i < partitionCount; i++) {
-            mapWithSlowMapStore.submitToKey(1L, new EntryGetOffloadable());
+        for (long i = 0; i < partitionCount; i++) {
+            mapWithSlowMapStore.submitToKey(i, new EntryGetOffloadable());
+            assertNull(map.get(i));
+        }
+    }
+
+    @Test
+    public void set_with_offloaded_entry_processor_does_not_block_partition_when_map_store_is_slow() {
+        IMap<Long, Long> mapWithSlowMapStore = instances[1].getMap(MAP_WITH_SLOW_MAP_STORE_NAME);
+        IMap<Long, Long> map = instances[1].getMap(MAP_NAME);
+        int partitionCount = Accessors.getPartitionService(instances[1]).getPartitionCount();
+
+        for (long i = 0; i < partitionCount; i++) {
+            mapWithSlowMapStore.submitToKey(i, new EntrySetOffloadable());
             assertNull(map.get(i));
         }
     }
@@ -214,6 +232,19 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
     private static class EntryGetOffloadable implements EntryProcessor<Long, Long, Long>, Offloadable {
         @Override
         public Long process(final Map.Entry<Long, Long> entry) {
+            return entry.getValue();
+        }
+
+        @Override
+        public String getExecutorName() {
+            return Offloadable.OFFLOADABLE_EXECUTOR;
+        }
+    }
+
+    private static class EntrySetOffloadable implements EntryProcessor<Long, Long, Long>, Offloadable {
+        @Override
+        public Long process(final Map.Entry<Long, Long> entry) {
+            entry.setValue(entry.getValue() + 1);
             return entry.getValue();
         }
 

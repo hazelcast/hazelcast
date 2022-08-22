@@ -100,6 +100,8 @@ public class State {
     private volatile Queue<InternalIndex> notMarkedIndexes;
     private volatile Set keysFromIndex;
     private volatile Throwable throwable;
+    private volatile EntryEventType modificationTypeForEP;
+    private volatile boolean unlockNeededForEP;
 
     public State(RecordStore recordStore, MapOperation operation) {
         this.recordStore = recordStore;
@@ -504,5 +506,23 @@ public class State {
 
     public List getBackupPairs() {
         return backupPairs;
+    }
+
+    public State setModificationTypeForEP(EntryEventType modificationTypeForEP) {
+        this.modificationTypeForEP = modificationTypeForEP;
+        return null;
+    }
+
+    public EntryEventType getModificationTypeForEP() {
+        return modificationTypeForEP;
+    }
+
+    public State setUnlockNeededForEP(boolean unlockNeededForEP) {
+        this.unlockNeededForEP = unlockNeededForEP;
+        return this;
+    }
+
+    public boolean isUnlockNeededForEP() {
+        return unlockNeededForEP;
     }
 }
