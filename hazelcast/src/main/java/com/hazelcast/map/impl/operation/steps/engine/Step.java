@@ -19,7 +19,7 @@ package com.hazelcast.map.impl.operation.steps.engine;
 import javax.annotation.Nullable;
 
 /**
- * Represent an isolated step of an operation. e.g.
+ * Represents an isolated step of an operation. e.g.
  * {@link  com.hazelcast.map.impl.operation.PutOperation}
  * <p>
  * By using this interface, an operation can be modeled as

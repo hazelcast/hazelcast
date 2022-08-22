@@ -19,6 +19,7 @@ package com.hazelcast.map.impl.operation.steps;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
+import com.hazelcast.map.impl.operation.EntryOperation;
 import com.hazelcast.map.impl.operation.EntryOperator;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
@@ -89,6 +90,10 @@ public enum EntryOpSteps implements Step<State> {
     PROCESS() {
         @Override
         public void runStep(State state) {
+            if (state.isEntryProcessorOffload()) {
+                return;
+            }
+
             RecordStore recordStore = state.getRecordStore();
             MapContainer mapContainer = recordStore.getMapContainer();
             MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
@@ -142,6 +147,12 @@ public enum EntryOpSteps implements Step<State> {
 
         @Override
         public Step nextStep(State state) {
+            if (state.isEntryProcessorOffload()) {
+                EntryOperation operation = (EntryOperation) state.getOperation();
+                operation.new EntryOperationOffload(state.getOldValue()).start();
+                return UtilSteps.SEND_RESPONSE;
+            }
+
             EntryEventType eventType = state.getOperator().getEventType();
             if (eventType == null) {
                 return AFTER_RUN;

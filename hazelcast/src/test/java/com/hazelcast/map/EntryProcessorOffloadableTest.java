@@ -31,6 +31,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationMonitor;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -79,6 +80,7 @@ import static org.junit.Assert.assertTrue;
 public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
 
     public static final String MAP_NAME = "EntryProcessorOffloadableTest";
+    public static final String MAP_WITH_SLOW_MAP_STORE_NAME = "slow-map-store-EntryProcessorOffloadableTest";
 
     private HazelcastInstance[] instances;
 
@@ -115,13 +117,40 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
         mapConfig.setAsyncBackupCount(asyncBackupCount);
         mapConfig.setBackupCount(syncBackupCount);
         config.addMapConfig(mapConfig);
-        return config;
+
+        MapConfig mapConfigWithSlowMapStore = new MapConfig(MAP_WITH_SLOW_MAP_STORE_NAME);
+        mapConfigWithSlowMapStore.setInMemoryFormat(inMemoryFormat);
+        mapConfigWithSlowMapStore.setAsyncBackupCount(asyncBackupCount);
+        mapConfigWithSlowMapStore.setBackupCount(syncBackupCount);
+        mapConfigWithSlowMapStore.getMapStoreConfig().setEnabled(true)
+                .setImplementation(new MapStoreAdapter() {
+                    @Override
+                    public Object load(Object key) {
+                        sleepSeconds(100);
+                        // just returns a random number
+                        return System.currentTimeMillis();
+                    }
+                });
+
+        return config.addMapConfig(mapConfigWithSlowMapStore);
     }
 
     @Before
     public void before() {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
         instances = factory.newInstances(getConfig());
+    }
+
+    @Test
+    public void slow_map_store_of_offloaded_entry_processor_does_not_block_partitions() {
+        IMap<Long, Long> mapWithSlowMapStore = instances[1].getMap(MAP_WITH_SLOW_MAP_STORE_NAME);
+        IMap<Long, Long> map = instances[1].getMap(MAP_NAME);
+        int partitionCount = Accessors.getPartitionService(instances[1]).getPartitionCount();
+
+        for (int i = 0; i < partitionCount; i++) {
+            mapWithSlowMapStore.submitToKey(1L, new EntryGetOffloadable());
+            assertNull(map.get(i));
+        }
     }
 
     @Test
@@ -174,6 +203,18 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
             value.i++;
             entry.setValue(value);
             return result;
+        }
+
+        @Override
+        public String getExecutorName() {
+            return Offloadable.OFFLOADABLE_EXECUTOR;
+        }
+    }
+
+    private static class EntryGetOffloadable implements EntryProcessor<Long, Long, Long>, Offloadable {
+        @Override
+        public Long process(final Map.Entry<Long, Long> entry) {
+            return entry.getValue();
         }
 
         @Override
@@ -913,9 +954,9 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
 
     private static class TimeConsumingOffloadableTask
             implements HazelcastInstanceAware,
-                       EntryProcessor<String, TimestampedSimpleValue, Object>,
-                       Offloadable,
-                       Serializable {
+            EntryProcessor<String, TimestampedSimpleValue, Object>,
+            Offloadable,
+            Serializable {
 
         private final int secondsToWork;
         private final String startTimeRefName;

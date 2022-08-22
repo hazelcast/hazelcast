@@ -85,6 +85,7 @@ public class State {
     private volatile Collection<Data> keys;
     private volatile ArrayList<Record> records;
     private volatile EntryProcessor entryProcessor;
+    private volatile boolean entryProcessorOffload;
     private volatile EntryOperator operator;
     private volatile List<State> toStore;
     private volatile List<State> toRemove;
@@ -208,6 +209,15 @@ public class State {
 
     public State setEntryProcessor(EntryProcessor entryProcessor) {
         this.entryProcessor = entryProcessor;
+        return this;
+    }
+
+    public boolean isEntryProcessorOffload() {
+        return entryProcessorOffload;
+    }
+
+    public State setEntryProcessorOffload(boolean entryProcessorOffload) {
+        this.entryProcessorOffload = entryProcessorOffload;
         return this;
     }
 

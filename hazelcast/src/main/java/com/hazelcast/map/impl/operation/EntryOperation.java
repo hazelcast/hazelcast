@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastException;
@@ -180,24 +179,25 @@ public class EntryOperation extends LockAwareOperation
         entryProcessor = (EntryProcessor) managedContext.initialize(entryProcessor);
     }
 
-    // FIXME: EntryOperationOffload loads with get from map-store
     // TODO: EP no forced eviction for EP?
     @Override
     public CallStatus call() {
         if (shouldWait()) {
             return WAIT;
         }
+
         // when offloading is enabled, left disposing
         // to EntryOffloadableSetUnlockOperation
         disposeDeferredBlocks = !offload;
 
+        if (isMapStoreOffloadEnabled()) {
+            return offloadOperation();
+        }
+
         if (offload) {
-            return new EntryOperationOffload(getCallerAddress());
+            Object oldValue = recordStore.get(dataKey, false, getCallerAddress());
+            return new EntryOperationOffload(oldValue);
         } else {
-            if (isMapStoreOffloadEnabled()) {
-                assert this != null;
-                return offloadOperation();
-            }
             response = operator(this, entryProcessor)
                     .operateOnKey(dataKey)
                     .doPostOperateOps()
@@ -211,7 +211,8 @@ public class EntryOperation extends LockAwareOperation
         return super.createState()
                 .setKey(dataKey)
                 .setCallerProvenance(CallerProvenance.NOT_WAN)
-                .setEntryProcessor(entryProcessor);
+                .setEntryProcessor(entryProcessor)
+                .setEntryProcessorOffload(offload);
     }
 
     @Override
@@ -221,6 +222,9 @@ public class EntryOperation extends LockAwareOperation
 
     @Override
     public void applyState(State state) {
+        if (offload) {
+            return;
+        }
         super.applyState(state);
         response = state.getOperator().getResult();
     }
@@ -341,41 +345,41 @@ public class EntryOperation extends LockAwareOperation
         out.writeObject(entryProcessor);
     }
 
-    private final class EntryOperationOffload extends Offload {
-        private Address callerAddress;
+    private Object getOldValueByInMemoryFormat(Object oldValue) {
+        InMemoryFormat inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
+        switch (inMemoryFormat) {
+            case NATIVE:
+                return toHeapData((Data) oldValue);
+            case OBJECT:
+                return getNodeEngine().getSerializationService()
+                        .toData(oldValue);
+            case BINARY:
+                return oldValue;
+            default:
+                throw new IllegalArgumentException("Unknown in memory format: " + inMemoryFormat);
+        }
+    }
 
-        private EntryOperationOffload(Address callerAddress) {
+    public final class EntryOperationOffload extends Offload {
+        private final Object oldValue;
+
+        public EntryOperationOffload(Object oldValue) {
             super(EntryOperation.this);
-            this.callerAddress = callerAddress;
+            this.oldValue = getOldValueByInMemoryFormat(oldValue);
         }
 
         @Override
         public void start() {
             verifyEntryProcessor();
 
-            Object oldValue = getOldValueByInMemoryFormat();
             String executorName = ((Offloadable) entryProcessor).getExecutorName();
-            executorName = executorName.equals(Offloadable.OFFLOADABLE_EXECUTOR) ? OFFLOADABLE_EXECUTOR : executorName;
+            executorName = executorName.equals(Offloadable.OFFLOADABLE_EXECUTOR)
+                    ? OFFLOADABLE_EXECUTOR : executorName;
 
             if (readOnly) {
                 executeReadOnlyEntryProcessor(oldValue, executorName);
             } else {
                 executeMutatingEntryProcessor(oldValue, executorName);
-            }
-        }
-
-        private Object getOldValueByInMemoryFormat() {
-            Object oldValue = recordStore.get(dataKey, false, callerAddress);
-            InMemoryFormat inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
-            switch (inMemoryFormat) {
-                case NATIVE:
-                    return toHeapData((Data) oldValue);
-                case OBJECT:
-                    return serializationService.toData(oldValue);
-                case BINARY:
-                    return oldValue;
-                default:
-                    throw new IllegalArgumentException("Unknown in memory format: " + inMemoryFormat);
             }
         }
 
