@@ -208,10 +208,10 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             }
 
             if (ordinal == outerJoinSide) {
-                // mark opposite-side item as used
+                // mark current item as used
                 unusedEventsTracker.remove(currItem);
             } else if (ordinal == 1 - outerJoinSide) {
-                // mark current item as used
+                // mark opposite-side item as used
                 unusedEventsTracker.remove(oppositeBufferItem);
             }
 
