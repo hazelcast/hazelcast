@@ -72,23 +72,19 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
 
     @Override
     protected void runInternal() {
-        recordStore.beforeOperation();
+        verifyLock();
         try {
-            verifyLock();
-            try {
-                operator(this).init(dataKey, oldValue, newValue, null, modificationType, null, newTtl)
+            operator(this).init(dataKey, oldValue, newValue,
+                            null, modificationType, null, newTtl)
                     .doPostOperateOps();
-            } finally {
-                unlockKey();
-            }
         } finally {
-            recordStore.afterOperation();
+            unlockKey();
         }
     }
 
     private void verifyLock() {
         if (!recordStore.isLockedBy(dataKey, caller, threadId)) {
-            // we can't send a RetryableHazelcastException explicitly since it would retry this opertation and we want to retry
+            // we can't send a RetryableHazelcastException explicitly since it would retry this operation, and we want to retry
             // the preceding EntryOperation that this operation is part of.
             throw new EntryOffloadableLockMismatchException(
                     String.format("The key is not locked by the caller=%s and threadId=%d", caller, threadId));
@@ -102,18 +98,6 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
                     String.format("Unexpected error! EntryOffloadableSetUnlockOperation finished but the unlock method "
                             + "returned false for caller=%s and threadId=%d", caller, threadId));
         }
-    }
-
-    @Override
-    protected void innerBeforeRun() throws Exception {
-        // Do registration on the record store in the run
-        // to avoid nested registrations
-    }
-
-    @Override
-    public void afterRunFinal() {
-        // Do de-registration on the record store in the run
-        // to avoid nested registrations
     }
 
     @Override
@@ -188,5 +172,4 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
         entryBackupProcessor = in.readObject();
         newTtl = in.readLong();
     }
-
 }
