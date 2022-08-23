@@ -105,7 +105,7 @@ public class SourceBuilder_TopologyChangeTest extends JetTestSupport {
 
         Pipeline p = Pipeline.create();
         p.readFrom(source)
-                .withNativeTimestamps(0)
+                .withNativeTimestamps(100)
                 .window(tumbling(windowSize))
                 .aggregate(AggregateOperations.counting())
                 .peek()
