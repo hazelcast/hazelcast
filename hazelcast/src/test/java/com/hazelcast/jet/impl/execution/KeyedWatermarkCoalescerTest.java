@@ -20,23 +20,22 @@ import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
+import static java.util.Collections.emptyList;
+import static java.util.Collections.emptySet;
+import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class KeyedWatermarkCoalescerTest extends JetTestSupport {
-    @Rule
-    public ExpectedException exception = ExpectedException.none();
 
-    private KeyedWatermarkCoalescer kwc = new KeyedWatermarkCoalescer(2);
+    private final KeyedWatermarkCoalescer kwc = new KeyedWatermarkCoalescer(2);
 
     @Test
     public void when_Q1ProducesWmPlusEventAndQ2IsIdle_then_forwardWmAndEventFromQ1() {
@@ -45,5 +44,38 @@ public class KeyedWatermarkCoalescerTest extends JetTestSupport {
 
         kwc.observeEvent(0);
         assertEquals(singletonList(wm(1)), kwc.observeWm(0, wm(1)));
+    }
+
+    @Test
+    public void when_noWmKeyKnown_and_idleMessageReceived_then_idleForwardedWhenAllIdle() {
+        assertEquals(emptyList(), kwc.observeWm(0, IDLE_MESSAGE));
+        assertEquals(singletonList(IDLE_MESSAGE), kwc.observeWm(1, IDLE_MESSAGE));
+
+        assertEquals(emptySet(), kwc.keys());
+    }
+
+    @Test
+    public void test_initialScenario2() {
+        // no wm key known yet, receive idle message on queue 0 - 1 of 2 queues idle, nothing forwarded
+        assertEquals(emptyList(), kwc.observeWm(0, IDLE_MESSAGE));
+
+        // receive a wm on queue 0, queue 0 active again. Nothing forwarded, wm missing on queue 1
+        assertEquals(emptyList(), kwc.observeWm(0, wm(10, (byte) 42)));
+
+        // receive an idle message on queue 1. Since queue 0 is active and queue 1 idle, the previous wm from
+        // queue 0 is forwarded
+        assertEquals(singletonList(wm(10, (byte) 42)), kwc.observeWm(1, IDLE_MESSAGE));
+
+        assertEquals(singleton((byte) 42), kwc.keys());
+    }
+
+    @Test
+    public void test_initialScenario3_idleStatusTransferredToNewWmKey() {
+        // idle message on queue 0, no WM key known yet
+        assertEquals(emptyList(), kwc.observeWm(0, IDLE_MESSAGE));
+        // WM on queue 1, new WM key. Since queue 0 is idle, it should be forwarded immediately
+        assertEquals(singletonList(wm(10, (byte) 42)), kwc.observeWm(1, wm(10, (byte) 42)));
+
+        assertEquals(singleton((byte) 42), kwc.keys());
     }
 }
