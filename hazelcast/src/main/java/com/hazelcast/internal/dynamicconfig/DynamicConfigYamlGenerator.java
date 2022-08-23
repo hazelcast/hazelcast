@@ -119,7 +119,7 @@ public class DynamicConfigYamlGenerator {
 
     private static final int INDENT = 2;
     private static final boolean DEFAULT_MASK_SENSITIVE_FIELDS = false;
-    private static boolean maskSensitiveFields = DEFAULT_MASK_SENSITIVE_FIELDS;
+    private static volatile boolean maskSensitiveFields = DEFAULT_MASK_SENSITIVE_FIELDS;
 
     String generate(Config config, boolean isMask) {
         maskSensitiveFields = isMask;

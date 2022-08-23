@@ -21,8 +21,14 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 
 public record AllTypesRecord(
         byte primitiveInt8,
@@ -72,7 +78,13 @@ public record AllTypesRecord(
         LocalDateTime[] timestampArray,
         OffsetDateTime[] timestampWithTimezoneArray,
         AnEnum[] anEnumArray,
-        NestedRecord[] nestedRecordArray
+        NestedRecord[] nestedRecordArray,
+        List<BigDecimal> list,
+        ArrayList<String> arrayList,
+        Set<Byte> set,
+        HashSet<Integer> hashSet,
+        Map<Short, Character> map,
+        HashMap<Long, Boolean> hashMap
 ) {
 
     enum AnEnum {
@@ -135,7 +147,31 @@ public record AllTypesRecord(
                 new LocalDateTime[]{null, LocalDateTime.now()},
                 new OffsetDateTime[]{null, OffsetDateTime.now()},
                 new AnEnum[]{AnEnum.VALUE0, null, AnEnum.VALUE1},
-                new NestedRecord[]{null, NestedRecord.create()}
+                new NestedRecord[]{null, NestedRecord.create()},
+                new ArrayList<>() {{
+                    add(BigDecimal.ONE);
+                    add(null);
+                    add(BigDecimal.TEN);
+                }},
+                new ArrayList<>() {{
+                    add("a");
+                    add("b");
+                    add("c");
+                }},
+                new HashSet<>() {{
+                    add((byte) 0);
+                }},
+                new HashSet<>() {{
+                    add(42);
+                    add(null);
+                }},
+                new HashMap<>() {{
+                    put((short) 42, 'x');
+                }},
+                new HashMap<>() {{
+                    put(0L, false);
+                    put(1L, true);
+                }}
         );
     }
 
@@ -156,6 +192,12 @@ public record AllTypesRecord(
                 0,
                 null,
                 false,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
                 null,
                 null,
                 null,
@@ -248,6 +290,12 @@ public record AllTypesRecord(
                 && Arrays.equals(timestampArray, that.timestampArray)
                 && Arrays.equals(timestampWithTimezoneArray, that.timestampWithTimezoneArray)
                 && Arrays.equals(anEnumArray, that.anEnumArray)
-                && Arrays.equals(nestedRecordArray, that.nestedRecordArray);
+                && Arrays.equals(nestedRecordArray, that.nestedRecordArray)
+                && Objects.equals(list, that.list)
+                && Objects.equals(arrayList, that.arrayList)
+                && Objects.equals(set, that.set)
+                && Objects.equals(hashSet, that.hashSet)
+                && Objects.equals(map, that.map)
+                && Objects.equals(hashMap, that.hashMap);
     }
 }

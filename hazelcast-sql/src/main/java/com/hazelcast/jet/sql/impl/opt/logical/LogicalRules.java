@@ -42,10 +42,13 @@ public final class LogicalRules {
                 // We need it to transpose RIGHT JOIN to the LEFT JOIN
                 CoreRules.PROJECT_TO_CALC,
                 SlidingWindowCalcSplitLogicalRule.STREAMING_FILTER_TRANSPOSE,
+                CalcDropLateItemsTransposeRule.INSTANCE,
 
-                // Windowing rules
+                // Watermark rules
                 WatermarkRules.IMPOSE_ORDER_INSTANCE,
                 WatermarkRules.WATERMARK_INTO_SCAN_INSTANCE,
+
+                // Windowing rules
                 FunctionLogicalRules.WINDOW_FUNCTION_INSTANCE,
                 SlidingWindowDropLateItemsMergeRule.INSTANCE,
 

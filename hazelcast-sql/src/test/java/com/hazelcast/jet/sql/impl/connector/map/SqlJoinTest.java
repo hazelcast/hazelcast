@@ -20,7 +20,6 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.jet.sql.impl.connector.map.model.PersonId;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
-import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryException;
@@ -46,32 +45,6 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(Enclosed.class)
 public class SqlJoinTest {
-
-    public static class SqlStreamingJoinCheckerTest extends SqlTestSupport {
-
-        private static SqlService sqlService;
-
-        @BeforeClass
-        public static void setUpClass() {
-            initialize(2, null);
-            sqlService = instance().getSql();
-        }
-
-        @Test
-        public void when_streamToStreamJoin_then_fail() {
-            String stream1 = "stream1";
-            String stream2 = "stream2";
-            TestStreamSqlConnector.create(sqlService, stream1, singletonList("a"), singletonList(INTEGER));
-            TestStreamSqlConnector.create(sqlService, stream2, singletonList("b"), singletonList(INTEGER));
-
-
-            assertThatThrownBy(() ->
-                    sqlService.execute(
-                            "SELECT * FROM " + stream1 + " AS s1, " + stream2 + " AS s2 WHERE s1.a = s2.b"
-                    )).hasMessageContaining("The right side of an INNER JOIN cannot be a streaming source");
-        }
-    }
-
     public static class SqlInnerJoinTest extends SqlTestSupport {
 
         private static SqlService sqlService;
@@ -97,7 +70,7 @@ public class SqlJoinTest {
                     "SELECT l.v, m.this " +
                             "FROM " + leftName + " l " +
                             "INNER JOIN " + mapName + " m ON l.v = m.__key + m.__key",
-                    asList(
+                    singletonList(
                             new Row(2, "value-1")
                     )
             );

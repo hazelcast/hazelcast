@@ -68,6 +68,7 @@ public class MetadataCompactResolverTest {
         Map<String, String> options =
                 ImmutableMap.of((key ? OPTION_KEY_COMPACT_TYPE_NAME : OPTION_VALUE_COMPACT_TYPE_NAME), "testAll");
 
+        // TODO: fix compact nested types support?
         assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(key, emptyList(), options, ss))
                 .hasMessageContaining("Column list is required for Compact format");
     }
@@ -85,6 +86,7 @@ public class MetadataCompactResolverTest {
 
         List<MappingField> fields = asList(field("object", QueryDataType.OBJECT, prefix + ".object"));
 
+        // TODO: fix compact nested types support?
         assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(key, fields, options, ss).collect(Collectors.toList()))
                 .isInstanceOf(QueryException.class)
                 .hasMessageContaining("Cannot derive Compact type for '" + QueryDataTypeFamily.OBJECT + "'");
@@ -132,6 +134,7 @@ public class MetadataCompactResolverTest {
 
         Map<String, String> options = Collections.emptyMap();
 
+        // TODO: fix compact nested types support?
         assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(key,
                 singletonList(field("field", QueryDataType.INT, prefix + ".field")), options, ss))
                 .hasMessageMatching("Unable to resolve table metadata\\. Missing '(key|value)CompactTypeName' option");
@@ -228,7 +231,6 @@ public class MetadataCompactResolverTest {
 
     private static InternalSerializationService createSerializationService() {
         SerializationConfig serializationConfig = new SerializationConfig();
-        serializationConfig.getCompactSerializationConfig().setEnabled(true);
         return new DefaultSerializationServiceBuilder().setSchemaService(CompactTestUtil.createInMemorySchemaService())
                 .setConfig(serializationConfig).build();
     }

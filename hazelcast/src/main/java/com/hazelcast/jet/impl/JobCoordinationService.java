@@ -32,6 +32,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.internal.util.counters.Counter;
 import com.hazelcast.internal.util.counters.MwCounter;
+import com.hazelcast.internal.util.executor.ManagedExecutorService;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.config.JetConfig;
@@ -336,20 +337,21 @@ public class JobCoordinationService {
 
         checkPermissions(subject, dag);
 
-        // Initialize and start the job (happens in the constructor). We do this before adding the actual
+        // Initialize and start the job. We do this before adding the actual
         // LightMasterContext to the map to avoid possible races of the job initialization and cancellation.
-        LightMasterContext mc = new LightMasterContext(nodeEngine, this, dag, jobId, jobConfig, subject);
-        oldContext = lightMasterContexts.put(jobId, mc);
-        assert oldContext == UNINITIALIZED_LIGHT_JOB_MARKER;
+        return LightMasterContext.createContext(nodeEngine, this, dag, jobId, jobConfig, subject)
+                .thenComposeAsync(mc -> {
+                    Object oldCtx = lightMasterContexts.put(jobId, mc);
+                    assert oldCtx == UNINITIALIZED_LIGHT_JOB_MARKER;
+                    scheduleJobTimeout(jobId, jobConfig.getTimeoutMillis());
 
-        scheduleJobTimeout(jobId, jobConfig.getTimeoutMillis());
-
-        return mc.getCompletionFuture()
-                .whenComplete((r, t) -> {
-                    Object removed = lightMasterContexts.remove(jobId);
-                    assert removed instanceof LightMasterContext : "LMC not found: " + removed;
-                    unscheduleJobTimeout(jobId);
-                });
+                    return mc.getCompletionFuture()
+                      .whenComplete((r, t) -> {
+                          Object removed = lightMasterContexts.remove(jobId);
+                          assert removed instanceof LightMasterContext : "LMC not found: " + removed;
+                          unscheduleJobTimeout(jobId);
+                      });
+                }, coordinationExecutor());
     }
 
     public long getJobSubmittedCount() {
@@ -1286,6 +1288,10 @@ public class JobCoordinationService {
         return nodeEngine;
     }
 
+    ManagedExecutorService coordinationExecutor() {
+        return nodeEngine.getExecutionService().getExecutor(COORDINATOR_EXECUTOR_NAME);
+    }
+
     CompletableFuture<Void> submitToCoordinatorThread(Runnable action) {
         return submitToCoordinatorThread(() -> {
             action.run();
@@ -1384,4 +1390,5 @@ public class JobCoordinationService {
     boolean isMemberShuttingDown(UUID uuid) {
         return membersShuttingDown.containsKey(uuid);
     }
+
 }

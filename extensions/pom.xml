@@ -46,6 +46,7 @@
         <module>hazelcast-3-connector</module>
         <module>kafka</module>
         <module>kinesis</module>
+        <module>mapstore</module>
         <module>s3</module>
     </modules>
 

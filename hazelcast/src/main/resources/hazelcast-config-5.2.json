@@ -2465,6 +2465,11 @@
           "default": 120,
           "description": "Timeout duration for CP members to restore their data from disk. CP member fails its startup if it cannot complete its CP data restore rocess in the configured duration."
         },
+        "cp-member-priority": {
+          "type": "integer",
+          "default": 0,
+          "description": "The CP member priority. The CP groups' leadership will be eventually transferred to members with higher priorities within the CP group."
+        },
         "raft-algorithm": {
           "type": "object",
           "additionalProperties": false,
@@ -3256,31 +3261,32 @@
         "compact-serialization": {
           "type": "object",
           "additionalProperties": false,
-          "description": "Contains configuration elements and attributes for the compact serialization. This feature is in the BETA status and any schema definition related to it might change in the future without a prior notice, until the feature is promoted to the stable status.",
+          "description": "Contains configuration elements and attributes for the compact serialization.",
           "properties": {
-            "enabled": {
-              "type": "boolean",
-              "default": false,
-              "description": "Enables/disables the compact serialization."
-            },
-            "registered-classes": {
+            "serializers": {
               "type": "array",
-              "description": "Contains classes registered to be serialized with compact serialization.",
+              "description": "Contains the Compact serializers to be registered.",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "serializer": {
+                    "type": "string",
+                    "description": "Fully qualified class name of the Compact serializer."
+                  }
+                }
+              }
+            },
+            "classes": {
+              "type": "array",
+              "description": "Contains the classes to be serialized with Compact serialization, which will override any other serialization mechanisms.",
               "items": {
                 "type": "object",
                 "additionalProperties": false,
                 "properties": {
                   "class": {
                     "type": "string",
-                    "description": "Fully qualified class name of the class to be serialized with compact serialization. If the class has an explicit serializer, it must be specified with type-name and serializer attributes. Those attributes must not be present if the class is to be serialized with reflective compact serializer. Either both or none of the attributes must be present."
-                  },
-                  "serializer": {
-                    "type": "string",
-                    "description": "Fully qualified class name of the compact serializer to be used to serialize the class."
-                  },
-                  "type-name": {
-                    "type": "string",
-                    "description": "Type name of the class."
+                    "description": "Fully qualified name of the class."
                   }
                 }
               }

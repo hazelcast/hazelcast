@@ -143,6 +143,11 @@ public abstract class ProcessorWrapper implements Processor, DynamicMetricsProvi
     }
 
     @Override
+    public boolean closeIsCooperative() {
+        return wrapped.closeIsCooperative();
+    }
+
+    @Override
     public void close() throws Exception {
         wrapped.close();
     }

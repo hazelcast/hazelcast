@@ -150,6 +150,8 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.CREATE_INDEX);
         SUPPORTED_KINDS.add(SqlKind.DROP_VIEW);
         SUPPORTED_KINDS.add(SqlKind.COLUMN_DECL);
+        SUPPORTED_KINDS.add(SqlKind.CREATE_TYPE);
+        SUPPORTED_KINDS.add(SqlKind.DROP_TYPE);
 
         SUPPORTED_KINDS.add(SqlKind.ROW);
         SUPPORTED_KINDS.add(SqlKind.VALUES);
@@ -166,6 +168,9 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_KINDS.add(SqlKind.JSON_ARRAYAGG);
         SUPPORTED_KINDS.add(SqlKind.JSON_OBJECTAGG);
         SUPPORTED_KINDS.add(SqlKind.WITHIN_GROUP);
+
+        // Nested Fields
+        SUPPORTED_KINDS.add(SqlKind.DOT);
 
         // Supported operators
         SUPPORTED_OPERATORS = new HashSet<>();
@@ -240,6 +245,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_MAPPINGS);
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_VIEWS);
         SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_JOBS);
+        SUPPORTED_OPERATORS.add(SqlShowStatement.SHOW_TYPES);
 
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.GENERATE_SERIES);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.GENERATE_STREAM);
@@ -248,6 +254,8 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.JSON_FLAT_FILE);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.AVRO_FILE);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.PARQUET_FILE);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.DOT);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TO_ROW);
 
         // SYMBOLS
         SUPPORTED_SYMBOLS = new HashSet<>();

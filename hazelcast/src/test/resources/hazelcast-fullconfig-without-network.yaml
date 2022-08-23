@@ -618,12 +618,10 @@ hazelcast:
           - "["
           - com.
     compact-serialization:
-      enabled: true
-      registered-classes:
+      serializers:
+        - serializer: com.hazelcast.examples.DummyTypeSerializer
+      classes:
         - class: com.hazelcast.examples.DummyType
-        - class: com.hazelcast.examples.DummyTypeWithSerializer
-          type-name: dummy
-          serializer: com.hazelcast.examples.DummyTypeSerializer
 
   native-memory:
     allocator-type: STANDARD
@@ -974,6 +972,7 @@ hazelcast:
     persistence-enabled: false
     base-dir: data
     data-load-timeout-seconds: 30
+    cp-member-priority: -1
     raft-algorithm:
       leader-election-timeout-in-millis: 2000
       leader-heartbeat-period-in-millis: 5000

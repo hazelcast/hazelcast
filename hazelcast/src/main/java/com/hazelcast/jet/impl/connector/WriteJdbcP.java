@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.PredicateEx;
 import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.jet.JetException;
@@ -68,6 +69,7 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
 
     private final CommonDataSource dataSource;
     private final BiConsumerEx<? super PreparedStatement, ? super T> bindFn;
+    private final PredicateEx<SQLException> isNonTransientPredicate;
     private final String updateQuery;
     private final int batchLimit;
 
@@ -79,7 +81,7 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
     private boolean supportsBatch;
     private int batchCount;
 
-    private WriteJdbcP(
+    public WriteJdbcP(
             @Nonnull String updateQuery,
             @Nonnull CommonDataSource dataSource,
             @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
@@ -91,6 +93,23 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
         this.dataSource = dataSource;
         this.bindFn = bindFn;
         this.batchLimit = batchLimit;
+        this.isNonTransientPredicate = this::isNonTransientException;
+    }
+
+    public WriteJdbcP(
+            @Nonnull String updateQuery,
+            @Nonnull CommonDataSource dataSource,
+            @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
+            @Nonnull PredicateEx<SQLException> isNonTransientPredicate,
+            boolean exactlyOnce,
+            int batchLimit
+    ) {
+        super(exactlyOnce ? EXACTLY_ONCE : AT_LEAST_ONCE);
+        this.updateQuery = updateQuery;
+        this.dataSource = dataSource;
+        this.bindFn = bindFn;
+        this.batchLimit = batchLimit;
+        this.isNonTransientPredicate = isNonTransientPredicate;
     }
 
     /**
@@ -170,9 +189,7 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
             idleCount = 0;
             inbox.clear();
         } catch (SQLException e) {
-            if (e instanceof SQLNonTransientException
-                    || e.getCause() instanceof SQLNonTransientException
-                    || snapshotUtility.usesTransactionLifecycle()) {
+            if (isNonTransientPredicate.test(e) || snapshotUtility.usesTransactionLifecycle()) {
                 throw ExceptionUtil.rethrow(e);
             } else {
                 logger.warning("Exception during update", e);
@@ -222,12 +239,13 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
             supportsBatch = connection.getMetaData().supportsBatchUpdates();
             statement = connection.prepareStatement(updateQuery);
         } catch (SQLException e) {
-            if (snapshotUtility.usesTransactionLifecycle()) {
+            if (isNonTransientPredicate.test(e) || snapshotUtility.usesTransactionLifecycle()) {
                 throw ExceptionUtil.rethrow(e);
+            } else {
+                logger.warning("Exception when connecting and preparing the statement", e);
+                idleCount++;
+                return false;
             }
-            logger.warning("Exception when connecting and preparing the statement", e);
-            idleCount++;
-            return false;
         }
         return true;
     }
@@ -284,4 +302,12 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
             logger.warning("Exception when closing " + closeable + ", ignoring it: " + e, e);
         }
     }
+
+    private boolean isNonTransientException(SQLException e) {
+        SQLException next = e.getNextException();
+        return e instanceof SQLNonTransientException
+                || e.getCause() instanceof SQLNonTransientException
+                || (next != null && e != next && isNonTransientException(next));
+    }
+
 }

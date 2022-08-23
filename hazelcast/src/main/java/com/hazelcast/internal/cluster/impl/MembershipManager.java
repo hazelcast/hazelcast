@@ -22,6 +22,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.MembershipEvent;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.cp.internal.RaftService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.cluster.MemberInfo;
@@ -362,6 +363,7 @@ public class MembershipManager {
         sendMembershipEvents(currentMemberMap.getMembers(), addedMembers, !clusterService.isJoined());
 
         removeFromMissingMembers(members);
+        removeFromCPMissingMembers(membersView);
 
         clusterHeartbeatManager.heartbeat();
         clusterService.printMemberList();
@@ -1077,6 +1079,12 @@ public class MembershipManager {
             }
         }
         missingMembersRef.set(unmodifiableMap(m));
+    }
+
+    private void removeFromCPMissingMembers(MembersView membersView) {
+        RaftService raftService = nodeEngine.getService(RaftService.SERVICE_NAME);
+        List<MemberInfo> membersInfo = membersView.getMembers();
+        raftService.removeFromMissingMembers(membersInfo);
     }
 
     private boolean isHotRestartEnabled() {

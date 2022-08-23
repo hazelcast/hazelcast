@@ -279,8 +279,7 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
                     (SqlInOperator) call.getOperator()
             );
         }
-        throw QueryException.error(SqlErrorCode.GENERIC,
-                "Sub-queries are not supported for IN operator.");
+        throw QueryException.error("Sub-queries are not supported for IN operator.");
     }
 
     /**

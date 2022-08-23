@@ -19,7 +19,6 @@ package com.hazelcast.internal.dynamicconfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.DeviceConfig;
 import com.hazelcast.config.DynamicConfigurationConfig;
-import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.SplitBrainProtectionConfig;
 import com.hazelcast.config.WanReplicationConfig;
@@ -52,8 +51,6 @@ public class DynamicConfigVersionTest {
         nonDynamicConfigClasses.add(ListenerConfig.class);
         nonDynamicConfigClasses.add(DeviceConfig.class);
         nonDynamicConfigClasses.add(DynamicConfigurationConfig.class);
-        //TODO ExternalDataStoreConfig make it dynamic: https://hazelcast.atlassian.net/browse/HZ-1258
-        nonDynamicConfigClasses.add(ExternalDataStoreConfig.class);
         NON_DYNAMIC_CONFIG_CLASSES = nonDynamicConfigClasses;
     }
 
