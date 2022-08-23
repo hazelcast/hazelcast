@@ -29,7 +29,6 @@ import java.util.Set;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE_TIME;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.NO_NEW_WM;
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
@@ -81,7 +80,6 @@ public class KeyedWatermarkCoalescer {
         }
     }
 
-    // never return IDLE_MESSAGE_TIME, but may return normal wm / NO_NEW_WM
     public List<Watermark> observeWm(int queueIndex, Watermark watermark) {
         WatermarkCoalescer c = coalescer(watermark.key());
 
@@ -104,15 +102,11 @@ public class KeyedWatermarkCoalescer {
         }
 
         long newWmValue = c.observeWm(queueIndex, watermark.timestamp());
+        assert !c.idleMessagePending();
         if (newWmValue == NO_NEW_WM) {
-            return c.idleMessagePending()
-                    ? singletonList(IDLE_MESSAGE)
-                    : emptyList();
+            return emptyList();
         }
-        Watermark newWm = new Watermark(newWmValue, watermark.key());
-        return c.idleMessagePending()
-                ? asList(newWm, IDLE_MESSAGE)
-                : singletonList(newWm);
+        return singletonList(new Watermark(newWmValue, watermark.key()));
     }
 
     public long coalescedWm(byte key) {

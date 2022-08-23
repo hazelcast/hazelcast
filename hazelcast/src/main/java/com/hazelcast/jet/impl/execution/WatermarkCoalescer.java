@@ -42,7 +42,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNegative;
 public abstract class WatermarkCoalescer {
 
     public static final long IDLE_MESSAGE_TIME = Long.MAX_VALUE;
-    public static final Watermark IDLE_MESSAGE = new Watermark(Long.MAX_VALUE, (byte) 0);
+    public static final Watermark IDLE_MESSAGE = new Watermark(IDLE_MESSAGE_TIME, (byte) 0);
 
     static final long NO_NEW_WM = Long.MIN_VALUE;
 
@@ -283,14 +283,12 @@ public abstract class WatermarkCoalescer {
                 //      Then message from Q1 is received. Without this condition WM would stay at wm(1). With it,
                 //      wm(2) is forwarded.
                 allInputsAreIdle = true;
+                idleMessagePending = notDoneInputCount != 0;
                 final long topObservedWmLocal = topObservedWm.get();
                 if (topObservedWmLocal > lastEmittedWm.get()) {
-                    idleMessagePending = notDoneInputCount != 0;
                     lastEmittedWm.set(topObservedWmLocal);
                     return topObservedWmLocal;
                 }
-
-                idleMessagePending = notDoneInputCount != 0;
 
                 return NO_NEW_WM;
             }
