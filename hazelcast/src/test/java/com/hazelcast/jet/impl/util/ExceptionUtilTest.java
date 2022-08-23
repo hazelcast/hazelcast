@@ -33,7 +33,7 @@ import org.junit.runner.RunWith;
 
 import java.util.concurrent.ExecutionException;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.hasCauseOfType;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static org.hamcrest.core.StringContains.containsString;
@@ -105,36 +105,42 @@ public class ExceptionUtilTest extends JetTestSupport {
     }
 
     @Test
-    public void when_findingCauseOfExistingType_then_true() {
+    public void test_isOrHasCause_when_expectedTypeADeepCause_then_true() {
         Throwable throwable = new TargetNotMemberException("");
         for (int i = 0; i < 10; i++) {
             throwable = new Exception(throwable);
         }
-        assertTrue(hasCauseOfType(throwable, TargetNotMemberException.class));
+        assertTrue(isOrHasCause(throwable, TargetNotMemberException.class));
     }
 
     @Test
-    public void when_findingCauseOfNotExistingType_then_false() {
+    public void test_isOrHasCause_when_noMatch_then_false() {
         Throwable throwable = new Exception();
         for (int i = 0; i < 10; i++) {
             throwable = new Exception(throwable);
         }
-        assertFalse(hasCauseOfType(throwable, TargetNotMemberException.class));
+        assertFalse(isOrHasCause(throwable, TargetNotMemberException.class));
     }
 
     @Test
-    public void when_findingCauseInALoop_then_false() {
+    public void test_isOrHasCause_when_selfCause() {
         Throwable throwable = new Exception() {
             @Override
             public synchronized Throwable getCause() {
                 return this;
             }
         };
-        assertFalse(hasCauseOfType(throwable, TargetNotMemberException.class));
+        assertFalse(isOrHasCause(throwable, TargetNotMemberException.class));
     }
 
     @Test
-    public void when_findingCauseForNull_then_false() {
-        assertFalse(hasCauseOfType(null, TargetNotMemberException.class));
+    public void test_isOrHasCause_null() {
+        assertFalse(isOrHasCause(null, TargetNotMemberException.class));
+    }
+
+    @Test
+    public void test_isOrHasCause_when_exceptionHasExpectedType() {
+        RuntimeException e = new RuntimeException("foo");
+        assertTrue(isOrHasCause(e, RuntimeException.class));
     }
 }

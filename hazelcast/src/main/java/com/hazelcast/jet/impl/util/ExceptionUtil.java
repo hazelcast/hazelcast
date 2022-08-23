@@ -218,9 +218,10 @@ public final class ExceptionUtil {
     }
 
     /**
-     * Checks is cause of type {@code classToFind} exists in throwable {@code t}.
+     * Checks, if {@code t} itself or any exception in its cause chain is an
+     * instance of {@code classToFind}.
      */
-    public static boolean hasCauseOfType(Throwable t, Class<?> classToFind) {
+    public static boolean isOrHasCause(Throwable t, Class<?> classToFind) {
         while (t != null && t.getCause() != t && !classToFind.isAssignableFrom(t.getClass())) {
             t = t.getCause();
         }
