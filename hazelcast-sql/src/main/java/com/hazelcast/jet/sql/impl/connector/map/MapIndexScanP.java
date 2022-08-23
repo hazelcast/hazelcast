@@ -200,7 +200,9 @@ final class MapIndexScanP extends AbstractProcessor {
     }
 
     private boolean runHashIndex() {
-        for (; ; ) {
+        boolean allIdle;
+        do {
+            allIdle = true;
             for (int i = 0; i < splits.size(); ++i) {
                 Split split = splits.get(i);
                 try {
@@ -219,6 +221,7 @@ final class MapIndexScanP extends AbstractProcessor {
                         }
                     }
                 } else {
+                    allIdle = false;
                     if (tryEmit(split.currentRow)) {
                         split.remove();
                     } else {
@@ -226,7 +229,9 @@ final class MapIndexScanP extends AbstractProcessor {
                     }
                 }
             }
-        }
+        } while (!allIdle);
+
+        return false;
     }
 
     /**
