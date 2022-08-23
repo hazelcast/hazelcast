@@ -72,7 +72,7 @@ public final class SqlConsole {
     private static final int PRIMARY_COLOR = AttributedStyle.YELLOW;
     private static final int SECONDARY_COLOR = 12;
 
-    private static final int EXPLAIN_QUERY_OUTPUT_CAPACITY = 100;
+    private static final int EXPLAIN_ROWS_INITIAL_CAPACITY = 100;
 
     private SqlConsole() { }
 
@@ -244,7 +244,7 @@ public final class SqlConsole {
         assert rowMetadata.getColumnCount() == 1 : "Explain query must produce only one column";
         assert colWidths.length == 1 : "Explain query must produce only one column";
 
-        List<SqlRow> rows = new ArrayList<>(EXPLAIN_QUERY_OUTPUT_CAPACITY);
+        List<SqlRow> rows = new ArrayList<>(EXPLAIN_ROWS_INITIAL_CAPACITY);
         sqlResult.iterator().forEachRemaining(rows::add);
 
         int maxLength = 0;
