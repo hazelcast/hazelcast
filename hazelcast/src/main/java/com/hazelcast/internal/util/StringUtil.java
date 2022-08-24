@@ -39,7 +39,6 @@ import static java.lang.Character.toLowerCase;
 /**
  * Utility class for Strings.
  */
-@SuppressWarnings({"checkstyle:methodcount"})
 public final class StringUtil {
 
     /**
@@ -415,22 +414,6 @@ public final class StringUtil {
         return (str1 == null || str2 == null)
                 ? false
                 : (str1 == str2 || lowerCaseInternal(str1).equals(lowerCaseInternal(str2)));
-    }
-
-    /**
-     * Checks if the string {@code str} starts with the string {@code prefix} ignoring the casing.
-     *
-     * @param str string to check ignoring the casing
-     * @param prefix string to check whether it is the prefix of the other
-     *              parameter ignoring the casing
-     * @return true if {@code str} starts with {@code prefix} ignoring the casing,
-     * otherwise false
-     */
-    public static boolean startsWithIgnoreCase(String str, String prefix) {
-        if (str == null || prefix == null) {
-            return false;
-        }
-        return lowerCaseInternal(str).startsWith(lowerCaseInternal(prefix));
     }
 
     /**

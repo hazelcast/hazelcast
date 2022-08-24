@@ -52,6 +52,7 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -59,7 +60,6 @@ import static com.hazelcast.client.console.HazelcastCommandLine.getClusterMetada
 import static com.hazelcast.client.console.HazelcastCommandLine.getHazelcastClientInstanceImpl;
 import static com.hazelcast.internal.util.StringUtil.equalsIgnoreCase;
 import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
-import static com.hazelcast.internal.util.StringUtil.startsWithIgnoreCase;
 import static com.hazelcast.internal.util.StringUtil.trim;
 
 @SuppressWarnings({
@@ -71,8 +71,8 @@ import static com.hazelcast.internal.util.StringUtil.trim;
 public final class SqlConsole {
     private static final int PRIMARY_COLOR = AttributedStyle.YELLOW;
     private static final int SECONDARY_COLOR = 12;
-
     private static final int EXPLAIN_ROWS_INITIAL_CAPACITY = 100;
+    private static final List<SqlRow> ROWS_BUFFER = new ArrayList<>(EXPLAIN_ROWS_INITIAL_CAPACITY);
 
     private SqlConsole() { }
 
@@ -192,7 +192,7 @@ public final class SqlConsole {
             int[] colWidths = determineColumnWidths(rowMetadata);
             Alignment[] alignments = determineAlignments(rowMetadata);
 
-            boolean isExplainQuery = startsWithIgnoreCase(command, "explain");
+            boolean isExplainQuery = command.toLowerCase(Locale.ROOT).startsWith("explain");
             int rowCount = 0;
             if (isExplainQuery) {
                 // Explain query result will be handled differently
@@ -244,13 +244,12 @@ public final class SqlConsole {
         assert rowMetadata.getColumnCount() == 1 : "Explain query must produce only one column";
         assert colWidths.length == 1 : "Explain query must produce only one column";
 
-        List<SqlRow> rows = new ArrayList<>(EXPLAIN_ROWS_INITIAL_CAPACITY);
-        sqlResult.iterator().forEachRemaining(rows::add);
+        ROWS_BUFFER.clear();
+        sqlResult.iterator().forEachRemaining(ROWS_BUFFER::add);
 
         int maxLength = 0;
-
         // One pass to compute max length for explain query rows
-        for (SqlRow row : rows) {
+        for (SqlRow row : ROWS_BUFFER) {
             String columnValue = row.getObject(0);
             maxLength = Math.max(maxLength, columnValue.length());
         }
@@ -259,11 +258,11 @@ public final class SqlConsole {
         printMetadataInfo(rowMetadata, colWidths, alignments, out);
 
         // Second pass to print the rows
-        for (SqlRow row : rows) {
+        for (SqlRow row : ROWS_BUFFER) {
             printRow(row, colWidths, alignments, out);
         }
 
-        return rows.size();
+        return ROWS_BUFFER.size();
     }
 
     private static String sqlStartingPrompt(HazelcastInstance hz) {
