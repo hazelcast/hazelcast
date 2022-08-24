@@ -19,8 +19,10 @@ package com.hazelcast.jet.sql.impl.type;
 import com.hazelcast.config.Config;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
+import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.jet.sql.impl.schema.TablesStorage;
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlRow;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -86,6 +88,26 @@ public class NestedTypesDDLTest extends SqlTestSupport {
                 .hasMessage("Type does not exist: Foo");
 
         execute("DROP TYPE IF EXISTS Foo");
+    }
+
+    @Test
+    public void test_createTwoTypesForSameClass() {
+        execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName()));
+        execute(format("CREATE TYPE SecondType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName()));
+
+        createMapping("m", Long.class, FirstType.class);
+        createMapping("m2", Long.class, Person.class);
+        instance().getSql().execute("select m.this.name from m");
+        for (SqlRow r : instance().getSql().execute("select table_name, column_name, data_type from information_schema.columns")) {
+            System.out.println(r);
+        }
+        System.out.println("---");
+
+        for (SqlRow r : instance().getSql().execute("select table_name, column_name, data_type from information_schema.columns")) {
+            System.out.println(r);
+        }
+        System.out.println("---");
+
     }
 
     void execute(String sql) {
