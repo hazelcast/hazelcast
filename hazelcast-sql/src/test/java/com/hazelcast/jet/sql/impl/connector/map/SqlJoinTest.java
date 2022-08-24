@@ -32,7 +32,6 @@ import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
-import java.io.Serializable;
 import java.util.Collection;
 import java.util.List;
 
@@ -678,23 +677,15 @@ public class SqlJoinTest {
 
         @Test
         public void test_whenNaturalJoin_noErrorShouldHappen() {
-            createMapping(instance(), "Hzl_Transaction", Long.class, Transaction.class);
-            createMapping(instance(), "Hzl_Account", Long.class, Account.class);
+            createMapping(instance(), "t1", Long.class, Person.class);
+            createMapping(instance(), "t2", Long.class, Person.class);
 
-            sqlService.execute("SELECT * FROM Hzl_Transaction JOIN Hzl_Account USING(bankId, accountNumber)");
-            sqlService.execute("SELECT * FROM Hzl_Transaction NATURAL JOIN Hzl_Account");
-        }
+            sqlService.execute("insert into t1(__key, id, name) values(42, 420, 'foo')");
+            sqlService.execute("insert into t2(__key, id, name) values(43, 430, 'foo')");
 
-        public static class Transaction implements Serializable {
-            public String bankId;
-            public String accountNumber;
-            public int amount;
-        }
-
-        public static class Account implements Serializable {
-            public String bankId;
-            public String accountNumber;
-            public int balance;
+            assertRowsAnyOrder("SELECT * FROM t1 JOIN t2 USING(name)", rows(5,
+                    "foo", 42L, 420, 43L, 430));
+            assertRowsAnyOrder("SELECT * FROM t1 NATURAL JOIN t2", rows(5));
         }
 
         @Test
