@@ -292,6 +292,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
     @Override
     public void destroy() {
+        awaitInitFinished();
         dropMapping(mapping);
     }
 
