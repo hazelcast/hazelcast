@@ -59,7 +59,7 @@ public class TablesStorage {
             .setBackupCount(MapConfig.MAX_BACKUP_COUNT)
             .setTimeToLiveSeconds(INFINITE_TTL_SECONDS)
             .setReadBackupData(true)
-            .setMergePolicyConfig(new MergePolicyConfig().setPolicy(DiscardMergePolicy.class.getName()))
+            .setMergePolicyConfig(new MergePolicyConfig().setPolicy(LatestUpdateMergePolicy.class.getName()))
             .setStatisticsEnabled(true);
 
     private static final int MAX_CHECK_ATTEMPTS = 5;
