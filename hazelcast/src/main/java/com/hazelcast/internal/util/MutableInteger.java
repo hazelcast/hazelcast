@@ -39,4 +39,9 @@ public class MutableInteger {
     public int getAndInc() {
         return value++;
     }
+
+    public int addAndGet(int value) {
+        this.value += value;
+        return this.value;
+    }
 }
