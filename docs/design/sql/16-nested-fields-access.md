@@ -18,6 +18,28 @@ Hazelcast is most commonly used by Java shops, which tend to store complex
 objects. This is contrary to traditional RDBMS, where denormalized structures
 are typically used. This made the feature very useful for our user base.
 
+User Defined Types are meant to provide users with ability to query nested
+fields inside their OBJECT mappings, by providing both SQL Backend and
+Frontend with necessary type information required for validation and execution
+of queries.
+
+The original motivation was to support queries like `SELECT
+(organization).office.name FROM users` where `organization` would be an OBJECT
+field itself (e.g. a Java class or a nested GenericRecord) with its own
+columns/fields (here and thereafter Column and Field are used interchangeably).
+This was also expanded to include ability to perform UPDATE/INSERT queries as
+well as support for Portable and Compact MAPPINGs in addition to Java ones.
+
+## Terminology
+
+|Term|Definition|
+|---|---|
+|||
+|UDT|**User Defined Types**, also known as Custom Types, also previously known as Nested Type and Nested Fields Types|
+|CRec Type| Cyclically Recurrent UDTs, UDT type hierarchies with type or instance-level cycles|
+|Nested Field|A column (field) inside of mapped OBJECT column (field)|
+|Nested Type| In this document, synonymous to UDT|
+
 ## Goals
 
 The feature should provide:
@@ -99,6 +121,12 @@ The types are schema objects. They share the namespace with tables and views,
 and are scoped to schemas. Currently, they can be created only in `public`
 schema, as all other objects.
 
+### No mixing of formats
+
+Type Formats can not be mixed together. For example a `java` type can not be
+used as column inside of `portable` type or mapping or vice-versa. Violations
+are reported at runtime when using such mapping/type in a statement.
+
 ## References to types are symbolic
 
 - validated at run-time (also in mappings?)
@@ -179,16 +207,75 @@ WHERE ...;
 
 ### Issues with `CAST(field AS ROW)`
 
-## SQL standards
-
-I actually didn't consult the standard, but the implementation in major databases.
+For some reason we weren't able to implement this (TODO ivan).
 
 # Implementation details
 
+## CREATE/DROP TYPE statement
+
+Syntax:
+```sql
+CREATE [OR REPLACE] TYPE [IF NOT EXISTS] <typeName> [<columnList>] 
+OPTIONS ('format'='<typeFormat>',
+  <...other options relevant for the chosen format...>)
+
+<columnList>:
+(
+    columnName ColumnType,
+    [<... more columns ...>]
+)
+
+DROP TYPE [IF EXISTS] <typeName>
+```
+
 ## Catalog storage
+
+Types are stored in `__sql.catalog` map, along with mappings and views. This
+ensures name uniqueness.
+
+As with other SQL metadata, we don't enforce mutual dependencies. For example, a
+type can be dropped even if it is used in some mapping - when this happens, the
+mapping then becomes invalid. (TODO test this)
 
 ## Circular dependencies
 
+Because types are validated when used in a statement, it is possible to create
+mutually (or circularly) dependent types.
+
+We distinguish circular dependencies in types and in instances.
+
 ### Circular dependencies in types
 
+This happens when from type `A` exists a field path that that is also of type
+`A`. Most simple example is a self-reference, such as:
+
+```sql
+CREATE TYPE GraphNode(connectedNodes GraphNode[]) 
+```
+
+Another example is a chain: `A` has a field of type `B`, `B` has a field of type
+`C` and `C` has a field of type `A`; then if the type of field `f` is `A`, then
+property path `f.b.c.a` is also of type `A`.
+
+It is possible to create such types in SQL because the types are validated only
+when used in a statement, so it's possible to create a type that has a field
+with type that doesn't yet exist.
+
+Such types pose the risk of infinite recursion if the code follows the type
+path, without checking for types that have already been seen by the recursion.
+In fact, one such issue within Calcite codebase prevented us from importing DML
+that involves such types.
+
 ### Circular dependencies in instances
+
+A circular dependency in instances happens when from instance `a` there exists a
+property path that refers to the same instance. It is not possible to create
+such values through SQL, because it is not possible to obtain a reference to a
+value that can be assigned elsewhere; values are always copied by value.
+However, it is possible to encounter such data that was created using one of the
+clients, and the implementation has to deal with it.
+
+The `TO_ROW` function raises an error when it encounters such value. We could
+possibly refer to the same nested `RowValue` at this conversion, but for
+example, the conversion to `VARCHAR` of such a value would be infinite because
+in it we cannot refer to another nested value in this way.
