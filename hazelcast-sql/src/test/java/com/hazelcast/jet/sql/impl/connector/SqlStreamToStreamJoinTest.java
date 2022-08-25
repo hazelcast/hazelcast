@@ -71,9 +71,9 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
         );
 
         sqlService.execute("CREATE VIEW s1 AS " +
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.001' SECOND))");
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.002' SECOND))");
         sqlService.execute("CREATE VIEW s2 AS " +
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), INTERVAL '0.001' SECOND))");
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(b), INTERVAL '0.002' SECOND))");
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM s1 JOIN s2 ON s2.b BETWEEN s1.a AND s1.a + INTERVAL '0.002' SECOND ",
@@ -96,7 +96,6 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 singletonList("a"),
                 singletonList(TIMESTAMP_WITH_TIME_ZONE),
                 row(timestampTz(0L)),
-                row(timestampTz(2L)),
                 row(timestampTz(3L)),
                 row(timestampTz(4L)),
                 row(timestampTz(5L))
@@ -110,9 +109,7 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 singletonList(TIMESTAMP_WITH_TIME_ZONE),
                 row(timestampTz(2L)),
                 row(timestampTz(5L)),
-                row(timestampTz(6L)),
-                row(timestampTz(7L)),
-                row(timestampTz(10L))
+                row(timestampTz(7L))
         );
 
         sqlService.execute("CREATE VIEW s1 AS " +
@@ -123,12 +120,10 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM s1 LEFT JOIN s2 ON s2.b BETWEEN s1.a AND s1.a + INTERVAL '0.001' SECOND ",
                 asList(
-//                        new Row(timestampTz(0L), null),
-                        new Row(timestampTz(2L), timestampTz(2L)),
-//                        new Row(timestampTz(3L), null),
+                        new Row(timestampTz(0L), null),
+                        new Row(timestampTz(3L), null),
                         new Row(timestampTz(4L), timestampTz(5L)),
-                        new Row(timestampTz(5L), timestampTz(5L)),
-                        new Row(timestampTz(5L), timestampTz(6L))
+                        new Row(timestampTz(5L), timestampTz(5L))
                 )
         );
     }
@@ -143,9 +138,7 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 singletonList(TIMESTAMP_WITH_TIME_ZONE),
                 row(timestampTz(2L)),
                 row(timestampTz(5L)),
-                row(timestampTz(6L)),
-                row(timestampTz(7L)),
-                row(timestampTz(10L))
+                row(timestampTz(7L))
         );
 
         String stream2 = "stream2";
@@ -155,7 +148,6 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 singletonList("b"),
                 singletonList(TIMESTAMP_WITH_TIME_ZONE),
                 row(timestampTz(0L)),
-                row(timestampTz(2L)),
                 row(timestampTz(3L)),
                 row(timestampTz(4L)),
                 row(timestampTz(5L))
@@ -169,12 +161,10 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM s1 RIGHT JOIN s2 ON s1.a BETWEEN s2.b AND s2.b + INTERVAL '0.001' SECOND ",
                 asList(
-//                        new Row(null, timestampTz(0L)),
-                        new Row(timestampTz(2L), timestampTz(2L)),
-//                        new Row(null, timestampTz(3L)),
+                        new Row(null, timestampTz(0L)),
+                        new Row(null, timestampTz(3L)),
                         new Row(timestampTz(5L), timestampTz(4L)),
-                        new Row(timestampTz(5L), timestampTz(5L)),
-                        new Row(timestampTz(6L), timestampTz(5L))
+                        new Row(timestampTz(5L), timestampTz(5L))
                 )
         );
     }
@@ -276,7 +266,6 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 stream,
                 asList("a", "b"),
                 asList(TIMESTAMP, INTEGER),
-                row(timestamp(8L), 8),
                 row(timestamp(9L), 9),
                 row(timestamp(11L), 11),
                 row(timestamp(12L), 12),
@@ -291,16 +280,17 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 stream2,
                 asList("x", "y"),
                 asList(TIMESTAMP, INTEGER),
+                row(timestamp(9L), 9),
                 row(timestamp(10L), 10),
                 row(timestamp(11L), 11),
                 row(timestamp(12L), 12),
                 row(timestamp(13L), 13),
                 row(timestamp(14L), 14),
-                row(timestamp(25L), 25)
+                row(timestamp(15L), 15)
         );
 
         sqlService.execute("CREATE VIEW s1 AS " +
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.001' SECOND))");
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0.002' SECOND))");
         sqlService.execute("CREATE VIEW s2 AS " +
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream2, DESCRIPTOR(x), INTERVAL '0.002' SECOND))");
 
@@ -308,11 +298,11 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 "SELECT b, y FROM s1" +
                         " JOIN s2 ON s2.x BETWEEN s1.a AND s1.a + INTERVAL '0.002' SECOND WHERE b % 2 = 0 ",
                 asList(
-                        new Row(8, 10),
                         new Row(12, 12),
                         new Row(12, 13),
                         new Row(12, 14),
-                        new Row(14, 14)
+                        new Row(14, 14),
+                        new Row(14, 15)
                 )
         );
     }
