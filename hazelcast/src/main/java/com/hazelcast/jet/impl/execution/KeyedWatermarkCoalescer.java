@@ -40,9 +40,11 @@ public class KeyedWatermarkCoalescer {
     private final int queueCount;
     private final Map<Byte, WatermarkCoalescer> coalescers = new HashMap<>();
     private final Set<Integer> doneQueues = new HashSet<>();
+    private final boolean[] idleQueues;
 
     KeyedWatermarkCoalescer(int queueCount) {
         this.queueCount = queueCount;
+        this.idleQueues = new boolean[queueCount];
     }
 
     public Set<Byte> keys() {
@@ -81,11 +83,23 @@ public class KeyedWatermarkCoalescer {
     }
 
     public List<Watermark> observeWm(int queueIndex, Watermark watermark) {
-        WatermarkCoalescer c = coalescer(watermark.key());
-
         if (watermark.equals(IDLE_MESSAGE)) {
+            idleQueues[queueIndex] = true;
+            if (coalescers.isEmpty()) {
+                boolean allIdle = true;
+                for (boolean idleQueue : idleQueues) {
+                    allIdle &= idleQueue;
+                }
+                if (allIdle) {
+                    return singletonList(IDLE_MESSAGE);
+                } else {
+                    return emptyList();
+                }
+            }
+
             boolean idleMessagePending = true;
             List<Watermark> watermarks = new ArrayList<>();
+
             for (Entry<Byte, WatermarkCoalescer> coalescerEntry : coalescers.entrySet()) {
                 long observedWm = coalescerEntry.getValue().observeWm(queueIndex, watermark.timestamp());
                 assert observedWm != IDLE_MESSAGE_TIME;
@@ -99,6 +113,18 @@ public class KeyedWatermarkCoalescer {
                 watermarks.add(IDLE_MESSAGE);
             }
             return watermarks;
+        }
+
+        idleQueues[queueIndex] = false;
+
+        boolean coalescerExistsBefore = coalescers.containsKey(watermark.key());
+        WatermarkCoalescer c = coalescer(watermark.key());
+        if (!coalescerExistsBefore) {
+            for (int i = 0; i < idleQueues.length; ++i) {
+                if (idleQueues[i]) {
+                    c.observeWm(i, IDLE_MESSAGE_TIME);
+                }
+            }
         }
 
         long newWmValue = c.observeWm(queueIndex, watermark.timestamp());

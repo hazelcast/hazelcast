@@ -30,6 +30,7 @@ import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -62,10 +63,9 @@ public class KeyedWatermarkCoalescerTest extends JetTestSupport {
         // receive a wm on queue 0, queue 0 active again. Nothing forwarded, wm missing on queue 1
         assertEquals(emptyList(), kwc.observeWm(0, wm(10, (byte) 42)));
 
-        // receive an idle message on queue 1. Since queue 0 is active and queue 1 idle, the previous wm from
-        // queue 0 is forwarded
+        // receive an idle message on queue 1
+        // since queue 0 is active and queue 1 idle, the previous wm from queue 0 is forwarded
         assertEquals(singletonList(wm(10, (byte) 42)), kwc.observeWm(1, IDLE_MESSAGE));
-
         assertEquals(singleton((byte) 42), kwc.keys());
     }
 
@@ -73,6 +73,8 @@ public class KeyedWatermarkCoalescerTest extends JetTestSupport {
     public void test_initialScenario3_idleStatusTransferredToNewWmKey() {
         // idle message on queue 0, no WM key known yet
         assertEquals(emptyList(), kwc.observeWm(0, IDLE_MESSAGE));
+        assertTrue(kwc.keys().isEmpty());
+
         // WM on queue 1, new WM key. Since queue 0 is idle, it should be forwarded immediately
         assertEquals(singletonList(wm(10, (byte) 42)), kwc.observeWm(1, wm(10, (byte) 42)));
 
