@@ -51,6 +51,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -270,7 +271,7 @@ public class JetClassLoaderTest extends JetTestSupport {
 
     private static class LeakClassLoaderPS implements ProcessorSupplier {
 
-        private static final Map<String, List<ClassLoader>> classLoaders = new HashMap<>();
+        private static final Map<String, List<ClassLoader>> classLoaders = new ConcurrentHashMap<>();
         private volatile boolean blocks = false;
 
         LeakClassLoaderPS withBlock() {
@@ -329,7 +330,7 @@ public class JetClassLoaderTest extends JetTestSupport {
 
     private static class LeakClassLoaderPMS implements ProcessorMetaSupplier {
 
-        private static final Map<String, List<ClassLoader>> classLoaders = new HashMap<>();
+        private static final Map<String, List<ClassLoader>> classLoaders = new ConcurrentHashMap<>();
 
         @Override
         public void init(@Nonnull Context context) throws Exception {
