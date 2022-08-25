@@ -86,7 +86,7 @@ public class TcpIpSplitBrainAutoDiscoveryTest extends HazelcastTestSupport {
     }
 
     /**
-     * Regression test (<a href="https://github.com/hazelcast/hazelcast/issues/20331">#20331</a>) for a case where there there
+     * Regression test (<a href="https://github.com/hazelcast/hazelcast/issues/20331">#20331</a>) for a case where there
      * is an even number of members in the cluster and a split brain happens. When the two splits have the same number of
      * members, the merge (healing) is initiated from one side based on the lexicographic order of the master address. If the
      * "initiator" doesn't know the master address from the second split, but the other split knows the "initiator", the splits
