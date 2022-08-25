@@ -35,7 +35,7 @@ import com.hazelcast.replicatedmap.impl.operation.GetOperation;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.view.View;
 
@@ -47,7 +47,7 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.config.MapConfig.INFINITE_TTL_SECONDS;
+import static com.hazelcast.config.MapConfig.DISABLED_TTL_SECONDS;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
@@ -57,10 +57,9 @@ public class TablesStorage {
     static final MapConfig SQL_CATALOG_MAP_CONFIG = new MapConfig()
             .setName(CATALOG_MAP_NAME)
             .setBackupCount(MapConfig.MAX_BACKUP_COUNT)
-            .setTimeToLiveSeconds(INFINITE_TTL_SECONDS)
+            .setTimeToLiveSeconds(DISABLED_TTL_SECONDS)
             .setReadBackupData(true)
-            .setMergePolicyConfig(new MergePolicyConfig().setPolicy(LatestUpdateMergePolicy.class.getName()))
-            .setStatisticsEnabled(true);
+            .setMergePolicyConfig(new MergePolicyConfig().setPolicy(LatestUpdateMergePolicy.class.getName()));
 
     private static final int MAX_CHECK_ATTEMPTS = 5;
     private static final long SLEEP_MILLIS = 100;
