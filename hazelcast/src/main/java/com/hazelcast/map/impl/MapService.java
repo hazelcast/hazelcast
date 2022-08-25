@@ -370,7 +370,7 @@ public class MapService implements ManagedService, ChunkedMigrationAwareService,
                 }
 
                 MutableLong count = offloaded.computeIfAbsent(recordStore.getName(), s -> new MutableLong());
-                count.value += recordStore.getMapStoreOffloadedOperationsCount();
+                count.addAndGet(recordStore.getMapStoreOffloadedOperationsCount());
             }
         }
 

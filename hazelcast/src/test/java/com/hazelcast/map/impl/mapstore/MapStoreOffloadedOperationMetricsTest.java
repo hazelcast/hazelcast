@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
+import com.hazelcast.internal.util.MutableLong;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.MapStoreAdapter;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -33,7 +34,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.testcontainers.shaded.org.apache.commons.lang3.mutable.MutableInt;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -123,7 +123,7 @@ public class MapStoreOffloadedOperationMetricsTest extends HazelcastTestSupport 
 
         sleepSeconds(2);
 
-        MutableInt observedOffloadedOpCount = new MutableInt();
+        MutableLong observedOffloadedOpCount = new MutableLong();
 
         assertTrueEventually(() -> {
             ProbeCatcher mapWithMapStore = new ProbeCatcher();
@@ -146,7 +146,7 @@ public class MapStoreOffloadedOperationMetricsTest extends HazelcastTestSupport 
 
         sleepSeconds(2);
 
-        MutableInt observedOffloadedOpCount = new MutableInt();
+        MutableLong observedOffloadedOpCount = new MutableLong();
 
         assertTrueAllTheTime(() -> {
             ProbeCatcher mapWithoutMapStore = new ProbeCatcher();

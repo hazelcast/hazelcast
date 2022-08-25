@@ -21,6 +21,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
+import com.hazelcast.internal.util.MutableLong;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -32,7 +33,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
-import org.testcontainers.shaded.org.apache.commons.lang3.mutable.MutableInt;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -76,7 +76,7 @@ public class MapStoreForceOffloadAllOperationTest extends HazelcastTestSupport {
                     Integer.toString(i)).toCompletableFuture());
         }
 
-        MutableInt observedOffloadedOpCount = new MutableInt();
+        MutableLong observedOffloadedOpCount = new MutableLong();
 
         assertTrueEventually(() -> {
             ProbeCatcher mapWithMapStore = new ProbeCatcher();
