@@ -59,7 +59,8 @@ public class TablesStorage {
             .setBackupCount(MapConfig.MAX_BACKUP_COUNT)
             .setTimeToLiveSeconds(DISABLED_TTL_SECONDS)
             .setReadBackupData(true)
-            .setMergePolicyConfig(new MergePolicyConfig().setPolicy(LatestUpdateMergePolicy.class.getName()));
+            .setMergePolicyConfig(new MergePolicyConfig().setPolicy(LatestUpdateMergePolicy.class.getName()))
+            .setPerEntryStatsEnabled(true);
 
     private static final int MAX_CHECK_ATTEMPTS = 5;
     private static final long SLEEP_MILLIS = 100;
