@@ -19,6 +19,8 @@ package com.hazelcast.jet.sql.impl.schema;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
+import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.cluster.Versions;
@@ -33,6 +35,7 @@ import com.hazelcast.replicatedmap.impl.operation.GetOperation;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
+import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
@@ -45,11 +48,20 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.config.MapConfig.DISABLED_TTL_SECONDS;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 public class TablesStorage {
     static final String CATALOG_MAP_NAME = "__sql.catalog";
+
+    static final MapConfig SQL_CATALOG_MAP_CONFIG = new MapConfig()
+            .setName(CATALOG_MAP_NAME)
+            .setBackupCount(MapConfig.MAX_BACKUP_COUNT)
+            .setTimeToLiveSeconds(DISABLED_TTL_SECONDS)
+            .setReadBackupData(true)
+            .setMergePolicyConfig(new MergePolicyConfig().setPolicy(LatestUpdateMergePolicy.class.getName()))
+            .setPerEntryStatsEnabled(true);
 
     private static final int MAX_CHECK_ATTEMPTS = 5;
     private static final long SLEEP_MILLIS = 100;
@@ -195,6 +207,8 @@ public class TablesStorage {
     }
 
     void initializeWithListener(EntryListener<String, Object> listener) {
+        nodeEngine.getConfig().addMapConfig(SQL_CATALOG_MAP_CONFIG);
+
         boolean useOldStorage = useOldStorage();
 
         if (!useOldStorage) {
