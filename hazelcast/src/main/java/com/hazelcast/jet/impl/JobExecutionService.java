@@ -77,6 +77,7 @@ import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.JetServiceBackend.SERVICE_NAME;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.EXECUTION;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
@@ -650,7 +651,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                                                             .createInvocationBuilder(SERVICE_NAME, op, en.getKey())
                                                             .invoke();
                 future.whenComplete((r, t) -> {
-                    if (t instanceof TargetNotMemberException) {
+                    if (isOrHasCause(t, TargetNotMemberException.class)) {
                         // if the target isn't a member, then all executions are unknown
                         r = executionIds;
                     } else if (t != null) {
