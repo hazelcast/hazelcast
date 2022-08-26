@@ -79,7 +79,6 @@ import static com.hazelcast.jet.sql.SqlBasicTest.SerializationMode;
 import static com.hazelcast.jet.sql.SqlBasicTest.SerializationMode.IDENTIFIED_DATA_SERIALIZABLE;
 import static com.hazelcast.jet.sql.SqlBasicTest.SerializationMode.SERIALIZABLE;
 import static com.hazelcast.jet.sql.SqlBasicTest.serializationConfig;
-import static java.util.Collections.frequency;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
