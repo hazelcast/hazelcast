@@ -77,8 +77,8 @@ class CardinalityEstimatorContainerCollector extends AbstractNamedContainerColle
     }
 
     @Override
-    protected int getMergingValueCount() {
-        int size = 0;
+    protected long getMergingValueCount() {
+        long size = 0;
         for (Collection<CardinalityEstimatorContainer> containers : getCollectedContainers().values()) {
             size += containers.size();
         }
