@@ -26,8 +26,12 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.util.Collections;
 import java.util.concurrent.ExecutionException;
 
+import static com.hazelcast.internal.util.ExceptionUtil.rethrowFromCollection;
+import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -115,6 +119,27 @@ public class ExceptionUtilTest extends HazelcastTestSupport {
         assertNoAsyncTrace(result);
     }
 
+    @Test
+    public void testRethrowFromCollection_when_notIgnoredThrowableOnList_then_isRethrown() {
+        assertThatExceptionOfType(TestException.class)
+                .isThrownBy(() -> {
+                    rethrowFromCollection(Collections.singleton(new TestException()));
+                });
+        assertThatExceptionOfType(TestException.class)
+                .isThrownBy(() -> {
+                    rethrowFromCollection(Collections.singleton(new TestException()), NullPointerException.class);
+                });
+        assertThatExceptionOfType(TestException.class)
+                .isThrownBy(() -> {
+                    rethrowFromCollection(asList(new NullPointerException(), new TestException()), NullPointerException.class);
+                });
+    }
+
+    @Test
+    public void testRethrowFromCollection_when_ignoredThrowableIsOnlyOnList_then_() throws Throwable {
+        rethrowFromCollection(Collections.singleton(new TestException()), TestException.class);
+    }
+
     private void assertNoAsyncTrace(Throwable result) {
         for (StackTraceElement stackTraceElement : result.getStackTrace()) {
             if (stackTraceElement.getClassName().equals(ExceptionUtil.EXCEPTION_SEPARATOR)) {
@@ -132,5 +157,8 @@ public class ExceptionUtilTest extends HazelcastTestSupport {
         private NonStandardException(Integer iDontCareAboutStandardSignatures, Throwable cause) {
             super("" + iDontCareAboutStandardSignatures, cause);
         }
+    }
+
+    private static class TestException extends Exception {
     }
 }

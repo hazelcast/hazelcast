@@ -36,13 +36,12 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JetGetJobSummaryListMessageTaskExceptionTest extends AbstractJetMultiTargetMessageTaskTest {
-
     public static final JobSummary SUMMARY = new JobSummary(true, 0, 0, "", JobStatus.RUNNING, 0, 0, "");
 
     @Test
-    public void when_reducingWithMemberLeftException_then_exceptionIsNotRethrown() throws Throwable {
+    public void when_reducingWithIgnoredExceptions_then_exceptionIsNotRethrown() throws Throwable {
         JetGetJobSummaryListMessageTask task = new JetGetJobSummaryListMessageTask(null, node, connection);
-        assertEquals(0, ((Collection<?>) task.reduce(MEMBER_LEFT_EXCEPTION_RESULT)).size());
+        assertEquals(0, ((Collection<?>) task.reduce(IGNORED_EXCEPTIONS_RESULT)).size());
     }
 
     @Test

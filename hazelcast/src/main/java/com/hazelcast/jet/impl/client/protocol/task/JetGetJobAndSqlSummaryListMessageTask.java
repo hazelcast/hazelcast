@@ -20,6 +20,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobAndSqlSummaryListCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.jet.impl.JetServiceBackend;
@@ -27,6 +28,7 @@ import com.hazelcast.jet.impl.JobAndSqlSummary;
 import com.hazelcast.jet.impl.operation.GetJobAndSqlSummaryListOperation;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.JobPermission;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.security.Permission;
@@ -37,6 +39,7 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrowFromCollection;
 import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
 import static com.hazelcast.jet.impl.util.Util.distinctBy;
 
@@ -60,7 +63,7 @@ public class JetGetJobAndSqlSummaryListMessageTask extends AbstractMultiTargetMe
     @SuppressWarnings("unchecked")
     @Override
     protected Object reduce(Map<Member, Object> map) throws Throwable {
-        rethrowInReduce(map, true);
+        rethrowFromCollection(map.values(), TargetNotMemberException.class, MemberLeftException.class);
         return map.values().stream()
                 .filter(item -> item instanceof List<?>)
                 .flatMap(item -> ((List<JobAndSqlSummary>) item).stream())

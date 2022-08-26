@@ -23,20 +23,24 @@ import com.hazelcast.instance.SimpleMemberImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.core.TestUtil;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.Accessors;
 import com.hazelcast.test.mocknetwork.MockServerConnection;
 import org.junit.Before;
 
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 public abstract class AbstractJetMultiTargetMessageTaskTest extends JetTestSupport {
     protected static final String OTHER_EXCEPTION_MESSAGE = "null";
-    protected static final Map<Member, Object> MEMBER_LEFT_EXCEPTION_RESULT =
-            Collections.singletonMap(new SimpleMemberImpl(), new MemberLeftException());
+    protected static final Map<Member, Object> IGNORED_EXCEPTIONS_RESULT =
+            TestUtil.createMap(
+                    new SimpleMemberImpl(), new MemberLeftException(),
+                    new SimpleMemberImpl(), new TargetNotMemberException("")
+            );
     protected static final Map<Member, Object> OTHER_EXCEPTION_RESULT =
             Collections.singletonMap(new SimpleMemberImpl(), new OtherException(OTHER_EXCEPTION_MESSAGE));
 
@@ -64,9 +68,9 @@ public abstract class AbstractJetMultiTargetMessageTaskTest extends JetTestSuppo
 
     protected Map<Member, Object> prepareDuplicatedResult(Object result) {
         List<?> summaryList = Collections.singletonList(result);
-        Map<Member, Object> duplicatedResults = new HashMap<>();
-        duplicatedResults.put(new SimpleMemberImpl(), summaryList);
-        duplicatedResults.put(new SimpleMemberImpl(), summaryList);
-        return duplicatedResults;
+        return TestUtil.createMap(
+                new SimpleMemberImpl(), summaryList,
+                new SimpleMemberImpl(), summaryList
+        );
     }
 }
