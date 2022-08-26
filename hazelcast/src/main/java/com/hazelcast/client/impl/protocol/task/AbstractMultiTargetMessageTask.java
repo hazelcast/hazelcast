@@ -18,6 +18,7 @@ package com.hazelcast.client.impl.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
@@ -72,6 +73,17 @@ public abstract class AbstractMultiTargetMessageTask<P> extends AbstractAsyncMes
         }
 
         return finalResult;
+    }
+
+    protected void rethrowInReduce(Map<Member, Object> map, boolean ignoreMemberLeftException) throws Throwable {
+        for (Object item : map.values()) {
+            if (item instanceof Throwable) {
+                if (ignoreMemberLeftException && (item instanceof MemberLeftException)) {
+                    continue;
+                }
+                throw (Throwable) item;
+            }
+        }
     }
 
     protected abstract Supplier<Operation> createOperationSupplier();

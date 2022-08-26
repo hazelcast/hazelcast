@@ -60,7 +60,9 @@ public class JetGetJobSummaryListMessageTask extends AbstractMultiTargetMessageT
     @SuppressWarnings("unchecked")
     @Override
     protected Object reduce(Map<Member, Object> map) throws Throwable {
+        rethrowInReduce(map, true);
         return map.values().stream()
+                .filter(item -> item instanceof List<?>)
                 .flatMap(item -> ((List<JobSummary>) item).stream())
                 // In edge cases there can be duplicates. E.g. the GetIdsOp is broadcast to all members.  member1
                 // is master and responds and dies. It's removed from cluster, member2 becomes master and
