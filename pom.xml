@@ -112,7 +112,7 @@
         <log4j2.version>2.18.0</log4j2.version>
         <mysql.connector.version>8.0.30</mysql.connector.version>
         <netty.version>4.1.79.Final</netty.version>
-        <objenesis.version>3.2</objenesis.version>
+        <objenesis.version>3.3</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.12.3</parquet.version>
         <picocli.version>4.6.3</picocli.version>
@@ -1759,7 +1759,7 @@
             <dependency>
                 <groupId>org.objenesis</groupId>
                 <artifactId>objenesis</artifactId>
-                <version>3.2</version>
+                <version>3.3</version>
             </dependency>
             <dependency>
                 <groupId>com.github.luben</groupId>
