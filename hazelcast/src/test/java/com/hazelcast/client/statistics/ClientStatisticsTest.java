@@ -198,15 +198,12 @@ public class ClientStatisticsTest extends ClientTestSupport {
     public void testStatisticsSentImmediatelyOnClusterChange() {
         HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
 
-        ClientConfig clientConfig = new ClientConfig()
-                // add IMap and ICache with Near Cache config
-                .addNearCacheConfig(new NearCacheConfig(MAP_NAME))
-                .addNearCacheConfig(new NearCacheConfig(CACHE_NAME));
+        ClientConfig clientConfig = new ClientConfig();
 
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         // set the collection frequency to something really high to test that statistics are sent on cluster change
         clientConfig.getMetricsConfig()
-                .setCollectionFrequencySeconds(1000);
+                .setCollectionFrequencySeconds(Integer.MAX_VALUE);
 
         HazelcastInstance clientInstance = hazelcastFactory.newHazelcastClient(clientConfig);
         HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(clientInstance);
@@ -224,7 +221,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
             Collection<ClientEndpoint> endpoints = hazelcastNode.getClientEngine().getEndpointManager().getEndpoints();
             ClientEndpoint[] endpointArray = endpoints.toArray(new ClientEndpoint[0]);
             assertNotNull("Statistics are not sent on cluster change", endpointArray[0].getClientStatistics());
-        }, 120);
+        });
     }
 
     @Test
