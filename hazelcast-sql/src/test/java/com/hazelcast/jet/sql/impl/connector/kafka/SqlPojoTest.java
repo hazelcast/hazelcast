@@ -31,19 +31,13 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
-import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
-import org.apache.kafka.common.serialization.Serializer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -362,47 +356,6 @@ public class SqlPojoTest extends SqlTestSupport {
     public static class ClzWithPerson implements Serializable {
         public int outerField;
         public Person person;
-    }
-
-    public static class JavaSerializer implements Serializer<Object> {
-
-        public void configure(Map map, boolean b) {}
-
-        public byte[] serialize(String s, Object o) {
-            try {
-                ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                ObjectOutputStream oos = new ObjectOutputStream(baos);
-                oos.writeObject(o);
-                oos.close();
-                return baos.toByteArray();
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        public void close() { }
-    }
-
-    public static class JavaDeserializer implements Deserializer<Object> {
-
-        public void configure(Map map, boolean b) {}
-
-        @Override
-        public Object deserialize(String topic, byte[] data) {
-            try {
-                ByteArrayInputStream bais = new ByteArrayInputStream(data);
-                ObjectInputStream ois = new ObjectInputStream(bais);
-                try {
-                    return ois.readObject();
-                } finally {
-                    ois.close();
-                }
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        }
-
-        public void close() { }
     }
 
     private static String createRandomTopic() {
