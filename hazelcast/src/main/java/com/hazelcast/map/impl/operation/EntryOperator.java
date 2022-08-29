@@ -120,6 +120,10 @@ public final class EntryOperator {
         this.entry = new LockAwareLazyMapEntry();
     }
 
+    public EntryProcessor getEntryProcessor() {
+        return entryProcessor;
+    }
+
     private void setProcessor(Object processor) {
         if (backup) {
             backupProcessor = ((EntryProcessor) processor);
