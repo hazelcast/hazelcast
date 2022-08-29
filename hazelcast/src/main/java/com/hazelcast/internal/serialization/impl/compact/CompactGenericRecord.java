@@ -35,6 +35,7 @@ import java.time.OffsetDateTime;
  * <p>
  * See the javadoc of {@link InternalGenericRecord} for GenericRecord class hierarchy.
  */
+@SuppressWarnings({"checkstyle:methodcount"})
 public abstract class CompactGenericRecord extends AbstractGenericRecord {
 
     /**
