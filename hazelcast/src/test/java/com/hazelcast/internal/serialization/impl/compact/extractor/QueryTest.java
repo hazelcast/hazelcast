@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.serialization.impl.compact.extractor;
 
-import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexConfig;
@@ -59,7 +58,6 @@ public class QueryTest extends HazelcastTestSupport {
         mapConfig.setName("map");
         mapConfig.setInMemoryFormat(InMemoryFormat.OBJECT);
         config.addMapConfig(mapConfig);
-        config.getSerializationConfig().setCompactSerializationConfig(new CompactSerializationConfig().setEnabled(true));
 
         HazelcastInstance instance = createHazelcastInstance(config);
         IMap map = instance.getMap("map");
@@ -73,7 +71,6 @@ public class QueryTest extends HazelcastTestSupport {
         Config config = new Config();
         MapConfig mapConfig = new MapConfig();
         mapConfig.setName("map");
-        config.getSerializationConfig().setCompactSerializationConfig(new CompactSerializationConfig().setEnabled(true));
 
         IndexConfig indexConfig = new IndexConfig();
         indexConfig.addAttribute("firstLimb");
@@ -105,7 +102,6 @@ public class QueryTest extends HazelcastTestSupport {
         Config config = new Config();
         MapConfig mapConfig = new MapConfig();
         mapConfig.setName("map");
-        config.getSerializationConfig().setCompactSerializationConfig(new CompactSerializationConfig().setEnabled(true));
 
         IndexConfig indexConfig = new IndexConfig();
         indexConfig.addAttribute("firstLimb.name");

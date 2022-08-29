@@ -16,8 +16,11 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
+import com.hazelcast.map.impl.operation.steps.RemoveOpSteps;
+import com.hazelcast.map.impl.operation.steps.engine.State;
 
 public class RemoveOperation extends BaseRemoveOperation {
 
@@ -32,20 +35,32 @@ public class RemoveOperation extends BaseRemoveOperation {
 
     @Override
     protected void runInternal() {
-        dataOldValue = mapServiceContext.toData(recordStore.remove(dataKey, getCallerProvenance()));
+        dataOldValue = mapServiceContext.toData(recordStore.remove(dataKey,
+                getCallerProvenance()));
         successful = dataOldValue != null;
     }
 
     @Override
-    protected void afterRunInternal() {
+    public void afterRunInternal() {
         if (successful) {
             super.afterRunInternal();
         }
     }
 
     @Override
+    public void applyState(State state) {
+        super.applyState(state);
+        successful = dataOldValue != null;
+    }
+
+    @Override
+    public Step getStartingStep() {
+        return RemoveOpSteps.READ;
+    }
+
+    @Override
     public boolean shouldBackup() {
-        return successful;
+        return dataOldValue != null;
     }
 
     @Override

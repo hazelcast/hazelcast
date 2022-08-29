@@ -37,6 +37,7 @@ import com.hazelcast.internal.networking.InboundHandler;
 import com.hazelcast.internal.networking.OutboundHandler;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.server.ServerContext;
 import com.hazelcast.internal.util.ByteArrayProcessor;
@@ -74,6 +75,11 @@ public class SamplingNodeExtension implements NodeExtension {
     public InternalSerializationService createCompatibilitySerializationService() {
         InternalSerializationService serializationService = nodeExtension.createCompatibilitySerializationService();
         return new SamplingSerializationService(serializationService);
+    }
+
+    @Override
+    public MemberSchemaService createSchemaService() {
+        return nodeExtension.createSchemaService();
     }
 
     @Override

@@ -22,8 +22,8 @@ import com.hazelcast.internal.serialization.impl.FieldOperations;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.FieldKind;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import javax.annotation.Nonnull;
@@ -166,7 +166,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
 
     @Override
     @Nonnull
-    public GenericRecordBuilder cloneWithBuilder() {
+    public GenericRecordBuilder newBuilderWithClone() {
         TreeMap<String, Object> objects = new TreeMap<>();
         for (String fieldName : getFieldNames()) {
             objects.put(fieldName, readAny(fieldName));
@@ -179,7 +179,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     public FieldKind getFieldKind(@Nonnull String fieldName) {
         FieldDescriptor field = schema.getField(fieldName);
         if (field == null) {
-            throw new IllegalArgumentException("Field name " + fieldName + " does not exist in the schema");
+            return FieldKind.NOT_AVAILABLE;
         }
         return field.getKind();
     }
@@ -751,10 +751,10 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             int itemCount = in.readInt();
             int dataStartPosition = in.position();
 
-            OffsetReader offsetReader = getOffsetReader(dataLength);
+            OffsetReader offsetReader = OffsetReader.readerFor(dataLength);
             int offsetsPosition = dataStartPosition + dataLength;
             for (int i = 0; i < itemCount; i++) {
-                int offset = offsetReader.getOffset(in, offsetsPosition, i);
+                int offset = offsetReader.read(in, offsetsPosition, i);
                 if (offset == NULL_ARRAY_LENGTH) {
                     throw exceptionForUnexpectedNullValueInArray(fd.getFieldName(), getMethodPrefixForErrorMessages(),
                             methodSuffix);
@@ -1106,10 +1106,10 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
             int dataStartPosition = in.position();
             T[] values = constructor.apply(itemCount);
 
-            OffsetReader offsetReader = getOffsetReader(dataLength);
+            OffsetReader offsetReader = OffsetReader.readerFor(dataLength);
             int offsetsPosition = dataStartPosition + dataLength;
             for (int i = 0; i < itemCount; i++) {
-                int offset = offsetReader.getOffset(in, offsetsPosition, i);
+                int offset = offsetReader.read(in, offsetsPosition, i);
                 if (offset != NULL_ARRAY_LENGTH) {
                     in.position(offset + dataStartPosition);
                     values[i] = reader.read(in);
@@ -1129,16 +1129,6 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                                            Reader<T> reader) {
         FieldDescriptor fieldDefinition = getFieldDescriptor(fieldName, fieldKind);
         return getArrayOfVariableSize(fieldDefinition, constructor, reader);
-    }
-
-    private static OffsetReader getOffsetReader(int dataLength) {
-        if (dataLength < BYTE_OFFSET_READER_RANGE) {
-            return BYTE_OFFSET_READER;
-        } else if (dataLength < SHORT_OFFSET_READER_RANGE) {
-            return SHORT_OFFSET_READER;
-        } else {
-            return INT_OFFSET_READER;
-        }
     }
 
     private int readFixedSizePosition(FieldDescriptor fd) {
@@ -1167,7 +1157,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     private int readVariableSizeFieldPosition(FieldDescriptor fd) {
         try {
             int index = fd.getIndex();
-            int offset = offsetReader.getOffset(in, variableOffsetsPosition, index);
+            int offset = offsetReader.read(in, variableOffsetsPosition, index);
             return offset == NULL_OFFSET ? NULL_OFFSET : offset + dataStartPosition;
         } catch (IOException e) {
             throw illegalStateException(e);
@@ -1376,9 +1366,9 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
                 return null;
             }
             int dataStartPosition = pos + (2 * INT_SIZE_IN_BYTES);
-            OffsetReader offsetReader = getOffsetReader(dataLength);
+            OffsetReader offsetReader = OffsetReader.readerFor(dataLength);
             int offsetsPosition = dataStartPosition + dataLength;
-            int indexedItemOffset = offsetReader.getOffset(in, offsetsPosition, index);
+            int indexedItemOffset = offsetReader.read(in, offsetsPosition, index);
             if (indexedItemOffset != NULL_OFFSET) {
                 in.position(indexedItemOffset + dataStartPosition);
                 return reader.read(in);

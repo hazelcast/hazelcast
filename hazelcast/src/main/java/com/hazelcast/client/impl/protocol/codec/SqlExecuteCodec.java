@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Starts execution of an SQL query (as of 4.2).
  */
-@Generated("e6a79c776014541ab0f562c3fa442af9")
+@Generated("9b95472501ff4d52610e2c2c6fc44819")
 public final class SqlExecuteCodec {
     //hex: 0x210400
     public static final int REQUEST_MESSAGE_TYPE = 2163712;
@@ -48,7 +48,8 @@ public final class SqlExecuteCodec {
     private static final int REQUEST_SKIP_UPDATE_STATISTICS_FIELD_OFFSET = REQUEST_EXPECTED_RESULT_TYPE_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_SKIP_UPDATE_STATISTICS_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
     private static final int RESPONSE_UPDATE_COUNT_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_UPDATE_COUNT_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_IS_INFINITE_ROWS_FIELD_OFFSET = RESPONSE_UPDATE_COUNT_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_IS_INFINITE_ROWS_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
     private SqlExecuteCodec() {
     }
@@ -167,13 +168,25 @@ public final class SqlExecuteCodec {
          * Error object.
          */
         public @Nullable com.hazelcast.sql.impl.client.SqlError error;
+
+        /**
+         * Is the result set unbounded.
+         */
+        public boolean isInfiniteRows;
+
+        /**
+         * True if the isInfiniteRows is received from the member, false otherwise.
+         * If this is false, isInfiniteRows has the default value for its type.
+         */
+        public boolean isIsInfiniteRowsExists;
     }
 
-    public static ClientMessage encodeResponse(@Nullable java.util.List<com.hazelcast.sql.SqlColumnMetadata> rowMetadata, @Nullable com.hazelcast.sql.impl.client.SqlPage rowPage, long updateCount, @Nullable com.hazelcast.sql.impl.client.SqlError error) {
+    public static ClientMessage encodeResponse(@Nullable java.util.List<com.hazelcast.sql.SqlColumnMetadata> rowMetadata, @Nullable com.hazelcast.sql.impl.client.SqlPage rowPage, long updateCount, @Nullable com.hazelcast.sql.impl.client.SqlError error, boolean isInfiniteRows) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         encodeLong(initialFrame.content, RESPONSE_UPDATE_COUNT_FIELD_OFFSET, updateCount);
+        encodeBoolean(initialFrame.content, RESPONSE_IS_INFINITE_ROWS_FIELD_OFFSET, isInfiniteRows);
         clientMessage.add(initialFrame);
 
         ListMultiFrameCodec.encodeNullable(clientMessage, rowMetadata, SqlColumnMetadataCodec::encode);
@@ -187,6 +200,12 @@ public final class SqlExecuteCodec {
         ResponseParameters response = new ResponseParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         response.updateCount = decodeLong(initialFrame.content, RESPONSE_UPDATE_COUNT_FIELD_OFFSET);
+        if (initialFrame.content.length >= RESPONSE_IS_INFINITE_ROWS_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES) {
+            response.isInfiniteRows = decodeBoolean(initialFrame.content, RESPONSE_IS_INFINITE_ROWS_FIELD_OFFSET);
+            response.isIsInfiniteRowsExists = true;
+        } else {
+            response.isIsInfiniteRowsExists = false;
+        }
         response.rowMetadata = ListMultiFrameCodec.decodeNullable(iterator, SqlColumnMetadataCodec::decode);
         response.rowPage = CodecUtil.decodeNullable(iterator, SqlPageCodec::decode);
         response.error = CodecUtil.decodeNullable(iterator, SqlErrorCodec::decode);

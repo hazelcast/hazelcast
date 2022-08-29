@@ -18,10 +18,13 @@ package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.operation.steps.ClearOpSteps;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
+import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.spi.impl.operationservice.BackupAwareOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
-import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 
@@ -51,7 +54,22 @@ public class ClearOperation extends MapOperation
     }
 
     @Override
-    protected void afterRunInternal() {
+    public Step getStartingStep() {
+        return ClearOpSteps.CLEAR_MEMORY;
+    }
+
+    @Override
+    public void applyState(State state) {
+        if (recordStore == null) {
+            return;
+        }
+        super.applyState(state);
+        numberOfClearedEntries = (int) state.getResult();
+        shouldBackup = true;
+    }
+
+    @Override
+    public void afterRunInternal() {
         invalidateAllKeysInNearCaches();
         hintMapEvent();
         super.afterRunInternal();
@@ -82,10 +100,10 @@ public class ClearOperation extends MapOperation
         return numberOfClearedEntries;
     }
 
+    @Override
     public Operation getBackupOperation() {
-        ClearBackupOperation clearBackupOperation = new ClearBackupOperation(name);
-        clearBackupOperation.setServiceName(SERVICE_NAME);
-        return clearBackupOperation;
+        return new ClearBackupOperation(name)
+                .setServiceName(SERVICE_NAME);
     }
 
     @Override

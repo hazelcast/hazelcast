@@ -38,6 +38,7 @@
             "enabled": true,
             "initial-mode": "LAZY",
             "class-name": "com.hazelcast.examples.DummyStore",
+            "offload": false,
             "write-delay-seconds": 60,
             "write-batch-size": 1000,
             "write-coalescing": true,
@@ -108,6 +109,24 @@
               "bitmap-index-options": {
                 "unique-key": "id",
                 "unique-key-transformation": "RAW"
+              }
+            },
+            {
+              "type": "SORTED",
+              "attributes": [
+                "name"
+              ],
+              "btree-index": {
+                "page-size": {
+                  "value": 16,
+                  "unit": "KILOBYTES"
+                },
+                "memory-tier": {
+                  "capacity": {
+                    "value": 160,
+                    "unit": "MEGABYTES"
+                  }
+                }
               }
             }
           ],

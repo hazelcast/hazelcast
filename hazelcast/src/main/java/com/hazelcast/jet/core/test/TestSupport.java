@@ -92,7 +92,7 @@ import static java.util.stream.Collectors.toMap;
  *     <li>does snapshot or snapshot+restore each time the {@code complete()}
  *     method returned {@code false} and made a progress
  * </ul>
- *
+ * <p>
  * The {@code init()} and {@code close()} methods of {@link
  * ProcessorSupplier} and {@link ProcessorMetaSupplier} are called if you call
  * the {@link #verifyProcessor} using one of these.
@@ -394,7 +394,11 @@ public final class TestSupport {
                 .filter(TestEventInt::isOutput)
                 .mapToInt(event -> ((ItemWithOrdinal) event).ordinal())
                 .max()
-                .orElse(-1) + 1;
+                .orElse(0) + 1;
+        // In case there's no output event in the events, we still have to have 1 output bucket. Otherwise,
+        // all the output of the processor will be thrown out, and if the test expects no output, even if there
+        // was some output, the test would not fail.
+        assert outputOrdinalCount > 0;
         outputMustOccurOnTime = true;
         assertOutputFn = (mode, actual) -> assertExpectedOutput(mode, transformToListList(accumulatedExpectedOutput), actual);
 
@@ -647,7 +651,7 @@ public final class TestSupport {
         accumulatedExpectedOutput.clear();
 
         assert testMode.isSnapshotsEnabled() || testMode.snapshotRestoreInterval() == 0
-            : "Illegal combination: don't do snapshots, but do restore";
+                : "Illegal combination: don't do snapshots, but do restore";
 
         boolean doSnapshots = testMode.doSnapshots;
         int doRestoreEvery = testMode.restoreInterval;
@@ -728,7 +732,7 @@ public final class TestSupport {
             String methodName;
             methodName = processInbox(inbox, inboxOrdinal, isCooperative, processor);
             boolean madeProgress = inbox.size() < lastInboxSize ||
-                (outbox[0].bucketCount() > 0 && !outbox[0].queue(0).isEmpty());
+                    (outbox[0].bucketCount() > 0 && !outbox[0].queue(0).isEmpty());
             assertTrue(methodName + "() call without progress", !assertProgress || madeProgress);
             idleCount = idle(idler, idleCount, madeProgress);
             if (outbox[0].bucketCount() > 0 && outbox[0].queue(0).size() == 1 && !inbox.isEmpty()) {
@@ -763,7 +767,7 @@ public final class TestSupport {
             do {
                 doCall("complete", isCooperative, () -> done[0] = processor[0].complete());
                 boolean madeProgress = done[0] ||
-                    (outbox[0].bucketCount() > 0 && !outbox[0].queue(0).isEmpty());
+                        (outbox[0].bucketCount() > 0 && !outbox[0].queue(0).isEmpty());
                 assertTrue("complete() call without progress", !assertProgress || madeProgress);
                 outbox[0].drainQueuesAndReset(actualOutputs, logInputOutput);
                 if (outbox[0].hasUnfinishedItem()) {
@@ -803,7 +807,7 @@ public final class TestSupport {
         assertOutputFn.accept(testMode, actualOutputs);
     }
 
-    private void assertExpectedOutput(TestMode mode, List<List<?>> expected , List<List<Object>> actual) {
+    private void assertExpectedOutput(TestMode mode, List<List<?>> expected, List<List<Object>> actual) {
         for (int i = 0; i < expected.size(); i++) {
             List<?> expectedOutput = expected.get(i);
             List<?> actualOutput = actual.get(i);
@@ -827,7 +831,7 @@ public final class TestSupport {
         SortedMap<Integer, List<Integer>> ordinalsByPriority = new TreeMap<>();
         for (int i = 0; i < priorities.length; i++) {
             ordinalsByPriority.computeIfAbsent(priorities[i], k -> new ArrayList<>())
-                            .add(i);
+                    .add(i);
         }
 
         List<TestEventInt> result = new ArrayList<>();
@@ -857,11 +861,20 @@ public final class TestSupport {
     private String processInbox(TestInbox inbox, int inboxOrdinal, boolean isCooperative, Processor[] processor) {
         if (inbox.peek() instanceof Watermark) {
             Watermark wm = ((Watermark) inbox.peek());
-            doCall("tryProcessWatermark", isCooperative, () -> {
-                if (processor[0].tryProcessWatermark(wm)) {
-                    inbox.remove();
-                }
-            });
+            // TODO[sasha]: enhance it for further usage, for now its just a plug.
+            if (processor[0].toString().contains("StreamToStream")) {
+                doCall("tryProcessWatermark", isCooperative, () -> {
+                    if (processor[0].tryProcessWatermark(inboxOrdinal, wm)) {
+                        inbox.remove();
+                    }
+                });
+            } else {
+                doCall("tryProcessWatermark", isCooperative, () -> {
+                    if (processor[0].tryProcessWatermark(wm)) {
+                        inbox.remove();
+                    }
+                });
+            }
             return "tryProcessWatermark";
         } else {
             doCall("process", isCooperative, () -> processor[0].process(inboxOrdinal, inbox));
@@ -950,7 +963,7 @@ public final class TestSupport {
         if (isCooperative) {
             if (cooperativeTimeout > 0) {
                 assertTrue(String.format("call to %s() took %.1fms, it should be <%dms", methodName,
-                        toMillis(elapsed), COOPERATIVE_TIME_LIMIT_MS_FAIL),
+                                toMillis(elapsed), COOPERATIVE_TIME_LIMIT_MS_FAIL),
                         elapsed < MILLISECONDS.toNanos(COOPERATIVE_TIME_LIMIT_MS_FAIL));
             }
             // print warning
@@ -1264,7 +1277,7 @@ public final class TestSupport {
                 return "snapshots enabled, never restoring them, inboxLimit=" + sInboxSize;
             } else {
                 throw new IllegalArgumentException("Unknown mode, doSnapshots=" + doSnapshots + ", restoreInterval="
-                    + restoreInterval + ", inboxLimit=" + inboxLimit);
+                        + restoreInterval + ", inboxLimit=" + inboxLimit);
             }
         }
     }

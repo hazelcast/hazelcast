@@ -46,21 +46,25 @@ public class IndexFirstComponentDecoratorTest {
         serializationService = new DefaultSerializationServiceBuilder().build();
         extractors = Extractors.newBuilder(serializationService).build();
         expected = new IndexImpl(
+            null,
             IndexUtils.createTestIndexConfig(IndexType.SORTED, "this"),
             serializationService,
             extractors,
             IndexCopyBehavior.COPY_ON_READ,
             PerIndexStats.EMPTY,
-            MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT
+            MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT,
+            "test"
         );
 
         InternalIndex compositeIndex = new IndexImpl(
+            null,
             IndexUtils.createTestIndexConfig(IndexType.SORTED, "this", "__key"),
             serializationService,
             extractors,
             IndexCopyBehavior.COPY_ON_READ,
             PerIndexStats.EMPTY,
-            MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT
+            MemberPartitionStateImpl.DEFAULT_PARTITION_COUNT,
+            "test"
         );
 
         actual = new AttributeIndexRegistry.FirstComponentDecorator(compositeIndex);

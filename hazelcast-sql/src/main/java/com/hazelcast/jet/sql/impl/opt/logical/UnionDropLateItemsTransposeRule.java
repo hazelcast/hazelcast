@@ -72,7 +72,7 @@ public class UnionDropLateItemsTransposeRule extends RelRule<RelRule.Config> imp
                         .operand(Union.class)
                         .trait(LOGICAL)
                         .predicate(union -> union.all)
-                        .inputs(b1 -> b1
+                        .unorderedInputs(b1 -> b1
                                 .operand(DropLateItemsLogicalRel.class)
                                 .anyInputs()))
                 .build();
@@ -92,10 +92,11 @@ public class UnionDropLateItemsTransposeRule extends RelRule<RelRule.Config> imp
     @Override
     public boolean matches(RelOptRuleCall call) {
         Union union = call.rel(0);
-        return union.getInputs()
+        boolean match = union.getInputs()
                 .stream()
                 .map(rel -> (RelSubset) rel)
                 .allMatch(rel -> rel.getBest() instanceof DropLateItemsLogicalRel);
+        return match;
     }
 
     @Override
@@ -109,10 +110,11 @@ public class UnionDropLateItemsTransposeRule extends RelRule<RelRule.Config> imp
             inputs.add(((DropLateItemsLogicalRel) Objects.requireNonNull(((RelSubset) node).getBest())).getInput());
         }
 
+        assert !inputs.isEmpty();
         Union newUnion = (Union) union.copy(union.getTraitSet(), inputs);
         DropLateItemsLogicalRel dropLateItemsRel = new DropLateItemsLogicalRel(
-                dropRel.getCluster(),
-                dropRel.getTraitSet(),
+                union.getCluster(),
+                union.getTraitSet(),
                 newUnion,
                 dropRel.wmField()
         );

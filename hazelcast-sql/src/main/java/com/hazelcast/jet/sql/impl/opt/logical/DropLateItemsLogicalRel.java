@@ -36,7 +36,7 @@ import java.util.List;
 public class DropLateItemsLogicalRel extends SingleRel implements LogicalRel {
     private final int wmField;
 
-    protected DropLateItemsLogicalRel(
+    public DropLateItemsLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelNode input,
@@ -58,6 +58,10 @@ public class DropLateItemsLogicalRel extends SingleRel implements LogicalRel {
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
         return new DropLateItemsLogicalRel(getCluster(), traitSet, sole(inputs), wmField);
+    }
+
+    public DropLateItemsLogicalRel copy(RelTraitSet traitSet, RelNode input, int wmField) {
+        return new DropLateItemsLogicalRel(getCluster(), traitSet, input, wmField);
     }
 
     @Override

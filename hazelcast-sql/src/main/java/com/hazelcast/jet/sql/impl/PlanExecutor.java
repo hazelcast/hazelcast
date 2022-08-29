@@ -26,17 +26,20 @@ import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.AlterJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateIndexPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateSnapshotPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateTypePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.CreateViewPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DmlPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropJobPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropMappingPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropSnapshotPlan;
+import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropTypePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.DropViewPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ExplainStatementPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapDeletePlan;
@@ -46,15 +49,20 @@ import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapSinkPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.IMapUpdatePlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.SelectPlan;
 import com.hazelcast.jet.sql.impl.SqlPlanImpl.ShowStatementPlan;
+import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
+import com.hazelcast.jet.sql.impl.schema.TypeDefinitionColumn;
+import com.hazelcast.jet.sql.impl.schema.TypesUtils;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.impl.EntryRemovingProcessor;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
@@ -67,6 +75,8 @@ import com.hazelcast.sql.impl.UpdateSqlResultImpl;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.schema.type.Type;
+import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
@@ -79,20 +89,25 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static com.hazelcast.config.BitmapIndexOptions.UniqueKeyTransformation;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_QUERY_TEXT;
 import static com.hazelcast.jet.config.JobConfigArguments.KEY_SQL_UNBOUNDED;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
+import static com.hazelcast.jet.impl.util.Util.getSerializationService;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY;
 import static com.hazelcast.jet.sql.impl.parse.SqlCreateIndex.UNIQUE_KEY_TRANSFORMATION;
 import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.toHazelcastType;
+import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static com.hazelcast.sql.SqlColumnType.VARCHAR;
 import static com.hazelcast.sql.impl.expression.ExpressionEvalContext.SQL_ARGUMENTS_KEY_NAME;
 import static java.util.Collections.emptyIterator;
@@ -277,6 +292,11 @@ public class PlanExecutor {
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
+    SqlResult execute(DropTypePlan plan) {
+        catalog.removeType(plan.typeName(), plan.isIfExists());
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
+    }
+
     SqlResult execute(ShowStatementPlan plan) {
         Stream<String> rows;
 
@@ -291,6 +311,9 @@ public class PlanExecutor {
                 NodeEngine nodeEngine = getNodeEngine(hazelcastInstance);
                 JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
                 rows = jetServiceBackend.getJobRepository().getActiveJobNames().stream();
+                break;
+            case TYPES:
+                rows = catalog.getTypeNames().stream();
                 break;
             default:
                 throw new AssertionError("Unsupported SHOW statement target");
@@ -447,6 +470,87 @@ public class PlanExecutor {
         return UpdateSqlResultImpl.createUpdateCountResult(0);
     }
 
+    SqlResult execute(CreateTypePlan plan) {
+        NodeEngineImpl nodeEngine = getNodeEngine(hazelcastInstance);
+        if (!nodeEngine.getProperties().getBoolean(SQL_CUSTOM_TYPES_ENABLED)) {
+            throw QueryException.error("Experimental feature of creating custom types isn't enabled. To enable, set "
+                    + SQL_CUSTOM_TYPES_ENABLED + " to true");
+        }
+        final String format = plan.options().get(SqlConnector.OPTION_FORMAT);
+        final Type type;
+
+        if (SqlConnector.PORTABLE_FORMAT.equals(format)) {
+            final Integer factoryId = Optional.ofNullable(plan.option(SqlConnector.OPTION_TYPE_PORTABLE_FACTORY_ID))
+                    .map(Integer::parseInt)
+                    .orElse(null);
+            final Integer classId = Optional.ofNullable(plan.option(SqlConnector.OPTION_TYPE_PORTABLE_CLASS_ID))
+                    .map(Integer::parseInt)
+                    .orElse(null);
+            final Integer version = Optional.ofNullable(plan.option(SqlConnector.OPTION_TYPE_PORTABLE_CLASS_VERSION))
+                    .map(Integer::parseInt)
+                    .orElse(0);
+
+            if (factoryId == null || classId == null) {
+                throw QueryException.error("FactoryID and ClassID are required for Portable Types");
+            }
+
+            final ClassDefinition existingClassDef = getSerializationService(hazelcastInstance).getPortableContext()
+                    .lookupClassDefinition(factoryId, classId, version);
+
+            if (existingClassDef != null) {
+                type = TypesUtils.convertPortableClassToType(plan.name(), existingClassDef, catalog);
+            } else {
+                if (plan.columns().isEmpty()) {
+                    throw QueryException.error("The given FactoryID/ClassID/Version combination not known to the member. " +
+                            "You need to provide column list for this type");
+                }
+
+                type = new Type();
+                type.setName(plan.name());
+                type.setKind(TypeKind.PORTABLE);
+                type.setPortableFactoryId(factoryId);
+                type.setPortableClassId(classId);
+                type.setPortableVersion(version);
+                type.setFields(new ArrayList<>());
+
+                for (int i = 0; i < plan.columns().size(); i++) {
+                    final TypeDefinitionColumn planColumn = plan.columns().get(i);
+                    type.getFields().add(new Type.TypeField(planColumn.name(), planColumn.dataType()));
+                }
+            }
+        } else if (SqlConnector.COMPACT_FORMAT.equals(format)) {
+            type = new Type();
+            type.setKind(TypeKind.COMPACT);
+            type.setName(plan.name());
+            final List<Type.TypeField> typeFields = plan.columns().stream()
+                    .map(typeColumn -> new Type.TypeField(typeColumn.name(), typeColumn.dataType()))
+                    .collect(Collectors.toList());
+            type.setFields(typeFields);
+
+            final String compactTypeName = plan.option(SqlConnector.OPTION_TYPE_COMPACT_TYPE_NAME);
+            if (compactTypeName == null || compactTypeName.isEmpty()) {
+                throw QueryException.error("Compact Type Name must not be empty for Compact-based Types.");
+            }
+            type.setCompactTypeName(compactTypeName);
+        } else if (SqlConnector.JAVA_FORMAT.equals(format)) {
+            final Class<?> typeClass;
+            try {
+                typeClass = ReflectionUtils.loadClass(plan.options().get(SqlConnector.OPTION_TYPE_JAVA_CLASS));
+            } catch (Exception e) {
+                throw QueryException.error("Unable to load class: '"
+                        + plan.options().get(SqlConnector.OPTION_TYPE_JAVA_CLASS) + "'", e);
+            }
+
+            type = TypesUtils.convertJavaClassToType(plan.name(), plan.columns(), typeClass);
+        } else {
+            throw QueryException.error("Unsupported type format: " + format);
+        }
+
+        catalog.createType(type, plan.replace(), plan.ifNotExists());
+
+        return UpdateSqlResultImpl.createUpdateCountResult(0);
+    }
+
     private List<Object> prepareArguments(QueryParameterMetadata parameterMetadata, List<Object> arguments) {
         assert arguments != null;
 
@@ -478,8 +582,12 @@ public class PlanExecutor {
             if (t instanceof QueryException) {
                 return ((QueryException) t).getCode();
             }
+            if (isTopologyException(t)) {
+                return SqlErrorCode.TOPOLOGY_CHANGE;
+            }
             t = t.getCause();
         }
+
         return SqlErrorCode.GENERIC;
     }
 

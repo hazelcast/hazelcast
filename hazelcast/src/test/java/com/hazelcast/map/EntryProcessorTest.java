@@ -1671,8 +1671,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
     }
 
-    private static class PartitionAwareTestEntryProcessor implements EntryProcessor<Integer, Integer, Object>,
-            HazelcastInstanceAware {
+    private static class PartitionAwareTestEntryProcessor
+            implements EntryProcessor<Integer, Integer, Object>, HazelcastInstanceAware {
 
         private final String name;
         private transient HazelcastInstance hz;
@@ -1698,7 +1698,8 @@ public class EntryProcessorTest extends HazelcastTestSupport {
         }
     }
 
-    private static final class ExecutionCountingEP<K, V, O> implements EntryProcessor<K, V, O>, ReadOnly, HazelcastInstanceAware {
+    private static final class ExecutionCountingEP<K, V, O>
+            implements EntryProcessor<K, V, O>, ReadOnly, HazelcastInstanceAware {
         private AtomicLong executionCounter;
 
         @Override
@@ -1813,14 +1814,22 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         @Override
         public Set<QueryableEntry<K, V>> filter(QueryContext queryContext) {
-            Index index = queryContext.getIndex(attributeName);
+            Index index = getIndex(queryContext);
+            if (index == null) {
+                return null;
+            }
+
             Set records = index.getRecords(key);
             return records;
         }
 
+        private Index getIndex(QueryContext queryContext) {
+            return queryContext.getIndex(attributeName);
+        }
+
         @Override
         public boolean isIndexed(QueryContext queryContext) {
-            return true;
+            return getIndex(queryContext) != null;
         }
 
         @Override

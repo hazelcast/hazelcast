@@ -1188,6 +1188,15 @@
         It has the following sub-elements:
         - <class-name>:
             The name of your class implementing MapLoader and/or MapStore interface.
+        - <offload>:
+            Default value is true.
+            MapStore or MapLoader implementations are executed by
+            partition threads, by setting offload to true, Hazelcast
+            makes these threads available for other cluster operations
+            and offloads MapStore or MapLoader interacting parts of
+            executions to a different thread pool, upon interaction finish,
+            operations continue to work in the partition thread from
+            the point they are offloaded.
         - <write-delay-seconds>:
             Number of seconds to delay the storing of entries. If the value is 0, then it is write-through.
             Otherwise, it is write-behind so updates will be stored after this period. Its default value is 0.
@@ -1338,6 +1347,7 @@
         </event-journal>
         <map-store enabled="true" initial-mode="LAZY">
             <class-name>com.hazelcast.examples.DummyStore</class-name>
+            <offload>true</offload>
             <write-delay-seconds>60</write-delay-seconds>
             <write-batch-size>1000</write-batch-size>
             <write-coalescing>true</write-coalescing>
@@ -1403,6 +1413,17 @@
                     <unique-key>id</unique-key>
                     <unique-key-transformation>RAW</unique-key-transformation>
                 </bitmap-index-options>
+            </index>
+            <index type="SORTED">
+                <attributes>
+                    <attribute>age</attribute>
+                </attributes>
+                <btree-index>
+                    <memory-tier>
+                        <capacity value="128" unit="BYTES" />
+                    </memory-tier>
+                    <page-size value="1024" unit="BYTES" />
+                </btree-index>
             </index>
         </indexes>
         <attributes>
@@ -2103,6 +2124,20 @@
             and throw a Serialization Exception with the error definition.
         * <java-serialization-filter>:
             Allows to configure blacklisting and whitelisting for deserialized classes when Java serialization is used.
+        * <compact-serialization>:
+            Contains configuration elements and attributes for the compact serialization.
+
+            The optional "enabled" attribute enables or disables the Compact
+            serialization.
+
+            It has the following sub-elements.
+            * <serializers>:
+                List of fully qualified class names of the Compact serializers.
+            * <classes>:
+                List of fully qualified names of the classes to be serialized
+                with the reflective Compact serializer. It is meant to be used
+                to serialize classes that are serializable with other mechanisms
+                like Java serialization with Compact serialization.
     -->
     <serialization>
         <portable-version>0</portable-version>
@@ -2134,15 +2169,13 @@
                 <prefix>java</prefix>
             </whitelist>
         </java-serialization-filter>
-        <compact-serialization enabled="true">
-            <registered-classes>
-                <class>
-                    com.hazelcast.examples.DummyType
-                </class>
-                <class type-name="dummy" serializer="com.hazelcast.examples.DummyTypeSerializer">
-                    com.hazelcast.examples.DummyTypeWithSerializer
-                </class>
-            </registered-classes>
+        <compact-serialization>
+            <serializers>
+                <serializer>com.hazelcast.examples.DummyTypeSerializer</serializer>
+            </serializers>
+            <classes>
+                <class>com.hazelcast.examples.DummyType</class>
+            </classes>
         </compact-serialization>
     </serialization>
     <!--
@@ -3470,6 +3503,9 @@
             Timeout duration for CP members to restore their data from disk.
             A CP member fails its startup if it cannot complete its CP data restore
             process in the configured duration.
+        * <cp-member-priority>:
+            The CP member priority. The CP groups' leadership will be eventually
+            transferred to members with higher priorities within the CP group.
 
         * <raft-algorithm>:
             These parameters tune specific parameters of Hazelcast’s Raft consensus
@@ -3547,6 +3583,7 @@
         <persistence-enabled>true</persistence-enabled>
         <base-dir>custom-cp-dir</base-dir>
         <data-load-timeout-seconds>30</data-load-timeout-seconds>
+        <cp-member-priority>1</cp-member-priority>
         <raft-algorithm>
             <leader-election-timeout-in-millis>2000</leader-election-timeout-in-millis>
             <leader-heartbeat-period-in-millis>5000</leader-heartbeat-period-in-millis>
@@ -3851,5 +3888,23 @@
     it can be disabled to improve startup time. Integrity Checker is disabled by default.
     -->
     <integrity-checker enabled="false"/>
+
+    <!--
+      ===== HAZELCAST EXTERNAL DATA STORE CONFIGURATION =====
+    
+      Configuration element's name is <external-data-store>. Contains configuration of external data stores
+      used by map stores and jdbc sinks and sources
+      -->
+    <external-data-store name="mysql-database">
+        <class-name>com.hazelcast.datastore.JdbcDataStoreFactory</class-name>
+        <properties>
+            <property name="jdbcUrl">jdbc:mysql://dummy:3306</property>
+        </properties>
+        <shared>false</shared>
+    </external-data-store>
+
+    <external-data-store name="other-database">
+        <class-name>com.hazelcast.datastore.OtherDataStore</class-name>
+    </external-data-store>
 
 </hazelcast>

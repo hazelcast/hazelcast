@@ -34,6 +34,7 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHol
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConfigHolder;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.AttributeConfig;
+import com.hazelcast.config.BTreeIndexConfig;
 import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
@@ -49,6 +50,7 @@ import com.hazelcast.config.MerkleTreeConfig;
 import com.hazelcast.config.NearCachePreloaderConfig;
 import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.config.WanReplicationRef;
+import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.internal.CPMemberInfo;
 import com.hazelcast.cp.internal.RaftGroupId;
@@ -62,6 +64,8 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
+import com.hazelcast.jet.impl.JobAndSqlSummary;
+import com.hazelcast.jet.impl.SqlSummary;
 import com.hazelcast.map.impl.SimpleEntryView;
 import com.hazelcast.map.impl.querycache.event.DefaultQueryCacheEventData;
 import com.hazelcast.map.impl.querycache.event.QueryCacheEventData;
@@ -77,8 +81,6 @@ import com.hazelcast.sql.impl.client.SqlError;
 import com.hazelcast.sql.impl.client.SqlPage;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.version.MemberVersion;
-
-import javax.transaction.xa.Xid;
 import java.lang.reflect.Array;
 import java.net.UnknownHostException;
 import java.util.AbstractMap;
@@ -91,6 +93,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.UUID;
+import javax.transaction.xa.Xid;
 
 public class ReferenceObjects {
 
@@ -551,6 +554,13 @@ public class ReferenceObjects {
         return a.isFsync() == b.isFsync();
     }
 
+    public static boolean isEqual(HazelcastJsonValue a, HazelcastJsonValue b) {
+        if (a == null && b != null) {
+            return false;
+        }
+        return a.equals(b);
+    }
+
     public static boolean isEqual(DataPersistenceConfig a, DataPersistenceConfig b) {
         if (a == b) {
             return true;
@@ -795,22 +805,26 @@ public class ReferenceObjects {
     }
 
     public static Capacity aCapacity;
+
     static {
         aCapacity = Capacity.of(aPositiveLong, MemoryUnit.GIGABYTES);
     }
 
     public static MemoryTierConfig aMemoryTierConfig;
+
     static {
         aMemoryTierConfig = new MemoryTierConfig();
         aMemoryTierConfig.setCapacity(aCapacity);
     }
 
     public static DiskTierConfig aDiskTierConfig;
+
     static {
         aDiskTierConfig = new DiskTierConfig();
         aDiskTierConfig.setEnabled(aBoolean);
         aDiskTierConfig.setDeviceName(aString);
     }
+
     public static TieredStoreConfig aTieredStoreConfig;
 
     static {
@@ -830,8 +844,16 @@ public class ReferenceObjects {
         aBitmapIndexOptions.setUniqueKeyTransformation(BitmapIndexOptions.UniqueKeyTransformation.LONG);
     }
 
-    public static IndexConfig anIndexConfig = CustomTypeFactory.createIndexConfig(aString, anEnum, aListOfStrings, aBitmapIndexOptions);
-    public static MapStoreConfigHolder aMapStoreConfigHolder = new MapStoreConfigHolder(aBoolean, aBoolean, anInt, anInt, aString, aData, aString, aData, aMapOfStringToString, aString);
+    public static BTreeIndexConfig aBTreeIndexConfig;
+
+    static {
+        aBTreeIndexConfig = new BTreeIndexConfig();
+        aBTreeIndexConfig.setPageSize(aCapacity);
+        aBTreeIndexConfig.getMemoryTierConfig().setCapacity(aCapacity);
+    }
+
+    public static IndexConfig anIndexConfig = CustomTypeFactory.createIndexConfig(aString, anEnum, aListOfStrings, aBitmapIndexOptions, true, aBTreeIndexConfig);
+    public static MapStoreConfigHolder aMapStoreConfigHolder = new MapStoreConfigHolder(aBoolean, aBoolean, anInt, anInt, aString, aData, aString, aData, aMapOfStringToString, aString, aBoolean, aBoolean);
 
     public static NearCachePreloaderConfig aNearCachePreloaderConfig = new NearCachePreloaderConfig(aBoolean, aString);
 
@@ -881,18 +903,23 @@ public class ReferenceObjects {
     public static CacheConfigHolder aCacheConfigHolder = new CacheConfigHolder(aString, aString, aString, anInt, anInt,
             aString, anEvictionConfigHolder, aWanReplicationRef, aString, aString, aData, aData, aData, aBoolean,
             aBoolean, aBoolean, aBoolean, aBoolean, aHotRestartConfig, anEventJournalConfig, aString, aListOfData,
-            aMergePolicyConfig, aBoolean, aListOfListenerConfigHolders, aBoolean, aMerkleTreeConfig);
+            aMergePolicyConfig, aBoolean, aListOfListenerConfigHolders, aBoolean, aMerkleTreeConfig, true,
+            aDataPersistenceConfig);
     private static MemberVersion aMemberVersion = new MemberVersion(aByte, aByte, aByte);
     public static Collection<MemberInfo> aListOfMemberInfos = Collections.singletonList(new MemberInfo(anAddress, aUUID, aMapOfStringToString, aBoolean, aMemberVersion,
             ImmutableMap.of(EndpointQualifier.resolve(ProtocolType.WAN, "localhost"), anAddress)));
 
     public static AnchorDataListHolder anAnchorDataListHolder = new AnchorDataListHolder(aListOfIntegers, aListOfDataToData);
     public static PagingPredicateHolder aPagingPredicateHolder = new PagingPredicateHolder(anAnchorDataListHolder, aData, aData,
-            anInt, anInt, aByte, aData);
+            anInt, anInt, aByte, aData, false, null);
 
     public static QueryId anSqlQueryId = new QueryId(aLong, aLong, aLong, aLong);
     public static SqlColumnMetadata anSqlColumnMetadata = CustomTypeFactory.createSqlColumnMetadata(aString, SqlColumnType.BOOLEAN.getId(), aBoolean, aBoolean);
     public static List<SqlColumnMetadata> aListOfSqlColumnMetadata = Collections.singletonList(anSqlColumnMetadata);
+    public static SqlSummary aSqlSummary = CustomTypeFactory.createSqlSummary(aString, aBoolean);
+    public static JobAndSqlSummary aJobAndSqlSummary = CustomTypeFactory.createJobAndSqlSummary(aBoolean, aLong, aLong, aString, 2, aLong, aLong, aString, aSqlSummary);
+    public static List<JobAndSqlSummary> aListJobAndSqlSummary = Collections.singletonList(aJobAndSqlSummary);
     public static SqlError anSqlError = new SqlError(anInt, aString, aUUID, aBoolean, aString);
     public static SqlPage aSqlPage = SqlPage.fromColumns(Collections.singletonList(SqlColumnType.INTEGER), Collections.singletonList(Arrays.asList(1, 2, 3, 4)), true);
+    public static HazelcastJsonValue aHazelcastJsonValue = new HazelcastJsonValue("{'value': ''}");
 }

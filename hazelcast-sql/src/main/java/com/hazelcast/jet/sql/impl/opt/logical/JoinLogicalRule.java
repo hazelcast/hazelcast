@@ -42,9 +42,9 @@ final class JoinLogicalRule extends ConverterRule {
     public RelNode convert(RelNode rel) {
         LogicalJoin join = (LogicalJoin) rel;
 
-        // We convert every RIGHT JOIN to LEFT JOIN to use already
-        // implemented LEFT JOIN operators.
-        if (join.getJoinType() == JoinRelType.RIGHT) {
+        // We convert every RIGHT JOIN to LEFT JOIN to use already-implemented
+        // LEFT JOIN operators.
+        if (OptUtils.isBounded(join) && join.getJoinType() == JoinRelType.RIGHT) {
             return JoinCommuteRule.swap(join, true);
         }
 

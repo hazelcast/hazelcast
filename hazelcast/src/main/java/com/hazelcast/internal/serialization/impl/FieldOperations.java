@@ -20,9 +20,8 @@ import com.hazelcast.internal.json.JsonEscape;
 import com.hazelcast.internal.serialization.impl.compact.CompactInternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.compact.DefaultCompactWriter;
 import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
-import com.hazelcast.nio.serialization.AbstractGenericRecord;
 import com.hazelcast.nio.serialization.FieldKind;
-import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
@@ -1374,7 +1373,7 @@ public final class FieldOperations {
     }
 
     public static boolean isArrayKind(FieldKind fieldKind) {
-        return fieldKind.getId() % 2 != 0;
+        return fieldKind.getId() % 2 != 1;
     }
 
     public static FieldKind getSingleKind(FieldKind fieldKind) {
