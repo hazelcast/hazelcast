@@ -239,7 +239,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public void removeReplicatedRecord(Data dataKey) {
         Record record = storage.get(dataKey);
         if (record != null) {
-            removeRecord0(dataKey, record);
+            removeRecord0(dataKey, record, true);
         }
     }
 
@@ -520,29 +520,30 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         return definedExpirationTime - System.currentTimeMillis();
     }
 
-    public int removeBulk(ArrayList<Data> dataKeys, ArrayList<Record> records) {
-        return removeOrEvictEntries(dataKeys, records, false);
+    public int removeBulk(ArrayList<Data> dataKeys, ArrayList<Record> records, boolean backup) {
+        return removeOrEvictEntries(dataKeys, records, false, backup);
     }
 
-    protected int evictBulk(ArrayList<Data> dataKeys, ArrayList<Record> records) {
-        return removeOrEvictEntries(dataKeys, records, true);
+    protected int evictBulk(ArrayList<Data> dataKeys, ArrayList<Record> records, boolean backup) {
+        return removeOrEvictEntries(dataKeys, records, true, backup);
     }
 
-    private int removeOrEvictEntries(ArrayList<Data> dataKeys, ArrayList<Record> records, boolean eviction) {
+    private int removeOrEvictEntries(ArrayList<Data> dataKeys, ArrayList<Record> records, boolean eviction,
+                                     boolean backup) {
         for (int i = 0; i < dataKeys.size(); i++) {
             Data dataKey = dataKeys.get(i);
             Record record = records.get(i);
-            removeOrEvictEntry(dataKey, record, eviction);
+            removeOrEvictEntry(dataKey, record, eviction, backup);
         }
 
         return dataKeys.size();
     }
 
-    private void removeOrEvictEntry(Data dataKey, Record record, boolean eviction) {
+    private void removeOrEvictEntry(Data dataKey, Record record, boolean eviction, boolean backup) {
         if (eviction) {
-            mutationObserver.onEvictRecord(dataKey, record);
+            mutationObserver.onEvictRecord(dataKey, record, backup);
         } else {
-            mutationObserver.onRemoveRecord(dataKey, record);
+            mutationObserver.onRemoveRecord(dataKey, record, backup);
         }
         removeKeyFromExpirySystem(dataKey);
         storage.removeRecord(dataKey, record);
@@ -555,7 +556,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (record != null) {
             value = record.getValue();
             mapDataStore.flush(key, value, backup);
-            mutationObserver.onEvictRecord(key, record);
+            mutationObserver.onEvictRecord(key, record, backup);
             removeKeyFromExpirySystem(key);
             storage.removeRecord(key, record);
             if (!backup) {
@@ -586,7 +587,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         if (record == null) {
             return;
         }
-        removeRecord0(key, record);
+        removeRecord0(key, record, true);
         if (persistenceEnabledFor(provenance)) {
             mapDataStore.removeBackup(key, now, transactionId);
         }
@@ -660,7 +661,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             mapDataStore.remove(key, now, null);
             if (record != null) {
                 onStore(record);
-                removeRecord0(key, record);
+                removeRecord0(key, record, false);
                 updateStatsOnRemove(now);
             }
             removed = true;
@@ -1079,7 +1080,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                     mapDataStore.remove(key, now, null);
                 }
                 onStore(record);
-                removeRecord0(key, record);
+                removeRecord0(key, record, false);
                 return true;
             }
 
@@ -1217,12 +1218,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
             onStore(record);
         }
-        removeRecord0(key, record);
+        removeRecord0(key, record, false);
         return oldValue;
     }
 
-    public void removeRecord0(Data key, @Nonnull Record record) {
-        mutationObserver.onRemoveRecord(key, record);
+    public void removeRecord0(Data key, @Nonnull Record record, boolean backup) {
+        mutationObserver.onRemoveRecord(key, record, backup);
         removeKeyFromExpirySystem(key);
         storage.removeRecord(key, record);
     }
@@ -1406,12 +1407,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }, true);
 
         flush(keys, records, backup);
-        return evictBulk(keys, records);
+        return evictBulk(keys, records, backup);
     }
 
     // TODO optimize when no mapdatastore
     @Override
-    public int clear() {
+    public int clear(boolean backup) {
         checkIfLoaded();
 
         ArrayList<Data> keys = new ArrayList<>();
@@ -1432,7 +1433,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         // This conversion is required by mapDataStore#removeAll call.
         mapDataStore.removeAll(keys);
         mapDataStore.reset();
-        int removedKeyCount = removeBulk(keys, records);
+        int removedKeyCount = removeBulk(keys, records, backup);
         if (removedKeyCount > 0) {
             updateStatsOnRemove(Clock.currentTimeMillis());
         }
