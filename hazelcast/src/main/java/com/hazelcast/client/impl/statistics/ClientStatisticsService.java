@@ -58,8 +58,6 @@ public class ClientStatisticsService {
     private static final char ESCAPE_CHAR = '\\';
 
     private final MetricsRegistry metricsRegistry;
-    private ClientMetricCollector clientMetricCollector;
-    private CompositeMetricsCollector compositeMetricsCollector;
     private final boolean enabled;
     private final ILogger logger = Logger.getLogger(this.getClass());
 
@@ -134,14 +132,14 @@ public class ClientStatisticsService {
      * @param periodSeconds the interval at which the statistics collection and send is being run
      */
     private void schedulePeriodicStatisticsSendTask(long periodSeconds) {
-        clientMetricCollector = new ClientMetricCollector();
-        compositeMetricsCollector = new CompositeMetricsCollector(clientMetricCollector,
-                publisherMetricsCollector);
-
         client.getTaskScheduler().scheduleWithRepetition(this::collectAndSendStats, 0, periodSeconds, SECONDS);
     }
 
     private void collectAndSendStats() {
+        ClientMetricCollector clientMetricCollector = new ClientMetricCollector();
+        CompositeMetricsCollector compositeMetricsCollector = new CompositeMetricsCollector(clientMetricCollector,
+                publisherMetricsCollector);
+
         long collectionTimestamp = System.currentTimeMillis();
         metricsRegistry.collect(compositeMetricsCollector);
         publisherMetricsCollector.publishCollectedMetrics();
