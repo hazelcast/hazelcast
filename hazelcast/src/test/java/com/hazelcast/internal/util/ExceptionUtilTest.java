@@ -136,7 +136,7 @@ public class ExceptionUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testRethrowFromCollection_when_ignoredThrowableIsOnlyOnList_then_() throws Throwable {
+    public void testRethrowFromCollection_when_ignoredThrowableIsOnlyOnList_then_isNotRethrown() throws Throwable {
         rethrowFromCollection(Collections.singleton(new TestException()), TestException.class);
     }
 

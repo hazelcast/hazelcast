@@ -44,6 +44,7 @@ import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
 import static com.hazelcast.jet.impl.util.Util.distinctBy;
 
 public class JetGetJobSummaryListMessageTask extends AbstractMultiTargetMessageTask<Void> {
+    private static final Class[] IGNORED_EXCEPTIONS = {TargetNotMemberException.class, MemberLeftException.class};
 
     JetGetJobSummaryListMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -63,9 +64,9 @@ public class JetGetJobSummaryListMessageTask extends AbstractMultiTargetMessageT
     @SuppressWarnings("unchecked")
     @Override
     protected Object reduce(Map<Member, Object> map) throws Throwable {
-        rethrowFromCollection(map.values(), TargetNotMemberException.class, MemberLeftException.class);
+        rethrowFromCollection(map.values(), IGNORED_EXCEPTIONS);
         return map.values().stream()
-                .filter(item -> item instanceof List<?>)
+                .filter(item -> !(item instanceof Throwable))
                 .flatMap(item -> ((List<JobSummary>) item).stream())
                 // In edge cases there can be duplicates. E.g. the GetIdsOp is broadcast to all members.  member1
                 // is master and responds and dies. It's removed from cluster, member2 becomes master and
