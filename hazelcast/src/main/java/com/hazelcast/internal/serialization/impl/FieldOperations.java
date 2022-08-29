@@ -17,6 +17,7 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.json.JsonEscape;
+import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
 import com.hazelcast.internal.serialization.impl.compact.CompactInternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.compact.DefaultCompactWriter;
 import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
@@ -859,7 +860,7 @@ public final class FieldOperations {
         ALL[FieldKind.COMPACT.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readAsLeafObjectOnQuery(InternalGenericRecord genericRecord, String fieldName, FieldDescriptor fd) {
-                return ((CompactInternalGenericRecord) genericRecord).getObject(fd);
+                return ((CompactGenericRecord) genericRecord).getObject(fd);
             }
 
             @Override

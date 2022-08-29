@@ -19,6 +19,10 @@ package com.hazelcast.internal.serialization.impl.compact;
 import com.hazelcast.internal.json.JsonEscape;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.AbstractGenericRecord;
+import com.hazelcast.nio.serialization.FieldKind;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 /**
  * An extension of the {@link AbstractGenericRecord} that requires the
@@ -33,6 +37,16 @@ public abstract class CompactGenericRecord extends AbstractGenericRecord {
      * Returns the schema associated with this GenericRecord.
      */
     public abstract Schema getSchema();
+
+    /**
+     * WARNING: This method should only be used if `fd` is known to be a valid field descriptor in this generic record
+     * and its kind is {@link FieldKind#COMPACT}.
+     */
+    @Nullable
+    public abstract <T> T getObject(@Nonnull FieldDescriptor fd);
+
+    @Nonnull
+    public abstract FieldDescriptor getFieldDescriptor(@Nonnull String fieldName);
 
     @Override
     public String toString() {

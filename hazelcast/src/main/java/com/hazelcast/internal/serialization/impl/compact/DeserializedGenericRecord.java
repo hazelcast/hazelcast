@@ -687,6 +687,22 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         return getGenericRecord(fieldName);
     }
 
+    @Override
+    @Nullable
+    public <T> T getObject(@Nonnull FieldDescriptor fd) {
+        return (T) objects.get(fd.getFieldName());
+    }
+
+    @Override
+    @Nonnull
+    public FieldDescriptor getFieldDescriptor(@Nonnull String fieldName) {
+        FieldDescriptor field = schema.getField(fieldName);
+        if (field == null) {
+            throw new HazelcastSerializationException("Unknown field name: '" + fieldName + "' for " + schema);
+        }
+        return field;
+    }
+
     @Nullable
     @Override
     public BigDecimal getDecimalFromArray(@Nonnull String fieldName, int index) {

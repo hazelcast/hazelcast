@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl;
 
-import com.hazelcast.internal.serialization.impl.compact.CompactInternalGenericRecord;
+import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
 import com.hazelcast.internal.serialization.impl.compact.FieldDescriptor;
 import com.hazelcast.internal.serialization.impl.portable.PortableInternalGenericRecord;
 import com.hazelcast.internal.util.StringUtil;
@@ -249,8 +249,8 @@ public final class GenericRecordQueryReader implements ValueReader {
     }
 
     private Object readLeaf(InternalGenericRecord record, String path) {
-        if (record instanceof CompactInternalGenericRecord) {
-            FieldDescriptor fd = ((CompactInternalGenericRecord) record).getFieldDescriptor(path);
+        if (record instanceof CompactGenericRecord) {
+            FieldDescriptor fd = ((CompactGenericRecord) record).getFieldDescriptor(path);
             return fieldOperations(fd.getKind()).readAsLeafObjectOnQuery(record, path, fd);
         } else {
             // Getting field descriptor is not possible in portable.

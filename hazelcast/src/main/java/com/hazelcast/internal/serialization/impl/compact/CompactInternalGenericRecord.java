@@ -508,10 +508,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return (T) getVariableSize(fieldName, COMPACT, in -> serializer.read(in, schemaIncludedInBinary));
     }
 
-    /**
-     * WARNING: This method should only be used if `fd` is known to be a valid field descriptor in this generic record
-     * and its kind is {@link FieldKind#COMPACT}.
-     */
+    @Override
     @Nullable
     public <T> T getObject(@Nonnull FieldDescriptor fd) {
         return (T) getVariableSize(fd, in -> serializer.read(in, schemaIncludedInBinary));
@@ -1136,6 +1133,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return primitiveOffset + dataStartPosition;
     }
 
+    @Override
     @Nonnull
     public FieldDescriptor getFieldDescriptor(@Nonnull String fieldName) {
         FieldDescriptor fd = schema.getField(fieldName);
