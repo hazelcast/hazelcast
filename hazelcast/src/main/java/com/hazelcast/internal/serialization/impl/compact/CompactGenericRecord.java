@@ -19,10 +19,14 @@ package com.hazelcast.internal.serialization.impl.compact;
 import com.hazelcast.internal.json.JsonEscape;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.AbstractGenericRecord;
-import com.hazelcast.nio.serialization.FieldKind;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.OffsetDateTime;
 
 /**
  * An extension of the {@link AbstractGenericRecord} that requires the
@@ -39,9 +43,124 @@ public abstract class CompactGenericRecord extends AbstractGenericRecord {
     public abstract Schema getSchema();
 
     /**
-     * WARNING: This method should only be used if `fd` is known to be a valid field descriptor in this generic record
-     * and its kind is {@link FieldKind#COMPACT}.
+     * WARNING: The following getter methods are for optimizing compact generic records query reading. They
+     * allow a field descriptor to be reused and not having to read the same field descriptor twice from schema.
+     * These methods should only be used if the field descriptor passed to these methods are known to be a valid
+     * field descriptor in the generic record and its field kind is correct.
      */
+    public abstract boolean getBoolean(@Nonnull FieldDescriptor fd);
+
+    public abstract byte getInt8(@Nonnull FieldDescriptor fd);
+
+    public abstract short getInt16(@Nonnull FieldDescriptor fd);
+
+    public abstract int getInt32(@Nonnull FieldDescriptor fd);
+
+    public abstract long getInt64(@Nonnull FieldDescriptor fd);
+
+    public abstract float getFloat32(@Nonnull FieldDescriptor fd);
+
+    public abstract double getFloat64(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract String getString(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract BigDecimal getDecimal(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract LocalTime getTime(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract LocalDate getDate(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract LocalDateTime getTimestamp(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract OffsetDateTime getTimestampWithTimezone(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract boolean[] getArrayOfBoolean(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract byte[] getArrayOfInt8(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract short[] getArrayOfInt16(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract int[] getArrayOfInt32(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract long[] getArrayOfInt64(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract float[] getArrayOfFloat32(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract double[] getArrayOfFloat64(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract String[] getArrayOfString(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract BigDecimal[] getArrayOfDecimal(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract LocalTime[] getArrayOfTime(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract LocalDate[] getArrayOfDate(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract LocalDateTime[] getArrayOfTimestamp(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract OffsetDateTime[] getArrayOfTimestampWithTimezone(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract Boolean getNullableBoolean(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract Byte getNullableInt8(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract Short getNullableInt16(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract Integer getNullableInt32(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract Long getNullableInt64(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract Float getNullableFloat32(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract Double getNullableFloat64(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract Boolean[] getArrayOfNullableBoolean(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract Byte[] getArrayOfNullableInt8(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract Short[] getArrayOfNullableInt16(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract Integer[] getArrayOfNullableInt32(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract Long[] getArrayOfNullableInt64(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract Float[] getArrayOfNullableFloat32(@Nonnull FieldDescriptor fd);
+
+    @Nullable
+    public abstract Double[] getArrayOfNullableFloat64(@Nonnull FieldDescriptor fd);
+
     @Nullable
     public abstract <T> T getObject(@Nonnull FieldDescriptor fd);
 

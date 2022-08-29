@@ -132,13 +132,25 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     }
 
     @Override
+    public boolean getBoolean(@Nonnull FieldDescriptor fd) {
+        return getNonNull(fd.getFieldName(), "Boolean");
+    }
+
+    @Override
     public boolean getBoolean(@Nonnull String fieldName) {
-        return getNonNull(fieldName, BOOLEAN, NULLABLE_BOOLEAN, "Boolean");
+        check(fieldName, BOOLEAN, NULLABLE_BOOLEAN);
+        return getNonNull(fieldName, "Boolean");
+    }
+
+    @Override
+    public byte getInt8(@Nonnull FieldDescriptor fd) {
+        return getNonNull(fd.getFieldName(), "Int8");
     }
 
     @Override
     public byte getInt8(@Nonnull String fieldName) {
-        return getNonNull(fieldName, INT8, NULLABLE_INT8, "Int8");
+        check(fieldName, INT8, NULLABLE_INT8);
+        return getNonNull(fieldName, "Int8");
     }
 
     @Override
@@ -147,76 +159,159 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     }
 
     @Override
+    public double getFloat64(@Nonnull FieldDescriptor fd) {
+        return getNonNull(fd.getFieldName(), "Float64");
+    }
+
+    @Override
     public double getFloat64(@Nonnull String fieldName) {
-        return getNonNull(fieldName, FLOAT64, NULLABLE_FLOAT64, "Float64");
+        check(fieldName, FLOAT64, NULLABLE_FLOAT64);
+        return getNonNull(fieldName, "Float64");
+    }
+
+    @Override
+    public float getFloat32(@Nonnull FieldDescriptor fd) {
+        return getNonNull(fd.getFieldName(), "Float32");
     }
 
     @Override
     public float getFloat32(@Nonnull String fieldName) {
-        return getNonNull(fieldName, FLOAT32, NULLABLE_FLOAT32, "Float32");
+        check(fieldName, FLOAT32, NULLABLE_FLOAT32);
+        return getNonNull(fieldName, "Float32");
+    }
+
+    @Override
+    public int getInt32(@Nonnull FieldDescriptor fd) {
+        return getNonNull(fd.getFieldName(), "Int32");
     }
 
     @Override
     public int getInt32(@Nonnull String fieldName) {
-        return getNonNull(fieldName, INT32, NULLABLE_INT32, "Int32");
+        check(fieldName, INT32, NULLABLE_INT32);
+        return getNonNull(fieldName, "Int32");
+    }
+
+    @Override
+    public long getInt64(@Nonnull FieldDescriptor fd) {
+        return getNonNull(fd.getFieldName(), "Int64");
     }
 
     @Override
     public long getInt64(@Nonnull String fieldName) {
-        return getNonNull(fieldName, INT64, NULLABLE_INT64, "Int64");
+        check(fieldName, INT64, NULLABLE_INT64);
+        return getNonNull(fieldName, "Int64");
+    }
+
+    @Override
+    public short getInt16(@Nonnull FieldDescriptor fd) {
+        return getNonNull(fd.getFieldName(), "Int16");
     }
 
     @Override
     public short getInt16(@Nonnull String fieldName) {
-        return getNonNull(fieldName, INT16, NULLABLE_INT16, "Int16");
+        check(fieldName, INT16, NULLABLE_INT16);
+        return getNonNull(fieldName, "Int16");
+    }
+
+    @Nullable
+    @Override
+    public String getString(@Nonnull FieldDescriptor fd) {
+        return (String) objects.get(fd.getFieldName());
     }
 
     @Override
     @Nullable
     public String getString(@Nonnull String fieldName) {
-        return get(fieldName, STRING);
+        check(fieldName, STRING);
+        return (String) objects.get(fieldName);
+    }
+
+    @Nullable
+    @Override
+    public BigDecimal getDecimal(@Nonnull FieldDescriptor fd) {
+        return (BigDecimal) objects.get(fd.getFieldName());
     }
 
     @Override
     @Nullable
     public BigDecimal getDecimal(@Nonnull String fieldName) {
-        return get(fieldName, DECIMAL);
+        check(fieldName, DECIMAL);
+        return (BigDecimal) objects.get(fieldName);
+    }
+
+    @Nullable
+    @Override
+    public LocalTime getTime(@Nonnull FieldDescriptor fd) {
+        return (LocalTime) objects.get(fd.getFieldName());
     }
 
     @Nullable
     @Override
     public LocalTime getTime(@Nonnull String fieldName) {
-        return get(fieldName, TIME);
+        check(fieldName, TIME);
+        return (LocalTime) objects.get(fieldName);
+    }
+
+    @Nullable
+    @Override
+    public LocalDate getDate(@Nonnull FieldDescriptor fd) {
+        return (LocalDate) objects.get(fd.getFieldName());
     }
 
     @Nullable
     @Override
     public LocalDate getDate(@Nonnull String fieldName) {
-        return get(fieldName, DATE);
+        check(fieldName, DATE);
+        return (LocalDate) objects.get(fieldName);
+    }
+
+    @Nullable
+    @Override
+    public LocalDateTime getTimestamp(@Nonnull FieldDescriptor fd) {
+        return (LocalDateTime) objects.get(fd.getFieldName());
     }
 
     @Nullable
     @Override
     public LocalDateTime getTimestamp(@Nonnull String fieldName) {
-        return get(fieldName, TIMESTAMP);
+        check(fieldName, TIMESTAMP);
+        return (LocalDateTime) objects.get(fieldName);
+    }
+
+    @Nullable
+    @Override
+    public OffsetDateTime getTimestampWithTimezone(@Nonnull FieldDescriptor fd) {
+        return (OffsetDateTime) objects.get(fd.getFieldName());
     }
 
     @Nullable
     @Override
     public OffsetDateTime getTimestampWithTimezone(@Nonnull String fieldName) {
-        return get(fieldName, TIMESTAMP_WITH_TIMEZONE);
+        check(fieldName, TIMESTAMP_WITH_TIMEZONE);
+        return (OffsetDateTime) objects.get(fieldName);
     }
 
     @Nullable
     @Override
     public GenericRecord getGenericRecord(@Nonnull String fieldName) {
-        return get(fieldName, COMPACT);
+        check(fieldName, COMPACT);
+        return (GenericRecord) objects.get(fieldName);
+    }
+
+    @Nullable
+    @Override
+    public boolean[] getArrayOfBoolean(@Nonnull FieldDescriptor fd) {
+        return getArrayOfBooleanInternal(fd.getFieldName(), fd.getKind());
     }
 
     @Override
     @Nullable
     public boolean[] getArrayOfBoolean(@Nonnull String fieldName) {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_BOOLEAN, ARRAY_OF_NULLABLE_BOOLEAN);
+        return getArrayOfBooleanInternal(fieldName, fieldKind);
+    }
+
+    private boolean[] getArrayOfBooleanInternal(@Nonnull String fieldName, FieldKind fieldKind) {
         if (fieldKind == ARRAY_OF_NULLABLE_BOOLEAN) {
             Boolean[] array = (Boolean[]) objects.get(fieldName);
             boolean[] result = new boolean[array.length];
@@ -231,10 +326,20 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         return (boolean[]) objects.get(fieldName);
     }
 
+    @Nullable
+    @Override
+    public byte[] getArrayOfInt8(@Nonnull FieldDescriptor fd) {
+        return getArrayOfInt8Internal(fd.getFieldName(), fd.getKind());
+    }
+
     @Override
     @Nullable
     public byte[] getArrayOfInt8(@Nonnull String fieldName) {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_INT8, ARRAY_OF_NULLABLE_INT8);
+        return getArrayOfInt8Internal(fieldName, fieldKind);
+    }
+
+    private byte[] getArrayOfInt8Internal(@Nonnull String fieldName, FieldKind fieldKind) {
         if (fieldKind == ARRAY_OF_NULLABLE_INT8) {
             Byte[] array = (Byte[]) objects.get(fieldName);
             byte[] result = new byte[array.length];
@@ -255,10 +360,20 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         throw new UnsupportedOperationException("Compact format does not support reading an array of chars field");
     }
 
+    @Nullable
+    @Override
+    public double[] getArrayOfFloat64(@Nonnull FieldDescriptor fd) {
+        return getArrayOfFloat64Internal(fd.getFieldName(), fd.getKind());
+    }
+
     @Override
     @Nullable
     public double[] getArrayOfFloat64(@Nonnull String fieldName) {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_FLOAT64, ARRAY_OF_NULLABLE_FLOAT64);
+        return getArrayOfFloat64Internal(fieldName, fieldKind);
+    }
+
+    private double[] getArrayOfFloat64Internal(@Nonnull String fieldName, FieldKind fieldKind) {
         if (fieldKind == ARRAY_OF_NULLABLE_FLOAT64) {
             Double[] array = (Double[]) objects.get(fieldName);
             double[] result = new double[array.length];
@@ -273,10 +388,20 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         return (double[]) objects.get(fieldName);
     }
 
+    @Nullable
+    @Override
+    public float[] getArrayOfFloat32(@Nonnull FieldDescriptor fd) {
+        return getArrayOfFloat32Internal(fd.getFieldName(), fd.getKind());
+    }
+
     @Override
     @Nullable
     public float[] getArrayOfFloat32(@Nonnull String fieldName) {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_FLOAT32, ARRAY_OF_NULLABLE_FLOAT32);
+        return getArrayOfFloat32Internal(fieldName, fieldKind);
+    }
+
+    private float[] getArrayOfFloat32Internal(@Nonnull String fieldName, FieldKind fieldKind) {
         if (fieldKind == ARRAY_OF_NULLABLE_FLOAT32) {
             Float[] array = (Float[]) objects.get(fieldName);
             float[] result = new float[array.length];
@@ -291,10 +416,20 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         return (float[]) objects.get(fieldName);
     }
 
+    @Nullable
+    @Override
+    public int[] getArrayOfInt32(@Nonnull FieldDescriptor fd) {
+        return getArrayOfInt32Internal(fd.getFieldName(), fd.getKind());
+    }
+
     @Override
     @Nullable
     public int[] getArrayOfInt32(@Nonnull String fieldName) {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_INT32, ARRAY_OF_NULLABLE_INT32);
+        return getArrayOfInt32Internal(fieldName, fieldKind);
+    }
+
+    private int[] getArrayOfInt32Internal(@Nonnull String fieldName, FieldKind fieldKind) {
         if (fieldKind == ARRAY_OF_NULLABLE_INT32) {
             Integer[] array = (Integer[]) objects.get(fieldName);
             int[] result = new int[array.length];
@@ -309,10 +444,20 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         return (int[]) objects.get(fieldName);
     }
 
+    @Nullable
+    @Override
+    public long[] getArrayOfInt64(@Nonnull FieldDescriptor fd) {
+        return getArrayOfInt64Internal(fd.getFieldName(), fd.getKind());
+    }
+
     @Override
     @Nullable
     public long[] getArrayOfInt64(@Nonnull String fieldName) {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_INT64, ARRAY_OF_NULLABLE_INT64);
+        return getArrayOfInt64Internal(fieldName, fieldKind);
+    }
+
+    private long[] getArrayOfInt64Internal(@Nonnull String fieldName, FieldKind fieldKind) {
         if (fieldKind == ARRAY_OF_NULLABLE_INT64) {
             Long[] array = (Long[]) objects.get(fieldName);
             long[] result = new long[array.length];
@@ -327,10 +472,20 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         return (long[]) objects.get(fieldName);
     }
 
+    @Nullable
+    @Override
+    public short[] getArrayOfInt16(@Nonnull FieldDescriptor fd) {
+        return getArrayOfInt16Internal(fd.getFieldName(), fd.getKind());
+    }
+
     @Override
     @Nullable
     public short[] getArrayOfInt16(@Nonnull String fieldName) {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_INT16, ARRAY_OF_NULLABLE_INT16);
+        return getArrayOfInt16Internal(fieldName, fieldKind);
+    }
+
+    private short[] getArrayOfInt16Internal(@Nonnull String fieldName, FieldKind fieldKind) {
         if (fieldKind == ARRAY_OF_NULLABLE_INT16) {
             Short[] array = (Short[]) objects.get(fieldName);
             short[] result = new short[array.length];
@@ -345,94 +500,196 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         return (short[]) objects.get(fieldName);
     }
 
+    @Nullable
+    @Override
+    public String[] getArrayOfString(@Nonnull FieldDescriptor fd) {
+        return (String[]) objects.get(fd.getFieldName());
+    }
+
     @Override
     @Nullable
     public String[] getArrayOfString(@Nonnull String fieldName) {
-        return get(fieldName, ARRAY_OF_STRING);
+        check(fieldName, ARRAY_OF_STRING);
+        return (String[]) objects.get(fieldName);
+    }
+
+    @Nullable
+    @Override
+    public BigDecimal[] getArrayOfDecimal(@Nonnull FieldDescriptor fd) {
+        return (BigDecimal[]) objects.get(fd.getFieldName());
     }
 
     @Override
     @Nullable
     public BigDecimal[] getArrayOfDecimal(@Nonnull String fieldName) {
-        return get(fieldName, ARRAY_OF_DECIMAL);
+        check(fieldName, ARRAY_OF_DECIMAL);
+        return (BigDecimal[]) objects.get(fieldName);
+    }
+
+    @Nullable
+    @Override
+    public LocalTime[] getArrayOfTime(@Nonnull FieldDescriptor fd) {
+        return (LocalTime[]) objects.get(fd.getFieldName());
     }
 
     @Override
     @Nullable
     public LocalTime[] getArrayOfTime(@Nonnull String fieldName) {
-        return get(fieldName, ARRAY_OF_TIME);
+        check(fieldName, ARRAY_OF_TIME);
+        return (LocalTime[]) objects.get(fieldName);
+    }
+
+    @Nullable
+    @Override
+    public LocalDate[] getArrayOfDate(@Nonnull FieldDescriptor fd) {
+        return (LocalDate[]) objects.get(fd.getFieldName());
     }
 
     @Override
     @Nullable
     public LocalDate[] getArrayOfDate(@Nonnull String fieldName) {
-        return get(fieldName, ARRAY_OF_DATE);
+        check(fieldName, ARRAY_OF_DATE);
+        return (LocalDate[]) objects.get(fieldName);
+    }
+
+    @Nullable
+    @Override
+    public LocalDateTime[] getArrayOfTimestamp(@Nonnull FieldDescriptor fd) {
+        return (LocalDateTime[]) objects.get(fd.getFieldName());
     }
 
     @Override
     @Nullable
     public LocalDateTime[] getArrayOfTimestamp(@Nonnull String fieldName) {
-        return get(fieldName, ARRAY_OF_TIMESTAMP);
+        check(fieldName, ARRAY_OF_TIMESTAMP);
+        return (LocalDateTime[]) objects.get(fieldName);
+    }
+
+    @Nullable
+    @Override
+    public OffsetDateTime[] getArrayOfTimestampWithTimezone(@Nonnull FieldDescriptor fd) {
+        return (OffsetDateTime[]) objects.get(fd.getFieldName());
     }
 
     @Override
     @Nullable
     public OffsetDateTime[] getArrayOfTimestampWithTimezone(@Nonnull String fieldName) {
-        return get(fieldName, ARRAY_OF_TIMESTAMP_WITH_TIMEZONE);
+        check(fieldName, ARRAY_OF_TIMESTAMP_WITH_TIMEZONE);
+        return (OffsetDateTime[]) objects.get(fieldName);
     }
 
     @Nullable
     @Override
     public GenericRecord[] getArrayOfGenericRecord(@Nonnull String fieldName) {
-        return get(fieldName, ARRAY_OF_COMPACT);
+        check(fieldName, ARRAY_OF_COMPACT);
+        return (GenericRecord[]) objects.get(fieldName);
+    }
+
+    @Nullable
+    @Override
+    public Boolean getNullableBoolean(@Nonnull FieldDescriptor fd) {
+        return (Boolean) objects.get(fd.getFieldName());
     }
 
     @Nullable
     @Override
     public Boolean getNullableBoolean(@Nonnull String fieldName) {
-        return get(fieldName, BOOLEAN, NULLABLE_BOOLEAN);
+        check(fieldName, BOOLEAN, NULLABLE_BOOLEAN);
+        return (Boolean) objects.get(fieldName);
+    }
+
+    @Nullable
+    @Override
+    public Byte getNullableInt8(@Nonnull FieldDescriptor fd) {
+        return (Byte) objects.get(fd.getFieldName());
     }
 
     @Nullable
     @Override
     public Byte getNullableInt8(@Nonnull String fieldName) {
-        return get(fieldName, INT8, NULLABLE_INT8);
+        check(fieldName, INT8, NULLABLE_INT8);
+        return (Byte) objects.get(fieldName);
+    }
+
+    @Nullable
+    @Override
+    public Double getNullableFloat64(@Nonnull FieldDescriptor fd) {
+        return (Double) objects.get(fd.getFieldName());
     }
 
     @Nullable
     @Override
     public Double getNullableFloat64(@Nonnull String fieldName) {
-        return get(fieldName, FLOAT64, NULLABLE_FLOAT64);
+        check(fieldName, FLOAT64, NULLABLE_FLOAT64);
+        return (Double) objects.get(fieldName);
+    }
+
+    @Nullable
+    @Override
+    public Float getNullableFloat32(@Nonnull FieldDescriptor fd) {
+        return (Float) objects.get(fd.getFieldName());
     }
 
     @Nullable
     @Override
     public Float getNullableFloat32(@Nonnull String fieldName) {
-        return get(fieldName, FLOAT32, NULLABLE_FLOAT32);
+        check(fieldName, FLOAT32, NULLABLE_FLOAT32);
+        return (Float) objects.get(fieldName);
+    }
+
+    @Nullable
+    @Override
+    public Integer getNullableInt32(@Nonnull FieldDescriptor fd) {
+        return (Integer) objects.get(fd.getFieldName());
     }
 
     @Nullable
     @Override
     public Integer getNullableInt32(@Nonnull String fieldName) {
-        return get(fieldName, INT32, NULLABLE_INT32);
+        check(fieldName, INT32, NULLABLE_INT32);
+        return (Integer) objects.get(fieldName);
+    }
+
+    @Nullable
+    @Override
+    public Long getNullableInt64(@Nonnull FieldDescriptor fd) {
+        return (Long) objects.get(fd.getFieldName());
     }
 
     @Nullable
     @Override
     public Long getNullableInt64(@Nonnull String fieldName) {
-        return get(fieldName, INT64, NULLABLE_INT64);
+        check(fieldName, INT64, NULLABLE_INT64);
+        return (Long) objects.get(fieldName);
+    }
+
+    @Nullable
+    @Override
+    public Short getNullableInt16(@Nonnull FieldDescriptor fd) {
+        return (Short) objects.get(fd.getFieldName());
     }
 
     @Nullable
     @Override
     public Short getNullableInt16(@Nonnull String fieldName) {
-        return get(fieldName, INT16, NULLABLE_INT16);
+        check(fieldName, INT16, NULLABLE_INT16);
+        return (Short) objects.get(fieldName);
+    }
+
+    @Nullable
+    @Override
+    public Boolean[] getArrayOfNullableBoolean(@Nonnull FieldDescriptor fd) {
+        return getArrayOfNullableBooleanInternal(fd.getFieldName(), fd.getKind());
     }
 
     @Nullable
     @Override
     public Boolean[] getArrayOfNullableBoolean(@Nonnull String fieldName) {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_BOOLEAN, ARRAY_OF_NULLABLE_BOOLEAN);
+        return getArrayOfNullableBooleanInternal(fieldName, fieldKind);
+    }
+
+    private Boolean[] getArrayOfNullableBooleanInternal(@Nonnull String fieldName, FieldKind fieldKind) {
         if (fieldKind == ARRAY_OF_BOOLEAN) {
             boolean[] array = (boolean[]) objects.get(fieldName);
             Boolean[] result = new Boolean[array.length];
@@ -444,8 +701,18 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
 
     @Nullable
     @Override
+    public Byte[] getArrayOfNullableInt8(@Nonnull FieldDescriptor fd) {
+        return getArrayOfNullableInt8Internal(fd.getFieldName(), fd.getKind());
+    }
+
+    @Nullable
+    @Override
     public Byte[] getArrayOfNullableInt8(@Nonnull String fieldName) {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_INT8, ARRAY_OF_NULLABLE_INT8);
+        return getArrayOfNullableInt8Internal(fieldName, fieldKind);
+    }
+
+    private Byte[] getArrayOfNullableInt8Internal(@Nonnull String fieldName, FieldKind fieldKind) {
         if (fieldKind == ARRAY_OF_INT8) {
             byte[] array = (byte[]) objects.get(fieldName);
             Byte[] result = new Byte[array.length];
@@ -457,8 +724,18 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
 
     @Nullable
     @Override
+    public Double[] getArrayOfNullableFloat64(@Nonnull FieldDescriptor fd) {
+        return getArrayOfNullableFloat64Internal(fd.getFieldName(), fd.getKind());
+    }
+
+    @Nullable
+    @Override
     public Double[] getArrayOfNullableFloat64(@Nonnull String fieldName) {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_FLOAT64, ARRAY_OF_NULLABLE_FLOAT64);
+        return getArrayOfNullableFloat64Internal(fieldName, fieldKind);
+    }
+
+    private Double[] getArrayOfNullableFloat64Internal(@Nonnull String fieldName, FieldKind fieldKind) {
         if (fieldKind == ARRAY_OF_FLOAT64) {
             double[] array = (double[]) objects.get(fieldName);
             Double[] result = new Double[array.length];
@@ -470,8 +747,18 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
 
     @Nullable
     @Override
+    public Float[] getArrayOfNullableFloat32(@Nonnull FieldDescriptor fd) {
+        return getArrayOfNullableFloat32Internal(fd.getFieldName(), fd.getKind());
+    }
+
+    @Nullable
+    @Override
     public Float[] getArrayOfNullableFloat32(@Nonnull String fieldName) {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_FLOAT32, ARRAY_OF_NULLABLE_FLOAT32);
+        return getArrayOfNullableFloat32Internal(fieldName, fieldKind);
+    }
+
+    private Float[] getArrayOfNullableFloat32Internal(@Nonnull String fieldName, FieldKind fieldKind) {
         if (fieldKind == ARRAY_OF_FLOAT32) {
             float[] array = (float[]) objects.get(fieldName);
             Float[] result = new Float[array.length];
@@ -483,8 +770,18 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
 
     @Nullable
     @Override
+    public Integer[] getArrayOfNullableInt32(@Nonnull FieldDescriptor fd) {
+        return getArrayOfNullableInt32Internal(fd.getFieldName(), fd.getKind());
+    }
+
+    @Nullable
+    @Override
     public Integer[] getArrayOfNullableInt32(@Nonnull String fieldName) {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_INT32, ARRAY_OF_NULLABLE_INT32);
+        return getArrayOfNullableInt32Internal(fieldName, fieldKind);
+    }
+
+    private Integer[] getArrayOfNullableInt32Internal(@Nonnull String fieldName, FieldKind fieldKind) {
         if (fieldKind == ARRAY_OF_INT32) {
             int[] array = (int[]) objects.get(fieldName);
             Integer[] result = new Integer[array.length];
@@ -496,8 +793,18 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
 
     @Nullable
     @Override
+    public Long[] getArrayOfNullableInt64(@Nonnull FieldDescriptor fd) {
+        return getArrayOfNullableInt64Internal(fd.getFieldName(), fd.getKind());
+    }
+
+    @Nullable
+    @Override
     public Long[] getArrayOfNullableInt64(@Nonnull String fieldName) {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_INT64, ARRAY_OF_NULLABLE_INT64);
+        return getArrayOfNullableInt64Internal(fieldName, fieldKind);
+    }
+
+    private Long[] getArrayOfNullableInt64Internal(@Nonnull String fieldName, FieldKind fieldKind) {
         if (fieldKind == ARRAY_OF_INT64) {
             long[] array = (long[]) objects.get(fieldName);
             Long[] result = new Long[array.length];
@@ -509,8 +816,18 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
 
     @Nullable
     @Override
+    public Short[] getArrayOfNullableInt16(@Nonnull FieldDescriptor fd) {
+        return getArrayOfNullableInt16Internal(fd.getFieldName(), fd.getKind());
+    }
+
+    @Nullable
+    @Override
     public Short[] getArrayOfNullableInt16(@Nonnull String fieldName) {
         FieldKind fieldKind = check(fieldName, ARRAY_OF_INT16, ARRAY_OF_NULLABLE_INT16);
+        return getArrayOfNullableInt16Internal(fieldName, fieldKind);
+    }
+
+    private Short[] getArrayOfNullableInt16Internal(@Nonnull String fieldName, FieldKind fieldKind) {
         if (fieldKind == ARRAY_OF_INT16) {
             short[] array = (short[]) objects.get(fieldName);
             Short[] result = new Short[array.length];
@@ -520,25 +837,12 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
         return (Short[]) objects.get(fieldName);
     }
 
-    private <T> T get(@Nonnull String fieldName, @Nonnull FieldKind primitiveFieldKind,
-                      @Nonnull FieldKind nullableFieldKind) {
-        check(fieldName, primitiveFieldKind, nullableFieldKind);
-        return (T) objects.get(fieldName);
-    }
-
-    private <T> T getNonNull(@Nonnull String fieldName, @Nonnull FieldKind primitiveFieldKind,
-                             @Nonnull FieldKind nullableFieldKind, String methodSuffix) {
-        check(fieldName, primitiveFieldKind, nullableFieldKind);
+    private <T> T getNonNull(@Nonnull String fieldName, String methodSuffix) {
         T t = (T) objects.get(fieldName);
         if (t == null) {
             throw exceptionForUnexpectedNullValue(fieldName, METHOD_PREFIX_FOR_ERROR_MESSAGES, methodSuffix);
         }
         return t;
-    }
-
-    private <T> T get(@Nonnull String fieldName, @Nonnull FieldKind fieldKind) {
-        check(fieldName, fieldKind);
-        return (T) objects.get(fieldName);
     }
 
     private FieldKind check(@Nonnull String fieldName, @Nonnull FieldKind... kinds) {
@@ -566,13 +870,15 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Nullable
     @Override
     public InternalGenericRecord getInternalGenericRecord(@Nonnull String fieldName) {
-        return get(fieldName, COMPACT);
+        check(fieldName, COMPACT);
+        return (InternalGenericRecord) objects.get(fieldName);
     }
 
     @Nullable
     @Override
     public InternalGenericRecord[] getArrayOfInternalGenericRecord(@Nonnull String fieldName) {
-        return get(fieldName, ARRAY_OF_COMPACT);
+        check(fieldName, ARRAY_OF_COMPACT);
+        return (InternalGenericRecord[]) objects.get(fieldName);
     }
 
     @Nullable
