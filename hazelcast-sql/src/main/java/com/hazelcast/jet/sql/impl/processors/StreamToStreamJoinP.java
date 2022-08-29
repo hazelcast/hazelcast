@@ -117,6 +117,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             // using MIN_VALUE + 1 because Object2LongHashMap uses MIN_VALUE as a missing value, and it cannot be used as a value
             wmState.put(wmKey, Long.MIN_VALUE + 1);
             lastEmittedWm.put(wmKey, Long.MIN_VALUE + 1);
+            lastReceivedWm.put(wmKey, Long.MIN_VALUE + 1);
         }
 
         // no key must be on both sides
@@ -205,10 +206,15 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             if (preparedOutput == null) {
                 continue;
             }
-            if (ordinal == 1 - outerJoinSide) {
+
+            if (ordinal == outerJoinSide) {
+                // mark current item as used
+                unusedEventsTracker.remove(currItem);
+            } else if (ordinal == 1 - outerJoinSide) {
                 // mark opposite-side item as used
                 unusedEventsTracker.remove(oppositeBufferItem);
             }
+
             if (!tryEmit(preparedOutput)) {
                 pendingOutput.add(preparedOutput);
                 return false;
@@ -221,13 +227,14 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     }
 
     @Override
-    public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
+    public boolean tryProcessWatermark(int ordinal, @Nonnull Watermark watermark) {
         if (!pendingOutput.isEmpty()) {
             return processPendingOutput();
         }
 
         assert wmState.containsKey(watermark.key()) : "unexpected watermark key: " + watermark.key();
-        assert wmState.get(watermark.key()) < watermark.timestamp() : "non-monotonic watermark: " + watermark;
+        assert lastReceivedWm.get(watermark.key()) < watermark.timestamp() : "non-monotonic watermark: " + watermark
+                + " when state is " + lastReceivedWm.get(watermark.key());
 
         lastReceivedWm.put((Byte) watermark.key(), watermark.timestamp());
 
@@ -240,7 +247,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         }
 
         // Note: We can't immediately emit current WM, as it could render items in buffers late.
-
         for (Byte wmKey : wmState.keySet()) {
             long minimumBufferTime = findMinimumBufferTime(wmKey);
             long lastReceivedWm = this.lastReceivedWm.getValue(wmKey);
@@ -252,6 +258,11 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         }
 
         return processPendingOutput();
+    }
+
+    @Override
+    public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
+        return true;
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")

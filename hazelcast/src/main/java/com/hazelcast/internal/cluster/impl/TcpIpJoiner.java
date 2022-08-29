@@ -462,8 +462,12 @@ public class TcpIpJoiner extends AbstractJoiner {
 
     public void onMemberRemoved(Member member) {
         if (!member.localMember()) {
-            knownMemberAddresses.put(member.getAddress(), Clock.currentTimeMillis());
+            addTemporaryMemberAddress(member.getAddress());
         }
+    }
+
+    protected void addTemporaryMemberAddress(Address memberAddress) {
+        knownMemberAddresses.put(memberAddress, Clock.currentTimeMillis());
     }
 
     @Override

@@ -58,7 +58,7 @@ public final class StaticParams {
             .importFrom(SET_PARAMS)
             .setTryPut(true);
 
-    public static final StaticParams SET_WTH_NO_ACCESS_PARAMS = new StaticParams()
+    public static final StaticParams SET_WITH_NO_ACCESS_PARAMS = new StaticParams()
             .importFrom(SET_PARAMS)
             .setCountAsAccess(false);
 

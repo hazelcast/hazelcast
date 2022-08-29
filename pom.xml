@@ -81,7 +81,7 @@
         <maven.os.plugin.version>1.7.0</maven.os.plugin.version>
         <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
         <maven.resources.plugin.version>3.2.0</maven.resources.plugin.version>
-        <owasp.dependency-check.version>7.1.1</owasp.dependency-check.version>
+        <owasp.dependency-check.version>7.1.2</owasp.dependency-check.version>
         <maven.dependency.plugin.version>3.1.2</maven.dependency.plugin.version>
         <codehause.license.plugin.version>2.0.0</codehause.license.plugin.version>
 
@@ -115,7 +115,7 @@
         <objenesis.version>3.2</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.12.3</parquet.version>
-        <picocli.version>4.4.0</picocli.version>
+        <picocli.version>4.6.3</picocli.version>
         <postgresql.version>42.4.2</postgresql.version>
         <prometheus.version>0.17.0</prometheus.version>
         <protobuf.version>3.19.4</protobuf.version>
@@ -1759,7 +1759,7 @@
             <dependency>
                 <groupId>org.objenesis</groupId>
                 <artifactId>objenesis</artifactId>
-                <version>3.1</version>
+                <version>3.2</version>
             </dependency>
             <dependency>
                 <groupId>com.github.luben</groupId>
