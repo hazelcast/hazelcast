@@ -114,4 +114,16 @@ public class VarFieldsDTOSerializer implements CompactSerializer<VarFieldsDTO> {
         out.writeNullableFloat64("nullableD", object.nullableD);
         out.writeArrayOfNullableFloat64("arrayOfNullableD", object.arrayOfNullableD);
     }
+
+    @Nonnull
+    @Override
+    public String getTypeName() {
+        return "varFields";
+    }
+
+    @Nonnull
+    @Override
+    public Class<VarFieldsDTO> getCompactClass() {
+        return VarFieldsDTO.class;
+    }
 }

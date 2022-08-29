@@ -19,6 +19,7 @@ package com.hazelcast.map.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.serialization.Data;
@@ -42,6 +43,7 @@ import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.query.impl.predicates.QueryOptimizer;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import java.util.Map;
 import java.util.UUID;
@@ -69,13 +71,25 @@ import java.util.function.Predicate;
 public interface MapServiceContext extends MapServiceContextInterceptorSupport,
         MapServiceContextEventListenerSupport {
 
+    /**
+     * Following fields for FORCE_OFFLOAD_ALL_OPERATIONS
+     * are introduced only for testing purposes.
+     *
+     * @see {@link MapServiceContext#isForceOffloadEnabled}
+     */
+    boolean DEFAULT_FORCE_OFFLOAD_ALL_OPERATIONS = false;
+    String PROP_FORCE_OFFLOAD_ALL_OPERATIONS
+            = "hazelcast.internal.map.force.offload.all.map.operations";
+    HazelcastProperty FORCE_OFFLOAD_ALL_OPERATIONS
+            = new HazelcastProperty(PROP_FORCE_OFFLOAD_ALL_OPERATIONS,
+            DEFAULT_FORCE_OFFLOAD_ALL_OPERATIONS);
+
+
     Object toObject(Object data);
 
     Data toData(Object object, PartitioningStrategy partitionStrategy);
 
     Data toData(Object object);
-
-    Data toDataWithSchema(Object object);
 
     MapContainer getMapContainer(String mapName);
 
@@ -202,6 +216,20 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
     NodeWideUsedCapacityCounter getNodeWideUsedCapacityCounter();
 
     ExecutorStats getOffloadedEntryProcessorExecutorStats();
+
+    /**
+     * Only used for testing purposes.
+     * <p>
+     * Default value is {@code false}
+     * <p>
+     * Forces offload of all operations of all maps regardless of a
+     * map-store is being configured. This has identical behavior
+     * with enabling {@link MapStoreConfig#isOffload()} for all maps.
+     *
+     * @return {@code true} if force offload for all
+     * operations are enabled, otherwise {@code false}.
+     */
+    boolean isForceOffloadEnabled();
 
     Semaphore getNodeWideLoadedKeyLimiter();
 

@@ -51,15 +51,14 @@
         },
         "allow-override-default-serializers": true,
         "compact-serialization": {
-          "enabled": true,
-          "registered-classes": [
+          "serializers": [
+            {
+              "serializer": "com.hazelcast.examples.DummyTypeSerializer"
+            }
+          ],
+          "classes": [
             {
               "class": "com.hazelcast.examples.DummyType"
-            },
-            {
-              "class": "com.hazelcast.examples.DummyTypeWithSerializer",
-              "type-name": "dummy",
-              "serializer": "com.hazelcast.examples.DummyTypeSerializer"
             }
           ]
         }

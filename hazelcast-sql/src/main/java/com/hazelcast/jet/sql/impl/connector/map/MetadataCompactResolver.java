@@ -160,6 +160,8 @@ final class MetadataCompactResolver implements KvMetadataResolver {
                 return FieldKind.TIMESTAMP;
             case TIMESTAMP_WITH_TIME_ZONE:
                 return FieldKind.TIMESTAMP_WITH_TIMEZONE;
+            case OBJECT:
+                return FieldKind.COMPACT;
             default:
                 throw new IllegalArgumentException("Compact format does not allow " + type + " data type");
         }

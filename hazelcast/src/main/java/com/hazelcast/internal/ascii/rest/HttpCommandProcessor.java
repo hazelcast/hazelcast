@@ -106,6 +106,7 @@ public abstract class HttpCommandProcessor<T extends HttpCommand> extends Abstra
     public static final String URI_CONFIG = "/hazelcast/rest/config";
     public static final String URI_CONFIG_RELOAD = URI_CONFIG + "/reload";
     public static final String URI_CONFIG_UPDATE = URI_CONFIG + "/update";
+    public static final String URI_TCP_IP_MEMBER_LIST = URI_CONFIG + "/tcp-ip/member-list";
 
 
     protected final ILogger logger;

@@ -63,7 +63,7 @@ public final class JoinPhysicalRule extends RelRule<RelRule.Config> {
         JoinLogicalRel logicalJoin = call.rel(0);
 
         JoinRelType joinType = logicalJoin.getJoinType();
-        if (joinType != JoinRelType.INNER && joinType != JoinRelType.LEFT) {
+        if (OptUtils.isBounded(logicalJoin) && (joinType != JoinRelType.INNER && joinType != JoinRelType.LEFT)) {
             throw new RuntimeException("Unexpected joinType: " + joinType);
         }
 
@@ -71,8 +71,8 @@ public final class JoinPhysicalRule extends RelRule<RelRule.Config> {
         RelNode rightInput = call.rel(2);
 
         if (OptUtils.isUnbounded(rightInput)) {
-            // This rule doesn't support joining of streaming data on the right side. Stream
-            // can be on the left side.
+            // This rule doesn't support joining of streaming data on the right side.
+            // Stream can be on the left side.
             return;
         }
 

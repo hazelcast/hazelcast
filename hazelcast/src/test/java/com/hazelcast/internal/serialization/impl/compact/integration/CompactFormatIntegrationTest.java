@@ -25,8 +25,8 @@ import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.listener.EntryAddedListener;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -87,7 +87,6 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
             FilteringClassLoader classLoader = new FilteringClassLoader(excludes, null);
             config.setClassLoader(classLoader);
         }
-        config.getSerializationConfig().getCompactSerializationConfig().setEnabled(true);
         return config;
     }
 
@@ -168,7 +167,6 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
             } else {
                 EmployeeDTO employeeDTO = (EmployeeDTO) map.get(i);
                 assertEquals(employeeDTO.getAge(), 1000 + i);
-
             }
         }
     }

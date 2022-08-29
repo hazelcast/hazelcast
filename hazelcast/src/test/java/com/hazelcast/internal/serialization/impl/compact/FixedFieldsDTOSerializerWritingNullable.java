@@ -45,4 +45,16 @@ public class FixedFieldsDTOSerializerWritingNullable implements CompactSerialize
         out.writeNullableFloat32("f", object.f);
         out.writeNullableFloat64("d", object.d);
     }
+
+    @Nonnull
+    @Override
+    public String getTypeName() {
+        return "fixedFieldsDTO";
+    }
+
+    @Nonnull
+    @Override
+    public Class<FixedFieldsDTO> getCompactClass() {
+        return FixedFieldsDTO.class;
+    }
 }

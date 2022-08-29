@@ -17,7 +17,6 @@
 package com.hazelcast.internal.serialization.impl.compact.integration;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -32,25 +31,14 @@ import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LiteMemberCompactTest extends CompactFormatIntegrationTest {
 
-    HazelcastInstance member1;
-    HazelcastInstance member2;
-
     @Override
     public void setup() {
-        member1 = factory.newHazelcastInstance(getConfig());
-        member2 = factory.newHazelcastInstance(getConfig());
+        factory.newHazelcastInstance(getConfig());
+        factory.newHazelcastInstance(getConfig());
         Config config = getConfig();
         config.setLiteMember(true);
         instance1 = factory.newHazelcastInstance(config);
         instance2 = factory.newHazelcastInstance(config);
-    }
-
-    @Override
-    protected void restartCluster() {
-        member1.shutdown();
-        member2.shutdown();
-        member1 = factory.newHazelcastInstance(getConfig());
-        member2 = factory.newHazelcastInstance(getConfig());
     }
 }
 

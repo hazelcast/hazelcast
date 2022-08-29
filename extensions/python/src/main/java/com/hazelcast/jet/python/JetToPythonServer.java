@@ -74,7 +74,7 @@ class JetToPythonServer {
                     }
                 } catch (SocketTimeoutException e) {
                     if (!pythonProcess.isAlive()) {
-                        throw new IOException("Python process died before completing initialization");
+                        throw new IOException("Python process died before completing initialization", e);
                     }
                 }
             }

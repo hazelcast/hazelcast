@@ -16,16 +16,19 @@
 
 package com.hazelcast.spi.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.datastore.ExternalDataStoreService;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.partition.IPartitionService;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.cluster.Address;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.spi.annotation.PrivateApi;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
@@ -33,7 +36,6 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.impl.tenantcontrol.impl.TenantControlServiceImpl;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
-import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.sql.impl.SqlServiceImpl;
@@ -84,6 +86,11 @@ public interface NodeEngine {
     SplitBrainProtectionService getSplitBrainProtectionService();
 
     SqlServiceImpl getSqlService();
+
+    /**
+     * Return a service for accessing external data stores
+     */
+    ExternalDataStoreService getExternalDataStoreService();
 
     /**
      * Gets the TransactionManagerService.
@@ -274,4 +281,6 @@ public interface NodeEngine {
      * <b>Note:</b> CoreServices will be placed at the beginning of the list.
      */
     <S> Collection<S> getServices(Class<S> serviceClass);
+
+    MemberSchemaService getSchemaService();
 }

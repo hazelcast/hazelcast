@@ -34,6 +34,7 @@ import com.hazelcast.client.impl.protocol.task.dynamicconfig.QueueStoreConfigHol
 import com.hazelcast.client.impl.protocol.task.dynamicconfig.RingbufferStoreConfigHolder;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.AttributeConfig;
+import com.hazelcast.config.BTreeIndexConfig;
 import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
 import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExpiryPolicyFactoryConfig;
@@ -80,8 +81,6 @@ import com.hazelcast.sql.impl.client.SqlError;
 import com.hazelcast.sql.impl.client.SqlPage;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.version.MemberVersion;
-
-import javax.transaction.xa.Xid;
 import java.lang.reflect.Array;
 import java.net.UnknownHostException;
 import java.util.AbstractMap;
@@ -94,6 +93,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.UUID;
+import javax.transaction.xa.Xid;
 
 public class ReferenceObjects {
 
@@ -805,22 +805,26 @@ public class ReferenceObjects {
     }
 
     public static Capacity aCapacity;
+
     static {
         aCapacity = Capacity.of(aPositiveLong, MemoryUnit.GIGABYTES);
     }
 
     public static MemoryTierConfig aMemoryTierConfig;
+
     static {
         aMemoryTierConfig = new MemoryTierConfig();
         aMemoryTierConfig.setCapacity(aCapacity);
     }
 
     public static DiskTierConfig aDiskTierConfig;
+
     static {
         aDiskTierConfig = new DiskTierConfig();
         aDiskTierConfig.setEnabled(aBoolean);
         aDiskTierConfig.setDeviceName(aString);
     }
+
     public static TieredStoreConfig aTieredStoreConfig;
 
     static {
@@ -840,8 +844,16 @@ public class ReferenceObjects {
         aBitmapIndexOptions.setUniqueKeyTransformation(BitmapIndexOptions.UniqueKeyTransformation.LONG);
     }
 
-    public static IndexConfig anIndexConfig = CustomTypeFactory.createIndexConfig(aString, anEnum, aListOfStrings, aBitmapIndexOptions);
-    public static MapStoreConfigHolder aMapStoreConfigHolder = new MapStoreConfigHolder(aBoolean, aBoolean, anInt, anInt, aString, aData, aString, aData, aMapOfStringToString, aString);
+    public static BTreeIndexConfig aBTreeIndexConfig;
+
+    static {
+        aBTreeIndexConfig = new BTreeIndexConfig();
+        aBTreeIndexConfig.setPageSize(aCapacity);
+        aBTreeIndexConfig.getMemoryTierConfig().setCapacity(aCapacity);
+    }
+
+    public static IndexConfig anIndexConfig = CustomTypeFactory.createIndexConfig(aString, anEnum, aListOfStrings, aBitmapIndexOptions, true, aBTreeIndexConfig);
+    public static MapStoreConfigHolder aMapStoreConfigHolder = new MapStoreConfigHolder(aBoolean, aBoolean, anInt, anInt, aString, aData, aString, aData, aMapOfStringToString, aString, aBoolean, aBoolean);
 
     public static NearCachePreloaderConfig aNearCachePreloaderConfig = new NearCachePreloaderConfig(aBoolean, aString);
 
@@ -899,7 +911,7 @@ public class ReferenceObjects {
 
     public static AnchorDataListHolder anAnchorDataListHolder = new AnchorDataListHolder(aListOfIntegers, aListOfDataToData);
     public static PagingPredicateHolder aPagingPredicateHolder = new PagingPredicateHolder(anAnchorDataListHolder, aData, aData,
-            anInt, anInt, aByte, aData);
+            anInt, anInt, aByte, aData, false, null);
 
     public static QueryId anSqlQueryId = new QueryId(aLong, aLong, aLong, aLong);
     public static SqlColumnMetadata anSqlColumnMetadata = CustomTypeFactory.createSqlColumnMetadata(aString, SqlColumnType.BOOLEAN.getId(), aBoolean, aBoolean);

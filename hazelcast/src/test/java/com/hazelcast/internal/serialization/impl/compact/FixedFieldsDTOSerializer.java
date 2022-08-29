@@ -45,4 +45,16 @@ public class FixedFieldsDTOSerializer implements CompactSerializer<FixedFieldsDT
         out.writeFloat32("f", object.f);
         out.writeFloat64("d", object.d);
     }
+
+    @Nonnull
+    @Override
+    public String getTypeName() {
+        return "fixedFields";
+    }
+
+    @Nonnull
+    @Override
+    public Class<FixedFieldsDTO> getCompactClass() {
+        return FixedFieldsDTO.class;
+    }
 }

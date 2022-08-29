@@ -52,4 +52,16 @@ public class ArrayOfFixedFieldsDTOSerializerWritingNull implements CompactSerial
         out.writeArrayOfNullableFloat32("f", ff);
         out.writeArrayOfNullableFloat64("d", dd);
     }
+
+    @Nonnull
+    @Override
+    public String getTypeName() {
+        return "arrayOfFixedFieldsDTO";
+    }
+
+    @Nonnull
+    @Override
+    public Class<ArrayOfFixedFieldsDTO> getCompactClass() {
+        return ArrayOfFixedFieldsDTO.class;
+    }
 }

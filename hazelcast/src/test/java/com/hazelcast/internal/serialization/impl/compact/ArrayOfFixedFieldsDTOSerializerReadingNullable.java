@@ -73,4 +73,16 @@ public class ArrayOfFixedFieldsDTOSerializerReadingNullable implements CompactSe
         out.writeArrayOfFloat32("f", object.f);
         out.writeArrayOfFloat64("d", object.d);
     }
+
+    @Nonnull
+    @Override
+    public String getTypeName() {
+        return "arrayOfFixedFieldsDTO";
+    }
+
+    @Nonnull
+    @Override
+    public Class<ArrayOfFixedFieldsDTO> getCompactClass() {
+        return ArrayOfFixedFieldsDTO.class;
+    }
 }

@@ -97,4 +97,16 @@ public class MainDTOSerializerReadingWrongTypedField implements CompactSerialize
         out.writeNullableFloat32("nullableF", object.nullableF);
         out.writeNullableFloat64("nullableD", object.nullableD);
     }
+
+    @Nonnull
+    @Override
+    public String getTypeName() {
+        return "main";
+    }
+
+    @Nonnull
+    @Override
+    public Class<MainDTO> getCompactClass() {
+        return MainDTO.class;
+    }
 }

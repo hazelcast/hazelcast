@@ -88,4 +88,16 @@ public class InnerDTOSerializerReadingMissingFields implements CompactSerializer
         out.writeArrayOfNullableFloat32("nullableFloats", object.nullableFloats);
         out.writeArrayOfNullableFloat64("nullableDoubles", object.nullableDoubles);
     }
+
+    @Nonnull
+    @Override
+    public String getTypeName() {
+        return "inner";
+    }
+
+    @Nonnull
+    @Override
+    public Class<InnerDTO> getCompactClass() {
+        return InnerDTO.class;
+    }
 }

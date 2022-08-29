@@ -136,6 +136,9 @@ public final class Converters {
         // JSON converter
         converters.add(JsonConverter.INSTANCE);
 
+        // ROW converter
+        converters.add(RowConverter.INSTANCE);
+
         return converters;
     }
 

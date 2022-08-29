@@ -128,11 +128,13 @@ public class JobSummaryTest extends JetTestSupport {
     }
 
     @Test
-    public void when_lightJob() {
+    public void when_lightJob() throws InterruptedException {
         Job job = instance.getJet().newLightJob(newStreamPipeline());
+        // wait till jobs are scanned
+        Thread.sleep(200);
 
+        assertTrueEventually(() -> assertEquals(1, getJetClientInstanceImpl(client).getJobSummaryList().size()));
         List<JobSummary> list = getJetClientInstanceImpl(client).getJobSummaryList();
-        assertEquals(1, list.size());
         JobSummary jobSummary = list.get(0);
 
         assertTrue(jobSummary.isLightJob());

@@ -24,9 +24,13 @@ import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.ResultIterator.HasNextResult;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,6 +42,7 @@ import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlUnionTest extends SqlTestSupport {
     private IMap<Integer, Person> map1;
     private IMap<Integer, Person> map2;
@@ -215,6 +220,7 @@ public class SqlUnionTest extends SqlTestSupport {
     }
 
     @Test
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/21984")
     public void watermarkedStreamUnionAllTest() {
         String name = createTable(
                 row(timestampTz(10L), 1),
