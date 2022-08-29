@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
 import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,7 +40,7 @@ import static org.junit.Assert.assertEquals;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createSerializationService;
 
 @RunWith(HazelcastParametrizedRunner.class)
-@Category({QuickTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CompactBooleanFieldTest {
     SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
 
@@ -93,7 +94,7 @@ public class CompactBooleanFieldTest {
     @Test
     public void testMultipleBoolFields() {
         CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.addSerializer(new BoolArrayDTOSerializer2(itemCount));
+        compactSerializationConfig.addSerializer(new BoolArrayDTOAsBooleansSerializer(itemCount));
         SerializationService serializationService = new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
                 .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
@@ -165,10 +166,10 @@ public class CompactBooleanFieldTest {
         }
     }
 
-    private static class BoolArrayDTOSerializer2 implements CompactSerializer<BoolArrayDTO> {
+    private static class BoolArrayDTOAsBooleansSerializer implements CompactSerializer<BoolArrayDTO> {
         private final int itemCount;
 
-        BoolArrayDTOSerializer2(int itemCount) {
+        BoolArrayDTOAsBooleansSerializer(int itemCount) {
             this.itemCount = itemCount;
         }
 

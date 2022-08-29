@@ -61,10 +61,9 @@ import java.util.ArrayList;
 import java.util.Objects;
 
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createCompactGenericRecord;
-import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createFixedFieldsDTO;
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createFixedSizeFieldsDTO;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createInnerDTO;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createMainDTO;
-import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createSerializationService;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createVarFieldsDTO;
 import static com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder.compact;
 import static example.serialization.HiringStatus.HIRING;
@@ -167,10 +166,10 @@ public class CompactStreamSerializerTest {
     @Test
     public void testFixedSizedFieldsWithReflectiveSerializer() {
         SerializationService serializationService = createSerializationService();
-        FixedFieldsDTO expected = createFixedFieldsDTO();
+        FixedSizeFieldsDTO expected = createFixedSizeFieldsDTO();
 
         Data data = serializationService.toData(expected);
-        FixedFieldsDTO actual = serializationService.toObject(data);
+        FixedSizeFieldsDTO actual = serializationService.toObject(data);
 
         assertEquals(expected, actual);
     }
@@ -178,16 +177,16 @@ public class CompactStreamSerializerTest {
     @Test
     public void testFixedSizedFieldsWithCustomSerializer() {
         CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.addSerializer(new FixedFieldsDTOSerializer());
+        compactSerializationConfig.addSerializer(new FixedSizeFieldsDTOSerializer());
         compactSerializationConfig.addSerializer(new InnerDTOSerializer());
         SerializationService serializationService = new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
                 .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
                 .build();
-        FixedFieldsDTO expected = createFixedFieldsDTO();
+        FixedSizeFieldsDTO expected = createFixedSizeFieldsDTO();
 
         Data data = serializationService.toData(expected);
-        FixedFieldsDTO actual = serializationService.toObject(data);
+        FixedSizeFieldsDTO actual = serializationService.toObject(data);
 
         assertEquals(expected, actual);
     }

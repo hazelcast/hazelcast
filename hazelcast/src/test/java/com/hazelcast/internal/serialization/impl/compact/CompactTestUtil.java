@@ -161,14 +161,14 @@ public final class CompactTestUtil {
     }
 
     @Nonnull
-    static FixedFieldsDTO createFixedFieldsDTO() {
-        return new FixedFieldsDTO((byte) 1, true, (short) 1231, 123123123, 123123123123L, 12312.123f,
+    static FixedSizeFieldsDTO createFixedSizeFieldsDTO() {
+        return new FixedSizeFieldsDTO((byte) 1, true, (short) 1231, 123123123, 123123123123L, 12312.123f,
                 1111.1111111123123);
     }
 
     @Nonnull
-    static ArrayOfFixedFieldsDTO createArrayOfFixedFieldsDTO() {
-        return new ArrayOfFixedFieldsDTO(new byte[]{1, 2, 3}, new boolean[]{true, false},
+    static ArrayOfFixedSizeFieldsDTO createArrayOfFixedSizeFieldsDTO() {
+        return new ArrayOfFixedSizeFieldsDTO(new byte[]{1, 2, 3}, new boolean[]{true, false},
                 new short[]{1231, 1232}, new int[]{123123123, 123123123}, new long[]{123123123123L, 123123123123L},
                 new float[]{12312.123f, 12312.123f}, new double[]{1111.1111111123123, 1111.1111111123123});
     }

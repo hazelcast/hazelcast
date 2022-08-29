@@ -21,22 +21,22 @@ import com.hazelcast.nio.serialization.compact.CompactWriter;
 
 import javax.annotation.Nonnull;
 
-public class FixedFieldsDTOSerializerReadingNullable implements CompactSerializer<FixedFieldsDTO> {
+public class FixedSizeFieldsDTOSerializer implements CompactSerializer<FixedSizeFieldsDTO> {
     @Nonnull
     @Override
-    public FixedFieldsDTO read(@Nonnull CompactReader reader) {
-        Byte b = reader.readNullableInt8("b");
-        Boolean bool = reader.readNullableBoolean("bool");
-        Short s = reader.readNullableInt16("s");
-        Integer i = reader.readNullableInt32("i");
-        Long l = reader.readNullableInt64("l");
-        Float f = reader.readNullableFloat32("f");
-        Double d = reader.readNullableFloat64("d");
-        return new FixedFieldsDTO(b, bool, s, i, l, f, d);
+    public FixedSizeFieldsDTO read(@Nonnull CompactReader reader) {
+        byte b = reader.readInt8("b");
+        boolean bool = reader.readBoolean("bool");
+        short s = reader.readInt16("s");
+        int i = reader.readInt32("i");
+        long l = reader.readInt64("l");
+        float f = reader.readFloat32("f");
+        double d = reader.readFloat64("d");
+        return new FixedSizeFieldsDTO(b, bool, s, i, l, f, d);
     }
 
     @Override
-    public void write(@Nonnull CompactWriter out, @Nonnull FixedFieldsDTO object) {
+    public void write(@Nonnull CompactWriter out, @Nonnull FixedSizeFieldsDTO object) {
         out.writeInt8("b", object.b);
         out.writeBoolean("bool", object.bool);
         out.writeInt16("s", object.s);
@@ -49,12 +49,12 @@ public class FixedFieldsDTOSerializerReadingNullable implements CompactSerialize
     @Nonnull
     @Override
     public String getTypeName() {
-        return "fixedFieldsDTO";
+        return "fixedSizeFields";
     }
 
     @Nonnull
     @Override
-    public Class<FixedFieldsDTO> getCompactClass() {
-        return FixedFieldsDTO.class;
+    public Class<FixedSizeFieldsDTO> getCompactClass() {
+        return FixedSizeFieldsDTO.class;
     }
 }

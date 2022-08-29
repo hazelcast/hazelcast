@@ -21,10 +21,10 @@ import com.hazelcast.nio.serialization.compact.CompactWriter;
 
 import javax.annotation.Nonnull;
 
-public class ArrayOfFixedFieldsDTOSerializerWritingNull implements CompactSerializer<ArrayOfFixedFieldsDTO> {
+public class ArrayOfFixedSizeFieldsDTOSerializerWritingNull implements CompactSerializer<ArrayOfFixedSizeFieldsDTO> {
     @Nonnull
     @Override
-    public ArrayOfFixedFieldsDTO read(@Nonnull CompactReader reader) {
+    public ArrayOfFixedSizeFieldsDTO read(@Nonnull CompactReader reader) {
         byte[] b = reader.readArrayOfInt8("b");
         boolean[] bool = reader.readArrayOfBoolean("bool");
         short[] s = reader.readArrayOfInt16("s");
@@ -32,11 +32,11 @@ public class ArrayOfFixedFieldsDTOSerializerWritingNull implements CompactSerial
         long[] l = reader.readArrayOfInt64("l");
         float[] f = reader.readArrayOfFloat32("f");
         double[] d = reader.readArrayOfFloat64("d");
-        return new ArrayOfFixedFieldsDTO(b, bool, s, i, l, f, d);
+        return new ArrayOfFixedSizeFieldsDTO(b, bool, s, i, l, f, d);
     }
 
     @Override
-    public void write(@Nonnull CompactWriter out, @Nonnull ArrayOfFixedFieldsDTO object) {
+    public void write(@Nonnull CompactWriter out, @Nonnull ArrayOfFixedSizeFieldsDTO object) {
         Byte[] bb = new Byte[object.b.length];
         Boolean[] bools = new Boolean[object.bool.length];
         Short[] ss = new Short[object.s.length];
@@ -56,12 +56,12 @@ public class ArrayOfFixedFieldsDTOSerializerWritingNull implements CompactSerial
     @Nonnull
     @Override
     public String getTypeName() {
-        return "arrayOfFixedFieldsDTO";
+        return "arrayOfFixedSizeFieldsDTO";
     }
 
     @Nonnull
     @Override
-    public Class<ArrayOfFixedFieldsDTO> getCompactClass() {
-        return ArrayOfFixedFieldsDTO.class;
+    public Class<ArrayOfFixedSizeFieldsDTO> getCompactClass() {
+        return ArrayOfFixedSizeFieldsDTO.class;
     }
 }

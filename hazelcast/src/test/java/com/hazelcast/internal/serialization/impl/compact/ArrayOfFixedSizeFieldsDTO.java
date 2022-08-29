@@ -15,22 +15,22 @@
  */
 package com.hazelcast.internal.serialization.impl.compact;
 
-import java.util.Objects;
+import java.util.Arrays;
 
-public class FixedFieldsDTO {
+public class ArrayOfFixedSizeFieldsDTO {
 
-    public byte b;
-    public boolean bool;
-    public short s;
-    public int i;
-    public long l;
-    public float f;
-    public double d;
+    public byte[] b;
+    public boolean[] bool;
+    public short[] s;
+    public int[] i;
+    public long[] l;
+    public float[] f;
+    public double[] d;
 
-    FixedFieldsDTO() {
+    ArrayOfFixedSizeFieldsDTO() {
     }
 
-    public FixedFieldsDTO(byte b, boolean bool, short s, int i, long l, float f, double d) {
+    public ArrayOfFixedSizeFieldsDTO(byte[] b, boolean[] bool, short[] s, int[] i, long[] l, float[] f, double[] d) {
         this.b = b;
         this.bool = bool;
         this.s = s;
@@ -48,26 +48,21 @@ public class FixedFieldsDTO {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        FixedFieldsDTO that = (FixedFieldsDTO) o;
-        return b == that.b && bool == that.bool && s == that.s && i == that.i && l == that.l
-                && Float.compare(that.f, f) == 0 && Double.compare(that.d, d) == 0;
+        ArrayOfFixedSizeFieldsDTO that = (ArrayOfFixedSizeFieldsDTO) o;
+        return Arrays.equals(b, that.b) && Arrays.equals(bool, that.bool) && Arrays.equals(s, that.s)
+                && Arrays.equals(i, that.i) && Arrays.equals(l, that.l) && Arrays.equals(f, that.f)
+                && Arrays.equals(d, that.d);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(b, bool, s, i, l, f, d);
-    }
-
-    @Override
-    public String toString() {
-        return "FixedFieldsDTO{"
-                + "b=" + b
-                + ", bool=" + bool
-                + ", s=" + s
-                + ", i=" + i
-                + ", l=" + l
-                + ", f=" + f
-                + ", d=" + d
-                + '}';
+        int result = Arrays.hashCode(b);
+        result = 31 * result + Arrays.hashCode(bool);
+        result = 31 * result + Arrays.hashCode(s);
+        result = 31 * result + Arrays.hashCode(i);
+        result = 31 * result + Arrays.hashCode(l);
+        result = 31 * result + Arrays.hashCode(f);
+        result = 31 * result + Arrays.hashCode(d);
+        return result;
     }
 }

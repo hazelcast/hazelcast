@@ -21,10 +21,10 @@ import com.hazelcast.nio.serialization.compact.CompactWriter;
 
 import javax.annotation.Nonnull;
 
-public class FixedFieldsDTOSerializerWritingNullable implements CompactSerializer<FixedFieldsDTO> {
+public class FixedSizeFieldsDTOSerializerWritingNull implements CompactSerializer<FixedSizeFieldsDTO> {
     @Nonnull
     @Override
-    public FixedFieldsDTO read(@Nonnull CompactReader reader) {
+    public FixedSizeFieldsDTO read(@Nonnull CompactReader reader) {
         byte b = reader.readInt8("b");
         boolean bool = reader.readBoolean("bool");
         short s = reader.readInt16("s");
@@ -32,29 +32,29 @@ public class FixedFieldsDTOSerializerWritingNullable implements CompactSerialize
         long l = reader.readInt64("l");
         float f = reader.readFloat32("f");
         double d = reader.readFloat64("d");
-        return new FixedFieldsDTO(b, bool, s, i, l, f, d);
+        return new FixedSizeFieldsDTO(b, bool, s, i, l, f, d);
     }
 
     @Override
-    public void write(@Nonnull CompactWriter out, @Nonnull FixedFieldsDTO object) {
-        out.writeNullableInt8("b", object.b);
-        out.writeNullableBoolean("bool", object.bool);
-        out.writeNullableInt16("s", object.s);
-        out.writeNullableInt32("i", object.i);
-        out.writeNullableInt64("l", object.l);
-        out.writeNullableFloat32("f", object.f);
-        out.writeNullableFloat64("d", object.d);
+    public void write(@Nonnull CompactWriter out, @Nonnull FixedSizeFieldsDTO object) {
+        out.writeNullableInt8("b", null);
+        out.writeNullableBoolean("bool", null);
+        out.writeNullableInt16("s", null);
+        out.writeNullableInt32("i", null);
+        out.writeNullableInt64("l", null);
+        out.writeNullableFloat32("f", null);
+        out.writeNullableFloat64("d", null);
     }
 
     @Nonnull
     @Override
     public String getTypeName() {
-        return "fixedFieldsDTO";
+        return "fixedSizeFieldsDTO";
     }
 
     @Nonnull
     @Override
-    public Class<FixedFieldsDTO> getCompactClass() {
-        return FixedFieldsDTO.class;
+    public Class<FixedSizeFieldsDTO> getCompactClass() {
+        return FixedSizeFieldsDTO.class;
     }
 }
