@@ -525,6 +525,9 @@ public class PlanExecutor {
             final List<Type.TypeField> typeFields = plan.columns().stream()
                     .map(typeColumn -> new Type.TypeField(typeColumn.name(), typeColumn.dataType()))
                     .collect(Collectors.toList());
+            if (typeFields.isEmpty()) {
+                throw QueryException.error("At least one field is required for compact format");
+            }
             type.setFields(typeFields);
 
             final String compactTypeName = plan.option(SqlConnector.OPTION_TYPE_COMPACT_TYPE_NAME);

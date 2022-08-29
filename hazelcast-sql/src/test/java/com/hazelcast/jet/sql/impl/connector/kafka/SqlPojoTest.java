@@ -29,7 +29,6 @@ import com.hazelcast.jet.sql.impl.connector.kafka.model.PersonId;
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
@@ -346,11 +345,8 @@ public class SqlPojoTest extends SqlTestSupport {
 
         sqlService.execute("insert into m values (1, (2, 'foo'))");
 
-        System.out.println("---");
-        for (SqlRow r : sqlService.execute("select * from m")) {
-            System.out.println(r);
-        }
-        System.out.println("---");
+        assertRowsEventuallyInAnyOrder("select outerField, (person).id, (person).name from m",
+            rows(3, 1, 2, "foo"));
     }
 
     public static class ClzWithPerson implements Serializable {

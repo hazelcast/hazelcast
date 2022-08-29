@@ -690,12 +690,10 @@ public class SqlPortableTest extends SqlTestSupport {
         sqlService.execute("insert into " + name + "(__key, foo) values(1, null)");
         sqlService.execute("insert into " + name + "(__key) values(2)");
 
-
-        System.out.println("---");
-        for (SqlRow r : sqlService.execute("select __key, foo from " + name)) {
-            System.out.println(r);
-        }
-        System.out.println("---");
+        assertRowsAnyOrder("select __key, foo from " + name,
+                rows(2,
+                        1, null,
+                        2, null));
     }
 
     @SuppressWarnings({"OptionalGetWithoutIsPresent", "unchecked", "rawtypes"})

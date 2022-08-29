@@ -151,7 +151,7 @@ public class NestedTypesDDLTest extends SqlTestSupport {
     public void when_compactTypeNoColumns_then_fail() {
         assertThatThrownBy(() ->
                 execute("CREATE TYPE FirstType OPTIONS ('format'='compact','compactTypeName'='foo')"))
-                .hasMessage("<add the actual message>");
+                .hasMessage("At least one field is required for compact format");
     }
 
     void execute(String sql) {
