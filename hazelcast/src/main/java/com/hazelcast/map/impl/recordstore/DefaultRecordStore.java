@@ -236,10 +236,10 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public void removeReplicatedRecord(Data dataKey) {
+    public void removeReplicatedRecord(Data dataKey, boolean backup) {
         Record record = storage.get(dataKey);
         if (record != null) {
-            removeRecord0(dataKey, record, true);
+            removeRecord0(dataKey, record, backup);
         }
     }
 

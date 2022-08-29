@@ -312,8 +312,9 @@ public interface RecordStore<R extends Record> {
      * does not intercept.
      *
      * @param dataKey key to remove
+     * @param backup {@code true} if a backup partition, otherwise {@code false}.
      */
-    void removeReplicatedRecord(Data dataKey);
+    void removeReplicatedRecord(Data dataKey, boolean backup);
 
     void forEach(BiConsumer<Data, R> consumer, boolean backup);
 
