@@ -56,7 +56,6 @@ import java.util.function.Consumer;
 
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.cdc.postgres.AbstractPostgresCdcIntegrationTest.getConnection;
-import static com.hazelcast.jet.cdc.postgres.PostgresCdcSources.PostgresSnapshotMode.INITIAL;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -316,7 +315,6 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
                 .setTableWhitelist("inventory.customers")
                 .setReconnectBehavior(reconnectBehavior)
                 .setShouldStateBeResetOnReconnect(resetStateOnReconnect)
-                .setSnapshotMode(INITIAL)
                 .build();
     }
 
