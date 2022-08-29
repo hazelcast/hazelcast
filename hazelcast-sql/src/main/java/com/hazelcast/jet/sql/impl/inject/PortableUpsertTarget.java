@@ -69,7 +69,7 @@ class PortableUpsertTarget implements UpsertTarget {
 
         return value -> {
             if (fieldIndex == -1 && value != null) {
-                throw QueryException.error("Unable to inject a non-null value to \"" + path + "\"");
+                throw QueryException.error("Field \"" + path + "\" doesn't exist in Portable Class Definition");
             }
 
             if (fieldIndex > -1) {

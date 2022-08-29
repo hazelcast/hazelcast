@@ -125,13 +125,19 @@ schema, as all other objects.
 
 Type Formats can not be mixed together. For example a `java` type can not be
 used as column inside of `portable` type or mapping or vice-versa. Violations
-are reported at runtime when using such mapping/type in a statement.
+are reported at runtime when using such mapping/type in a statement, not when
+executing the DDL.
 
 ## References to types are symbolic
 
-- validated at run-time (also in mappings?)
-- allows creation of circular dependencies in types
-- doesn't require transactions on the SQL catalog for implementation - lazily evaluated
+When creating a type, references to other custom types are only validated at
+run-time. The main reason for this is the ability to create circularly-dependent
+types. When creating a mapping, types are validated at mapping-creation time. 
+
+As is the case with other schema objects, we don't track dependencies at DDL
+time, mainly due to the lack of a consistent transactional metadata store, so if
+the type a type or mapping depends on is modified or dropped later, it will fail
+at run-time when that mapping is used.
 
 ## Behavior of custom types
 
@@ -150,6 +156,28 @@ This has notable consequences:
   compare field-by-field. This might seem counter-intuitive, but it is the
   limitation already present: if the imap's `__key` field is compared, we compare
   the instances and not the individual fields, if they are expanded.
+
+## Case sensitivity
+
+Unquoted custom type names, same as all other schema objects, are
+case-sensitive. This is contrary to built-in types, whose names are
+case-insensitive. This might seem illogical, but is consistent with the rest of
+our SQL implementation where identifiers are case-sensitive, but keywords (which
+include built-in functions and types) are not.
+
+```sql
+CREATE TYPE My_Type ...;
+
+CREATE MAPPING m (
+  field my_type  -- fails here
+) ...
+```
+
+Here we need to note that identifiers in SQL are always case-sensitive, however,
+many SQL implementations convert unquoted identifiers to canonical case, which
+gives the impression that identifiers are case-insensitive. Quoted identifiers
+are always case-sensitive. The conversion to canonical case is optional in the
+SQL standard, Hazelcast doesn't do it for legacy reasons.
 
 ## Automatic resolution
 
@@ -208,6 +236,15 @@ WHERE ...;
 ### Issues with `CAST(field AS ROW)`
 
 For some reason we weren't able to implement this (TODO ivan).
+
+## Information schema
+
+We need to provide these new tables:
+- `USER_DEFINED_TYPES`
+- `ATTRIBUTES`
+
+We should provide `INFORMATION_SCHEMA.USER_DEFINED_TYPES` view, which is SQL
+standard. I couldn't find an information schema table to list type fields.
 
 # Implementation details
 
@@ -279,3 +316,16 @@ The `TO_ROW` function raises an error when it encounters such value. We could
 possibly refer to the same nested `RowValue` at this conversion, but for
 example, the conversion to `VARCHAR` of such a value would be infinite because
 in it we cannot refer to another nested value in this way.
+
+## How values are stored
+
+Each type must have one of supported serialization types: java, portable,
+compact, json, avro, ... Initial support might not support all types.
+
+For Java custom types, the cluster needs access to the Java class of the custom
+type. When reading, writing or evaluating operators, we need to deserialize the
+value.
+
+This is unlike other types, where the cluster can work with generic records
+
+In the initial release we will support only: java, portable, compact.

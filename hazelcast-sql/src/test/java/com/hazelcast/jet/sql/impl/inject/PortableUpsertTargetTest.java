@@ -431,7 +431,7 @@ public class PortableUpsertTargetTest {
         target.init();
         assertThatThrownBy(() -> injector.set("1"))
                 .isInstanceOf(QueryException.class)
-                .hasMessageContaining("Unable to inject a non-null value to \"field\"");
+                .hasMessageContaining("Field \"field\" doesn't exist in Portable Class Definition");
     }
 
     @Test

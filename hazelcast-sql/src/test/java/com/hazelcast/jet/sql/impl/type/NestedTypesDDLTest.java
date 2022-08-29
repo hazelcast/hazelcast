@@ -19,10 +19,10 @@ package com.hazelcast.jet.sql.impl.type;
 import com.hazelcast.config.Config;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
-import com.hazelcast.jet.sql.impl.connector.map.model.Person;
+import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.schema.TablesStorage;
 import com.hazelcast.sql.HazelcastSqlException;
-import com.hazelcast.sql.SqlRow;
+import com.hazelcast.sql.SqlResult;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -30,8 +30,17 @@ import org.junit.runner.RunWith;
 
 import java.io.Serializable;
 
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.JAVA_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_CLASS;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS_ID;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_CLASS_VERSION;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FACTORY_ID;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
+import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static java.lang.String.format;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
@@ -91,23 +100,58 @@ public class NestedTypesDDLTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_createTwoTypesForSameClass() {
+    public void test_createTwoTypesForSameJavaClass() {
         execute(format("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName()));
         execute(format("CREATE TYPE SecondType OPTIONS ('format'='java','javaClass'='%s')", FirstType.class.getName()));
+    }
 
-        createMapping("m", Long.class, FirstType.class);
-        createMapping("m2", Long.class, Person.class);
-        instance().getSql().execute("select m.this.name from m");
-        for (SqlRow r : instance().getSql().execute("select table_name, column_name, data_type from information_schema.columns")) {
-            System.out.println(r);
+    @Test
+    public void test_createTwoTypesForSamePortableClass() {
+        execute("CREATE TYPE FirstType(a INT, b INT) OPTIONS ('format'='portable','portableFactoryId'='123','portableClassId'='456')");
+        execute("CREATE TYPE SecondType(c VARCHAR, d VARCHAR) OPTIONS ('format'='portable','portableFactoryId'='123','portableClassId'='456')");
+
+        try (SqlResult result = instance().getSql().execute("CREATE OR REPLACE MAPPING " + "m(" +
+                "e varchar" +
+                ")" + " TYPE " + IMapSqlConnector.TYPE_NAME + " "
+                + "OPTIONS ("
+                + '\'' + OPTION_KEY_FORMAT + "'='" + JAVA_FORMAT + '\''
+                + ", '" + OPTION_KEY_CLASS + "'='" + Long.class.getName() + '\''
+                + ", '" + OPTION_VALUE_FORMAT + "'='" + PORTABLE_FORMAT + '\''
+                + ", '" + OPTION_VALUE_FACTORY_ID + "'='" + 123 + '\''
+                + ", '" + OPTION_VALUE_CLASS_ID + "'='" + 456 + '\''
+                + ", '" + OPTION_VALUE_CLASS_VERSION + "'='" + 0 + '\''
+                + ")"
+        )) {
+            assertThat(result.updateCount()).isEqualTo(0);
         }
-        System.out.println("---");
+    }
 
-        for (SqlRow r : instance().getSql().execute("select table_name, column_name, data_type from information_schema.columns")) {
-            System.out.println(r);
-        }
-        System.out.println("---");
+    @Test
+    public void test_createTwoTypesForSameCompactClass() {
+        execute("CREATE TYPE FirstType(a int, b varchar) OPTIONS ('format'='compact','compactTypeName'='foo')");
+        execute("CREATE TYPE SecondType(a int, b varchar) OPTIONS ('format'='compact','compactTypeName'='foo')");
+    }
 
+    @Test
+    public void when_javaClassUnknown_then_fail() {
+        assertThatThrownBy(() ->
+                execute("CREATE TYPE FirstType OPTIONS ('format'='java','javaClass'='foo')"))
+                .hasRootCauseMessage("foo")
+                .hasRootCauseInstanceOf(ClassNotFoundException.class);
+    }
+
+    @Test
+    public void when_portableClassDefNotKnown_then_requireFields() {
+        assertThatThrownBy(() ->
+                execute("CREATE TYPE FirstType OPTIONS ('format'='portable','portableFactoryId'='123','portableClassId'='456')"))
+                .hasMessage("The given FactoryID/ClassID/Version combination not known to the member. You need to provide column list for this type");
+    }
+
+    @Test
+    public void when_compactTypeNoColumns_then_fail() {
+        assertThatThrownBy(() ->
+                execute("CREATE TYPE FirstType OPTIONS ('format'='compact','compactTypeName'='foo')"))
+                .hasMessage("<add the actual message>");
     }
 
     void execute(String sql) {

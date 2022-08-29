@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.kafka;
 
+import com.hazelcast.config.Config;
 import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.kafka.model.AllCanonicalTypesValue;
@@ -28,15 +29,24 @@ import com.hazelcast.jet.sql.impl.connector.kafka.model.PersonIdDeserializer;
 import com.hazelcast.jet.sql.impl.connector.kafka.model.PersonIdSerializer;
 import com.hazelcast.jet.sql.impl.connector.kafka.model.PersonSerializer;
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
+import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
+import org.apache.kafka.common.serialization.Deserializer;
 import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
+import org.apache.kafka.common.serialization.Serializer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -64,7 +74,9 @@ public class SqlPojoTest extends SqlTestSupport {
 
     @BeforeClass
     public static void setUpClass() throws IOException {
-        initialize(1, null);
+        Config config = smallInstanceConfig();
+        config.setProperty(ClusterProperty.SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
+        initialize(1, config);
         sqlService = instance().getSql();
 
         kafkaTestSupport = KafkaTestSupport.create();
@@ -325,6 +337,74 @@ public class SqlPojoTest extends SqlTestSupport {
                 "SELECT __key, this FROM " + name,
                 singletonList(new Row(new PersonId(1), new Person(null, "Alice")))
         );
+    }
+
+    @Test
+    public void test_customType() {
+        sqlService.execute("CREATE TYPE person_type OPTIONS ('format'='java', 'javaClass'='" + Person.class.getName() + "')");
+        sqlService.execute("CREATE MAPPING m (outerField INT, person person_type) TYPE " + KafkaSqlConnector.TYPE_NAME + " OPTIONS ("
+                + "'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + "',"
+                + "'auto.offset.reset'='earliest',"
+                + "'valueFormat'='java',"
+                + "'valueJavaClass'='" + ClzWithPerson.class.getName() + "',"
+                + "'value.serializer'='" + JavaSerializer.class.getName() + "',"
+                + "'value.deserializer'='" + JavaDeserializer.class.getName() + "'"
+                + ")"
+        );
+
+        sqlService.execute("insert into m values (1, (2, 'foo'))");
+
+        System.out.println("---");
+        for (SqlRow r : sqlService.execute("select * from m")) {
+            System.out.println(r);
+        }
+        System.out.println("---");
+    }
+
+    public static class ClzWithPerson implements Serializable {
+        public int outerField;
+        public Person person;
+    }
+
+    public static class JavaSerializer implements Serializer<Object> {
+
+        public void configure(Map map, boolean b) {}
+
+        public byte[] serialize(String s, Object o) {
+            try {
+                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                ObjectOutputStream oos = new ObjectOutputStream(baos);
+                oos.writeObject(o);
+                oos.close();
+                return baos.toByteArray();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public void close() { }
+    }
+
+    public static class JavaDeserializer implements Deserializer<Object> {
+
+        public void configure(Map map, boolean b) {}
+
+        @Override
+        public Object deserialize(String topic, byte[] data) {
+            try {
+                ByteArrayInputStream bais = new ByteArrayInputStream(data);
+                ObjectInputStream ois = new ObjectInputStream(bais);
+                try {
+                    return ois.readObject();
+                } finally {
+                    ois.close();
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        public void close() { }
     }
 
     private static String createRandomTopic() {
