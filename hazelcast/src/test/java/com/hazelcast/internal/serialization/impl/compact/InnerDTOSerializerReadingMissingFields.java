@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
+import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
@@ -33,31 +34,146 @@ public class InnerDTOSerializerReadingMissingFields implements CompactSerializer
     @Nonnull
     @Override
     public InnerDTO read(@Nonnull CompactReader in) {
-        boolean[] bools = in.readArrayOfBoolean("nonExistingField", new boolean[0]);
-        byte[] bytes = in.readArrayOfInt8("nonExistingField", new byte[0]);
-        short[] shorts = in.readArrayOfInt16("nonExistingField", new short[0]);
-        char[] chars = CompactUtil.charArrayFromShortArray(in.readArrayOfInt16("nonExistingField", new short[0]));
-        int[] ints = in.readArrayOfInt32("nonExistingField", new int[0]);
-        long[] longs = in.readArrayOfInt64("nonExistingField", new long[0]);
-        float[] floats = in.readArrayOfFloat32("nonExistingField", new float[0]);
-        double[] doubles = in.readArrayOfFloat64("nonExistingField", new double[0]);
-        String[] strings = in.readArrayOfString("nonExistingField", new String[0]);
-        NamedDTO[] namedDTOS = in.readArrayOfCompact("nonExistingField", NamedDTO.class, new NamedDTO[0]);
-        BigDecimal[] bigDecimals = in.readArrayOfDecimal("nonExistingField", new BigDecimal[0]);
-        LocalTime[] localTimes = in.readArrayOfTime("nonExistingField", new LocalTime[0]);
-        LocalDate[] localDates = in.readArrayOfDate("nonExistingField", new LocalDate[0]);
-        LocalDateTime[] localDateTimes = in.readArrayOfTimestamp("nonExistingField", new LocalDateTime[0]);
-        OffsetDateTime[] offsetDateTimes = in.readArrayOfTimestampWithTimezone("nonExistingField", new OffsetDateTime[0]);
-        Boolean[] nullableBools = in.readArrayOfNullableBoolean("nonExistingField", new Boolean[0]);
-        Byte[] nullableBytes = in.readArrayOfNullableInt8("nonExistingField", new Byte[0]);
-        Short[] nullableCharactersAsShorts = in.readArrayOfNullableInt16("nonExistingField", new Short[0]);
+        boolean[] bools;
+        if (in.getFieldKind("nonExistingField") == FieldKind.ARRAY_OF_BOOLEAN) {
+            bools = in.readArrayOfBoolean("nonExistingField");
+        } else {
+            bools = new boolean[0];
+        }
+        byte[] bytes;
+        if (in.getFieldKind("nonExistingField") == FieldKind.ARRAY_OF_INT8) {
+            bytes = in.readArrayOfInt8("nonExistingField");
+        } else {
+            bytes = new byte[0];
+        }
+        short[] shorts;
+        if (in.getFieldKind("nonExistingField") == FieldKind.ARRAY_OF_INT16) {
+            shorts = in.readArrayOfInt16("nonExistingField");
+        } else {
+            shorts = new short[0];
+        }
+        char[] chars;
+        if (in.getFieldKind("nonExistingField") == FieldKind.ARRAY_OF_INT16) {
+            chars = CompactUtil.charArrayFromShortArray(in.readArrayOfInt16("nonExistingField"));
+        } else {
+            chars = CompactUtil.charArrayFromShortArray(new short[0]);
+        }
+        int[] ints;
+        if (in.getFieldKind("nonExistingField") == FieldKind.ARRAY_OF_INT32) {
+            ints = in.readArrayOfInt32("nonExistingField");
+        } else {
+            ints = new int[0];
+        }
+        long[] longs;
+        if (in.getFieldKind("nonExistingField") == FieldKind.ARRAY_OF_INT64) {
+            longs = in.readArrayOfInt64("nonExistingField");
+        } else {
+            longs = new long[0];
+        }
+        float[] floats;
+        if (in.getFieldKind("nonExistingField") == FieldKind.ARRAY_OF_FLOAT32) {
+            floats = in.readArrayOfFloat32("nonExistingField");
+        } else {
+            floats = new float[0];
+        }
+        double[] doubles;
+        if (in.getFieldKind("nonExistingField") == FieldKind.ARRAY_OF_FLOAT64) {
+            doubles = in.readArrayOfFloat64("nonExistingField");
+        } else {
+            doubles = new double[0];
+        }
+        String[] strings;
+        if (in.getFieldKind("nonExistingField") == FieldKind.ARRAY_OF_STRING) {
+            strings = in.readArrayOfString("nonExistingField");
+        } else {
+            strings = new String[0];
+        }
+        NamedDTO[] namedDTOs;
+        if (in.getFieldKind("nonExistingField") == FieldKind.ARRAY_OF_COMPACT) {
+            namedDTOs = in.readArrayOfCompact("nonExistingField", NamedDTO.class);
+        } else {
+            namedDTOs = new NamedDTO[0];
+        }
+        BigDecimal[] bigDecimals;
+        if (in.getFieldKind("nonExistingField") == FieldKind.ARRAY_OF_DECIMAL) {
+            bigDecimals = in.readArrayOfDecimal("nonExistingField");
+        } else {
+            bigDecimals = new BigDecimal[0];
+        }
+        LocalTime[] localTimes;
+        if (in.getFieldKind("nonExistingField") == FieldKind.ARRAY_OF_TIME) {
+            localTimes = in.readArrayOfTime("nonExistingField");
+        } else {
+            localTimes = new LocalTime[0];
+        }
+        LocalDate[] localDates;
+        if (in.getFieldKind("nonExistingField") == FieldKind.ARRAY_OF_DATE) {
+            localDates = in.readArrayOfDate("nonExistingField");
+        } else {
+            localDates = new LocalDate[0];
+        }
+        LocalDateTime[] localDateTimes;
+        if (in.getFieldKind("nonExistingField") == FieldKind.ARRAY_OF_TIMESTAMP) {
+            localDateTimes = in.readArrayOfTimestamp("nonExistingField");
+        } else {
+            localDateTimes = new LocalDateTime[0];
+        }
+        OffsetDateTime[] offsetDateTimes;
+        if (in.getFieldKind("nonExistingField") == FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONE) {
+            offsetDateTimes = in.readArrayOfTimestampWithTimezone("nonExistingField");
+        } else {
+            offsetDateTimes = new OffsetDateTime[0];
+        }
+        Boolean[] nullableBools;
+        if (in.getFieldKind("nonExistingField") == FieldKind.ARRAY_OF_NULLABLE_BOOLEAN) {
+            nullableBools = in.readArrayOfNullableBoolean("nonExistingField");
+        } else {
+            nullableBools = new Boolean[0];
+        }
+        Byte[] nullableBytes;
+        if (in.getFieldKind("nonExistingField") == FieldKind.ARRAY_OF_NULLABLE_INT8) {
+            nullableBytes = in.readArrayOfNullableInt8("nonExistingField");
+        } else {
+            nullableBytes = new Byte[0];
+        }
+        Short[] nullableCharactersAsShorts;
+        if (in.getFieldKind("nonExistingField") == FieldKind.ARRAY_OF_NULLABLE_INT16) {
+            nullableCharactersAsShorts = in.readArrayOfNullableInt16("nonExistingField");
+        } else {
+            nullableCharactersAsShorts = new Short[0];
+        }
         Character[] nullableCharacters = CompactUtil.characterArrayFromShortArray(nullableCharactersAsShorts);
-        Short[] nullableShorts = in.readArrayOfNullableInt16("nonExistingField", new Short[0]);
-        Integer[] nullableIntegers = in.readArrayOfNullableInt32("nonExistingField", new Integer[0]);
-        Long[] nullableLongs = in.readArrayOfNullableInt64("nonExistingField", new Long[0]);
-        Float[] nullableFloats = in.readArrayOfNullableFloat32("nonExistingField", new Float[0]);
-        Double[] nullableDoubles = in.readArrayOfNullableFloat64("nonExistingField", new Double[0]);
-        return new InnerDTO(bools, bytes, chars, shorts, ints, longs, floats, doubles, strings, namedDTOS,
+        Short[] nullableShorts;
+        if (in.getFieldKind("nonExistingField") == FieldKind.ARRAY_OF_NULLABLE_INT16) {
+            nullableShorts = in.readArrayOfNullableInt16("nonExistingField");
+        } else {
+            nullableShorts = new Short[0];
+        }
+        Integer[] nullableIntegers;
+        if (in.getFieldKind("nonExistingField") == FieldKind.ARRAY_OF_NULLABLE_INT32) {
+            nullableIntegers = in.readArrayOfNullableInt32("nonExistingField");
+        } else {
+            nullableIntegers = new Integer[0];
+        }
+        Long[] nullableLongs;
+        if (in.getFieldKind("nonExistingField") == FieldKind.ARRAY_OF_NULLABLE_INT64) {
+            nullableLongs = in.readArrayOfNullableInt64("nonExistingField");
+        } else {
+            nullableLongs = new Long[0];
+        }
+        Float[] nullableFloats;
+        if (in.getFieldKind("nonExistingField") == FieldKind.ARRAY_OF_NULLABLE_FLOAT32) {
+            nullableFloats = in.readArrayOfNullableFloat32("nonExistingField");
+        } else {
+            nullableFloats = new Float[0];
+        }
+        Double[] nullableDoubles;
+        if (in.getFieldKind("nonExistingField") == FieldKind.ARRAY_OF_NULLABLE_FLOAT64) {
+            nullableDoubles = in.readArrayOfNullableFloat64("nonExistingField");
+        } else {
+            nullableDoubles = new Double[0];
+        }
+        return new InnerDTO(bools, bytes, chars, shorts, ints, longs, floats, doubles, strings, namedDTOs,
                 bigDecimals, localTimes, localDates, localDateTimes, offsetDateTimes, nullableBools, nullableBytes,
                 nullableCharacters, nullableShorts, nullableIntegers, nullableLongs, nullableFloats, nullableDoubles);
     }

@@ -64,8 +64,7 @@ public class CompactBooleanFieldTest {
     @Test
     public void testBooleanArrayWithCustomSerializer() {
         CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.register(BoolArrayDTO.class, "bools", new BoolArrayDTOSerializer());
-        compactSerializationConfig.setEnabled(true);
+        compactSerializationConfig.addSerializer(new BoolArrayDTOSerializer());
         SerializationService serializationService = new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
                 .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
@@ -94,8 +93,7 @@ public class CompactBooleanFieldTest {
     @Test
     public void testMultipleBoolFields() {
         CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.register(BoolArrayDTO.class, "bools", new BoolArrayDTOSerializer2(itemCount));
-        compactSerializationConfig.setEnabled(true);
+        compactSerializationConfig.addSerializer(new BoolArrayDTOSerializer2(itemCount));
         SerializationService serializationService = new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
                 .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
@@ -153,6 +151,18 @@ public class CompactBooleanFieldTest {
         public void write(@Nonnull CompactWriter out, @Nonnull BoolArrayDTO object) {
             out.writeArrayOfBoolean("bools", object.bools);
         }
+
+        @Nonnull
+        @Override
+        public String getTypeName() {
+            return "bools";
+        }
+
+        @Nonnull
+        @Override
+        public Class<BoolArrayDTO> getCompactClass() {
+            return BoolArrayDTO.class;
+        }
     }
 
     private static class BoolArrayDTOSerializer2 implements CompactSerializer<BoolArrayDTO> {
@@ -177,6 +187,18 @@ public class CompactBooleanFieldTest {
             for (int i = 0; i < itemCount; i++) {
                 out.writeBoolean(Integer.toString(i), object.bools[i]);
             }
+        }
+
+        @Nonnull
+        @Override
+        public String getTypeName() {
+            return "bools";
+        }
+
+        @Nonnull
+        @Override
+        public Class<BoolArrayDTO> getCompactClass() {
+            return BoolArrayDTO.class;
         }
     }
 }

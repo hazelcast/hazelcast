@@ -71,4 +71,16 @@ class OffsetReaderTestDTOSerializer implements CompactSerializer<OffsetReaderTes
         out.writeInt32("i", object.i);
         out.writeString("str", object.str);
     }
+
+    @Nonnull
+    @Override
+    public String getTypeName() {
+        return "a";
+    }
+
+    @Nonnull
+    @Override
+    public Class<OffsetReaderTestDTO> getCompactClass() {
+        return OffsetReaderTestDTO.class;
+    }
 }

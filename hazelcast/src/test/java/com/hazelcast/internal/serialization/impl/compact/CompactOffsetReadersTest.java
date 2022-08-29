@@ -60,8 +60,7 @@ public class CompactOffsetReadersTest {
     @Test
     public void testObjectWithDifferentPositionReadersWithCustomSerializer() {
         CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.register(OffsetReaderTestDTO.class, "a", new OffsetReaderTestDTOSerializer());
-        compactSerializationConfig.setEnabled(true);
+        compactSerializationConfig.addSerializer(new OffsetReaderTestDTOSerializer());
         SerializationService serializationService = new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
                 .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))

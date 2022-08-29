@@ -175,7 +175,6 @@ public final class CompactTestUtil {
 
     public static InternalSerializationService createSerializationService(SchemaService schemaService) {
         CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.setEnabled(true);
         return new DefaultSerializationServiceBuilder()
                 .setSchemaService(schemaService)
                 .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))

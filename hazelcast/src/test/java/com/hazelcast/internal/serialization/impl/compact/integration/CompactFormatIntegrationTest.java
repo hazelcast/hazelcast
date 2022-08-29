@@ -51,7 +51,6 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
-import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
@@ -194,20 +193,6 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
     }
 
     @Test
-    public void testClusterRestart() {
-        EmployeeDTO employeeDTO = new EmployeeDTO(30, 102310312);
-        IMap<Integer, EmployeeDTO> map = instance1.getMap("test");
-        map.put(1, employeeDTO);
-
-        restartCluster();
-
-        map.put(1, employeeDTO);
-        assertEquals(employeeDTO, map.get(1));
-        // Perform a query to make sure that the schema is available on the cluster
-        assertEquals(1, map.values(Predicates.sql("age == 30")).size());
-    }
-
-    @Test
     public void testMapListener() {
         IMap<Integer, EmployeeDTO> map = instance1.getMap("test");
         CountDownLatch latch = new CountDownLatch(1);
@@ -229,7 +214,4 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
 
         assertOpenEventually(latch);
     }
-
-    protected abstract void restartCluster();
-
 }

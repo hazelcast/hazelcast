@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
+import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
@@ -34,31 +35,144 @@ public class MainDTOSerializerReadingMissingFields implements CompactSerializer<
     @Nonnull
     @Override
     public MainDTO read(@Nonnull CompactReader reader) {
-        boolean bool = reader.readBoolean("nonExistingField", false);
-        byte b = reader.readInt8("nonExistingField", (byte) 1);
-        char c = (char) reader.readInt16("nonExistingField", (short) 1);
-        short s = reader.readInt16("nonExistingField", (short) 1);
-        int i = reader.readInt32("nonExistingField", 1);
-        long l = reader.readInt64("nonExistingField", 1L);
-        float f = reader.readFloat32("nonExistingField", 1.0f);
-        double d = reader.readFloat64("nonExistingField", 1.0d);
-        String str = reader.readString("nonExistingField", "NA");
-        InnerDTO p = reader.readCompact("nonExistingField", null);
-        BigDecimal bigDecimal = reader.readDecimal("nonExistingField", BigDecimal.ONE);
-        LocalTime localTime = reader.readTime("nonExistingField", LocalTime.of(1, 1, 1));
-        LocalDate localDate = reader.readDate("nonExistingField", LocalDate.of(1, 1, 1));
-        LocalDateTime localDateTime = reader.readTimestamp("nonExistingField",
-                LocalDateTime.of(1, 1, 1, 1, 1, 1));
-        OffsetDateTime offsetDateTime = reader.readTimestampWithTimezone("nonExistingField",
-                OffsetDateTime.of(1, 1, 1, 1, 1, 1, 1, ZoneOffset.ofHours(1)));
-        Byte nullableB = reader.readNullableInt8("nonExistingField", (byte) 1);
-        Boolean nullableBool = reader.readNullableBoolean("nonExistingField", false);
-        Character nullableC = CompactUtil.characterFromShort(reader.readNullableInt16("nonExistingField", (short) 1));
-        Short nullableS = reader.readNullableInt16("nonExistingField", (short) 1);
-        Integer nullableI = reader.readNullableInt32("nonExistingField", 1);
-        Long nullableL = reader.readNullableInt64("nonExistingField", 1L);
-        Float nullableF = reader.readNullableFloat32("nonExistingField", 1.0f);
-        Double nullableD = reader.readNullableFloat64("nonExistingField", 1.0d);
+        boolean bool;
+        if (reader.getFieldKind("nonExistingField") == FieldKind.BOOLEAN) {
+            bool = reader.readBoolean("nonExistingField");
+        } else {
+            bool = false;
+        }
+        byte b;
+        if (reader.getFieldKind("nonExistingField") == FieldKind.INT8) {
+            b = reader.readInt8("nonExistingField");
+        } else {
+            b = 1;
+        }
+        char c;
+        if (reader.getFieldKind("nonExistingField") == FieldKind.INT16) {
+            c = (char) reader.readInt16("nonExistingField");
+        } else {
+            c = 1;
+        }
+        short s;
+        if (reader.getFieldKind("nonExistingField") == FieldKind.INT16) {
+            s = reader.readInt16("nonExistingField");
+        } else {
+            s = 1;
+        }
+        int i;
+        if (reader.getFieldKind("nonExistingField") == FieldKind.INT32) {
+            i = reader.readInt32("nonExistingField");
+        } else {
+            i = 1;
+        }
+        long l;
+        if (reader.getFieldKind("nonExistingField") == FieldKind.INT64) {
+            l = reader.readInt64("nonExistingField");
+        } else {
+            l = 1L;
+        }
+        float f;
+        if (reader.getFieldKind("nonExistingField") == FieldKind.FLOAT32) {
+            f = reader.readFloat32("nonExistingField");
+        } else {
+            f = 1.0f;
+        }
+        double d;
+        if (reader.getFieldKind("nonExistingField") == FieldKind.FLOAT64) {
+            d = reader.readFloat64("nonExistingField");
+        } else {
+            d = 1.0d;
+        }
+        String str;
+        if (reader.getFieldKind("nonExistingField") == FieldKind.STRING) {
+            str = reader.readString("nonExistingField");
+        } else {
+            str = "NA";
+        }
+        InnerDTO p;
+        if (reader.getFieldKind("nonExistingField") == FieldKind.COMPACT) {
+            p = reader.readCompact("nonExistingField");
+        } else {
+            p = null;
+        }
+        BigDecimal bigDecimal;
+        if (reader.getFieldKind("nonExistingField") == FieldKind.DECIMAL) {
+            bigDecimal = reader.readDecimal("nonExistingField");
+        } else {
+            bigDecimal = BigDecimal.ONE;
+        }
+        LocalTime localTime;
+        if (reader.getFieldKind("nonExistingField") == FieldKind.TIME) {
+            localTime = reader.readTime("nonExistingField");
+        } else {
+            localTime = LocalTime.of(1, 1, 1);
+        }
+        LocalDate localDate;
+        if (reader.getFieldKind("nonExistingField") == FieldKind.DATE) {
+            localDate = reader.readDate("nonExistingField");
+        } else {
+            localDate = LocalDate.of(1, 1, 1);
+        }
+        LocalDateTime localDateTime;
+        if (reader.getFieldKind("nonExistingField") == FieldKind.TIMESTAMP) {
+            localDateTime = reader.readTimestamp("nonExistingField");
+        } else {
+            localDateTime = LocalDateTime.of(1, 1, 1, 1, 1, 1);
+        }
+        OffsetDateTime offsetDateTime;
+        if (reader.getFieldKind("nonExistingField") == FieldKind.TIMESTAMP_WITH_TIMEZONE) {
+            offsetDateTime = reader.readTimestampWithTimezone("nonExistingField");
+        } else {
+            offsetDateTime = OffsetDateTime.of(1, 1, 1, 1, 1, 1, 1, ZoneOffset.ofHours(1));
+        }
+        Byte nullableB;
+        if (reader.getFieldKind("nonExistingField") == FieldKind.NULLABLE_INT8) {
+            nullableB = reader.readNullableInt8("nonExistingField");
+        } else {
+            nullableB = 1;
+        }
+        Boolean nullableBool;
+        if (reader.getFieldKind("nonExistingField") == FieldKind.NULLABLE_BOOLEAN) {
+            nullableBool = reader.readNullableBoolean("nonExistingField");
+        } else {
+            nullableBool = false;
+        }
+        Character nullableC;
+        if (reader.getFieldKind("nonExistingField") == FieldKind.NULLABLE_INT16) {
+            nullableC = CompactUtil.characterFromShort(reader.readNullableInt16("nonExistingField"));
+        } else {
+            nullableC = 1;
+        }
+        Short nullableS;
+        if (reader.getFieldKind("nonExistingField") == FieldKind.NULLABLE_INT16) {
+            nullableS = reader.readNullableInt16("nonExistingField");
+        } else {
+            nullableS = 1;
+        }
+        Integer nullableI;
+        if (reader.getFieldKind("nonExistingField") == FieldKind.NULLABLE_INT32) {
+            nullableI = reader.readNullableInt32("nonExistingField");
+        } else {
+            nullableI = 1;
+        }
+        Long nullableL;
+        if (reader.getFieldKind("nonExistingField") == FieldKind.NULLABLE_INT64) {
+            nullableL = reader.readNullableInt64("nonExistingField");
+        } else {
+            nullableL = 1L;
+        }
+        Float nullableF;
+        if (reader.getFieldKind("nonExistingField") == FieldKind.NULLABLE_FLOAT32) {
+            nullableF = reader.readNullableFloat32("nonExistingField");
+        } else {
+            nullableF = 1.0f;
+        }
+        Double nullableD;
+        if (reader.getFieldKind("nonExistingField") == FieldKind.NULLABLE_FLOAT64) {
+            nullableD = reader.readNullableFloat64("nonExistingField");
+        } else {
+            nullableD = 1.0d;
+        }
         return new MainDTO(b, bool, c, s, i, l, f, d, str, p, bigDecimal, localTime, localDate, localDateTime,
                 offsetDateTime, nullableB, nullableBool, nullableC, nullableS, nullableI, nullableL, nullableF, nullableD);
     }
