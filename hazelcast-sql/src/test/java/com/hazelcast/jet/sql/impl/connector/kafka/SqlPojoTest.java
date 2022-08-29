@@ -22,12 +22,10 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.kafka.model.AllCanonicalTypesValue;
 import com.hazelcast.jet.sql.impl.connector.kafka.model.AllCanonicalTypesValueDeserializer;
 import com.hazelcast.jet.sql.impl.connector.kafka.model.AllCanonicalTypesValueSerializer;
+import com.hazelcast.jet.sql.impl.connector.kafka.model.JavaDeserializer;
+import com.hazelcast.jet.sql.impl.connector.kafka.model.JavaSerializer;
 import com.hazelcast.jet.sql.impl.connector.kafka.model.Person;
-import com.hazelcast.jet.sql.impl.connector.kafka.model.PersonDeserializer;
 import com.hazelcast.jet.sql.impl.connector.kafka.model.PersonId;
-import com.hazelcast.jet.sql.impl.connector.kafka.model.PersonIdDeserializer;
-import com.hazelcast.jet.sql.impl.connector.kafka.model.PersonIdSerializer;
-import com.hazelcast.jet.sql.impl.connector.kafka.model.PersonSerializer;
 import com.hazelcast.jet.sql.impl.connector.test.TestAllTypesSqlConnector;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.HazelcastSqlException;
@@ -99,10 +97,10 @@ public class SqlPojoTest extends SqlTestSupport {
                 + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
                 + ", '" + OPTION_VALUE_CLASS + "'='" + Person.class.getName() + '\''
                 + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", 'key.serializer'='" + PersonIdSerializer.class.getCanonicalName() + '\''
-                + ", 'key.deserializer'='" + PersonIdDeserializer.class.getCanonicalName() + '\''
-                + ", 'value.serializer'='" + PersonSerializer.class.getCanonicalName() + '\''
-                + ", 'value.deserializer'='" + PersonDeserializer.class.getCanonicalName() + '\''
+                + ", 'key.serializer'='" + JavaSerializer.class.getCanonicalName() + '\''
+                + ", 'key.deserializer'='" + JavaDeserializer.class.getCanonicalName() + '\''
+                + ", 'value.serializer'='" + JavaSerializer.class.getCanonicalName() + '\''
+                + ", 'value.deserializer'='" + JavaDeserializer.class.getCanonicalName() + '\''
                 + ", 'auto.offset.reset'='earliest'"
                 + ")"
         );
@@ -129,10 +127,10 @@ public class SqlPojoTest extends SqlTestSupport {
                 + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
                 + ", '" + OPTION_VALUE_CLASS + "'='" + Person.class.getName() + '\''
                 + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", 'key.serializer'='" + PersonIdSerializer.class.getCanonicalName() + '\''
-                + ", 'key.deserializer'='" + PersonIdDeserializer.class.getCanonicalName() + '\''
-                + ", 'value.serializer'='" + PersonSerializer.class.getCanonicalName() + '\''
-                + ", 'value.deserializer'='" + PersonDeserializer.class.getCanonicalName() + '\''
+                + ", 'key.serializer'='" + JavaSerializer.class.getCanonicalName() + '\''
+                + ", 'key.deserializer'='" + JavaDeserializer.class.getCanonicalName() + '\''
+                + ", 'value.serializer'='" + JavaSerializer.class.getCanonicalName() + '\''
+                + ", 'value.deserializer'='" + JavaDeserializer.class.getCanonicalName() + '\''
                 + ", 'auto.offset.reset'='earliest'"
                 + ")"
         );
@@ -162,10 +160,10 @@ public class SqlPojoTest extends SqlTestSupport {
                 + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
                 + ", '" + OPTION_VALUE_CLASS + "'='" + Person.class.getName() + '\''
                 + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", 'key.serializer'='" + PersonIdSerializer.class.getCanonicalName() + '\''
-                + ", 'key.deserializer'='" + PersonIdDeserializer.class.getCanonicalName() + '\''
-                + ", 'value.serializer'='" + PersonSerializer.class.getCanonicalName() + '\''
-                + ", 'value.deserializer'='" + PersonDeserializer.class.getCanonicalName() + '\''
+                + ", 'key.serializer'='" + JavaSerializer.class.getCanonicalName() + '\''
+                + ", 'key.deserializer'='" + JavaDeserializer.class.getCanonicalName() + '\''
+                + ", 'value.serializer'='" + JavaSerializer.class.getCanonicalName() + '\''
+                + ", 'value.deserializer'='" + JavaDeserializer.class.getCanonicalName() + '\''
                 + ", 'auto.offset.reset'='earliest'"
                 + ")"
         );
@@ -195,8 +193,8 @@ public class SqlPojoTest extends SqlTestSupport {
                 + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
                 + ", '" + OPTION_VALUE_CLASS + "'='" + AllCanonicalTypesValue.class.getName() + '\''
                 + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", 'key.serializer'='" + PersonIdSerializer.class.getCanonicalName() + '\''
-                + ", 'key.deserializer'='" + PersonIdDeserializer.class.getCanonicalName() + '\''
+                + ", 'key.serializer'='" + JavaSerializer.class.getCanonicalName() + '\''
+                + ", 'key.deserializer'='" + JavaDeserializer.class.getCanonicalName() + '\''
                 + ", 'value.serializer'='" + AllCanonicalTypesValueSerializer.class.getCanonicalName() + '\''
                 + ", 'value.deserializer'='" + AllCanonicalTypesValueDeserializer.class.getCanonicalName() + '\''
                 + ", 'auto.offset.reset'='earliest'"
@@ -289,8 +287,8 @@ public class SqlPojoTest extends SqlTestSupport {
                 + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
                 + ", 'key.serializer'='" + IntegerSerializer.class.getCanonicalName() + '\''
                 + ", 'key.deserializer'='" + IntegerDeserializer.class.getCanonicalName() + '\''
-                + ", 'value.serializer'='" + PersonSerializer.class.getCanonicalName() + '\''
-                + ", 'value.deserializer'='" + PersonDeserializer.class.getCanonicalName() + '\''
+                + ", 'value.serializer'='" + JavaSerializer.class.getCanonicalName() + '\''
+                + ", 'value.deserializer'='" + JavaDeserializer.class.getCanonicalName() + '\''
                 + ", 'auto.offset.reset'='earliest'"
                 + ")"
         );
@@ -324,10 +322,10 @@ public class SqlPojoTest extends SqlTestSupport {
                 + ", '" + OPTION_VALUE_FORMAT + "'='" + JAVA_FORMAT + '\''
                 + ", '" + OPTION_VALUE_CLASS + "'='" + Person.class.getName() + '\''
                 + ", 'bootstrap.servers'='" + kafkaTestSupport.getBrokerConnectionString() + '\''
-                + ", 'key.serializer'='" + PersonIdSerializer.class.getCanonicalName() + '\''
-                + ", 'key.deserializer'='" + PersonIdDeserializer.class.getCanonicalName() + '\''
-                + ", 'value.serializer'='" + PersonSerializer.class.getCanonicalName() + '\''
-                + ", 'value.deserializer'='" + PersonDeserializer.class.getCanonicalName() + '\''
+                + ", 'key.serializer'='" + JavaSerializer.class.getCanonicalName() + '\''
+                + ", 'key.deserializer'='" + JavaDeserializer.class.getCanonicalName() + '\''
+                + ", 'value.serializer'='" + JavaSerializer.class.getCanonicalName() + '\''
+                + ", 'value.deserializer'='" + JavaDeserializer.class.getCanonicalName() + '\''
                 + ", 'auto.offset.reset'='earliest'"
                 + ")"
         );
@@ -419,8 +417,8 @@ public class SqlPojoTest extends SqlTestSupport {
         kafkaTestSupport.assertTopicContentsEventually(
                 name,
                 expected,
-                PersonIdDeserializer.class,
-                PersonDeserializer.class
+                JavaDeserializer.class,
+                JavaDeserializer.class
         );
     }
 }
