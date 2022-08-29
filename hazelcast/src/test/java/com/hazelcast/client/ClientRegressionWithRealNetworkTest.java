@@ -31,10 +31,8 @@ import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
-import com.hazelcast.config.TcpIpConfig;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.map.IMap;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -46,7 +44,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
@@ -62,41 +59,6 @@ import static org.junit.Assert.assertNull;
 @Category(SlowTest.class)
 public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
 
-    private static final Random rnd = new Random();
-
-    private static int getRandomAvailablePort() {
-        int port = rnd.nextInt(65535) + 1;
-        if (TestUtil.isPortAvailable(port)) {
-            return port;
-        }
-        return getRandomAvailablePort();
-    }
-
-    private Config getCustomConfig(String clusterName, int port) {
-        Config config = new Config();
-        config.setClusterName(clusterName);
-        // Use a system assigned port and disable multicast not to collide with other possibly running members.
-        config.getNetworkConfig().setPort(port);
-        config.getNetworkConfig().getJoin().getMulticastConfig().setEnabled(false);
-        return config;
-    }
-
-    private Config getCustomConfig(String clusterName) {
-        return getCustomConfig(clusterName, 0);
-    }
-
-    private Config getCustomConfig(int port) {
-        return getCustomConfig("dev", port);
-    }
-
-    private Config getCustomConfig() {
-        return getCustomConfig("dev");
-    }
-
-    private int getPortOfMember(HazelcastInstance member) {
-        return member.getCluster().getLocalMember().getAddress().getPort();
-    }
-
     @After
     public void cleanUp() {
         HazelcastClient.shutdownAll();
@@ -106,17 +68,21 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
     @Test
     @Category(QuickTest.class)
     public void testClientPortConnection() {
-        Config config1 = getCustomConfig("foo");
+        String clusterName1 = randomString();
+        Config config1 = new Config();
+        config1.setClusterName(clusterName1);
+        config1.getNetworkConfig().setPort(5701);
         HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config1);
         instance1.getMap("map").put("key", "value");
 
-        Config config2 = getCustomConfig("bar");
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config2);
-        int port = getPortOfMember(instance2);
+        String clusterName2 = randomString();
+        Config config2 = new Config();
+        config2.setClusterName(clusterName2);
+        config2.getNetworkConfig().setPort(5702);
+        Hazelcast.newHazelcastInstance(config2);
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setClusterName("bar");
-        clientConfig.getNetworkConfig().addAddress("127.0.0.1:"  + port);
+        clientConfig.setClusterName(clusterName2);
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
 
         IMap<Object, Object> map = client.getMap("map");
@@ -126,17 +92,19 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
 
     @Test
     public void testClientConnectionBeforeServerReady() {
+        String clusterName = randomString();
         ExecutorService executorService = Executors.newFixedThreadPool(2);
-        int port = getRandomAvailablePort();
         executorService.submit(() -> {
-            Hazelcast.newHazelcastInstance(getCustomConfig(port));
+            Config config = new Config();
+            config.setClusterName(clusterName);
+            Hazelcast.newHazelcastInstance(config);
         });
 
         CountDownLatch clientLatch = new CountDownLatch(1);
         executorService.submit(() -> {
             ClientConfig config = new ClientConfig();
-            config.getNetworkConfig().addAddress("127.0.0.1:" + port);
             config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
+            config.setClusterName(clusterName);
             HazelcastClient.newHazelcastClient(config);
             clientLatch.countDown();
         });
@@ -165,13 +133,15 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
     }
 
     private void testConnectionCountAfterClientReconnect(String memberAddress, String clientAddress) {
-        int port = getRandomAvailablePort();
-        Config config = getCustomConfig(port);
+        String clusterName = randomString();
+        Config config = new Config();
+        config.setClusterName(clusterName);
         config.getNetworkConfig().setPublicAddress(memberAddress);
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getNetworkConfig().addAddress(clientAddress + ":" + port);
+        clientConfig.getNetworkConfig().addAddress(clientAddress);
+        clientConfig.setClusterName(clusterName);
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
 
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
@@ -212,16 +182,18 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
     }
 
     private void testListenersAfterClientDisconnected(String memberAddress, String clientAddress) {
-        int port = getRandomAvailablePort();
-        Config config = getCustomConfig(port);
+        String clusterName = randomString();
+        Config config = new Config();
         int heartBeatSeconds = 6;
         config.getNetworkConfig().setPublicAddress(memberAddress);
         config.setProperty(ClusterProperty.CLIENT_HEARTBEAT_TIMEOUT_SECONDS.getName(), Integer.toString(heartBeatSeconds));
+        config.setClusterName(clusterName);
         HazelcastInstance hazelcastInstance = Hazelcast.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setClusterName(clusterName);
         ClientNetworkConfig networkConfig = clientConfig.getNetworkConfig();
-        networkConfig.addAddress(clientAddress + ":" + port);
+        networkConfig.addAddress(clientAddress);
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         HazelcastInstance client = HazelcastClient.newHazelcastClient(clientConfig);
         IMap<Integer, Integer> map = client.getMap("test");
@@ -259,18 +231,13 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
     }
 
     private void testOperationsContinueWhenClientDisconnected(ClientConnectionStrategyConfig.ReconnectMode reconnectMode) {
-        // We will disable multicast and enable tcp ip to avoid accidental clashes with other clusters.
-        int port1 = getRandomAvailablePort();
-        int port2 = getRandomAvailablePort();
-
-        // getCustomConfig disables multicast.
-        Config config1 = getCustomConfig(port1);
-        TcpIpConfig tcpIpConfig1 = config1.getNetworkConfig().getJoin().getTcpIpConfig();
-        tcpIpConfig1.setEnabled(true);
-        tcpIpConfig1.addMember("127.0.0.1:" + port1);
-        tcpIpConfig1.addMember("127.0.0.1:" + port2);
-        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config1);
-
+        String clusterName = randomString();
+        Config config = new Config();
+        config.setClusterName(clusterName);
+        HazelcastInstance instance1 = Hazelcast.newHazelcastInstance(config);
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setClusterName(clusterName);
+        clientConfig.getConnectionStrategyConfig().setReconnectMode(reconnectMode);
         AtomicBoolean waitFlag = new AtomicBoolean();
         CountDownLatch testFinished = new CountDownLatch(1);
         AddressProvider addressProvider = new AddressProvider() {
@@ -283,12 +250,7 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
                         e.printStackTrace();
                     }
                 }
-                Addresses addresses = new Addresses();
-                Addresses socketAddresses1 = AddressHelper.getSocketAddresses("127.0.0.1:" + port1, listener);
-                addresses.addAll(socketAddresses1);
-                Addresses socketAddresses2 = AddressHelper.getSocketAddresses("127.0.0.1:" + port2, listener);
-                addresses.addAll(socketAddresses2);
-                return addresses;
+                return AddressHelper.getSocketAddresses("127.0.0.1", listener);
             }
 
             @Override
@@ -301,19 +263,11 @@ public class ClientRegressionWithRealNetworkTest extends ClientTestSupport {
                 return member.getAddress();
             }
         };
-
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getConnectionStrategyConfig().setReconnectMode(reconnectMode);
         clientConfig.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(Long.MAX_VALUE);
         clientConfig.setProperty(ClientProperty.INVOCATION_TIMEOUT_SECONDS.getName(), "3");
         HazelcastInstance client = HazelcastClientUtil.newHazelcastClient(clientConfig, addressProvider);
 
-        Config config2 = getCustomConfig(port2);
-        TcpIpConfig tcpIpConfig2 = config2.getNetworkConfig().getJoin().getTcpIpConfig();
-        tcpIpConfig2.setEnabled(true);
-        tcpIpConfig2.addMember("127.0.0.1:" + port1);
-        tcpIpConfig2.addMember("127.0.0.1:" + port2);
-        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config2);
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance(config);
 
         warmUpPartitions(instance1, instance2);
         String keyOwnedBy2 = generateKeyOwnedBy(instance2);
