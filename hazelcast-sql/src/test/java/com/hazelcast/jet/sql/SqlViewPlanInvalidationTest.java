@@ -22,9 +22,12 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+/**
+ * Test for https://github.com/hazelcast/hazelcast/pull/22091
+ */
 @Category({QuickTest.class, ParallelJVMTest.class})
 @SuppressWarnings("checkstyle:RedundantModifier")
-public class SqlViewReplaceTest extends SqlTestSupport {
+public class SqlViewPlanInvalidationTest extends SqlTestSupport {
     public static final String FIRST_MAP_NAME = "m_one";
     public static final String SECOND_MAP_NAME = "m_two";
     public static final int FIRST_MAP_VALUE = 1;
@@ -34,17 +37,17 @@ public class SqlViewReplaceTest extends SqlTestSupport {
 
     @BeforeClass
     public static void initialize() {
-        initializeWithClient(1, null, null);
+        // we use 1 member so that all queries use the same plan cache
+        initialize(1, null);
     }
 
     @Test
     public void when_changingViewDefinitionWithLiteral_then_newViewDefinitionIsUsed() {
-        client().getSql().execute("CREATE OR REPLACE VIEW v1 AS SELECT '" + FIRST_LITERAL + "'");
+        instance().getSql().execute("CREATE OR REPLACE VIEW v1 AS SELECT '" + FIRST_LITERAL + "'");
         assertRowsAnyOrder("SELECT * FROM v1", rows(1, FIRST_LITERAL));
-        client().getSql().execute("CREATE OR REPLACE VIEW v1 AS SELECT '" + SECOND_LITERAL + "'");
-        assertTrueEventually(() -> {
-            assertRowsAnyOrder("SELECT * FROM v1", rows(1, SECOND_LITERAL));
-        });
+        instance().getSql().execute("CREATE OR REPLACE VIEW v1 AS SELECT '" + SECOND_LITERAL + "'");
+        assertTrueEventually(() ->
+                assertRowsAnyOrder("SELECT * FROM v1", rows(1, SECOND_LITERAL)));
     }
 
     @Test
@@ -54,34 +57,31 @@ public class SqlViewReplaceTest extends SqlTestSupport {
         createMapping(FIRST_MAP_NAME, String.class, Integer.class);
         createMapping(SECOND_MAP_NAME, String.class, Integer.class);
 
-        client().getSql().execute("CREATE OR REPLACE VIEW v1 AS SELECT this from " + FIRST_MAP_NAME);
+        instance().getSql().execute("CREATE OR REPLACE VIEW v1 AS SELECT this from " + FIRST_MAP_NAME);
         assertRowsAnyOrder("SELECT * FROM v1", rows(1, FIRST_MAP_VALUE));
-        client().getSql().execute("CREATE OR REPLACE VIEW v1 AS SELECT this from " + SECOND_MAP_NAME);
-        assertTrueEventually(() -> {
-            assertRowsAnyOrder("SELECT * FROM v1", rows(1, SECOND_MAP_VALUE));
-        });
+        instance().getSql().execute("CREATE OR REPLACE VIEW v1 AS SELECT this from " + SECOND_MAP_NAME);
+        assertTrueEventually(() ->
+                assertRowsAnyOrder("SELECT * FROM v1", rows(1, SECOND_MAP_VALUE)));
     }
 
     @Test
     public void when_changingInnerViewDefinitionWithNestedViews_then_newViewDefinitionIsUsed() {
-        client().getSql().execute("CREATE OR REPLACE VIEW v1 AS SELECT '" + FIRST_LITERAL + "'");
-        client().getSql().execute("CREATE OR REPLACE VIEW v2 AS SELECT * FROM v1");
+        instance().getSql().execute("CREATE OR REPLACE VIEW v1 AS SELECT '" + FIRST_LITERAL + "'");
+        instance().getSql().execute("CREATE OR REPLACE VIEW v2 AS SELECT * FROM v1");
         assertRowsAnyOrder("SELECT * FROM v2", rows(1, FIRST_LITERAL));
-        client().getSql().execute("CREATE OR REPLACE VIEW v1 AS SELECT '" + SECOND_LITERAL + "'");
-        assertTrueEventually(() -> {
-            assertRowsAnyOrder("SELECT * FROM v2", rows(1, SECOND_LITERAL));
-        });
+        instance().getSql().execute("CREATE OR REPLACE VIEW v1 AS SELECT '" + SECOND_LITERAL + "'");
+        assertTrueEventually(() ->
+                assertRowsAnyOrder("SELECT * FROM v2", rows(1, SECOND_LITERAL)));
     }
 
     @Test
     public void when_changingOuterViewDefinitionWithNestedViews_then_newViewDefinitionIsUsed() {
-        client().getSql().execute("CREATE OR REPLACE VIEW v1 AS SELECT '" + FIRST_LITERAL + "'");
-        client().getSql().execute("CREATE OR REPLACE VIEW v2 AS SELECT '" + SECOND_LITERAL + "'");
-        client().getSql().execute("CREATE OR REPLACE VIEW v3 AS SELECT * FROM v1");
+        instance().getSql().execute("CREATE OR REPLACE VIEW v1 AS SELECT '" + FIRST_LITERAL + "'");
+        instance().getSql().execute("CREATE OR REPLACE VIEW v2 AS SELECT '" + SECOND_LITERAL + "'");
+        instance().getSql().execute("CREATE OR REPLACE VIEW v3 AS SELECT * FROM v1");
         assertRowsAnyOrder("SELECT * FROM v3", rows(1, FIRST_LITERAL));
-        client().getSql().execute("CREATE OR REPLACE VIEW v3 AS SELECT * FROM v2");
-        assertTrueEventually(() -> {
-            assertRowsAnyOrder("SELECT * FROM v2", rows(1, SECOND_LITERAL));
-        });
+        instance().getSql().execute("CREATE OR REPLACE VIEW v3 AS SELECT * FROM v2");
+        assertTrueEventually(() ->
+                assertRowsAnyOrder("SELECT * FROM v2", rows(1, SECOND_LITERAL)));
     }
 }
