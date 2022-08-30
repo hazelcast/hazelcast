@@ -84,11 +84,12 @@ public class ViewTable extends Table {
         private final String query;
         private final Set<String> conflictingSchemas;
 
-        public ViewPlanObjectKey(
+        ViewPlanObjectKey(
                 String schemaName,
                 String viewName,
                 String query,
-                Set<String> conflictingSchemas) {
+                Set<String> conflictingSchemas
+        ) {
             this.schemaName = schemaName;
             this.viewName = viewName;
             this.query = query;
