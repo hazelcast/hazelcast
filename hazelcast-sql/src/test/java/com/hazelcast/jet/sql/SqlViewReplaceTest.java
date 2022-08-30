@@ -34,7 +34,7 @@ public class SqlViewReplaceTest extends SqlTestSupport {
 
     @BeforeClass
     public static void initialize() {
-        initializeWithClient(3, null, null);
+        initializeWithClient(1, null, null);
     }
 
     @Test
