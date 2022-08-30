@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
+import com.hazelcast.jet.sql.impl.opt.common.CalcIntoScanPushdownRule;
 import org.apache.calcite.rel.rules.CoreRules;
 import org.apache.calcite.rel.rules.PruneEmptyRules;
 import org.apache.calcite.tools.RuleSet;
@@ -35,7 +36,7 @@ public final class LogicalRules {
 
                 // Calc rules
                 CalcLogicalRule.INSTANCE,
-                CalcIntoScanLogicalRule.INSTANCE,
+                CalcIntoScanPushdownRule.INSTANCE,
                 CalcMergeRule.INSTANCE,
                 CoreRules.CALC_REMOVE,
                 CoreRules.CALC_REDUCE_EXPRESSIONS,

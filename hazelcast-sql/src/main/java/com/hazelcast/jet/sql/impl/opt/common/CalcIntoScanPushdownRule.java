@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.logical;
+package com.hazelcast.jet.sql.impl.opt.common;
 
+import com.hazelcast.jet.sql.impl.HazelcastRexBuilder;
+import com.hazelcast.jet.sql.impl.opt.FullScan;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import org.apache.calcite.plan.RelOptRule;
@@ -33,6 +36,8 @@ import org.immutables.value.Value;
 import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
+import static java.util.Arrays.asList;
+import static org.apache.calcite.rex.RexUtil.composeConjunction;
 
 /**
  * Logical rule that pushes a {@link Calc} down into a {@link TableScan} to allow for constrained scans.
@@ -40,54 +45,57 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
  * <p>
  * Before:
  * <pre>
- * LogicalCalc[filter=exp1]
- *     LogicalScan[table[filter=exp2]]
+ * Calc[filter=exp1]
+ *     TableScan[table[filter=exp2]]
  * </pre>
  * After:
  * <pre>
- * LogicalScan[table[filter=exp1 AND exp2]]
+ * TableScan[table[filter=exp1 AND exp2]]
  * </pre>
  */
 @Value.Enclosing
-public final class CalcIntoScanLogicalRule extends RelRule<Config> implements TransformationRule {
+public final class CalcIntoScanPushdownRule extends RelRule<Config> implements TransformationRule {
 
     @Value.Immutable
     public interface Config extends RelRule.Config {
-        CalcIntoScanLogicalRule.Config DEFAULT = ImmutableCalcIntoScanLogicalRule.Config.builder()
-                .description(CalcIntoScanLogicalRule.class.getSimpleName())
+        CalcIntoScanPushdownRule.Config DEFAULT = ImmutableCalcIntoScanPushdownRule.Config.builder()
+                .description(CalcIntoScanPushdownRule.class.getSimpleName())
                 .operandSupplier(b0 -> b0
-                        .operand(CalcLogicalRel.class)
+                        .operand(Calc.class)
                         .trait(LOGICAL)
                         .inputs(b1 -> b1
-                                .operand(FullScanLogicalRel.class).anyInputs()))
+                                .operand(FullScan.class).anyInputs()))
                 .build();
 
         @Override
         default RelOptRule toRule() {
-            return new CalcIntoScanLogicalRule(this);
+            return new CalcIntoScanPushdownRule(this);
         }
     }
 
-    public static final CalcIntoScanLogicalRule INSTANCE = new CalcIntoScanLogicalRule(Config.DEFAULT);
+    public static final CalcIntoScanPushdownRule INSTANCE = new CalcIntoScanPushdownRule(Config.DEFAULT);
 
-    private CalcIntoScanLogicalRule(Config config) {
+    private CalcIntoScanPushdownRule(Config config) {
         super(config);
     }
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        CalcLogicalRel calc = call.rel(0);
-        FullScanLogicalRel scan = call.rel(1);
+        Calc calc = call.rel(0);
+        FullScan scan = call.rel(1);
 
         HazelcastTable table = OptUtils.extractHazelcastTable(scan);
-
         RexProgram program = calc.getProgram();
+        assert scan.getConvention() == LOGICAL; // support it for physical rels also.
 
         List<RexNode> newProjects = program.expandList(program.getProjectList());
         HazelcastTable newTable = table.withProject(newProjects, program.getOutputRowType());
 
         if (program.getCondition() != null) {
-            newTable = newTable.withFilter(program.expandLocalRef(program.getCondition()));
+            RexNode calcFilter = program.expandLocalRef(program.getCondition());
+            RexNode tableFilter = table.getFilter();
+            newTable = newTable.withFilter(
+                    composeConjunction(HazelcastRexBuilder.INSTANCE, asList(calcFilter, tableFilter)));
         }
 
         HazelcastRelOptTable convertedTable = OptUtils.createRelTable(
@@ -96,13 +104,12 @@ public final class CalcIntoScanLogicalRule extends RelRule<Config> implements Tr
                 scan.getCluster().getTypeFactory()
         );
 
-        FullScanLogicalRel rel = new FullScanLogicalRel(
+        call.transformTo(new FullScanLogicalRel(
                 scan.getCluster(),
                 OptUtils.toLogicalConvention(scan.getTraitSet()),
                 convertedTable,
                 scan.eventTimePolicyProvider(),
                 OptUtils.getTargetField(program, scan.watermarkedColumnIndex())
-        );
-        call.transformTo(rel);
+        ));
     }
 }

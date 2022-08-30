@@ -49,7 +49,7 @@ import static com.hazelcast.jet.sql.impl.opt.cost.CostUtils.TABLE_SCAN_CPU_MULTI
 public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
     private Byte watermarkKey;
 
-    FullScanPhysicalRel(
+    public FullScanPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,

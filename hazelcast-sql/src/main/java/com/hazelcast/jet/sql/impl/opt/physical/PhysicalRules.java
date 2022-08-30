@@ -30,6 +30,8 @@ public final class PhysicalRules {
         return RuleSets.ofList(
                 // Filter rules
                 CalcPhysicalRule.INSTANCE,
+                CalcRemovePhysicalRule.INSTANCE,
+                // CalcIntoScanPushdownRule.INSTANCE, TODO [sasha]: support it for 5.3
 
                 // Scan rules
                 FullScanPhysicalRule.INSTANCE,
