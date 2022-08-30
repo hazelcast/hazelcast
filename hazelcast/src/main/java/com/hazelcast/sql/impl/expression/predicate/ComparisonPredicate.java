@@ -24,13 +24,18 @@ import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.BiExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.RowValue;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.hazelcast.sql.impl.type.converter.Converter;
+import com.hazelcast.sql.impl.type.converter.Converters;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
 import java.util.Objects;
+
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.OBJECT;
+import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.ROW;
 
 /**
  * Implements evaluation of SQL comparison predicates.
@@ -65,7 +70,13 @@ public final class ComparisonPredicate extends BiExpression<Boolean> implements 
         return SqlDataSerializerHook.EXPRESSION_COMPARISON;
     }
 
-    @SuppressWarnings({"rawtypes", "unchecked"})
+    @SuppressWarnings({
+            "rawtypes",
+            "unchecked",
+            "checkstyle:CyclomaticComplexity",
+            "checkstyle:NPathComplexity",
+            "checkstyle:ReturnCount"
+    })
     @SuppressFBWarnings(value = "NP_BOOLEAN_RETURN_NULL", justification = "Any SQL expression may return null")
     @Override
     public Boolean eval(Row row, ExpressionEvalContext context) {
@@ -79,7 +90,17 @@ public final class ComparisonPredicate extends BiExpression<Boolean> implements 
             return null;
         }
 
-        if (this.operand1.getType().getTypeFamily() == QueryDataTypeFamily.OBJECT) {
+        if (operand1.getType().getTypeFamily().equals(ROW)
+                || operand2.getType().getTypeFamily().equals(ROW)) {
+            if (operand1.getType().getTypeFamily() != operand2.getType().getTypeFamily()) {
+                throw QueryException.error(operand1.getType().getTypeFamily() + " can not be compared to "
+                        + operand2.getType().getTypeFamily());
+            }
+
+            return compareRows((RowValue) left, (RowValue) right);
+        }
+
+        if (this.operand1.getType().getTypeFamily() == OBJECT) {
             Class<?> leftClass = left.getClass();
             Class<?> rightClass = right.getClass();
 
@@ -124,6 +145,47 @@ public final class ComparisonPredicate extends BiExpression<Boolean> implements 
             default:
                 throw new IllegalStateException("unexpected comparison mode: " + mode);
         }
+    }
+
+    private boolean compareRows(RowValue left, RowValue right) {
+        if (left.getValues().size() != right.getValues().size()) {
+            return false;
+        }
+
+        for (int i = 0; i < left.getValues().size(); i++) {
+            final Object leftVal = left.getValues().get(i);
+            final Object rightVal = right.getValues().get(i);
+
+            if (Objects.equals(leftVal, rightVal)) {
+                continue;
+            }
+
+            if (leftVal == null || rightVal == null) {
+                return false;
+            }
+
+            if (leftVal instanceof RowValue && rightVal instanceof RowValue) {
+                if (!compareRows((RowValue) leftVal, (RowValue) rightVal)) {
+                    return false;
+                } else {
+                    continue;
+                }
+            }
+
+            final Converter leftConverter = Converters.getConverter(leftVal.getClass());
+            final Converter rightConverter = Converters.getConverter(rightVal.getClass());
+
+            if (!leftConverter.canConvertTo(rightConverter.getTypeFamily())) {
+                return false;
+            }
+
+            final Object newRightVal = leftConverter.convertToSelf(rightConverter, rightVal);
+            if (!leftVal.equals(newRightVal)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     @Override
