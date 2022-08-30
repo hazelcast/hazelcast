@@ -198,14 +198,13 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
         } catch (Exception e) {
             if (e.getMessage() != null && e.getMessage().startsWith("Mapping or view already exists:")) {
                 readExistingMapping();
-                return;
             } else {
                 logger.warning(e);
                 initFailure = e;
             }
+        } finally {
+            initFinished.countDown();
         }
-
-        initFinished.countDown();
     }
 
     private String deriveMappingType() {
@@ -259,6 +258,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
     }
 
     private void readExistingMapping() {
+        logger.fine("Reading existing mapping for map" + mapName);
         try (SqlResult mappings = sql.execute("SHOW MAPPINGS")) {
             for (SqlRow mapping : mappings) {
                 String name = mapping.getObject(MAPPING_NAME_COLUMN);
@@ -267,13 +267,11 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
                     validateColumns(rowMetadata);
                     columnMetadataList = rowMetadata.getColumns();
                     queries = new Queries(name, properties.idColumn, columnMetadataList);
-                    initFinished.countDown();
-                    return;
+                    break;
                 }
             }
         } catch (Exception e) {
             initFailure = e;
-            initFinished.countDown();
         }
     }
 
