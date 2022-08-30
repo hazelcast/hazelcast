@@ -538,7 +538,8 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
         try {
             boolean finished = initFinished.await(initTimeoutMillis, MILLISECONDS);
             if (!finished) {
-                throw new HazelcastException("MapStore init for map: " + mapName + " timed out after " + initTimeoutMillis + " ms", initFailure);
+                throw new HazelcastException("MapStore init for map: " + mapName + " timed out after " + initTimeoutMillis
+                        + " ms", initFailure);
             }
             if (initFailure != null) {
                 throw new HazelcastException("MapStore init failed for map: " + mapName, initFailure);
