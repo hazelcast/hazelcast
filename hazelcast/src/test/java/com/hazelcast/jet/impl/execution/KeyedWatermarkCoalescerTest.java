@@ -25,6 +25,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
+import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptySet;
 import static java.util.Collections.singleton;
@@ -79,5 +80,12 @@ public class KeyedWatermarkCoalescerTest extends JetTestSupport {
         assertEquals(singletonList(wm(10, (byte) 42)), kwc.observeWm(1, wm(10, (byte) 42)));
 
         assertEquals(singleton((byte) 42), kwc.keys());
+    }
+
+    @Test
+    public void test_initialScenario4() {
+        kwc.observeWm(0, wm(42));
+        assertEquals(emptyList(), kwc.observeWm(0, IDLE_MESSAGE));
+        assertEquals(asList(wm(42), IDLE_MESSAGE), kwc.observeWm(1, IDLE_MESSAGE));
     }
 }

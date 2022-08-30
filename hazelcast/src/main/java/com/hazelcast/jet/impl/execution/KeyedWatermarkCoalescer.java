@@ -57,6 +57,11 @@ public class KeyedWatermarkCoalescer {
             for (Integer queueIndex : doneQueues) {
                 wc.queueDone(queueIndex);
             }
+            for (int i = 0; i < idleQueues.length; ++i) {
+                if (idleQueues[i]) {
+                    wc.observeWm(i, IDLE_MESSAGE_TIME);
+                }
+            }
             return wc;
         });
     }
@@ -85,31 +90,23 @@ public class KeyedWatermarkCoalescer {
     public List<Watermark> observeWm(int queueIndex, Watermark watermark) {
         if (watermark.equals(IDLE_MESSAGE)) {
             idleQueues[queueIndex] = true;
-            if (coalescers.isEmpty()) {
-                boolean allIdle = true;
-                for (boolean idleQueue : idleQueues) {
-                    allIdle &= idleQueue;
-                }
-                if (allIdle) {
-                    return singletonList(IDLE_MESSAGE);
-                } else {
-                    return emptyList();
-                }
+            boolean allIdle = true;
+            // we need to track idle queues for the case when there's no coalescer yet
+            for (boolean idleQueue : idleQueues) {
+                allIdle &= idleQueue;
             }
 
-            boolean idleMessagePending = true;
             List<Watermark> watermarks = new ArrayList<>();
-
             for (Entry<Byte, WatermarkCoalescer> coalescerEntry : coalescers.entrySet()) {
                 long observedWm = coalescerEntry.getValue().observeWm(queueIndex, watermark.timestamp());
                 assert observedWm != IDLE_MESSAGE_TIME;
                 if (observedWm != NO_NEW_WM) {
                     watermarks.add(new Watermark(observedWm, coalescerEntry.getKey()));
                 }
-                idleMessagePending &= coalescerEntry.getValue().idleMessagePending();
+                assert coalescerEntry.getValue().idleMessagePending() == allIdle;
             }
 
-            if (idleMessagePending) {
+            if (allIdle) {
                 watermarks.add(IDLE_MESSAGE);
             }
             return watermarks;
@@ -117,16 +114,7 @@ public class KeyedWatermarkCoalescer {
 
         idleQueues[queueIndex] = false;
 
-        boolean coalescerExistsBefore = coalescers.containsKey(watermark.key());
         WatermarkCoalescer c = coalescer(watermark.key());
-        if (!coalescerExistsBefore) {
-            for (int i = 0; i < idleQueues.length; ++i) {
-                if (idleQueues[i]) {
-                    c.observeWm(i, IDLE_MESSAGE_TIME);
-                }
-            }
-        }
-
         long newWmValue = c.observeWm(queueIndex, watermark.timestamp());
         assert !c.idleMessagePending();
         if (newWmValue == NO_NEW_WM) {
