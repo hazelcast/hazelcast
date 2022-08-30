@@ -233,6 +233,34 @@ SET address=CAST(('street', 'city', 12345, 'Slovakia') AS AddressType
 WHERE ...;
 ```
 
+### Semantics of comparison operators
+
+Comparison operators are: `=`, `!=`, `<`, `>`, `<=`, `>=`. `IS [NOT] DISTINCT
+FROM` isn't currently supported.
+
+When one operand of a comparison operator is ROW, the other operand must:
+- have a ROW type
+- have the same number of fields
+
+For individual fields of the ROW, we apply normal rules for comparison operator
+recursively. That is, `(value1, value2) = (value3, value4)` is equivalent to
+`value1 = value3 AND value2 = value4`, including the type conversion this
+involves.
+
+For example: 
+
+```
+(INT, INT) <cmp> (BIGINT, INT)   # ok, INT converted to BIGINT
+(INT, INT) <cmp> OBJECT  # reject ROW and OBJECT comparison
+(INT) <cmp> (VARCHAR) # ok, VARCHAR onverted to INT
+(INT) <cmp> (INT, INT)  # reject - different number of fields
+(INT, (INT, BIGINT)) <cmp> (TINYINT, (BIGINT, INT))  # ok, same rules for nested ROW
+```
+
+The comparison will be done from left to right. For evaluation, initial equal
+fields are ignored, and the first non-equal field determines the result. If all
+fields are equal, any field determines the result.
+
 ### Issues with `CAST(field AS ROW)`
 
 For some reason we weren't able to implement this (TODO ivan).
