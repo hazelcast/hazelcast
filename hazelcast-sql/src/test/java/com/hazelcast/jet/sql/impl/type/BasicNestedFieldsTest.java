@@ -508,11 +508,11 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
     public void test_rowComparison() {
         initDefault();
 
-        assertRowsAnyOrder(testInstance(), "SELECT 1 FROM test WHERE TO_ROW((this).organization.office) = (3, 'office1')",
-                rows(1, (byte) 1));
+        assertThatThrownBy(() -> testInstance().getSql().execute("select 1 from test where to_row((this).organization.office)=(3, 'office1')").iterator().next())
+                .hasMessageContaining("From line 1, column 26 to line 1, column 74: ROW type comparison operators are not supported");
 
         assertThatThrownBy(() -> testInstance().getSql().execute("select 1 from test where (this).organization.office=(3, 'office1')").iterator().next())
-                .hasMessage("From line 1, column 27 to line 1, column 66: Cannot apply '=' operator to [OBJECT, ROW] (consider adding an explicit CAST)");
+                .hasMessage("From line 1, column 27 to line 1, column 66: ROW type comparison operators are not supported");
     }
 
     private User initDefault() {
