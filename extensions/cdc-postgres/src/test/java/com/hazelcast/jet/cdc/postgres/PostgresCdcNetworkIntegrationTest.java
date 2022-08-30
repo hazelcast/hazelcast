@@ -43,6 +43,7 @@ import org.junit.runners.Parameterized.Parameters;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.PostgreSQLContainer;
 import org.testcontainers.containers.ToxiproxyContainer;
+import org.testcontainers.utility.DockerImageName;
 
 import javax.annotation.Nonnull;
 import java.sql.Connection;
@@ -64,12 +65,16 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 
+@SuppressWarnings("resource")
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({NightlyTest.class})
 public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTest {
 
     private static final long RECONNECT_INTERVAL_MS = SECONDS.toMillis(1);
+    private static final DockerImageName TOXI_PROXY_IMAGE = DockerImageName
+            .parse("ghcr.io/shopify/toxiproxy:2.4.0")
+            .asCompatibleSubstituteFor("shopify/toxiproxy");
 
     @Parameter(value = 0)
     public RetryStrategy reconnectBehavior;
@@ -99,10 +104,10 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
     }
 
     @Test
-    public void when_noDatabaseToConnectTo() throws Exception {
+    public void when_noDatabaseToConnectTo() {
         postgres = initPostgres(null, null);
         int port = fixPortBinding(postgres, POSTGRESQL_PORT);
-        String containerIpAddress = postgres.getContainerIpAddress();
+        String containerIpAddress = postgres.getHost();
         stopContainer(postgres);
 
         Pipeline pipeline = initPipeline(containerIpAddress, port);
@@ -115,7 +120,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
         if (neverReconnect) {
             // then job fails
             assertThatThrownBy(job::join)
-                    .hasRootCauseInstanceOf(JetException.class)
+                    .hasCauseInstanceOf(JetException.class)
                     .hasStackTraceContaining("Failed to connect to database");
             assertTrue(hz.getMap("results").isEmpty());
         } else {
@@ -139,7 +144,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
     public void when_shortNetworkDisconnectDuringSnapshotting_then_connectorDoesNotNoticeAnything() throws Exception {
         try (
                 Network network = initNetwork();
-                ToxiproxyContainer toxiproxy = initToxiproxy(network);
+                ToxiproxyContainer toxiproxy = initToxiproxy(network)
         ) {
             postgres = initPostgres(network, null);
             ToxiproxyContainer.ContainerProxy proxy = initProxy(toxiproxy, postgres);
@@ -177,7 +182,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
         postgres = initPostgres(null, null);
         int port = fixPortBinding(postgres, POSTGRESQL_PORT);
 
-        Pipeline pipeline = initPipeline(postgres.getContainerIpAddress(), port);
+        Pipeline pipeline = initPipeline(postgres.getHost(), port);
         // when job starts
         HazelcastInstance hz = createHazelcastInstances(2)[0];
         Job job = hz.getJet().newJob(pipeline);
@@ -195,7 +200,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
         if (neverReconnect) {
             // then job fails
             assertThatThrownBy(job::join)
-                    .hasRootCauseInstanceOf(JetException.class)
+                    .hasCauseInstanceOf(JetException.class)
                     .hasStackTraceContaining("Failed to connect to database");
         } else {
             // and DB is started anew
@@ -215,7 +220,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
     public void when_shortConnectionLossDuringBinlogReading_then_connectorDoesNotNoticeAnything() throws Exception {
         try (
                 Network network = initNetwork();
-                ToxiproxyContainer toxiproxy = initToxiproxy(network);
+                ToxiproxyContainer toxiproxy = initToxiproxy(network)
         ) {
             postgres = initPostgres(network, null);
             ToxiproxyContainer.ContainerProxy proxy = initProxy(toxiproxy, postgres);
@@ -258,7 +263,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
         postgres = initPostgres(null, null);
         int port = fixPortBinding(postgres, POSTGRESQL_PORT);
 
-        Pipeline pipeline = initPipeline(postgres.getContainerIpAddress(), port);
+        Pipeline pipeline = initPipeline(postgres.getHost(), port);
         // when connector is up and transitions to binlog reading
         HazelcastInstance hz = createHazelcastInstances(2)[0];
         Job job = hz.getJet().newJob(pipeline);
@@ -274,7 +279,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
         if (neverReconnect) {
             // then job fails
             assertThatThrownBy(job::join)
-                    .hasRootCauseInstanceOf(JetException.class)
+                    .hasCauseInstanceOf(JetException.class)
                     .hasStackTraceContaining("Failed to connect to database");
         } else {
             // and results are cleared
@@ -331,6 +336,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
         }
     }
 
+    @SuppressWarnings("ConstantConditions")
     private PostgreSQLContainer<?> initPostgres(Network network, Integer fixedExposedPort) {
         PostgreSQLContainer<?> postgres = namedTestContainer(
                 new PostgreSQLContainer<>(AbstractPostgresCdcIntegrationTest.DOCKER_IMAGE)
@@ -339,7 +345,7 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
                         .withPassword("postgres")
         );
         if (fixedExposedPort != null) {
-            Consumer<CreateContainerCmd> cmd = e -> e.withPortBindings(
+            Consumer<CreateContainerCmd> cmd = e -> e.getHostConfig().withPortBindings(
                     new PortBinding(Ports.Binding.bindPort(fixedExposedPort), new ExposedPort(POSTGRESQL_PORT)));
             postgres = postgres.withCreateContainerCmdModifier(cmd);
         }
@@ -350,8 +356,9 @@ public class PostgresCdcNetworkIntegrationTest extends AbstractCdcIntegrationTes
         return postgres;
     }
 
+    @SuppressWarnings("resource")
     private ToxiproxyContainer initToxiproxy(Network network) {
-        ToxiproxyContainer toxiproxy = namedTestContainer(new ToxiproxyContainer().withNetwork(network));
+        ToxiproxyContainer toxiproxy = namedTestContainer(new ToxiproxyContainer(TOXI_PROXY_IMAGE).withNetwork(network));
         toxiproxy.start();
         return toxiproxy;
     }
