@@ -317,7 +317,6 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         SqlService sqlService = instance.getSql();
         List<Row> actualRows = new ArrayList<>();
         try (SqlResult result = sqlService.execute(statement)) {
-
             result.iterator().forEachRemaining(row -> actualRows.add(new Row(row)));
         }
         assertThat(actualRows).containsExactlyInAnyOrderElementsOf(expectedRows);
