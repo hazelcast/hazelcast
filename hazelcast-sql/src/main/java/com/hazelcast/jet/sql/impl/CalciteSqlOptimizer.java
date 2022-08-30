@@ -548,7 +548,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         } else if (physicalRel instanceof TableModify) {
             checkDmlOperationWithView(physicalRel);
             Operation operation = ((TableModify) physicalRel).getOperation();
-            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(physicalRel, parameterMetadata);
+            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(physicalRel, parameterMetadata, context.getUsedViews());
             return new DmlPlan(
                     operation,
                     planKey,
@@ -561,7 +561,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     permissions
             );
         } else {
-            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(new RootRel(physicalRel), parameterMetadata);
+            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(new RootRel(physicalRel), parameterMetadata,
+                    context.getUsedViews());
             SqlRowMetadata rowMetadata = createRowMetadata(
                     fieldNames,
                     physicalRel.schema(parameterMetadata).getTypes(),
@@ -688,7 +689,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private Tuple2<DAG, Set<PlanObjectKey>> createDag(
             PhysicalRel physicalRel,
-            QueryParameterMetadata parameterMetadata
+            QueryParameterMetadata parameterMetadata,
+            Set<PlanObjectKey> usedViews
     ) {
         WatermarkKeysAssigner wmKeysAssigner = new WatermarkKeysAssigner(physicalRel);
         // we should assign watermark keys also for bounded jobs, but due to the
@@ -699,7 +701,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             logger.finest("Watermark keys assigned");
         }
 
-        CreateDagVisitor visitor = new CreateDagVisitor(nodeEngine, parameterMetadata, wmKeysAssigner);
+        CreateDagVisitor visitor = new CreateDagVisitor(nodeEngine, parameterMetadata, wmKeysAssigner, usedViews);
         physicalRel.accept(visitor);
         visitor.optimizeFinishedDag();
         return tuple2(visitor.getDag(), visitor.getObjectKeys());
