@@ -21,15 +21,15 @@ import com.hazelcast.collection.impl.queue.QueueDataSerializerHook;
 import com.hazelcast.core.ItemEventType;
 import com.hazelcast.internal.monitor.impl.LocalQueueStatsImpl;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
-import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.BlockingOperation;
+import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 import com.hazelcast.spi.impl.operationservice.Notifier;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.WaitNotifyKey;
-import com.hazelcast.spi.impl.operationservice.MutatingOperation;
 
 import java.io.IOException;
 
@@ -53,23 +53,20 @@ public final class OfferOperation extends QueueBackupAwareOperation
     @Override
     public void run() {
         QueueContainer queueContainer = getContainer();
+        LocalQueueStatsImpl stats = getQueueService().getLocalQueueStatsImpl(name);
         if (queueContainer.hasEnoughCapacity()) {
             itemId = queueContainer.offer(data);
+            stats.incrementOffers();
             response = true;
         } else {
+            stats.incrementRejectedOffers();
             response = false;
         }
     }
 
     @Override
     public void afterRun() throws Exception {
-        LocalQueueStatsImpl stats = getQueueService().getLocalQueueStatsImpl(name);
-        if (Boolean.TRUE.equals(response)) {
-            stats.incrementOffers();
-            publishEvent(ItemEventType.ADDED, data);
-        } else {
-            stats.incrementRejectedOffers();
-        }
+        publishEvent(ItemEventType.ADDED, data);
     }
 
     @Override
