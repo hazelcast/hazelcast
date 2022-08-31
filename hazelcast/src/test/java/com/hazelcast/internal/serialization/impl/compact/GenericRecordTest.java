@@ -52,7 +52,7 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class GenericRecordTest {
 
-    SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
+    private final SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
 
     @Test
     public void testGenericRecordToStringValidJson() throws IOException {
@@ -249,7 +249,7 @@ public class GenericRecordTest {
 
         assertThatThrownBy(() -> {
             internalGenericRecord.getInt32("doesNotExist");
-        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Unknown field name");
+        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Invalid field name");
     }
 
     @Test

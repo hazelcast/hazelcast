@@ -26,7 +26,7 @@ import java.util.Arrays;
 import java.util.Objects;
 
 @SuppressWarnings({"checkstyle:ParameterNumber"})
-public class VarFieldsDTO {
+public class VarSizedFieldsDTO {
 
     public boolean[] arrayOfBoolean;
     public byte[] arrayOfInt8;
@@ -64,20 +64,20 @@ public class VarFieldsDTO {
     public Double nullableD;
     public Double[] arrayOfNullableD;
 
-    VarFieldsDTO() {
+    VarSizedFieldsDTO() {
     }
 
-    public VarFieldsDTO(boolean[] arrayOfBoolean, byte[] arrayOfInt8, short[] arrayOfInt16, int[] arrayOfInt32,
-                        long[] arrayOfInt64, float[] arrayOfFloat32, double[] arrayOfFloat64, String str,
-                        String[] arrayOfString, BigDecimal bigDecimal, BigDecimal[] arrayOfBigDecimal,
-                        LocalTime localTime, LocalTime[] arrayOfLocalTime, LocalDate localDate,
-                        LocalDate[] arrayOfLocalDate, LocalDateTime localDateTime,
-                        LocalDateTime[] arrayOfLocalDateTime, OffsetDateTime offsetDateTime,
-                        OffsetDateTime[] arrayOfOffsetDateTime, InnerDTO compact, InnerDTO[] arrayOfCompact,
-                        Boolean nullableBool, Boolean[] arrayOfNullableBool, Byte nullableB, Byte[] arrayOfNullableB,
-                        Short nullableS, Short[] arrayOfNullableS, Integer nullableI, Integer[] arrayOfNullableI,
-                        Long nullableL, Long[] arrayOfNullableL, Float nullableF, Float[] arrayOfNullableF,
-                        Double nullableD, Double[] arrayOfNullableD) {
+    public VarSizedFieldsDTO(boolean[] arrayOfBoolean, byte[] arrayOfInt8, short[] arrayOfInt16, int[] arrayOfInt32,
+                             long[] arrayOfInt64, float[] arrayOfFloat32, double[] arrayOfFloat64, String str,
+                             String[] arrayOfString, BigDecimal bigDecimal, BigDecimal[] arrayOfBigDecimal,
+                             LocalTime localTime, LocalTime[] arrayOfLocalTime, LocalDate localDate,
+                             LocalDate[] arrayOfLocalDate, LocalDateTime localDateTime,
+                             LocalDateTime[] arrayOfLocalDateTime, OffsetDateTime offsetDateTime,
+                             OffsetDateTime[] arrayOfOffsetDateTime, InnerDTO compact, InnerDTO[] arrayOfCompact,
+                             Boolean nullableBool, Boolean[] arrayOfNullableBool, Byte nullableB, Byte[] arrayOfNullableB,
+                             Short nullableS, Short[] arrayOfNullableS, Integer nullableI, Integer[] arrayOfNullableI,
+                             Long nullableL, Long[] arrayOfNullableL, Float nullableF, Float[] arrayOfNullableF,
+                             Double nullableD, Double[] arrayOfNullableD) {
         this.arrayOfBoolean = arrayOfBoolean;
         this.arrayOfInt8 = arrayOfInt8;
         this.arrayOfInt16 = arrayOfInt16;
@@ -123,7 +123,7 @@ public class VarFieldsDTO {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        VarFieldsDTO that = (VarFieldsDTO) o;
+        VarSizedFieldsDTO that = (VarSizedFieldsDTO) o;
         return Arrays.equals(arrayOfBoolean, that.arrayOfBoolean) && Arrays.equals(arrayOfInt8, that.arrayOfInt8)
                 && Arrays.equals(arrayOfInt16, that.arrayOfInt16) && Arrays.equals(arrayOfInt32, that.arrayOfInt32)
                 && Arrays.equals(arrayOfInt64, that.arrayOfInt64) && Arrays.equals(arrayOfFloat32, that.arrayOfFloat32)
@@ -177,7 +177,7 @@ public class VarFieldsDTO {
 
     @Override
     public String toString() {
-        return "VarFieldsDTO{" + "arrayOfBoolean=" + Arrays.toString(arrayOfBoolean)
+        return "VarSizedFieldsDTO{" + "arrayOfBoolean=" + Arrays.toString(arrayOfBoolean)
                 + ", arrayOfInt8=" + Arrays.toString(arrayOfInt8)
                 + ", arrayOfInt16=" + Arrays.toString(arrayOfInt16)
                 + ", arrayOfInt32=" + Arrays.toString(arrayOfInt32)

@@ -16,12 +16,12 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.config.CompactSerializationConfig;
-import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -34,16 +34,16 @@ import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParametrizedRunner.class)
-@Category({QuickTest.class})
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class CompactOffsetReadersTest {
 
-    SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
+    private final SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
 
     private static String[] createStringArray(int itemCount) {
         String[] arr = new String[itemCount + 1];
         for (int i = 1; i <= itemCount; i++) {
             // create a string made up of n copies of string s
-            arr[i] = String.join("", Collections.nCopies(i * 100, "x"));
+            arr[i - 1] = String.join("", Collections.nCopies(i * 100, "x"));
         }
         arr[itemCount] = null;
         return arr;
@@ -58,30 +58,17 @@ public class CompactOffsetReadersTest {
     }
 
     @Test
-    public void testObjectWithDifferentPositionReadersWithCustomSerializer() {
-        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.addSerializer(new OffsetReaderTestDTOSerializer());
-        SerializationService serializationService = new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
-                .build();
-        String[] strArray = createStringArray(itemCount);
-        OffsetReaderTestDTO expected = new OffsetReaderTestDTO(strArray, 32, "hey");
-
-        Data data = serializationService.toData(expected);
-        OffsetReaderTestDTO actual = serializationService.toObject(data);
-
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    public void testObjectWithDifferentPositionReadersWithReflectiveSerializer() {
+    public void testObjectWithDifferentPositionReaders() {
         SerializationService serializationService = createSerializationService(schemaService);
         String[] strArray = createStringArray(itemCount);
-        OffsetReaderTestDTO expected = new OffsetReaderTestDTO(strArray, 32, "hey");
+        GenericRecord expected = GenericRecordBuilder.compact("offsetReaderTestDTO")
+                .setArrayOfString("arrayOfStr", strArray)
+                .setInt32("i", 32)
+                .setString("str", "hey")
+                .build();
 
         Data data = serializationService.toData(expected);
-        OffsetReaderTestDTO actual = serializationService.toObject(data);
+        GenericRecord actual = serializationService.toObject(data);
 
         assertEquals(expected, actual);
     }

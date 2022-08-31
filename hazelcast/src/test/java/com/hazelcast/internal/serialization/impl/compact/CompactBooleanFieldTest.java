@@ -42,7 +42,7 @@ import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.
 @RunWith(HazelcastParametrizedRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CompactBooleanFieldTest {
-    SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
+    private final SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
 
     @Parameterized.Parameter
     public int itemCount;

@@ -91,7 +91,7 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         }
     }
 
-    SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
+    private final SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
 
     private SerializationService createSerializationService() {
         return new DefaultSerializationServiceBuilder()
@@ -279,19 +279,17 @@ public class CompactNullablePrimitiveInteroperabilityTest {
 
     @Test
     public void testWriteNullReadPrimitiveThrowsExceptionCustomSerializer() {
-        FixedSizeFieldsDTO fixedSizeFieldsDTO = createFixedSizeFieldsDTO();
-        SerializationService serializationService = createSerializationService(FixedSizeFieldsDTOSerializerWritingNull::new);
+        SerializationService serializationService = createSerializationService(ASerializer::new);
 
-        Data data = serializationService.toData(fixedSizeFieldsDTO);
+        Data data = serializationService.toData(new A(null, new Integer[]{1, 2}));
 
         assertThatThrownBy(() -> serializationService.toObject(data))
                 .isInstanceOf(HazelcastSerializationException.class)
                 .hasMessageContaining("Use readNullable");
 
-        ArrayOfFixedSizeFieldsDTO arrayOfFixedSizeFieldsDTO = createArrayOfFixedSizeFieldsDTO();
-        SerializationService serializationService2 = createSerializationService(ArrayOfFixedSizeFieldsDTOSerializerWritingNull::new);
+        SerializationService serializationService2 = createSerializationService(ASerializer::new);
 
-        Data data2 = serializationService2.toData(arrayOfFixedSizeFieldsDTO);
+        Data data2 = serializationService2.toData(new A(1, new Integer[]{1, null}));
 
         assertThatThrownBy(() -> serializationService2.toObject(data2))
                 .isInstanceOf(HazelcastSerializationException.class)

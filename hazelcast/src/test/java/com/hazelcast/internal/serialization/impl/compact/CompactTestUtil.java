@@ -142,9 +142,9 @@ public final class CompactTestUtil {
     }
 
     @Nonnull
-    static VarFieldsDTO createVarFieldsDTO() {
+    static VarSizedFieldsDTO createVarSizedFieldsDTO() {
         InnerDTO inner = createInnerDTO();
-        return new VarFieldsDTO(new boolean[]{true, false}, new byte[]{0, 1, 2},
+        return new VarSizedFieldsDTO(new boolean[]{true, false}, new byte[]{0, 1, 2},
                 new short[]{3, 4, 5}, new int[]{9, 8, 7, 6}, new long[]{0, 1, 5, 7, 9, 11},
                 new float[]{0.6543f, -3.56f, 45.67f}, new double[]{456.456, 789.789, 321.321}, "test",
                 new String[]{"test", null}, new BigDecimal("12345"),

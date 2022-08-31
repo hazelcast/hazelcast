@@ -884,7 +884,7 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     }
 
     private HazelcastSerializationException throwUnknownFieldException(@Nonnull String fieldName) {
-        return new HazelcastSerializationException("Unknown field name: '" + fieldName
+        return new HazelcastSerializationException("Invalid field name: '" + fieldName
                 + "' for " + schema);
     }
 

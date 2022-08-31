@@ -27,10 +27,10 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
 
-public class VarFieldsDTOSerializer implements CompactSerializer<VarFieldsDTO> {
+public class VarSizedFieldsDTOSerializer implements CompactSerializer<VarSizedFieldsDTO> {
     @Nonnull
     @Override
-    public VarFieldsDTO read(@Nonnull CompactReader reader) {
+    public VarSizedFieldsDTO read(@Nonnull CompactReader reader) {
         boolean[] arrayOfBoolean = reader.readArrayOfBoolean("arrayOfBoolean");
         byte[] arrayOfInt8 = reader.readArrayOfInt8("arrayOfInt8");
         short[] arrayOfInt16 = reader.readArrayOfInt16("arrayOfInt16");
@@ -67,7 +67,7 @@ public class VarFieldsDTOSerializer implements CompactSerializer<VarFieldsDTO> {
         Double nullableD = reader.readNullableFloat64("nullableD");
         Double[] arrayOfNullableD = reader.readArrayOfNullableFloat64("arrayOfNullableD");
 
-        return new VarFieldsDTO(arrayOfBoolean, arrayOfInt8, arrayOfInt16, arrayOfInt32, arrayOfInt64, arrayOfFloat32,
+        return new VarSizedFieldsDTO(arrayOfBoolean, arrayOfInt8, arrayOfInt16, arrayOfInt32, arrayOfInt64, arrayOfFloat32,
                 arrayOfFloat64, str, arrayOfString, bigDecimal, arrayOfBigDecimal, localTime, arrayOfLocalTime,
                 localDate, arrayOfLocalDate, localDateTime, arrayOfLocalDateTime, offsetDateTime,
                 arrayOfOffsetDateTime, compact, arrayOfCompact, nullableBool, arrayOfNullableBool, nullableB,
@@ -77,7 +77,7 @@ public class VarFieldsDTOSerializer implements CompactSerializer<VarFieldsDTO> {
     }
 
     @Override
-    public void write(@Nonnull CompactWriter out, @Nonnull VarFieldsDTO object) {
+    public void write(@Nonnull CompactWriter out, @Nonnull VarSizedFieldsDTO object) {
         out.writeArrayOfBoolean("arrayOfBoolean", object.arrayOfBoolean);
         out.writeArrayOfInt8("arrayOfInt8", object.arrayOfInt8);
         out.writeArrayOfInt16("arrayOfInt16", object.arrayOfInt16);
@@ -118,12 +118,12 @@ public class VarFieldsDTOSerializer implements CompactSerializer<VarFieldsDTO> {
     @Nonnull
     @Override
     public String getTypeName() {
-        return "varFields";
+        return "varSizedFields";
     }
 
     @Nonnull
     @Override
-    public Class<VarFieldsDTO> getCompactClass() {
-        return VarFieldsDTO.class;
+    public Class<VarSizedFieldsDTO> getCompactClass() {
+        return VarSizedFieldsDTO.class;
     }
 }

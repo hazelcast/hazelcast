@@ -132,7 +132,7 @@ public class CompactSerializationTest {
 
         assertThatThrownBy(() -> service.toObject(data))
                 .isInstanceOf(HazelcastSerializationException.class)
-                .hasMessageContaining("Unknown field name");
+                .hasMessageContaining("Invalid field name");
     }
 
     public void testSerializerRegistration_withDuplicateClasses() {
