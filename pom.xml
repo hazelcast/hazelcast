@@ -92,7 +92,7 @@
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.1</avro.version>
-        <aws.sdk.version>1.12.276</aws.sdk.version>
+        <aws.sdk.version>1.12.293</aws.sdk.version>
         <classgraph.version>4.8.149</classgraph.version>
         <debezium.version>1.9.3.Final</debezium.version>
         <grpc.version>1.48.0</grpc.version>
