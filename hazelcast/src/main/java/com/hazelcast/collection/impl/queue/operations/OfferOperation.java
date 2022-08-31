@@ -66,7 +66,9 @@ public final class OfferOperation extends QueueBackupAwareOperation
 
     @Override
     public void afterRun() throws Exception {
-        publishEvent(ItemEventType.ADDED, data);
+        if (Boolean.TRUE.equals(response)) {
+            publishEvent(ItemEventType.ADDED, data);
+        }
     }
 
     @Override
