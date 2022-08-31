@@ -22,6 +22,7 @@ import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import org.apache.calcite.plan.RelOptPredicateList;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
@@ -31,12 +32,14 @@ import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.rules.TransformationRule;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexProgram;
+import org.apache.calcite.rex.RexSimplify;
 import org.immutables.value.Value;
 
 import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static java.util.Arrays.asList;
+import static org.apache.calcite.rex.RexUtil.EXECUTOR;
 import static org.apache.calcite.rex.RexUtil.composeConjunction;
 
 /**
@@ -91,11 +94,19 @@ public final class CalcIntoScanRule extends RelRule<Config> implements Transform
         List<RexNode> newProjects = program.expandList(program.getProjectList());
         HazelcastTable newTable = table.withProject(newProjects, program.getOutputRowType());
 
+        // merge filters
         if (program.getCondition() != null) {
             RexNode calcFilter = program.expandLocalRef(program.getCondition());
-            RexNode tableFilter = table.getFilter();
-            newTable = newTable.withFilter(
-                    composeConjunction(HazelcastRexBuilder.INSTANCE, asList(calcFilter, tableFilter)));
+            RexNode scanFilter = table.getFilter();
+
+            RexSimplify rexSimplify = new RexSimplify(
+                    HazelcastRexBuilder.INSTANCE,
+                    RelOptPredicateList.EMPTY,
+                    EXECUTOR);
+
+            RexNode mergedFilter = composeConjunction(HazelcastRexBuilder.INSTANCE, asList(calcFilter, scanFilter));
+
+            newTable = newTable.withFilter(rexSimplify.simplify(mergedFilter));
         }
 
         HazelcastRelOptTable convertedTable = OptUtils.createRelTable(
