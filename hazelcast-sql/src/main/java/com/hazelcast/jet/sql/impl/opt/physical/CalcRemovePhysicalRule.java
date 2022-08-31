@@ -23,7 +23,7 @@ import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.rules.SubstitutionRule;
 import org.immutables.value.Value;
 
-// Copied from CalcRemovePhysicalRule.
+// Copied from CalcRemoveRule.
 // Removes trivial Calc physical relation.
 @Value.Enclosing
 public class CalcRemovePhysicalRule extends RelRule<Config> implements SubstitutionRule {
