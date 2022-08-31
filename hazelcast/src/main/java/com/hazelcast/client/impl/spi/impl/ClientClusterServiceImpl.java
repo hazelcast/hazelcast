@@ -191,7 +191,7 @@ public class ClientClusterServiceImpl implements ClientClusterService {
         }
     }
 
-    public void onNextCluster() {
+    public void onTryToConnectNextCluster() {
         synchronized (clusterViewLock) {
             if (logger.isFineEnabled()) {
                 logger.fine("Resetting the cluster snapshot");

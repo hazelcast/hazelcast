@@ -441,7 +441,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                                                                      CandidateClusterContext nextContext) {
         currentContext.destroy();
 
-        client.onNextCluster();
+        client.onTryToConnectNextCluster();
 
         nextContext.start();
 
