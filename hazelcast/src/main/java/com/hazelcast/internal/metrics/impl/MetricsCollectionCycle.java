@@ -93,7 +93,7 @@ class MetricsCollectionCycle {
                 metricsSource.provideDynamicMetrics(descriptorSupplier.get(), metricsContext);
             } catch (Throwable t) {
                 logger.warning("Collecting metrics from source " + metricsSource.getClass().getName() + " failed", t);
-                assert false : "Collecting metrics from source " + metricsSource.getClass().getName() + " failed";
+                assert false : "Collecting metrics from source " + metricsSource.getClass().getName() + " failed\n" + t;
             }
         }
     }
