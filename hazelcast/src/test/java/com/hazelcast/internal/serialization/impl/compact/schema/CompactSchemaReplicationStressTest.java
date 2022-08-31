@@ -20,13 +20,14 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.map.IMap;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.Before;
@@ -45,13 +46,14 @@ import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({SlowTest.class, ParallelJVMTest.class})
+@Category(SlowTest.class)
 public class CompactSchemaReplicationStressTest extends HazelcastTestSupport {
 
+    private static final ILogger LOGGER = Logger.getLogger(CompactSchemaReplicationStressTest.class);
     private static final Random RANDOM = new Random();
     private static final int CLUSTER_SIZE = 6;
     private static final int DRIVER_COUNT = 30;
-    private static final int SCHEMA_COUNT = 42000;
+    private static final int SCHEMA_COUNT = 42_000;
     private static final String MAP_NAME = "map";
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
@@ -78,7 +80,7 @@ public class CompactSchemaReplicationStressTest extends HazelcastTestSupport {
         }
     }
 
-    @Test
+    @Test(timeout = 600_000)
     public void testSchemaReplication() throws InterruptedException {
         CountDownLatch latch = new CountDownLatch(1);
 
@@ -133,11 +135,13 @@ public class CompactSchemaReplicationStressTest extends HazelcastTestSupport {
 
     private static class DriverThread extends Thread {
 
+        private final HazelcastInstance driver;
         private final CountDownLatch latch;
         private final IMap<Integer, GenericRecord> map;
         private volatile Throwable t;
 
         private DriverThread(HazelcastInstance driver, CountDownLatch latch) {
+            this.driver = driver;
             this.latch = latch;
             map = driver.getMap(MAP_NAME);
         }
@@ -153,7 +157,11 @@ public class CompactSchemaReplicationStressTest extends HazelcastTestSupport {
         }
 
         private void replicateSchemas() {
-            for (int i = 0; i < SCHEMA_COUNT ; i++) {
+            for (int i = 1; i <= SCHEMA_COUNT; i++) {
+                if (i % 10_000 == 0) {
+                    LOGGER.info("Replicating the schema number " + i + " with the driver " + driver.getName());
+                }
+
                 GenericRecord record = GenericRecordBuilder.compact(Integer.toString(i))
                         .build();
 
