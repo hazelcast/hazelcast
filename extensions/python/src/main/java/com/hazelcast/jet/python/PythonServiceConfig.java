@@ -15,7 +15,10 @@
  */
 package com.hazelcast.jet.python;
 
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.jet.pipeline.GeneralStage;
+import io.grpc.ManagedChannelBuilder;
+import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -24,6 +27,8 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Locale;
 import java.util.StringJoiner;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Configuration object for the Python service factory, used in a
@@ -71,10 +76,10 @@ import java.util.StringJoiner;
  *     up job initialization. Jet reuses the global modules and adds the
  *     missing ones.
  * <li>
- *     {@code init.sh} is assumed to be a Bash script that Jet will run when
+ *     {@code init.sh} is assumed to be a shell script that Jet will run when
  *     initializing the job.
  * <li>
- *     {@code cleanup.sh} is assumed to be a Bash script that Jet will run
+ *     {@code cleanup.sh} is assumed to be a shell script that Jet will run
  *     when completing the job.
  * </ul>
  * Regardless of local parallelism, the init and cleanup scripts run only
@@ -106,9 +111,11 @@ public class PythonServiceConfig implements Serializable {
     private File handlerFile;
     private String handlerModule;
     private String handlerFunction = HANDLER_FUNCTION_DEFAULT;
+    private BiFunctionEx<String, Integer, ? extends ManagedChannelBuilder<?>> channelFn =
+            NettyChannelBuilder::forAddress;
 
     /**
-     * Validates the configuration and throws an exception of a mandatory
+     * Validates the configuration and throws an exception if a mandatory
      * config option is missing. Called automatically from {@link
      * PythonTransforms#mapUsingPython}.
      */
@@ -123,6 +130,9 @@ public class PythonServiceConfig implements Serializable {
         }
         if (handlerFunction == null) {
             missingMandatoryFields.add("handlerFunction");
+        }
+        if (channelFn == null) {
+            missingMandatoryFields.add("channelFn");
         }
         if (missingMandatoryFields.length() > 0) {
             throw new InvalidPythonServiceConfigException("The supplied Python Service configuration is missing these " +
@@ -260,5 +270,33 @@ public class PythonServiceConfig implements Serializable {
             throw new IllegalArgumentException("Parameter must not be blank: " + name);
         }
         return in;
+    }
+
+    /**
+     * Returns the channel function, see {@link #setChannelFn}.
+     *
+     * @since 5.2
+     */
+    @Nonnull
+    public BiFunctionEx<String, Integer, ? extends ManagedChannelBuilder<?>> channelFn() {
+        return channelFn;
+    }
+
+    /**
+     * Sets the channel function. The function receives a host+port tuple, and
+     * it's supposed to return a configured instance of {@link
+     * ManagedChannelBuilder}. You can use this to configure the channel, for
+     * example to configure the maximum message size etc.
+     * <p>
+     * The default value is {@code NettyChannelBuilder::forAddress}.
+     *
+     * @since 5.2
+     */
+    @Nonnull
+    public PythonServiceConfig setChannelFn(
+            @Nonnull BiFunctionEx<String, Integer, ? extends ManagedChannelBuilder<?>> channelFn
+    ) {
+        this.channelFn = requireNonNull(channelFn, "channelFn");
+        return this;
     }
 }
