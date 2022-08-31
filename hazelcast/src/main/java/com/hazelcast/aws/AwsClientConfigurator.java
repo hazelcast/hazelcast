@@ -51,6 +51,9 @@ final class AwsClientConfigurator {
         AwsMetadataApi metadataApi = new AwsMetadataApi(awsConfig);
 
         String region = resolveRegion(awsConfig, metadataApi, environment);
+        if (region == null) {
+            throw new IllegalStateException("Region cannot be resolved");
+        }
         validateRegion(region);
 
         AwsCredentialsProvider credentialsProvider = new AwsCredentialsProvider(awsConfig, metadataApi, environment);
