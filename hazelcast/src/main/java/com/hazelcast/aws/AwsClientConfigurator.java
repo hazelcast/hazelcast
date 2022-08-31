@@ -74,7 +74,7 @@ final class AwsClientConfigurator {
             return awsConfig.getRegion();
         }
 
-        if (environment.isRunningOnEcs()) {
+        if (environment.isRunningOnEcs() && environment.getAwsRegionOnEcs() != null) {
             return environment.getAwsRegionOnEcs();
         }
 
