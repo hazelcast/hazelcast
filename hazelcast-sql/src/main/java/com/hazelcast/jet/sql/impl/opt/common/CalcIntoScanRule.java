@@ -27,11 +27,13 @@ import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.plan.RelRule.Config;
 import org.apache.calcite.rel.core.Calc;
+import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.rules.TransformationRule;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexProgram;
 import org.apache.calcite.rex.RexSimplify;
+import org.apache.calcite.util.Permutation;
 import org.immutables.value.Value;
 
 import java.util.List;
@@ -39,7 +41,6 @@ import java.util.List;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static java.util.Arrays.asList;
 import static org.apache.calcite.rex.RexUtil.EXECUTOR;
-import static org.apache.calcite.rex.RexUtil.composeConjunction;
 
 /**
  * Logical rule that pushes a {@link Calc} down into a {@link TableScan} to allow for constrained scans.
@@ -82,6 +83,15 @@ public final class CalcIntoScanRule extends RelRule<Config> implements Transform
     }
 
     @Override
+    public boolean matches(RelOptRuleCall call) {
+        // we don't merge projections. Refuse to match the rule if the scan's projection isn't identity.
+        FullScan scan = call.rel(1);
+        HazelcastTable table = OptUtils.extractHazelcastTable(scan);
+        Permutation permutation = Project.getPermutation(table.getTarget().getFieldCount(), table.getProjects());
+        return permutation != null && permutation.isIdentity();
+    }
+
+    @Override
     public void onMatch(RelOptRuleCall call) {
         Calc calc = call.rel(0);
         FullScan scan = call.rel(1);
@@ -97,13 +107,13 @@ public final class CalcIntoScanRule extends RelRule<Config> implements Transform
         if (program.getCondition() != null) {
             RexNode calcFilter = program.expandLocalRef(program.getCondition());
             RexNode scanFilter = table.getFilter();
-            RexNode mergedFilter = composeConjunction(call.builder().getRexBuilder(), asList(calcFilter, scanFilter));
 
             RexSimplify rexSimplify = new RexSimplify(
                     call.builder().getRexBuilder(),
                     RelOptPredicateList.EMPTY,
                     EXECUTOR);
-            newTable = newTable.withFilter(rexSimplify.simplify(mergedFilter));
+            RexNode simplifiedCondition = rexSimplify.simplifyFilterPredicates(asList(calcFilter, scanFilter));
+            newTable = newTable.withFilter(simplifiedCondition);
         }
 
         HazelcastRelOptTable convertedTable = OptUtils.createRelTable(

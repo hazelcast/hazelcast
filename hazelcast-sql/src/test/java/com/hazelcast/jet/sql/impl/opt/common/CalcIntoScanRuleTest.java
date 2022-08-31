@@ -107,7 +107,7 @@ public class CalcIntoScanRuleTest extends OptimizerTestSupport {
         FullScanLogicalRel scan = (FullScanLogicalRel) logicalRel.getInput(0);
 
         // here, we see that (t > 1 AND t = 2) AND t <= 2 was simplified to just t = 2
-        assertContains(scan.toString(), "filter=AND(IS NOT NULL($0), =($0, 2))]");
+        assertContains(scan.toString(), "filter==($0, 2)]");
         assertTipOfStream(sql, singletonList(new Row(2)));
     }
 }
