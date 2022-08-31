@@ -26,6 +26,7 @@ import com.hazelcast.internal.metrics.ProbeFunction;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.ProbeUnit;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
@@ -93,7 +94,8 @@ class MetricsCollectionCycle {
                 metricsSource.provideDynamicMetrics(descriptorSupplier.get(), metricsContext);
             } catch (Throwable t) {
                 logger.warning("Collecting metrics from source " + metricsSource.getClass().getName() + " failed", t);
-                assert false : "Collecting metrics from source " + metricsSource.getClass().getName() + " failed\n" + t;
+                assert false : "Collecting metrics from source " + metricsSource.getClass().getName() + " failed\n"
+                        + ExceptionUtil.toString(t);
             }
         }
     }
