@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.opt.common;
 
-import com.hazelcast.jet.sql.impl.HazelcastRexBuilder;
 import com.hazelcast.jet.sql.impl.opt.FullScan;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
@@ -98,14 +97,12 @@ public final class CalcIntoScanRule extends RelRule<Config> implements Transform
         if (program.getCondition() != null) {
             RexNode calcFilter = program.expandLocalRef(program.getCondition());
             RexNode scanFilter = table.getFilter();
+            RexNode mergedFilter = composeConjunction(call.builder().getRexBuilder(), asList(calcFilter, scanFilter));
 
             RexSimplify rexSimplify = new RexSimplify(
-                    HazelcastRexBuilder.INSTANCE,
+                    call.builder().getRexBuilder(),
                     RelOptPredicateList.EMPTY,
                     EXECUTOR);
-
-            RexNode mergedFilter = composeConjunction(HazelcastRexBuilder.INSTANCE, asList(calcFilter, scanFilter));
-
             newTable = newTable.withFilter(rexSimplify.simplify(mergedFilter));
         }
 
