@@ -31,7 +31,7 @@ public final class PhysicalRules {
                 // Filter rules
                 CalcPhysicalRule.INSTANCE,
                 CalcRemovePhysicalRule.INSTANCE,
-                // CalcIntoScanPushdownRule.INSTANCE, TODO [sasha]: support it for 5.3
+                // CalcIntoScanLogicalRule.INSTANCE, TODO [sasha]: support it for 5.3
 
                 // Scan rules
                 FullScanPhysicalRule.INSTANCE,

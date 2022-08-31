@@ -54,12 +54,12 @@ import static org.apache.calcite.rex.RexUtil.composeConjunction;
  * </pre>
  */
 @Value.Enclosing
-public final class CalcIntoScanPushdownRule extends RelRule<Config> implements TransformationRule {
+public final class CalcIntoScanRule extends RelRule<Config> implements TransformationRule {
 
     @Value.Immutable
     public interface Config extends RelRule.Config {
-        CalcIntoScanPushdownRule.Config DEFAULT = ImmutableCalcIntoScanPushdownRule.Config.builder()
-                .description(CalcIntoScanPushdownRule.class.getSimpleName())
+        CalcIntoScanRule.Config DEFAULT = ImmutableCalcIntoScanRule.Config.builder()
+                .description(CalcIntoScanRule.class.getSimpleName())
                 .operandSupplier(b0 -> b0
                         .operand(Calc.class)
                         .trait(LOGICAL)
@@ -69,13 +69,13 @@ public final class CalcIntoScanPushdownRule extends RelRule<Config> implements T
 
         @Override
         default RelOptRule toRule() {
-            return new CalcIntoScanPushdownRule(this);
+            return new CalcIntoScanRule(this);
         }
     }
 
-    public static final CalcIntoScanPushdownRule INSTANCE = new CalcIntoScanPushdownRule(Config.DEFAULT);
+    public static final CalcIntoScanRule INSTANCE = new CalcIntoScanRule(Config.DEFAULT);
 
-    private CalcIntoScanPushdownRule(Config config) {
+    private CalcIntoScanRule(Config config) {
         super(config);
     }
 
