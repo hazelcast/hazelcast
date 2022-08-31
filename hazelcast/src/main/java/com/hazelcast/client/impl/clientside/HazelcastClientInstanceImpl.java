@@ -892,7 +892,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clusterService.onClusterConnect();
         // Send statistics to the new cluster immediately to make clientVersion, isEnterprise and other fields
         // available in Management Center as soon as possible. They are currently sent as part of client statistics.
-        clientStatisticsService.onConnectionToNewCluster();
+        clientStatisticsService.collectAndSendStatsNow();
     }
 
     public void waitForInitialMembershipEvents() {
