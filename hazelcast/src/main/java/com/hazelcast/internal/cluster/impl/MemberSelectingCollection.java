@@ -192,4 +192,25 @@ public final class MemberSelectingCollection<M extends Member> implements Collec
 
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (o == this) {
+            return true;
+        }
+
+        if (!(o instanceof MemberSelectingCollection)) {
+            return false;
+        }
+
+        Collection<?> c = (Collection<?>) o;
+        if (c.size() != size()) {
+            return false;
+        }
+
+        try {
+            return containsAll(c);
+        } catch (ClassCastException | NullPointerException unused) {
+            return false;
+        }
+    }
 }
