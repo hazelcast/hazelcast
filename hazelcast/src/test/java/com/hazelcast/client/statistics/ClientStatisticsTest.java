@@ -197,10 +197,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
 
     @Test
     public void testStatisticsSentImmediatelyOnClusterChange() {
-        String clusterName = randomString();
-        Config config = new Config();
-        config.setClusterName(clusterName);
-        HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance(config);
+        HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
 
         ClientConfig clientConfig = new ClientConfig();
 
@@ -208,7 +205,6 @@ public class ClientStatisticsTest extends ClientTestSupport {
         // set the collection frequency to something really high to test that statistics are sent on cluster change
         clientConfig.getMetricsConfig()
                 .setCollectionFrequencySeconds(Integer.MAX_VALUE);
-        clientConfig.setClusterName(clusterName);
 
         HazelcastInstance clientInstance = hazelcastFactory.newHazelcastClient(clientConfig);
         HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(clientInstance);
@@ -217,7 +213,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
         client.getLifecycleService().addLifecycleListener(reconnectListener);
 
         hazelcastInstance.getLifecycleService().terminate();
-        Node hazelcastNode = getNode(hazelcastFactory.newHazelcastInstance(config));
+        Node hazelcastNode = getNode(hazelcastFactory.newHazelcastInstance());
 
         assertOpenEventually(reconnectListener.reconnectedLatch);
 
