@@ -383,6 +383,24 @@ public class CompactSerializationTest {
     }
 
     @Test
+    public void testSerializingClassReflectively_withCollectionTypes_whenTheyAreNull() {
+        SerializationConfig config = new SerializationConfig();
+        SerializationService service = createSerializationService(config);
+        ClassWithCollectionFields object = new ClassWithCollectionFields(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+
+        Data data = service.toData(object);
+        ClassWithCollectionFields deserialized = service.toObject(data);
+        assertEquals(object, deserialized);
+    }
+
+    @Test
     public void testReflectiveSerializer_withFieldsWithOtherSerializationMechanisms() {
         SerializationConfig config = new SerializationConfig();
         SerializationService service = createSerializationService(config);
