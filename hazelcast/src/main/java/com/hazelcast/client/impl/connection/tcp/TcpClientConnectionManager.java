@@ -963,9 +963,11 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
             boolean connectionsEmpty = activeConnections.isEmpty();
             activeConnections.put(response.memberUuid, connection);
-            // This is called here instead of above on purpose because sending statistics
-            // require a random connection to exist in activeConnections map.
+            // We send statistics to the new cluster immediately to make clientVersion, isEnterprise and other fields
+            // available in Management Center as soon as possible. They are currently sent as part of client statistics.
             if (clusterIdChanged) {
+                // This is called here instead of above on purpose because sending statistics
+                // require a random connection to exist in activeConnections map.
                 client.collectAndSendStatsNow();
             }
             if (connectionsEmpty) {
