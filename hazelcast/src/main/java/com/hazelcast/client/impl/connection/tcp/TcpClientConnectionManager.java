@@ -957,15 +957,16 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             if (clusterIdChanged) {
                 checkClientStateOnClusterIdChange(connection, switchingToNextCluster);
                 logger.warning("Switching from current cluster: " + this.clusterId + " to new cluster: " + newClusterId);
+                client.onConnectionToNewCluster();
             }
             checkClientState(connection, switchingToNextCluster);
 
             boolean connectionsEmpty = activeConnections.isEmpty();
             activeConnections.put(response.memberUuid, connection);
-            // This is called here instead of above on purpose because onConnectionToNewCluster sends statistics
-            // which require a random connection to exist in activeConnections map.
+            // This is called here instead of above on purpose because sending statistics
+            // require a random connection to exist in activeConnections map.
             if (clusterIdChanged) {
-                client.onConnectionToNewCluster();
+                client.collectAndSendStatsNow();
             }
             if (connectionsEmpty) {
                 // The first connection that opens a connection to the new cluster should set `clusterId`.
