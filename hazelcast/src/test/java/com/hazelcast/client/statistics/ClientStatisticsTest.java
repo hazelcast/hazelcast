@@ -27,6 +27,7 @@ import com.hazelcast.client.impl.statistics.ClientStatisticsService;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.CacheConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
@@ -196,7 +197,10 @@ public class ClientStatisticsTest extends ClientTestSupport {
 
     @Test
     public void testStatisticsSentImmediatelyOnClusterChange() {
-        HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance();
+        String clusterName = randomString();
+        Config config = new Config();
+        config.setClusterName(clusterName);
+        HazelcastInstance hazelcastInstance = hazelcastFactory.newHazelcastInstance(config);
 
         ClientConfig clientConfig = new ClientConfig();
 
@@ -204,6 +208,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
         // set the collection frequency to something really high to test that statistics are sent on cluster change
         clientConfig.getMetricsConfig()
                 .setCollectionFrequencySeconds(Integer.MAX_VALUE);
+        clientConfig.setClusterName(clusterName);
 
         HazelcastInstance clientInstance = hazelcastFactory.newHazelcastClient(clientConfig);
         HazelcastClientInstanceImpl client = getHazelcastClientInstanceImpl(clientInstance);
@@ -212,7 +217,7 @@ public class ClientStatisticsTest extends ClientTestSupport {
         client.getLifecycleService().addLifecycleListener(reconnectListener);
 
         hazelcastInstance.getLifecycleService().terminate();
-        Node hazelcastNode = getNode(hazelcastFactory.newHazelcastInstance());
+        Node hazelcastNode = getNode(hazelcastFactory.newHazelcastInstance(config));
 
         assertOpenEventually(reconnectListener.reconnectedLatch);
 
