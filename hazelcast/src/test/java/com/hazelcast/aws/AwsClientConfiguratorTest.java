@@ -79,6 +79,23 @@ public class AwsClientConfiguratorTest {
     }
 
     @Test
+    public void resolveRegionEcsMetadata() {
+        // given
+        AwsConfig awsConfig = AwsConfig.builder().build();
+        AwsMetadataApi awsMetadataApi = mock(AwsMetadataApi.class);
+        Environment environment = mock(Environment.class);
+        given(awsMetadataApi.availabilityZoneEc2()).willReturn("us-east-1a");
+        given(environment.getAwsRegionOnEcs()).willReturn(null);
+        given(environment.isRunningOnEcs()).willReturn(true);
+
+        // when
+        String result = resolveRegion(awsConfig, awsMetadataApi, environment);
+
+        // then
+        assertEquals("us-east-1", result);
+    }
+
+    @Test
     public void resolveEc2Endpoints() {
         assertEquals("ec2.us-east-1.amazonaws.com", resolveEc2Endpoint(AwsConfig.builder().build(), "us-east-1"));
         assertEquals("ec2.us-east-1.amazonaws.com", resolveEc2Endpoint(AwsConfig.builder().setHostHeader("ecs").build(), "us-east-1"));
