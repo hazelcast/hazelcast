@@ -39,6 +39,7 @@
         <calcite.version>1.23.0</calcite.version>
         <guava.version>30.1-jre</guava.version>
         <slf4j.version>1.7.25</slf4j.version>
+        <avatica-core.version>1.22.0</avatica-core.version>
     </properties>
 
     <build>
@@ -87,6 +88,30 @@
             <scope>test</scope>
             <version>${project.parent.version}</version>
             <classifier>tests</classifier>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.calcite.avatica</groupId>
+            <artifactId>avatica-core</artifactId>
+            <version>${avatica-core.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.google.protobuf</groupId>
+                    <artifactId>protobuf-java</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.calcite.avatica</groupId>
+                    <artifactId>avatica-metrics</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpclient</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents</groupId>
+                    <artifactId>httpcore</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -148,6 +173,10 @@
                     <artifactId>apiguardian-api</artifactId>
                 </exclusion>
                 <!-- Exclusions for Avatica. -->
+                <exclusion>
+                    <groupId>org.apache.calcite.avatica</groupId>
+                    <artifactId>avatica-core</artifactId>
+                </exclusion>
                 <exclusion>
                     <groupId>com.google.protobuf</groupId>
                     <artifactId>protobuf-java</artifactId>
