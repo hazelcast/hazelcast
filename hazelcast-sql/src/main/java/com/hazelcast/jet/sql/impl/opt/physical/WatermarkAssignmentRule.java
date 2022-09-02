@@ -63,9 +63,7 @@ public final class WatermarkAssignmentRule extends RelRule<RelRule.Config> {
                 Collections.emptyList(),
                 keyCounter.getValue());
 
-        System.err.println("Assigned " + keyCounter.getValue() + " to " + newScan);
         keyCounter.inc();
-
         call.transformTo(newScan);
     }
 }
