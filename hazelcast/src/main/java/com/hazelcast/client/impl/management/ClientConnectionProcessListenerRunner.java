@@ -28,13 +28,14 @@ import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
 /**
- * Runs all the configured listeners on a specific executor, with proper
- * error handling.
+ * Runs all the configured listeners on a specific executor, with proper error
+ * handling.
  */
 public final class ClientConnectionProcessListenerRunner {
 
@@ -70,19 +71,25 @@ public final class ClientConnectionProcessListenerRunner {
 
     /**
      * Stops the executor, if it has been created.
+     * <p>
+     * It waits for the tasks that has been submitted before the call to stop,
+     * to not miss firing terminal connection events like cluster connection
+     * failed during the client shutdown.
      */
     public void stop() {
         if (!hasListeners.get()) {
             return;
         }
 
-        executor.shutdownNow();
+        executor.shutdown();
         ClientExecutionServiceImpl.awaitExecutorTermination("connection-diagnostics", executor, logger);
     }
 
     /**
-     * Calls {@link ClientConnectionProcessListener#attemptingToConnectToAddress(Address)}
-     * on all listeners after translating the target address.
+     * Calls
+     * {@link
+     * ClientConnectionProcessListener#attemptingToConnectToAddress(Address)} on
+     * all listeners after translating the target address.
      */
     public <A> void onAttemptingToConnectToTarget(Function<A, Address> addressTranslator, A target) {
         if (!hasListeners.get()) {
@@ -98,7 +105,8 @@ public final class ClientConnectionProcessListenerRunner {
     }
 
     /**
-     * Calls {@link ClientConnectionProcessListener#connectionAttemptFailed(Address)}
+     * Calls
+     * {@link ClientConnectionProcessListener#connectionAttemptFailed(Address)}
      * on all listeners after translating the target address.
      */
     public <A> void onConnectionAttemptFailed(Function<A, Address> addressTranslator, A target) {
@@ -115,8 +123,8 @@ public final class ClientConnectionProcessListenerRunner {
     }
 
     /**
-     * Calls {@link ClientConnectionProcessListener#hostNotFound(String)}
-     * on all listeners.
+     * Calls {@link ClientConnectionProcessListener#hostNotFound(String)} on all
+     * listeners.
      */
     public void onHostNotFound(String host) {
         if (!hasListeners.get()) {
@@ -127,7 +135,8 @@ public final class ClientConnectionProcessListenerRunner {
     }
 
     /**
-     * Calls {@link ClientConnectionProcessListener#possibleAddressesCollected(List)}
+     * Calls
+     * {@link ClientConnectionProcessListener#possibleAddressesCollected(List)}
      * on all listeners, after converting the given collection to a list.
      */
     public void onPossibleAddressesCollected(Collection<Address> addresses) {
@@ -140,7 +149,8 @@ public final class ClientConnectionProcessListenerRunner {
     }
 
     /**
-     * Calls {@link ClientConnectionProcessListener#possibleAddressesCollected(List)}
+     * Calls
+     * {@link ClientConnectionProcessListener#possibleAddressesCollected(List)}
      * on all listeners.
      */
     public void onPossibleAddressesCollected(List<Address> addresses) {
@@ -152,8 +162,9 @@ public final class ClientConnectionProcessListenerRunner {
     }
 
     /**
-     * Calls {@link ClientConnectionProcessListener#authenticationSuccess(Address)}
-     * on all listeners.
+     * Calls
+     * {@link ClientConnectionProcessListener#authenticationSuccess(Address)} on
+     * all listeners.
      */
     public void onAuthenticationSuccess(Address address) {
         if (!hasListeners.get()) {
@@ -176,8 +187,10 @@ public final class ClientConnectionProcessListenerRunner {
     }
 
     /**
-     * Calls {@link ClientConnectionProcessListener#clientNotAllowedInCluster(Address)}
-     * on all listeners.
+     * Calls
+     * {@link
+     * ClientConnectionProcessListener#clientNotAllowedInCluster(Address)} on
+     * all listeners.
      */
     public void onClientNotAllowedInCluster(Address address) {
         if (!hasListeners.get()) {
@@ -188,7 +201,8 @@ public final class ClientConnectionProcessListenerRunner {
     }
 
     /**
-     * Calls {@link ClientConnectionProcessListener#clusterConnectionFailed(String)}
+     * Calls
+     * {@link ClientConnectionProcessListener#clusterConnectionFailed(String)}
      * on all listeners.
      */
     public void onClusterConnectionFailed(String clusterName) {
@@ -200,8 +214,10 @@ public final class ClientConnectionProcessListenerRunner {
     }
 
     /**
-     * Calls {@link ClientConnectionProcessListener#clusterConnectionSucceeded(String)}
-     * on all listeners.
+     * Calls
+     * {@link
+     * ClientConnectionProcessListener#clusterConnectionSucceeded(String)} on
+     * all listeners.
      */
     public void onClusterConnectionSucceeded(String clusterName) {
         if (!hasListeners.get()) {
@@ -212,7 +228,8 @@ public final class ClientConnectionProcessListenerRunner {
     }
 
     /**
-     * Calls {@link ClientConnectionProcessListener#remoteClosedConnection(Address)}
+     * Calls
+     * {@link ClientConnectionProcessListener#remoteClosedConnection(Address)}
      * on all listeners after translating the target address.
      */
     public <A> void onRemoteClosedConnection(Function<A, Address> addressTranslator, A target) {
@@ -239,15 +256,19 @@ public final class ClientConnectionProcessListenerRunner {
     }
 
     private void callListeners(Consumer<ClientConnectionProcessListener> consumer) {
-        executor.execute(() -> {
-            for (ClientConnectionProcessListener listener : listeners) {
-                try {
-                    consumer.accept(listener);
-                } catch (Throwable t) {
-                    logger.finest("Exception while running the listener " + listener, t);
+        try {
+            executor.execute(() -> {
+                for (ClientConnectionProcessListener listener : listeners) {
+                    try {
+                        consumer.accept(listener);
+                    } catch (Throwable t) {
+                        logger.finest("Exception while running the listener " + listener, t);
+                    }
                 }
-            }
-        });
+            });
+        } catch (RejectedExecutionException ignored) {
+            // Client is shutting down
+        }
     }
 
     private void createLogger() {
