@@ -19,6 +19,9 @@ package com.hazelcast.internal.util;
 public class MutableByte {
     private byte value;
 
+    public MutableByte() {
+    }
+
     public MutableByte(byte value) {
         this.value = value;
     }

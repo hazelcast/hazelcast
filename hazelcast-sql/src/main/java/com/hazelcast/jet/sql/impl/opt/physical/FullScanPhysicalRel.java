@@ -59,6 +59,18 @@ public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
         super(cluster, traitSet, table, eventTimePolicyProvider, watermarkedColumnIndex);
     }
 
+    FullScanPhysicalRel(
+            RelOptCluster cluster,
+            RelTraitSet traitSet,
+            RelOptTable table,
+            @Nullable BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
+            int watermarkedColumnIndex,
+            Byte watermarkKey
+    ) {
+        super(cluster, traitSet, table, eventTimePolicyProvider, watermarkedColumnIndex);
+        this.watermarkKey = watermarkKey;
+    }
+
     public Expression<Boolean> filter(QueryParameterMetadata parameterMetadata) {
         PlanNodeSchema schema = OptUtils.schema(getTable());
 
@@ -142,6 +154,11 @@ public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
         return new FullScanPhysicalRel(getCluster(), traitSet, getTable(), eventTimePolicyProvider(),
                 watermarkedColumnIndex());
+    }
+
+    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs, byte key) {
+        return new FullScanPhysicalRel(getCluster(), traitSet, getTable(), eventTimePolicyProvider(),
+                watermarkedColumnIndex(), key);
     }
 
     public Byte getWatermarkKey() {

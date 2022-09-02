@@ -55,6 +55,8 @@ import com.hazelcast.jet.sql.impl.opt.physical.RootRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SelectByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SinkMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.UpdateByKeyMapPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.WatermarkAssignmentRule;
+import com.hazelcast.jet.sql.impl.opt.physical.WatermarkAssignmentRule.Config;
 import com.hazelcast.jet.sql.impl.parse.QueryConvertResult;
 import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob;
@@ -97,10 +99,14 @@ import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.Convention;
+import org.apache.calcite.plan.RelOptCostImpl;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.plan.hep.HepPlanner;
+import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelShuttleImpl;
@@ -632,6 +638,11 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         }
 
         PhysicalRel physicalRel = optimizePhysical(context, logicalRel);
+
+        if (OptUtils.isUnbounded(physicalRel)) {
+            physicalRel = watermarksAssignmentPhase(physicalRel);
+        }
+
         if (fineLogOn) {
             logger.fine("After physical opt:\n" + RelOptUtil.toString(physicalRel));
         }
@@ -665,6 +676,27 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 PhysicalRules.getRuleSet(),
                 OptUtils.toPhysicalConvention(rel.getTraitSet())
         );
+    }
+
+    /**
+     * Perform watermarks assignment phase with single
+     * available {@link WatermarkAssignmentRule} rule.
+     */
+    static PhysicalRel watermarksAssignmentPhase(PhysicalRel rel) {
+        HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
+
+        hepProgramBuilder.addRuleInstance(new WatermarkAssignmentRule(Config.DEFAULT));
+
+        HepPlanner planner = new HepPlanner(
+                hepProgramBuilder.build(),
+                Contexts.empty(),
+                true,
+                null,
+                RelOptCostImpl.FACTORY
+        );
+
+        planner.setRoot(rel);
+        return (PhysicalRel) planner.findBestExp();
     }
 
     private SqlRowMetadata createRowMetadata(
