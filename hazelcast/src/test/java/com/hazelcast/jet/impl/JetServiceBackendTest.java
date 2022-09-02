@@ -17,36 +17,48 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_CONFIG;
+import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
+import static com.hazelcast.jet.impl.JetServiceBackend.initializeSqlCatalog;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JetServiceBackendTest extends JetTestSupport {
-    private HazelcastInstance instance;
-
-    @Before
-    public void setup() {
+    @Test
+    public void when_instanceIsCreated_then_sqlCatalogIsConfigured() {
         Config config = new Config();
         config.getJetConfig().setEnabled(true);
-
-        instance = createHazelcastInstance(config);
+        HazelcastInstance instance = createHazelcastInstance(config);
+        MapConfig mapConfig = instance.getConfig().getMapConfig(JetServiceBackend.SQL_CATALOG_MAP_NAME);
+        assertEquals(initializeSqlCatalog(new MapConfig()), mapConfig);
     }
 
     @Test
-    public void when_instanceIsCreated_then_sqlCatalogIsConfigured() {
+    public void when_instanceIsCreatedWithOverriddenConfiguration_then_sqlCatalogConfigIsMerged() {
+        Config config = new Config();
+        DataPersistenceConfig dataPersistenceConfig = new DataPersistenceConfig();
+        dataPersistenceConfig.setEnabled(true);
+        config.addMapConfig(getMapConfig(dataPersistenceConfig));
+        config.getJetConfig().setEnabled(true);
+
+        HazelcastInstance instance = createHazelcastInstance(config);
         MapConfig mapConfig = instance.getConfig().getMapConfig(JetServiceBackend.SQL_CATALOG_MAP_NAME);
-        assertEquals(SQL_CATALOG_MAP_CONFIG, mapConfig);
+        assertEquals(dataPersistenceConfig, mapConfig.getDataPersistenceConfig());
+        assertEquals(initializeSqlCatalog(new MapConfig(SQL_CATALOG_MAP_NAME).setDataPersistenceConfig(dataPersistenceConfig)), mapConfig);
+    }
+
+    private static MapConfig getMapConfig(DataPersistenceConfig dataPersistenceConfig) {
+        return new MapConfig(SQL_CATALOG_MAP_NAME).setDataPersistenceConfig(dataPersistenceConfig);
     }
 }

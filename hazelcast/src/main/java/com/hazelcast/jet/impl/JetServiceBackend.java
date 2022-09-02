@@ -81,14 +81,6 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     public static final String SQL_CATALOG_MAP_NAME = "__sql.catalog";
     public static final int MAX_PARALLEL_ASYNC_OPS = 1000;
 
-    static final MapConfig SQL_CATALOG_MAP_CONFIG = new MapConfig()
-            .setName(SQL_CATALOG_MAP_NAME)
-            .setBackupCount(MapConfig.MAX_BACKUP_COUNT)
-            .setTimeToLiveSeconds(DISABLED_TTL_SECONDS)
-            .setReadBackupData(true)
-            .setMergePolicyConfig(new MergePolicyConfig().setPolicy(LatestUpdateMergePolicy.class.getName()))
-            .setPerEntryStatsEnabled(true);
-
     private static final int NOTIFY_MEMBER_SHUTDOWN_DELAY = 5;
     private static final int SHUTDOWN_JOBS_MAX_WAIT_SECONDS = 10;
 
@@ -166,7 +158,17 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         config.addMapConfig(internalMapConfig)
                 .addMapConfig(resultsMapConfig)
                 .addMapConfig(metricsMapConfig)
-                .addMapConfig(SQL_CATALOG_MAP_CONFIG);
+                .addMapConfig(initializeSqlCatalog(config.getMapConfig(SQL_CATALOG_MAP_NAME)));
+    }
+
+    static MapConfig initializeSqlCatalog(MapConfig config) {
+        return config
+                .setName(SQL_CATALOG_MAP_NAME)
+                .setBackupCount(MapConfig.MAX_BACKUP_COUNT)
+                .setTimeToLiveSeconds(DISABLED_TTL_SECONDS)
+                .setReadBackupData(true)
+                .setMergePolicyConfig(new MergePolicyConfig().setPolicy(LatestUpdateMergePolicy.class.getName()))
+                .setPerEntryStatsEnabled(true);
     }
 
     /**
