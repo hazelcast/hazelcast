@@ -32,6 +32,7 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.steps.EntryOpSteps;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
+import com.hazelcast.map.impl.recordstore.StaticParams;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
@@ -160,6 +161,7 @@ public class EntryOperation extends LockAwareOperation
     private transient boolean readOnly;
     private transient int setUnlockRetryCount;
     private transient long begin;
+    private transient boolean mapStoreOffloadEnabled;
 
     public EntryOperation() {
     }
@@ -179,6 +181,15 @@ public class EntryOperation extends LockAwareOperation
         SerializationService serializationService = getNodeEngine().getSerializationService();
         ManagedContext managedContext = serializationService.getManagedContext();
         entryProcessor = (EntryProcessor) managedContext.initialize(entryProcessor);
+
+        // When EP is readOnly and entry is in memory, we
+        // don't expect any map-store api call, so no need
+        // to enter map-store-api-offloading procedure.
+        if (readOnly && recordStore.existInMemory(dataKey)) {
+            mapStoreOffloadEnabled = false;
+        } else {
+            mapStoreOffloadEnabled = isMapStoreOffloadEnabled();
+        }
     }
 
     // TODO: EP no forced eviction for EP?
@@ -192,7 +203,11 @@ public class EntryOperation extends LockAwareOperation
         // to EntryOffloadableSetUnlockOperation
         disposeDeferredBlocks = !offload;
 
-        if (isMapStoreOffloadEnabled()) {
+        // When mapStoreOffloadEnabled is true, run all procedure
+        // in this class, including EP-offload, as a series
+        // of Steps. See EntryOpSteps to check how it works.
+        if (mapStoreOffloadEnabled) {
+            assert recordStore != null;
             return offloadOperation();
         }
 
@@ -214,7 +229,8 @@ public class EntryOperation extends LockAwareOperation
                 .setKey(dataKey)
                 .setCallerProvenance(CallerProvenance.NOT_WAN)
                 .setEntryProcessor(entryProcessor)
-                .setEntryProcessorOffload(offload);
+                .setEntryProcessorOffload(offload)
+                .setStaticPutParams(StaticParams.SET_WITH_NO_ACCESS_PARAMS);
     }
 
     @Override
@@ -224,10 +240,6 @@ public class EntryOperation extends LockAwareOperation
 
     @Override
     public void applyState(State state) {
-        if (offload) {
-            return;
-        }
-        super.applyState(state);
         response = state.getOperator().getResult();
     }
 
@@ -269,7 +281,7 @@ public class EntryOperation extends LockAwareOperation
 
     @Override
     public Object getResponse() {
-        if (offload) {
+        if (offload && !mapStoreOffloadEnabled) {
             return null;
         }
         return response;
@@ -277,7 +289,7 @@ public class EntryOperation extends LockAwareOperation
 
     @Override
     public boolean returnsResponse() {
-        if (offload) {
+        if (offload && !mapStoreOffloadEnabled) {
             // This has to be false, since the operation uses the
             // deferred-response mechanism. This method returns false, but
             // the response will be send later on using the response handler
@@ -289,7 +301,7 @@ public class EntryOperation extends LockAwareOperation
 
     @Override
     public void onExecutionFailure(Throwable e) {
-        if (offload) {
+        if (offload && !mapStoreOffloadEnabled) {
             // This is required since if the returnsResponse() method returns
             // false there won't be any response sent to the invoking
             // party - this means that the operation won't be retried if
@@ -305,19 +317,21 @@ public class EntryOperation extends LockAwareOperation
             value = {"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"},
             justification = "backupProcessor can indeed be null so check is not redundant")
     public Operation getBackupOperation() {
-        if (offload) {
+        if (offload && !mapStoreOffloadEnabled) {
             return null;
         }
         EntryProcessor backupProcessor = entryProcessor.getBackupProcessor();
-        return backupProcessor != null ? new EntryBackupOperation(name, dataKey, backupProcessor) : null;
+        return backupProcessor != null
+                ? new EntryBackupOperation(name, dataKey, backupProcessor) : null;
     }
 
     @Override
     public boolean shouldBackup() {
-        if (offload) {
+        if (offload && !mapStoreOffloadEnabled) {
             return false;
         }
-        return mapContainer.getTotalBackupCount() > 0 && entryProcessor.getBackupProcessor() != null;
+        return mapContainer.getTotalBackupCount() > 0
+                && entryProcessor.getBackupProcessor() != null;
     }
 
     @Override
@@ -347,7 +361,7 @@ public class EntryOperation extends LockAwareOperation
         out.writeObject(entryProcessor);
     }
 
-    private Object getOldValueByInMemoryFormat(Object oldValue) {
+    public Object getOldValueByInMemoryFormat(Object oldValue) {
         InMemoryFormat inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
         switch (inMemoryFormat) {
             case NATIVE:
