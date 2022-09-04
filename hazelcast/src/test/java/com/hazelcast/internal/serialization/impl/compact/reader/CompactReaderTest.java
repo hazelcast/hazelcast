@@ -49,7 +49,6 @@ public class CompactReaderTest {
     public void testGetFieldKind() {
         SerializationConfig config = new SerializationConfig();
         config.getCompactSerializationConfig()
-                .setEnabled(true)
                 .addSerializer(new FooSerializer());
 
         SerializationService service = createSerializationService(config);
@@ -64,7 +63,6 @@ public class CompactReaderTest {
     public void testGetFieldKind_whenFieldDoesNotExist() {
         SerializationConfig config = new SerializationConfig();
         config.getCompactSerializationConfig()
-                .setEnabled(true)
                 .addSerializer(new FooSerializer());
 
         SerializationService service = createSerializationService(config);

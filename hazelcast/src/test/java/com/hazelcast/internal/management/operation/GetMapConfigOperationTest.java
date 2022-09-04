@@ -16,14 +16,12 @@
 
 package com.hazelcast.internal.management.operation;
 
-import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.ClientDelegatingFuture;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
 import com.hazelcast.client.impl.protocol.codec.MCGetMapConfigCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.test.TestHazelcastFactory;
-import com.hazelcast.config.CompactSerializationConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
@@ -59,14 +57,8 @@ public class GetMapConfigOperationTest extends HazelcastTestSupport {
                 .addIndexConfig(new IndexConfig(IndexType.SORTED, "first"));
         config.addMapConfig(withIndex);
 
-        CompactSerializationConfig compactSerializationConfig =
-                config.getSerializationConfig().getCompactSerializationConfig();
-        compactSerializationConfig.setEnabled(true);
-
         hz = factory.newHazelcastInstance(config);
-        ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getSerializationConfig().getCompactSerializationConfig().setEnabled(true);
-        client = ((HazelcastClientProxy) factory.newHazelcastClient(clientConfig)).client;
+        client = ((HazelcastClientProxy) factory.newHazelcastClient()).client;
     }
 
     @After

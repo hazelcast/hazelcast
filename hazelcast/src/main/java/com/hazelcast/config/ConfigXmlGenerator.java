@@ -975,7 +975,8 @@ public class ConfigXmlGenerator {
                 .node("fail-on-indeterminate-operation-state", cpSubsystemConfig.isFailOnIndeterminateOperationState())
                 .node("persistence-enabled", cpSubsystemConfig.isPersistenceEnabled())
                 .node("base-dir", cpSubsystemConfig.getBaseDir().getAbsolutePath())
-                .node("data-load-timeout-seconds", cpSubsystemConfig.getDataLoadTimeoutSeconds());
+                .node("data-load-timeout-seconds", cpSubsystemConfig.getDataLoadTimeoutSeconds())
+                .node("cp-member-priority", cpSubsystemConfig.getCPMemberPriority());
 
         RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();
         gen.open("raft-algorithm")

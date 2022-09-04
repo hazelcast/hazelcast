@@ -1195,7 +1195,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public boolean setWithUncountedAccess(Data dataKey, Object value, long ttl, long maxIdle) {
         long now = getNow();
         Object oldValue = putInternal(dataKey, value, ttl, maxIdle, UNSET, now,
-                null, null, null, StaticParams.SET_WTH_NO_ACCESS_PARAMS);
+                null, null, null, StaticParams.SET_WITH_NO_ACCESS_PARAMS);
         return oldValue == null;
     }
 

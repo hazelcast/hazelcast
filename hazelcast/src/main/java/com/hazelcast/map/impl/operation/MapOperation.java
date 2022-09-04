@@ -81,7 +81,6 @@ public abstract class MapOperation extends AbstractNamedOperation
     protected transient MapServiceContext mapServiceContext;
     protected transient MapEventPublisher mapEventPublisher;
 
-    protected transient boolean hasMapStore;
     protected transient boolean createRecordStoreOnDemand = true;
     protected transient boolean disposeDeferredBlocks = true;
 
@@ -117,13 +116,17 @@ public abstract class MapOperation extends AbstractNamedOperation
         }
 
         canPublishWanEvent = canPublishWanEvent(mapContainer);
-        hasMapStore = recordStore != null
-                && recordStore.getMapDataStore() != MapDataStores.EMPTY_MAP_DATA_STORE;
+
         MapConfig mapConfig = mapContainer.getMapConfig();
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
-        mapStoreOffloadEnabled = hasMapStore
-                && mapStoreConfig.isEnabled()
-                && mapStoreConfig.isOffload()
+
+        boolean hasUserConfiguredOffload = mapServiceContext.isForceOffloadEnabled()
+                || (mapStoreConfig.isOffload()
+                && recordStore != null
+                && recordStore.getMapDataStore() != MapDataStores.EMPTY_MAP_DATA_STORE);
+
+        // check mapStoreOffloadEnabled is true for current operation
+        mapStoreOffloadEnabled = recordStore != null && hasUserConfiguredOffload
                 && getStartingStep() != null
                 && !mapConfig.getTieredStoreConfig().isEnabled();
 

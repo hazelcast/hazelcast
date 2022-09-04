@@ -216,4 +216,15 @@ public final class ExceptionUtil {
 
         throw e;
     }
+
+    /**
+     * Checks, if {@code t} itself or any exception in its cause chain is an
+     * instance of {@code classToFind}.
+     */
+    public static boolean isOrHasCause(Throwable t, Class<?> classToFind) {
+        while (t != null && t.getCause() != t && !classToFind.isAssignableFrom(t.getClass())) {
+            t = t.getCause();
+        }
+        return t != null && classToFind.isAssignableFrom(t.getClass());
+    }
 }

@@ -3056,22 +3056,10 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     }
 
     @Override
-    public void testCompactSerialization() {
-        String xml = HAZELCAST_START_TAG
-                + "    <serialization>\n"
-                + "        <compact-serialization enabled=\"true\" />\n"
-                + "    </serialization>\n"
-                + HAZELCAST_END_TAG;
-
-        Config config = buildConfig(xml);
-        assertTrue(config.getSerializationConfig().getCompactSerializationConfig().isEnabled());
-    }
-
-    @Override
     public void testCompactSerialization_serializerRegistration() {
         String xml = HAZELCAST_START_TAG
                 + "    <serialization>\n"
-                + "        <compact-serialization enabled=\"true\">\n"
+                + "        <compact-serialization>\n"
                 + "            <serializers>\n"
                 + "                <serializer>example.serialization.SerializableEmployeeDTOSerializer</serializer>\n"
                 + "            </serializers>\n"
@@ -3087,7 +3075,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testCompactSerialization_classRegistration() {
         String xml = HAZELCAST_START_TAG
                 + "    <serialization>\n"
-                + "        <compact-serialization enabled=\"true\">\n"
+                + "        <compact-serialization>\n"
                 + "            <classes>\n"
                 + "                <class>example.serialization.ExternalizableEmployeeDTO</class>\n"
                 + "            </classes>\n"
@@ -3103,7 +3091,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testCompactSerialization_serializerAndClassRegistration() {
         String xml = HAZELCAST_START_TAG
                 + "    <serialization>\n"
-                + "        <compact-serialization enabled=\"true\">\n"
+                + "        <compact-serialization>\n"
                 + "            <serializers>\n"
                 + "                <serializer>example.serialization.SerializableEmployeeDTOSerializer</serializer>\n"
                 + "            </serializers>\n"
@@ -3123,7 +3111,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testCompactSerialization_duplicateSerializerRegistration() {
         String xml = HAZELCAST_START_TAG
                 + "    <serialization>\n"
-                + "        <compact-serialization enabled=\"true\">\n"
+                + "        <compact-serialization>\n"
                 + "            <serializers>\n"
                 + "                <serializer>example.serialization.EmployeeDTOSerializer</serializer>\n"
                 + "                <serializer>example.serialization.EmployeeDTOSerializer</serializer>\n"
@@ -3142,7 +3130,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testCompactSerialization_duplicateClassRegistration() {
         String xml = HAZELCAST_START_TAG
                 + "    <serialization>\n"
-                + "        <compact-serialization enabled=\"true\">\n"
+                + "        <compact-serialization>\n"
                 + "            <classes>\n"
                 + "                <class>example.serialization.ExternalizableEmployeeDTO</class>\n"
                 + "                <class>example.serialization.ExternalizableEmployeeDTO</class>\n"
@@ -3161,7 +3149,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testCompactSerialization_registrationsWithDuplicateClasses() {
         String xml = HAZELCAST_START_TAG
                 + "    <serialization>\n"
-                + "        <compact-serialization enabled=\"true\">\n"
+                + "        <compact-serialization>\n"
                 + "            <serializers>\n"
                 + "                <serializer>example.serialization.EmployeeDTOSerializer</serializer>\n"
                 + "                <serializer>example.serialization.SameClassEmployeeDTOSerializer</serializer>\n"
@@ -3181,7 +3169,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testCompactSerialization_registrationsWithDuplicateTypeNames() {
         String xml = HAZELCAST_START_TAG
                 + "    <serialization>\n"
-                + "        <compact-serialization enabled=\"true\">\n"
+                + "        <compact-serialization>\n"
                 + "            <serializers>\n"
                 + "                <serializer>example.serialization.EmployeeDTOSerializer</serializer>\n"
                 + "                <serializer>example.serialization.SameTypeNameEmployeeDTOSerializer</serializer>\n"
@@ -3201,7 +3189,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testCompactSerialization_withInvalidSerializer() {
         String xml = HAZELCAST_START_TAG
                 + "    <serialization>\n"
-                + "        <compact-serialization enabled=\"true\">\n"
+                + "        <compact-serialization>\n"
                 + "            <serializers>\n"
                 + "                <serializer>does.not.exist.FooSerializer</serializer>\n"
                 + "            </serializers>\n"
@@ -3219,7 +3207,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
     public void testCompactSerialization_withInvalidCompactSerializableClass() {
         String xml = HAZELCAST_START_TAG
                 + "    <serialization>\n"
-                + "        <compact-serialization enabled=\"true\">\n"
+                + "        <compact-serialization>\n"
                 + "            <classes>\n"
                 + "                <class>does.not.exist.Foo</class>\n"
                 + "            </classes>\n"
@@ -3904,6 +3892,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
                 + "  <persistence-enabled>true</persistence-enabled>\n"
                 + "  <base-dir>/mnt/cp-data</base-dir>\n"
                 + "  <data-load-timeout-seconds>30</data-load-timeout-seconds>\n"
+                + "  <cp-member-priority>-1</cp-member-priority>\n"
                 + "  <raft-algorithm>\n"
                 + "    <leader-election-timeout-in-millis>500</leader-election-timeout-in-millis>\n"
                 + "    <leader-heartbeat-period-in-millis>100</leader-heartbeat-period-in-millis>\n"
@@ -3948,6 +3937,7 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         assertTrue(cpSubsystemConfig.isPersistenceEnabled());
         assertEquals(new File("/mnt/cp-data").getAbsoluteFile(), cpSubsystemConfig.getBaseDir().getAbsoluteFile());
         assertEquals(30, cpSubsystemConfig.getDataLoadTimeoutSeconds());
+        assertEquals(-1, cpSubsystemConfig.getCPMemberPriority());
         RaftAlgorithmConfig raftAlgorithmConfig = cpSubsystemConfig.getRaftAlgorithmConfig();
         assertEquals(500, raftAlgorithmConfig.getLeaderElectionTimeoutInMillis());
         assertEquals(100, raftAlgorithmConfig.getLeaderHeartbeatPeriodInMillis());

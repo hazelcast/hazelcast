@@ -85,6 +85,7 @@ public class State {
     private volatile Collection<Data> keys;
     private volatile ArrayList<Record> records;
     private volatile EntryProcessor entryProcessor;
+    private volatile boolean entryProcessorOffload;
     private volatile EntryOperator operator;
     private volatile List<State> toStore;
     private volatile List<State> toRemove;
@@ -99,6 +100,8 @@ public class State {
     private volatile Queue<InternalIndex> notMarkedIndexes;
     private volatile Set keysFromIndex;
     private volatile Throwable throwable;
+    private volatile EntryEventType modificationTypeForEP;
+    private volatile boolean unlockNeededForEP;
 
     public State(RecordStore recordStore, MapOperation operation) {
         this.recordStore = recordStore;
@@ -208,6 +211,15 @@ public class State {
 
     public State setEntryProcessor(EntryProcessor entryProcessor) {
         this.entryProcessor = entryProcessor;
+        return this;
+    }
+
+    public boolean isEntryProcessorOffload() {
+        return entryProcessorOffload;
+    }
+
+    public State setEntryProcessorOffload(boolean entryProcessorOffload) {
+        this.entryProcessorOffload = entryProcessorOffload;
         return this;
     }
 
@@ -494,5 +506,23 @@ public class State {
 
     public List getBackupPairs() {
         return backupPairs;
+    }
+
+    public State setModificationTypeForEP(EntryEventType modificationTypeForEP) {
+        this.modificationTypeForEP = modificationTypeForEP;
+        return null;
+    }
+
+    public EntryEventType getModificationTypeForEP() {
+        return modificationTypeForEP;
+    }
+
+    public State setUnlockNeededForEP(boolean unlockNeededForEP) {
+        this.unlockNeededForEP = unlockNeededForEP;
+        return this;
+    }
+
+    public boolean isUnlockNeededForEP() {
+        return unlockNeededForEP;
     }
 }

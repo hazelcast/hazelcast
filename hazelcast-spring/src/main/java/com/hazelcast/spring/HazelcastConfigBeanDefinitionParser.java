@@ -17,7 +17,6 @@
 package com.hazelcast.spring;
 
 import com.hazelcast.config.AdvancedNetworkConfig;
-import com.hazelcast.config.AliasedDiscoveryConfig;
 import com.hazelcast.config.AttributeConfig;
 import com.hazelcast.config.AuditlogConfig;
 import com.hazelcast.config.CRDTReplicationConfig;
@@ -544,7 +543,7 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
             BeanDefinitionBuilder cpSubsystemConfigBuilder = createBeanBuilder(CPSubsystemConfig.class);
 
             fillValues(node, cpSubsystemConfigBuilder, "raftAlgorithm", "semaphores", "locks", "cpMemberCount",
-                    "missingCpMemberAutoRemovalSeconds");
+                    "missingCpMemberAutoRemovalSeconds", "cpMemberPriority");
 
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
@@ -569,6 +568,9 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                     } else if ("missing-cp-member-auto-removal-seconds".equals(nodeName)) {
                         cpSubsystemConfigBuilder.addPropertyValue("missingCPMemberAutoRemovalSeconds",
                                 getIntegerValue("missing-cp-member-auto-removal-seconds", value));
+                    } else if ("cp-member-priority".equals(nodeName)) {
+                        cpSubsystemConfigBuilder.addPropertyValue("CPMemberPriority",
+                                getIntegerValue("cp-member-priority", value));
                     }
                 }
             }
@@ -1128,11 +1130,6 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 }
             }
             builder.addPropertyValue("members", members);
-        }
-
-        private void handleAliasedDiscoveryStrategy(Node node, BeanDefinitionBuilder builder, String name) {
-            AliasedDiscoveryConfig config = AliasedDiscoveryConfigUtils.newConfigFor(name);
-            fillAttributesForAliasedDiscoveryStrategy(config, node, builder, name);
         }
 
         public void handleReliableTopic(Node node) {

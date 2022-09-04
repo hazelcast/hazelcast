@@ -394,14 +394,12 @@ public class ClientConfigXmlGeneratorTest extends HazelcastTestSupport {
     @Test
     public void testCompactSerialization() {
         CompactSerializationConfig expected = new CompactSerializationConfig();
-        expected.setEnabled(true);
         expected.addClass(EmployerDTO.class);
         expected.addSerializer(new EmployeeDTOSerializer());
 
         clientConfig.getSerializationConfig().setCompactSerializationConfig(expected);
 
         CompactSerializationConfig actual = newConfigViaGenerator().getSerializationConfig().getCompactSerializationConfig();
-        assertEquals(expected.isEnabled(), actual.isEnabled());
 
         // Since we don't have APIs to register string class names in the
         // compact serialization config, when we read the config from XML/YAML,

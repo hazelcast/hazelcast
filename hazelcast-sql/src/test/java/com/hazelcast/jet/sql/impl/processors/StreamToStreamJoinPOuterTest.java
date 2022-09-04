@@ -185,6 +185,28 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
                 );
     }
 
+    @Test
+    // test for https://github.com/hazelcast/hazelcast/pull/22007
+    public void test_matchingRowAlreadyInBuffer() {
+        // l.time == r.time
+        postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 0L));
+        postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
+
+        SupplierEx<Processor> supplier = createProcessor(1, 1);
+
+        TestSupport.verifyProcessor(supplier)
+                .disableSnapshots()
+                .disableProgressAssertion() // TODO remove
+                .cooperativeTimeout(0)
+                .expectExactOutput(
+                        in(ordinal1, jetRow(42L)),
+                        in(ordinal0, jetRow(42L)),
+                        out(jetRow(42L, 42L)),
+                        in(ordinal1, wm(52, ordinal1)),
+                        out(wm(42, ordinal1))
+                );
+    }
+
     private SupplierEx<Processor> createProcessor(int leftColumnCount, int rightColumnCount) {
         Expression<Boolean> condition = createConditionFromPostponeTimeMap(postponeTimeMap);
         JetJoinInfo joinInfo = new JetJoinInfo(joinType, new int[0], new int[0], condition, condition);

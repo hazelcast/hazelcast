@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.opt.physical.visitor;
 
 import com.google.common.collect.RangeSet;
 import com.hazelcast.jet.sql.impl.expression.Range;
+import com.hazelcast.jet.sql.impl.expression.ToRowFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonArrayFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonObjectFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonParseFunction;
@@ -33,6 +34,7 @@ import com.hazelcast.sql.impl.expression.CaseExpression;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.RowExpression;
 import com.hazelcast.sql.impl.expression.SearchableExpression;
 import com.hazelcast.sql.impl.expression.SymbolExpression;
 import com.hazelcast.sql.impl.expression.datetime.ExtractField;
@@ -486,9 +488,13 @@ public final class RexToExpression {
                     final Expression<?>[] fields = Arrays.copyOfRange(operands, 1, operands.length);
 
                     return JsonArrayFunction.create(fields, nullClause);
+                } else if (function == HazelcastSqlOperatorTable.TO_ROW) {
+                    return ToRowFunction.create(operands[0]);
                 }
 
                 break;
+            case ROW:
+                return RowExpression.create(operands);
             default:
                 break;
         }

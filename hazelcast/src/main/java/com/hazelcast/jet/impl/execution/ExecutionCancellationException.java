@@ -14,20 +14,22 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.serialization.impl.compact.record;
+package com.hazelcast.jet.impl.execution;
 
-import com.hazelcast.nio.serialization.compact.CompactWriter;
+import java.util.concurrent.CancellationException;
 
-/**
- * Writes a single component of the record object to writer.
- */
-@FunctionalInterface
-public interface ComponentWriter {
+public class ExecutionCancellationException extends CancellationException {
+    private static final long serialVersionUID = 1L;
 
-    /**
-     * @param compactWriter to write the component to.
-     * @param recordObject to get the component from.
-     * @throws Exception in case the reflective access to the component fails.
-     */
-    void writeComponent(CompactWriter compactWriter, Object recordObject) throws Exception;
+    private final Throwable cause;
+
+    public ExecutionCancellationException(Throwable cause) {
+        super(cause.getMessage());
+        this.cause = cause;
+    }
+
+    @Override
+    public synchronized Throwable getCause() {
+        return cause;
+    }
 }

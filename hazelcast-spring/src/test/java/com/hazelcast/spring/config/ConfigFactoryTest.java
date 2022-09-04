@@ -131,13 +131,10 @@ public class ConfigFactoryTest {
         List<String> compactSerializableClassNames = new ArrayList<>();
         compactSerializerClassNames.add("a");
         compactSerializableClassNames.add("b");
-        CompactSerializationConfig config
-                = ConfigFactory.newCompactSerializationConfig(true,
+        CompactSerializationConfig config = ConfigFactory.newCompactSerializationConfig(
                 compactSerializerClassNames,
                 compactSerializableClassNames
         );
-        assertThat(config.isEnabled())
-                .isTrue();
         assertThat(CompactSerializationConfigAccessor.getSerializerClassNames(config))
                 .isEqualTo(compactSerializerClassNames);
         assertThat(CompactSerializationConfigAccessor.getCompactSerializableClassNames(config))

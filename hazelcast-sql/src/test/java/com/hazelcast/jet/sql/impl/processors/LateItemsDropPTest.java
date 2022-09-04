@@ -50,7 +50,7 @@ public class LateItemsDropPTest extends SqlTestSupport {
 
     @Test
     public void when_noEventIsLate_then_successful() {
-        SupplierEx<Processor> supplier = () -> new LateItemsDropP(timestampEx);
+        SupplierEx<Processor> supplier = () -> new LateItemsDropP((byte) 0, timestampEx);
 
         TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
                 .hazelcastInstance(instance())
@@ -75,7 +75,7 @@ public class LateItemsDropPTest extends SqlTestSupport {
 
     @Test
     public void when_oneEventIsLate_then_dropEvent() {
-        SupplierEx<Processor> supplier = () -> new LateItemsDropP(timestampEx);
+        SupplierEx<Processor> supplier = () -> new LateItemsDropP((byte) 0, timestampEx);
 
         TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
                 .hazelcastInstance(instance())
@@ -99,7 +99,7 @@ public class LateItemsDropPTest extends SqlTestSupport {
 
     @Test
     public void when_fewEventsAreLate_then_dropEvents() {
-        SupplierEx<Processor> supplier = () -> new LateItemsDropP(timestampEx);
+        SupplierEx<Processor> supplier = () -> new LateItemsDropP((byte) 0, timestampEx);
 
         TestSupport.verifyProcessor(adaptSupplier(ProcessorSupplier.of(supplier)))
                 .hazelcastInstance(instance())

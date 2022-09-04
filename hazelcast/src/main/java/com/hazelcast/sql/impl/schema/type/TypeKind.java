@@ -14,21 +14,25 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.serialization.impl.compact.record;
+package com.hazelcast.sql.impl.schema.type;
 
-import com.hazelcast.internal.serialization.impl.compact.Schema;
-import com.hazelcast.nio.serialization.compact.CompactReader;
+public enum TypeKind {
+    NONE(0),
+    JAVA(1),
+    PORTABLE(2),
+    COMPACT(3);
 
-/**
- * Reads a single component of the record object and returns it.
- */
-@FunctionalInterface
-public interface ComponentReader {
+    private final int value;
 
-    /**
-     * @param compactReader to read the component from.
-     * @param schema to validate expected and actual types.
-     * @return a single component of the record object.
-     */
-    Object readComponent(CompactReader compactReader, Schema schema);
+    TypeKind(int value) {
+        this.value = value;
+    }
+
+    public int value() {
+        return value;
+    }
+
+    public static TypeKind of(int value) {
+        return TypeKind.values()[value];
+    }
 }

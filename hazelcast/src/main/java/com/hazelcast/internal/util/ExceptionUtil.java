@@ -29,6 +29,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.WrongMethodTypeException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -357,5 +358,23 @@ public final class ExceptionUtil {
         newStackTrace[remoteStackTrace.length] = new StackTraceElement(EXCEPTION_SEPARATOR, "", "", -1);
         System.arraycopy(localSideStackTrace, 1, newStackTrace, remoteStackTrace.length + 1, localSideStackTrace.length - 1);
         return newStackTrace;
+    }
+
+    /**
+     * If there's any Throwable instance in the values, throw it.
+     */
+    @SafeVarargs
+    public static void rethrowFromCollection(Collection<?> values, Class<? extends Throwable> ... ignored) throws Throwable {
+        outerLoop:
+        for (Object value : values) {
+            if (value instanceof Throwable) {
+                for (Class<? extends Throwable> ignoredClass : ignored) {
+                    if (ignoredClass.isAssignableFrom(value.getClass())) {
+                        continue outerLoop;
+                    }
+                }
+                throw (Throwable) value;
+            }
+        }
     }
 }

@@ -22,7 +22,10 @@ import com.hazelcast.jet.sql.impl.opt.SlidingWindow;
 import com.hazelcast.jet.sql.impl.opt.logical.DropLateItemsLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.WatermarkLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.DropLateItemsPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.JoinHashPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.JoinNestedLoopPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowAggregatePhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.StreamToStreamJoinPhysicalRel;
 import org.apache.calcite.linq4j.tree.Types;
 import org.apache.calcite.plan.hep.HepRelVertex;
 import org.apache.calcite.plan.volcano.RelSubset;
@@ -39,7 +42,6 @@ import org.apache.calcite.rel.metadata.RelMetadataProvider;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.util.Util;
 
 import javax.annotation.Nullable;
 import java.lang.reflect.Method;
@@ -47,6 +49,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.sql.impl.validate.ValidationUtil.unwrapAsOperatorOperand;
 
@@ -150,10 +153,28 @@ public final class HazelcastRelMdWatermarkedFields
     @SuppressWarnings("unused")
     public WatermarkedFields extractWatermarkedFields(Join rel, RelMetadataQuery mq) {
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
-        // We currently support only nested-loop join and hash join that iterate the left side and forward
-        // WM in it. WM on the right side isn't forwarded.
-        // TODO: When we implement stream-to-stream join, we need to revisit this.
-        return query.extractWatermarkedFields(rel.getLeft());
+
+        if (rel instanceof JoinNestedLoopPhysicalRel || rel instanceof JoinHashPhysicalRel) {
+            // Nested-loop join and hash join iterate the left side and forward WM in it.
+            // WM on the right side isn't forwarded.
+            return query.extractWatermarkedFields(rel.getLeft());
+        } else if (rel instanceof StreamToStreamJoinPhysicalRel) {
+            // Stream-to-stream join forwards all watermarks from both inputs. The fields
+            // of the right input are shifted by the number of fields in the left input, so we
+            // merge the WM indices this way.
+            WatermarkedFields leftWmFields = query.extractWatermarkedFields(rel.getLeft());
+            WatermarkedFields rightWmFields = query.extractWatermarkedFields(rel.getRight());
+
+            final int offset = rel.getLeft().getRowType().getFieldList().size();
+            Set<Integer> shiftedRightProps = rightWmFields.getFieldIndexes()
+                    .stream()
+                    .map(idx -> idx + offset)
+                    .collect(Collectors.toSet());
+
+            return leftWmFields.union(new WatermarkedFields(shiftedRightProps));
+        } else {
+            throw new RuntimeException("Unknown join rel: " + rel.getClass().getName());
+        }
     }
 
     @SuppressWarnings("unused")
@@ -191,7 +212,7 @@ public final class HazelcastRelMdWatermarkedFields
     @SuppressWarnings("unused")
     public WatermarkedFields extractWatermarkedFields(RelSubset subset, RelMetadataQuery mq) {
         HazelcastRelMetadataQuery query = HazelcastRelMetadataQuery.reuseOrCreate(mq);
-        RelNode rel = Util.first(subset.getBest(), subset.getOriginal());
+        RelNode rel = subset.getBestOrOriginal();
         return query.extractWatermarkedFields(rel);
     }
 

@@ -19,32 +19,25 @@ package com.hazelcast.jet.sql.impl.connector.kafka.model;
 import org.apache.kafka.common.serialization.Deserializer;
 
 import java.io.ByteArrayInputStream;
-import java.io.DataInputStream;
-import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.util.Map;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
-
-public class PersonIdDeserializer implements Deserializer<PersonId> {
+/**
+ * Kafka deserializer for any java-serializable Object.
+ */
+public class JavaDeserializer implements Deserializer<Object> {
+    public void configure(Map map, boolean b) { }
+    public void close() { }
 
     @Override
-    public void configure(Map<String, ?> configs, boolean isKey) {
-    }
-
-    @Override
-    public PersonId deserialize(String topic, byte[] bytes) {
-        try (DataInputStream input = new DataInputStream(new ByteArrayInputStream(bytes))) {
-            PersonId personId = new PersonId();
-            if (input.readBoolean()) {
-                personId.setId(input.readInt());
+    public Object deserialize(String topic, byte[] data) {
+        try {
+            ByteArrayInputStream bais = new ByteArrayInputStream(data);
+            try (ObjectInputStream ois = new ObjectInputStream(bais)) {
+                return ois.readObject();
             }
-            return personId;
-        } catch (IOException e) {
-            throw sneakyThrow(e);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
-    }
-
-    @Override
-    public void close() {
     }
 }

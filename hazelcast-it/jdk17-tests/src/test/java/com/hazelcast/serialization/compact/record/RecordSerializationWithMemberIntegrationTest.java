@@ -35,9 +35,6 @@ public class RecordSerializationWithMemberIntegrationTest extends RecordSerializ
     @Override
     public HazelcastInstance getDriver() {
         Config config = smallInstanceConfig();
-        config.getSerializationConfig()
-                .getCompactSerializationConfig()
-                .setEnabled(true);
         return factory.newHazelcastInstance(config);
     }
 
