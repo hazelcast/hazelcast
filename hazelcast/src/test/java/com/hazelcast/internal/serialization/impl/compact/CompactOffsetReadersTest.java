@@ -58,7 +58,7 @@ public class CompactOffsetReadersTest {
     }
 
     @Test
-    public void testObjectWithDifferentPositionReaders() {
+    public void testObjectWithDifferentOffsetReaders() {
         SerializationService serializationService = createSerializationService(schemaService);
         String[] strArray = createStringArray(itemCount);
         GenericRecord expected = GenericRecordBuilder.compact("offsetReaderTestDTO")

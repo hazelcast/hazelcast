@@ -191,27 +191,4 @@ public abstract class CompactFormatIntegrationTest extends HazelcastTestSupport 
             return null;
         }
     }
-
-    @Test
-    public void testMapListener() {
-        IMap<Integer, EmployeeDTO> map = instance1.getMap("test");
-        CountDownLatch latch = new CountDownLatch(1);
-
-        class MapListener implements EntryAddedListener {
-            @Override
-            public void entryAdded(EntryEvent event) {
-                latch.countDown();
-            }
-        }
-        map.addEntryListener(new MapListener(), true);
-
-        // Put the entry from the other instance to not create a local
-        // registry in the actual instance. This will force it to
-        // go the cluster to fetch the schema.
-        IMap<Integer, EmployeeDTO> map2 = instance2.getMap("test");
-        EmployeeDTO employeeDTO = new EmployeeDTO(30, 102310312);
-        map2.put(1, employeeDTO);
-
-        assertOpenEventually(latch);
-    }
 }
