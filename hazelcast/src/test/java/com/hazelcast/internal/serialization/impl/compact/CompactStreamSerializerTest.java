@@ -58,7 +58,6 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createCompactGenericRecord;
@@ -620,7 +619,14 @@ public class CompactStreamSerializerTest {
             @Nonnull
             @Override
             public EmployeeDTO read(@Nonnull CompactReader reader) {
-                throw new UnsupportedOperationException("We will not read from here on this test");
+
+                int age = reader.readInt32("age");
+                long id = reader.readInt64("id");
+                String surname = "N/A";
+                if (reader.getFieldKind("surname") == FieldKind.STRING) {
+                    surname = reader.readString("surname");
+                }
+                return new EmployeeDTO(age, id);
             }
 
             @Override
@@ -648,11 +654,19 @@ public class CompactStreamSerializerTest {
         EmployeeDTO expected = new EmployeeDTO(20, 102310312);
         Data data = serializationService.toData(expected);
 
+        // Assert that older client can read newer data
         SerializationService serializationService2 = createSerializationService();
-        EmployeeDTO actual = serializationService2.toObject(data);
+        EmployeeDTO employee = serializationService2.toObject(data);
 
-        assertEquals(expected.getAge(), actual.getAge());
-        assertEquals(expected.getId(), actual.getId());
+        assertEquals(expected.getAge(), employee.getAge());
+        assertEquals(expected.getId(), employee.getId());
+
+        // Assert that newer client can read older data
+        Data data2 = serializationService2.toData(expected);
+        EmployeeDTO employee2 = serializationService.toObject(data2);
+
+        assertEquals(expected.getAge(), employee2.getAge());
+        assertEquals(expected.getId(), employee2.getId());
     }
 
     @Test
