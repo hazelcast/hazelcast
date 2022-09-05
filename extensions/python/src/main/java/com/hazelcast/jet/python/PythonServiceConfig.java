@@ -16,6 +16,7 @@
 package com.hazelcast.jet.python;
 
 import com.hazelcast.function.BiFunctionEx;
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.pipeline.GeneralStage;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.netty.shaded.io.grpc.netty.NettyChannelBuilder;
@@ -27,8 +28,6 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.util.Locale;
 import java.util.StringJoiner;
-
-import static java.util.Objects.requireNonNull;
 
 /**
  * Configuration object for the Python service factory, used in a
@@ -288,7 +287,8 @@ public class PythonServiceConfig implements Serializable {
      * ManagedChannelBuilder}. You can use this to configure the channel, for
      * example to configure the maximum message size etc.
      * <p>
-     * The default value is {@code NettyChannelBuilder::forAddress}.
+     * The default value is {@link NettyChannelBuilder#forAddress
+     * NettyChannelBuilder::forAddress}.
      *
      * @since 5.2
      */
@@ -296,7 +296,7 @@ public class PythonServiceConfig implements Serializable {
     public PythonServiceConfig setChannelFn(
             @Nonnull BiFunctionEx<String, Integer, ? extends ManagedChannelBuilder<?>> channelFn
     ) {
-        this.channelFn = requireNonNull(channelFn, "channelFn");
+        this.channelFn = Preconditions.isNotNull(channelFn, "channelFn");
         return this;
     }
 }
