@@ -973,12 +973,13 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                     executor.execute(() -> {
                         initializeClientOnCluster(newClusterId);
                         /*
-                          We send statistics to the new cluster immediately to make clientVersion, isEnterprise and some other fields
-                          available in Management Center as soon as possible. They are currently sent as part of client statistics.
+                          We send statistics to the new cluster immediately to make clientVersion, isEnterprise and some other
+                          fields available in Management Center as soon as possible. They are currently sent as part of client
+                          statistics.
 
                           This method is called here instead of above on purpose because sending statistics require an active
-                          connection to exist. Also, the client needs to be initialized on the new cluster in order for invocations
-                          to be allowed.
+                          connection to exist. Also, the client needs to be initialized on the new cluster in order for
+                          invocations to be allowed.
                          */
                         client.collectAndSendStatsNow();
                     });
