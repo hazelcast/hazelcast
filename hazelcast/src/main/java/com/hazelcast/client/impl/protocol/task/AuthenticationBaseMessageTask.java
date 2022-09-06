@@ -172,25 +172,21 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         logger.warning("Received auth from " + connection + " with clientUuid " + clientUuid
                 + " and clientName " + clientName + ", authentication failed");
         byte status = CREDENTIALS_FAILED.getId();
-        return encodeAuth(status, null, null, serializationService.getVersion(),
-                clientEngine.getPartitionService().getPartitionCount(), clientEngine.getClusterService().getClusterId(),
-                clientFailoverSupported);
+        return encodeAuth(status, null, null, serializationService.getVersion(), -1,
+                clientEngine.getClusterService().getClusterId(), clientFailoverSupported, false);
     }
 
     private ClientMessage prepareNotAllowedInCluster() {
         boolean clientFailoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
         byte status = NOT_ALLOWED_IN_CLUSTER.getId();
-        return encodeAuth(status, null, null, serializationService.getVersion(),
-                clientEngine.getPartitionService().getPartitionCount(), clientEngine.getClusterService().getClusterId(),
-                clientFailoverSupported);
+        return encodeAuth(status, null, null, serializationService.getVersion(), -1,
+                clientEngine.getClusterService().getClusterId(), clientFailoverSupported, false);
     }
 
     private ClientMessage prepareSerializationVersionMismatchClientMessage() {
         boolean clientFailoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
-        return encodeAuth(SERIALIZATION_VERSION_MISMATCH.getId(), null, null,
-                serializationService.getVersion(),
-                clientEngine.getPartitionService().getPartitionCount(),
-                clientEngine.getClusterService().getClusterId(), clientFailoverSupported);
+        return encodeAuth(SERIALIZATION_VERSION_MISMATCH.getId(), null, null, serializationService.getVersion(), -1,
+                clientEngine.getClusterService().getClusterId(), clientFailoverSupported, false);
     }
 
     private ClientMessage prepareAuthenticatedClientMessage() {
@@ -216,7 +212,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         byte status = AUTHENTICATED.getId();
         boolean clientFailoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
         return encodeAuth(status, thisAddress, uuid, serializationService.getVersion(),
-                clientEngine.getPartitionService().getPartitionCount(), clusterId, clientFailoverSupported);
+                clientEngine.getPartitionService().getPartitionCount(), clusterId, clientFailoverSupported, true);
     }
 
     private void setConnectionType() {
@@ -225,7 +221,8 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
 
     protected abstract ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid,
                                                 byte serializationVersion,
-                                                int partitionCount, UUID clusterId, boolean failoverSupported);
+                                                int partitionCount, UUID clusterId, boolean failoverSupported,
+                                                boolean isAuthenticated);
 
     protected abstract String getClientType();
 

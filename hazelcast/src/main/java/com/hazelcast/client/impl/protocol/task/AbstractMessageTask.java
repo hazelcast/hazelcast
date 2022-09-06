@@ -170,8 +170,9 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         Exception exception;
         if (nodeEngine.isRunning()) {
             String message = "Client " + endpoint + " must authenticate before any operation.";
+            String secureMessage = "Client " + endpoint.toSecureString() + " must authenticate before any operation.";
             logger.severe(message);
-            exception = new RetryableHazelcastException(new AuthenticationException(message));
+            exception = new RetryableHazelcastException(new AuthenticationException(secureMessage));
         } else {
             exception = new HazelcastInstanceNotActiveException();
         }
