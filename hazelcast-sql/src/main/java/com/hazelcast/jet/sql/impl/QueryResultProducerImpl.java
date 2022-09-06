@@ -94,6 +94,7 @@ public class QueryResultProducerImpl implements QueryResultProducer {
         if (limit <= 0) {
             doneTracker.markDone();
             ensureNotDone();
+            return;
         }
 
         while (offset > 0 && inbox.poll() != null) {
