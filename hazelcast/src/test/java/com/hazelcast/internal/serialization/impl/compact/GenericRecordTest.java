@@ -43,6 +43,7 @@ import java.util.List;
 
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createCompactGenericRecord;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createMainDTO;
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createSerializationService;
 import static com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder.compact;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -52,14 +53,9 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class GenericRecordTest {
 
-    private final SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
-
     @Test
     public void testGenericRecordToStringValidJson() throws IOException {
-        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig())
-                .build();
+        InternalSerializationService serializationService = (InternalSerializationService) createSerializationService();
 
         MainDTO expectedDTO = createMainDTO();
         expectedDTO.nullableBool = null;
@@ -79,7 +75,7 @@ public class GenericRecordTest {
         try {
             Thread.currentThread().setContextClassLoader(classLoader);
             InternalSerializationService ss2 = new DefaultSerializationServiceBuilder()
-                    .setSchemaService(schemaService)
+                    .setSchemaService(CompactTestUtil.createInMemorySchemaService())
                     .setClassLoader(classLoader)
                     .setConfig(new SerializationConfig().setCompactSerializationConfig(new CompactSerializationConfig()))
                     .build();
@@ -133,13 +129,6 @@ public class GenericRecordTest {
 
         assertEquals(2, clone.getInt32("foo"));
         assertEquals(1231L, clone.getInt64("bar"));
-    }
-
-    private SerializationService createSerializationService() {
-        return new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig())
-                .build();
     }
 
     @Test

@@ -16,11 +16,8 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.config.CompactSerializationConfig;
-import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.compact.CompactWriter;
@@ -64,12 +61,7 @@ public class CompactBooleanFieldTest {
 
     @Test
     public void testBooleanArrayWithCustomSerializer() {
-        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.addSerializer(new BoolArrayDTOSerializer());
-        SerializationService serializationService = new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
-                .build();
+        SerializationService serializationService = createSerializationService(BoolArrayDTOSerializer::new);
         boolean[] bools = getBooleans(itemCount);
         BoolArrayDTO expected = new BoolArrayDTO(bools);
 
@@ -81,7 +73,7 @@ public class CompactBooleanFieldTest {
 
     @Test
     public void testBooleanArrayWithReflectiveSerializer() {
-        SerializationService serializationService = createSerializationService(schemaService);
+        SerializationService serializationService = createSerializationService();
         boolean[] bools = getBooleans(itemCount);
         BoolArrayDTO expected = new BoolArrayDTO(bools);
 
@@ -93,12 +85,8 @@ public class CompactBooleanFieldTest {
 
     @Test
     public void testMultipleBoolFields() {
-        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.addSerializer(new BoolArrayDTOAsBooleansSerializer(itemCount));
-        SerializationService serializationService = new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
-                .build();
+        SerializationService serializationService = createSerializationService(() ->
+                new BoolArrayDTOAsBooleansSerializer(itemCount));
         boolean[] bools = getBooleans(itemCount);
         BoolArrayDTO expected = new BoolArrayDTO(bools);
 

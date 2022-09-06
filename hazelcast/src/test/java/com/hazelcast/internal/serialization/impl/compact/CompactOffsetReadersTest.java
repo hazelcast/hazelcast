@@ -37,8 +37,6 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CompactOffsetReadersTest {
 
-    private final SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
-
     private static String[] createStringArray(int itemCount) {
         String[] arr = new String[itemCount + 1];
         for (int i = 1; i <= itemCount; i++) {
@@ -59,7 +57,7 @@ public class CompactOffsetReadersTest {
 
     @Test
     public void testObjectWithDifferentOffsetReaders() {
-        SerializationService serializationService = createSerializationService(schemaService);
+        SerializationService serializationService = createSerializationService();
         String[] strArray = createStringArray(itemCount);
         GenericRecord expected = GenericRecordBuilder.compact("offsetReaderTestDTO")
                 .setArrayOfString("arrayOfStr", strArray)

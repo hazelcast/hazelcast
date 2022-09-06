@@ -17,11 +17,9 @@
 package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.config.CompactSerializationConfig;
-import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.FieldKind;
@@ -58,11 +56,11 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
-import java.util.function.Supplier;
 
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createCompactGenericRecord;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createFixedSizeFieldsDTO;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createMainDTO;
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createSerializationService;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createVarSizedFieldsDTO;
 import static com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder.compact;
 import static example.serialization.HiringStatus.HIRING;
@@ -76,31 +74,6 @@ import static org.junit.Assert.assertTrue;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CompactStreamSerializerTest {
-
-    private final SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
-
-    private InternalSerializationService createSerializationService() {
-        return new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig())
-                .build();
-    }
-
-    private <T> SerializationService createSerializationService(CompactSerializationConfig compactSerializationConfig) {
-        return new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
-                .build();
-    }
-
-    private <T> SerializationService createSerializationService(Supplier<CompactSerializer<T>> serializerSupplier) {
-        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
-        compactSerializationConfig.addSerializer(serializerSupplier.get());
-        return new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
-                .build();
-    }
 
     @Test
     public void testAllTypesWithReflectiveSerializer() {
@@ -341,8 +314,8 @@ public class CompactStreamSerializerTest {
 
     @Test
     public void testBits() throws IOException {
-        InternalSerializationService ss1 = createSerializationService();
-        InternalSerializationService ss2 = createSerializationService();
+        InternalSerializationService ss1 = (InternalSerializationService) createSerializationService();
+        InternalSerializationService ss2 = (InternalSerializationService) createSerializationService();
 
         BitsDTO bitsDTO = new BitsDTO();
         bitsDTO.a = true;
