@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class CompactNestedFieldsTest extends SqlTestSupport {
@@ -66,5 +67,12 @@ public class CompactNestedFieldsTest extends SqlTestSupport {
 
         client().getSql().execute("INSERT INTO test VALUES (1, 1, 'user1', (1, 'organization1', (1, 'office1')))");
         assertRowsAnyOrder("SELECT (organization).office.name FROM test", rows(1, "office1"));
+    }
+
+    @Test
+    public void test_emptyColumnList() {
+        assertThatThrownBy(() -> client().getSql()
+                .execute("CREATE TYPE Office OPTIONS ('format'='compact', 'compactTypeName'='OfficeCompactType')"))
+                .hasMessageContaining("Column list is required to create Compact-based Types");
     }
 }

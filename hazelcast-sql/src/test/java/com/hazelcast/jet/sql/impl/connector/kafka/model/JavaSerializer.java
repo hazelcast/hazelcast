@@ -19,35 +19,26 @@ package com.hazelcast.jet.sql.impl.connector.kafka.model;
 import org.apache.kafka.common.serialization.Serializer;
 
 import java.io.ByteArrayOutputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.ObjectOutputStream;
 import java.util.Map;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+/**
+ * Kafka serializer for any java-serializable Object.
+ */
+public class JavaSerializer implements Serializer<Object> {
+    public void configure(Map map, boolean b) { }
+    public void close() { }
 
-public class PersonIdSerializer implements Serializer<PersonId> {
-
-    @Override
-    public void configure(Map<String, ?> configs, boolean isKey) {
-    }
-
-    @Override
-    public byte[] serialize(String topic, PersonId personId) {
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        try (DataOutputStream output = new DataOutputStream(outputStream)) {
-            if (personId.getId() == null) {
-                output.writeBoolean(false);
-            } else {
-                output.writeBoolean(true);
-                output.writeInt(personId.getId());
-            }
+    public byte[] serialize(String s, Object o) {
+        try {
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
+            ObjectOutputStream oos = new ObjectOutputStream(baos);
+            oos.writeObject(o);
+            oos.close();
+            return baos.toByteArray();
         } catch (IOException e) {
-            throw sneakyThrow(e);
+            throw new RuntimeException(e);
         }
-        return outputStream.toByteArray();
-    }
-
-    @Override
-    public void close() {
     }
 }
