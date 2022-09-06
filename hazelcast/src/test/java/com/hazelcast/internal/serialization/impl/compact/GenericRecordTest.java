@@ -55,7 +55,9 @@ public class GenericRecordTest {
 
     @Test
     public void testGenericRecordToStringValidJson() throws IOException {
-        InternalSerializationService serializationService = (InternalSerializationService) createSerializationService();
+        SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
+        InternalSerializationService serializationService = (InternalSerializationService)
+                createSerializationService(schemaService);
 
         MainDTO expectedDTO = createMainDTO();
         expectedDTO.nullableBool = null;
@@ -75,7 +77,7 @@ public class GenericRecordTest {
         try {
             Thread.currentThread().setContextClassLoader(classLoader);
             InternalSerializationService ss2 = new DefaultSerializationServiceBuilder()
-                    .setSchemaService(CompactTestUtil.createInMemorySchemaService())
+                    .setSchemaService(schemaService)
                     .setClassLoader(classLoader)
                     .setConfig(new SerializationConfig().setCompactSerializationConfig(new CompactSerializationConfig()))
                     .build();

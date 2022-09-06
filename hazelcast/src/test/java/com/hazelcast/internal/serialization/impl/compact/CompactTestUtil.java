@@ -182,6 +182,13 @@ public final class CompactTestUtil {
                 .build();
     }
 
+    public static SerializationService createSerializationService(SchemaService schemaService) {
+        return new DefaultSerializationServiceBuilder()
+                .setSchemaService(schemaService)
+                .setConfig(new SerializationConfig())
+                .build();
+    }
+
     public static SerializationService createSerializationService(SerializationConfig config) {
         SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
         return new DefaultSerializationServiceBuilder()
@@ -202,6 +209,17 @@ public final class CompactTestUtil {
 
     public static <T> SerializationService createSerializationService(Supplier<CompactSerializer<T>> serializerSupplier) {
         SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
+        CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
+        compactSerializationConfig.addSerializer(serializerSupplier.get());
+        return new DefaultSerializationServiceBuilder()
+                .setSchemaService(schemaService)
+                .setConfig(new SerializationConfig().setCompactSerializationConfig(compactSerializationConfig))
+                .build();
+    }
+
+    public static <T> SerializationService createSerializationService(
+            Supplier<CompactSerializer<T>> serializerSupplier, SchemaService schemaService
+    ) {
         CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
         compactSerializationConfig.addSerializer(serializerSupplier.get());
         return new DefaultSerializationServiceBuilder()
