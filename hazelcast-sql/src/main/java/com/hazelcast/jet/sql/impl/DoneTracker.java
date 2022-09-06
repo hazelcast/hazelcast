@@ -29,7 +29,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
  */
 class DoneTracker {
 
-    private volatile boolean done = false;
+    private volatile boolean done;
     private final AtomicReference<Exception> exception = new AtomicReference<>();
 
     void markDone() {
