@@ -34,6 +34,7 @@ public final class PhysicalRules {
                 // Scan rules
                 FullScanPhysicalRule.INSTANCE,
                 IndexScanMapPhysicalRule.INSTANCE,
+                SelectByKeyDeoptPhysicalRule.INSTANCE,
 
                 // Windowing rules
                 WatermarkPhysicalRule.INSTANCE,

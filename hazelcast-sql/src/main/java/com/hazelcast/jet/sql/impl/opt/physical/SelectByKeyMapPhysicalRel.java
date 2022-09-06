@@ -19,9 +19,9 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
@@ -29,13 +29,17 @@ import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.linq4j.Ord;
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptCost;
+import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.AbstractRelNode;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
+import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexNode;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -92,7 +96,7 @@ public class SelectByKeyMapPhysicalRel extends AbstractRelNode implements Physic
         );
     }
 
-    private PartitionedMapTable table() {
+    public PartitionedMapTable table() {
         return table.unwrap(HazelcastTable.class).getTarget();
     }
 
@@ -110,6 +114,16 @@ public class SelectByKeyMapPhysicalRel extends AbstractRelNode implements Physic
     @Override
     public Vertex accept(CreateDagVisitor visitor) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public @Nullable RelOptTable getTable() {
+        return table;
+    }
+
+    @Override
+    public @Nullable RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+        return planner.getCostFactory().makeHugeCost();
     }
 
     @Override
