@@ -37,7 +37,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.sql.impl.ResultLimitReachedException;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -277,9 +276,6 @@ public class TaskletExecutionService {
     private void handleTaskletExecutionError(TaskletTracker t, Throwable e) {
         if (e instanceof CancellationException) {
             logger.fine("Job was cancelled by the user.");
-            t.executionTracker.exception(e);
-        } else if (e instanceof ResultLimitReachedException) {
-            logger.fine("SQL LIMIT reached.");
             t.executionTracker.exception(e);
         } else {
             logger.info("Exception in " + t.tasklet, e);

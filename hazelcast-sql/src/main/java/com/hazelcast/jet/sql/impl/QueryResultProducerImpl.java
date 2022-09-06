@@ -23,12 +23,10 @@ import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.ResultIterator;
-import com.hazelcast.sql.impl.ResultLimitReachedException;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.DONE;
@@ -41,12 +39,10 @@ public class QueryResultProducerImpl implements QueryResultProducer {
 
     static final int QUEUE_CAPACITY = 4096;
 
-    private static final Exception NORMAL_COMPLETION = new NormalCompletionException();
-
     private final boolean blockForNextItem;
 
     private final OneToOneConcurrentArrayQueue<JetSqlRow> rows = new OneToOneConcurrentArrayQueue<>(QUEUE_CAPACITY);
-    private final AtomicReference<Exception> done = new AtomicReference<>();
+    private final DoneTracker doneTracker = new DoneTracker();
 
     private InternalIterator iterator;
     private long limit = Long.MAX_VALUE;
@@ -80,17 +76,23 @@ public class QueryResultProducerImpl implements QueryResultProducer {
     @Override
     public void onError(QueryException error) {
         assert error != null;
-        done.compareAndSet(null, error);
+        doneTracker.markDone(error);
+    }
+
+    public void ensureNotDone() {
+        doneTracker.ensureNotDone();
     }
 
     public void done() {
-        done.compareAndSet(null, NORMAL_COMPLETION);
+        doneTracker.markDone();
     }
 
     public void consume(Inbox inbox) {
-        ensureNotDone();
+        if (doneTracker.isDone()) {
+            return;
+        }
         if (limit <= 0) {
-            done.compareAndSet(null, new ResultLimitReachedException());
+            doneTracker.markDone();
             ensureNotDone();
         }
 
@@ -103,17 +105,10 @@ public class QueryResultProducerImpl implements QueryResultProducer {
             if (limit != Long.MAX_VALUE) {
                 limit -= 1;
                 if (limit < 1) {
-                    done.compareAndSet(null, new ResultLimitReachedException());
-                    ensureNotDone();
+                    doneTracker.markDone();
+                    break;
                 }
             }
-        }
-    }
-
-    public void ensureNotDone() {
-        Exception exception = done.get();
-        if (exception != null) {
-            throw sneakyThrow(exception);
         }
     }
 
@@ -181,23 +176,12 @@ public class QueryResultProducerImpl implements QueryResultProducer {
          * </ul>
          */
         private boolean isDone() {
-            Exception exception = done.get();
-            if (exception != null) {
-                if (exception instanceof NormalCompletionException || exception instanceof ResultLimitReachedException) {
-                    // finish the rows first
-                    return rows.isEmpty();
-                }
-                throw sneakyThrow(exception);
+            switch (doneTracker.status()) {
+                case NOT_DONE: return false;
+                case DONE_NORMALLY: return rows.isEmpty();
+                case DONE_EXCEPTIONALLY: throw sneakyThrow(doneTracker.exception());
+                default: throw new IllegalStateException("not possible");
             }
-            return false;
-        }
-    }
-
-    private static final class NormalCompletionException extends Exception {
-        NormalCompletionException() {
-            // Use writableStackTrace = false, the exception is not created at a place where it's thrown,
-            // it's better if it has no stack trace then.
-            super("Done normally", null, false, false);
         }
     }
 }

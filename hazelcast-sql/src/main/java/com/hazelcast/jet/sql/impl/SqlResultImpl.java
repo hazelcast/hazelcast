@@ -72,7 +72,6 @@ class SqlResultImpl extends AbstractSqlResult {
     public ResultIterator<SqlRow> iterator() {
         if (iterator == null) {
             iterator = new RowToSqlRowIterator(rootResultConsumer.iterator());
-
             return iterator;
         } else {
             throw new IllegalStateException("Iterator can be requested only once.");
