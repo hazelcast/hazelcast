@@ -622,21 +622,21 @@ public class CompactStreamSerializerTest {
             }
         };
 
-        SerializationService serializationService = createSerializationService(() -> serializer);
+        SerializationService newSerializationService = createSerializationService(() -> serializer);
 
         EmployeeDTO expected = new EmployeeDTO(20, 102310312);
-        Data data = serializationService.toData(expected);
+        Data data = newSerializationService.toData(expected);
 
         // Assert that older client can read newer data
-        SerializationService serializationService2 = createSerializationService();
-        EmployeeDTO employee = serializationService2.toObject(data);
+        SerializationService oldSerializationService = createSerializationService();
+        EmployeeDTO employee = oldSerializationService.toObject(data);
 
         assertEquals(expected.getAge(), employee.getAge());
         assertEquals(expected.getId(), employee.getId());
 
         // Assert that newer client can read older data
-        Data data2 = serializationService2.toData(expected);
-        EmployeeDTO employee2 = serializationService.toObject(data2);
+        Data data2 = oldSerializationService.toData(expected);
+        EmployeeDTO employee2 = newSerializationService.toObject(data2);
 
         assertEquals(expected.getAge(), employee2.getAge());
         assertEquals(expected.getId(), employee2.getId());

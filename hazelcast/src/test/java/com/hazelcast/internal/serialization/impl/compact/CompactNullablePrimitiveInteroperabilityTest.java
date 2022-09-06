@@ -131,10 +131,10 @@ public class CompactNullablePrimitiveInteroperabilityTest {
     @Test
     public void testWriteArraysOfPrimitiveReadNullableCustomSerializer() {
         ArrayOfFixedSizeFieldsDTO arrayOfFixedSizeFieldsDTO = createArrayOfFixedSizeFieldsDTO();
-        SerializationService serializationService2 = createSerializationService(ArrayOfFixedSizeFieldsDTOSerializerReadingNullable::new);
+        SerializationService serializationService = createSerializationService(ArrayOfFixedSizeFieldsDTOSerializerReadingNullable::new);
 
-        Data data2 = serializationService2.toData(arrayOfFixedSizeFieldsDTO);
-        ArrayOfFixedSizeFieldsDTO obj2 = serializationService2.toObject(data2);
+        Data data2 = serializationService.toData(arrayOfFixedSizeFieldsDTO);
+        ArrayOfFixedSizeFieldsDTO obj2 = serializationService.toObject(data2);
 
         assertEquals(obj2, arrayOfFixedSizeFieldsDTO);
     }
@@ -153,11 +153,11 @@ public class CompactNullablePrimitiveInteroperabilityTest {
     @Test
     public void testWriteNullableReadArraysOfPrimitiveCustomSerializer() {
         ArrayOfFixedSizeFieldsDTO arrayOfFixedSizeFieldsDTO = createArrayOfFixedSizeFieldsDTO();
-        SerializationService serializationService2 =
+        SerializationService serializationService =
                 createSerializationService(ArrayOfFixedSizeFieldsDTOSerializerWritingNullable::new);
 
-        Data data2 = serializationService2.toData(arrayOfFixedSizeFieldsDTO);
-        ArrayOfFixedSizeFieldsDTO obj2 = serializationService2.toObject(data2);
+        Data data2 = serializationService.toData(arrayOfFixedSizeFieldsDTO);
+        ArrayOfFixedSizeFieldsDTO obj2 = serializationService.toObject(data2);
 
         assertEquals(obj2, arrayOfFixedSizeFieldsDTO);
     }
