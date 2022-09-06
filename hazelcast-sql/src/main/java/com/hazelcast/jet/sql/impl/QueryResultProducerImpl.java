@@ -80,7 +80,7 @@ public class QueryResultProducerImpl implements QueryResultProducer {
     }
 
     public void ensureNotDone() {
-        doneTracker.ensureNotDone();
+        doneTracker.ensureNotDoneExceptionally();
     }
 
     public void done() {

@@ -27,32 +27,32 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
  *
  * Note that it remembers only the first exception that is passed.
  */
-public class DoneTracker {
+class DoneTracker {
 
     private volatile boolean done = false;
     private final AtomicReference<Exception> exception = new AtomicReference<>();
 
-    public void markDone() {
+    void markDone() {
         done = true;
     }
 
-    public void markDone(Exception ex) {
+    void markDone(Exception ex) {
         exception.compareAndSet(null, ex);
         done = true;
     }
 
-    public boolean isDone() {
+    boolean isDone() {
         return done;
     }
 
-    public void ensureNotDone() {
+    void ensureNotDoneExceptionally() {
         Exception ex = exception.get();
         if (ex != null) {
             throw sneakyThrow(ex);
         }
     }
 
-    public Status status() {
+    Status status() {
         if (done) {
             Exception ex = exception.get();
             return ex == null ? Status.DONE_NORMALLY : Status.DONE_EXCEPTIONALLY;
@@ -61,7 +61,7 @@ public class DoneTracker {
         }
     }
 
-    public Exception exception() {
+    Exception exception() {
         return exception.get();
     }
 
