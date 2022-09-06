@@ -37,7 +37,7 @@ import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.TablesStorage;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.calcite.rel.RelNode;
@@ -59,7 +59,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
     @BeforeClass
