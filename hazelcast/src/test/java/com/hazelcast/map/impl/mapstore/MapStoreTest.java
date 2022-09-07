@@ -1105,6 +1105,7 @@ public class MapStoreTest extends AbstractMapStoreTest {
         assertEquals(1_500, map.size());
     }
 
+    // See https://github.com/hazelcast/hazelcast/issues/21414
     @Test(timeout = 120000)
     public void testCanCloneExceptionsWhoseCauseIsAlreadySet() {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
