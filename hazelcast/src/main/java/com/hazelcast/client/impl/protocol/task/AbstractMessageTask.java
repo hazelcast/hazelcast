@@ -168,16 +168,21 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
 
     private void handleAuthenticationFailure() {
         Exception exception;
+        String closeReason;
         if (nodeEngine.isRunning()) {
             String message = "Client " + endpoint + " must authenticate before any operation.";
             String secureMessage = "Client " + endpoint.toSecureString() + " must authenticate before any operation.";
+
             logger.severe(message);
+
+            closeReason = new AuthenticationException(message).getMessage();
             exception = new RetryableHazelcastException(new AuthenticationException(secureMessage));
         } else {
             exception = new HazelcastInstanceNotActiveException();
+            closeReason = exception.getMessage();
         }
         sendClientMessage(exception);
-        connection.close("Authentication failed. " + exception.getMessage(), null);
+        connection.close("Authentication failed. " + closeReason, null);
     }
 
     private void logProcessingFailure(Throwable throwable) {
