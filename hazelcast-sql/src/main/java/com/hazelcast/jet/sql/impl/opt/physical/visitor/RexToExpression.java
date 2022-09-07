@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.opt.physical.visitor;
 import com.google.common.collect.RangeSet;
 import com.hazelcast.jet.sql.impl.expression.Range;
 import com.hazelcast.jet.sql.impl.expression.ToRowFunction;
+import com.hazelcast.jet.sql.impl.expression.ToRowJsonFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonArrayFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonObjectFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonParseFunction;
@@ -490,6 +491,8 @@ public final class RexToExpression {
                     return JsonArrayFunction.create(fields, nullClause);
                 } else if (function == HazelcastSqlOperatorTable.TO_ROW) {
                     return ToRowFunction.create(operands[0]);
+                } else if (function == HazelcastSqlOperatorTable.TO_ROW_JSON) {
+                    return ToRowJsonFunction.create(operands[0]);
                 }
 
                 break;
