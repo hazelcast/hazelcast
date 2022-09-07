@@ -300,7 +300,8 @@ public final class ExceptionUtil {
                 try {
                     cloned.initCause(cause);
                 } catch (IllegalStateException ignored) {
-                    // Cause can be already set by the exception. See https://github.com/hazelcast/hazelcast/issues/21414
+                    // Cause can be already set by the exception. It can be set to null as well.
+                    // So doing null check is not the solution here. See https://github.com/hazelcast/hazelcast/issues/21414
                 }
                 return cloned;
             }
@@ -319,7 +320,8 @@ public final class ExceptionUtil {
                 try {
                     cloned.initCause(cause);
                 } catch (IllegalStateException ignored) {
-                    // Cause can be already set by the exception. See https://github.com/hazelcast/hazelcast/issues/21414
+                    // Cause can be already set by the exception. It can be set to null as well.
+                    // So doing null check is not the solution here. See https://github.com/hazelcast/hazelcast/issues/21414
                 }
                 return cloned;
             }
