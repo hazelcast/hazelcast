@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.partition.Partition;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -76,6 +77,8 @@ public final class QueryUtils {
             while (copy != null) {
                 if (ExceptionUtil.isTopologyException(copy)) {
                     return new HazelcastSqlException(localMemberId, SqlErrorCode.TOPOLOGY_CHANGE, e.getMessage(), e, null);
+                } else if (copy instanceof RestartableException) {
+                    return new HazelcastSqlException(localMemberId, SqlErrorCode.RESTARTABLE_ERROR, e.getMessage(), e, null);
                 }
                 copy = copy.getCause();
             }
