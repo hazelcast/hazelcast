@@ -40,6 +40,7 @@ import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -1104,8 +1105,48 @@ public class MapStoreTest extends AbstractMapStoreTest {
         assertEquals(1_500, map.size());
     }
 
+    @Test(timeout = 120000)
+    public void testCanCloneExceptionsWhoseCauseIsAlreadySet() {
+        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
+        Config config = getConfig();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(new MapLoader<String, String>() {
+
+            public String load(String key) {
+                throw new ExceptionThatHasCause();
+            }
+
+            public Map<String, String> loadAll(Collection<String> keys) {
+                return null;
+            }
+
+            public Set<String> loadAllKeys() {
+                return null;
+            }
+        });
+        String mapName = "default";
+        config.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
+
+        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
+
+        IMap<String, String> map = instance.getMap(mapName);
+
+        try {
+            map.get("key1");
+        } catch (RuntimeException e) {
+            assertTrue(e instanceof ExceptionThatHasCause);
+        }
+    }
+
     public Config newConfig(Object storeImpl) {
         return newConfig("default", storeImpl, 0, MapStoreConfig.InitialLoadMode.LAZY);
+    }
+
+    public static class ExceptionThatHasCause extends RuntimeException {
+        public ExceptionThatHasCause() {
+            super((Throwable) null);
+        }
     }
 
     public static class WaitingOnFirstTestMapStore extends TestMapStore {
