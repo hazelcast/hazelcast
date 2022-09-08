@@ -42,7 +42,7 @@ public class QueryResultProducerImpl implements QueryResultProducer {
     private final boolean blockForNextItem;
 
     private final OneToOneConcurrentArrayQueue<JetSqlRow> rows = new OneToOneConcurrentArrayQueue<>(QUEUE_CAPACITY);
-    private final DoneTracker doneTracker;
+    private final QueryEndTracker doneTracker;
 
     private InternalIterator iterator;
     private long limit = Long.MAX_VALUE;
@@ -57,7 +57,7 @@ public class QueryResultProducerImpl implements QueryResultProducer {
      */
     public QueryResultProducerImpl(boolean isBatch) {
         this.blockForNextItem = isBatch;
-        this.doneTracker = new DoneTracker(isBatch);
+        this.doneTracker = new QueryEndTracker(isBatch);
     }
 
     public void init(long limit, long offset) {
@@ -86,24 +86,16 @@ public class QueryResultProducerImpl implements QueryResultProducer {
 
     public void consume(Inbox inbox) {
         doneTracker.ensureNotDoneExceptionally();
-        produce(inbox);
-    }
-
-    /**
-     * @return true if all results are produced to the Iterator.
-     */
-    public boolean produce(Inbox inbox) {
-        doneTracker.ensureNotDoneExceptionally();
 
         // in case of close() being called
         if (doneTracker.isDone()) {
             inbox.clear();
-            return end();
+            return;
         }
         if (limit <= 0) {
             doneTracker.markDone();
             inbox.clear();
-            return end();
+            return;
         }
 
         while (offset > 0 && inbox.poll() != null) {
@@ -117,22 +109,14 @@ public class QueryResultProducerImpl implements QueryResultProducer {
                 if (limit < 1) {
                     doneTracker.markDone();
                     inbox.clear();
-                    return end();
+                    return;
                 }
             }
         }
-        return false;
     }
 
     public void ensureNotDone() {
         doneTracker.ensureNotDoneExceptionally();
-    }
-
-    private boolean end() {
-        if (blockForNextItem) {
-            return true;
-        }
-        throw new QueryEndException();
     }
 
     private class InternalIterator implements ResultIterator<JetSqlRow> {
@@ -202,12 +186,7 @@ public class QueryResultProducerImpl implements QueryResultProducer {
             switch (doneTracker.status()) {
                 case NOT_DONE: return false;
                 case DONE_NORMALLY: return rows.isEmpty();
-                case DONE_EXCEPTIONALLY:
-                    Exception e = doneTracker.exception();
-                    if (e instanceof QueryEndException) {
-                        return true;
-                    }
-                    throw sneakyThrow(e);
+                case DONE_EXCEPTIONALLY: throw sneakyThrow(doneTracker.exception());
                 default: throw new IllegalStateException("not possible");
             }
         }

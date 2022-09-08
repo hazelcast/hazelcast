@@ -31,18 +31,19 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
  *
  * Note that it remembers only the first exception that is passed.
  */
-class DoneTracker {
+class QueryEndTracker {
 
     private final boolean isBatch;
     private volatile boolean done;
     private final AtomicReference<Exception> exception = new AtomicReference<>();
 
-    DoneTracker(boolean isBatch) {
+    QueryEndTracker(boolean isBatch) {
         this.isBatch = isBatch;
     }
 
     void markDone() {
         if (!isBatch) {
+            // exception just to make the streaming job end
             exception.compareAndSet(null, new QueryEndException());
         }
         done = true;
@@ -67,7 +68,9 @@ class DoneTracker {
     Status status() {
         if (done) {
             Exception ex = exception.get();
-            return ex == null ? Status.DONE_NORMALLY : Status.DONE_EXCEPTIONALLY;
+            return ex == null || ex instanceof QueryEndException
+                    ? Status.DONE_NORMALLY
+                    : Status.DONE_EXCEPTIONALLY;
         } else {
             return Status.NOT_DONE;
         }
@@ -83,4 +86,18 @@ class DoneTracker {
         NOT_DONE
     }
 
+    /**
+     * Exception marking the query as completed even if the inbound edges are still producing values.
+     *
+     * Needed for streaming jobs, where {@link com.hazelcast.jet.core.Processor#complete} will never be called
+     * if inbound edges are too fast. Should be always ignored on client side, it just means "no more data, but it's ok".
+     */
+    private static class QueryEndException extends RuntimeException {
+
+        private QueryEndException() {
+            // Use writableStackTrace = false, the exception is not created at a place where it's thrown,
+            // it's better if it has no stack trace then.
+            super("Done by reaching the end specified by the query", null, false, false);
+        }
+    }
 }
