@@ -39,7 +39,7 @@ class DoneTracker {
     private volatile boolean done;
     private final AtomicReference<Exception> exception = new AtomicReference<>();
 
-    public DoneTracker(boolean isBatch) {
+    DoneTracker(boolean isBatch) {
         this.isBatch = isBatch;
     }
 
