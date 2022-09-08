@@ -297,7 +297,9 @@ public final class ExceptionUtil {
             <T extends Throwable> T cloneWith(MethodHandle constructor, String message,
                                               @Nullable Throwable cause) throws Throwable {
                 T cloned = (T) constructor.invokeWithArguments(message);
-                cloned.initCause(cause);
+                if (cause != null) {
+                    cloned.initCause(cause);
+                }
                 return cloned;
             }
         },
@@ -312,7 +314,9 @@ public final class ExceptionUtil {
             <T extends Throwable> T cloneWith(MethodHandle constructor, String message,
                                               @Nullable Throwable cause) throws Throwable {
                 T cloned = (T) constructor.invokeWithArguments();
-                cloned.initCause(cause);
+                if (cause != null) {
+                    cloned.initCause(cause);
+                }
                 return cloned;
             }
         };
