@@ -88,10 +88,9 @@ class SqlResultImpl extends AbstractSqlResult {
     @Override
     public void close(@Nullable QueryException exception) {
         if (exception == null) {
-            rootResultConsumer.onClose();
-        } else {
-            rootResultConsumer.onError(exception);
+            exception = QueryException.cancelledByUser();
         }
+        rootResultConsumer.onError(exception);
     }
 
     private final class RowToSqlRowIterator implements ResultIterator<SqlRow> {

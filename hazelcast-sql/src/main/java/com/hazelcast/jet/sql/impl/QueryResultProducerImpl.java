@@ -85,11 +85,6 @@ public class QueryResultProducerImpl implements QueryResultProducer {
         doneTracker.markDone(error);
     }
 
-    @Override
-    public void onClose() {
-        doneTracker.markDone(new QueryEndException());
-    }
-
     public void consume(Inbox inbox) {
         doneTracker.ensureNotDoneExceptionally();
         produce(inbox);
