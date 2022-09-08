@@ -116,10 +116,6 @@ public class QueryResultProducerImpl implements QueryResultProducer {
             offset--;
         }
 
-        if (inbox.isEmpty()) {
-            doneTracker.markDone();
-            return end();
-        }
         for (JetSqlRow row; (row = (JetSqlRow) inbox.peek()) != null && rows.offer(row); ) {
             inbox.remove();
             if (limit != Long.MAX_VALUE) {
