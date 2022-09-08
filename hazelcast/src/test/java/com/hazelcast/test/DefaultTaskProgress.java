@@ -18,12 +18,12 @@ package com.hazelcast.test;
 
 public class DefaultTaskProgress implements TaskProgress {
     private final long timestamp = System.currentTimeMillis();
-    private final int total;
-    private final int done;
+    private final long total;
+    private final long done;
     private final double progress;
     private final boolean completed;
 
-    public DefaultTaskProgress(int total, int done) {
+    public DefaultTaskProgress(long total, long done) {
         this.total = total;
         this.done = done;
         this.progress = ((double) done) / total;
