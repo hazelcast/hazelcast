@@ -92,7 +92,7 @@ class QueryEndTracker {
      * Needed for streaming jobs, where {@link com.hazelcast.jet.core.Processor#complete} will never be called
      * if inbound edges are too fast. Should be always ignored on client side, it just means "no more data, but it's ok".
      */
-    private static class QueryEndException extends RuntimeException {
+    private static final class QueryEndException extends RuntimeException {
 
         private QueryEndException() {
             // Use writableStackTrace = false, the exception is not created at a place where it's thrown,
