@@ -36,4 +36,6 @@ public interface QueryResultProducer {
      * @param error Error.
      */
     void onError(QueryException error);
+
+    void onClose();
 }

@@ -31,12 +31,14 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import static com.github.stefanbirkner.systemlambda.SystemLambda.tapSystemOut;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@SuppressWarnings("resource")
 public class SqlLimitTest extends SqlTestSupport {
 
     private static SqlService sqlService;
@@ -48,28 +50,32 @@ public class SqlLimitTest extends SqlTestSupport {
     }
 
     @Test
-    public void limitOverTable() {
-        String tableName = createTable(
-                new String[]{"Alice", "1"},
-                new String[]{"Bob", "2"},
-                new String[]{"Joey", "3"}
-        );
+    public void limitOverTable() throws Exception {
+        // use System.out to check if any exception appears in logs, even if it was suspended but logged
+        String systemOut = tapSystemOut(() -> {
+            String tableName = createTable(
+                    new String[]{"Alice", "1"},
+                    new String[]{"Bob", "2"},
+                    new String[]{"Joey", "3"}
+            );
 
-        assertContainsOnlyOneOfRows(
-                "SELECT name FROM " + tableName + " LIMIT 1",
-                asList(new Row("Alice"), new Row("Bob"), new Row("Joey"))
-        );
+            assertContainsOnlyOneOfRows(
+                    "SELECT name FROM " + tableName + " LIMIT 1",
+                    asList(new Row("Alice"), new Row("Bob"), new Row("Joey"))
+            );
 
-        assertContainsSubsetOfRows(
-                "SELECT name FROM " + tableName + " LIMIT 2",
-                2,
-                asList(new Row("Alice"), new Row("Bob"), new Row("Joey"))
-        );
+            assertContainsSubsetOfRows(
+                    "SELECT name FROM " + tableName + " LIMIT 2",
+                    2,
+                    asList(new Row("Alice"), new Row("Bob"), new Row("Joey"))
+            );
 
-        assertRowsAnyOrder(
-                "SELECT name FROM " + tableName + " LIMIT 5",
-                asList(new Row("Alice"), new Row("Bob"), new Row("Joey"))
-        );
+            assertRowsAnyOrder(
+                    "SELECT name FROM " + tableName + " LIMIT 5",
+                    asList(new Row("Alice"), new Row("Bob"), new Row("Joey"))
+            );
+        });
+        assertThat(systemOut).doesNotContain("Exception:");
     }
 
     @Test

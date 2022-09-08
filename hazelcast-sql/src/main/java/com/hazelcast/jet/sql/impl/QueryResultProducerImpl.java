@@ -20,15 +20,14 @@ import com.hazelcast.internal.util.concurrent.BackoffIdleStrategy;
 import com.hazelcast.internal.util.concurrent.IdleStrategy;
 import com.hazelcast.internal.util.concurrent.OneToOneConcurrentArrayQueue;
 import com.hazelcast.jet.core.Inbox;
+import com.hazelcast.sql.impl.QueryEndException;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryResultProducer;
 import com.hazelcast.sql.impl.ResultIterator;
-import com.hazelcast.sql.impl.ResultLimitReachedException;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.DONE;
@@ -41,12 +40,10 @@ public class QueryResultProducerImpl implements QueryResultProducer {
 
     static final int QUEUE_CAPACITY = 4096;
 
-    private static final Exception NORMAL_COMPLETION = new NormalCompletionException();
-
     private final boolean blockForNextItem;
 
     private final OneToOneConcurrentArrayQueue<JetSqlRow> rows = new OneToOneConcurrentArrayQueue<>(QUEUE_CAPACITY);
-    private final AtomicReference<Exception> done = new AtomicReference<>();
+    private final DoneTracker doneTracker;
 
     private InternalIterator iterator;
     private long limit = Long.MAX_VALUE;
@@ -59,8 +56,9 @@ public class QueryResultProducerImpl implements QueryResultProducer {
      * batch jobs where low streaming latency isn't required, but rather we
      * want to return full pages of results to the client.
      */
-    public QueryResultProducerImpl(boolean blockForNextItem) {
-        this.blockForNextItem = blockForNextItem;
+    public QueryResultProducerImpl(boolean isBatch) {
+        this.blockForNextItem = isBatch;
+        this.doneTracker = new DoneTracker(isBatch);
     }
 
     public void init(long limit, long offset) {
@@ -77,44 +75,74 @@ public class QueryResultProducerImpl implements QueryResultProducer {
         return iterator;
     }
 
+    public void done() {
+        doneTracker.markDone();
+    }
+
     @Override
     public void onError(QueryException error) {
         assert error != null;
-        done.compareAndSet(null, error);
+        doneTracker.markDone(error);
     }
 
-    public void done() {
-        done.compareAndSet(null, NORMAL_COMPLETION);
+    @Override
+    public void onClose() {
+        doneTracker.markDone(new QueryEndException());
     }
 
     public void consume(Inbox inbox) {
-        ensureNotDone();
+        doneTracker.ensureNotDoneExceptionally();
+        produce(inbox);
+    }
+
+    /**
+     * @return true if all results are produced to the Iterator.
+     */
+    public boolean produce(Inbox inbox) {
+        doneTracker.ensureNotDoneExceptionally();
+
+        // in case of close() being called
+        if (doneTracker.isDone()) {
+            inbox.clear();
+            return end();
+        }
         if (limit <= 0) {
-            done.compareAndSet(null, new ResultLimitReachedException());
-            ensureNotDone();
+            doneTracker.markDone();
+            inbox.clear();
+            return end();
         }
 
         while (offset > 0 && inbox.poll() != null) {
             offset--;
         }
 
+        if (inbox.isEmpty()) {
+            doneTracker.markDone();
+            return end();
+        }
         for (JetSqlRow row; (row = (JetSqlRow) inbox.peek()) != null && rows.offer(row); ) {
             inbox.remove();
             if (limit != Long.MAX_VALUE) {
                 limit -= 1;
                 if (limit < 1) {
-                    done.compareAndSet(null, new ResultLimitReachedException());
-                    ensureNotDone();
+                    doneTracker.markDone();
+                    inbox.clear();
+                    return end();
                 }
             }
         }
+        return false;
     }
 
     public void ensureNotDone() {
-        Exception exception = done.get();
-        if (exception != null) {
-            throw sneakyThrow(exception);
+        doneTracker.ensureNotDoneExceptionally();
+    }
+
+    private boolean end() {
+        if (blockForNextItem) {
+            return true;
         }
+        throw new QueryEndException();
     }
 
     private class InternalIterator implements ResultIterator<JetSqlRow> {
@@ -181,23 +209,13 @@ public class QueryResultProducerImpl implements QueryResultProducer {
          * </ul>
          */
         private boolean isDone() {
-            Exception exception = done.get();
-            if (exception != null) {
-                if (exception instanceof NormalCompletionException || exception instanceof ResultLimitReachedException) {
-                    // finish the rows first
-                    return rows.isEmpty();
-                }
-                throw sneakyThrow(exception);
+            switch (doneTracker.status()) {
+                case NOT_DONE: return false;
+                case DONE_NORMALLY: return rows.isEmpty();
+                case DONE_EXCEPTIONALLY: throw sneakyThrow(doneTracker.exception());
+                default: throw new IllegalStateException("not possible");
             }
-            return false;
         }
     }
 
-    private static final class NormalCompletionException extends Exception {
-        NormalCompletionException() {
-            // Use writableStackTrace = false, the exception is not created at a place where it's thrown,
-            // it's better if it has no stack trace then.
-            super("Done normally", null, false, false);
-        }
-    }
 }
