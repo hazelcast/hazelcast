@@ -1104,53 +1104,8 @@ public class MapStoreTest extends AbstractMapStoreTest {
         assertEquals(1_500, map.size());
     }
 
-    // See https://github.com/hazelcast/hazelcast/issues/21414
-    @Test(timeout = 120000)
-    public void testBugFix_21414() {
-        TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
-        Config config = getConfig();
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setEnabled(true);
-        mapStoreConfig.setImplementation(new MapLoader<String, String>() {
-
-            public String load(String key) {
-                throw new ExceptionThatHasCause();
-            }
-
-            public Map<String, String> loadAll(Collection<String> keys) {
-                return null;
-            }
-
-            public Set<String> loadAllKeys() {
-                return null;
-            }
-        });
-        String mapName = "default";
-        config.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
-
-        HazelcastInstance instance = nodeFactory.newHazelcastInstance(config);
-
-        IMap<String, String> map = instance.getMap(mapName);
-
-        try {
-            map.get("key1");
-        } catch (RuntimeException e) {
-            // Exceptions that are thrown from MapLoader.load() is cloned using ExceptionUtil.
-            // If the exception already has cause, Throwable.initCause() will throw. Some libraries
-            // may set cause to null even when the no cause is passed in the constructor. This test
-            // verifies that we handle that case.
-            assertTrue(e instanceof ExceptionThatHasCause);
-        }
-    }
-
     public Config newConfig(Object storeImpl) {
         return newConfig("default", storeImpl, 0, MapStoreConfig.InitialLoadMode.LAZY);
-    }
-
-    public static class ExceptionThatHasCause extends RuntimeException {
-        public ExceptionThatHasCause() {
-            super((Throwable) null);
-        }
     }
 
     public static class WaitingOnFirstTestMapStore extends TestMapStore {
