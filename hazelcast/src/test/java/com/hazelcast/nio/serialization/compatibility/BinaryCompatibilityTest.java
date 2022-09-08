@@ -88,7 +88,7 @@ public class BinaryCompatibilityTest {
     @Parameter
     public boolean allowUnsafe;
     @Parameter(1)
-    public Object  object;
+    public Object object;
     @Parameter(2)
     public ByteOrder byteOrder;
     @Parameter(3)
