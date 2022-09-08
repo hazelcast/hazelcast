@@ -451,7 +451,7 @@
         <dependency>
             <groupId>net.openhft</groupId>
             <artifactId>affinity</artifactId>
-            <version>3.20.0</version>
+            <version>3.23ea1</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
