@@ -22,10 +22,13 @@ import com.hazelcast.aggregation.Aggregators;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects;
+import example.serialization.MainDTO;
+
 import java.io.Externalizable;
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -237,11 +240,20 @@ class ReferenceObjects {
     static SynchronousQueue synchronousQueue = new SynchronousQueue();
     static LinkedTransferQueue linkedTransferQueue = new LinkedTransferQueue(nonNullList);
 
+    static MainDTO aCompact;
+    static {
+        aCompact = CompactTestUtil.createMainDTO();
+        aCompact.localDate = aLocalDate;
+        aCompact.localTime = aLocalTime;
+        aCompact.localDateTime = aLocalDateTime;
+        aCompact.offsetDateTime = aOffsetDateTime;
+    }
+
     static Object[] allTestObjects = {
             aNullObject, aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString, aUUID, anInnerPortable,
             aSimpleMapEntry, aSimpleImmutableMapEntry, booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
             aCustomStreamSerializable, aCustomByteArraySerializable,
-            anIdentifiedDataSerializable, aPortable,
+            anIdentifiedDataSerializable, aPortable, aCompact,
             aDate, aLocalDate, aLocalTime, aLocalDateTime, aOffsetDateTime, aBigInteger, aBigDecimal, aClass,
             aFullOptional, anEnum, serializable, externalizable,
             arrayList, linkedList, copyOnWriteArrayList, concurrentSkipListMap, concurrentHashMap, linkedHashMap, treeMap,
