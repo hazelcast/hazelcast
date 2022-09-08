@@ -509,10 +509,10 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
         initDefault();
 
         assertThatThrownBy(() -> testInstance().getSql().execute("select 1 from test where to_row((this).organization.office)=(3, 'office1')").iterator().next())
-                .hasMessageContaining("From line 1, column 26 to line 1, column 74: ROW type comparison operators are not supported");
+                .hasMessageContaining("From line 1, column 26 to line 1, column 74: Comparison operators are not supported for ROW type");
 
         assertThatThrownBy(() -> testInstance().getSql().execute("select 1 from test where (this).organization.office=(3, 'office1')").iterator().next())
-                .hasMessage("From line 1, column 27 to line 1, column 66: ROW type comparison operators are not supported");
+                .hasMessage("From line 1, column 27 to line 1, column 66: Comparison operators are not supported for ROW type");
     }
 
     private User initDefault() {

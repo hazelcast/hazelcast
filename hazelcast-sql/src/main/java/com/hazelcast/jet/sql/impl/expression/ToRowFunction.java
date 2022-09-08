@@ -58,7 +58,7 @@ public class ToRowFunction extends UniExpressionWithType<RowValue> implements Id
 
     private RowValue convert(final Object obj, final QueryDataType dataType, final Set<Object> seenObjects) {
         if (obj instanceof GenericRecord) {
-            throw QueryException.error("TO_ROW function is only supported for Java Types");
+            throw QueryException.error("TO_ROW function is only supported for Java types");
         }
 
         if (!seenObjects.add(obj)) {

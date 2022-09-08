@@ -43,7 +43,7 @@ public interface ValidatorResource {
     @BaseMessage("UPDATE FROM SELECT not supported")
     ExInst<SqlValidatorException> updateFromSelectNotSupported();
 
-    @BaseMessage("ROW type comparison operators are not supported")
+    @BaseMessage("Comparison operators are not supported for ROW type")
     ExInst<SqlValidatorException> rowTypeComparisonNotSupported();
 
     static String imapNotMapped(String originalMessage, String identifier, String suggestion) {
