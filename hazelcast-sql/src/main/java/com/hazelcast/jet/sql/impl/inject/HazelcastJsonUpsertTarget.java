@@ -31,7 +31,7 @@ import static com.hazelcast.jet.sql.impl.inject.UpsertInjector.FAILING_TOP_LEVEL
 @NotThreadSafe
 class HazelcastJsonUpsertTarget implements UpsertTarget {
 
-    private JsonObject json;
+    protected JsonObject json;
 
     HazelcastJsonUpsertTarget() {
     }
