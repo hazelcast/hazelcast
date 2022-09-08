@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.AbstractSqlResult;
-import com.hazelcast.sql.impl.QueryEndException;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultProducer;
@@ -106,9 +105,6 @@ class SqlResultImpl extends AbstractSqlResult {
             try {
                 return delegate.hasNext();
             } catch (Exception e) {
-                if (e instanceof QueryEndException) {
-                    return false;
-                }
                 throw QueryUtils.toPublicException(e, queryId.getMemberId());
             }
         }
@@ -118,9 +114,6 @@ class SqlResultImpl extends AbstractSqlResult {
             try {
                 return delegate.hasNext(timeout, timeUnit);
             } catch (Exception e) {
-                if (e instanceof QueryEndException) {
-                    return HasNextResult.DONE;
-                }
                 throw QueryUtils.toPublicException(e, queryId.getMemberId());
             }
         }

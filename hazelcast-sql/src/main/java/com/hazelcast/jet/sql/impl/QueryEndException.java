@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.hazelcast.sql.impl;
+package com.hazelcast.jet.sql.impl;
 
 /**
  * Exception marking the query as completed even if the inbound edges are still producing values.
@@ -21,9 +21,9 @@ package com.hazelcast.sql.impl;
  * Needed for streaming jobs, where {@link com.hazelcast.jet.core.Processor#complete} will never be called
  * if inbound edges are too fast. Should be always ignored on client side, it just means "no more data, but it's ok".
  */
-public class QueryEndException extends RuntimeException {
+class QueryEndException extends RuntimeException {
 
-    public QueryEndException() {
+    QueryEndException() {
         // Use writableStackTrace = false, the exception is not created at a place where it's thrown,
         // it's better if it has no stack trace then.
         super("Done by reaching the end specified by the query", null, false, false);

@@ -16,8 +16,6 @@
 
 package com.hazelcast.jet.sql.impl;
 
-import com.hazelcast.sql.impl.QueryEndException;
-
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;

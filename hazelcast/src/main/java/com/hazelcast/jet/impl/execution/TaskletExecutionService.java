@@ -37,7 +37,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
-import com.hazelcast.sql.impl.QueryEndException;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -278,10 +277,8 @@ public class TaskletExecutionService {
         if (e instanceof CancellationException) {
             logger.fine("Job was cancelled by the user.");
             t.executionTracker.exception(e);
-        } else if (e instanceof QueryEndException) {
-            logger.fine("Query ended");
-            t.executionTracker.exception(e);
-        } else {
+        }
+        else {
             logger.info("Exception in " + t.tasklet, e);
             t.executionTracker.exception(new JetException("Exception in " + t.tasklet + ": " + e, e));
         }
