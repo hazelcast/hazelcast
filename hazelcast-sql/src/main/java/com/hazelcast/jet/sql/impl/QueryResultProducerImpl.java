@@ -203,7 +203,12 @@ public class QueryResultProducerImpl implements QueryResultProducer {
             switch (doneTracker.status()) {
                 case NOT_DONE: return false;
                 case DONE_NORMALLY: return rows.isEmpty();
-                case DONE_EXCEPTIONALLY: throw sneakyThrow(doneTracker.exception());
+                case DONE_EXCEPTIONALLY:
+                    Exception e = doneTracker.exception();
+                    if (e instanceof QueryEndException) {
+                        return true;
+                    }
+                    throw sneakyThrow(e);
                 default: throw new IllegalStateException("not possible");
             }
         }
