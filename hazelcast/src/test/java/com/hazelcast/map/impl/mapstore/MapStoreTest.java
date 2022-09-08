@@ -40,7 +40,6 @@ import com.hazelcast.map.listener.EntryUpdatedListener;
 import com.hazelcast.query.SampleTestObjects.Employee;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
