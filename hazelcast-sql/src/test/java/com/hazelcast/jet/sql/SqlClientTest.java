@@ -37,6 +37,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -115,7 +116,7 @@ public class SqlClientTest extends SqlTestSupport {
 
         result.close();
         logger.info("after res.close() returned");
-        assertJobStatusEventually(job, FAILED);
+        assertJobStatusEventually(job, COMPLETED);
     }
 
     // test for https://github.com/hazelcast/hazelcast/issues/19897

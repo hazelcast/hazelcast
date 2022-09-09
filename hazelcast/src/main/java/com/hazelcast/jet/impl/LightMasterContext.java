@@ -213,12 +213,16 @@ public final class LightMasterContext {
     }
 
     private void cancelInvocations() {
+        cancelInvocations(CANCEL_FORCEFUL);
+    }
+
+    private void cancelInvocations(TerminationMode terminationMode) {
         if (invocationsCancelled.compareAndSet(false, true)) {
             for (MemberInfo memberInfo : executionPlanMap.keySet()) {
                 // Termination is fire and forget. If the termination isn't handled (e.g. due to a packet loss or
                 // because the execution wasn't yet initialized at the target), it will be fixed by the
                 // CheckLightJobsOperation.
-                TerminateExecutionOperation op = new TerminateExecutionOperation(jobId, jobId, CANCEL_FORCEFUL);
+                TerminateExecutionOperation op = new TerminateExecutionOperation(jobId, jobId, terminationMode);
                 nodeEngine.getOperationService()
                         .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, memberInfo.getAddress())
                         .invoke();
@@ -312,8 +316,11 @@ public final class LightMasterContext {
         return result;
     }
 
+    public void requestTermination(TerminationMode terminationMode) {
+        cancelInvocations(terminationMode);
+    }
     public void requestTermination() {
-        cancelInvocations();
+        cancelInvocations(CANCEL_FORCEFUL);
     }
 
     public boolean isCancelled() {

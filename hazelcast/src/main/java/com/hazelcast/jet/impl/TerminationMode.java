@@ -36,7 +36,9 @@ public enum TerminationMode {
     // terminate and complete the job
     /** Used to implement {@link Job#cancelAndExportSnapshot} in enterprise */
     CANCEL_GRACEFUL(true, ActionAfterTerminate.CANCEL),
-    CANCEL_FORCEFUL(false, ActionAfterTerminate.CANCEL);
+    CANCEL_FORCEFUL(false, ActionAfterTerminate.CANCEL),
+    CANCEL_FORCEFUL_QUIET(false, ActionAfterTerminate.CANCEL)
+    ;
 
     private final boolean withTerminalSnapshot;
     private final ActionAfterTerminate actionAfterTerminate;

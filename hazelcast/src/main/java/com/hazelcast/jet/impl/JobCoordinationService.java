@@ -112,6 +112,7 @@ import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.COORDINATOR;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
+import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL_QUIET;
 import static com.hazelcast.jet.impl.execution.init.CustomClassLoadedObject.deserializeWithCustomClassLoader;
 import static com.hazelcast.jet.impl.operation.GetJobIdsOperation.ALL_JOBS;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
@@ -132,6 +133,7 @@ import static java.util.stream.Collectors.toList;
  * A service that handles MasterContexts on the coordinator member.
  * Job-control operations from client are handled here.
  */
+@SuppressWarnings("rawtypes")
 public class JobCoordinationService {
 
     private static final String COORDINATOR_EXECUTOR_NAME = "jet:coordinator";
@@ -189,7 +191,7 @@ public class JobCoordinationService {
         this.nodeEngine = nodeEngine;
         this.jetServiceBackend = jetServiceBackend;
         this.config = config;
-        this.pipelineToDagContext = () -> this.config.getCooperativeThreadCount();
+        this.pipelineToDagContext = this.config::getCooperativeThreadCount;
         this.logger = nodeEngine.getLogger(getClass());
         this.jobRepository = jobRepository;
 
@@ -507,12 +509,13 @@ public class JobCoordinationService {
         );
     }
 
-    public void terminateLightJob(long jobId) {
+    public void terminateLightJob(long jobId, TerminationMode terminationMode) {
+        assert terminationMode == CANCEL_FORCEFUL || terminationMode == CANCEL_FORCEFUL_QUIET;
         Object mc = lightMasterContexts.get(jobId);
         if (mc == null || mc == UNINITIALIZED_LIGHT_JOB_MARKER) {
             throw new JobNotFoundException(jobId);
         }
-        ((LightMasterContext) mc).requestTermination();
+        ((LightMasterContext) mc).requestTermination(terminationMode);
     }
 
     /**
@@ -1379,7 +1382,7 @@ public class JobCoordinationService {
                 if (mc != null && isMaster() && !mc.jobStatus().isTerminal()) {
                     terminateJob(jobId, CANCEL_FORCEFUL);
                 } else if (lightMc != null && !lightMc.isCancelled()) {
-                    lightMc.requestTermination();
+                    lightMc.requestTermination(CANCEL_FORCEFUL);
                 }
             } finally {
                 scheduledJobTimeouts.remove(jobId);

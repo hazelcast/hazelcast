@@ -323,6 +323,8 @@ public class PlanExecutor {
         InternalSerializationService serializationService = Util.getSerializationService(hazelcastInstance);
 
         return new SqlResultImpl(
+                hazelcastInstance,
+                -1,
                 QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
                 new StaticQueryResultProducerImpl(
                         rows.sorted().map(name -> new JetSqlRow(serializationService, new Object[]{name})).iterator()),
@@ -342,6 +344,8 @@ public class PlanExecutor {
 
         planRows = Arrays.stream(plan.getRel().explain().split(LE));
         return new SqlResultImpl(
+                hazelcastInstance,
+                -1,
                 QueryId.create(hazelcastInstance.getLocalEndpoint().getUuid()),
                 new StaticQueryResultProducerImpl(
                         planRows.map(rel -> new JetSqlRow(serializationService, new Object[]{rel})).iterator()),
@@ -381,6 +385,8 @@ public class PlanExecutor {
         }
 
         return new SqlResultImpl(
+                hazelcastInstance,
+                jobId,
                 queryId,
                 queryResultProducer,
                 plan.getRowMetadata(),
@@ -417,7 +423,7 @@ public class PlanExecutor {
         StaticQueryResultProducerImpl resultProducer = row != null
                 ? new StaticQueryResultProducerImpl(row)
                 : new StaticQueryResultProducerImpl(emptyIterator());
-        return new SqlResultImpl(queryId, resultProducer, plan.rowMetadata(), false);
+        return new SqlResultImpl(hazelcastInstance, -1, queryId, resultProducer, plan.rowMetadata(), false);
     }
 
     SqlResult execute(IMapInsertPlan plan, List<Object> arguments, long timeout) {

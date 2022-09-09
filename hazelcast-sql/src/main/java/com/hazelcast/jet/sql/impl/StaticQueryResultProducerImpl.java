@@ -66,6 +66,10 @@ public class StaticQueryResultProducerImpl implements QueryResultProducer {
     }
 
     @Override
+    public void done() {
+    }
+
+    @Override
     public void onError(QueryException error) {
     }
 }

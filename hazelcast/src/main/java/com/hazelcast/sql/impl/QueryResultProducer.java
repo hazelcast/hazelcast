@@ -30,6 +30,8 @@ public interface QueryResultProducer {
      */
     ResultIterator<JetSqlRow> iterator();
 
+    void done();
+
     /**
      * Notify the producer about an error.
      *

@@ -19,7 +19,6 @@ package com.hazelcast.jet.sql.impl;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.jet.impl.util.ExceptionUtil.isTechnicalCancellationException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 
 /**
@@ -35,19 +34,10 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
  */
 class QueryEndTracker {
 
-    private final boolean isBatch;
     private volatile boolean done;
     private final AtomicReference<Exception> exception = new AtomicReference<>();
 
-    QueryEndTracker(boolean isBatch) {
-        this.isBatch = isBatch;
-    }
-
     void markDone() {
-        if (!isBatch) {
-            // exception just to make the streaming job end
-            exception.compareAndSet(null, new CancellationException());
-        }
         done = true;
     }
 
@@ -70,7 +60,7 @@ class QueryEndTracker {
     Status status() {
         if (done) {
             Exception ex = exception.get();
-            return ex == null || isTechnicalCancellationException(ex)
+            return ex == null
                     ? Status.DONE_NORMALLY
                     : Status.DONE_EXCEPTIONALLY;
         } else {

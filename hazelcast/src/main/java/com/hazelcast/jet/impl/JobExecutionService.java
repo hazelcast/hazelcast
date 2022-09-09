@@ -78,7 +78,6 @@ import static com.hazelcast.jet.impl.JetServiceBackend.SERVICE_NAME;
 import static com.hazelcast.jet.impl.JobClassLoaderService.JobPhase.EXECUTION;
 import static com.hazelcast.jet.impl.TerminationMode.CANCEL_FORCEFUL;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.isTechnicalCancellationException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
@@ -587,7 +586,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
                       .thenCompose(stage -> stage)
                       .whenComplete((metrics, e0) -> {
                           Throwable e = peel(e0);
-                          if (isTechnicalCancellationException(e)) {
+                          if (e instanceof CancellationException) {
                               logger.fine("Execution of " + execCtx.jobNameAndExecutionId() + " was cancelled");
                           } else if (e != null) {
                               logger.fine("Execution of " + execCtx.jobNameAndExecutionId()

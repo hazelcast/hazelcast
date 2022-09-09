@@ -22,67 +22,81 @@ import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
+import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.github.stefanbirkner.systemlambda.SystemLambda.tapSystemOut;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @SuppressWarnings("resource")
 public class SqlLimitTest extends SqlTestSupport {
 
     private static SqlService sqlService;
+    private static SqlService sqlClientService;
+
+    @Parameter(0)
+    public boolean useClient;
+
+    @Parameters(name = "useClient={0}")
+    public static Iterable<?> parameters() {
+        return Arrays.asList(true, false);
+    }
 
     @BeforeClass
     public static void setUpClass() {
-        initialize(2, null);
+        initializeWithClient(2, null, null);
         sqlService = instance().getSql();
+        sqlClientService = client().getSql();
     }
 
     @Test
-    public void limitOverTable() throws Exception {
-        // use System.out to check if any exception appears in logs, even if it was suspended but logged
-        String systemOut = tapSystemOut(() -> {
-            String tableName = createTable(
-                    new String[]{"Alice", "1"},
-                    new String[]{"Bob", "2"},
-                    new String[]{"Joey", "3"}
-            );
+    public void limitOverTable() {
+        String tableName = createTable(
+                new String[]{"Alice", "1"},
+                new String[]{"Bob", "2"},
+                new String[]{"Joey", "3"}
+        );
 
-            assertContainsOnlyOneOfRows(
-                    "SELECT name FROM " + tableName + " LIMIT 1",
-                    asList(new Row("Alice"), new Row("Bob"), new Row("Joey"))
-            );
+        assertContainsOnlyOneOfRows(
+                "SELECT name FROM " + tableName + " LIMIT 1",
+                asList(new Row("Alice"), new Row("Bob"), new Row("Joey"))
+        );
 
-            assertContainsSubsetOfRows(
-                    "SELECT name FROM " + tableName + " LIMIT 2",
-                    2,
-                    asList(new Row("Alice"), new Row("Bob"), new Row("Joey"))
-            );
+        assertContainsSubsetOfRows(
+                "SELECT name FROM " + tableName + " LIMIT 2",
+                2,
+                asList(new Row("Alice"), new Row("Bob"), new Row("Joey"))
+        );
 
-            assertRowsAnyOrder(
-                    "SELECT name FROM " + tableName + " LIMIT 5",
-                    asList(new Row("Alice"), new Row("Bob"), new Row("Joey"))
-            );
-        });
-        assertThat(systemOut).doesNotContain("Exception:");
+        assertRowsAnyOrder(
+                "SELECT name FROM " + tableName + " LIMIT 5",
+                asList(new Row("Alice"), new Row("Bob"), new Row("Joey"))
+        );
     }
 
     @Test
     public void nullLimitValue() {
         String tableName = createTable(new String[]{"Alice", "1"});
 
-        assertThatThrownBy(() -> sqlService.execute("SELECT name FROM " + tableName + " LIMIT null"))
+        assertThatThrownBy(() -> sqlService().execute("SELECT name FROM " + tableName + " LIMIT null"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Encountered \"null\"")
                 .extracting(e -> ((HazelcastSqlException) e).getCode()).isEqualTo(SqlErrorCode.PARSING);
@@ -92,7 +106,7 @@ public class SqlLimitTest extends SqlTestSupport {
     public void negativeLimitValue() {
         String tableName = createTable(new String[]{"Alice", "1"});
 
-        assertThatThrownBy(() -> sqlService.execute("SELECT name FROM " + tableName + " LIMIT -10"))
+        assertThatThrownBy(() -> sqlService().execute("SELECT name FROM " + tableName + " LIMIT -10"))
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Encountered \"-\"")
                 .extracting(e -> ((HazelcastSqlException) e).getCode()).isEqualTo(SqlErrorCode.PARSING);
@@ -131,10 +145,10 @@ public class SqlLimitTest extends SqlTestSupport {
         );
     }
 
-    private static String createTable(String[]... values) {
+    private String createTable(String[]... values) {
         String name = randomName();
         TestBatchSqlConnector.create(
-                sqlService,
+                sqlService(),
                 name,
                 asList("name", "distance"),
                 asList(QueryDataTypeFamily.VARCHAR, QueryDataTypeFamily.INTEGER),
@@ -153,21 +167,21 @@ public class SqlLimitTest extends SqlTestSupport {
         assertRowsOrdered(
                 "SELECT * FROM TABLE(GENERATE_STREAM(5)) LIMIT 2",
                 asList(new Row(0L),
-                new Row(1L))
+                        new Row(1L))
         );
 
         assertRowsOrdered(
                 "SELECT * FROM TABLE(GENERATE_STREAM(5)) LIMIT 10",
                 asList(new Row(0L),
-                new Row(1L),
-                new Row(2L),
-                new Row(3L),
-                new Row(4L),
-                new Row(5L),
-                new Row(6L),
-                new Row(7L),
-                new Row(8L),
-                new Row(9L))
+                        new Row(1L),
+                        new Row(2L),
+                        new Row(3L),
+                        new Row(4L),
+                        new Row(5L),
+                        new Row(6L),
+                        new Row(7L),
+                        new Row(8L),
+                        new Row(9L))
         );
 
         assertTrueEventually(() -> assertThat(instance().getJet().getJobs()).isEmpty());
@@ -224,7 +238,7 @@ public class SqlLimitTest extends SqlTestSupport {
         assertRowsOrdered(sql, rows(8L, 7L, 6L, 5L, 4L));
     }
 
-    private static void assertContainsOnlyOneOfRows(String sql, Collection<Row> expectedRows) {
+    private void assertContainsOnlyOneOfRows(String sql, Collection<Row> expectedRows) {
         assertContainsSubsetOfRows(sql, 1, expectedRows);
     }
 
@@ -232,7 +246,7 @@ public class SqlLimitTest extends SqlTestSupport {
      * Asserts that the result of {@code sql} contains a subset of {@code
      * expectedRows}, the subset must be of size {@code subsetSize}.
      */
-    private static void assertContainsSubsetOfRows(String sql, int subsetSize, Collection<Row> expectedRows) {
+    private void assertContainsSubsetOfRows(String sql, int subsetSize, Collection<Row> expectedRows) {
         assertContainsSubsetOfRows(sql, emptyList(), subsetSize, expectedRows);
     }
 
@@ -240,7 +254,7 @@ public class SqlLimitTest extends SqlTestSupport {
      * Asserts that the result of {@code sql} contains a subset of {@code
      * expectedRows}, the subset must be of size {@code subsetSize}.
      */
-    private static void assertContainsSubsetOfRows(
+    private void assertContainsSubsetOfRows(
             String sql,
             List<Object> arguments,
             int subsetSize,
@@ -249,7 +263,7 @@ public class SqlLimitTest extends SqlTestSupport {
         List<Row> actualRows = new ArrayList<>();
         SqlStatement statement = new SqlStatement(sql);
         statement.setParameters(arguments);
-        sqlService.execute(statement).iterator().forEachRemaining(sqlRow -> {
+        sqlService().execute(statement).iterator().forEachRemaining(sqlRow -> {
             int columnCount = sqlRow.getMetadata().getColumnCount();
             Object[] values = new Object[columnCount];
             for (int i = 0; i < columnCount; i++) {
@@ -264,5 +278,9 @@ public class SqlLimitTest extends SqlTestSupport {
         return Stream.of(rows)
                 .map(Row::new)
                 .collect(Collectors.toList());
+    }
+
+    private SqlService sqlService() {
+        return useClient ? sqlClientService : sqlService;
     }
 }

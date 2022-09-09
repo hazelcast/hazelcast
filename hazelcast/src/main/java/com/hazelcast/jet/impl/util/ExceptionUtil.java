@@ -230,9 +230,4 @@ public final class ExceptionUtil {
         return t != null && classToFind.isAssignableFrom(t.getClass());
     }
 
-    public static boolean isTechnicalCancellationException(Throwable t) {
-        Throwable peeledFailure = peel(t);
-        return peeledFailure instanceof CancellationException
-                || peeledFailure instanceof JobTerminateRequestedException;
-    }
 }

@@ -55,9 +55,9 @@ public class QueryResultProducerImpl implements QueryResultProducer {
      * batch jobs where low streaming latency isn't required, but rather we
      * want to return full pages of results to the client.
      */
-    public QueryResultProducerImpl(boolean isBatch) {
-        this.blockForNextItem = isBatch;
-        this.doneTracker = new QueryEndTracker(isBatch);
+    public QueryResultProducerImpl(boolean blockForNextItem) {
+        this.blockForNextItem = blockForNextItem;
+        this.doneTracker = new QueryEndTracker();
     }
 
     public void init(long limit, long offset) {
@@ -74,6 +74,7 @@ public class QueryResultProducerImpl implements QueryResultProducer {
         return iterator;
     }
 
+    @Override
     public void done() {
         doneTracker.markDone();
     }

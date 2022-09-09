@@ -315,7 +315,7 @@ public class TaskletExecutionService {
                         idlerLocal.idle(++idleCount);
                     }
                 } while (!result.isDone()
-                        && !tracker.executionTracker.executionCompletedExceptionally()
+                        && !tracker.executionTracker.executionCompleted()
                         && !isShutdown);
             } catch (Throwable e) {
                 handleTaskletExecutionError(tracker, e);
@@ -407,7 +407,7 @@ public class TaskletExecutionService {
             } finally {
                 contextContainer.setContext(null);
             }
-            if (t.executionTracker.executionCompletedExceptionally()) {
+            if (t.executionTracker.executionCompleted()) {
                 dismissTasklet(t);
             }
 
@@ -466,14 +466,17 @@ public class TaskletExecutionService {
 
         private final AtomicInteger completionLatch;
         private final AtomicReference<Throwable> executionException = new AtomicReference<>();
+        private volatile boolean completedEarly;
 
         ExecutionTracker(int taskletCount, CompletableFuture<Void> cancellationFuture) {
             this.completionLatch = new AtomicInteger(taskletCount);
             cancellationFuture.whenComplete(withTryCatch(logger, (r, e) -> {
                 if (e == null) {
-                    e = new IllegalStateException("cancellationFuture must be completed exceptionally");
+//                    e = new IllegalStateException("cancellationFuture must be completed exceptionally");
+                    completedEarly = true;
+                } else {
+                    exception(e);
                 }
-                exception(e);
                 // Don't interrupt the threads. We require that they do not block for too long,
                 // interrupting them might make the termination faster, but can also cause
                 // troubles, for example as in https://github.com/hazelcast/hazelcast-jet/issues/1946
@@ -496,8 +499,8 @@ public class TaskletExecutionService {
             }
         }
 
-        boolean executionCompletedExceptionally() {
-            return executionException.get() != null;
+        boolean executionCompleted() {
+            return completedEarly || executionException.get() != null;
         }
     }
 }

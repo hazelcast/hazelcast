@@ -314,6 +314,8 @@ public class ExecutionContext implements DynamicMetricsProvider {
         synchronized (executionLock) {
             if (mode == null) {
                 cancellationFuture.completeExceptionally(new ExecutionCancellationException(cause));
+            } else if (mode == TerminationMode.CANCEL_FORCEFUL_QUIET) {
+                cancellationFuture.complete(null);
             } else {
                 cancellationFuture.completeExceptionally(new JobTerminateRequestedException(mode));
             }

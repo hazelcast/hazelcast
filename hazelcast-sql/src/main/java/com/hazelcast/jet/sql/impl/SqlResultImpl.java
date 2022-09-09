@@ -16,6 +16,13 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.cluster.Address;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.TerminationMode;
+import com.hazelcast.jet.impl.operation.TerminateJobOperation;
+import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.AbstractSqlResult;
@@ -32,8 +39,12 @@ import javax.annotation.Nullable;
 import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
+
 class SqlResultImpl extends AbstractSqlResult {
 
+    private final HazelcastInstance hazelcastInstance;
+    private final long jobId;
     private final QueryId queryId;
     private final QueryResultProducer rootResultConsumer;
     private final SqlRowMetadata rowMetadata;
@@ -42,11 +53,15 @@ class SqlResultImpl extends AbstractSqlResult {
     private ResultIterator<SqlRow> iterator;
 
     SqlResultImpl(
+            HazelcastInstance hazelcastInstance,
+            long jobId,
             QueryId queryId,
             QueryResultProducer rootResultConsumer,
             SqlRowMetadata rowMetadata,
             boolean isInfiniteRows
     ) {
+        this.hazelcastInstance = hazelcastInstance;
+        this.jobId = jobId;
         this.queryId = queryId;
         this.rootResultConsumer = rootResultConsumer;
         this.rowMetadata = rowMetadata;
@@ -86,10 +101,27 @@ class SqlResultImpl extends AbstractSqlResult {
 
     @Override
     public void close(@Nullable QueryException exception) {
-        if (exception == null) {
-            exception = QueryException.cancelledByUser();
+        if (exception != null) {
+            rootResultConsumer.onError(exception);
+        } else {
+            sendJobTermination();
         }
-        rootResultConsumer.onError(exception);
+
+    }
+
+    private void sendJobTermination() {
+        rootResultConsumer.done();
+
+        Operation op = new TerminateJobOperation(jobId, TerminationMode.CANCEL_FORCEFUL_QUIET, true);
+        getNodeEngine(hazelcastInstance)
+            .getOperationService()
+            .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, coordinatorId())
+            .invoke();
+    }
+
+    private Address coordinatorId() {
+        NodeEngineImpl container = getNodeEngine(hazelcastInstance);
+        return container.getThisAddress();
     }
 
     private final class RowToSqlRowIterator implements ResultIterator<SqlRow> {

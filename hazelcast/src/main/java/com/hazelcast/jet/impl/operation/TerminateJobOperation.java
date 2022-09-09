@@ -43,13 +43,15 @@ public class TerminateJobOperation extends AsyncJobOperation {
         super(jobId);
         this.terminationMode = mode;
         this.isLightJob = isLightJob;
-        assert !isLightJob || terminationMode == TerminationMode.CANCEL_FORCEFUL;
+        assert !isLightJob
+                || terminationMode == TerminationMode.CANCEL_FORCEFUL
+                || terminationMode == TerminationMode.CANCEL_FORCEFUL_QUIET;
     }
 
     @Override
     public CompletableFuture<Void> doRun() {
         if (isLightJob) {
-            getJobCoordinationService().terminateLightJob(jobId());
+            getJobCoordinationService().terminateLightJob(jobId(), terminationMode);
             return completedFuture(null);
         } else {
             return getJobCoordinationService().terminateJob(jobId(), terminationMode);
