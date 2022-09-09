@@ -162,7 +162,7 @@ public class ClientUserCodeDeploymentTest extends ClientTestSupport {
     }
 
     @Test
-    public void testWithSplitBrain_clientReconnectsToOtherHalf() {
+    public void testClassesAreDeployed_whenClientReconnectsToOtherHalf() {
         ClientConfig clientConfig = createClientConfig();
         Config config = createNodeConfig();
 

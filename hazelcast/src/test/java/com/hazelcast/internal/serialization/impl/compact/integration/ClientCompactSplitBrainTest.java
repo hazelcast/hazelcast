@@ -50,7 +50,7 @@ public class ClientCompactSplitBrainTest extends ClientTestSupport {
     }
 
     @Test
-    public void testWithSplitBrain_clientReconnectsToOtherHalf() {
+    public void testLocalSchemasAreSent_whenClientReconnectsToOtherHalf() {
         Config config = smallInstanceConfig();
 
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);

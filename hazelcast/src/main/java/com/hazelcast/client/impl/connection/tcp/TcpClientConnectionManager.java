@@ -968,12 +968,12 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                     // completely dead. Since the cluster id is preserved in
                     // split brain scenarios, it is impossible to distinguish
                     // reconnection to the same cluster vs reconnection to the
-                    // other half of the split brain. However, in latter,
+                    // other half of the split brain. However, in the latter,
                     // we might need to send some state to the other half of
                     // the split brain (like Compact schemas or user code
-                    // deployment classes). That forces us to send client state
-                    // to the cluster after first cluster connection, regardless
-                    // the cluster id is changed or not.
+                    // deployment classes). That forces us to send the client
+                    // state to the cluster after the first cluster connection,
+                    // regardless the cluster id is changed or not.
                     clientState = ClientState.CONNECTED_TO_CLUSTER;
                     executor.execute(() -> initializeClientOnCluster(newClusterId));
                 } else {
