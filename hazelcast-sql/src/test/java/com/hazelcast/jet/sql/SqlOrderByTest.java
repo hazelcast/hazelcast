@@ -81,6 +81,7 @@ import static com.hazelcast.jet.sql.SqlBasicTest.SerializationMode.IDENTIFIED_DA
 import static com.hazelcast.jet.sql.SqlBasicTest.SerializationMode.SERIALIZABLE;
 import static com.hazelcast.jet.sql.SqlBasicTest.serializationConfig;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -828,6 +829,7 @@ public class SqlOrderByTest extends SqlTestSupport {
 
             assertThrows(IllegalStateException.class, res::iterator);
         }
+        assertTrueEventually(() -> assertThat(getTarget().getJet().getJobs()).isEmpty());
     }
 
     private void assertSqlResultCount(String sql, int expectedCount) {

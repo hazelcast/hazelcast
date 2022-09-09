@@ -151,10 +151,11 @@ public class SqlClientTest extends SqlTestSupport {
                     .map(c -> idToString(c.executionId()))
                     .collect(Collectors.joining(", "));
             assertEquals("remaining execIds: " + remainingContexts, 0, contexts.size());
-        }, 5);
+        }, 15);
 
         // assert that failedJobs is also cleaned up
         ConcurrentMap<Long, Long> failedJobs = jetService.getJobExecutionService().getFailedJobs();
         assertTrueEventually(() -> assertEquals(0, failedJobs.size()));
+        assertTrueEventually(() -> assertEquals(0, client.getJet().getJobs().size()));
     }
 }

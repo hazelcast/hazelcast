@@ -169,6 +169,8 @@ public class SqlLimitTest extends SqlTestSupport {
                 new Row(8L),
                 new Row(9L))
         );
+
+        assertTrueEventually(() -> assertThat(instance().getJet().getJobs()).isEmpty());
     }
 
     @Test
