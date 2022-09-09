@@ -26,9 +26,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
+import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE_TIME;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.NO_NEW_WM;
-import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 
@@ -40,9 +40,11 @@ public class KeyedWatermarkCoalescer {
     private final int queueCount;
     private final Map<Byte, WatermarkCoalescer> coalescers = new HashMap<>();
     private final Set<Integer> doneQueues = new HashSet<>();
+    private final boolean[] idleQueues;
 
     KeyedWatermarkCoalescer(int queueCount) {
         this.queueCount = queueCount;
+        this.idleQueues = new boolean[queueCount];
     }
 
     public Set<Byte> keys() {
@@ -54,6 +56,11 @@ public class KeyedWatermarkCoalescer {
             WatermarkCoalescer wc = WatermarkCoalescer.create(queueCount);
             for (Integer queueIndex : doneQueues) {
                 wc.queueDone(queueIndex);
+            }
+            for (int i = 0; i < idleQueues.length; ++i) {
+                if (idleQueues[i]) {
+                    wc.observeWm(i, IDLE_MESSAGE_TIME);
+                }
             }
             return wc;
         });
@@ -81,17 +88,39 @@ public class KeyedWatermarkCoalescer {
     }
 
     public List<Watermark> observeWm(int queueIndex, Watermark watermark) {
+        if (watermark.equals(IDLE_MESSAGE)) {
+            idleQueues[queueIndex] = true;
+            boolean allIdle = true;
+            // we need to track idle queues for the case when there's no coalescer yet
+            for (boolean idleQueue : idleQueues) {
+                allIdle &= idleQueue;
+            }
+
+            List<Watermark> watermarks = new ArrayList<>();
+            for (Entry<Byte, WatermarkCoalescer> coalescerEntry : coalescers.entrySet()) {
+                long observedWm = coalescerEntry.getValue().observeWm(queueIndex, watermark.timestamp());
+                assert observedWm != IDLE_MESSAGE_TIME;
+                if (observedWm != NO_NEW_WM) {
+                    watermarks.add(new Watermark(observedWm, coalescerEntry.getKey()));
+                }
+                assert coalescerEntry.getValue().idleMessagePending() == allIdle;
+            }
+
+            if (allIdle) {
+                watermarks.add(IDLE_MESSAGE);
+            }
+            return watermarks;
+        }
+
+        idleQueues[queueIndex] = false;
+
         WatermarkCoalescer c = coalescer(watermark.key());
         long newWmValue = c.observeWm(queueIndex, watermark.timestamp());
+        assert !c.idleMessagePending();
         if (newWmValue == NO_NEW_WM) {
-            return c.idleMessagePending()
-                    ? singletonList(new Watermark(IDLE_MESSAGE_TIME, watermark.key()))
-                    : emptyList();
+            return emptyList();
         }
-        Watermark newWm = new Watermark(newWmValue, watermark.key());
-        return c.idleMessagePending()
-                ? asList(newWm, new Watermark(IDLE_MESSAGE_TIME, watermark.key()))
-                : singletonList(newWm);
+        return singletonList(new Watermark(newWmValue, watermark.key()));
     }
 
     public long coalescedWm(byte key) {

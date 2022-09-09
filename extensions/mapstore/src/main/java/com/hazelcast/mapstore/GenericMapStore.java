@@ -198,14 +198,13 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
         } catch (Exception e) {
             if (e.getMessage() != null && e.getMessage().startsWith("Mapping or view already exists:")) {
                 readExistingMapping();
-                return;
             } else {
                 logger.warning(e);
                 initFailure = e;
             }
+        } finally {
+            initFinished.countDown();
         }
-
-        initFinished.countDown();
     }
 
     private String deriveMappingType() {
@@ -259,6 +258,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
     }
 
     private void readExistingMapping() {
+        logger.fine("Reading existing mapping for map" + mapName);
         try (SqlResult mappings = sql.execute("SHOW MAPPINGS")) {
             for (SqlRow mapping : mappings) {
                 String name = mapping.getObject(MAPPING_NAME_COLUMN);
@@ -267,13 +267,11 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
                     validateColumns(rowMetadata);
                     columnMetadataList = rowMetadata.getColumns();
                     queries = new Queries(name, properties.idColumn, columnMetadataList);
-                    initFinished.countDown();
-                    return;
+                    break;
                 }
             }
         } catch (Exception e) {
             initFailure = e;
-            initFinished.countDown();
         }
     }
 
@@ -292,9 +290,8 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
     @Override
     public void destroy() {
-        if (isMaster()) {
-            dropMapping(mapping);
-        }
+        awaitInitFinished();
+        dropMapping(mapping);
     }
 
     @Override
@@ -530,15 +527,8 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
         sql.execute(queries.deleteAll(keys.size()), keys.toArray()).close();
     }
 
-    /**
-     * Returns true if the instance where the MapStore is instantiated is master
-     */
-    private boolean isMaster() {
-        return nodeEngine().getClusterService().isMaster();
-    }
-
     private void dropMapping(String mappingName) {
-        sql.execute("DROP MAPPING \"" + mappingName + "\"").close();
+        sql.execute("DROP MAPPING IF EXISTS \"" + mappingName + "\"").close();
     }
 
     /**
@@ -547,7 +537,11 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
     private void awaitInitFinished() {
         try {
             boolean finished = initFinished.await(initTimeoutMillis, MILLISECONDS);
-            if (!finished || initFailure != null) {
+            if (!finished) {
+                throw new HazelcastException("MapStore init for map: " + mapName + " timed out after " + initTimeoutMillis
+                        + " ms", initFailure);
+            }
+            if (initFailure != null) {
                 throw new HazelcastException("MapStore init failed for map: " + mapName, initFailure);
             }
         } catch (InterruptedException e) {

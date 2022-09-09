@@ -106,7 +106,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void whenMapStoreDestroy_thenDropMapping() throws Exception {
+    public void whenMapStoreDestroyOnMaster_thenDropMapping() throws Exception {
         createTable(mapName);
 
         GenericMapStore<Object> mapStore = createMapStore();
@@ -119,7 +119,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void whenMapStoreDestroyNotMaster_thenDoNotDropMapping() throws Exception {
+    public void whenMapStoreDestroyOnNonMaster_thenDropMapping() throws Exception {
         createTable(mapName);
 
         createMapStore();
@@ -128,7 +128,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         GenericMapStore<Object> mapStoreNotMaster = createMapStore(instances()[1]);
         mapStoreNotMaster.destroy();
         assertTrueEventually(() -> {
-            assertRowsAnyOrder(hz, "SHOW MAPPINGS", newArrayList(new Row(MAPPING_PREFIX + mapName)));
+            assertRowsAnyOrder(hz, "SHOW MAPPINGS", newArrayList());
         }, 5);
     }
 

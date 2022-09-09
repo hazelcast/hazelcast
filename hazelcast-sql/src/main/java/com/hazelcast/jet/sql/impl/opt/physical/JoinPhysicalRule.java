@@ -63,7 +63,7 @@ public final class JoinPhysicalRule extends RelRule<RelRule.Config> {
         JoinLogicalRel logicalJoin = call.rel(0);
 
         JoinRelType joinType = logicalJoin.getJoinType();
-        if (joinType != JoinRelType.INNER && joinType != JoinRelType.LEFT) {
+        if (OptUtils.isBounded(logicalJoin) && (joinType != JoinRelType.INNER && joinType != JoinRelType.LEFT)) {
             throw new RuntimeException("Unexpected joinType: " + joinType);
         }
 

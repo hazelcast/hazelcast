@@ -17,7 +17,7 @@
 package com.hazelcast.client.util;
 
 import com.hazelcast.client.impl.connection.Addresses;
-import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRunner;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.util.AddressUtil;
@@ -50,7 +50,7 @@ public final class AddressHelper {
                 : addressHolder.getAddress();
     }
 
-    public static Addresses getSocketAddresses(String address, ClientConnectionProcessListener listener) {
+    public static Addresses getSocketAddresses(String address, ClientConnectionProcessListenerRunner listenerRunner) {
         AddressHolder addressHolder = AddressUtil.getAddressHolder(address, -1);
         String scopedAddress = getScopedHostName(addressHolder);
 
@@ -59,11 +59,11 @@ public final class AddressHelper {
         if (port == -1) {
             maxPortTryCount = MAX_PORT_TRIES;
         }
-        return getPossibleSocketAddresses(port, scopedAddress, maxPortTryCount, listener);
+        return getPossibleSocketAddresses(port, scopedAddress, maxPortTryCount, listenerRunner);
     }
 
     public static Addresses getPossibleSocketAddresses(int port, String scopedAddress, int portTryCount,
-                                                       ClientConnectionProcessListener listener) {
+                                                       ClientConnectionProcessListenerRunner listenerRunner) {
         InetAddress inetAddress = null;
         try {
             inetAddress = InetAddress.getByName(scopedAddress);
@@ -82,7 +82,7 @@ public final class AddressHelper {
                 try {
                     addressList.add(new Address(scopedAddress, possiblePort + i));
                 } catch (UnknownHostException ignored) {
-                    listener.hostNotFound(scopedAddress);
+                    listenerRunner.onHostNotFound(scopedAddress);
                     Logger.getLogger(AddressHelper.class).finest("Address not available", ignored);
                 }
             }

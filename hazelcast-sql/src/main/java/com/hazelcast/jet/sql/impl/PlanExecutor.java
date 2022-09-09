@@ -519,6 +519,9 @@ public class PlanExecutor {
                 }
             }
         } else if (SqlConnector.COMPACT_FORMAT.equals(format)) {
+            if (plan.columns().isEmpty()) {
+                throw QueryException.error("Column list is required to create Compact-based Types");
+            }
             type = new Type();
             type.setKind(TypeKind.COMPACT);
             type.setName(plan.name());
