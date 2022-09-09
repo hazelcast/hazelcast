@@ -30,6 +30,7 @@ import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.impl.exception.EnteringPassiveClusterStateException;
 import com.hazelcast.jet.impl.exception.JetDisabledException;
+import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
@@ -44,6 +45,7 @@ import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
@@ -226,5 +228,11 @@ public final class ExceptionUtil {
             t = t.getCause();
         }
         return t != null && classToFind.isAssignableFrom(t.getClass());
+    }
+
+    public static boolean isTechnicalCancellationException(Throwable t) {
+        Throwable peeledFailure = peel(t);
+        return peeledFailure instanceof CancellationException
+                || peeledFailure instanceof JobTerminateRequestedException;
     }
 }

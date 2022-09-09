@@ -16,8 +16,10 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.isTechnicalCancellationException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 
 /**
@@ -25,8 +27,8 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
  * - normally, without exception
  * - exceptionally, when some exception is being thrown.
  *
- * For streaming jobs it always add {@link QueryEndException} - even if query is marked as done normally. That's because
- * streaming queries should never end, so context closing via exception is nothing suspicious. We still
+ * For streaming jobs it always add {@link CancellationException} - even if query is marked as done normally.
+ * That's because streaming queries should never end, so context closing via exception is nothing suspicious. We still
  * hide this exception on the client side.
  *
  * Note that it remembers only the first exception that is passed.
@@ -44,7 +46,7 @@ class QueryEndTracker {
     void markDone() {
         if (!isBatch) {
             // exception just to make the streaming job end
-            exception.compareAndSet(null, new QueryEndException());
+            exception.compareAndSet(null, new CancellationException());
         }
         done = true;
     }
@@ -68,7 +70,7 @@ class QueryEndTracker {
     Status status() {
         if (done) {
             Exception ex = exception.get();
-            return ex == null || ex instanceof QueryEndException
+            return ex == null || isTechnicalCancellationException(ex)
                     ? Status.DONE_NORMALLY
                     : Status.DONE_EXCEPTIONALLY;
         } else {
@@ -86,18 +88,4 @@ class QueryEndTracker {
         NOT_DONE
     }
 
-    /**
-     * Exception marking the query as completed even if the inbound edges are still producing values.
-     *
-     * Needed for streaming jobs, where {@link com.hazelcast.jet.core.Processor#complete} will never be called
-     * if inbound edges are too fast. Should be always ignored on client side, it just means "no more data, but it's ok".
-     */
-    private static final class QueryEndException extends RuntimeException {
-
-        private QueryEndException() {
-            // Use writableStackTrace = false, the exception is not created at a place where it's thrown,
-            // it's better if it has no stack trace then.
-            super("Done by reaching the end specified by the query", null, false, false);
-        }
-    }
 }
