@@ -137,12 +137,16 @@ public class StepSupplier implements Supplier<Runnable> {
      */
     private void runStepWith(Step step, State state) {
         boolean runningOnPartitionThread = isRunningOnPartitionThread();
+        boolean metWithPreconditions = true;
         try {
             try {
                 log(step, state);
 
                 if (runningOnPartitionThread && state.getThrowable() == null) {
-                    operationRunner.metWithPreconditions(state.getOperation());
+                    metWithPreconditions = operationRunner.metWithPreconditions(state.getOperation());
+                    if (!metWithPreconditions) {
+                        return;
+                    }
                 }
                 step.runStep(state);
             } catch (NativeOutOfMemoryError e) {
@@ -158,8 +162,13 @@ public class StepSupplier implements Supplier<Runnable> {
             }
             state.setThrowable(throwable);
         } finally {
-            currentStep = nextStep(step);
-            currentRunnable = createRunnable(currentStep, state);
+            if (metWithPreconditions) {
+                currentStep = nextStep(step);
+                currentRunnable = createRunnable(currentStep, state);
+            } else {
+                currentStep = null;
+                currentRunnable = null;
+            }
         }
     }
 
