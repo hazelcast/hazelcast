@@ -117,7 +117,7 @@
         <parquet.version>1.12.3</parquet.version>
         <picocli.version>4.6.3</picocli.version>
         <postgresql.version>42.4.2</postgresql.version>
-        <prometheus.version>0.17.0</prometheus.version>
+        <prometheus.version>0.17.1</prometheus.version>
         <protobuf.version>3.19.4</protobuf.version>
         <scala.version>2.13</scala.version>
         <slf4j.version>1.7.36</slf4j.version>
