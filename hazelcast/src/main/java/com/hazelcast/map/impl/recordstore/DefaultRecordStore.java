@@ -199,7 +199,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 expiryMetadata.getMaxIdle(), expiryMetadata.getExpirationTime(),
                 now, expiryMetadata.getLastUpdateTime());
         mutationObserver.onReplicationPutRecord(dataKey, newRecord, populateIndexes);
-        updateStatsOnPut(replicatedRecord.getHits(), now);
 
         return newRecord;
     }
