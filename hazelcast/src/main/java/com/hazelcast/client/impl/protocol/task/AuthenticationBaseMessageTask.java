@@ -172,19 +172,19 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
         logger.warning("Received auth from " + connection + " with clientUuid " + clientUuid
                 + " and clientName " + clientName + ", authentication failed");
         byte status = CREDENTIALS_FAILED.getId();
-        return encodeAuth(status, null, null, serializationService.getVersion(), -1, null, clientFailoverSupported, false);
+        return encodeAuth(status, null, null, (byte) -1, -1, null, clientFailoverSupported, false);
     }
 
     private ClientMessage prepareNotAllowedInCluster() {
         boolean clientFailoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
         byte status = NOT_ALLOWED_IN_CLUSTER.getId();
-        return encodeAuth(status, null, null, serializationService.getVersion(), -1, null, clientFailoverSupported, false);
+        return encodeAuth(status, null, null, (byte) -1, -1, null, clientFailoverSupported, false);
     }
 
     private ClientMessage prepareSerializationVersionMismatchClientMessage() {
         boolean clientFailoverSupported = nodeEngine.getNode().getNodeExtension().isClientFailoverSupported();
-        return encodeAuth(SERIALIZATION_VERSION_MISMATCH.getId(), null, null, serializationService.getVersion(), -1,
-                null, clientFailoverSupported, false);
+        return encodeAuth(SERIALIZATION_VERSION_MISMATCH.getId(), null, null, (byte) -1, -1, null, clientFailoverSupported,
+                false);
     }
 
     private ClientMessage prepareAuthenticatedClientMessage() {

@@ -141,6 +141,7 @@ public class AuthenticationLeakTest {
                 ClientAuthenticationCodec.ResponseParameters responseParameters = ClientAuthenticationCodec.decodeResponse(res);
                 assertEquals(status.getId(), responseParameters.status);
                 assertEquals(-1, responseParameters.partitionCount);
+                assertEquals(-1, responseParameters.serializationVersion);
                 assertNull(responseParameters.address);
                 assertNull(responseParameters.memberUuid);
                 assertNull(responseParameters.clusterId);
