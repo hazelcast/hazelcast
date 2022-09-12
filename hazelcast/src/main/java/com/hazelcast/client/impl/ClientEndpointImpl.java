@@ -287,9 +287,7 @@ public final class ClientEndpointImpl implements ClientEndpoint {
         return "ClientEndpoint{"
                 + "clientUuid=" + clientUuid
                 + ", clientName=" + clientName
-                + ", authenticated=" + authenticated
                 + ", clientVersion=" + clientVersion
-                + ", creationTime=" + creationTime
                 + ", labels=" + labels
                 + '}';
     }
