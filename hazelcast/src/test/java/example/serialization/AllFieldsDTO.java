@@ -164,8 +164,12 @@ public class AllFieldsDTO {
 
     @Override
     public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
         AllFieldsDTO that = (AllFieldsDTO) o;
         return bool == that.bool && b == that.b && s == that.s && i == that.i && l == that.l && Float.compare(that.f, f) == 0
                 && Double.compare(that.d, d) == 0 && c == that.c && Objects.equals(str, that.str)
