@@ -459,6 +459,8 @@ public class ClientCompatibilityTest_2_5 {
     @Test
     public void test_ClientSendSchemaCodec_decodeResponse() {
         int fileClientMessageIndex = 44;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aSetOfUUIDs, ClientSendSchemaCodec.decodeResponse(fromFile)));
     }
 
     @Test

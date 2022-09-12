@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.protocol.codec.ClientFetchSchemaCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientSendAllSchemasCodec;
 import com.hazelcast.client.impl.protocol.codec.ClientSendSchemaCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.logging.ILogger;
@@ -28,17 +29,24 @@ import com.hazelcast.logging.ILogger;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
+
+import static com.hazelcast.client.properties.ClientProperty.INVOCATION_RETRY_PAUSE_MILLIS;
 
 public class ClientSchemaService implements SchemaService {
 
-    private final Map<Long, Schema> schemas = new ConcurrentHashMap<>();
+    private static final int MAX_PUT_RETRY_COUNT = 10;
     private final HazelcastClientInstanceImpl client;
+    private final Map<Long, Schema> schemas = new ConcurrentHashMap<>();
     private final ILogger logger;
+    private final long retryPauseMillis;
 
     public ClientSchemaService(HazelcastClientInstanceImpl client, ILogger logger) {
         this.client = client;
         this.logger = logger;
+        retryPauseMillis = client.getProperties().getPositiveMillisOrDefault(INVOCATION_RETRY_PAUSE_MILLIS);
     }
 
     @Override
@@ -67,9 +75,16 @@ public class ClientSchemaService implements SchemaService {
             return;
         }
 
-        ClientMessage clientMessage = ClientSendSchemaCodec.encodeRequest(schema);
-        ClientInvocation invocation = new ClientInvocation(client, clientMessage, SERVICE_NAME);
-        invocation.invoke().joinInternal();
+        if (!replicateSchemaInCluster(schema)) {
+            throw new IllegalStateException("The schema " + schema + " cannot be "
+                    + "replicated in the cluster, after " + MAX_PUT_RETRY_COUNT
+                    + " retries. It might be the case that the client is "
+                    + "connected to the to two halves of the cluster that is "
+                    + "experiencing a split-brain, and continue putting the "
+                    + "data associated with that schema might result in data "
+                    + "loss. It might be possible to replicate the schema "
+                    + "after some time, when the cluster is healed.");
+        }
 
         putIfAbsent(schema);
     }
@@ -106,5 +121,44 @@ public class ClientSchemaService implements SchemaService {
         ClientMessage clientMessage = ClientSendAllSchemasCodec.encodeRequest(new ArrayList<>(schemas.values()));
         ClientInvocation invocation = new ClientInvocation(client, clientMessage, SERVICE_NAME);
         invocation.invokeUrgent().joinInternal();
+    }
+
+    private boolean replicateSchemaInCluster(Schema schema) {
+        ClientMessage clientMessage = ClientSendSchemaCodec.encodeRequest(schema);
+        outer:
+        for (int i = 0; i < MAX_PUT_RETRY_COUNT; i++) {
+            ClientInvocation invocation = new ClientInvocation(client, clientMessage, SERVICE_NAME);
+            ClientMessage response = invocation.invoke().joinInternal();
+            Set<UUID> replicatedMemberUuids = ClientSendSchemaCodec.decodeResponse(response);
+            Set<Member> members = client.getCluster().getMembers();
+            for (Member member : members) {
+                if (!replicatedMemberUuids.contains(member.getUuid())) {
+                    // There is a member in our member list that the schema
+                    // is not known to be replicated yet. We should retry
+                    // sending it in a random member.
+
+                    // correlation id will be set when the invoke method is
+                    // called above
+                    clientMessage = clientMessage.copyWithUnsetCorrelationId();
+
+                    try {
+                        Thread.sleep(retryPauseMillis);
+                    } catch (InterruptedException e) {
+                        Thread.currentThread().interrupt();
+                        return false;
+                    }
+
+                    continue outer;
+                }
+            }
+
+            // All members in our member list all known to have the schema
+            return true;
+        }
+
+        // We tried to send it a couple of times, but the member list in our
+        // local and the member list returned by the initiator nodes did not
+        // match.
+        return false;
     }
 }

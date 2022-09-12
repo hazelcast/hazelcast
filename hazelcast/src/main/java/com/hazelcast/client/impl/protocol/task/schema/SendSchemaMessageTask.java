@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task.schema;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientSendSchemaCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAsyncMessageTask;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
@@ -26,9 +27,12 @@ import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 
 import java.security.Permission;
+import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors;
 
-public class SendSchemaMessageTask extends AbstractAsyncMessageTask<Schema, Void> {
+public class SendSchemaMessageTask extends AbstractAsyncMessageTask<Schema, Collection<UUID>> {
 
     public SendSchemaMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -40,14 +44,20 @@ public class SendSchemaMessageTask extends AbstractAsyncMessageTask<Schema, Void
     }
 
     @Override
-    protected CompletableFuture<Void> processInternal() {
+    protected CompletableFuture<Collection<UUID>> processInternal() {
+        nodeEngine.getClusterService().getMembers();
         MemberSchemaService memberSchemaService = getService(getServiceName());
-        return memberSchemaService.putAsync(parameters);
+
+        // After replicating the schema, we will return the current member list
+        // in this member, as we for sure that the schema is replicated in these
+        // members.
+        return memberSchemaService.putAsync(parameters)
+                .thenApply(ignored -> getCurrentMemberUuids());
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ClientSendSchemaCodec.encodeResponse();
+        return ClientSendSchemaCodec.encodeResponse((Collection<UUID>) response);
     }
 
     @Override
@@ -73,5 +83,12 @@ public class SendSchemaMessageTask extends AbstractAsyncMessageTask<Schema, Void
     @Override
     public Object[] getParameters() {
         return null;
+    }
+
+    private Collection<UUID> getCurrentMemberUuids() {
+        return nodeEngine.getClusterService().getMembers()
+                .stream()
+                .map(Member::getUuid)
+                .collect(Collectors.toList());
     }
 }
