@@ -175,7 +175,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
 
             logger.severe(message);
 
-            closeReason = new AuthenticationException(message).getMessage();
+            closeReason = message;
             exception = new RetryableHazelcastException(new AuthenticationException(secureMessage));
         } else {
             exception = new HazelcastInstanceNotActiveException();
