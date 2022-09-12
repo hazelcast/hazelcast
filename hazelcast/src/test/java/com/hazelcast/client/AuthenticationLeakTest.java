@@ -107,8 +107,7 @@ public class AuthenticationLeakTest {
             String message = runtimeException.getMessage();
             assertContains(message, "AuthenticationException");
             assertContains(message, "must authenticate before any operation");
-            assertNotContains(message, "connection");
-            assertNotContains(message, "Connection");
+            assertNotContains(message.toLowerCase(), "connection");
         }
     }
 
