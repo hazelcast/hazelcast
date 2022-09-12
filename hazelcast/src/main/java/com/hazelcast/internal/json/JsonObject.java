@@ -24,6 +24,7 @@ package com.hazelcast.internal.json;
 import com.hazelcast.internal.json.JsonObject.Member;
 import com.hazelcast.internal.serialization.SerializableByConvention;
 
+import javax.annotation.concurrent.NotThreadSafe;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.ArrayList;
@@ -66,6 +67,7 @@ import java.util.List;
  * This class is <strong>not supposed to be extended</strong> by clients.
  */
 @SerializableByConvention
+@NotThreadSafe
 public class JsonObject extends JsonValue implements Iterable<Member> {
 
   private static final long serialVersionUID = -1139160206104439809L;

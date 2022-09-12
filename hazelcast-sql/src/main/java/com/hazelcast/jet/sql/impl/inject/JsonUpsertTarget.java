@@ -19,23 +19,23 @@ package com.hazelcast.jet.sql.impl.inject;
 import javax.annotation.concurrent.NotThreadSafe;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.ObjectOutputStream;
+import java.nio.charset.StandardCharsets;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 
 @SuppressWarnings("SpellCheckingInspection")
 @NotThreadSafe
 class JsonUpsertTarget extends HazelcastJsonUpsertTarget {
+    private final ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
     JsonUpsertTarget() {
     }
 
     @Override
     public Object conclude() {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        baos.reset();
         try {
-            ObjectOutputStream oos = new ObjectOutputStream(baos);
-            oos.writeObject(json);
-            oos.close();
+            baos.write(json.toString().getBytes(StandardCharsets.UTF_8));
         } catch (IOException e) {
             throw sneakyThrow(e);
         }

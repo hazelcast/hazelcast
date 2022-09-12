@@ -201,6 +201,7 @@ public class SqlJsonTest extends SqlTestSupport {
 
         sqlService.execute("INSERT INTO " + to + " SELECT '1', f.* FROM " + from + " f");
 
+        // TODO: no support for map ?!
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM " + to,
                 singletonList(new Row(
