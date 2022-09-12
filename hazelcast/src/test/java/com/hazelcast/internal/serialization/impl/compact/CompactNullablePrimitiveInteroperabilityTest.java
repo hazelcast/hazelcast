@@ -133,10 +133,10 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         ArrayOfFixedSizeFieldsDTO arrayOfFixedSizeFieldsDTO = createArrayOfFixedSizeFieldsDTO();
         SerializationService serializationService = createSerializationService(ArrayOfFixedSizeFieldsDTOSerializerReadingNullable::new);
 
-        Data data2 = serializationService.toData(arrayOfFixedSizeFieldsDTO);
-        ArrayOfFixedSizeFieldsDTO obj2 = serializationService.toObject(data2);
+        Data data = serializationService.toData(arrayOfFixedSizeFieldsDTO);
+        ArrayOfFixedSizeFieldsDTO obj = serializationService.toObject(data);
 
-        assertEquals(obj2, arrayOfFixedSizeFieldsDTO);
+        assertEquals(obj, arrayOfFixedSizeFieldsDTO);
     }
 
     @Test
@@ -156,10 +156,10 @@ public class CompactNullablePrimitiveInteroperabilityTest {
         SerializationService serializationService =
                 createSerializationService(ArrayOfFixedSizeFieldsDTOSerializerWritingNullable::new);
 
-        Data data2 = serializationService.toData(arrayOfFixedSizeFieldsDTO);
-        ArrayOfFixedSizeFieldsDTO obj2 = serializationService.toObject(data2);
+        Data data = serializationService.toData(arrayOfFixedSizeFieldsDTO);
+        ArrayOfFixedSizeFieldsDTO obj = serializationService.toObject(data);
 
-        assertEquals(obj2, arrayOfFixedSizeFieldsDTO);
+        assertEquals(obj, arrayOfFixedSizeFieldsDTO);
     }
 
     void assertReadAsNullable(GenericRecord record) {

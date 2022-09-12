@@ -188,7 +188,7 @@ public class CompactStreamSerializerTest {
 
         assertThatThrownBy(() -> serializationService.toObject(data))
                 .isInstanceOf(HazelcastSerializationException.class)
-                .hasMessageContaining("Unexpected field kind");
+                .hasMessageContaining("Invalid field kind");
     }
 
     @Test

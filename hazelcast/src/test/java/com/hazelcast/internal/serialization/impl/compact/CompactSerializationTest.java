@@ -115,11 +115,7 @@ public class CompactSerializationTest {
 
     @Test
     public void testReadWhenFieldDoesNotExist() {
-        SerializationConfig config = new SerializationConfig();
-        config.getCompactSerializationConfig()
-                .addSerializer(new NonExistingFieldReadingSerializer());
-
-        SerializationService service = createSerializationService(config);
+        SerializationService service = createSerializationService(NonExistingFieldReadingSerializer::new);
 
         Foo foo = new Foo(42);
         Data data = service.toData(foo);

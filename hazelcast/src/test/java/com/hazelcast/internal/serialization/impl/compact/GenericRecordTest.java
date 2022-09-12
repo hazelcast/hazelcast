@@ -257,6 +257,6 @@ public class GenericRecordTest {
 
         assertThatThrownBy(() -> {
             internalGenericRecord.getInt64("foo");
-        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Unexpected field kind");
+        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Invalid field kind");
     }
 }

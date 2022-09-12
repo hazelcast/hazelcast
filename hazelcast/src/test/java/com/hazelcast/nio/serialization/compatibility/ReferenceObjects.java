@@ -28,6 +28,7 @@ import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects;
 import example.serialization.MainDTO;
+import example.serialization.ReflectiveMainDTO;
 
 import java.io.Externalizable;
 import java.io.Serializable;
@@ -249,11 +250,13 @@ class ReferenceObjects {
         aCompact.offsetDateTime = aOffsetDateTime;
     }
 
+    static ReflectiveMainDTO aReflectiveCompact = CompactTestUtil.createReflectiveMainDTO();
+
     static Object[] allTestObjects = {
             aNullObject, aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString, aUUID, anInnerPortable,
             aSimpleMapEntry, aSimpleImmutableMapEntry, booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
             aCustomStreamSerializable, aCustomByteArraySerializable,
-            anIdentifiedDataSerializable, aPortable, aCompact,
+            anIdentifiedDataSerializable, aPortable, aCompact, aReflectiveCompact,
             aDate, aLocalDate, aLocalTime, aLocalDateTime, aOffsetDateTime, aBigInteger, aBigDecimal, aClass,
             aFullOptional, anEnum, serializable, externalizable,
             arrayList, linkedList, copyOnWriteArrayList, concurrentSkipListMap, concurrentHashMap, linkedHashMap, treeMap,

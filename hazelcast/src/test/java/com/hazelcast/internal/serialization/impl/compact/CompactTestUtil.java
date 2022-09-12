@@ -26,9 +26,11 @@ import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import example.serialization.ExternalizableEmployeeDTO;
+import example.serialization.HiringStatus;
 import example.serialization.InnerDTO;
 import example.serialization.MainDTO;
 import example.serialization.NamedDTO;
+import example.serialization.ReflectiveMainDTO;
 import example.serialization.SerializableEmployeeDTO;
 
 import javax.annotation.Nonnull;
@@ -39,8 +41,13 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 
@@ -141,6 +148,27 @@ public final class CompactTestUtil {
                 new BigDecimal("12312313"), LocalTime.now(), LocalDate.now(), LocalDateTime.now(), OffsetDateTime.now(),
                 (byte) 113, true, '\u4567', (short) -500, 56789, -50992225L, 900.5678f,
                 -897543.3678909d);
+    }
+
+    @Nonnull
+    public static ReflectiveMainDTO createReflectiveMainDTO() {
+        List<Integer> listOfIntegers = Arrays.asList(1, 3, 5, 6);
+        Map<Integer, Integer> mapOfIntegers = new HashMap<>();
+        mapOfIntegers.put(1, 2);
+        mapOfIntegers.put(3, 4);
+        mapOfIntegers.put(5, 6);
+        Set<Integer> setOfIntegers = new HashSet<>();
+        setOfIntegers.add(1);
+        setOfIntegers.add(2);
+        setOfIntegers.add(3);
+        InnerDTO inner = createInnerDTO();
+        return new ReflectiveMainDTO((byte) 113, true, '\u1256', (short) -500, 56789, -50992225L, 900.5678f,
+                -897543.3678909d, "this is main object created for testing!", inner,
+                new BigDecimal("12312313"), LocalTime.of(1, 2, 3, 999999999), LocalDate.of(-999999999, 3, 31),
+                LocalDateTime.of(-999999999, 3, 31, 1, 2, 3, 999999999),
+                OffsetDateTime.of(-999999999, 3, 31, 1, 2, 3, 999999999, ZoneOffset.UTC),
+                (byte) 113, true, '\u4567', (short) -500, 56789, -50992225L, 900.5678f,
+                -897543.3678909d, HiringStatus.HIRING, listOfIntegers, mapOfIntegers, setOfIntegers);
     }
 
     @Nonnull

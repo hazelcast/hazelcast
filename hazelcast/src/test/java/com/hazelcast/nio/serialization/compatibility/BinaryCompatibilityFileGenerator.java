@@ -24,7 +24,9 @@ import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import example.serialization.InnerDTOSerializer;
 import example.serialization.MainDTOSerializer;
+import example.serialization.NamedDTOSerializer;
 
 import java.io.DataOutputStream;
 import java.io.FileOutputStream;
@@ -84,7 +86,7 @@ final class BinaryCompatibilityFileGenerator {
             config.addSerializerConfig(serializerConfig);
         }
         config.setByteOrder(byteOrder);
-        config.getCompactSerializationConfig().addSerializer(new MainDTOSerializer());
+        config.getCompactSerializationConfig().setSerializers(new MainDTOSerializer(), new InnerDTOSerializer(), new NamedDTOSerializer());
         ClassDefinition classDefinition =
                 new ClassDefinitionBuilder(ReferenceObjects.PORTABLE_FACTORY_ID, ReferenceObjects.INNER_PORTABLE_CLASS_ID)
                         .addIntField("i").addFloatField("f").build();
