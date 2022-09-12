@@ -25,6 +25,7 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
+import example.serialization.EmployeeDTO;
 import example.serialization.ExternalizableEmployeeDTO;
 import example.serialization.HiringStatus;
 import example.serialization.InnerDTO;
@@ -161,14 +162,25 @@ public final class CompactTestUtil {
         setOfIntegers.add(1);
         setOfIntegers.add(2);
         setOfIntegers.add(3);
-        InnerDTO inner = createInnerDTO();
-        return new ReflectiveMainDTO((byte) 113, true, '\u1256', (short) -500, 56789, -50992225L, 900.5678f,
-                -897543.3678909d, "this is main object created for testing!", inner,
+
+        return new ReflectiveMainDTO(true, (byte) 113, (short) -500, 56789, -50992225L, 900.5678f,
+                -897543.3678909d, "this is main object created for testing!",
                 new BigDecimal("12312313"), LocalTime.of(1, 2, 3, 999999999), LocalDate.of(-999999999, 3, 31),
                 LocalDateTime.of(-999999999, 3, 31, 1, 2, 3, 999999999),
-                OffsetDateTime.of(-999999999, 3, 31, 1, 2, 3, 999999999, ZoneOffset.UTC),
-                (byte) 113, true, '\u4567', (short) -500, 56789, -50992225L, 900.5678f,
-                -897543.3678909d, HiringStatus.HIRING, listOfIntegers, mapOfIntegers, setOfIntegers);
+                OffsetDateTime.of(-999999999, 3, 31, 1, 2, 3, 999999999, ZoneOffset.UTC), true,
+                (byte) 113, (short) -500, 56789, -50992225L, 900.5678f, -897543.3678909d,
+                new boolean[]{true, false}, new byte[]{0, 1, 2}, new short[]{3, 4, 5},
+                 new int[]{9, 8, 7, 6}, new long[]{0, 1, 5, 7, 9, 11},
+                new float[]{0.6543f, -3.56f, 45.67f}, new double[]{456.456, 789.789, 321.321},
+                new String[]{"test", null}, new BigDecimal[]{new BigDecimal("12345"), new BigDecimal("123456")},
+                new LocalTime[]{LocalTime.of(22, 13, 15, 123123), null, LocalTime.of(1, 2, 3, 999_999_999)},
+                new LocalDate[]{LocalDate.of(2022, 12, 23), null, LocalDate.of(999_999_999, 1, 2)},
+                new LocalDateTime[]{LocalDateTime.of(2022, 12, 23, 22, 13, 15, 123123), null},
+                new OffsetDateTime[]{OffsetDateTime.of(2022, 12, 23, 22, 13, 15, 123123, ZoneOffset.MAX)},
+                new Boolean[]{true, false, null}, new Byte[]{0, 1, 2, null}, new Short[]{3, 4, 5, null},
+                new Integer[]{9, 8, 7, 6, null}, new Long[]{0L, 1L, 5L, 7L, 9L, 11L}, new Float[]{0.6543f, -3.56f, 45.67f},
+                new Double[]{456.456, 789.789, 321.321}, new EmployeeDTO(123, 123L), '\u1256', new char[]{'0', 'a', 'b'},
+                '\u4567', new Character[]{'i', null, '9'}, HiringStatus.HIRING, listOfIntegers, mapOfIntegers, setOfIntegers);
     }
 
     @Nonnull
