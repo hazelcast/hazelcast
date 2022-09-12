@@ -1,13 +1,4 @@
-# For most projects, this workflow file will not need changing; you simply need
-# to commit it to your repository.
-#
-# You may wish to alter this file to override the set of languages analyzed,
-# or to provide custom queries or build logic.
-#
-# ******** NOTE ********
-# We have attempted to detect the languages in your repository. Please check
-# the `language` matrix defined below to confirm you have the correct set of
-# supported CodeQL languages.
+# See the `.github/codeql/README.md` file
 #
 name: "CodeQL"
 
@@ -17,8 +8,11 @@ on:
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ "master" ]
-  schedule:
-    - cron: '21 8 * * 6'
+  workflow_dispatch:
+    inputs:
+      reference:
+        description: 'Branch/tag/commit-id in hazelcast/hazelcast to scan. Keep it empty for using latest master.'
+        required: false
 
 jobs:
   analyze:
@@ -39,6 +33,8 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v3
+      with:
+        ref: ${{ github.event.inputs.reference }}
 
     - name: Setup local maven cache
       uses: actions/cache@v3
@@ -60,25 +56,9 @@ jobs:
         # queries: security-extended,security-and-quality
 
         
-    # Autobuild attempts to build any compiled languages  (C/C++, C#, or Java).
-    # If this step fails, then you should remove it and run the build manually (see below)
     - name: Custom Java build
       run: |
         ./mvnw -B -V -e clean package -Dfindbugs.skip -Dcheckstyle.skip -Dpmd.skip=true -Dspotbugs.skip -Denforcer.skip -Dmaven.javadoc.skip -DskipTests -Dlicense.skip=true -Drat.skip=true -Dspotless.check.skip=true -Dmaven.test.skip -Dattribution.skip -Danimal.sniffer.skip=true -Dmaven.source.skip=true
-        for MODULE in $MODULES_TO_KEEP; do
-          mv $MODULE/target $MODULE/target-keep
-        done;
-        ./mvnw -B -V -e clean
-
-    # ℹ️ Command-line programs to run using the OS shell.
-    # 📚 See https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions#jobsjob_idstepsrun
-
-    #   If the Autobuild fails above, remove it and uncomment the following three lines.
-    #   modify them (or add more) to build your code if your project, please refer to the EXAMPLE below for guidance.
-
-    # - run: |
-    #   echo "Run, Build Application using script"
-    #   ./location_of_script_within_repo/buildscript.sh
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v2
