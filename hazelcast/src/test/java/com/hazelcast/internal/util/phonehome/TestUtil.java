@@ -18,6 +18,7 @@ package com.hazelcast.internal.util.phonehome;
 
 import com.hazelcast.client.impl.ClientEndpointStatisticsManagerImpl;
 import com.hazelcast.client.impl.ClientEngineImpl;
+import com.hazelcast.client.impl.clientside.ClientTestUtil;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.core.HazelcastInstance;
@@ -44,7 +45,6 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
 import static com.hazelcast.internal.nio.IOUtil.readFully;
 import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY;
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 
 public class TestUtil {
 
@@ -121,7 +121,7 @@ public class TestUtil {
             OutputStream os = socket.getOutputStream();
             InputStream is = socket.getInputStream();
             os.write(CLIENT_BINARY.getBytes(StandardCharsets.UTF_8));
-            writeClientMessage(os, authenticationRequest);
+            ClientTestUtil.writeClientMessage(os, authenticationRequest);
             readResponse(is);
         }
 
@@ -141,36 +141,6 @@ public class TestUtil {
                 }
             }
             return clientMessage;
-        }
-
-        private void writeClientMessage(OutputStream os, final ClientMessage clientMessage) throws IOException {
-            for (ClientMessage.ForwardFrameIterator it = clientMessage.frameIterator(); it.hasNext(); ) {
-                ClientMessage.Frame frame = it.next();
-                os.write(frameAsBytes(frame, !it.hasNext()));
-            }
-            os.flush();
-        }
-
-        private byte[] frameAsBytes(ClientMessage.Frame frame, boolean isLastFrame) {
-            byte[] content = frame.content != null ? frame.content : new byte[0];
-            int frameSize = content.length + SIZE_OF_FRAME_LENGTH_AND_FLAGS;
-            ByteBuffer buffer = ByteBuffer.allocateDirect(frameSize);
-            buffer.order(ByteOrder.LITTLE_ENDIAN);
-            buffer.putInt(frameSize);
-            if (!isLastFrame) {
-                buffer.putShort((short) frame.flags);
-            } else {
-                buffer.putShort((short) (frame.flags | IS_FINAL_FLAG));
-            }
-            buffer.put(content);
-            return byteBufferToBytes(buffer);
-        }
-
-        private byte[] byteBufferToBytes(ByteBuffer buffer) {
-            upcast(buffer).flip();
-            byte[] requestBytes = new byte[buffer.limit()];
-            buffer.get(requestBytes);
-            return requestBytes;
         }
     }
 

@@ -17,6 +17,7 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.impl.ClientSelectors;
+import com.hazelcast.client.impl.clientside.ClientTestUtil;
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
@@ -32,7 +33,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.util.HashUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -56,7 +57,6 @@ import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
 import static com.hazelcast.internal.nio.IOUtil.readFully;
 import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY;
-import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.test.Accessors.getClientEngineImpl;
 import static com.hazelcast.test.HazelcastTestSupport.assertContains;
 import static com.hazelcast.test.HazelcastTestSupport.assertNotContains;
@@ -65,17 +65,17 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({ SlowTest.class })
-public class AuthenticationLeakTest {
+@Category({ QuickTest.class })
+public class AuthenticationInformationLeakTest {
 
-    static byte serVersion;
-    HazelcastInstance instance;
-    String clusterName;
+    private static byte serializationVersion;
+    private HazelcastInstance instance;
+    private String clusterName;
 
     @BeforeClass
     public static void setupClass() {
         InternalSerializationService ss = new DefaultSerializationServiceBuilder().build();
-        serVersion = ss.getVersion();
+        serializationVersion = ss.getVersion();
     }
 
     @Before
@@ -88,7 +88,6 @@ public class AuthenticationLeakTest {
 
     @After
     public void cleanUp() {
-        HazelcastClient.shutdownAll();
         Hazelcast.shutdownAll();
     }
 
@@ -113,19 +112,19 @@ public class AuthenticationLeakTest {
 
     @Test
     public void testFailedAuthenticationDoesNotLeakInfoCredentialsFailed() throws Exception {
-        authenticateAndAssert(AuthenticationStatus.CREDENTIALS_FAILED, serVersion, true, clusterName);
+        authenticateAndAssert(AuthenticationStatus.CREDENTIALS_FAILED, serializationVersion, true, clusterName);
     }
 
     @Test
     public void testFailedAuthenticationDoesNotLeakInfoSerializationVersionMismatch() throws Exception {
-        authenticateAndAssert(AuthenticationStatus.SERIALIZATION_VERSION_MISMATCH, (byte) (serVersion + 1), false, clusterName);
+        authenticateAndAssert(AuthenticationStatus.SERIALIZATION_VERSION_MISMATCH, (byte) (serializationVersion + 1), false, clusterName);
     }
 
     @Test
     public void testFailedAuthenticationDoesNotLeakInfoClientNotAllowed() throws Exception {
         // No client is allowed in the cluster
         getClientEngineImpl(instance).applySelector(ClientSelectors.none());
-        authenticateAndAssert(AuthenticationStatus.NOT_ALLOWED_IN_CLUSTER, serVersion, false, clusterName);
+        authenticateAndAssert(AuthenticationStatus.NOT_ALLOWED_IN_CLUSTER, serializationVersion, false, clusterName);
     }
 
     private void authenticateAndAssert(AuthenticationStatus status, byte serVersion, boolean useWrongClusterName, String clusterName) throws IOException {
@@ -141,6 +140,7 @@ public class AuthenticationLeakTest {
                 assertEquals(status.getId(), responseParameters.status);
                 assertEquals(-1, responseParameters.partitionCount);
                 assertEquals(-1, responseParameters.serializationVersion);
+                assertEquals("", responseParameters.serverHazelcastVersion);
                 assertNull(responseParameters.address);
                 assertNull(responseParameters.memberUuid);
                 assertNull(responseParameters.clusterId);
@@ -152,7 +152,7 @@ public class AuthenticationLeakTest {
             throws IOException {
         UUID uuid = new UUID(0, 0);
         ClientMessage msg = ClientAuthenticationCodec.encodeRequest(clusterName, null, null, uuid, "", serVersion, "", "", new ArrayList<>());
-        writeClientMessage(os, msg);
+        ClientTestUtil.writeClientMessage(os, msg);
         return readResponse(is, ClientAuthenticationCodec.RESPONSE_MESSAGE_TYPE);
     }
 
@@ -161,43 +161,13 @@ public class AuthenticationLeakTest {
         Data keyData = ss.toData("key");
         ClientMessage msg = MapGetCodec.encodeRequest("mapName", keyData, 0);
         msg.setPartitionId(getPartitionId(keyData));
-        writeClientMessage(os, msg);
+        ClientTestUtil.writeClientMessage(os, msg);
         readResponse(is, MapGetCodec.RESPONSE_MESSAGE_TYPE);
     }
 
     private int getPartitionId(Data keyData) {
         int hash = keyData.getPartitionHash();
         return HashUtil.hashToIndex(hash, 271);
-    }
-
-    private void writeClientMessage(OutputStream os, final ClientMessage clientMessage) throws IOException {
-        for (ClientMessage.ForwardFrameIterator it = clientMessage.frameIterator(); it.hasNext();) {
-            ClientMessage.Frame frame = it.next();
-            os.write(frameAsBytes(frame, !it.hasNext()));
-        }
-        os.flush();
-    }
-
-    private byte[] frameAsBytes(ClientMessage.Frame frame, boolean isLastFrame) {
-        byte[] content = frame.content != null ? frame.content : new byte[0];
-        int frameSize = content.length + SIZE_OF_FRAME_LENGTH_AND_FLAGS;
-        ByteBuffer buffer = ByteBuffer.allocateDirect(frameSize);
-        buffer.order(ByteOrder.LITTLE_ENDIAN);
-        buffer.putInt(frameSize);
-        if (!isLastFrame) {
-            buffer.putShort((short) frame.flags);
-        } else {
-            buffer.putShort((short) (frame.flags | IS_FINAL_FLAG));
-        }
-        buffer.put(content);
-        return byteBufferToBytes(buffer);
-    }
-
-    private static byte[] byteBufferToBytes(ByteBuffer buffer) {
-        upcast(buffer).flip();
-        byte[] requestBytes = new byte[buffer.limit()];
-        buffer.get(requestBytes);
-        return requestBytes;
     }
 
     private ClientMessage readResponse(InputStream is, int expectedMsgType) throws IOException {

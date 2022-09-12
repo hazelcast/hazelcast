@@ -16,8 +16,18 @@
 
 package com.hazelcast.client.impl.clientside;
 
+import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.internal.serialization.SerializationService;
+
+import java.io.IOException;
+import java.io.OutputStream;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+
+import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
+import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
 
 public final class ClientTestUtil {
 
@@ -33,5 +43,28 @@ public final class ClientTestUtil {
 
     public static SerializationService getClientSerializationService(HazelcastInstance hz) {
         return getHazelcastClientInstanceImpl(hz).getSerializationService();
+    }
+
+    public static void writeClientMessage(OutputStream os, final ClientMessage clientMessage) throws IOException {
+        for (ClientMessage.ForwardFrameIterator it = clientMessage.frameIterator(); it.hasNext(); ) {
+            ClientMessage.Frame frame = it.next();
+            os.write(frameAsBytes(frame, !it.hasNext()));
+        }
+        os.flush();
+    }
+
+    public static byte[] frameAsBytes(ClientMessage.Frame frame, boolean isLastFrame) {
+        byte[] content = frame.content != null ? frame.content : new byte[0];
+        int frameSize = content.length + SIZE_OF_FRAME_LENGTH_AND_FLAGS;
+        ByteBuffer buffer = ByteBuffer.allocateDirect(frameSize);
+        buffer.order(ByteOrder.LITTLE_ENDIAN);
+        buffer.putInt(frameSize);
+        if (!isLastFrame) {
+            buffer.putShort((short) frame.flags);
+        } else {
+            buffer.putShort((short) (frame.flags | IS_FINAL_FLAG));
+        }
+        buffer.put(content);
+        return TestUtil.byteBufferToBytes(buffer);
     }
 }
