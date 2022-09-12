@@ -87,7 +87,7 @@ public class CompactStreamSerializerTest {
     }
 
     @Test
-    public void testAllTypesWithCustomSerializer() {
+    public void testAllTypes() {
         CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
         compactSerializationConfig.setSerializers(new MainDTOSerializer(), new InnerDTOSerializer());
         SerializationService serializationService = createSerializationService(compactSerializationConfig);
@@ -100,7 +100,7 @@ public class CompactStreamSerializerTest {
     }
 
     @Test
-    public void testNoFieldsWithCustomSerializer() {
+    public void testNoFields() {
         SerializationService serializationService = createSerializationService(EmptyDTOSerializer::new);
         EmptyDTO expected = new EmptyDTO();
 
@@ -111,7 +111,7 @@ public class CompactStreamSerializerTest {
     }
 
     @Test
-    public void testVarSizedFieldsWithCustomSerializer() {
+    public void testVarSizedFields() {
         CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
         compactSerializationConfig.addSerializer(new VarSizedFieldsDTOSerializer());
         compactSerializationConfig.addSerializer(new InnerDTOSerializer());
@@ -125,7 +125,7 @@ public class CompactStreamSerializerTest {
     }
 
     @Test
-    public void testFixedSizedFieldsWithCustomSerializer() {
+    public void testFixedSizedFields() {
         CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
         compactSerializationConfig.addSerializer(new FixedSizeFieldsDTOSerializer());
         compactSerializationConfig.addSerializer(new InnerDTOSerializer());

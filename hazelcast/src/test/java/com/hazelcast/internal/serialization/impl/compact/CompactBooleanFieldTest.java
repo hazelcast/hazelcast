@@ -60,7 +60,7 @@ public class CompactBooleanFieldTest {
     }
 
     @Test
-    public void testBooleanArrayWithCustomSerializer() {
+    public void testBooleanArray() {
         SerializationService serializationService = createSerializationService(BoolArrayDTOSerializer::new);
         boolean[] bools = getBooleans(itemCount);
         BoolArrayDTO expected = new BoolArrayDTO(bools);
