@@ -61,7 +61,7 @@ public class ToRowJsonFunction extends UniExpressionWithType<HazelcastJsonValue>
         if (obj instanceof GenericRecord) {
             throw QueryException.error("TO_ROW_JSON function is only supported for Java Types");
         }
-        final List<Object> values = new ArrayList<>();
+        final List<Object> values = new ArrayList<>(queryDataType.getObjectFields().size());
         convert(obj, values, queryDataType, newSetFromMap(new IdentityHashMap<>()));
 
         return new HazelcastJsonValue(JsonCreationUtil.serializeValue(values));
