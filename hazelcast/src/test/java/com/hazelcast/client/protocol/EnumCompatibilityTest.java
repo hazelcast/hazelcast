@@ -320,6 +320,7 @@ public class EnumCompatibilityTest {
         mappings.put(TerminationMode.SUSPEND_FORCEFUL, 3);
         mappings.put(TerminationMode.CANCEL_GRACEFUL, 4);
         mappings.put(TerminationMode.CANCEL_FORCEFUL, 5);
+        mappings.put(TerminationMode.CANCEL_FORCEFUL_QUIET, 6);
         verifyCompatibility(TerminationMode.values(), TerminationMode::ordinal, mappings);
     }
 

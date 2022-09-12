@@ -363,24 +363,6 @@ public class TaskletExecutionServiceTest extends JetTestSupport {
         f.cancel(true);
     }
 
-    @Test
-    public void when_cancellationFutureCompleted_then_fails() throws Throwable {
-        // Given
-        final MockTasklet t = new MockTasklet().callsBeforeDone(Integer.MAX_VALUE);
-        CompletableFuture<Void> f = tes.beginExecute(singletonList(t), cancellationFuture, classLoaderMock);
-
-        // When
-        cancellationFuture.complete(null);
-
-        // Then
-        exceptionRule.expect(IllegalStateException.class);
-        try {
-            f.join();
-        } catch (CompletionException e) {
-            throw peel(e);
-        }
-    }
-
     private void executeAndJoin(List<MockTasklet> tasklets) {
         CompletableFuture<Void> f = tes.beginExecute(tasklets, cancellationFuture, classLoaderMock);
         f.join();
