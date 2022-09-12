@@ -95,7 +95,7 @@ public class StepSupplier implements Supplier<Runnable> {
                         assert !isRunningOnPartitionThread();
                     }
 
-                    runStepWith(step, state);
+                    runStepWithState(step, state);
                 }
 
                 @Override
@@ -113,7 +113,7 @@ public class StepSupplier implements Supplier<Runnable> {
                 if (checkCurrentThread) {
                     assert isRunningOnPartitionThread();
                 }
-                runStepWith(step, state);
+                runStepWithState(step, state);
             }
 
             @Override
@@ -131,11 +131,11 @@ public class StepSupplier implements Supplier<Runnable> {
     /**
      * Responsibilities of this method:
      * <lu>
-     *     <li>Runs this step</li>
+     *     <li>Runs passed step with passed state</li>
      *     <li>Sets next step to run</li>
      * </lu>
      */
-    private void runStepWith(Step step, State state) {
+    private void runStepWithState(Step step, State state) {
         boolean runningOnPartitionThread = isRunningOnPartitionThread();
         boolean metWithPreconditions = true;
         try {
