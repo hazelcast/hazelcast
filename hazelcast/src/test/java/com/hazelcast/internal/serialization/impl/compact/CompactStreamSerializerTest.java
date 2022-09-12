@@ -100,34 +100,12 @@ public class CompactStreamSerializerTest {
     }
 
     @Test
-    public void testNoFieldsWithReflectiveSerializer() {
-        SerializationService serializationService = createSerializationService();
-        EmptyDTO expected = new EmptyDTO();
-
-        Data data = serializationService.toData(expected);
-        EmptyDTO actual = serializationService.toObject(data);
-
-        assertEquals(expected, actual);
-    }
-
-    @Test
     public void testNoFieldsWithCustomSerializer() {
         SerializationService serializationService = createSerializationService(EmptyDTOSerializer::new);
         EmptyDTO expected = new EmptyDTO();
 
         Data data = serializationService.toData(expected);
         EmptyDTO actual = serializationService.toObject(data);
-
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    public void testVarSizedFieldsWithReflectiveSerializer() {
-        SerializationService serializationService = createSerializationService();
-        VarSizedFieldsDTO expected = createVarSizedFieldsDTO();
-
-        Data data = serializationService.toData(expected);
-        VarSizedFieldsDTO actual = serializationService.toObject(data);
 
         assertEquals(expected, actual);
     }
@@ -142,17 +120,6 @@ public class CompactStreamSerializerTest {
 
         Data data = serializationService.toData(expected);
         VarSizedFieldsDTO actual = serializationService.toObject(data);
-
-        assertEquals(expected, actual);
-    }
-
-    @Test
-    public void testFixedSizedFieldsWithReflectiveSerializer() {
-        SerializationService serializationService = createSerializationService();
-        FixedSizeFieldsDTO expected = createFixedSizeFieldsDTO();
-
-        Data data = serializationService.toData(expected);
-        FixedSizeFieldsDTO actual = serializationService.toObject(data);
 
         assertEquals(expected, actual);
     }

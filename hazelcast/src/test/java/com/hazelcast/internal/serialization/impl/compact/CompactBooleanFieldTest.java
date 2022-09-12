@@ -72,18 +72,6 @@ public class CompactBooleanFieldTest {
     }
 
     @Test
-    public void testBooleanArrayWithReflectiveSerializer() {
-        SerializationService serializationService = createSerializationService();
-        boolean[] bools = getBooleans(itemCount);
-        BoolArrayDTO expected = new BoolArrayDTO(bools);
-
-        Data data = serializationService.toData(expected);
-        BoolArrayDTO actual = serializationService.toObject(data);
-
-        assertEquals(expected, actual);
-    }
-
-    @Test
     public void testMultipleBoolFields() {
         SerializationService serializationService = createSerializationService(() ->
                 new BoolArrayDTOAsBooleansSerializer(itemCount));
