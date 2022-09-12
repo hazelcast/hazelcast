@@ -29,7 +29,6 @@ import com.hazelcast.sql.impl.AbstractSqlResult;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryId;
 import com.hazelcast.sql.impl.QueryResultProducer;
-import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.ResultIterator;
 import com.hazelcast.sql.impl.SqlRowImpl;
 import com.hazelcast.sql.impl.row.JetSqlRow;
@@ -40,6 +39,8 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
+import static com.hazelcast.sql.impl.QueryException.cancelledByUser;
+import static com.hazelcast.sql.impl.QueryUtils.toPublicException;
 
 class SqlResultImpl extends AbstractSqlResult {
 
@@ -51,6 +52,7 @@ class SqlResultImpl extends AbstractSqlResult {
     private final boolean isInfiniteRows;
 
     private ResultIterator<SqlRow> iterator;
+    private volatile boolean isClosed;
 
     SqlResultImpl(
             HazelcastInstance hazelcastInstance,
@@ -101,12 +103,12 @@ class SqlResultImpl extends AbstractSqlResult {
 
     @Override
     public void close(@Nullable QueryException exception) {
+        isClosed = true;
         if (exception != null) {
             rootResultConsumer.onError(exception);
         } else {
             sendJobTermination();
         }
-
     }
 
     private void sendJobTermination() {
@@ -134,30 +136,39 @@ class SqlResultImpl extends AbstractSqlResult {
 
         @Override
         public boolean hasNext() {
+            checkNotClosed();
             try {
                 return delegate.hasNext();
             } catch (Exception e) {
-                throw QueryUtils.toPublicException(e, queryId.getMemberId());
+                throw toPublicException(e, queryId.getMemberId());
             }
         }
 
         @Override
         public HasNextResult hasNext(long timeout, TimeUnit timeUnit) {
+            checkNotClosed();
             try {
                 return delegate.hasNext(timeout, timeUnit);
             } catch (Exception e) {
-                throw QueryUtils.toPublicException(e, queryId.getMemberId());
+                throw toPublicException(e, queryId.getMemberId());
             }
         }
 
         @Override
         public SqlRow next() {
+            checkNotClosed();
             try {
                 return new SqlRowImpl(getRowMetadata(), delegate.next());
             } catch (NoSuchElementException e) {
                 throw e;
             } catch (Exception e) {
-                throw QueryUtils.toPublicException(e, queryId.getMemberId());
+                throw toPublicException(e, queryId.getMemberId());
+            }
+        }
+
+        private void checkNotClosed() {
+            if (isClosed) {
+                throw toPublicException(cancelledByUser(), queryId.getMemberId());
             }
         }
     }

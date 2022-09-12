@@ -42,6 +42,9 @@ class QueryEndTracker {
     }
 
     void markDone(Exception ex) {
+        if (done) {
+            return;
+        }
         exception.compareAndSet(null, ex);
         done = true;
     }

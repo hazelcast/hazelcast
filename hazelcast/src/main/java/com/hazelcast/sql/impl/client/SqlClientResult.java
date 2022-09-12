@@ -37,6 +37,8 @@ import java.util.NoSuchElementException;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
+import static com.hazelcast.sql.impl.QueryException.cancelledByUser;
+import static com.hazelcast.sql.impl.QueryUtils.toPublicException;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
@@ -217,7 +219,7 @@ public class SqlClientResult implements SqlResult {
                 // If the cancellation is initiated before the first response is received, then throw cancellation errors on
                 // the dependent methods (update count, row metadata, iterator).
                 if (state == null) {
-                    onExecuteError(QueryException.cancelledByUser());
+                    onExecuteError(cancelledByUser());
                 }
 
                 // Make sure that all subsequent fetches will fail.
@@ -225,7 +227,7 @@ public class SqlClientResult implements SqlResult {
                     fetch = new SqlFetchResult();
                 }
 
-                onFetchFinished(null, QueryException.cancelledByUser());
+                onFetchFinished(null, cancelledByUser());
 
                 // Send the close request.
                 service.close(connection, queryId);
@@ -345,7 +347,7 @@ public class SqlClientResult implements SqlResult {
     }
 
     private HazelcastSqlException wrap(Throwable error) {
-        throw QueryUtils.toPublicException(error, service.getClientId());
+        throw toPublicException(error, service.getClientId());
     }
 
     private static final class State {
@@ -436,6 +438,12 @@ public class SqlClientResult implements SqlResult {
             }
 
             return new JetSqlRow(service.getSerializationService(), values);
+        }
+
+        private void checkNotClosed() {
+            if (closed) {
+                throw toPublicException(cancelledByUser(), service.getClientId());
+            }
         }
     }
 
