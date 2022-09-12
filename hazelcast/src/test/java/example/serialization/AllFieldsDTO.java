@@ -28,8 +28,8 @@ import java.util.Objects;
 import java.util.Set;
 
 /**
- * A class that includes all fields in the {@link MainDTO} class and some extra that are only
- * supported by the reflective serializer:
+ * A class that includes all fields supported in compact serialization. This class the following extra fields compared
+ * to {@link MainDTO} and they are only supported in reflective serializer:
  * - Char, Character (and arrays of these)
  * - Enum
  * - List
@@ -38,7 +38,7 @@ import java.util.Set;
  * Used by {@link com.hazelcast.nio.serialization.compatibility.BinaryCompatibilityTest}.
  */
 @SuppressWarnings({"checkstyle:ParameterNumber"})
-public class ReflectiveMainDTO {
+public class AllFieldsDTO {
 
     public boolean bool;
     public byte b;
@@ -95,21 +95,21 @@ public class ReflectiveMainDTO {
     public Map<Integer, Integer> mapOfNumbers;
     public Set<Integer> setOfNumbers;
 
-    ReflectiveMainDTO() {
+    AllFieldsDTO() {
     }
 
-    public ReflectiveMainDTO(boolean bool, byte b, short s, int i, long l, float f, double d, String str, BigDecimal bigDecimal,
-                             LocalTime localTime, LocalDate localDate, LocalDateTime localDateTime,
-                             OffsetDateTime offsetDateTime, Boolean nullableBool, Byte nullableB, Short nullableS,
-                             Integer nullableI, Long nullableL, Float nullableF, Double nullableD, boolean[] bools,
-                             byte[] bytes, short[] shorts, int[] ints, long[] longs, float[] floats, double[] doubles,
-                             String[] strings, BigDecimal[] bigDecimals, LocalTime[] localTimes, LocalDate[] localDates,
-                             LocalDateTime[] localDateTimes, OffsetDateTime[] offsetDateTimes, Boolean[] nullableBools,
-                             Byte[] nullableBytes, Short[] nullableShorts, Integer[] nullableIntegers, Long[] nullableLongs,
-                             Float[] nullableFloats, Double[] nullableDoubles, EmployeeDTO nestedCompact,
-                             EmployeeDTO[] arrayOfNestedCompact, char c, char[] chars, Character nullableC,
-                             Character[] nullableChars, HiringStatus hiringStatus, List<Integer> listOfNumbers,
-                             Map<Integer, Integer> mapOfNumbers, Set<Integer> setOfNumbers) {
+    public AllFieldsDTO(boolean bool, byte b, short s, int i, long l, float f, double d, String str, BigDecimal bigDecimal,
+                        LocalTime localTime, LocalDate localDate, LocalDateTime localDateTime,
+                        OffsetDateTime offsetDateTime, Boolean nullableBool, Byte nullableB, Short nullableS,
+                        Integer nullableI, Long nullableL, Float nullableF, Double nullableD, boolean[] bools,
+                        byte[] bytes, short[] shorts, int[] ints, long[] longs, float[] floats, double[] doubles,
+                        String[] strings, BigDecimal[] bigDecimals, LocalTime[] localTimes, LocalDate[] localDates,
+                        LocalDateTime[] localDateTimes, OffsetDateTime[] offsetDateTimes, Boolean[] nullableBools,
+                        Byte[] nullableBytes, Short[] nullableShorts, Integer[] nullableIntegers, Long[] nullableLongs,
+                        Float[] nullableFloats, Double[] nullableDoubles, EmployeeDTO nestedCompact,
+                        EmployeeDTO[] arrayOfNestedCompact, char c, char[] chars, Character nullableC,
+                        Character[] nullableChars, HiringStatus hiringStatus, List<Integer> listOfNumbers,
+                        Map<Integer, Integer> mapOfNumbers, Set<Integer> setOfNumbers) {
         this.bool = bool;
         this.b = b;
         this.s = s;
@@ -166,7 +166,7 @@ public class ReflectiveMainDTO {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        ReflectiveMainDTO that = (ReflectiveMainDTO) o;
+        AllFieldsDTO that = (AllFieldsDTO) o;
         return bool == that.bool && b == that.b && s == that.s && i == that.i && l == that.l && Float.compare(that.f, f) == 0
                 && Double.compare(that.d, d) == 0 && c == that.c && Objects.equals(str, that.str)
                 && Objects.equals(bigDecimal, that.bigDecimal) && Objects.equals(localTime, that.localTime)

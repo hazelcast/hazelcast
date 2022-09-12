@@ -28,7 +28,7 @@ import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects;
 import example.serialization.MainDTO;
-import example.serialization.ReflectiveMainDTO;
+import example.serialization.AllFieldsDTO;
 
 import java.io.Externalizable;
 import java.io.Serializable;
@@ -250,7 +250,7 @@ class ReferenceObjects {
         aCompact.offsetDateTime = aOffsetDateTime;
     }
 
-    static ReflectiveMainDTO aReflectiveCompact = CompactTestUtil.createReflectiveMainDTO();
+    static AllFieldsDTO aReflectiveCompact = CompactTestUtil.createReflectiveMainDTO();
 
     static Object[] allTestObjects = {
             aNullObject, aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString, aUUID, anInnerPortable,

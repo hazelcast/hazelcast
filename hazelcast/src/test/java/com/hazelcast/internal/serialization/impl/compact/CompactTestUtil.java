@@ -31,7 +31,7 @@ import example.serialization.HiringStatus;
 import example.serialization.InnerDTO;
 import example.serialization.MainDTO;
 import example.serialization.NamedDTO;
-import example.serialization.ReflectiveMainDTO;
+import example.serialization.AllFieldsDTO;
 import example.serialization.SerializableEmployeeDTO;
 
 import javax.annotation.Nonnull;
@@ -152,7 +152,7 @@ public final class CompactTestUtil {
     }
 
     @Nonnull
-    public static ReflectiveMainDTO createReflectiveMainDTO() {
+    public static AllFieldsDTO createReflectiveMainDTO() {
         List<Integer> listOfIntegers = Arrays.asList(1, 3, 5, 6);
         Map<Integer, Integer> mapOfIntegers = new HashMap<>();
         mapOfIntegers.put(1, 2);
@@ -163,7 +163,7 @@ public final class CompactTestUtil {
         setOfIntegers.add(2);
         setOfIntegers.add(3);
 
-        return new ReflectiveMainDTO(true, (byte) 113, (short) -500, 56789, -50992225L, 900.5678f,
+        return new AllFieldsDTO(true, (byte) 113, (short) -500, 56789, -50992225L, 900.5678f,
                 -897543.3678909d, "this is main object created for testing!",
                 new BigDecimal("12312313"), LocalTime.of(1, 2, 3, 999999999), LocalDate.of(-999999999, 3, 31),
                 LocalDateTime.of(-999999999, 3, 31, 1, 2, 3, 999999999),
