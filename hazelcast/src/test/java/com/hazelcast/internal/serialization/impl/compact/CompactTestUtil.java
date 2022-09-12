@@ -179,8 +179,9 @@ public final class CompactTestUtil {
                 new OffsetDateTime[]{OffsetDateTime.of(2022, 12, 23, 22, 13, 15, 123123, ZoneOffset.MAX)},
                 new Boolean[]{true, false, null}, new Byte[]{0, 1, 2, null}, new Short[]{3, 4, 5, null},
                 new Integer[]{9, 8, 7, 6, null}, new Long[]{0L, 1L, 5L, 7L, 9L, 11L}, new Float[]{0.6543f, -3.56f, 45.67f},
-                new Double[]{456.456, 789.789, 321.321}, new EmployeeDTO(123, 123L), '\u1256', new char[]{'0', 'a', 'b'},
-                '\u4567', new Character[]{'i', null, '9'}, HiringStatus.HIRING, listOfIntegers, mapOfIntegers, setOfIntegers);
+                new Double[]{456.456, 789.789, 321.321}, new EmployeeDTO(123, 123L),
+                new EmployeeDTO[]{new EmployeeDTO(123, 123L), null}, '\u1256', new char[]{'0', 'a', 'b'}, '\u4567',
+                new Character[]{'i', null, '9'}, HiringStatus.HIRING, listOfIntegers, mapOfIntegers, setOfIntegers);
     }
 
     @Nonnull

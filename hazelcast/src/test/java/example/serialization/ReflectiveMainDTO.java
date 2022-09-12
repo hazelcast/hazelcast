@@ -82,6 +82,7 @@ public class ReflectiveMainDTO {
     public Double[] nullableDoubles;
     // Make sure the following class does not have a compact serializer registered so that reflective serializer is used.
     public EmployeeDTO nestedCompact;
+    public EmployeeDTO[] arrayOfNestedCompact;
 
     // Extra fields:
     public char c;
@@ -105,9 +106,10 @@ public class ReflectiveMainDTO {
                              String[] strings, BigDecimal[] bigDecimals, LocalTime[] localTimes, LocalDate[] localDates,
                              LocalDateTime[] localDateTimes, OffsetDateTime[] offsetDateTimes, Boolean[] nullableBools,
                              Byte[] nullableBytes, Short[] nullableShorts, Integer[] nullableIntegers, Long[] nullableLongs,
-                             Float[] nullableFloats, Double[] nullableDoubles, EmployeeDTO nestedCompact, char c, char[] chars,
-                             Character nullableC, Character[] nullableChars, HiringStatus hiringStatus,
-                             List<Integer> listOfNumbers, Map<Integer, Integer> mapOfNumbers, Set<Integer> setOfNumbers) {
+                             Float[] nullableFloats, Double[] nullableDoubles, EmployeeDTO nestedCompact,
+                             EmployeeDTO[] arrayOfNestedCompact, char c, char[] chars, Character nullableC,
+                             Character[] nullableChars, HiringStatus hiringStatus, List<Integer> listOfNumbers,
+                             Map<Integer, Integer> mapOfNumbers, Set<Integer> setOfNumbers) {
         this.bool = bool;
         this.b = b;
         this.s = s;
@@ -149,6 +151,7 @@ public class ReflectiveMainDTO {
         this.nullableFloats = nullableFloats;
         this.nullableDoubles = nullableDoubles;
         this.nestedCompact = nestedCompact;
+        this.arrayOfNestedCompact = arrayOfNestedCompact;
         this.c = c;
         this.chars = chars;
         this.nullableC = nullableC;
