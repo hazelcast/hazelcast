@@ -961,7 +961,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 // The first connection that opens a connection to the new cluster should set `clusterId`.
                 // This one will initiate `initializeClientOnCluster` if necessary.
                 clusterId = newClusterId;
-                if (clusterIdChanged || establishedInitialClusterConnection) {
+                if (establishedInitialClusterConnection) {
                     // In split brain, the client might connect to the one half
                     // of the cluster, and then later might reconnect to the
                     // other half, after the half it was connected to is
