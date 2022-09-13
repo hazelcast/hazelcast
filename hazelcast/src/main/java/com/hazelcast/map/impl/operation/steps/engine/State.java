@@ -77,6 +77,7 @@ public class State {
     private volatile boolean disableWanReplicationEvent;
     private volatile boolean triggerMapLoader;
     private volatile boolean shouldLoad;
+    private volatile boolean changeExpiryOnUpdate;
     private volatile Object oldValue;
     private volatile Object newValue;
     private volatile Object result;
@@ -112,6 +113,7 @@ public class State {
 
         setTtl(state.getTtl())
                 .setMaxIdle(state.getMaxIdle())
+                .setChangeExpiryOnUpdate(state.isChangeExpiryOnUpdate())
                 .setVersion(state.getVersion())
                 .setExpiryTime(state.getExpiryTime())
                 .setNow(state.getNow())
@@ -504,5 +506,14 @@ public class State {
 
     public List getBackupPairs() {
         return backupPairs;
+    }
+
+    public State setChangeExpiryOnUpdate(boolean changeExpiryOnUpdate) {
+        this.changeExpiryOnUpdate = changeExpiryOnUpdate;
+        return this;
+    }
+
+    public boolean isChangeExpiryOnUpdate() {
+        return changeExpiryOnUpdate;
     }
 }

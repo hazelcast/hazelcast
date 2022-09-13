@@ -194,6 +194,7 @@ public class PartitionWideEntryOperation extends MapOperation
                 outComes.add(operator.getByPreferringDataNewValue());
                 outComes.add(eventType);
                 outComes.add(operator.getEntry().getNewTtl());
+                outComes.add(operator.getEntry().isChangeExpiryOnUpdate());
             }
         }, false);
 
@@ -209,9 +210,10 @@ public class PartitionWideEntryOperation extends MapOperation
             Object newValue = outComes.poll();
             EntryEventType eventType = (EntryEventType) outComes.poll();
             long newTtl = (long) outComes.poll();
+            boolean changeExpiryOnUpdate = (boolean) outComes.poll();
 
             operator.init(dataKey, oldValue, newValue, null, eventType,
-                    null, newTtl).doPostOperateOps();
+                    null, changeExpiryOnUpdate, newTtl).doPostOperateOps();
         }
     }
 

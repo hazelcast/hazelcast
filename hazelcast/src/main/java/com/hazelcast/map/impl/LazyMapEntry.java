@@ -66,6 +66,7 @@ public class LazyMapEntry<K, V> extends CachedQueryEntry<K, V>
     private transient boolean modified;
 
     private transient long newTtl = UNSET;
+    private transient boolean changeExpiryOnUpdate = true;
 
     public LazyMapEntry() {
     }
@@ -79,10 +80,12 @@ public class LazyMapEntry<K, V> extends CachedQueryEntry<K, V>
     }
 
     public LazyMapEntry init(InternalSerializationService serializationService,
-                             Object key, Object value, Extractors extractors, long ttl) {
+                             Object key, Object value, Extractors extractors, long ttl,
+                             boolean changeExpiryOnUpdate) {
         super.init(serializationService, key, value, extractors);
-        modified = false;
-        newTtl = ttl;
+        this.modified = false;
+        this.newTtl = ttl;
+        this.changeExpiryOnUpdate = changeExpiryOnUpdate;
         return this;
     }
 
@@ -111,6 +114,12 @@ public class LazyMapEntry<K, V> extends CachedQueryEntry<K, V>
         return setValue(value);
     }
 
+    @Override
+    public V setValueWithoutChangingExpiryTime(V value) {
+        changeExpiryOnUpdate = false;
+        return setValue(value);
+    }
+
     /**
      * Similar to calling {@link #setValue} with null but doesn't return old-value hence no extra deserialization.
      */
@@ -135,6 +144,10 @@ public class LazyMapEntry<K, V> extends CachedQueryEntry<K, V>
 
     public long getNewTtl() {
         return newTtl;
+    }
+
+    public boolean isChangeExpiryOnUpdate() {
+        return changeExpiryOnUpdate;
     }
 
     @Override

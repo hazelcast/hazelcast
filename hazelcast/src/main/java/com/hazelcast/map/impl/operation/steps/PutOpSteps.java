@@ -176,8 +176,8 @@ public enum PutOpSteps implements Step<State> {
                         ? record.getValue() : mapServiceContext.toData(record.getValue()));
                 recordStore.updateRecord0(record, state.getNow(), state.getStaticParams().isCountAsAccess());
                 recordStore.updateMemory(record, state.getKey(), state.getOldValue(), state.getNewValue(),
-                        state.getTtl(), state.getMaxIdle(), state.getExpiryTime(), state.getNow(),
-                        state.getStaticParams().isBackup());
+                        state.isChangeExpiryOnUpdate(), state.getTtl(), state.getMaxIdle(), state.getExpiryTime(),
+                        state.getNow(), state.getStaticParams().isBackup());
             }
 
             state.setRecord(record);

@@ -89,8 +89,8 @@ public interface RecordStore<R extends Record> {
      * @param provenance origin of call to this method.
      * @return current record after put.
      */
-    R putBackup(Data key, Object value, long ttl, long maxIdle,
-                long nowOrExpiryTime, CallerProvenance provenance);
+    R putBackup(Data key, Object value, boolean changeExpiryOnUpdate,
+                long ttl, long maxIdle, long nowOrExpiryTime, CallerProvenance provenance);
 
     /**
      * @return current record after put.
@@ -111,7 +111,8 @@ public interface RecordStore<R extends Record> {
      * Does exactly the same thing as {@link #set(Data, Object, long, long)} except the invocation is not counted as
      * a read access while updating the access statics.
      */
-    boolean setWithUncountedAccess(Data dataKey, Object value, long ttl, long maxIdle);
+    boolean setWithUncountedAccess(Data dataKey, Object value,
+                                   boolean changeExpiryOnUpdate, long ttl, long maxIdle);
 
     /**
      * @param key        the key to be removed
