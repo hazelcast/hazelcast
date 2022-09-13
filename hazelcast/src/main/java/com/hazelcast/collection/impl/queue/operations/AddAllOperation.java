@@ -57,7 +57,7 @@ public class AddAllOperation extends QueueBackupAwareOperation implements Notifi
             dataMap = queueContainer.addAll(dataList);
             response = true;
         } else {
-            response = false;
+            throw new IllegalStateException("Queue full");
         }
     }
 

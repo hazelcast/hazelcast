@@ -426,8 +426,9 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
     @Test
     public void testAddAll_whenExceedingConstraint() {
         final List<VersionedObject<String>> list = Collections.nCopies(101, new VersionedObject<>("Hello"));
-        final boolean added = queue.addAll(list);
-        assertFalse(added);
+        assertThrows(IllegalStateException.class, () -> {
+                queue.addAll(list);
+        });
         List<VersionedObject<String>> drainTo = new ArrayList<>();
         queue.drainTo(drainTo);
         assertEquals(0, drainTo.size());
