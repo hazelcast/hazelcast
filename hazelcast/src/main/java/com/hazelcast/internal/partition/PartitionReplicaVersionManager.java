@@ -57,6 +57,19 @@ public interface PartitionReplicaVersionManager {
     long[] getPartitionReplicaVersions(int partitionId, ServiceNamespace namespace);
 
     /**
+     * Returns replica versions for syncing to backup replicas, ensuring any replica versions
+     * that are marked explicitly for sync ({@code REQUIRES_SYNC}) are reset. This is necessary
+     * when syncing primary to backup replicas (anti-entropy, migration etc), otherwise there is
+     * risk of perpetual attempts to sync partition data which may be already in sync.
+     *
+     * @param partitionId
+     * @param namespace
+     * @return
+     * @see     com.hazelcast.internal.partition.impl.PartitionReplicaManager#REQUIRES_SYNC
+     */
+    long[] getPartitionReplicaVersionsForSync(int partitionId, ServiceNamespace namespace);
+
+    /**
      * Updates the partition replica version and triggers replica sync if the replica is dirty (e.g. the
      * received version is not expected and this node might have missed an update)
      *

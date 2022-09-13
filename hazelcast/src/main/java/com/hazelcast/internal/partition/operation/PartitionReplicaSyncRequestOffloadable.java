@@ -152,7 +152,7 @@ public final class PartitionReplicaSyncRequestOffloadable
                         // returns references to the internal
                         // replica versions data structures
                         // that may change under our feet
-                        long[] versions = Arrays.copyOf(versionManager.getPartitionReplicaVersions(partitionId(), ns),
+                        long[] versions = Arrays.copyOf(versionManager.getPartitionReplicaVersionsForSync(partitionId(), ns),
                                 IPartition.MAX_BACKUP_COUNT);
                         replicaVersions.put(BiTuple.of(partitionId(), ns), versions);
                     }

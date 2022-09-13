@@ -40,9 +40,21 @@ final class PartitionReplicaFragmentVersions {
         this.namespace = namespace;
     }
 
+    /**
+     * Increments partition replica versions on partition owner
+     * when backup operation is prepared and sent to replica.
+     *
+     * If a replica is designated as requiring sync,
+     * do not increment because a sync has not occurred yet.
+     * It will be reset to 0 when
+     * {@link PartitionReplicaManager#getPartitionReplicaVersionsForSync}
+     * is executed.
+     */
     long[] incrementAndGet(int backupCount) {
         for (int i = 0; i < backupCount; i++) {
-            versions[i]++;
+            if (versions[i] != REQUIRES_SYNC) {
+                versions[i]++;
+            }
         }
         return versions;
     }
@@ -65,8 +77,9 @@ final class PartitionReplicaFragmentVersions {
     }
 
     /**
-     * Updates replica version if it is newer than current version. Otherwise has no effect.
+     * Updates replica version if it is newer than current version. Otherwise, has no effect.
      * Marks versions as dirty if version increase is not incremental.
+     * Executed on backup replica owner.
      *
      * @param newVersions new replica versions
      * @param replicaIndex replica index
@@ -76,6 +89,13 @@ final class PartitionReplicaFragmentVersions {
         int index = replicaIndex - 1;
         long currentVersion = versions[index];
         long nextVersion = newVersions[index];
+
+        if (currentVersion == REQUIRES_SYNC) {
+            // the replica is marked explicitly for partition sync,
+            // so maintain it as is and mark versions as dirty.
+            dirty = true;
+            return true;
+        }
 
         if (currentVersion < nextVersion) {
             setVersions(newVersions, replicaIndex);

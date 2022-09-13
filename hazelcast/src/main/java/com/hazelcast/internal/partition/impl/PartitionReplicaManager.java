@@ -68,6 +68,9 @@ import static java.util.Collections.newSetFromMap;
  */
 public class PartitionReplicaManager implements PartitionReplicaVersionManager {
 
+    /**
+     * Marker that indicates a particular backup replica index requires a sync with the primary replica.
+     */
     public static final long REQUIRES_SYNC = -1;
 
     /**
@@ -333,6 +336,19 @@ public class PartitionReplicaManager implements PartitionReplicaVersionManager {
     // Caution: Returning version array without copying for performance reasons. Callers must not modify this array!
     public long[] getPartitionReplicaVersions(int partitionId, ServiceNamespace namespace) {
         return replicaVersions[partitionId].get(namespace);
+    }
+
+    @Override
+    // Caution: Returning version array without copying for performance reasons. Callers must not modify this array!
+    // Mutates the replica version array, so that any replica indexes which require sync are reset to 0
+    public long[] getPartitionReplicaVersionsForSync(int partitionId, ServiceNamespace namespace) {
+        long[] replicas = replicaVersions[partitionId].get(namespace);
+        for (int i = 0; i < replicas.length; i++) {
+            if (replicas[i] == REQUIRES_SYNC) {
+                replicas[i] = 0;
+            }
+        }
+        return replicas;
     }
 
     // called in operation threads
