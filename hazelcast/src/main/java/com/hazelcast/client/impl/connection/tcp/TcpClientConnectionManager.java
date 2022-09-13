@@ -454,7 +454,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                                                                      CandidateClusterContext nextContext) {
         currentContext.destroy();
 
-        client.onClusterChange();
+        client.onTryToConnectNextCluster();
 
         nextContext.start();
 
@@ -950,19 +950,32 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             if (clusterIdChanged) {
                 checkClientStateOnClusterIdChange(connection, switchingToNextCluster);
                 logger.warning("Switching from current cluster: " + this.clusterId + " to new cluster: " + newClusterId);
-                client.onClusterConnect();
+                client.onConnectionToNewCluster();
             }
             checkClientState(connection, switchingToNextCluster);
 
             boolean connectionsEmpty = activeConnections.isEmpty();
             activeConnections.put(response.memberUuid, connection);
+
             if (connectionsEmpty) {
                 // The first connection that opens a connection to the new cluster should set `clusterId`.
                 // This one will initiate `initializeClientOnCluster` if necessary.
                 clusterId = newClusterId;
                 if (clusterIdChanged) {
                     clientState = ClientState.CONNECTED_TO_CLUSTER;
-                    executor.execute(() -> initializeClientOnCluster(newClusterId));
+                    executor.execute(() -> {
+                        initializeClientOnCluster(newClusterId);
+                        /*
+                          We send statistics to the new cluster immediately to make clientVersion, isEnterprise and some other
+                          fields available in Management Center as soon as possible. They are currently sent as part of client
+                          statistics.
+
+                          This method is called here instead of above on purpose because sending statistics require an active
+                          connection to exist. Also, the client needs to be initialized on the new cluster in order for
+                          invocations to be allowed.
+                         */
+                        client.collectAndSendStatsNow();
+                    });
                 } else {
                     clientState = ClientState.INITIALIZED_ON_CLUSTER;
                     fireLifecycleEvent(LifecycleState.CLIENT_CONNECTED);
