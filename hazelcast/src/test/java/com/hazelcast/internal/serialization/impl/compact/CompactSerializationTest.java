@@ -301,6 +301,26 @@ public class CompactSerializationTest {
     }
 
     @Test
+    public void testSerializingClassReflectively_withArrayOfArrayField() {
+        SerializationService service = createSerializationService(new SerializationConfig());
+        assertThatThrownBy(() -> {
+                service.toData(new ClassWithArrayOfArrayField());
+        }).isInstanceOf(HazelcastSerializationException.class)
+                .hasStackTraceContaining("cannot be serialized with zero configuration Compact serialization")
+                .hasStackTraceContaining("which uses this class in its fields");
+    }
+
+    @Test
+    public void testSerializingClassReflectively_withVoidField() {
+        SerializationService service = createSerializationService(new SerializationConfig());
+        assertThatThrownBy(() -> {
+            service.toData(new ClassWithVoidField());
+        }).isInstanceOf(HazelcastSerializationException.class)
+                .hasStackTraceContaining("cannot be serialized with zero configuration Compact serialization")
+                .hasStackTraceContaining("which uses this class in its fields");
+    }
+
+    @Test
     public void testWritingArrayOfCompactGenericRecordField_withDifferentSchemas() {
         SerializationService service = createSerializationService(new SerializationConfig());
 
@@ -460,6 +480,14 @@ public class CompactSerializationTest {
 
     private static class ClassWithUnsupportedArrayField {
         private LinkedList<String>[] lists;
+    }
+
+    private static class ClassWithArrayOfArrayField {
+        private int[][] arrays;
+    }
+
+    private static class ClassWithVoidField {
+        private Void aVoid;
     }
 
     private static class ClassWithCollectionFields {
