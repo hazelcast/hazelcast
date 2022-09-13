@@ -221,6 +221,7 @@ public final class ConcurrentInboundEdgeStream {
                     specialItemsStash.add(currentBarrier);
                     currentBarrier = null;
                     receivedBarriers.clear();
+                    break;
                 }
             }
 
