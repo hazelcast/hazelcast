@@ -165,6 +165,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     private volatile UUID clusterId;
     private volatile ClientState clientState = ClientState.INITIAL;
     private volatile boolean connectToClusterTaskSubmitted;
+    private boolean establishedInitialClusterConnection;
 
     private enum ClientState {
         /**
@@ -961,7 +962,19 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                 // The first connection that opens a connection to the new cluster should set `clusterId`.
                 // This one will initiate `initializeClientOnCluster` if necessary.
                 clusterId = newClusterId;
-                if (clusterIdChanged) {
+                if (establishedInitialClusterConnection) {
+                    // In split brain, the client might connect to the one half
+                    // of the cluster, and then later might reconnect to the
+                    // other half, after the half it was connected to is
+                    // completely dead. Since the cluster id is preserved in
+                    // split brain scenarios, it is impossible to distinguish
+                    // reconnection to the same cluster vs reconnection to the
+                    // other half of the split brain. However, in the latter,
+                    // we might need to send some state to the other half of
+                    // the split brain (like Compact schemas or user code
+                    // deployment classes). That forces us to send the client
+                    // state to the cluster after the first cluster connection,
+                    // regardless the cluster id is changed or not.
                     clientState = ClientState.CONNECTED_TO_CLUSTER;
                     executor.execute(() -> {
                         initializeClientOnCluster(newClusterId);
@@ -977,6 +990,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                         client.collectAndSendStatsNow();
                     });
                 } else {
+                    establishedInitialClusterConnection = true;
                     clientState = ClientState.INITIALIZED_ON_CLUSTER;
                     fireLifecycleEvent(LifecycleState.CLIENT_CONNECTED);
                 }
