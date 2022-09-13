@@ -87,7 +87,6 @@ public class SqlMemoryManagementTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM " + name + " ORDER BY name").iterator().next())
                 .hasMessageContaining("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
-
     }
 
     @Test
@@ -121,6 +120,5 @@ public class SqlMemoryManagementTest extends SqlTestSupport {
 
         assertThatThrownBy(() -> sqlService.execute("SELECT * FROM s1 JOIN s2 ON s2.ts = s1.ts").iterator().next())
                 .hasMessageContaining("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
-
     }
 }
