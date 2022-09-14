@@ -49,6 +49,8 @@ public class ClientRingbufferSplitBrainProtectionWriteTest extends RingbufferSpl
         if (clients != null) {
             clients.terminateAll();
         }
+        clients = null;
+
         shutdownTestEnvironment();
     }
 

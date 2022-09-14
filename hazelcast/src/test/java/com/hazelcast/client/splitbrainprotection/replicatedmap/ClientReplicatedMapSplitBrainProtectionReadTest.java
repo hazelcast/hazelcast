@@ -49,6 +49,8 @@ public class ClientReplicatedMapSplitBrainProtectionReadTest extends ReplicatedM
         if (clients != null) {
             clients.terminateAll();
         }
+        clients = null;
+
         shutdownTestEnvironment();
     }
 

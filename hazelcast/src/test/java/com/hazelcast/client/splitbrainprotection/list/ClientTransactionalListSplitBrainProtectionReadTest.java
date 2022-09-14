@@ -50,6 +50,8 @@ public class ClientTransactionalListSplitBrainProtectionReadTest extends Transac
         if (clients != null) {
             clients.terminateAll();
         }
+        clients = null;
+
         shutdownTestEnvironment();
     }
 
