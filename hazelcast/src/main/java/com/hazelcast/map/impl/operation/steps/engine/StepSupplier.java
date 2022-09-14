@@ -95,7 +95,7 @@ public class StepSupplier implements Supplier<Runnable> {
                         assert !isRunningOnPartitionThread();
                     }
 
-                    runStepWith(step, state);
+                    runStepWithState(step, state);
                 }
 
                 @Override
@@ -113,7 +113,7 @@ public class StepSupplier implements Supplier<Runnable> {
                 if (checkCurrentThread) {
                     assert isRunningOnPartitionThread();
                 }
-                runStepWith(step, state);
+                runStepWithState(step, state);
             }
 
             @Override
@@ -131,18 +131,22 @@ public class StepSupplier implements Supplier<Runnable> {
     /**
      * Responsibilities of this method:
      * <lu>
-     *     <li>Runs this step</li>
+     *     <li>Runs passed step with passed state</li>
      *     <li>Sets next step to run</li>
      * </lu>
      */
-    private void runStepWith(Step step, State state) {
+    private void runStepWithState(Step step, State state) {
         boolean runningOnPartitionThread = isRunningOnPartitionThread();
+        boolean metWithPreconditions = true;
         try {
             try {
                 log(step, state);
 
                 if (runningOnPartitionThread && state.getThrowable() == null) {
-                    operationRunner.metWithPreconditions(state.getOperation());
+                    metWithPreconditions = operationRunner.metWithPreconditions(state.getOperation());
+                    if (!metWithPreconditions) {
+                        return;
+                    }
                 }
                 step.runStep(state);
             } catch (NativeOutOfMemoryError e) {
@@ -158,8 +162,13 @@ public class StepSupplier implements Supplier<Runnable> {
             }
             state.setThrowable(throwable);
         } finally {
-            currentStep = nextStep(step);
-            currentRunnable = createRunnable(currentStep, state);
+            if (metWithPreconditions) {
+                currentStep = nextStep(step);
+                currentRunnable = createRunnable(currentStep, state);
+            } else {
+                currentStep = null;
+                currentRunnable = null;
+            }
         }
     }
 

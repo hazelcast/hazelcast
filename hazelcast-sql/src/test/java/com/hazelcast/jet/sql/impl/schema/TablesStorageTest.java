@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
-import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
@@ -33,8 +32,6 @@ import org.junit.experimental.categories.Category;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
-import static com.hazelcast.jet.sql.impl.schema.TablesStorage.CATALOG_MAP_NAME;
-import static com.hazelcast.jet.sql.impl.schema.TablesStorage.SQL_CATALOG_MAP_CONFIG;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
@@ -166,13 +163,6 @@ public class TablesStorageTest extends SimpleTestInClusterSupport {
         });
         MILLISECONDS.sleep(100);
         assertEquals(1, clearCounter.get());
-    }
-
-    @Test
-    public void when_storageIsInitialized_then_catalogMapIsConfigured() {
-        storage.initializeWithListener(new EmptyEntryListener());
-        MapConfig mapConfig = instance().getConfig().getMapConfig(CATALOG_MAP_NAME);
-        assertEquals(SQL_CATALOG_MAP_CONFIG, mapConfig);
     }
 
     private static Mapping mapping(String name, String type) {

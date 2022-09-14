@@ -89,10 +89,12 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * - EntryOperation fetches the entry and locks the given key on partition-thread
  * - Then the processing is offloaded to the given executor
  * - When the processing finishes
- * if there is a change to the entry, a EntryOffloadableSetUnlockOperation is spawned
- * which sets the new value and unlocks the given key on partition-thread
- * if there is no change to the entry, a UnlockOperation is spawned, which just unlocks the kiven key
- * on partition thread
+ * <ul>
+ * <li> if there is a change to the entry, a EntryOffloadableSetUnlockOperation is spawned
+ * which sets the new value and unlocks the given key on partition-thread </li>
+ * <li> if there is no change to the entry, a UnlockOperation is spawned, which just unlocks the given key
+ * on partition thread </li>
+ * </ul>
  * <p>
  * There will not be a conflict on a write due to the pessimistic locking of the key.
  * The threading looks as follows:
