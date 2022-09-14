@@ -22,18 +22,23 @@ import com.fasterxml.jackson.databind.ObjectReader;
 import com.fasterxml.jackson.dataformat.csv.CsvMapper;
 import com.fasterxml.jackson.dataformat.csv.CsvParser.Feature;
 import com.fasterxml.jackson.dataformat.csv.CsvSchema;
+import com.fasterxml.jackson.dataformat.csv.CsvSchema.Builder;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.compress.CompressionCodec;
+import org.apache.hadoop.io.compress.CompressionCodecFactory;
+import org.apache.hadoop.io.compress.SplittableCompressionCodec;
 import org.apache.hadoop.mapreduce.InputSplit;
+import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
+import org.apache.hadoop.mapreduce.lib.input.LineRecordReader;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -54,54 +59,87 @@ public class CsvInputFormat extends FileInputFormat<NullWritable, Object> {
 
         return new RecordReader<NullWritable, Object>() {
 
-            private Object current;
-            private MappingIterator<Object> iterator;
+            private Class<?> formatClazz;
+            private final LineRecordReader reader = new LineRecordReader();
+
+            private ObjectReader objectReader;
             private Function<Object, Object> projection = identity();
 
             @SuppressWarnings({"unchecked", "rawtypes"})
             @Override
             public void initialize(InputSplit split, TaskAttemptContext context) throws IOException {
+                reader.initialize(split, context);
+
                 FileSplit fileSplit = (FileSplit) split;
-                Configuration conf = context.getConfiguration();
+                if (fileSplit.getStart() == 0) {
+                    // We always expect a header, which we read below,
+                    // if this split is the first in the file, skip the header
+                    reader.nextKeyValue();
+                }
 
                 Configuration configuration = context.getConfiguration();
                 String className = configuration.get(CSV_INPUT_FORMAT_BEAN_CLASS);
-                Class<?> formatClazz = className == null ? null : ReflectionUtils.loadClass(className);
-                Path file = fileSplit.getPath();
-                FileSystem fs = file.getFileSystem(conf);
-                FSDataInputStream in = fs.open(file);
-
+                formatClazz = className == null ? null : ReflectionUtils.loadClass(className);
+                String[] header = readHeader(fileSplit, context);
                 if (formatClazz == String[].class) {
-                    ObjectReader reader = new CsvMapper().enable(Feature.WRAP_AS_ARRAY)
-                                                         .readerFor(String[].class)
-                                                         .with(CsvSchema.emptySchema().withSkipFirstDataRow(false));
+                    objectReader = new CsvMapper()
+                            .enable(Feature.WRAP_AS_ARRAY)
+                            .readerFor(String[].class)
+                            .with(CsvSchema.emptySchema().withSkipFirstDataRow(false));
 
-                    iterator = reader.readValues((InputStream) in);
-                    if (!iterator.hasNext()) {
-                        throw new JetException("Header row missing in " + split);
-                    }
-                    String[] header = (String[]) iterator.next();
                     List<String> fieldNames = new ArrayList<>();
                     String field;
                     for (int i = 0; (field = configuration.get(CSV_INPUT_FORMAT_FIELD_LIST_PREFIX + i)) != null; i++) {
                         fieldNames.add(field);
                     }
+
                     projection = (Function) createFieldProjection(header, fieldNames);
                 } else {
-                    iterator = new CsvMapper().readerFor(formatClazz)
-                                              .withoutFeatures(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
-                                              .with(CsvSchema.emptySchema().withHeader())
-                                              .readValues((InputStream) in);
+                    Builder builder = CsvSchema.builder();
+                    for (String column : header) {
+                        builder.addColumn(column);
+                    }
+                    objectReader = new CsvMapper().readerFor(formatClazz)
+                                                  .withoutFeatures(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                                                  .with(builder.build());
+                }
+            }
+
+            private String[] readHeader(FileSplit fileSplit, TaskAttemptContext context) throws IOException {
+                Configuration configuration = context.getConfiguration();
+                Path file = fileSplit.getPath();
+                FileSystem fs = file.getFileSystem(configuration);
+
+                try (InputStream in = fs.open(file)) {
+                    try (InputStream wrapped = wrap(in, configuration, file)) {
+                        ObjectReader headerReader = new CsvMapper()
+                                .enable(Feature.WRAP_AS_ARRAY)
+                                .readerFor(String[].class)
+                                .with(CsvSchema.emptySchema().withSkipFirstDataRow(false));
+
+                        try (MappingIterator<Object> iterator = headerReader.readValues(wrapped)) {
+                            if (!iterator.hasNext()) {
+                                throw new JetException("Header row missing in " + fileSplit);
+                            }
+                            return (String[]) iterator.next();
+                        }
+                    }
+                }
+
+            }
+
+            private InputStream wrap(InputStream in, Configuration configuration, Path file) throws IOException {
+                CompressionCodec codec = new CompressionCodecFactory(configuration).getCodec(file);
+                if (codec != null) {
+                    return codec.createInputStream(in);
+                } else {
+                    return in;
                 }
             }
 
             @Override
-            public boolean nextKeyValue() {
-                if (!iterator.hasNext()) {
-                    return false;
-                }
-                current = projection.apply(iterator.next());
-                return true;
+            public boolean nextKeyValue() throws IOException {
+                return reader.nextKeyValue();
             }
 
             @Override
@@ -110,19 +148,32 @@ public class CsvInputFormat extends FileInputFormat<NullWritable, Object> {
             }
 
             @Override
-            public Object getCurrentValue() {
-                return current;
+            public Object getCurrentValue() throws IOException {
+                String current = reader.getCurrentValue().toString();
+                if (formatClazz.equals(String[].class)) {
+                    try (MappingIterator<Object> iterator = objectReader.readValues(current)) {
+                        return projection.apply(iterator.next());
+                    }
+                } else {
+                    return projection.apply(objectReader.readValue(current));
+                }
             }
 
             @Override
-            public float getProgress() {
-                return 0;
+            public float getProgress() throws IOException {
+                return reader.getProgress();
             }
 
             @Override
             public void close() throws IOException {
-                iterator.close();
+                reader.close();
             }
         };
+    }
+
+    @Override
+    protected boolean isSplitable(JobContext context, Path file) {
+        final CompressionCodec codec = new CompressionCodecFactory(context.getConfiguration()).getCodec(file);
+        return ((null == codec) || (codec instanceof SplittableCompressionCodec));
     }
 }

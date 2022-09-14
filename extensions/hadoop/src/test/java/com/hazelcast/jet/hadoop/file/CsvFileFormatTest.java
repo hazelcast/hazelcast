@@ -28,6 +28,7 @@ import java.io.CharConversionException;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 
 public class CsvFileFormatTest extends BaseFileFormatTest {
 
@@ -128,5 +129,45 @@ public class CsvFileFormatTest extends BaseFileFormatTest {
                                                     .format(FileFormat.csv(User.class));
 
         assertJobFailed(source, CsvReadException.class, "Too many entries");
+    }
+
+    @Test
+    public void shouldReadLargeCsvFile() throws Exception {
+        FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
+                                                    .glob("file-large.csv")
+                                                    .sharedFileSystem(true)
+                                                    .option("mapreduce.input.fileinputformat.split.minsize", "32")
+                                                    .option("mapreduce.input.fileinputformat.split.maxsize", "64")
+                                                    .format(FileFormat.csv(User.class));
+
+        assertItemsInSource(source, (collected) -> assertThat(collected).hasSize(200));
+    }
+
+    @Test
+    public void shouldReadLargeCsvFileCompressed() throws Exception {
+        assumeThat(useHadoop).isTrue();
+
+        FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
+                                                    .glob("file-large.csv.gz")
+                                                    .sharedFileSystem(true)
+                                                    .option("mapreduce.input.fileinputformat.split.minsize", "32")
+                                                    .option("mapreduce.input.fileinputformat.split.maxsize", "64")
+                                                    .format(FileFormat.csv(User.class));
+
+        assertItemsInSource(source, (collected) -> assertThat(collected).hasSize(200));
+    }
+
+    @Test
+    public void shouldReadLargeCsvFileCompressedSplittable() throws Exception {
+        assumeThat(useHadoop).isTrue();
+
+        FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
+                                                    .glob("file-large.csv.bz2")
+                                                    .sharedFileSystem(true)
+                                                    .option("mapreduce.input.fileinputformat.split.minsize", "32")
+                                                    .option("mapreduce.input.fileinputformat.split.maxsize", "64")
+                                                    .format(FileFormat.csv(User.class));
+
+        assertItemsInSource(source, (collected) -> assertThat(collected).hasSize(200));
     }
 }
