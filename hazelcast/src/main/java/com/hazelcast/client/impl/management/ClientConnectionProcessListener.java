@@ -20,192 +20,115 @@ import com.hazelcast.cluster.Address;
 
 import java.util.EventListener;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
-
-import static java.util.Arrays.asList;
-
-final class ListenerAggregate
-        implements ClientConnectionProcessListener {
-
-    private final List<ClientConnectionProcessListener> childListeners;
-
-    ListenerAggregate(ClientConnectionProcessListener... listeners) {
-        childListeners = new CopyOnWriteArrayList<>(asList(listeners));
-    }
-
-    @Override
-    public void attemptingToConnectToAddress(Address address) {
-        childListeners.forEach(listener -> listener.attemptingToConnectToAddress(address));
-    }
-
-    @Override
-    public void connectionAttemptFailed(Address target) {
-        childListeners.forEach(listener -> listener.connectionAttemptFailed(target));
-    }
-
-    @Override
-    public void hostNotFound(String host) {
-        childListeners.forEach(listener -> listener.hostNotFound(host));
-    }
-
-    @Override
-    public void possibleAddressesCollected(List<Address> addresses) {
-        childListeners.forEach(listener -> listener.possibleAddressesCollected(addresses));
-    }
-
-    @Override
-    public void authenticationSuccess(Address address) {
-        childListeners.forEach(listener -> listener.authenticationSuccess(address));
-    }
-
-    @Override
-    public void credentialsFailed(Address address) {
-        childListeners.forEach(listener -> listener.credentialsFailed(address));
-    }
-
-    @Override
-    public void clientNotAllowedInCluster(Address address) {
-        childListeners.forEach(listener -> listener.clientNotAllowedInCluster(address));
-    }
-
-    @Override
-    public void clusterConnectionFailed(String clusterName) {
-        childListeners.forEach(listener -> listener.clusterConnectionFailed(clusterName));
-    }
-
-    @Override
-    public void clusterConnectionSucceeded(String clusterName) {
-        childListeners.forEach(listener -> listener.clusterConnectionSucceeded(clusterName));
-    }
-
-    @Override
-    public void remoteClosedConnection(Address address) {
-        childListeners.forEach(listener -> listener.remoteClosedConnection(address));
-    }
-
-    @Override
-    public ClientConnectionProcessListener withAdditionalListener(ClientConnectionProcessListener listener) {
-        childListeners.add(listener);
-        return this;
-    }
-}
 
 /**
- * Implementations can be attached to a {@link com.hazelcast.client.impl.connection.tcp.TcpClientConnectionManager} to receive
- * fine-grained events about the client-to-cluster connection process.
+ * Implementations can be attached to a
+ * {@link com.hazelcast.client.impl.connection.tcp.TcpClientConnectionManager}
+ * to receive fine-grained events about the client-to-cluster connection
+ * process.
  *
  * @since 5.2
  */
-public interface ClientConnectionProcessListener
-        extends EventListener {
-
-    ClientConnectionProcessListener NOOP = new ClientConnectionProcessListener() {
-
-        @Override
-        public ClientConnectionProcessListener withAdditionalListener(ClientConnectionProcessListener listener) {
-            return listener;
-        }
-    };
+public interface ClientConnectionProcessListener extends EventListener {
 
     /**
-     * Triggered before trying to connect to an address. This event is triggered after a {@link #possibleAddressesCollected(List)}
-     * event, and the {@code address} parameter is always an element of the possible-addresses list (passed to
-     * {@link #possibleAddressesCollected(List)}).
+     * Triggered before trying to connect to an address. This event is triggered
+     * after a {@link #possibleAddressesCollected(List)} event, and the
+     * {@code address} parameter is always an element of the possible-addresses
+     * list (passed to {@link #possibleAddressesCollected(List)}).
      * <p>
-     * If the connection fails, this event is followed by either a {@link #remoteClosedConnection(Address)} or a
+     * If the connection fails, this event is followed by either a
+     * {@link #remoteClosedConnection(Address)} or a
      * {@link #connectionAttemptFailed(Address)} event.
      * <p>
-     * If the connection is established but the client runs into an authentication failure, then this will be indicated by a
-     * subsequent {@link #clientNotAllowedInCluster(Address)} or a {@link #credentialsFailed(Address)} event.
+     * If the connection is established but the client runs into an
+     * authentication failure, then this will be indicated by a subsequent
+     * {@link #clientNotAllowedInCluster(Address)} or a
+     * {@link #credentialsFailed(Address)} event.
      * <p>
-     * If the authentication succeeds then a {@link #authenticationSuccess(Address)} event will be fired, followed by an
-     * {@link #clusterConnectionSucceeded(String)}.
-     *
-     * @param address
+     * If the authentication succeeds then a
+     * {@link #authenticationSuccess(Address)} event will be fired, followed by
+     * an {@link #clusterConnectionSucceeded(String)}.
      */
     default void attemptingToConnectToAddress(Address address) {
     }
 
     /**
-     * Triggered when an {@code IOException} is thrown during establishing network connection to a member address. This can happen
-     * due to a closed port or when no server is listening on the port. Address resolution failure cannot cause this event to be
-     * triggered.
-     *
-     * @param target
+     * Triggered when an {@code IOException} is thrown during establishing
+     * network connection to a member address. This can happen due to a closed
+     * port or when no server is listening on the port. Address resolution
+     * failure cannot cause this event to be triggered.
      */
     default void connectionAttemptFailed(Address target) {
     }
 
     /**
-     * Triggered when an {@link java.net.UnknownHostException} is thrown during establishing connection to the cluster. It happens
-     * while the client collects the possible member addresses, so a {@code hostNotFound()} event is triggered before the
-     * {@link #possibleAddressesCollected(List)} event. Can be called multiple times with the same {@code host} parameter.
-     *
-     * @param host
+     * Triggered when an {@link java.net.UnknownHostException} is thrown during
+     * establishing connection to the cluster. It happens while the client
+     * collects the possible member addresses, so a {@code hostNotFound()} event
+     * is triggered before the {@link #possibleAddressesCollected(List)} event.
+     * Can be called multiple times with the same {@code host} parameter.
      */
     default void hostNotFound(String host) {
     }
 
     /**
-     * Triggered once the available addresses are collected by a discovery plugin or fixed address list. Once this event is fired,
-     * the client will attempt to connect to the members one by one, hence a sequence of
+     * Triggered once the available addresses are collected by a discovery
+     * plugin or fixed address list. Once this event is fired, the client will
+     * attempt to connect to the members one by one, hence a sequence of
      * {@link #attemptingToConnectToAddress(Address)} calls will happen.
-     *
-     * @param addresses
      */
     default void possibleAddressesCollected(List<Address> addresses) {
     }
 
-    default ClientConnectionProcessListener withAdditionalListener(ClientConnectionProcessListener listener) {
-        return new ListenerAggregate(this, listener);
-    }
-
     /**
-     * Triggered when the client received acknowledgement of successful authentication from a member.
+     * Triggered when the client received acknowledgement of successful
+     * authentication from a member.
      */
     default void authenticationSuccess(Address remoteAddress) {
     }
 
     /**
-     * Triggered after an {@link #attemptingToConnectToAddress(Address)} event if the member doesn't accept the credentials
-     * presented by the client.
+     * Triggered after an {@link #attemptingToConnectToAddress(Address)} event
+     * if the member doesn't accept the credentials presented by the client.
      */
     default void credentialsFailed(Address remoteAddress) {
     }
 
     /**
-     * Called after an {@link #attemptingToConnectToAddress(Address)} event if the client gets rejected due to a client filtering
-     * rule
-     * (see {@link <a href="https://docs.hazelcast.com/management-center/latest/clusters/client-filtering">Client Filtering</a>}).
+     * Called after an {@link #attemptingToConnectToAddress(Address)} event if
+     * the client gets rejected due to a client filtering rule (see
+     * <a
+     * href="https://docs.hazelcast.com/management-center/latest/clusters/client-filtering">Client
+     * Filtering</a>).
      */
     default void clientNotAllowedInCluster(Address remoteAddress) {
     }
 
     /**
-     * Called when connection to a candidate cluster failed & could not establish connection with any members. The failure reasons
-     * are indicated by previously triggered failure events.
+     * Called when connection to a candidate cluster failed & could not
+     * establish connection with any members. The failure reasons are indicated
+     * by previously triggered failure events.
      * <p>
      * This failure can be followed by connection attempt to a backup cluster.
-     *
-     * @param clusterName
      */
     default void clusterConnectionFailed(String clusterName) {
     }
 
     /**
-     * Triggered after connection to at least one cluster member is established.
-     *
-     * @param clusterName
+     * Triggered after connection to at least one cluster member is
+     * established.
      */
     default void clusterConnectionSucceeded(String clusterName) {
     }
 
     /**
-     * Called when during establishing the initial connection, the remote side unexpectedly closes the network connection.
+     * Called when during establishing the initial connection, the remote side
+     * unexpectedly closes the network connection.
      * <p>
-     * This can be triggered after an {@link #attemptingToConnectToAddress(Address)} event (with the same address).
-     *
-     * @param address
+     * This can be triggered after an
+     * {@link #attemptingToConnectToAddress(Address)} event (with the same
+     * address).
      */
     default void remoteClosedConnection(Address address) {
     }

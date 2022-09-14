@@ -29,6 +29,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.WrongMethodTypeException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.Collection;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -296,7 +297,12 @@ public final class ExceptionUtil {
             <T extends Throwable> T cloneWith(MethodHandle constructor, String message,
                                               @Nullable Throwable cause) throws Throwable {
                 T cloned = (T) constructor.invokeWithArguments(message);
-                cloned.initCause(cause);
+                try {
+                    cloned.initCause(cause);
+                } catch (IllegalStateException ignored) {
+                    // Cause can be already set by the exception. It can be set to null as well.
+                    // So doing null check is not the solution here. See https://github.com/hazelcast/hazelcast/issues/21414
+                }
                 return cloned;
             }
         },
@@ -311,7 +317,12 @@ public final class ExceptionUtil {
             <T extends Throwable> T cloneWith(MethodHandle constructor, String message,
                                               @Nullable Throwable cause) throws Throwable {
                 T cloned = (T) constructor.invokeWithArguments();
-                cloned.initCause(cause);
+                try {
+                    cloned.initCause(cause);
+                } catch (IllegalStateException ignored) {
+                    // Cause can be already set by the exception. It can be set to null as well.
+                    // So doing null check is not the solution here. See https://github.com/hazelcast/hazelcast/issues/21414
+                }
                 return cloned;
             }
         };
@@ -357,5 +368,23 @@ public final class ExceptionUtil {
         newStackTrace[remoteStackTrace.length] = new StackTraceElement(EXCEPTION_SEPARATOR, "", "", -1);
         System.arraycopy(localSideStackTrace, 1, newStackTrace, remoteStackTrace.length + 1, localSideStackTrace.length - 1);
         return newStackTrace;
+    }
+
+    /**
+     * If there's any Throwable instance in the values, throw it.
+     */
+    @SafeVarargs
+    public static void rethrowFromCollection(Collection<?> values, Class<? extends Throwable> ... ignored) throws Throwable {
+        outerLoop:
+        for (Object value : values) {
+            if (value instanceof Throwable) {
+                for (Class<? extends Throwable> ignoredClass : ignored) {
+                    if (ignoredClass.isAssignableFrom(value.getClass())) {
+                        continue outerLoop;
+                    }
+                }
+                throw (Throwable) value;
+            }
+        }
     }
 }

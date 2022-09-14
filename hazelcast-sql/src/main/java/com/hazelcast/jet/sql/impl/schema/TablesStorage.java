@@ -34,6 +34,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.sql.impl.schema.Mapping;
+import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
 
 import java.util.Collection;
@@ -44,14 +45,13 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 public class TablesStorage {
     private static final int MAX_CHECK_ATTEMPTS = 5;
     private static final long SLEEP_MILLIS = 100;
-
-    private static final String CATALOG_MAP_NAME = "__sql.catalog";
 
     private final NodeEngine nodeEngine;
     private final Object mergingMutex = new Object();
@@ -80,6 +80,14 @@ public class TablesStorage {
         }
     }
 
+    void put(String name, Type type) {
+        newStorage().put(name, type);
+        if (useOldStorage()) {
+            oldStorage().put(name, type);
+            awaitMappingOnAllMembers(name, type);
+        }
+    }
+
     boolean putIfAbsent(String name, Mapping mapping) {
         Object previousNew = newStorage().putIfAbsent(name, mapping);
         Object previousOld = null;
@@ -98,11 +106,44 @@ public class TablesStorage {
         return previousNew == null && previousOld == null;
     }
 
+    boolean putIfAbsent(String name, Type type) {
+        Object previousNew = newStorage().putIfAbsent(name, type);
+        Object previousOld = null;
+        if (useOldStorage()) {
+            previousOld = oldStorage().putIfAbsent(name, type);
+        }
+        return previousNew == null && previousOld == null;
+    }
+
     Mapping removeMapping(String name) {
         Mapping removedNew = (Mapping) newStorage().remove(name);
         Mapping removedOld = null;
         if (useOldStorage()) {
             removedOld = (Mapping) oldStorage().remove(name);
+        }
+        return removedNew == null ? removedOld : removedNew;
+    }
+
+    public Collection<Type> getAllTypes() {
+        return mergedStorage().values().stream()
+                .filter(o -> o instanceof Type)
+                .map(o -> (Type) o)
+                .collect(Collectors.toList());
+    }
+
+    public Type getType(final String name) {
+        Object obj = mergedStorage().get(name);
+        if (obj instanceof Type) {
+            return (Type) obj;
+        }
+        return null;
+    }
+
+    public Type removeType(String name) {
+        Type removedNew = (Type) newStorage().remove(name);
+        Type removedOld = null;
+        if (useOldStorage()) {
+            removedOld = (Type) oldStorage().remove(name);
         }
         return removedNew == null ? removedOld : removedNew;
     }
@@ -144,10 +185,26 @@ public class TablesStorage {
                 .collect(Collectors.toList());
     }
 
-    void registerListener(EntryListener<String, Object> listener) {
+    Collection<String> typeNames() {
+        return mergedStorage().values()
+                .stream()
+                .filter(t -> t instanceof Type)
+                .map(t -> ((Type) t).getName())
+                .collect(Collectors.toList());
+    }
+
+    void initializeWithListener(EntryListener<String, Object> listener) {
+        boolean useOldStorage = useOldStorage();
+
+        if (!useOldStorage) {
+            storageMovedToNew = true;
+        }
+
         if (!nodeEngine.getLocalMember().isLiteMember()) {
             newStorage().addEntryListener(listener, false);
-            oldStorage().addEntryListener(listener);
+            if (useOldStorage) {
+                oldStorage().addEntryListener(listener);
+            }
         }
     }
 
@@ -155,11 +212,11 @@ public class TablesStorage {
         // To remove in 5.3. We are using the old storage if the cluster version is lower than 5.2. We destroy the old catalog
         // during the first read after the cluster version is upgraded to > =5.2. We do not synchronize put operations to the old
         // catalog, so it is possible that destroy happens before put, and we end up with a leaked ReplicatedMap.
-        return nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
+        return nodeEngine.getHazelcastInstance().getReplicatedMap(SQL_CATALOG_MAP_NAME);
     }
 
     IMap<String, Object> newStorage() {
-        return nodeEngine.getHazelcastInstance().getMap(CATALOG_MAP_NAME);
+        return nodeEngine.getHazelcastInstance().getMap(SQL_CATALOG_MAP_NAME);
     }
 
     private Map<String, Object> mergedStorage() {
@@ -208,7 +265,7 @@ public class TablesStorage {
         for (int i = 0; i < MAX_CHECK_ATTEMPTS && !memberAddresses.isEmpty(); i++) {
             List<CompletableFuture<Address>> futures = memberAddresses.stream()
                     .map(memberAddress -> {
-                        Operation operation = new GetOperation(CATALOG_MAP_NAME, keyData)
+                        Operation operation = new GetOperation(SQL_CATALOG_MAP_NAME, keyData)
                                 .setPartitionId(keyPartitionId)
                                 .setValidateTarget(false);
                         return operationService

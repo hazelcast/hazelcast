@@ -88,4 +88,9 @@ public class MapStoreConfigReadOnlyTest {
     public void setWriteCoalescingOfReadOnlyMapStoreConfigShouldFail() {
         getReadOnlyConfig().setWriteCoalescing(true);
     }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void setOffloadOfReadOnlyMapStoreConfigShouldFail() {
+        getReadOnlyConfig().setOffload(true);
+    }
 }

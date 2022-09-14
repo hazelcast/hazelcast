@@ -136,8 +136,8 @@ public class EventTimeMapper<T> {
     private static final WatermarkPolicy[] EMPTY_WATERMARK_POLICIES = {};
     private static final long[] EMPTY_LONGS = {};
 
-    private final long idleTimeoutNanos;
     private final byte wmKey;
+    private final long idleTimeoutNanos;
     @Nullable
     private final ToLongFunction<? super T> timestampFn;
     private final Supplier<? extends WatermarkPolicy> newWmPolicyFn;
@@ -275,7 +275,7 @@ public class EventTimeMapper<T> {
             }
         }
         if (allAreIdle) {
-            traverser.append(WatermarkCoalescer.createIdleMessage(wmKey));
+            traverser.append(WatermarkCoalescer.IDLE_MESSAGE);
         }
     }
 

@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.expression;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Arrays;
 
@@ -35,6 +36,11 @@ public abstract class VariExpression<T> implements Expression<T> {
 
     protected VariExpression(Expression<?>... operands) {
         this.operands = operands;
+    }
+
+    @Nonnull
+    public Expression<?>[] operands() {
+        return operands;
     }
 
     @Override

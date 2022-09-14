@@ -38,6 +38,7 @@
             "enabled": true,
             "initial-mode": "LAZY",
             "class-name": "com.hazelcast.examples.DummyStore",
+            "offload": false,
             "write-delay-seconds": 60,
             "write-batch-size": 1000,
             "write-coalescing": true,

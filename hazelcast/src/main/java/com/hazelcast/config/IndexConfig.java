@@ -16,10 +16,12 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.query.impl.IndexUtils;
 
 import java.io.IOException;
@@ -42,7 +44,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  * @see com.hazelcast.config.IndexType
  * @see com.hazelcast.config.MapConfig#setIndexConfigs(List)
  */
-public class IndexConfig implements IdentifiedDataSerializable {
+public class IndexConfig implements IdentifiedDataSerializable, Versioned {
     /** Default index type. */
     public static final IndexType DEFAULT_TYPE = IndexType.SORTED;
 
@@ -255,6 +257,11 @@ public class IndexConfig implements IdentifiedDataSerializable {
         out.writeInt(type.getId());
         writeNullableList(attributes, out);
         out.writeObject(bitmapIndexOptions);
+
+        // RU_COMPAT 5.1
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_2)) {
+            out.writeObject(bTreeIndexConfig);
+        }
     }
 
     @Override
@@ -263,6 +270,11 @@ public class IndexConfig implements IdentifiedDataSerializable {
         type = IndexType.getById(in.readInt());
         attributes = readNullableList(in);
         bitmapIndexOptions = in.readObject();
+
+        // RU_COMPAT 5.1
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_2)) {
+            bTreeIndexConfig = in.readObject();
+        }
     }
 
     @Override

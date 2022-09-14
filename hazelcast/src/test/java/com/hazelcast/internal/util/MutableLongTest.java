@@ -32,6 +32,22 @@ import static org.junit.Assert.assertNotEquals;
 public class MutableLongTest {
 
     @Test
+    public void testAddAndGet() {
+        MutableLong mutableLong = MutableLong.valueOf(13);
+
+        assertEquals(24L, mutableLong.addAndGet(11));
+        assertEquals(24L, mutableLong.value);
+    }
+
+    @Test
+    public void testGetAndInc() {
+        MutableLong mutableLong = MutableLong.valueOf(13);
+
+        assertEquals(13L, mutableLong.getAndInc());
+        assertEquals(14L, mutableLong.value);
+    }
+
+    @Test
     public void testToString() {
         MutableLong mutableLong = new MutableLong();
         String s = mutableLong.toString();

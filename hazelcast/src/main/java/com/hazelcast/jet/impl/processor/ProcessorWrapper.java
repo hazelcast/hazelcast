@@ -103,6 +103,11 @@ public abstract class ProcessorWrapper implements Processor, DynamicMetricsProvi
     }
 
     @Override
+    public boolean tryProcessWatermark(int ordinal, @Nonnull Watermark watermark) {
+        return wrapped.tryProcessWatermark(ordinal, watermark);
+    }
+
+    @Override
     public boolean tryProcess() {
         return wrapped.tryProcess();
     }
@@ -140,6 +145,11 @@ public abstract class ProcessorWrapper implements Processor, DynamicMetricsProvi
     @Override
     public boolean finishSnapshotRestore() {
         return wrapped.finishSnapshotRestore();
+    }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return wrapped.closeIsCooperative();
     }
 
     @Override

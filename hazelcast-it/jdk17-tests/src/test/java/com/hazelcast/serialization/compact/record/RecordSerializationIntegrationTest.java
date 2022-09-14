@@ -67,8 +67,7 @@ public abstract class RecordSerializationIntegrationTest extends HazelcastTestSu
     public void shouldSerializeAndDeserializeRecordWhenRegisteredExplicitly() {
         CompactSerializationConfig compactSerializationConfig = new CompactSerializationConfig();
         compactSerializationConfig
-                .setEnabled(true)
-                .register(AllTypesRecord.class);
+                .addClass(AllTypesRecord.class);
 
         HazelcastInstance instance = getDriverWithConfig(compactSerializationConfig);
 

@@ -24,10 +24,12 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.util.MutableByte;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.aggregate.AggregateOperation;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
+import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -45,8 +47,10 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
+import com.hazelcast.jet.sql.impl.opt.WatermarkKeysAssigner;
 import com.hazelcast.jet.sql.impl.processors.LateItemsDropP;
 import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
+import com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinProcessorSupplier;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -62,8 +66,11 @@ import org.apache.calcite.rel.SingleRel;
 import org.apache.calcite.rex.RexProgram;
 
 import javax.annotation.Nullable;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -80,6 +87,7 @@ import static com.hazelcast.jet.core.processor.SourceProcessors.convenientSource
 import static com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil.getJetSqlConnector;
 import static com.hazelcast.jet.sql.impl.processors.RootResultConsumerSink.rootResultConsumerSink;
 import static java.util.Collections.emptyList;
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 
 public class CreateDagVisitor {
@@ -96,11 +104,19 @@ public class CreateDagVisitor {
     private final NodeEngine nodeEngine;
     private final Address localMemberAddress;
     private final QueryParameterMetadata parameterMetadata;
+    private final WatermarkKeysAssigner watermarkKeysAssigner;
 
-    public CreateDagVisitor(NodeEngine nodeEngine, QueryParameterMetadata parameterMetadata) {
+    public CreateDagVisitor(
+            NodeEngine nodeEngine,
+            QueryParameterMetadata parameterMetadata,
+            @Nullable WatermarkKeysAssigner watermarkKeysAssigner,
+            Set<PlanObjectKey> usedViews
+    ) {
         this.nodeEngine = nodeEngine;
         this.localMemberAddress = nodeEngine.getThisAddress();
         this.parameterMetadata = parameterMetadata;
+        this.watermarkKeysAssigner = watermarkKeysAssigner;
+        this.objectKeys.addAll(usedViews);
     }
 
     public Vertex onValues(ValuesPhysicalRel rel) {
@@ -144,7 +160,12 @@ public class CreateDagVisitor {
     public Vertex onUpdate(UpdatePhysicalRel rel) {
         Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
 
-        Vertex vertex = getJetSqlConnector(table).updateProcessor(dag, table, rel.updates(parameterMetadata));
+        Vertex vertex = getJetSqlConnector(table).updateProcessor(
+                dag,
+                table,
+                rel.updatesAsRex(),
+                rel.updates(parameterMetadata)
+        );
         connectInput(rel.getInput(), vertex, null);
         return vertex;
     }
@@ -158,15 +179,21 @@ public class CreateDagVisitor {
     }
 
     public Vertex onFullScan(FullScanPhysicalRel rel) {
-        Table table = rel.getTable().unwrap(HazelcastTable.class).getTarget();
+        HazelcastTable hazelcastTable = rel.getTable().unwrap(HazelcastTable.class);
+        Table table = hazelcastTable.getTarget();
         collectObjectKeys(table);
 
+        BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> policyProvider = rel.eventTimePolicyProvider();
+        Byte watermarkKey = rel.getWatermarkKey();
         return getJetSqlConnector(table).fullScanReader(
                 dag,
                 table,
+                hazelcastTable,
                 rel.filter(parameterMetadata),
                 rel.projection(parameterMetadata),
-                rel.eventTimePolicyProvider()
+                policyProvider != null
+                        ? context -> policyProvider.apply(context, watermarkKey)
+                        : null
         );
     }
 
@@ -381,8 +408,8 @@ public class CreateDagVisitor {
 
     public Vertex onDropLateItems(DropLateItemsPhysicalRel rel) {
         Expression<?> timestampExpression = rel.timestampExpression();
-
-        SupplierEx<Processor> lateItemsDropPSupplier = () -> new LateItemsDropP(timestampExpression);
+        byte key = watermarkKeysAssigner.getWatermarkedFieldsKey(rel).get(rel.wmField()).getValue();
+        SupplierEx<Processor> lateItemsDropPSupplier = () -> new LateItemsDropP(key, timestampExpression);
         Vertex vertex = dag.newUniqueVertex("Drop-Late-Items", lateItemsDropPSupplier);
 
         connectInput(rel.getInput(), vertex, null);
@@ -418,6 +445,57 @@ public class CreateDagVisitor {
                 )
         );
         connectJoinInput(joinInfo, rel.getLeft(), rel.getRight(), joinVertex);
+        return joinVertex;
+    }
+
+    public Vertex onStreamToStreamJoin(StreamToStreamJoinPhysicalRel rel) {
+        JetJoinInfo joinInfo = rel.joinInfo(parameterMetadata);
+
+        Map<Byte, ToLongFunctionEx<JetSqlRow>> leftExtractors = new HashMap<>();
+        Map<Byte, ToLongFunctionEx<JetSqlRow>> rightExtractors = new HashMap<>();
+
+        // map watermarked timestamps extractors to enumerated wm keys
+        Map<Integer, MutableByte> refByteMap = watermarkKeysAssigner.getWatermarkedFieldsKey(rel.getLeft());
+        for (Map.Entry<Integer, ToLongFunctionEx<JetSqlRow>> e : rel.leftTimeExtractors().entrySet()) {
+            Byte wmKey = refByteMap.get(e.getKey()).getValue();
+            leftExtractors.put(wmKey, e.getValue());
+        }
+
+        refByteMap = watermarkKeysAssigner.getWatermarkedFieldsKey(rel.getRight());
+        for (Map.Entry<Integer, ToLongFunctionEx<JetSqlRow>> e : rel.rightTimeExtractors().entrySet()) {
+            Byte wmKey = refByteMap.get(e.getKey()).getValue();
+            rightExtractors.put(wmKey, e.getValue());
+        }
+
+        // map field descriptors to enumerated watermark keys
+        refByteMap = watermarkKeysAssigner.getWatermarkedFieldsKey(rel);
+        Map<Byte, Map<Byte, Long>> postponeTimeMap = new HashMap<>();
+        for (Entry<Integer, Map<Integer, Long>> entry : rel.postponeTimeMap().entrySet()) {
+            Map<Byte, Long> map = new HashMap<>();
+            for (Entry<Integer, Long> innerEntry : entry.getValue().entrySet()) {
+                map.put(refByteMap.get(innerEntry.getKey()).getValue(), innerEntry.getValue());
+            }
+            postponeTimeMap.put(refByteMap.get(entry.getKey()).getValue(), map);
+        }
+
+        // fill `postponeTimeMap` with empty inner maps for unused
+        // watermarks keys to be counted by the processor as present.
+        for (MutableByte key : refByteMap.values()) {
+            postponeTimeMap.putIfAbsent(key.getValue(), emptyMap());
+        }
+
+        Vertex joinVertex = dag.newUniqueVertex(
+                "Stream-Stream Join",
+                new StreamToStreamJoinProcessorSupplier(
+                        joinInfo,
+                        leftExtractors,
+                        rightExtractors,
+                        postponeTimeMap,
+                        rel.getLeft().getRowType().getFieldCount(),
+                        rel.getRight().getRowType().getFieldCount()));
+
+        connectStreamToStreamJoinInput(joinInfo, rel.getLeft(), rel.getRight(), joinVertex);
+
         return joinVertex;
     }
 
@@ -569,6 +647,36 @@ public class CreateDagVisitor {
             left = left.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.leftEquiJoinIndices()));
             right = right.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.rightEquiJoinIndices()));
         }
+        dag.edge(left);
+        dag.edge(right);
+    }
+
+    private void connectStreamToStreamJoinInput(
+            JetJoinInfo joinInfo,
+            RelNode leftInputRel,
+            RelNode rightInputRel,
+            Vertex joinVertex
+    ) {
+        Vertex leftInput = ((PhysicalRel) leftInputRel).accept(this);
+        Vertex rightInput = ((PhysicalRel) rightInputRel).accept(this);
+
+        Edge left = Edge.from(leftInput).to(joinVertex, 0);
+        Edge right = Edge.from(rightInput).to(joinVertex, 1);
+
+        if (joinInfo.isRightOuter()) {
+            left = left.distributed().broadcast();
+            right = right.unicast().local();
+        } else {
+            // this strategy applies to left and inner joins non-equi joins
+            left = left.unicast().local();
+            right = right.distributed().broadcast();
+        }
+
+        if (joinInfo.isEquiJoin()) {
+            left = left.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.leftEquiJoinIndices()));
+            right = right.distributed().partitioned(ObjectArrayKey.projectFn(joinInfo.rightEquiJoinIndices()));
+        }
+
         dag.edge(left);
         dag.edge(right);
     }

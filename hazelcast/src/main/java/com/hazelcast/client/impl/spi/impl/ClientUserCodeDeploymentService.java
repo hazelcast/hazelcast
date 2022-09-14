@@ -161,9 +161,10 @@ public class ClientUserCodeDeploymentService {
     }
 
     public void deploy(HazelcastClientInstanceImpl client) throws ExecutionException, InterruptedException {
-        if (!clientUserCodeDeploymentConfig.isEnabled()) {
+        if (!clientUserCodeDeploymentConfig.isEnabled() || classDefinitionList.isEmpty()) {
             return;
         }
+
         ClientMessage request = ClientDeployClassesCodec.encodeRequest(classDefinitionList);
         ClientInvocation invocation = new ClientInvocation(client, request, null);
         ClientInvocationFuture future = invocation.invokeUrgent();

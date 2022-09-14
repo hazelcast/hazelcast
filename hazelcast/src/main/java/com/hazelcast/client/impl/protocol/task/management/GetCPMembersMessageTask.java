@@ -19,6 +19,7 @@ package com.hazelcast.client.impl.protocol.task.management;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.MCGetCPMembersCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAsyncMessageTask;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.cp.CPMember;
 import com.hazelcast.cp.CPSubsystemManagementService;
 import com.hazelcast.instance.impl.Node;
@@ -52,7 +53,8 @@ public class GetCPMembersMessageTask extends AbstractAsyncMessageTask<Void, List
                 .thenApply(cpMembers -> {
                     List<SimpleEntry<UUID, UUID>> result = new ArrayList<>(cpMembers.size());
                     for (CPMember cpMember : cpMembers) {
-                        UUID apUuid = clusterService.getMember(cpMember.getAddress()).getUuid();
+                        Member member = clusterService.getMember(cpMember.getAddress());
+                        UUID apUuid = member != null ? member.getUuid() : null;
                         result.add(new SimpleEntry<>(cpMember.getUuid(), apUuid));
                     }
                     return result;

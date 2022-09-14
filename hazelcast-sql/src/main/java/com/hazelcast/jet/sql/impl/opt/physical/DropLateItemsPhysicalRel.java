@@ -54,6 +54,10 @@ public class DropLateItemsPhysicalRel extends SingleRel implements PhysicalRel {
         return ColumnExpression.create(wmField, type);
     }
 
+    public int wmField() {
+        return wmField;
+    }
+
     @Override
     public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
         return OptUtils.schema(getRowType());
@@ -71,7 +75,7 @@ public class DropLateItemsPhysicalRel extends SingleRel implements PhysicalRel {
 
     @Override
     public @Nullable RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        return planner.getCostFactory().makeHugeCost();
+        return planner.getCostFactory().makeTinyCost();
     }
 
     @Override

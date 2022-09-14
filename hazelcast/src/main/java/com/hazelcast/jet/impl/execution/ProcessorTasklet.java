@@ -86,6 +86,7 @@ import static com.hazelcast.jet.impl.execution.ProcessorState.SNAPSHOT_COMMIT_FI
 import static com.hazelcast.jet.impl.execution.ProcessorState.SNAPSHOT_COMMIT_FINISH__PROCESS;
 import static com.hazelcast.jet.impl.execution.ProcessorState.SNAPSHOT_COMMIT_PREPARE;
 import static com.hazelcast.jet.impl.execution.ProcessorState.WAITING_FOR_SNAPSHOT_COMPLETED;
+import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE_TIME;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.PrefixedLogger.prefix;
@@ -460,7 +461,7 @@ public class ProcessorTasklet implements Tasklet {
 
     private boolean tryProcessGlobalWatermark(Watermark wm) {
         // A watermark is handled by the processor, while the IDLE message is passed directly to the outbox.
-        if (wm.timestamp() == IDLE_MESSAGE_TIME) {
+        if (wm.equals(IDLE_MESSAGE)) {
             return outbox.offer(wm);
         } else {
             return doWithClassLoader(context.classLoader(), () -> processor.tryProcessWatermark(wm));
@@ -583,7 +584,7 @@ public class ProcessorTasklet implements Tasklet {
                 Object item = inbox.queue().poll();
                 if (item instanceof Watermark) {
                     Watermark wm = ((Watermark) item);
-                    if (wm.timestamp() != IDLE_MESSAGE_TIME) {
+                    if (!wm.equals(IDLE_MESSAGE)) {
                         pendingEdgeWatermark.add(wm);
                     }
                     pendingGlobalWatermarks.addAll(coalescers.observeWm(currInstream.ordinal(), wm));
@@ -720,12 +721,21 @@ public class ProcessorTasklet implements Tasklet {
             mContext.collect(descriptorWithOrdinal, EMITTED_COUNT, ProbeLevel.INFO, ProbeUnit.COUNT, emittedCounts.get(i));
         }
 
-        for (Byte key : coalescers.keys()) {
-            MetricDescriptor keyedDesc = descriptor.copy().withDiscriminator("key", Byte.toString(key));
-            mContext.collect(keyedDesc, TOP_OBSERVED_WM, ProbeLevel.INFO, ProbeUnit.MS, coalescers.topObservedWm(key));
-            mContext.collect(keyedDesc, COALESCED_WM, ProbeLevel.INFO, ProbeUnit.MS, coalescers.coalescedWm(key));
-            mContext.collect(keyedDesc, LAST_FORWARDED_WM, ProbeLevel.INFO, ProbeUnit.MS, outbox.lastForwardedWm(key));
-            mContext.collect(keyedDesc, LAST_FORWARDED_WM_LATENCY, ProbeLevel.INFO, ProbeUnit.MS, lastForwardedWmLatency(key));
+        if (!coalescers.keys().isEmpty()) {
+            for (Byte key : coalescers.keys()) {
+                MetricDescriptor keyedDesc = descriptor.copy().withDiscriminator("key", Byte.toString(key));
+                mContext.collect(keyedDesc, TOP_OBSERVED_WM, ProbeLevel.INFO, ProbeUnit.MS, coalescers.topObservedWm(key));
+                mContext.collect(keyedDesc, COALESCED_WM, ProbeLevel.INFO, ProbeUnit.MS, coalescers.coalescedWm(key));
+                mContext.collect(keyedDesc, LAST_FORWARDED_WM, ProbeLevel.INFO, ProbeUnit.MS, outbox.lastForwardedWm(key));
+                long lastForwardedWmLatency = lastForwardedWmLatency(key);
+                mContext.collect(keyedDesc, LAST_FORWARDED_WM_LATENCY, ProbeLevel.INFO, ProbeUnit.MS, lastForwardedWmLatency);
+            }
+        } else {
+            MetricDescriptor keyedDesc = descriptor.copy().withDiscriminator("key", "0");
+            mContext.collect(keyedDesc, TOP_OBSERVED_WM, ProbeLevel.INFO, ProbeUnit.MS, Long.MIN_VALUE);
+            mContext.collect(keyedDesc, COALESCED_WM, ProbeLevel.INFO, ProbeUnit.MS, Long.MIN_VALUE);
+            mContext.collect(keyedDesc, LAST_FORWARDED_WM, ProbeLevel.INFO, ProbeUnit.MS, Long.MIN_VALUE);
+            mContext.collect(keyedDesc, LAST_FORWARDED_WM_LATENCY, ProbeLevel.INFO, ProbeUnit.MS, 0L);
         }
 
         mContext.collect(descriptor, this);

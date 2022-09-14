@@ -136,6 +136,10 @@ public class PagingPredicateImpl<K, V>
         this.iterationType = iterationType;
     }
 
+    public PagingPredicateImpl(PagingPredicateImpl original) {
+        this(original, original.predicate);
+    }
+
     /**
      * Creates a shallow copy of the given original paging predicate while
      * replacing its inner predicate with the given predicate.

@@ -379,10 +379,9 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             clusterService.start(configuredListeners);
             clientClusterViewListenerService.start();
 
-            configuredListeners.stream().filter(ClientConnectionProcessListener.class::isInstance)
-                    // private API for Management Center (cluster connection diagnostics)
-                    .map(ClientConnectionProcessListener.class::cast)
-                    .forEach(connectionManager::addClientConnectionProcessListener);
+            // Add connection process listeners before starting the connection
+            // manager, so that they are invoked for all connection attempts
+            addConnectionProcessListeners(configuredListeners);
             connectionManager.start();
             startHeartbeat();
             startIcmpPing();
@@ -869,13 +868,13 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         return clientExtension.getJet();
     }
 
-    public void onClusterChange() {
+    public void onTryToConnectNextCluster() {
         ILogger logger = loggingService.getLogger(HazelcastInstance.class);
         logger.info("Resetting local state of the client, because of a cluster change.");
 
         dispose(onClusterChangeDisposables);
         //reset the member list version
-        clusterService.onClusterChange();
+        clusterService.onTryToConnectNextCluster();
         //clear partition service
         partitionService.reset();
         //close all the connections, consequently waiting invocations get TargetDisconnectedException
@@ -884,13 +883,18 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         connectionManager.reset();
     }
 
-    public void onClusterConnect() {
+    public void onConnectionToNewCluster() {
         ILogger logger = loggingService.getLogger(HazelcastInstance.class);
         logger.info("Clearing local state of the client, because of a cluster restart.");
 
         dispose(onClusterChangeDisposables);
         clusterService.onClusterConnect();
     }
+
+    public void collectAndSendStatsNow() {
+        clientStatisticsService.collectAndSendStatsNow();
+    }
+
 
     public void waitForInitialMembershipEvents() {
         clusterService.waitInitialMemberListFetched();
@@ -937,6 +941,14 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
 
         configuredListeners.stream().filter(listener -> listener instanceof CPGroupAvailabilityListener)
                 .forEach(listener -> getCPSubsystem().addGroupAvailabilityListener((CPGroupAvailabilityListener) listener));
+    }
+
+    private void addConnectionProcessListeners(Collection<EventListener> configuredListeners) {
+        configuredListeners.stream()
+                .filter(ClientConnectionProcessListener.class::isInstance)
+                // private API for Management Center (cluster connection diagnostics)
+                .map(ClientConnectionProcessListener.class::cast)
+                .forEach(connectionManager::addClientConnectionProcessListener);
     }
 
     public SchemaService getSchemaService() {

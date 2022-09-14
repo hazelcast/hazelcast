@@ -90,13 +90,6 @@ public class IMapSqlConnector implements SqlConnector {
             MetadataJsonResolver.INSTANCE
     );
 
-    private static final KvMetadataResolvers METADATA_RESOLVERS_WITHOUT_COMPACT = new KvMetadataResolvers(
-            KvMetadataJavaResolver.INSTANCE,
-            MetadataPortableResolver.INSTANCE,
-            MetadataCompactDisabledResolver.INSTANCE,
-            MetadataJsonResolver.INSTANCE
-    );
-
     @Override
     public String typeName() {
         return TYPE_NAME;
@@ -112,13 +105,10 @@ public class IMapSqlConnector implements SqlConnector {
     public List<MappingField> resolveAndValidateFields(
             @Nonnull NodeEngine nodeEngine,
             @Nonnull Map<String, String> options,
-            @Nonnull List<MappingField> userFields
+            @Nonnull List<MappingField> userFields,
+            @Nonnull String externalName
     ) {
-        if (nodeEngine.getConfig().getSerializationConfig().getCompactSerializationConfig().isEnabled()) {
-            return METADATA_RESOLVERS_WITH_COMPACT.resolveAndValidateFields(userFields, options, nodeEngine);
-        } else {
-            return METADATA_RESOLVERS_WITHOUT_COMPACT.resolveAndValidateFields(userFields, options, nodeEngine);
-        }
+        return METADATA_RESOLVERS_WITH_COMPACT.resolveAndValidateFields(userFields, options, nodeEngine);
     }
 
     @Nonnull
@@ -133,8 +123,17 @@ public class IMapSqlConnector implements SqlConnector {
     ) {
         InternalSerializationService ss = (InternalSerializationService) nodeEngine.getSerializationService();
 
-        KvMetadata keyMetadata = METADATA_RESOLVERS_WITH_COMPACT.resolveMetadata(true, resolvedFields, options, ss);
-        KvMetadata valueMetadata = METADATA_RESOLVERS_WITH_COMPACT.resolveMetadata(false, resolvedFields, options, ss);
+        KvMetadata keyMetadata = METADATA_RESOLVERS_WITH_COMPACT.resolveMetadata(
+                true,
+                resolvedFields,
+                options, ss
+        );
+        KvMetadata valueMetadata = METADATA_RESOLVERS_WITH_COMPACT.resolveMetadata(
+                false,
+                resolvedFields,
+                options,
+                ss
+        );
         List<TableField> fields = concat(keyMetadata.getFields().stream(), valueMetadata.getFields().stream())
                 .collect(toList());
 

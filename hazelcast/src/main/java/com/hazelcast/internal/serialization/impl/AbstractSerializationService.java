@@ -125,7 +125,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         this.allowOverrideDefaultSerializers = builder.allowOverrideDefaultSerializers;
         CompactSerializationConfig compactSerializationCfg = builder.compactSerializationConfig == null
                 ? new CompactSerializationConfig() : builder.compactSerializationConfig;
-        compactStreamSerializer = new CompactStreamSerializer(compactSerializationCfg,
+        compactStreamSerializer = new CompactStreamSerializer(this, compactSerializationCfg,
                 managedContext, builder.schemaService, classLoader);
         this.compactWithSchemaSerializerAdapter = new CompactWithSchemaStreamSerializerAdapter(compactStreamSerializer);
         this.compactSerializerAdapter = new CompactStreamSerializerAdapter(compactStreamSerializer);
@@ -570,7 +570,10 @@ public abstract class AbstractSerializationService implements InternalSerializat
             return nullSerializerAdapter;
         }
         final Class type = object.getClass();
+        return serializerForClass(type, includeSchema);
+    }
 
+    public SerializerAdapter serializerForClass(Class type, boolean includeSchema) {
         //2-Default serializers, Dataserializable, Compact, Portable, primitives, arrays, String and
         // some helper Java types(BigInteger etc)
         SerializerAdapter serializer = lookupDefaultSerializer(type, includeSchema);
@@ -594,7 +597,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         }
 
         //6-Compact serializer
-        if (serializer == null && compactStreamSerializer.isEnabled()) {
+        if (serializer == null) {
             serializer = getCompactSerializer(includeSchema);
         }
 
@@ -614,8 +617,8 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     private SerializerAdapter lookupDefaultSerializer(Class type, boolean includeSchema) {
-        if (compactStreamSerializer.isEnabled()
-                && (CompactGenericRecord.class.isAssignableFrom(type) || compactStreamSerializer.isRegisteredAsCompact(type))) {
+        if ((CompactGenericRecord.class.isAssignableFrom(type)
+                || compactStreamSerializer.isRegisteredAsCompact(type))) {
             return getCompactSerializer(includeSchema);
         }
         if (DataSerializable.class.isAssignableFrom(type)) {
@@ -692,21 +695,12 @@ public abstract class AbstractSerializationService implements InternalSerializat
 
     /**
      * Makes sure that the classes registered as Compact serializable are not
-     * overriding the default serializers, if the
-     * {@link #allowOverrideDefaultSerializers} configuration option is set to
-     * {@code false}.
+     * overriding the default serializers.
      * <p>
      * Must be called in the constructor of the child classes after they
      * complete registering default serializers.
      */
     protected void verifyDefaultSerializersNotOverriddenWithCompact() {
-        // If the user explicitly set to override default serializers, we should
-        // respect that and allow it to register Compact serializers for such
-        // types. No need to perform further checks.
-        if (allowOverrideDefaultSerializers) {
-            return;
-        }
-
         for (Class clazz : compactStreamSerializer.getCompactSerializableClasses()) {
             if (!constantTypesMap.containsKey(clazz)) {
                 continue;
@@ -715,10 +709,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
             throw new IllegalArgumentException("Compact serializer for the "
                     + "class '" + clazz + " can not be registered as it "
                     + "overrides the default serializer for that class "
-                    + "provided by Hazelcast. If you want to override the "
-                    + "default serializer, set the "
-                    + "'allowOverrideDefaultSerializers' to 'true' in the "
-                    + "serialization configuration."
+                    + "provided by Hazelcast."
             );
         }
     }

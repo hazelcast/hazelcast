@@ -35,9 +35,4 @@ public class MemberCompactTest extends CompactFormatIntegrationTest {
         instance1 = factory.newHazelcastInstance(getConfig());
         instance2 = factory.newHazelcastInstance(getConfig());
     }
-
-    @Override
-    protected void restartCluster() {
-        //noop.
-    }
 }
