@@ -19,11 +19,11 @@ package com.hazelcast.client;
 import com.hazelcast.client.impl.ClientSelectors;
 import com.hazelcast.client.impl.clientside.ClientTestUtil;
 import com.hazelcast.client.impl.protocol.AuthenticationStatus;
+import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientAuthenticationCodec;
 import com.hazelcast.client.impl.protocol.codec.MapGetCodec;
 import com.hazelcast.client.impl.protocol.codec.builtin.ErrorsCodec;
-import com.hazelcast.client.impl.protocol.exception.ErrorHolder;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
@@ -46,19 +46,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
-import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
-import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
-import static com.hazelcast.internal.nio.IOUtil.readFully;
 import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY;
 import static com.hazelcast.test.Accessors.getClientEngineImpl;
 import static com.hazelcast.test.HazelcastTestSupport.assertContains;
+import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
 import static com.hazelcast.test.HazelcastTestSupport.assertNotContains;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
@@ -98,13 +93,17 @@ public class AuthenticationInformationLeakTest {
         try (Socket socket = new Socket()) {
             socket.setReuseAddress(true);
             socket.connect(endpoint);
+            ClientMessage res;
             try (OutputStream os = socket.getOutputStream(); InputStream is = socket.getInputStream()) {
                 os.write(CLIENT_BINARY.getBytes(StandardCharsets.UTF_8));
-                getKeyValue(ss, os, is);
+                res = getKeyValue(ss, os, is);
             }
-        } catch (RuntimeException runtimeException) {
+            assertEquals(res.getMessageType(), ErrorsCodec.EXCEPTION_MESSAGE_TYPE);
+            ClientExceptionFactory factory = new ClientExceptionFactory(false, Thread.currentThread().getContextClassLoader());
+            throw factory.createException(res);
+        } catch (Throwable runtimeException) {
             String message = runtimeException.getMessage();
-            assertContains(message, "AuthenticationException");
+            assertInstanceOf(AuthenticationException.class, runtimeException.getCause());
             assertContains(message, "must authenticate before any operation");
             assertNotContains(message.toLowerCase(), "connection");
         }
@@ -153,46 +152,27 @@ public class AuthenticationInformationLeakTest {
         UUID uuid = new UUID(0, 0);
         ClientMessage msg = ClientAuthenticationCodec.encodeRequest(clusterName, null, null, uuid, "", serVersion, "", "", new ArrayList<>());
         ClientTestUtil.writeClientMessage(os, msg);
-        return readResponse(is, ClientAuthenticationCodec.RESPONSE_MESSAGE_TYPE);
+
+        ClientMessage res = ClientTestUtil.readResponse(is);
+        assertEquals(res.getMessageType(), ClientAuthenticationCodec.RESPONSE_MESSAGE_TYPE);
+        return res;
     }
 
-    private void getKeyValue(SerializationService ss, OutputStream os, InputStream is)
+    private ClientMessage getKeyValue(SerializationService ss, OutputStream os, InputStream is)
             throws IOException {
         Data keyData = ss.toData("key");
         ClientMessage msg = MapGetCodec.encodeRequest("mapName", keyData, 0);
         msg.setPartitionId(getPartitionId(keyData));
         ClientTestUtil.writeClientMessage(os, msg);
-        readResponse(is, MapGetCodec.RESPONSE_MESSAGE_TYPE);
+        ClientMessage res = ClientTestUtil.readResponse(is);
+        if (res.getMessageType() != ErrorsCodec.EXCEPTION_MESSAGE_TYPE) {
+            assertEquals(res.getMessageType(), MapGetCodec.RESPONSE_MESSAGE_TYPE);
+        }
+        return res;
     }
 
     private int getPartitionId(Data keyData) {
         int hash = keyData.getPartitionHash();
         return HashUtil.hashToIndex(hash, 271);
-    }
-
-    private ClientMessage readResponse(InputStream is, int expectedMsgType) throws IOException {
-        ClientMessage clientMessage = ClientMessage.createForEncode();
-        int msgType;
-        do {
-            while (true) {
-                ByteBuffer frameSizeBuffer = ByteBuffer.allocate(SIZE_OF_FRAME_LENGTH_AND_FLAGS);
-                frameSizeBuffer.order(ByteOrder.LITTLE_ENDIAN);
-                readFully(is, frameSizeBuffer.array());
-                int frameSize = frameSizeBuffer.getInt();
-                int flags = frameSizeBuffer.getShort() & 0xffff;
-                byte[] content = new byte[frameSize - SIZE_OF_FRAME_LENGTH_AND_FLAGS];
-                readFully(is, content);
-                clientMessage.add(new ClientMessage.Frame(content, flags));
-                if (ClientMessage.isFlagSet(flags, IS_FINAL_FLAG)) {
-                    break;
-                }
-            }
-            msgType = clientMessage.getMessageType();
-            if (msgType == ErrorsCodec.EXCEPTION_MESSAGE_TYPE) {
-                List<ErrorHolder> err = ErrorsCodec.decode(clientMessage);
-                throw new RuntimeException(err.get(0).getMessage());
-            }
-        } while (msgType != expectedMsgType);
-        return clientMessage;
     }
 }

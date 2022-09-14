@@ -32,8 +32,6 @@ import java.io.OutputStream;
 import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.Socket;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.nio.charset.StandardCharsets;
 import java.util.Collections;
 import java.util.Map;
@@ -41,9 +39,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
-import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
-import static com.hazelcast.internal.nio.IOUtil.readFully;
 import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY;
 
 public class TestUtil {
@@ -122,25 +117,7 @@ public class TestUtil {
             InputStream is = socket.getInputStream();
             os.write(CLIENT_BINARY.getBytes(StandardCharsets.UTF_8));
             ClientTestUtil.writeClientMessage(os, authenticationRequest);
-            readResponse(is);
-        }
-
-        private ClientMessage readResponse(InputStream is) throws IOException {
-            ClientMessage clientMessage = ClientMessage.createForEncode();
-            while (true) {
-                ByteBuffer frameSizeBuffer = ByteBuffer.allocate(SIZE_OF_FRAME_LENGTH_AND_FLAGS);
-                frameSizeBuffer.order(ByteOrder.LITTLE_ENDIAN);
-                readFully(is, frameSizeBuffer.array());
-                int frameSize = frameSizeBuffer.getInt();
-                int flags = frameSizeBuffer.getShort() & 0xffff;
-                byte[] content = new byte[frameSize - SIZE_OF_FRAME_LENGTH_AND_FLAGS];
-                readFully(is, content);
-                clientMessage.add(new ClientMessage.Frame(content, flags));
-                if (ClientMessage.isFlagSet(flags, IS_FINAL_FLAG)) {
-                    break;
-                }
-            }
-            return clientMessage;
+            ClientTestUtil.readResponse(is);
         }
     }
 

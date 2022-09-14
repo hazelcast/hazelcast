@@ -51,9 +51,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import java.util.UUID;
 
-import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
-import static com.hazelcast.internal.nio.IOUtil.readFully;
 import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY;
 import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
@@ -93,7 +91,7 @@ public class ClientMessageProtectionTest {
             try (OutputStream os = socket.getOutputStream(); InputStream is = socket.getInputStream()) {
                 os.write(CLIENT_BINARY.getBytes(StandardCharsets.UTF_8));
                 ClientTestUtil.writeClientMessage(os, clientMessage);
-                ClientMessage respMessage = readResponse(is);
+                ClientMessage respMessage = ClientTestUtil.readResponse(is);
                 assertEquals(ClientAuthenticationCodec.RESPONSE_MESSAGE_TYPE, respMessage.getMessageType());
                 ClientAuthenticationCodec.ResponseParameters authnResponse = ClientAuthenticationCodec
                         .decodeResponse(respMessage);
@@ -102,7 +100,7 @@ public class ClientMessageProtectionTest {
                 // the connection is now trusted, lets try bigger and fragmented messages
                 ClientMessage authenticationMessage = createAuthenticationMessage(hz, createString(1024));
                 ClientTestUtil.writeClientMessage(os, authenticationMessage);
-                respMessage = readResponse(is);
+                respMessage = ClientTestUtil.readResponse(is);
                 assertEquals(ClientAuthenticationCodec.RESPONSE_MESSAGE_TYPE, respMessage.getMessageType());
                 authnResponse = ClientAuthenticationCodec.decodeResponse(respMessage);
                 assertEquals(AuthenticationStatus.AUTHENTICATED, AuthenticationStatus.getById(authnResponse.status));
@@ -112,7 +110,7 @@ public class ClientMessageProtectionTest {
                 for (ClientMessage frame : subFrames) {
                     ClientTestUtil.writeClientMessage(os, frame);
                 }
-                respMessage = readResponse(is);
+                respMessage = ClientTestUtil.readResponse(is);
                 assertEquals(ClientAuthenticationCodec.RESPONSE_MESSAGE_TYPE, respMessage.getMessageType());
                 authnResponse = ClientAuthenticationCodec.decodeResponse(respMessage);
                 assertEquals(AuthenticationStatus.AUTHENTICATED, AuthenticationStatus.getById(authnResponse.status));
@@ -134,7 +132,7 @@ public class ClientMessageProtectionTest {
                 assertTrue(subFrames.size() > 1);
                 ClientTestUtil.writeClientMessage(os, subFrames.get(0));
                 expected.expect(connectionClosedException());
-                readResponse(is);
+                ClientTestUtil.readResponse(is);
             }
         }
     }
@@ -154,7 +152,7 @@ public class ClientMessageProtectionTest {
                 os.write(CLIENT_BINARY.getBytes(StandardCharsets.UTF_8));
                 ClientTestUtil.writeClientMessage(os, clientMessage);
                 expected.expect(connectionClosedException());
-                readResponse(is);
+                ClientTestUtil.readResponse(is);
             }
         }
     }
@@ -179,7 +177,7 @@ public class ClientMessageProtectionTest {
                 os.write(TestUtil.byteBufferToBytes(buffer));
                 os.flush();
                 expected.expect(connectionClosedException());
-                readResponse(is);
+                ClientTestUtil.readResponse(is);
             }
         }
     }
@@ -212,7 +210,7 @@ public class ClientMessageProtectionTest {
                 os.write(TestUtil.byteBufferToBytes(buffer));
                 os.flush();
                 expected.expect(connectionClosedException());
-                readResponse(is);
+                ClientTestUtil.readResponse(is);
             }
         }
     }
@@ -220,24 +218,6 @@ public class ClientMessageProtectionTest {
     private ClientMessage createAuthenticationMessage(HazelcastInstance hz, String clientName) {
         return ClientAuthenticationCodec.encodeRequest(hz.getConfig().getClusterName(), null, null, UUID.randomUUID(), "FOO",
                 (byte) 1, clientName, "xxx", emptyList());
-    }
-
-    private ClientMessage readResponse(InputStream is) throws IOException {
-        ClientMessage clientMessage = ClientMessage.createForEncode();
-        while (true) {
-            ByteBuffer frameSizeBuffer = ByteBuffer.allocate(SIZE_OF_FRAME_LENGTH_AND_FLAGS);
-            frameSizeBuffer.order(ByteOrder.LITTLE_ENDIAN);
-            readFully(is, frameSizeBuffer.array());
-            int frameSize = frameSizeBuffer.getInt();
-            int flags = frameSizeBuffer.getShort() & 0xffff;
-            byte[] content = new byte[frameSize - SIZE_OF_FRAME_LENGTH_AND_FLAGS];
-            readFully(is, content);
-            clientMessage.add(new ClientMessage.Frame(content, flags));
-            if (ClientMessage.isFlagSet(flags, IS_FINAL_FLAG)) {
-                break;
-            }
-        }
-        return clientMessage;
     }
 
     private <T> org.hamcrest.Matcher<T> connectionClosedException() {

@@ -22,12 +22,14 @@ import com.hazelcast.instance.impl.TestUtil;
 import com.hazelcast.internal.serialization.SerializationService;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 import static com.hazelcast.client.impl.protocol.ClientMessage.IS_FINAL_FLAG;
 import static com.hazelcast.client.impl.protocol.ClientMessage.SIZE_OF_FRAME_LENGTH_AND_FLAGS;
+import static com.hazelcast.internal.nio.IOUtil.readFully;
 
 public final class ClientTestUtil {
 
@@ -66,5 +68,23 @@ public final class ClientTestUtil {
         }
         buffer.put(content);
         return TestUtil.byteBufferToBytes(buffer);
+    }
+
+    public static ClientMessage readResponse(InputStream is) throws IOException {
+        ClientMessage clientMessage = ClientMessage.createForEncode();
+        while (true) {
+            ByteBuffer frameSizeBuffer = ByteBuffer.allocate(SIZE_OF_FRAME_LENGTH_AND_FLAGS);
+            frameSizeBuffer.order(ByteOrder.LITTLE_ENDIAN);
+            readFully(is, frameSizeBuffer.array());
+            int frameSize = frameSizeBuffer.getInt();
+            int flags = frameSizeBuffer.getShort() & 0xffff;
+            byte[] content = new byte[frameSize - SIZE_OF_FRAME_LENGTH_AND_FLAGS];
+            readFully(is, content);
+            clientMessage.add(new ClientMessage.Frame(content, flags));
+            if (ClientMessage.isFlagSet(flags, IS_FINAL_FLAG)) {
+                break;
+            }
+        }
+        return clientMessage;
     }
 }
