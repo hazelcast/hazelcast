@@ -83,6 +83,7 @@ public class SqlServiceImpl implements SqlService {
     private SqlInternalService internalService;
 
     private final Counter sqlQueriesSubmitted = MwCounter.newMwCounter();
+    private final Counter sqlStreamingQueriesSubmitted = MwCounter.newMwCounter();
 
     public SqlServiceImpl(NodeEngineImpl nodeEngine) {
         this.logger = nodeEngine.getLogger(getClass());
@@ -142,6 +143,10 @@ public class SqlServiceImpl implements SqlService {
         return sqlQueriesSubmitted.get();
     }
 
+    public long getSqlStreamingQueriesSubmittedCount() {
+        return sqlStreamingQueriesSubmitted.get();
+    }
+
     /**
      * For testing only.
      */
@@ -199,7 +204,7 @@ public class SqlServiceImpl implements SqlService {
                 queryId = QueryId.create(nodeServiceProvider.getLocalMemberId());
             }
 
-            return query0(
+            SqlResult sqlResult = query0(
                     queryId,
                     statement.getSchema(),
                     statement.getSql(),
@@ -209,6 +214,12 @@ public class SqlServiceImpl implements SqlService {
                     statement.getExpectedResultType(),
                     securityContext
             );
+            if (!skipStats && sqlResult instanceof AbstractSqlResult) {
+                if (((AbstractSqlResult) sqlResult).isInfiniteRows()) {
+                    sqlStreamingQueriesSubmitted.inc();
+                }
+            }
+            return sqlResult;
         } catch (AccessControlException e) {
             throw e;
         } catch (Exception e) {
@@ -350,5 +361,12 @@ public class SqlServiceImpl implements SqlService {
             return;
         }
         getInternalService().getClientStateRegistry().closeOnError(queryId);
+    }
+
+    /**
+     * Added for testing
+     */
+    void setOptimizer(SqlOptimizer optimizer) {
+        this.optimizer = optimizer;
     }
 }

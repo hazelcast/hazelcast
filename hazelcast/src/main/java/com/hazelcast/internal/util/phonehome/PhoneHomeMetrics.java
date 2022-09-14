@@ -148,6 +148,7 @@ public enum PhoneHomeMetrics {
 
     // SQL METRICS
     SQL_QUERIES_SUBMITTED("sqlqs"),
+    SQL_STREAMING_QUERIES_SUBMITTED("sqlqss"),
 
     // DYNAMIC CONFIG PERSISTENCE
     DYNAMIC_CONFIG_PERSISTENCE_ENABLED("dcpe"),
@@ -155,8 +156,12 @@ public enum PhoneHomeMetrics {
     // STORAGE METRICS
     HD_MEMORY_ENABLED("hdme"),
     MEMORY_USED_HEAP_SIZE("muhs"),
+    MEMORY_FREE_HEAP_SIZE("mfhs"),
     MEMORY_USED_NATIVE_SIZE("muns"),
     TIERED_STORAGE_ENABLED("tse"),
+    TIERED_STORAGE_LIMIT("tsl"),
+    TIERED_STORAGE_HELD("tsh"),
+    LICENSE_KEY_VERSION("lkv"),
     DATA_MEMORY_COST("dmc"),
 
     //CP SUBSYSTEM METRICS
