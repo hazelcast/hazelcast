@@ -1814,14 +1814,22 @@ public class EntryProcessorTest extends HazelcastTestSupport {
 
         @Override
         public Set<QueryableEntry<K, V>> filter(QueryContext queryContext) {
-            Index index = queryContext.getIndex(attributeName);
+            Index index = getIndex(queryContext);
+            if (index == null) {
+                return null;
+            }
+
             Set records = index.getRecords(key);
             return records;
         }
 
+        private Index getIndex(QueryContext queryContext) {
+            return queryContext.getIndex(attributeName);
+        }
+
         @Override
         public boolean isIndexed(QueryContext queryContext) {
-            return true;
+            return getIndex(queryContext) != null;
         }
 
         @Override

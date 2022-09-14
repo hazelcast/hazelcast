@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.expression;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -56,7 +57,10 @@ public class ToRowFunction extends UniExpressionWithType<RowValue> implements Id
     }
 
     private RowValue convert(final Object obj, final QueryDataType dataType, final Set<Object> seenObjects) {
-        // TODO: Compact and Portable support
+        if (obj instanceof GenericRecord) {
+            throw QueryException.error("TO_ROW function is only supported for Java types");
+        }
+
         if (!seenObjects.add(obj)) {
             throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "Cycle detected in row value");
         }

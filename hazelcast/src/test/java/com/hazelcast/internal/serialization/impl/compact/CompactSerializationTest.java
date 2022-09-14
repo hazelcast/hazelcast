@@ -301,6 +301,26 @@ public class CompactSerializationTest {
     }
 
     @Test
+    public void testSerializingClassReflectively_withArrayOfArrayField() {
+        SerializationService service = createSerializationService(new SerializationConfig());
+        assertThatThrownBy(() -> {
+                service.toData(new ClassWithArrayOfArrayField());
+        }).isInstanceOf(HazelcastSerializationException.class)
+                .hasStackTraceContaining("cannot be serialized with zero configuration Compact serialization")
+                .hasStackTraceContaining("which uses this class in its fields");
+    }
+
+    @Test
+    public void testSerializingClassReflectively_withVoidField() {
+        SerializationService service = createSerializationService(new SerializationConfig());
+        assertThatThrownBy(() -> {
+            service.toData(new ClassWithVoidField());
+        }).isInstanceOf(HazelcastSerializationException.class)
+                .hasStackTraceContaining("cannot be serialized with zero configuration Compact serialization")
+                .hasStackTraceContaining("which uses this class in its fields");
+    }
+
+    @Test
     public void testWritingArrayOfCompactGenericRecordField_withDifferentSchemas() {
         SerializationService service = createSerializationService(new SerializationConfig());
 
@@ -383,6 +403,24 @@ public class CompactSerializationTest {
     }
 
     @Test
+    public void testSerializingClassReflectively_withCollectionTypes_whenTheyAreNull() {
+        SerializationConfig config = new SerializationConfig();
+        SerializationService service = createSerializationService(config);
+        ClassWithCollectionFields object = new ClassWithCollectionFields(
+                null,
+                null,
+                null,
+                null,
+                null,
+                null
+        );
+
+        Data data = service.toData(object);
+        ClassWithCollectionFields deserialized = service.toObject(data);
+        assertEquals(object, deserialized);
+    }
+
+    @Test
     public void testReflectiveSerializer_withFieldsWithOtherSerializationMechanisms() {
         SerializationConfig config = new SerializationConfig();
         SerializationService service = createSerializationService(config);
@@ -442,6 +480,14 @@ public class CompactSerializationTest {
 
     private static class ClassWithUnsupportedArrayField {
         private LinkedList<String>[] lists;
+    }
+
+    private static class ClassWithArrayOfArrayField {
+        private int[][] arrays;
+    }
+
+    private static class ClassWithVoidField {
+        private Void aVoid;
     }
 
     private static class ClassWithCollectionFields {

@@ -19,8 +19,6 @@ package com.hazelcast.jet.sql.impl.schema;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.memberselector.MemberSelectors;
-import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.EntryListener;
 import com.hazelcast.internal.cluster.Versions;
@@ -35,7 +33,6 @@ import com.hazelcast.replicatedmap.impl.operation.GetOperation;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
-import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
@@ -48,21 +45,11 @@ import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.config.MapConfig.DISABLED_TTL_SECONDS;
+import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toSet;
 
 public class TablesStorage {
-    static final String CATALOG_MAP_NAME = "__sql.catalog";
-
-    static final MapConfig SQL_CATALOG_MAP_CONFIG = new MapConfig()
-            .setName(CATALOG_MAP_NAME)
-            .setBackupCount(MapConfig.MAX_BACKUP_COUNT)
-            .setTimeToLiveSeconds(DISABLED_TTL_SECONDS)
-            .setReadBackupData(true)
-            .setMergePolicyConfig(new MergePolicyConfig().setPolicy(LatestUpdateMergePolicy.class.getName()))
-            .setPerEntryStatsEnabled(true);
-
     private static final int MAX_CHECK_ATTEMPTS = 5;
     private static final long SLEEP_MILLIS = 100;
 
@@ -207,8 +194,6 @@ public class TablesStorage {
     }
 
     void initializeWithListener(EntryListener<String, Object> listener) {
-        nodeEngine.getConfig().addMapConfig(SQL_CATALOG_MAP_CONFIG);
-
         boolean useOldStorage = useOldStorage();
 
         if (!useOldStorage) {
@@ -227,11 +212,11 @@ public class TablesStorage {
         // To remove in 5.3. We are using the old storage if the cluster version is lower than 5.2. We destroy the old catalog
         // during the first read after the cluster version is upgraded to > =5.2. We do not synchronize put operations to the old
         // catalog, so it is possible that destroy happens before put, and we end up with a leaked ReplicatedMap.
-        return nodeEngine.getHazelcastInstance().getReplicatedMap(CATALOG_MAP_NAME);
+        return nodeEngine.getHazelcastInstance().getReplicatedMap(SQL_CATALOG_MAP_NAME);
     }
 
     IMap<String, Object> newStorage() {
-        return nodeEngine.getHazelcastInstance().getMap(CATALOG_MAP_NAME);
+        return nodeEngine.getHazelcastInstance().getMap(SQL_CATALOG_MAP_NAME);
     }
 
     private Map<String, Object> mergedStorage() {
@@ -280,7 +265,7 @@ public class TablesStorage {
         for (int i = 0; i < MAX_CHECK_ATTEMPTS && !memberAddresses.isEmpty(); i++) {
             List<CompletableFuture<Address>> futures = memberAddresses.stream()
                     .map(memberAddress -> {
-                        Operation operation = new GetOperation(CATALOG_MAP_NAME, keyData)
+                        Operation operation = new GetOperation(SQL_CATALOG_MAP_NAME, keyData)
                                 .setPartitionId(keyPartitionId)
                                 .setValidateTarget(false);
                         return operationService

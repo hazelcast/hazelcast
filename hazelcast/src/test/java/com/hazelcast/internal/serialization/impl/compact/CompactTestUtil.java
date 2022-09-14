@@ -53,7 +53,6 @@ import static org.mockito.Mockito.when;
 public final class CompactTestUtil {
 
     private CompactTestUtil() {
-
     }
 
     @Nonnull

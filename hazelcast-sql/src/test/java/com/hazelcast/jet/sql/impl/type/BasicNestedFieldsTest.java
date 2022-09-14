@@ -508,13 +508,11 @@ public class BasicNestedFieldsTest extends SqlTestSupport {
     public void test_rowComparison() {
         initDefault();
 
-        // TODO https://github.com/hazelcast/hazelcast/issues/22000
         assertThatThrownBy(() -> testInstance().getSql().execute("select 1 from test where to_row((this).organization.office)=(3, 'office1')").iterator().next())
-                .hasMessageContaining("com.hazelcast.sql.impl.expression.RowValue cannot be cast to");
+                .hasMessageContaining("From line 1, column 26 to line 1, column 74: Comparison operators are not supported for ROW type");
 
-        // without TO_ROW function it fails - TODO can we support this too?
         assertThatThrownBy(() -> testInstance().getSql().execute("select 1 from test where (this).organization.office=(3, 'office1')").iterator().next())
-                .hasMessage("From line 1, column 27 to line 1, column 66: Cannot apply '=' operator to [OBJECT, ROW] (consider adding an explicit CAST)");
+                .hasMessage("From line 1, column 27 to line 1, column 66: Comparison operators are not supported for ROW type");
     }
 
     private User initDefault() {

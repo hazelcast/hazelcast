@@ -66,6 +66,7 @@ import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.test.TestHazelcastInstanceFactory.initOrCreateConfig;
 import static java.util.Arrays.asList;
+import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.isIn;
 import static org.junit.Assert.assertArrayEquals;
@@ -74,7 +75,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -350,6 +350,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         instances[2] = factory.newHazelcastInstance(config);
 
         instance.getCPSubsystem().getCPSubsystemManagementService().reset().toCompletableFuture().get();
+        waitUntilCPDiscoveryCompleted(instances);
 
         List<CPMemberInfo> newEndpoints = getRaftInvocationManager(instance).<List<CPMemberInfo>>query(getMetadataGroupId(instance),
                 new GetActiveCPMembersOp(), LINEARIZABLE).get();
@@ -369,6 +370,7 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         instances[0] = factory.newHazelcastInstance(config);
 
         instances[1].getCPSubsystem().getCPSubsystemManagementService().reset().toCompletableFuture().get();
+        waitUntilCPDiscoveryCompleted(instances);
 
         List<CPMemberInfo> newEndpoints = invocationManager.<List<CPMemberInfo>>query(getMetadataGroupId(instances[2]),
                 new GetActiveCPMembersOp(), LINEARIZABLE).get();

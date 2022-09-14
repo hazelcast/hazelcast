@@ -138,8 +138,8 @@ public abstract class KafkaTestSupport {
     }
 
     public <K, V> KafkaConsumer<K, V> createConsumer(
-            Class<? extends Deserializer<K>> keyDeserializerClass,
-            Class<? extends Deserializer<V>> valueDeserializerClass,
+            Class<? extends Deserializer<? super K>> keyDeserializerClass,
+            Class<? extends Deserializer<? super V>> valueDeserializerClass,
             Map<String, String> properties,
             String... topicIds
     ) {
@@ -181,8 +181,8 @@ public abstract class KafkaTestSupport {
     public <K, V> void assertTopicContentsEventually(
             String topic,
             Map<K, V> expected,
-            Class<? extends Deserializer<K>> keyDeserializerClass,
-            Class<? extends Deserializer<V>> valueDeserializerClass
+            Class<? extends Deserializer<? super K>> keyDeserializerClass,
+            Class<? extends Deserializer<? super V>> valueDeserializerClass
     ) {
         assertTopicContentsEventually(topic, expected, keyDeserializerClass, valueDeserializerClass, emptyMap());
     }
@@ -190,8 +190,8 @@ public abstract class KafkaTestSupport {
     public <K, V> void assertTopicContentsEventually(
             String topic,
             Map<K, V> expected,
-            Class<? extends Deserializer<K>> keyDeserializerClass,
-            Class<? extends Deserializer<V>> valueDeserializerClass,
+            Class<? extends Deserializer<? super K>> keyDeserializerClass,
+            Class<? extends Deserializer<? super V>> valueDeserializerClass,
             Map<String, String> consumerProperties
     ) {
         try (KafkaConsumer<K, V> consumer = createConsumer(
