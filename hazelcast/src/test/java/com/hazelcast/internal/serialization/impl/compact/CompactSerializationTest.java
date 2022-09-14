@@ -82,24 +82,7 @@ public class CompactSerializationTest {
 
         assertThatThrownBy(() -> createSerializationService(config))
                 .isInstanceOf(IllegalArgumentException.class)
-                .hasMessageContaining("allowOverrideDefaultSerializers");
-    }
-
-    @Test
-    public void testOverridingDefaultSerializers_withAllowOverrideDefaultSerializers() {
-        SerializationConfig config = new SerializationConfig();
-        config.setAllowOverrideDefaultSerializers(true);
-        config.getCompactSerializationConfig()
-                .addSerializer(new IntegerSerializer());
-
-        SerializationService service = createSerializationService(config);
-        Data data = service.toData(42);
-
-        assertTrue(data.isCompact());
-
-        int i = service.toObject(data);
-
-        assertEquals(42, i);
+                .hasMessageContaining("overrides the default serializer");
     }
 
     @Test
