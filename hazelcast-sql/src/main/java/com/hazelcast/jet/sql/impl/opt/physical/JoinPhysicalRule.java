@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.JoinLogicalRel;
@@ -25,7 +26,6 @@ import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.JoinRelType;
-import org.apache.calcite.rel.core.TableScan;
 import org.immutables.value.Value;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
@@ -91,7 +91,7 @@ public final class JoinPhysicalRule extends RelRule<RelRule.Config> {
             call.transformTo(rel);
         }
 
-        if (rightInput instanceof TableScan) {
+        if (rightInput instanceof HazelcastPhysicalScan) {
             HazelcastTable rightHzTable = rightInput.getTable().unwrap(HazelcastTable.class);
             if (SqlConnectorUtil.getJetSqlConnector(rightHzTable.getTarget()).isNestedLoopReaderSupported()) {
                 RelNode rel2 = new JoinNestedLoopPhysicalRel(
