@@ -44,6 +44,8 @@ import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.WatermarkKeysAssigner;
+import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
+import com.hazelcast.jet.sql.impl.opt.logical.IMapByKeyOptRules;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
@@ -631,6 +633,13 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             logger.fine("After logical opt:\n" + RelOptUtil.toString(logicalRel));
         }
 
+        if (logicalRel instanceof FullScanLogicalRel) {
+            logicalRel = optimizeIMapKeyedAccess(context, logicalRel);
+            if (fineLogOn) {
+                logger.fine("After IMap keyed access opts:\n" + RelOptUtil.toString(logicalRel));
+            }
+        }
+
         PhysicalRel physicalRel = optimizePhysical(context, logicalRel);
         if (fineLogOn) {
             logger.fine("After physical opt:\n" + RelOptUtil.toString(physicalRel));
@@ -650,6 +659,18 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 LogicalRules.getRuleSet(),
                 OptUtils.toLogicalConvention(rel.getTraitSet())
         );
+    }
+
+    private LogicalRel optimizeIMapKeyedAccess(OptimizerContext context, LogicalRel rel) {
+        if (rel instanceof FullScanLogicalRel) {
+            return (LogicalRel) context.optimize(
+                    rel,
+                    IMapByKeyOptRules.getRuleSet(),
+                    OptUtils.toLogicalConvention(rel.getTraitSet())
+            );
+        } else {
+            return rel;
+        }
     }
 
     /**
