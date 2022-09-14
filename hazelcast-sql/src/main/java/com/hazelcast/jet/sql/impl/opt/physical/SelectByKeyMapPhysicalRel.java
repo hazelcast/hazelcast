@@ -29,17 +29,13 @@ import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.linq4j.Ord;
 import org.apache.calcite.plan.RelOptCluster;
-import org.apache.calcite.plan.RelOptCost;
-import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.AbstractRelNode;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
-import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexNode;
-import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.List;
 import java.util.stream.Collectors;
@@ -96,7 +92,7 @@ public class SelectByKeyMapPhysicalRel extends AbstractRelNode implements Physic
         );
     }
 
-    public PartitionedMapTable table() {
+    private PartitionedMapTable table() {
         return table.unwrap(HazelcastTable.class).getTarget();
     }
 
@@ -114,16 +110,6 @@ public class SelectByKeyMapPhysicalRel extends AbstractRelNode implements Physic
     @Override
     public Vertex accept(CreateDagVisitor visitor) {
         throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public @Nullable RelOptTable getTable() {
-        return table;
-    }
-
-    @Override
-    public @Nullable RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
-        return planner.getCostFactory().makeHugeCost();
     }
 
     @Override
