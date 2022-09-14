@@ -57,7 +57,7 @@ public class JsonFileFormatTest extends BaseFileFormatTest {
     public void shouldReadLargeJsonFile() {
         FileSourceBuilder<Map<String, Object>> source =
                 FileSources.files(currentDir + "/src/test/resources")
-                           .glob("file-large.jsonl")
+                           .glob("file-200-entries-with-header.jsonl")
                            .sharedFileSystem(true)
                            .option("mapreduce.input.fileinputformat.split.minsize", "32")
                            .option("mapreduce.input.fileinputformat.split.maxsize", "64")
@@ -72,7 +72,7 @@ public class JsonFileFormatTest extends BaseFileFormatTest {
 
         FileSourceBuilder<Map<String, Object>> source =
                 FileSources.files(currentDir + "/src/test/resources")
-                           .glob("file-large.jsonl.gz")
+                           .glob("file-200-entries-with-header.jsonl.gz")
                            .sharedFileSystem(true)
                            .option("mapreduce.input.fileinputformat.split.minsize", "32")
                            .option("mapreduce.input.fileinputformat.split.maxsize", "64")
@@ -87,7 +87,7 @@ public class JsonFileFormatTest extends BaseFileFormatTest {
 
         FileSourceBuilder<Map<String, Object>> source =
                 FileSources.files(currentDir + "/src/test/resources")
-                           .glob("file-large.jsonl.bz2")
+                           .glob("file-200-entries-with-header.jsonl.bz2")
                            .sharedFileSystem(true)
                            .option("mapreduce.input.fileinputformat.split.minsize", "32")
                            .option("mapreduce.input.fileinputformat.split.maxsize", "64")

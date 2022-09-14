@@ -158,7 +158,7 @@ public class CsvFileFormatTest extends BaseFileFormatTest {
     @Test
     public void shouldReadLargeCsvFile() throws Exception {
         FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
-                                                    .glob("file-large.csv")
+                                                    .glob("file-200-entries-with-header.csv")
                                                     .sharedFileSystem(true)
                                                     .option("mapreduce.input.fileinputformat.split.minsize", "32")
                                                     .option("mapreduce.input.fileinputformat.split.maxsize", "64")
@@ -172,7 +172,7 @@ public class CsvFileFormatTest extends BaseFileFormatTest {
         assumeThat(useHadoop).isTrue();
 
         FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
-                                                    .glob("file-large.csv.gz")
+                                                    .glob("file-200-entries-with-header.csv.gz")
                                                     .sharedFileSystem(true)
                                                     .option("mapreduce.input.fileinputformat.split.minsize", "32")
                                                     .option("mapreduce.input.fileinputformat.split.maxsize", "64")
@@ -186,7 +186,7 @@ public class CsvFileFormatTest extends BaseFileFormatTest {
         assumeThat(useHadoop).isTrue();
 
         FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
-                                                    .glob("file-large.csv.bz2")
+                                                    .glob("file-200-entries-with-header.csv.bz2")
                                                     .sharedFileSystem(true)
                                                     .option("mapreduce.input.fileinputformat.split.minsize", "32")
                                                     .option("mapreduce.input.fileinputformat.split.maxsize", "64")
