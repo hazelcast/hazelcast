@@ -90,7 +90,7 @@ public class Networking {
         int vertexId = memoryReader.readInt(payload, Long.BYTES);
         int ordinal = memoryReader.readInt(payload, Long.BYTES + Integer.BYTES);
 
-        ExecutionContext executionContext = jobExecutionService.getOrCreateExecutionContext(executionId);
+        ExecutionContext executionContext = jobExecutionService.getExecutionContext(executionId);
         if (executionContext != null) {
             executionContext.handlePacket(vertexId, ordinal, packet.getConn().getRemoteAddress(), payload);
         }
