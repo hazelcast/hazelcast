@@ -120,11 +120,8 @@ public class HazelcastCommandLine implements Runnable {
     )
     private File config;
 
-    @Mixin(name = "targets")
-    private TargetsMixin targetsMixin;
-
-    @Mixin(name = "verbosity")
-    private Verbosity verbosity;
+    @Mixin
+    private GlobalMixin global;
 
     public HazelcastCommandLine(Function<ClientConfig, HazelcastInstance> hzClientFn, PrintStream out, PrintStream err) {
         this.hzClientFn = hzClientFn;
@@ -148,16 +145,13 @@ public class HazelcastCommandLine implements Runnable {
     }
 
     @Command(description = "Starts the SQL shell [BETA]")
-    public void sql(@Mixin(name = "verbosity") Verbosity verbosity,
-                    @Mixin(name = "targets") TargetsMixin targets
-    ) {
-        runWithHazelcast(targets, verbosity, true, SqlConsole::run);
+    public void sql(@Mixin GlobalMixin global) {
+        runWithHazelcast(global, true, SqlConsole::run);
     }
 
     @Command(description = "Submits a job to the cluster")
     public void submit(
-            @Mixin(name = "verbosity") Verbosity verbosity,
-            @Mixin(name = "targets") TargetsMixin targets,
+            @Mixin GlobalMixin global,
             @Option(names = {"-s", "--snapshot"},
                     paramLabel = "<snapshot name>",
                     description = "Name of the initial snapshot to start the job from"
@@ -182,7 +176,7 @@ public class HazelcastCommandLine implements Runnable {
         if (params == null) {
             params = emptyList();
         }
-        this.verbosity.merge(verbosity);
+        this.global.merge(global);
         configureLogging();
         if (!file.exists()) {
             throw new Exception("File " + file + " could not be found.");
@@ -195,10 +189,8 @@ public class HazelcastCommandLine implements Runnable {
             printf("Will restore the job from the snapshot with name '%s'", snapshotName);
         }
 
-        targetsMixin.replace(targets);
-
         HazelcastBootstrap.executeJar(
-                () -> getHazelcastClient(false, verbosity.ignoreVersionMismatch),
+                () -> getHazelcastClient(false, global.ignoreVersionMismatch),
                 file.getAbsolutePath(), snapshotName, name, mainClass, params);
     }
 
@@ -206,23 +198,19 @@ public class HazelcastCommandLine implements Runnable {
             name = "console",
             description = "Starts the console application for trying out in-memory data structures of Hazelcast."
                     + " It is not recommended for use in production.")
-    public void consoleApp(
-            @Mixin(name = "verbosity") Verbosity verbosity,
-            @Mixin(name = "targets") TargetsMixin targets
-    ) {
-        runWithHazelcast(targets, verbosity, true, ClientConsoleApp::run);
+    public void consoleApp(@Mixin GlobalMixin global) {
+        runWithHazelcast(global, true, ClientConsoleApp::run);
     }
 
     @Command(description = "Suspends a running job")
     public void suspend(
-            @Mixin(name = "verbosity") Verbosity verbosity,
-            @Mixin(name = "targets") TargetsMixin targets,
+            @Mixin GlobalMixin global,
             @Parameters(index = "0",
                     paramLabel = "<job name or id>",
                     description = "Name of the job to suspend"
             ) String name
     ) {
-        runWithHazelcast(targets, verbosity, false, hz -> {
+        runWithHazelcast(global, false, hz -> {
             Job job = getJob(hz, name);
             assertJobRunning(name, job);
             printf("Suspending job %s...", formatJob(job));
@@ -236,14 +224,13 @@ public class HazelcastCommandLine implements Runnable {
             description = "Cancels a running job"
     )
     public void cancel(
-            @Mixin(name = "verbosity") Verbosity verbosity,
-            @Mixin(name = "targets") TargetsMixin targets,
+            @Mixin GlobalMixin global,
             @Parameters(index = "0",
                     paramLabel = "<job name or id>",
                     description = "Name of the job to cancel"
             ) String name
     ) {
-        runWithHazelcast(targets, verbosity, false, hz -> {
+        runWithHazelcast(global, false, hz -> {
             Job job = getJob(hz, name);
             assertJobActive(name, job);
             printf("Cancelling job %s", formatJob(job));
@@ -258,8 +245,7 @@ public class HazelcastCommandLine implements Runnable {
             description = "Exports a named snapshot from a job and optionally cancels it"
     )
     public void saveSnapshot(
-            @Mixin(name = "verbosity") Verbosity verbosity,
-            @Mixin(name = "targets") TargetsMixin targets,
+            @Mixin GlobalMixin global,
             @Parameters(index = "0",
                     paramLabel = "<job name or id>",
                     description = "Name of the job to take the snapshot from")
@@ -272,7 +258,7 @@ public class HazelcastCommandLine implements Runnable {
                     description = "Cancel the job after taking the snapshot")
                     boolean isTerminal
     ) {
-        runWithHazelcast(targets, verbosity, false, hz -> {
+        runWithHazelcast(global, false, hz -> {
             Job job = getJob(hz, jobName);
             assertJobActive(jobName, job);
             if (isTerminal) {
@@ -294,14 +280,13 @@ public class HazelcastCommandLine implements Runnable {
             description = "Deletes a named snapshot"
     )
     public void deleteSnapshot(
-            @Mixin(name = "verbosity") Verbosity verbosity,
-            @Mixin(name = "targets") TargetsMixin targets,
+            @Mixin GlobalMixin global,
             @Parameters(index = "0",
                     paramLabel = "<snapshot name>",
                     description = "Name of the snapshot")
                     String snapshotName
     ) {
-        runWithHazelcast(targets, verbosity, false, hz -> {
+        runWithHazelcast(global, false, hz -> {
             JobStateSnapshot jobStateSnapshot = hz.getJet().getJobStateSnapshot(snapshotName);
             if (jobStateSnapshot == null) {
                 throw new JetException(String.format("Didn't find a snapshot named '%s'", snapshotName));
@@ -315,14 +300,13 @@ public class HazelcastCommandLine implements Runnable {
             description = "Restarts a running job"
     )
     public void restart(
-            @Mixin(name = "verbosity") Verbosity verbosity,
-            @Mixin(name = "targets") TargetsMixin targets,
+            @Mixin GlobalMixin global,
             @Parameters(index = "0",
                     paramLabel = "<job name or id>",
                     description = "Name of the job to restart")
                     String name
     ) {
-        runWithHazelcast(targets, verbosity, false, hz -> {
+        runWithHazelcast(global, false, hz -> {
             Job job = getJob(hz, name);
             assertJobRunning(name, job);
             println("Restarting job " + formatJob(job) + "...");
@@ -336,14 +320,13 @@ public class HazelcastCommandLine implements Runnable {
             description = "Resumes a suspended job"
     )
     public void resume(
-            @Mixin(name = "verbosity") Verbosity verbosity,
-            @Mixin(name = "targets") TargetsMixin targets,
+            @Mixin GlobalMixin global,
             @Parameters(index = "0",
                     paramLabel = "<job name or id>",
                     description = "Name of the job to resume")
                     String name
     ) {
-        runWithHazelcast(targets, verbosity, false, hz -> {
+        runWithHazelcast(global, false, hz -> {
             Job job = getJob(hz, name);
             if (job.getStatus() != JobStatus.SUSPENDED) {
                 throw new RuntimeException("Job '" + name + "' is not suspended. Current state: " + job.getStatus());
@@ -360,13 +343,12 @@ public class HazelcastCommandLine implements Runnable {
             description = "Lists running jobs on the cluster"
     )
     public void listJobs(
-            @Mixin(name = "verbosity") Verbosity verbosity,
-            @Mixin(name = "targets") TargetsMixin targets,
+            @Mixin GlobalMixin global,
             @Option(names = {"-a", "--all"},
                     description = "Lists all jobs including completed and failed ones")
                     boolean listAll
     ) {
-        runWithHazelcast(targets, verbosity, false, hz -> {
+        runWithHazelcast(global, false, hz -> {
             JetClientInstanceImpl jetClientInstanceImpl = (JetClientInstanceImpl) hz.getJet();
             List<JobSummary> summaries = jetClientInstanceImpl.getJobSummaryList();
             String format = "%-19s %-18s %-23s %s";
@@ -386,12 +368,11 @@ public class HazelcastCommandLine implements Runnable {
             description = "Lists exported snapshots on the cluster"
     )
     public void listSnapshots(
-            @Mixin(name = "verbosity") Verbosity verbosity,
-            @Mixin(name = "targets") TargetsMixin targets,
+            @Mixin GlobalMixin global,
             @Option(names = {"-F", "--full-job-name"},
                     description = "Don't trim job name to fit, can break layout")
                     boolean fullJobName) {
-        runWithHazelcast(targets, verbosity, false, hz -> {
+        runWithHazelcast(global, false, hz -> {
             Collection<JobStateSnapshot> snapshots = hz.getJet().getJobStateSnapshots();
             printf("%-23s %-15s %-24s %s", "TIME", "SIZE (bytes)", "JOB NAME", "SNAPSHOT NAME");
             snapshots.stream()
@@ -411,10 +392,9 @@ public class HazelcastCommandLine implements Runnable {
             description = "Shows current cluster state and information about members"
     )
     public void cluster(
-            @Mixin(name = "verbosity") Verbosity verbosity,
-            @Mixin(name = "targets") TargetsMixin targets
+            @Mixin GlobalMixin global
     ) {
-        runWithHazelcast(targets, verbosity, false, hz -> {
+        runWithHazelcast(global, false, hz -> {
             HazelcastClientInstanceImpl hazelcastClientImpl = getHazelcastClientInstanceImpl(hz);
             ClientClusterService clientClusterService = hazelcastClientImpl.getClientClusterService();
             MCClusterMetadata clusterMetadata =
@@ -460,12 +440,11 @@ public class HazelcastCommandLine implements Runnable {
         );
     }
 
-    private void runWithHazelcast(TargetsMixin targets, Verbosity verbosity, boolean retryClusterConnectForever,
+    private void runWithHazelcast(GlobalMixin global, boolean retryClusterConnectForever,
                                   ConsumerEx<HazelcastInstance> consumer) {
-        this.targetsMixin.replace(targets);
-        this.verbosity.merge(verbosity);
+        this.global.merge(global);
         configureLogging();
-        HazelcastInstance hz = getHazelcastClient(retryClusterConnectForever, verbosity.ignoreVersionMismatch);
+        HazelcastInstance hz = getHazelcastClient(retryClusterConnectForever, global.ignoreVersionMismatch);
         try {
             consumer.accept(hz);
         } finally {
@@ -502,9 +481,9 @@ public class HazelcastCommandLine implements Runnable {
             config = ClientConfig.load();
         }
 
-        if (targetsMixin.getTargets() != null) {
-            config.getNetworkConfig().setAddresses(targetsMixin.getAddresses());
-            config.setClusterName(targetsMixin.getClusterName());
+        if (global.getTargets() != null) {
+            config.getNetworkConfig().setAddresses(global.getAddresses());
+            config.setClusterName(global.getClusterName());
         }
 
         if (retryClusterConnectForever) {
@@ -531,7 +510,7 @@ public class HazelcastCommandLine implements Runnable {
     private void configureLogging() {
         HazelcastBootstrap.configureLogging();
         Level logLevel = Level.WARNING;
-        if (verbosity.isVerbose) {
+        if (global.isVerbose) {
             println("Verbose mode is on, setting logging level to INFO");
             logLevel = Level.INFO;
         }
@@ -649,7 +628,7 @@ public class HazelcastCommandLine implements Runnable {
         }
     }
 
-    public static class Verbosity {
+    public static class GlobalMixin {
 
         @Option(names = {"-v", "--verbosity"},
                 description = {"Show verbose logs and full stack trace of errors"},
@@ -664,20 +643,12 @@ public class HazelcastCommandLine implements Runnable {
         )
         private boolean ignoreVersionMismatch;
 
-        void merge(Verbosity other) {
-            isVerbose |= other.isVerbose;
-            ignoreVersionMismatch |= other.ignoreVersionMismatch;
-        }
-    }
-
-    public static class TargetsMixin {
-
         @Option(names = {"-t", "--targets"},
                 description = "The cluster name and addresses to use if you want to connect to a "
                         + "cluster other than the one configured in the configuration file. "
                         + "At least one address is required. The cluster name is optional.",
                 paramLabel = "[<cluster-name>@]<hostname>:<port>[,<hostname>:<port>]",
-                converter = TargetsMixin.Converter.class)
+                converter = TargetsConverter.class)
         private Targets targets;
 
         private Targets getTargets() {
@@ -692,9 +663,11 @@ public class HazelcastCommandLine implements Runnable {
             return targets.addresses;
         }
 
-        public void replace(TargetsMixin targets) {
-            if (targets.getTargets() != null) {
-                this.targets = targets.getTargets();
+        void merge(GlobalMixin other) {
+            isVerbose |= other.isVerbose;
+            ignoreVersionMismatch |= other.ignoreVersionMismatch;
+            if (other.getTargets() != null) {
+                this.targets = other.getTargets();
             }
         }
 
@@ -703,7 +676,7 @@ public class HazelcastCommandLine implements Runnable {
             private List<String> addresses = Collections.emptyList();
         }
 
-        public static class Converter implements ITypeConverter<TargetsMixin.Targets> {
+        public static class TargetsConverter implements ITypeConverter<Targets> {
             @Override
             public Targets convert(String value) {
                 Targets targets = new Targets();
@@ -725,6 +698,11 @@ public class HazelcastCommandLine implements Runnable {
         }
     }
 
+    public static class TargetsMixin {
+
+
+    }
+
     static class ExceptionHandler<R> extends DefaultExceptionHandler<R> {
         @Override
         public R handleExecutionException(ExecutionException ex, ParseResult parseResult) {
@@ -734,7 +712,7 @@ public class HazelcastCommandLine implements Runnable {
                 cmdLine = cmdLine.getParent();
             }
             HazelcastCommandLine hzCmd = cmdLine.getCommand();
-            if (hzCmd.verbosity.isVerbose) {
+            if (hzCmd.global.isVerbose) {
                 ex.printStackTrace(err());
             } else {
                 err().println("ERROR: " + peel(ex.getCause()).getMessage());
