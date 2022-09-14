@@ -391,6 +391,17 @@ public class ClientQueueTest extends HazelcastTestSupport {
         assertEquals(coll, actual);
     }
 
+    @Test(expected = IllegalStateException.class)
+    public void testAddAll_whenExceedingMaximumCapacity() {
+        IQueue<Integer> q = client.getQueue(QUEUE_WITH_MAX_SIZE + randomString());
+        for (int i = 0; i < MAX_SIZE_FOR_QUEUE; i++) {
+            q.add(1);
+        }
+        Collection<Integer> coll = new ArrayList<>();
+        coll.add(1);
+        q.addAll(coll);
+    }
+
     @Test
     public void testRemoveList() throws IOException {
         final int maxItems = 131;
