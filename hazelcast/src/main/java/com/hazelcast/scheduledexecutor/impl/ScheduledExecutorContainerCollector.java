@@ -60,7 +60,7 @@ class ScheduledExecutorContainerCollector extends AbstractContainerCollector<Sch
     }
 
     @Override
-    protected int getMergingValueCount() {
+    protected long getMergingValueCount() {
         int size = 0;
         for (Collection<ScheduledExecutorContainer> containers : getCollectedContainers().values()) {
             for (ScheduledExecutorContainer container : containers) {

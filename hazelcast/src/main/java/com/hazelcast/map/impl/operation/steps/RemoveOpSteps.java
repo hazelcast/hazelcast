@@ -106,7 +106,7 @@ public enum RemoveOpSteps implements Step<State> {
             if (record == null) {
                 return;
             }
-            recordStore.removeRecord0(state.getKey(), record);
+            recordStore.removeRecord0(state.getKey(), record, false);
             recordStore.onStore(record);
         }
 

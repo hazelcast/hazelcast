@@ -194,7 +194,8 @@ public class ConcurrentInboundEdgeStreamTest {
         add(q2, wm(1));
 
         // Then
-        drainAndAssert(MADE_PROGRESS, barrier(0), wm(1));
+        drainAndAssert(MADE_PROGRESS, barrier(0));
+        drainAndAssert(MADE_PROGRESS, wm(1));
     }
 
     @Test
@@ -263,8 +264,8 @@ public class ConcurrentInboundEdgeStreamTest {
 
         add(q1, barrier(1));
         add(q2, 1);
-        drainAndAssert(MADE_PROGRESS, 1);
         drainAndAssert(MADE_PROGRESS, barrier(1));
+        drainAndAssert(MADE_PROGRESS, 1);
     }
 
     private void drainAndAssert(ProgressState expectedState, Object... expectedItems) {

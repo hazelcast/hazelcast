@@ -255,15 +255,27 @@ public class PhoneHomeTest extends HazelcastTestSupport {
     public void testMapCountWithHotRestartEnabled() {
         Map<String, String> parameters;
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_HOT_RESTART_ENABLED.getRequestParameterName()), "0");
+        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_HOT_RESTART_OR_PERSISTENCE_ENABLED.getRequestParameterName()), "0");
 
-        Map<String, String> map1 = node.hazelcastInstance.getMap("hazelcast");
+        node.hazelcastInstance.getMap("hazelcast");
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_HOT_RESTART_ENABLED.getRequestParameterName()), "0");
+        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_HOT_RESTART_OR_PERSISTENCE_ENABLED.getRequestParameterName()), "0");
 
-        node.getConfig().getMapConfig("hazelcast").getHotRestartConfig().setEnabled(true);
+        node.hazelcastInstance.getMap("with-hot-restart");
+        node.getConfig().getMapConfig("with-hot-restart").getHotRestartConfig().setEnabled(true);
         parameters = phoneHome.phoneHome(true);
-        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_HOT_RESTART_ENABLED.getRequestParameterName()), "1");
+        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_HOT_RESTART_OR_PERSISTENCE_ENABLED.getRequestParameterName()), "1");
+
+        node.hazelcastInstance.getMap("with-persistence");
+        node.getConfig().getMapConfig("with-persistence").getDataPersistenceConfig().setEnabled(true);
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_HOT_RESTART_OR_PERSISTENCE_ENABLED.getRequestParameterName()), "2");
+
+        node.hazelcastInstance.getMap("with-both");
+        node.getConfig().getMapConfig("with-both").getHotRestartConfig().setEnabled(true);
+        node.getConfig().getMapConfig("with-both").getDataPersistenceConfig().setEnabled(true);
+        parameters = phoneHome.phoneHome(true);
+        assertEquals(parameters.get(PhoneHomeMetrics.MAP_COUNT_WITH_HOT_RESTART_OR_PERSISTENCE_ENABLED.getRequestParameterName()), "3");
     }
 
     @Test

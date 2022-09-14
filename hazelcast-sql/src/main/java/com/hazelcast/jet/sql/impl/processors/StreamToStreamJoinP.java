@@ -25,6 +25,7 @@ import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.nio.ObjectDataInput;
@@ -74,6 +75,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors;
     private final Map<Byte, Map<Byte, Long>> postponeTimeMap;
     private final Tuple2<Integer, Integer> columnCounts;
+    private long maxProcessorAccumulatedRecords;
 
     private ExpressionEvalContext evalContext;
     private Iterator<JetSqlRow> iterator;
@@ -149,6 +151,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         SerializationService ss = evalContext.getSerializationService();
         emptyLeftRow = new JetSqlRow(ss, new Object[columnCounts.f0()]);
         emptyRightRow = new JetSqlRow(ss, new Object[columnCounts.f1()]);
+        maxProcessorAccumulatedRecords = context.maxProcessorAccumulatedRecords();
     }
 
     @SuppressWarnings("checkstyle:NestedIfDepth")
@@ -157,6 +160,10 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         assert ordinal == 0 || ordinal == 1; // bad DAG
         if (!pendingOutput.isEmpty()) {
             return processPendingOutput();
+        }
+
+        if (buffer[0].size() + buffer[1].size() >= maxProcessorAccumulatedRecords) {
+            throw new AccumulationLimitExceededException();
         }
 
         if (currItem == null) {
