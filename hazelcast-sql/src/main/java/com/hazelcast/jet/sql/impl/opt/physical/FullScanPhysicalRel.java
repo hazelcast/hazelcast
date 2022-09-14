@@ -47,17 +47,7 @@ import static com.hazelcast.jet.impl.util.Util.toList;
 import static com.hazelcast.jet.sql.impl.opt.cost.CostUtils.TABLE_SCAN_CPU_MULTIPLIER;
 
 public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
-    private Byte watermarkKey;
-
-    FullScanPhysicalRel(
-            RelOptCluster cluster,
-            RelTraitSet traitSet,
-            RelOptTable table,
-            @Nullable BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
-            int watermarkedColumnIndex
-    ) {
-        super(cluster, traitSet, table, eventTimePolicyProvider, watermarkedColumnIndex);
-    }
+    private final Byte watermarkKey;
 
     FullScanPhysicalRel(
             RelOptCluster cluster,
@@ -153,12 +143,12 @@ public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
         return new FullScanPhysicalRel(getCluster(), traitSet, getTable(), eventTimePolicyProvider(),
-                watermarkedColumnIndex());
+                watermarkedColumnIndex(), getWatermarkKey());
     }
 
-    public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs, byte key) {
+    public RelNode copy(RelTraitSet traitSet, byte watermarkKey) {
         return new FullScanPhysicalRel(getCluster(), traitSet, getTable(), eventTimePolicyProvider(),
-                watermarkedColumnIndex(), key);
+                watermarkedColumnIndex(), watermarkKey);
     }
 
     public Byte getWatermarkKey() {

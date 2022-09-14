@@ -188,8 +188,11 @@ public class CreateDagVisitor {
         Byte wmKey;
         if (fieldsKey != null) {
             wmKey = fieldsKey.get(rel.watermarkedColumnIndex()).getValue();
+            assert wmKey != null;
         } else {
-            wmKey = rel.getWatermarkKey();
+            assert rel.watermarkedColumnIndex() < 0;
+            assert rel.getWatermarkKey() == null;
+            wmKey = null;
         }
 
         return getJetSqlConnector(table).fullScanReader(

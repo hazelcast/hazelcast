@@ -42,10 +42,13 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.map.MetadataResolver;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.jet.sql.impl.opt.Conventions;
+import com.hazelcast.jet.sql.impl.opt.FullScan;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.WatermarkKeysAssigner;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
+import com.hazelcast.jet.sql.impl.opt.physical.AssignWatermarkKeyToScansRule;
+import com.hazelcast.jet.sql.impl.opt.physical.AssignWatermarkKeyToScansRule.Config;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
@@ -55,8 +58,6 @@ import com.hazelcast.jet.sql.impl.opt.physical.RootRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SelectByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SinkMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.UpdateByKeyMapPhysicalRel;
-import com.hazelcast.jet.sql.impl.opt.physical.WatermarkAssignmentRule;
-import com.hazelcast.jet.sql.impl.opt.physical.WatermarkAssignmentRule.Config;
 import com.hazelcast.jet.sql.impl.parse.QueryConvertResult;
 import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
 import com.hazelcast.jet.sql.impl.parse.SqlAlterJob;
@@ -640,7 +641,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         PhysicalRel physicalRel = optimizePhysical(context, logicalRel);
 
         if (OptUtils.isUnbounded(physicalRel)) {
-            physicalRel = watermarksAssignmentPhase(physicalRel);
+            physicalRel = assignWatermarkKeysToScans(physicalRel);
         }
 
         if (fineLogOn) {
@@ -679,13 +680,16 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     /**
-     * Perform watermarks assignment phase with single
-     * available {@link WatermarkAssignmentRule} rule.
+     * Perform watermark key to {@link FullScan} rels in the tree using the {@link
+     * AssignWatermarkKeyToScansRule} rule.
      */
-    static PhysicalRel watermarksAssignmentPhase(PhysicalRel rel) {
+    static PhysicalRel assignWatermarkKeysToScans(PhysicalRel rel) {
         HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
 
-        hepProgramBuilder.addRuleInstance(new WatermarkAssignmentRule(Config.DEFAULT));
+        // Note that we must create a new instance of the rule for each optimization, because
+        // the rule has a state that is used during the "optimization".
+        AssignWatermarkKeyToScansRule rule = new AssignWatermarkKeyToScansRule(Config.DEFAULT);
+        hepProgramBuilder.addRuleInstance(rule);
 
         HepPlanner planner = new HepPlanner(
                 hepProgramBuilder.build(),

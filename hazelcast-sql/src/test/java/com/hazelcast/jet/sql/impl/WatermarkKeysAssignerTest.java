@@ -149,10 +149,9 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
                 new TablesStorage(nodeEngine),
                 new SqlConnectorCache(nodeEngine));
 
-        String stream = "s";
         TestStreamSqlConnector.create(
                 instance().getSql(),
-                stream,
+                "s",
                 singletonList("a"),
                 singletonList(BIGINT),
                 row(1L)
@@ -176,7 +175,7 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
         ));
 
         assertThat(OptUtils.isUnbounded(optPhysicalRel)).isTrue();
-        PhysicalRel finalOptRel = CalciteSqlOptimizer.watermarksAssignmentPhase(optPhysicalRel);
+        PhysicalRel finalOptRel = CalciteSqlOptimizer.assignWatermarkKeysToScans(optPhysicalRel);
 
         WatermarkKeysAssigner keysAssigner = new WatermarkKeysAssigner(finalOptRel);
         keysAssigner.assignWatermarkKeys();
@@ -234,7 +233,7 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
         ));
 
         assertThat(OptUtils.isUnbounded(optPhysicalRel)).isTrue();
-        PhysicalRel finalOptRel = CalciteSqlOptimizer.watermarksAssignmentPhase(optPhysicalRel);
+        PhysicalRel finalOptRel = CalciteSqlOptimizer.assignWatermarkKeysToScans(optPhysicalRel);
 
         WatermarkKeysAssigner keysAssigner = new WatermarkKeysAssigner(finalOptRel);
         keysAssigner.assignWatermarkKeys();

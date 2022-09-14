@@ -453,8 +453,8 @@ public class SqlTumbleTest extends SqlTestSupport {
                 row(timestampTz(10), null, null)
         );
 
-        String unionQuery = "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND))";
-        sqlService.execute("CREATE VIEW v1 AS " + unionQuery);
+        sqlService.execute("CREATE VIEW v1 AS SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name
+                + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND))");
         sqlService.execute("CREATE VIEW v2 AS (SELECT * FROM v1) UNION ALL (SELECT * FROM v1)");
 
         assertTipOfStream(

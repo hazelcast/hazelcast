@@ -16,25 +16,22 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.hazelcast.internal.util.MutableByte;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.immutables.value.Value;
 
-import java.util.Collections;
-
 import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 
 @Value.Enclosing
-public final class WatermarkAssignmentRule extends RelRule<RelRule.Config> {
-    private final MutableByte keyCounter = new MutableByte();
+public final class AssignWatermarkKeyToScansRule extends RelRule<RelRule.Config> {
+    private byte keyCounter = 0;
 
     @Value.Immutable
     public interface Config extends RelRule.Config {
-        Config DEFAULT = ImmutableWatermarkAssignmentRule.Config.builder()
-                .description(WatermarkAssignmentRule.class.getSimpleName())
+        Config DEFAULT = ImmutableAssignWatermarkKeyToScansRule.Config.builder()
+                .description(AssignWatermarkKeyToScansRule.class.getSimpleName())
                 .operandSupplier(
                         b -> b.operand(FullScanPhysicalRel.class)
                                 .trait(PHYSICAL)
@@ -46,24 +43,19 @@ public final class WatermarkAssignmentRule extends RelRule<RelRule.Config> {
 
         @Override
         default RelOptRule toRule() {
-            return new WatermarkAssignmentRule(this);
+            return new AssignWatermarkKeyToScansRule(this);
         }
     }
 
-    public WatermarkAssignmentRule(Config config) {
+    public AssignWatermarkKeyToScansRule(Config config) {
         super(config);
     }
 
     @Override
     public void onMatch(RelOptRuleCall call) {
         FullScanPhysicalRel scan = call.rel(0);
-
-        FullScanPhysicalRel newScan = (FullScanPhysicalRel) scan.copy(
-                scan.getTraitSet(),
-                Collections.emptyList(),
-                keyCounter.getValue());
-
-        keyCounter.inc();
+        FullScanPhysicalRel newScan = (FullScanPhysicalRel) scan.copy(scan.getTraitSet(), keyCounter);
+        keyCounter++;
         call.transformTo(newScan);
     }
 }

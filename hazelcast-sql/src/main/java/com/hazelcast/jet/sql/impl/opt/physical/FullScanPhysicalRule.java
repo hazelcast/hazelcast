@@ -45,6 +45,7 @@ final class FullScanPhysicalRule extends ConverterRule {
                 OptUtils.toPhysicalConvention(logicalScan.getTraitSet()),
                 logicalScan.getTable(),
                 logicalScan.eventTimePolicyProvider(),
-                logicalScan.watermarkedColumnIndex());
+                logicalScan.watermarkedColumnIndex(),
+                null);
     }
 }
