@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
 import com.hazelcast.jet.sql.impl.OptimizerContext;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
@@ -100,6 +101,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         LogicalRel logicalRel = optimizeLogicalInternal(sql, context);
         PhysicalRel physicalRel = (PhysicalRel) context
                 .optimize(logicalRel, PhysicalRules.getRuleSet(), OptUtils.toPhysicalConvention(logicalRel.getTraitSet()));
+        physicalRel = CalciteSqlOptimizer.uniquifyScans(physicalRel);
         return new Result(logicalRel, physicalRel);
     }
 

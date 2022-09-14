@@ -175,7 +175,7 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
         ));
 
         assertThat(OptUtils.isUnbounded(optPhysicalRel)).isTrue();
-        PhysicalRel finalOptRel = CalciteSqlOptimizer.assignWatermarkKeysToScans(optPhysicalRel);
+        PhysicalRel finalOptRel = CalciteSqlOptimizer.uniquifyScans(optPhysicalRel);
 
         WatermarkKeysAssigner keysAssigner = new WatermarkKeysAssigner(finalOptRel);
         keysAssigner.assignWatermarkKeys();
@@ -233,7 +233,7 @@ public class WatermarkKeysAssignerTest extends OptimizerTestSupport {
         ));
 
         assertThat(OptUtils.isUnbounded(optPhysicalRel)).isTrue();
-        PhysicalRel finalOptRel = CalciteSqlOptimizer.assignWatermarkKeysToScans(optPhysicalRel);
+        PhysicalRel finalOptRel = CalciteSqlOptimizer.uniquifyScans(optPhysicalRel);
 
         WatermarkKeysAssigner keysAssigner = new WatermarkKeysAssigner(finalOptRel);
         keysAssigner.assignWatermarkKeys();

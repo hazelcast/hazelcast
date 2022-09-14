@@ -46,17 +46,12 @@ import static java.util.Collections.emptySet;
 import static java.util.Collections.singletonMap;
 
 /**
- * Traverse a relational tree and assign watermark keys. It assumes that {@link
- * FullScan} instances already have keys assigned, and assigns the watermark
- * keys to other rels in the tree. It can also assign a different key to
- * different scans, e.g. in case they are both an input to a UNION operator.
- * Therefore, after this, the {@link FullScanPhysicalRel#getWatermarkKey()}
- * shouldn't be used, because it contains the value assigned before this class
- * assigned different key.
+ * Traverse a relational tree and assign watermark keys.
  */
 public class WatermarkKeysAssigner {
     private final PhysicalRel root;
     private final KeyAssignerVisitor visitor;
+    private byte keyCounter;
 
     public WatermarkKeysAssigner(PhysicalRel root) {
         this.root = root;
@@ -75,7 +70,7 @@ public class WatermarkKeysAssigner {
      * Main watermark key assigner used to propagate keys
      * from bottom to top over whole rel tree.
      */
-    private static class KeyAssignerVisitor extends RelVisitor {
+    private class KeyAssignerVisitor extends RelVisitor {
         private final Map<RelNode, Map<Integer, MutableByte>> relToWmKeyMapping = new HashMap<>();
 
         KeyAssignerVisitor() {
@@ -107,12 +102,11 @@ public class WatermarkKeysAssigner {
                 if (scan.watermarkedColumnIndex() < 0) {
                     return;
                 }
-                Byte keyToAssign = scan.getWatermarkKey();
-                assert keyToAssign != null;
-                MutableByte key = new MutableByte(keyToAssign);
+                MutableByte key = new MutableByte(keyCounter);
                 Map<Integer, MutableByte> res = singletonMap(scan.watermarkedColumnIndex(), key);
                 Map<Integer, MutableByte> oldValue = relToWmKeyMapping.put(scan, res);
                 assert oldValue == null : "The same scan used twice in the execution plan";
+                keyCounter++;
                 return;
             }
 

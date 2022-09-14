@@ -46,6 +46,6 @@ final class FullScanPhysicalRule extends ConverterRule {
                 logicalScan.getTable(),
                 logicalScan.eventTimePolicyProvider(),
                 logicalScan.watermarkedColumnIndex(),
-                null);
+                0);
     }
 }

@@ -42,13 +42,11 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.map.MetadataResolver;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.jet.sql.impl.opt.Conventions;
-import com.hazelcast.jet.sql.impl.opt.FullScan;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.WatermarkKeysAssigner;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
-import com.hazelcast.jet.sql.impl.opt.physical.AssignWatermarkKeyToScansRule;
-import com.hazelcast.jet.sql.impl.opt.physical.AssignWatermarkKeyToScansRule.Config;
+import com.hazelcast.jet.sql.impl.opt.physical.AssignDiscriminatorToScansRule;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
@@ -639,10 +637,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         }
 
         PhysicalRel physicalRel = optimizePhysical(context, logicalRel);
-
-        if (OptUtils.isUnbounded(physicalRel)) {
-            physicalRel = assignWatermarkKeysToScans(physicalRel);
-        }
+        physicalRel = uniquifyScans(physicalRel);
 
         if (fineLogOn) {
             logger.fine("After physical opt:\n" + RelOptUtil.toString(physicalRel));
@@ -680,15 +675,20 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     /**
-     * Perform watermark key to {@link FullScan} rels in the tree using the {@link
-     * AssignWatermarkKeyToScansRule} rule.
+     * Assign a discriminator to each scan in the plan. This is essentially hack
+     * to make the scans unique. We need this because in the MEMO structure, the
+     * plan can contain the same instance of a RelNode multiple times, if it's
+     * identical. This happens if the query, for example, reads the same table
+     * twice. The {@link WatermarkKeysAssigner} might need to assign a different
+     * key to two identical scans, and it can't do it if they are the same
+     * instance.
      */
-    static PhysicalRel assignWatermarkKeysToScans(PhysicalRel rel) {
+    public static PhysicalRel uniquifyScans(PhysicalRel rel) {
         HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
 
         // Note that we must create a new instance of the rule for each optimization, because
         // the rule has a state that is used during the "optimization".
-        AssignWatermarkKeyToScansRule rule = new AssignWatermarkKeyToScansRule(Config.DEFAULT);
+        AssignDiscriminatorToScansRule rule = new AssignDiscriminatorToScansRule();
         hepProgramBuilder.addRuleInstance(rule);
 
         HepPlanner planner = new HepPlanner(

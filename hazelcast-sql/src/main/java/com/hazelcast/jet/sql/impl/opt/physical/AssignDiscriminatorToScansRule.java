@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
@@ -24,38 +25,45 @@ import org.immutables.value.Value;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 
+/**
+ * See {@link CalciteSqlOptimizer#uniquifyScans(PhysicalRel)}.
+ */
 @Value.Enclosing
-public final class AssignWatermarkKeyToScansRule extends RelRule<RelRule.Config> {
-    private byte keyCounter = 0;
+public final class AssignDiscriminatorToScansRule extends RelRule<RelRule.Config> {
+    private int counter = 0;
 
     @Value.Immutable
     public interface Config extends RelRule.Config {
-        Config DEFAULT = ImmutableAssignWatermarkKeyToScansRule.Config.builder()
-                .description(AssignWatermarkKeyToScansRule.class.getSimpleName())
+        Config DEFAULT = ImmutableAssignDiscriminatorToScansRule.Config.builder()
+                .description(AssignDiscriminatorToScansRule.class.getSimpleName())
                 .operandSupplier(
                         b -> b.operand(FullScanPhysicalRel.class)
                                 .trait(PHYSICAL)
                                 .predicate(scan -> OptUtils.isUnbounded(scan)
                                         && scan.watermarkedColumnIndex() >= 0
-                                        && scan.getWatermarkKey() == null)
+                                        && scan.getDiscriminator() == 0)
                                 .noInputs())
                 .build();
 
         @Override
         default RelOptRule toRule() {
-            return new AssignWatermarkKeyToScansRule(this);
+            return new AssignDiscriminatorToScansRule(this);
         }
     }
 
-    public AssignWatermarkKeyToScansRule(Config config) {
+    public AssignDiscriminatorToScansRule() {
+        this(Config.DEFAULT);
+    }
+
+    private AssignDiscriminatorToScansRule(Config config) {
         super(config);
     }
 
     @Override
     public void onMatch(RelOptRuleCall call) {
         FullScanPhysicalRel scan = call.rel(0);
-        FullScanPhysicalRel newScan = (FullScanPhysicalRel) scan.copy(scan.getTraitSet(), keyCounter);
-        keyCounter++;
+        counter++;
+        FullScanPhysicalRel newScan = (FullScanPhysicalRel) scan.copy(scan.getTraitSet(), counter);
         call.transformTo(newScan);
     }
 }
