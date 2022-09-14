@@ -103,6 +103,7 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
                 .hasRootCauseInstanceOf(MemberLeftException.class);
 
         shutdownThread.join();
+        assertNoJobsLeft(instance1);
     }
 
     private static String createTable(SqlService sqlService, Object[]... values) {

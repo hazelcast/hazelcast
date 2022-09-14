@@ -67,6 +67,7 @@ public class SqlClientTest extends SqlTestSupport {
             seenValues.set(v);
         }
         assertEquals(itemCount, seenValues.cardinality());
+        assertNoJobsLeft(client);
     }
 
     @Test
@@ -97,6 +98,7 @@ public class SqlClientTest extends SqlTestSupport {
                     }
                 })
                 .hasMessageContaining("mock failure");
+        assertNoJobsLeft(client);
     }
 
     @Test
@@ -117,6 +119,7 @@ public class SqlClientTest extends SqlTestSupport {
         result.close();
         logger.info("after res.close() returned");
         assertJobStatusEventually(job, COMPLETED);
+        assertNoJobsLeft(client);
     }
 
     // test for https://github.com/hazelcast/hazelcast/issues/19897
@@ -157,6 +160,6 @@ public class SqlClientTest extends SqlTestSupport {
         // assert that failedJobs is also cleaned up
         ConcurrentMap<Long, Long> failedJobs = jetService.getJobExecutionService().getFailedJobs();
         assertTrueEventually(() -> assertEquals(0, failedJobs.size()));
-        assertTrueEventually(() -> assertEquals(0, client.getJet().getJobs().size()));
+        assertNoJobsLeft(client);
     }
 }

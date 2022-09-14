@@ -90,6 +90,7 @@ public class SqlLimitTest extends SqlTestSupport {
                 "SELECT name FROM " + tableName + " LIMIT 5",
                 asList(new Row("Alice"), new Row("Bob"), new Row("Joey"))
         );
+        assertNoJobsLeft(instance());
     }
 
     @Test
@@ -100,6 +101,7 @@ public class SqlLimitTest extends SqlTestSupport {
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Encountered \"null\"")
                 .extracting(e -> ((HazelcastSqlException) e).getCode()).isEqualTo(SqlErrorCode.PARSING);
+        assertNoJobsLeft(instance());
     }
 
     @Test
@@ -110,6 +112,7 @@ public class SqlLimitTest extends SqlTestSupport {
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("Encountered \"-\"")
                 .extracting(e -> ((HazelcastSqlException) e).getCode()).isEqualTo(SqlErrorCode.PARSING);
+        assertNoJobsLeft(instance());
     }
 
     @Test
@@ -143,6 +146,7 @@ public class SqlLimitTest extends SqlTestSupport {
                 3,
                 asList(new Row("Alice"), new Row("Bob"), new Row("Joey"))
         );
+        assertNoJobsLeft(instance());
     }
 
     private String createTable(String[]... values) {
@@ -184,7 +188,7 @@ public class SqlLimitTest extends SqlTestSupport {
                         new Row(9L))
         );
 
-        assertTrueEventually(() -> assertThat(instance().getJet().getJobs()).isEmpty());
+        assertNoJobsLeft(instance());
     }
 
     @Test
@@ -197,6 +201,7 @@ public class SqlLimitTest extends SqlTestSupport {
                         new Row(1L)
                 )
         );
+        assertNoJobsLeft(instance());
     }
 
     @Test
@@ -207,6 +212,7 @@ public class SqlLimitTest extends SqlTestSupport {
         assertThatThrownBy(() -> sqlService.execute(statement).iterator().next())
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasMessageContaining("LIMIT value cannot be null");
+        assertNoJobsLeft(instance());
     }
 
     @Test
@@ -226,6 +232,7 @@ public class SqlLimitTest extends SqlTestSupport {
                 + "ORDER BY v ASC "
                 + "LIMIT 5";
         assertRowsOrdered(sql, rows(10L, 9L, 8L, 7L, 6L));
+        assertNoJobsLeft(instance());
     }
 
     @Test
