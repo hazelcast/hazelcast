@@ -215,7 +215,24 @@ public final class CompactUtil {
     private static boolean canBeSerializedAsCompact(Class<?> clazz) {
         Package classPackage = clazz.getPackage();
         if (classPackage == null) {
-            return false;
+            // If the Java version is 8, we can hit this branch if the user
+            // class does not have a package defined for it (the default
+            // package). In Java 9 and above, in that case, we won't hit this,
+            // but it will return a package whose name is an empty string.
+
+            // In Java 9 and above, the method returns null if the class is
+            // primitive, array or Void.
+
+            // We won't hit this line for primitive types, as they are already
+            // supported by the reflective serializers. For arrays, we can only
+            // hit this line for arrays of arrays which is not supported by
+            // Compact. And, Void is not a type we support in the Compact
+            // serialization.
+
+            // So, we can return false here, if the clazz is one of the types
+            // mentioned above, and return true if not, to be able to serialize
+            // user classes without a package in Java 8.
+            return !clazz.isPrimitive() && !clazz.isArray() && !Void.class.equals(clazz);
         }
 
         String name = classPackage.getName();

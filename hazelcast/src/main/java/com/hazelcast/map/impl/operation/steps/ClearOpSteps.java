@@ -90,7 +90,7 @@ public enum ClearOpSteps implements Step<State> {
         @Override
         public void runStep(State state) {
             DefaultRecordStore recordStore = ((DefaultRecordStore) state.getRecordStore());
-            int removedKeyCount = recordStore.removeBulk((ArrayList<Data>) state.getKeys(), state.getRecords());
+            int removedKeyCount = recordStore.removeBulk((ArrayList<Data>) state.getKeys(), state.getRecords(), false);
             if (removedKeyCount > 0) {
                 recordStore.updateStatsOnRemove(Clock.currentTimeMillis());
             }

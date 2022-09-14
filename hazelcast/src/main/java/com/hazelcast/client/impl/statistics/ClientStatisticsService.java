@@ -106,6 +106,10 @@ public class ClientStatisticsService {
         logger.info("Client statistics is enabled with period " + periodSeconds + " seconds.");
     }
 
+    public void collectAndSendStatsNow() {
+        client.getTaskScheduler().schedule(this::collectAndSendStats, 0, SECONDS);
+    }
+
     public void shutdown() {
         if (publisherMetricsCollector != null) {
             publisherMetricsCollector.shutdown();
@@ -128,28 +132,30 @@ public class ClientStatisticsService {
      * @param periodSeconds the interval at which the statistics collection and send is being run
      */
     private void schedulePeriodicStatisticsSendTask(long periodSeconds) {
+        client.getTaskScheduler().scheduleWithRepetition(this::collectAndSendStats, 0, periodSeconds, SECONDS);
+    }
+
+    private void collectAndSendStats() {
         ClientMetricCollector clientMetricCollector = new ClientMetricCollector();
         CompositeMetricsCollector compositeMetricsCollector = new CompositeMetricsCollector(clientMetricCollector,
                 publisherMetricsCollector);
 
-        client.getTaskScheduler().scheduleWithRepetition(() -> {
-            long collectionTimestamp = System.currentTimeMillis();
-            metricsRegistry.collect(compositeMetricsCollector);
-            publisherMetricsCollector.publishCollectedMetrics();
+        long collectionTimestamp = System.currentTimeMillis();
+        metricsRegistry.collect(compositeMetricsCollector);
+        publisherMetricsCollector.publishCollectedMetrics();
 
-            TcpClientConnection connection = getConnection();
-            if (connection == null) {
-                logger.finest("Cannot send client statistics to the server. No connection found.");
-                return;
-            }
+        TcpClientConnection connection = getConnection();
+        if (connection == null) {
+            logger.finest("Cannot send client statistics to the server. No connection found.");
+            return;
+        }
 
-            final StringBuilder clientAttributes = new StringBuilder();
-            periodicStats.fillMetrics(collectionTimestamp, clientAttributes, connection);
-            addNearCacheStats(clientAttributes);
+        final StringBuilder clientAttributes = new StringBuilder();
+        periodicStats.fillMetrics(collectionTimestamp, clientAttributes, connection);
+        addNearCacheStats(clientAttributes);
 
-            byte[] metricsBlob = clientMetricCollector.getBlob();
-            sendStats(collectionTimestamp, clientAttributes.toString(), metricsBlob, connection);
-        }, 0, periodSeconds, SECONDS);
+        byte[] metricsBlob = clientMetricCollector.getBlob();
+        sendStats(collectionTimestamp, clientAttributes.toString(), metricsBlob, connection);
     }
 
     private void addNearCacheStats(final StringBuilder stats) {

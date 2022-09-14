@@ -196,6 +196,7 @@ import java.util.concurrent.ExecutorService;
 import static com.hazelcast.config.MaxSizePolicy.USED_NATIVE_MEMORY_PERCENTAGE;
 import static com.hazelcast.config.PersistenceClusterDataRecoveryPolicy.PARTIAL_RECOVERY_MOST_COMPLETE;
 import static com.hazelcast.internal.util.CollectionUtil.isNotEmpty;
+import static com.hazelcast.jet.impl.JetServiceBackend.SQL_CATALOG_MAP_NAME;
 import static com.hazelcast.memory.MemoryUnit.GIGABYTES;
 import static com.hazelcast.spi.properties.ClusterProperty.MERGE_FIRST_RUN_DELAY_SECONDS;
 import static com.hazelcast.spi.properties.ClusterProperty.MERGE_NEXT_RUN_DELAY_SECONDS;
@@ -353,7 +354,10 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
     public void testMapConfig() {
         assertNotNull(config);
         long mapConfigSize = config.getMapConfigs()
-                .keySet().stream().filter(name -> !name.startsWith(INTERNAL_JET_OBJECTS_PREFIX)).count();
+                .keySet().stream()
+                .filter(name -> !name.startsWith(INTERNAL_JET_OBJECTS_PREFIX))
+                .filter(name -> !name.equals(SQL_CATALOG_MAP_NAME))
+                .count();
         assertEquals(27, mapConfigSize);
 
         MapConfig testMapConfig = config.getMapConfig("testMap");

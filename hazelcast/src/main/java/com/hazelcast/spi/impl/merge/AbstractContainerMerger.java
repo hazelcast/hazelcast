@@ -71,7 +71,7 @@ public abstract class AbstractContainerMerger<C, V, T extends MergingValue<V>> i
 
     @Override
     public final void run() {
-        int valueCount = collector.getMergingValueCount();
+        long valueCount = collector.getMergingValueCount();
         if (valueCount == 0) {
             return;
         }
