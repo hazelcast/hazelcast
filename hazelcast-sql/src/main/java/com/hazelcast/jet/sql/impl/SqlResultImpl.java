@@ -112,13 +112,12 @@ class SqlResultImpl extends AbstractSqlResult {
     }
 
     private void sendJobTermination() {
-        rootResultConsumer.done();
-
         Operation op = new TerminateJobOperation(jobId, TerminationMode.CANCEL_FORCEFUL_QUIET, true);
         getNodeEngine(hazelcastInstance)
             .getOperationService()
             .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, op, coordinatorId())
             .invoke();
+        rootResultConsumer.done();
     }
 
     private Address coordinatorId() {
