@@ -30,7 +30,7 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
  */
 @Value.Enclosing
 public final class AssignDiscriminatorToScansRule extends RelRule<RelRule.Config> {
-    private int counter = 0;
+    private int counter;
 
     @Value.Immutable
     public interface Config extends RelRule.Config {
