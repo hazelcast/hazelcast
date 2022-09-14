@@ -182,9 +182,9 @@ public class BinaryCompatibilityTest {
             serializationService.toData(CompactTestUtil.createMainDTO());
         }
 
-        if (key != null && key.contains("ReflectiveMainDTO")) {
+        if (key != null && key.contains("AllFieldsDTO")) {
             // Create schema for aReflectiveCompact
-            serializationService.toData(CompactTestUtil.createReflectiveMainDTO());
+            serializationService.toData(CompactTestUtil.createAllFieldsDTO());
         }
 
         return serializationService;

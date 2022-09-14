@@ -250,7 +250,7 @@ class ReferenceObjects {
         aCompact.offsetDateTime = aOffsetDateTime;
     }
 
-    static AllFieldsDTO aReflectiveCompact = CompactTestUtil.createReflectiveMainDTO();
+    static AllFieldsDTO aReflectiveCompact = CompactTestUtil.createAllFieldsDTO();
 
     static Object[] allTestObjects = {
             aNullObject, aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString, aUUID, anInnerPortable,

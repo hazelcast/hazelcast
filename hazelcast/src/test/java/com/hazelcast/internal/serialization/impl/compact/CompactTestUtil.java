@@ -152,7 +152,7 @@ public final class CompactTestUtil {
     }
 
     @Nonnull
-    public static AllFieldsDTO createReflectiveMainDTO() {
+    public static AllFieldsDTO createAllFieldsDTO() {
         List<Integer> listOfIntegers = Arrays.asList(1, 3, 5, 6);
         Map<Integer, Integer> mapOfIntegers = new HashMap<>();
         mapOfIntegers.put(1, 2);
