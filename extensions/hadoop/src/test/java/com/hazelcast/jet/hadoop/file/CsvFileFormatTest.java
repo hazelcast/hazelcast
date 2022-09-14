@@ -57,6 +57,18 @@ public class CsvFileFormatTest extends BaseFileFormatTest {
     }
 
     @Test
+    public void shouldIgnoreEmptyLine() {
+        FileSourceBuilder<String[]> source = FileSources.files(currentDir + "/src/test/resources")
+                                                        .glob("file-empty-line.csv")
+                                                        .format(FileFormat.csv(asList("name", "favoriteNumber")));
+
+        assertItemsInSource(source,
+                new String[]{"Frantisek", "7"},
+                new String[]{"Ali", "42"}
+        );
+    }
+
+    @Test
     public void shouldRemapSubsetOfFields() {
         FileSourceBuilder<String[]> source = FileSources.files(currentDir + "/src/test/resources")
                                                         .glob("file.csv")
@@ -72,6 +84,18 @@ public class CsvFileFormatTest extends BaseFileFormatTest {
     public void shouldReadCsvFileToObject() {
         FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
                                                     .glob("file.csv")
+                                                    .format(FileFormat.csv(User.class));
+
+        assertItemsInSource(source,
+                new User("Frantisek", 7),
+                new User("Ali", 42)
+        );
+    }
+
+    @Test
+    public void shouldReadCsvToObjectIgnoreEmptyLine() {
+        FileSourceBuilder<User> source = FileSources.files(currentDir + "/src/test/resources")
+                                                    .glob("file-empty-line.csv")
                                                     .format(FileFormat.csv(User.class));
 
         assertItemsInSource(source,

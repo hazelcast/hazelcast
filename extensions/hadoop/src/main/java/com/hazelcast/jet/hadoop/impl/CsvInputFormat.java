@@ -110,31 +110,26 @@ public class CsvInputFormat extends FileInputFormat<NullWritable, Object> {
                 Path file = fileSplit.getPath();
                 FileSystem fs = file.getFileSystem(configuration);
 
-                try (InputStream in = fs.open(file)) {
-                    try (InputStream wrapped = wrap(in, configuration, file)) {
-                        ObjectReader headerReader = new CsvMapper()
-                                .enable(Feature.WRAP_AS_ARRAY)
-                                .readerFor(String[].class)
-                                .with(CsvSchema.emptySchema().withSkipFirstDataRow(false));
+                ObjectReader headerReader = new CsvMapper()
+                        .enable(Feature.WRAP_AS_ARRAY)
+                        .readerFor(String[].class)
+                        .with(CsvSchema.emptySchema().withSkipFirstDataRow(false));
 
-                        try (MappingIterator<Object> iterator = headerReader.readValues(wrapped)) {
-                            if (!iterator.hasNext()) {
-                                throw new JetException("Header row missing in " + fileSplit);
-                            }
-                            return (String[]) iterator.next();
-                        }
+                try (InputStream in = fs.open(file);
+                     InputStream wrapped = wrap(in, configuration, file);
+                     MappingIterator<Object> iterator = headerReader.readValues(wrapped)) {
+
+                    if (!iterator.hasNext()) {
+                        throw new JetException("Header row missing in " + fileSplit);
                     }
+                    return (String[]) iterator.next();
                 }
 
             }
 
             private InputStream wrap(InputStream in, Configuration configuration, Path file) throws IOException {
                 CompressionCodec codec = new CompressionCodecFactory(configuration).getCodec(file);
-                if (codec != null) {
-                    return codec.createInputStream(in);
-                } else {
-                    return in;
-                }
+                return codec != null ? codec.createInputStream(in) : in;
             }
 
             @Override
@@ -150,12 +145,12 @@ public class CsvInputFormat extends FileInputFormat<NullWritable, Object> {
             @Override
             public Object getCurrentValue() throws IOException {
                 String current = reader.getCurrentValue().toString();
-                if (formatClazz.equals(String[].class)) {
+                if (formatClazz == String[].class) {
                     try (MappingIterator<Object> iterator = objectReader.readValues(current)) {
-                        return projection.apply(iterator.next());
+                        return iterator.hasNext() ? projection.apply(iterator.next()) : null;
                     }
                 } else {
-                    return projection.apply(objectReader.readValue(current));
+                    return current.isEmpty() ? null : projection.apply(objectReader.readValue(current));
                 }
             }
 
