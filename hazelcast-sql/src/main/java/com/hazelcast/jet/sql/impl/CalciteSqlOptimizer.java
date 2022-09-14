@@ -45,9 +45,9 @@ import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.WatermarkKeysAssigner;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
-import com.hazelcast.jet.sql.impl.opt.logical.IMapByKeyOptRules;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
+import com.hazelcast.jet.sql.impl.opt.logical.SelectByKeyMapLogicalRule;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
@@ -113,6 +113,7 @@ import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
 import org.apache.calcite.sql.util.SqlString;
+import org.apache.calcite.tools.RuleSets;
 
 import javax.annotation.Nullable;
 import java.security.Permission;
@@ -633,14 +634,12 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             logger.fine("After logical opt:\n" + RelOptUtil.toString(logicalRel));
         }
 
-        if (logicalRel instanceof FullScanLogicalRel) {
-            logicalRel = optimizeIMapKeyedAccess(context, logicalRel);
-            if (fineLogOn) {
-                logger.fine("After IMap keyed access opts:\n" + RelOptUtil.toString(logicalRel));
-            }
+        LogicalRel logicalRel2 = optimizeIMapKeyedAccess(context, logicalRel);
+        if (fineLogOn && logicalRel != logicalRel2) {
+            logger.fine("After IMap keyed access opt:\n" + RelOptUtil.toString(logicalRel2));
         }
 
-        PhysicalRel physicalRel = optimizePhysical(context, logicalRel);
+        PhysicalRel physicalRel = optimizePhysical(context, logicalRel2);
         if (fineLogOn) {
             logger.fine("After physical opt:\n" + RelOptUtil.toString(physicalRel));
         }
@@ -662,15 +661,14 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
     }
 
     private LogicalRel optimizeIMapKeyedAccess(OptimizerContext context, LogicalRel rel) {
-        if (rel instanceof FullScanLogicalRel) {
-            return (LogicalRel) context.optimize(
-                    rel,
-                    IMapByKeyOptRules.getRuleSet(),
-                    OptUtils.toLogicalConvention(rel.getTraitSet())
-            );
-        } else {
+        if (!(rel instanceof FullScanLogicalRel)) {
             return rel;
         }
+        return (LogicalRel) context.optimize(
+                rel,
+                RuleSets.ofList(SelectByKeyMapLogicalRule.INSTANCE),
+                OptUtils.toLogicalConvention(rel.getTraitSet())
+        );
     }
 
     /**
