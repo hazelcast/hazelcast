@@ -20,12 +20,15 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
     <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.hazelcast</groupId>
+    <artifactId>hazelcast-mapstore</artifactId>
+    <version>5.2-SNAPSHOT</version>
+
     <packaging>jar</packaging>
     <name>hazelcast-sql-mapstore</name>
     <description>Ready made MapStore using Hazelcast SQL</description>
     <url>http://www.hazelcast.com/</url>
-
-    <artifactId>hazelcast-mapstore</artifactId>
 
     <parent>
         <groupId>com.hazelcast.jet</groupId>

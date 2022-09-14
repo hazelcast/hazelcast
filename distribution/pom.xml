@@ -395,7 +395,7 @@
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>com.hazelcast.jet</groupId>
+            <groupId>com.hazelcast</groupId>
             <artifactId>hazelcast-mapstore</artifactId>
             <version>${project.version}</version>
         </dependency>
