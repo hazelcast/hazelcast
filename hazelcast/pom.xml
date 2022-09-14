@@ -768,12 +768,5 @@
             <artifactId>HikariCP</artifactId>
             <version>${hikari.version}</version>
         </dependency>
-
-        <dependency>
-            <groupId>com.hazelcast.marketing</groupId>
-            <artifactId>hazelcast-license-extractor</artifactId>
-            <version>${license.extractor.version}</version>
-        </dependency>
-
     </dependencies>
 </project>

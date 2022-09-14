@@ -20,7 +20,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.config.TieredStoreConfig;
-import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.memory.MemoryStats;
@@ -41,13 +40,10 @@ import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.DATA_MEMORY_COST;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.HD_MEMORY_ENABLED;
-import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.LICENSE_KEY_VERSION;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MEMORY_FREE_HEAP_SIZE;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MEMORY_USED_HEAP_SIZE;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MEMORY_USED_NATIVE_SIZE;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.TIERED_STORAGE_ENABLED;
-import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.TIERED_STORAGE_HELD;
-import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.TIERED_STORAGE_LIMIT;
 import static java.util.Collections.singletonMap;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -92,7 +88,6 @@ public class StorageInfoCollectorTest {
 
         when(node.getNodeExtension()).thenReturn(nodeExtension);
         when(node.getNodeEngine()).thenReturn(nodeEngine);
-        when(node.getBuildInfo()).thenReturn(BuildInfoProvider.getBuildInfo());
 
         when(nodeExtension.getMemoryStats()).thenReturn(memoryStats);
 
@@ -139,9 +134,6 @@ public class StorageInfoCollectorTest {
         verify(metricsConsumer).accept(MEMORY_USED_HEAP_SIZE, "0");
         verify(metricsConsumer).accept(MEMORY_FREE_HEAP_SIZE, "0");
         verify(metricsConsumer).accept(TIERED_STORAGE_ENABLED, "true");
-        verify(metricsConsumer).accept(TIERED_STORAGE_LIMIT, "0");
-        verify(metricsConsumer).accept(TIERED_STORAGE_HELD, "0");
-        verify(metricsConsumer).accept(LICENSE_KEY_VERSION, "V6");
         verify(metricsConsumer).accept(DATA_MEMORY_COST, "0");
         verifyNoMoreInteractions(metricsConsumer);
     }

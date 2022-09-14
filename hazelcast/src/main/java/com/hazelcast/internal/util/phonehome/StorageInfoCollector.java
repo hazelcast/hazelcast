@@ -21,8 +21,6 @@ import com.hazelcast.config.NativeMemoryConfig;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.memory.MemoryStats;
-import com.hazelcast.license.domain.License;
-import com.hazelcast.license.util.LicenseHelper;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.replicatedmap.impl.ReplicatedMapService;
@@ -34,13 +32,10 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.DATA_MEMORY_COST;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.HD_MEMORY_ENABLED;
-import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.LICENSE_KEY_VERSION;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MEMORY_FREE_HEAP_SIZE;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MEMORY_USED_HEAP_SIZE;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.MEMORY_USED_NATIVE_SIZE;
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.TIERED_STORAGE_ENABLED;
-import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.TIERED_STORAGE_HELD;
-import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.TIERED_STORAGE_LIMIT;
 
 public class StorageInfoCollector implements MetricsCollector {
 
@@ -50,7 +45,7 @@ public class StorageInfoCollector implements MetricsCollector {
         Config config = nodeEngine.getConfig();
 
         memory(metricsConsumer, config, node.getNodeExtension());
-        licenseAndTieredStorage(metricsConsumer, config, node);
+        licenseAndTieredStorage(metricsConsumer, config);
         dataMemoryCost(metricsConsumer, nodeEngine);
     }
 
@@ -72,22 +67,10 @@ public class StorageInfoCollector implements MetricsCollector {
         metricsConsumer.accept(MEMORY_FREE_HEAP_SIZE, String.valueOf(memoryStats.getFreeHeap()));
     }
 
-    private void licenseAndTieredStorage(
-            BiConsumer<PhoneHomeMetrics, String> metricsConsumer, Config config, Node node
-    ) {
+    private void licenseAndTieredStorage(BiConsumer<PhoneHomeMetrics, String> metricsConsumer, Config config) {
         boolean tieredStorageEnabled = config.getMapConfigs().values().stream()
                 .anyMatch(mapConfig -> mapConfig.getTieredStoreConfig().isEnabled());
         metricsConsumer.accept(TIERED_STORAGE_ENABLED, String.valueOf(tieredStorageEnabled));
-        if (tieredStorageEnabled) {
-            if (config.getLicenseKey() != null) {
-                License license = LicenseHelper.getLicense(config.getLicenseKey(), node.getBuildInfo().getVersion());
-                metricsConsumer.accept(LICENSE_KEY_VERSION, license.getVersion().name());
-                metricsConsumer.accept(TIERED_STORAGE_LIMIT, String.valueOf(license.getAllowedTieredStoreSize()));
-            }
-            // TODO If enabled, the amount of Tiered Storage held by this member,
-            //  otherwise 0 - it’s hybrid log length, the metric is present
-            metricsConsumer.accept(TIERED_STORAGE_HELD, String.valueOf(0));
-        }
     }
 
     private void dataMemoryCost(BiConsumer<PhoneHomeMetrics, String> metricsConsumer, NodeEngine nodeEngine) {
