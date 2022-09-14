@@ -49,7 +49,7 @@ public class ClearOperation extends MapOperation
             return;
         }
 
-        numberOfClearedEntries = recordStore.clear();
+        numberOfClearedEntries = recordStore.clear(false);
         shouldBackup = true;
     }
 

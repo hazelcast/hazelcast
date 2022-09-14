@@ -57,7 +57,7 @@ public class AbstractNamedContainerCollectorTest extends HazelcastTestSupport {
 
         collector.run();
 
-        assertEqualsStringFormat("Expected %d merging values, but found %d", 1, collector.getMergingValueCount());
+        assertEqualsStringFormat("Expected %d merging values, but found %d", 1L, collector.getMergingValueCount());
         assertEquals("Expected the collected containers to be removed from the container map", 0, collector.containers.size());
     }
 
@@ -68,7 +68,7 @@ public class AbstractNamedContainerCollectorTest extends HazelcastTestSupport {
 
         collector.run();
 
-        assertEqualsStringFormat("Expected %d merging values, but found %d", 0, collector.getMergingValueCount());
+        assertEqualsStringFormat("Expected %d merging values, but found %d", 0L, collector.getMergingValueCount());
         assertEquals("Expected the collected containers to be removed from the container map", 0, collector.containers.size());
     }
 
@@ -79,7 +79,7 @@ public class AbstractNamedContainerCollectorTest extends HazelcastTestSupport {
 
         collector.run();
 
-        assertEqualsStringFormat("Expected %d merging values, but found %d", 0, collector.getMergingValueCount());
+        assertEqualsStringFormat("Expected %d merging values, but found %d", 0L, collector.getMergingValueCount());
         assertEquals("Expected the collected containers to be removed from the container map", 0, collector.containers.size());
     }
 

@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.validate.operators.predicate;
 
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
+import com.hazelcast.jet.sql.impl.validate.ValidatorResource;
 import com.hazelcast.jet.sql.impl.validate.param.NumericPrecedenceParameterConverter;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.ParameterConverter;
@@ -26,6 +27,7 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlKind;
 import org.apache.calcite.sql.SqlNode;
+import org.apache.calcite.sql.type.SqlTypeName;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.OBJECT;
 
@@ -57,6 +59,14 @@ public final class HazelcastComparisonPredicateUtils {
             SqlNode second,
             RelDataType secondType
     ) {
+        if (firstType.getSqlTypeName() == SqlTypeName.ROW || secondType.getSqlTypeName() == SqlTypeName.ROW) {
+            if (throwOnFailure) {
+                throw callBinding.newError(ValidatorResource.RESOURCE.rowTypeComparisonNotSupported());
+            } else {
+                return false;
+            }
+        }
+
         RelDataType winningType = HazelcastTypeUtils.withHigherPrecedence(firstType, secondType);
 
         if (winningType == firstType) {
