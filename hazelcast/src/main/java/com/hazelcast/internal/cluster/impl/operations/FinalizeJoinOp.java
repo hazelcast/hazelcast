@@ -41,7 +41,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.UUID;
 
-import static com.hazelcast.instance.impl.ClusterTopologyIntent.UNKNOWN;
+import static com.hazelcast.internal.cluster.Versions.V5_2;
 import static com.hazelcast.spi.impl.operationservice.OperationResponseHandlerFactory.createEmptyResponseHandler;
 
 /**
@@ -200,7 +200,9 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         out.writeObject(preJoinOp);
         out.writeObject(postJoinOp);
         out.writeBoolean(deferPartitionProcessing);
-        out.writeByte(clusterTopologyIntent.ordinal());
+        if (clusterVersion.isGreaterOrEqual(V5_2)) {
+            out.writeByte(clusterTopologyIntent.ordinal());
+        }
     }
 
     @Override
@@ -214,13 +216,9 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         preJoinOp = readOnJoinOp(in);
         postJoinOp = readOnJoinOp(in);
         deferPartitionProcessing = in.readBoolean();
-        // todo: test patch-level backwards compatibility
-        try {
+        if (clusterVersion.isGreaterOrEqual(V5_2)) {
             byte topologyIntentOrdinal = in.readByte();
             clusterTopologyIntent = ClusterTopologyIntent.values()[topologyIntentOrdinal];
-        } catch (IOException e) {
-            // ignore exception, input originates from version that does not include topology intent
-            clusterTopologyIntent = UNKNOWN;
         }
     }
 
