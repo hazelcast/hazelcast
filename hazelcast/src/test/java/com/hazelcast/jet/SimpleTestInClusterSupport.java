@@ -37,7 +37,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import static com.hazelcast.jet.Util.idToString;
 import static java.util.stream.Collectors.joining;
