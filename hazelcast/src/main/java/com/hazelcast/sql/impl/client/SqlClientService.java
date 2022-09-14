@@ -60,6 +60,7 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 import static com.hazelcast.sql.impl.SqlErrorCode.CONNECTION_PROBLEM;
 import static com.hazelcast.sql.impl.SqlErrorCode.PARTITION_DISTRIBUTION;
+import static com.hazelcast.sql.impl.SqlErrorCode.RESTARTABLE_ERROR;
 import static com.hazelcast.sql.impl.SqlErrorCode.TOPOLOGY_CHANGE;
 
 /**
@@ -233,7 +234,8 @@ public class SqlClientService implements SqlService {
     }
 
     private boolean shouldResubmit(int errorCode) {
-        return errorCode == CONNECTION_PROBLEM || errorCode == PARTITION_DISTRIBUTION || errorCode == TOPOLOGY_CHANGE;
+        return errorCode == CONNECTION_PROBLEM || errorCode == PARTITION_DISTRIBUTION
+                || errorCode == TOPOLOGY_CHANGE || errorCode == RESTARTABLE_ERROR;
     }
 
     private boolean shouldResubmit(SqlClientResult result) {

@@ -19,7 +19,7 @@ package com.hazelcast.client.impl.spi.impl;
 import com.hazelcast.client.config.ClientNetworkConfig;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.Addresses;
-import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRunner;
 import com.hazelcast.client.util.AddressHelper;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
@@ -49,7 +49,7 @@ public class DefaultAddressProvider implements AddressProvider {
     }
 
     @Override
-    public Addresses loadAddresses(ClientConnectionProcessListener listener) {
+    public Addresses loadAddresses(ClientConnectionProcessListenerRunner listenerRunner) {
         List<String> configuredAddresses = networkConfig.getAddresses();
 
         if (configuredAddresses.isEmpty()) {
@@ -59,12 +59,12 @@ public class DefaultAddressProvider implements AddressProvider {
         Addresses addresses = new Addresses();
         List<Address> allAddresses = new ArrayList<>();
         for (String address : configuredAddresses) {
-            Addresses socketAddresses = AddressHelper.getSocketAddresses(address, listener);
+            Addresses socketAddresses = AddressHelper.getSocketAddresses(address, listenerRunner);
             addresses.addAll(socketAddresses);
         }
         allAddresses.addAll(addresses.primary());
         allAddresses.addAll(addresses.secondary());
-        listener.possibleAddressesCollected(allAddresses);
+        listenerRunner.onPossibleAddressesCollected(allAddresses);
         return addresses;
     }
 

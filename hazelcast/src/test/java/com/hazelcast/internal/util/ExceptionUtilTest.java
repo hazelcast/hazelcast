@@ -140,6 +140,20 @@ public class ExceptionUtilTest extends HazelcastTestSupport {
         rethrowFromCollection(Collections.singleton(new TestException()), TestException.class);
     }
 
+    @Test
+    public void testCanCreateExceptionsWithMessageAndCauseWhenExceptionHasCauseSetImplicitlyByNoArgumentConstructor() {
+        ExceptionUtil.tryCreateExceptionWithMessageAndCause(
+                ExceptionThatHasCauseImplicitlyByNoArgumentConstructor.class, "", new RuntimeException()
+        );
+    }
+
+    @Test
+    public void testCanCreateExceptionsWithMessageAndCauseWhenExceptionHasCauseSetImplicitlyByMessageConstructor() {
+        ExceptionUtil.tryCreateExceptionWithMessageAndCause(
+                ExceptionThatHasCauseImplicitlyByMessageConstructor.class, "", new RuntimeException()
+        );
+    }
+
     private void assertNoAsyncTrace(Throwable result) {
         for (StackTraceElement stackTraceElement : result.getStackTrace()) {
             if (stackTraceElement.getClassName().equals(ExceptionUtil.EXCEPTION_SEPARATOR)) {
@@ -153,6 +167,19 @@ public class ExceptionUtilTest extends HazelcastTestSupport {
             super(cause);
         }
     }
+
+    public static class ExceptionThatHasCauseImplicitlyByNoArgumentConstructor extends RuntimeException {
+        public ExceptionThatHasCauseImplicitlyByNoArgumentConstructor() {
+            super((Throwable) null);
+        }
+    }
+
+    public static class ExceptionThatHasCauseImplicitlyByMessageConstructor extends RuntimeException {
+        public ExceptionThatHasCauseImplicitlyByMessageConstructor(String message) {
+            super(message, null);
+        }
+    }
+
     public static class NonStandardException extends RuntimeException {
         private NonStandardException(Integer iDontCareAboutStandardSignatures, Throwable cause) {
             super("" + iDontCareAboutStandardSignatures, cause);

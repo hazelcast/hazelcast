@@ -79,7 +79,7 @@ public enum DeleteOpSteps implements Step<State> {
         public void runStep(State state) {
             DefaultRecordStore recordStore = (DefaultRecordStore) state.getRecordStore();
             Record record = recordStore.getRecord(state.getKey());
-            recordStore.removeRecord0(state.getKey(), record);
+            recordStore.removeRecord0(state.getKey(), record, false);
             recordStore.onStore(record);
         }
 
