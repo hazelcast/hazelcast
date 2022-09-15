@@ -674,7 +674,7 @@ class RaftGroupMembershipManager {
                         continue;
                     }
                     int k = g.size();
-                    if (k < min) {
+                    if (k <= min) {
                         min = k;
                         to = member;
                         groupId = group.id();
