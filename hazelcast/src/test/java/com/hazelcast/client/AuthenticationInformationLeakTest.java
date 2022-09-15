@@ -87,7 +87,7 @@ public class AuthenticationInformationLeakTest {
     }
 
     @Test
-    public void testAuthenticationExceptionDoesNotLeakInfo() {
+    public void testAuthenticationExceptionDoesNotLeakInfo() throws IOException {
         SerializationService ss = new DefaultSerializationServiceBuilder().build();
         InetSocketAddress endpoint = new InetSocketAddress("127.0.0.1", 5701);
         try (Socket socket = new Socket()) {
@@ -100,8 +100,7 @@ public class AuthenticationInformationLeakTest {
             }
             assertEquals(res.getMessageType(), ErrorsCodec.EXCEPTION_MESSAGE_TYPE);
             ClientExceptionFactory factory = new ClientExceptionFactory(false, Thread.currentThread().getContextClassLoader());
-            throw factory.createException(res);
-        } catch (Throwable err) {
+            Throwable err = factory.createException(res);
             String message = err.getMessage();
             assertInstanceOf(AuthenticationException.class, err.getCause());
             assertContains(message, "must authenticate before any operation");
