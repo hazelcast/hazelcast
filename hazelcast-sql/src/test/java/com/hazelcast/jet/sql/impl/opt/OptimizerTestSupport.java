@@ -58,13 +58,19 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 public abstract class OptimizerTestSupport extends SqlTestSupport {
 
-    protected RelNode optimizeLogical(String sql, HazelcastTable... tables) {
+    protected RelNode preOptimize(String sql, HazelcastTable... tables) {
+        HazelcastSchema schema = schema(tables);
+        OptimizerContext context = context(schema);
+        return preOptimizeInternal(sql, context);
+    }
+
+    protected LogicalRel optimizeLogical(String sql, HazelcastTable... tables) {
         HazelcastSchema schema = schema(tables);
         OptimizerContext context = context(schema);
         return optimizeLogicalInternal(sql, context);
     }
 
-    protected RelNode optimizeLogical(String sql, boolean requiresJob, HazelcastTable... tables) {
+    protected LogicalRel optimizeLogical(String sql, boolean requiresJob, HazelcastTable... tables) {
         HazelcastSchema schema = schema(tables);
         OptimizerContext context = context(schema);
         context.setRequiresJob(requiresJob);
@@ -77,9 +83,13 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         return optimizePhysicalInternal(sql, context);
     }
 
-    private static LogicalRel optimizeLogicalInternal(String sql, OptimizerContext context) {
+    static RelNode preOptimizeInternal(String sql, OptimizerContext context) {
         QueryParseResult parseResult = context.parse(sql);
-        RelNode rel = context.convert(parseResult.getNode()).getRel();
+        return context.convert(parseResult.getNode()).getRel();
+    }
+
+    private static LogicalRel optimizeLogicalInternal(String sql, OptimizerContext context) {
+        RelNode rel = preOptimizeInternal(sql, context);
 
         return (LogicalRel) context
                 .optimize(rel, LogicalRules.getRuleSet(), OptUtils.toLogicalConvention(rel.getTraitSet()));

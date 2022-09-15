@@ -64,13 +64,14 @@ public final class ClientProperty {
             = new HazelcastProperty("hazelcast.client.event.queue.capacity", 1000000);
 
     /**
-     * When an invocation gets an exception because :
+     * When an invocation gets an exception because:
      * - Member throws an exception.
      * - Connection between the client and member is closed.
      * - Client's heartbeat requests are timed out.
+     * - SQL query resubmission timed out.
      * Time passed since invocation started is compared with this property.
      * If the time is already passed, then the exception is delegated to the user. If not, the invocation is retried.
-     * Note that, if invocation gets no exception and it is a long running one, then it will not get any exception,
+     * Note that if invocation gets no exception, and it is a long-running one, then it will not get any exception,
      * no matter how small this timeout is set.
      */
     public static final HazelcastProperty INVOCATION_TIMEOUT_SECONDS

@@ -108,6 +108,7 @@ public class MetadataPortableResolverTest {
                 (key ? OPTION_KEY_CLASS_VERSION : OPTION_VALUE_CLASS_VERSION), String.valueOf(classDefinition.getVersion())
         );
 
+        // TODO: fix portable nested types support?
         Stream<MappingField> resolvedFields = INSTANCE.resolveAndValidateFields(key, emptyList(), options, ss);
 
         assertThat(resolvedFields).containsExactly(
@@ -159,6 +160,7 @@ public class MetadataPortableResolverTest {
                 field("timestampTz", QueryDataType.TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME, prefix + ".timestampTz")
         );
 
+        // TODO: fix portable nested types support?
         Stream<MappingField> resolvedFields = INSTANCE.resolveAndValidateFields(key, fields, options, ss);
 
         assertThat(resolvedFields).containsExactlyElementsOf(fields);
@@ -181,6 +183,7 @@ public class MetadataPortableResolverTest {
                 field("object", QueryDataType.OBJECT, prefix + ".object")
         );
 
+        // TODO: fix portable nested types support?
         //noinspection ResultOfMethodCallIgnored
         assertThatThrownBy(() -> INSTANCE.resolveAndValidateFields(key, fields, options, ss).collect(toList()))
                 .isInstanceOf(QueryException.class)

@@ -16,7 +16,6 @@
 
 package com.hazelcast.map.impl.operation;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.core.HazelcastException;
@@ -30,6 +29,9 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.ExecutorStats;
 import com.hazelcast.map.impl.MapDataSerializerHook;
+import com.hazelcast.map.impl.operation.steps.EntryOpSteps;
+import com.hazelcast.map.impl.operation.steps.engine.State;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
@@ -44,6 +46,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.impl.operationservice.impl.responses.CallTimeoutResponse;
+import com.hazelcast.wan.impl.CallerProvenance;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
@@ -86,10 +89,12 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * - EntryOperation fetches the entry and locks the given key on partition-thread
  * - Then the processing is offloaded to the given executor
  * - When the processing finishes
- * if there is a change to the entry, a EntryOffloadableSetUnlockOperation is spawned
- * which sets the new value and unlocks the given key on partition-thread
- * if there is no change to the entry, a UnlockOperation is spawned, which just unlocks the kiven key
- * on partition thread
+ * <ul>
+ * <li> if there is a change to the entry, a EntryOffloadableSetUnlockOperation is spawned
+ * which sets the new value and unlocks the given key on partition-thread </li>
+ * <li> if there is no change to the entry, a UnlockOperation is spawned, which just unlocks the given key
+ * on partition thread </li>
+ * </ul>
  * <p>
  * There will not be a conflict on a write due to the pessimistic locking of the key.
  * The threading looks as follows:
@@ -139,8 +144,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * GOTCHA: This operation LOADS missing keys from map-store, in contrast with PartitionWideEntryOperation.
  */
 @SuppressWarnings("checkstyle:methodcount")
-public class
-EntryOperation extends LockAwareOperation
+public class EntryOperation extends LockAwareOperation
         implements BackupAwareOperation, BlockingOperation, MutatingOperation {
 
     private static final int SET_UNLOCK_FAST_RETRY_LIMIT = 10;
@@ -177,17 +181,24 @@ EntryOperation extends LockAwareOperation
         entryProcessor = (EntryProcessor) managedContext.initialize(entryProcessor);
     }
 
+    // TODO: EP no forced eviction for EP?
     @Override
     public CallStatus call() {
         if (shouldWait()) {
             return WAIT;
         }
+
         // when offloading is enabled, left disposing
         // to EntryOffloadableSetUnlockOperation
         disposeDeferredBlocks = !offload;
 
+        if (isMapStoreOffloadEnabled()) {
+            return offloadOperation();
+        }
+
         if (offload) {
-            return new EntryOperationOffload(getCallerAddress());
+            Object oldValue = recordStore.get(dataKey, false, getCallerAddress());
+            return new EntryOperationOffload(oldValue);
         } else {
             response = operator(this, entryProcessor)
                     .operateOnKey(dataKey)
@@ -195,6 +206,29 @@ EntryOperation extends LockAwareOperation
                     .getResult();
             return RESPONSE;
         }
+    }
+
+    @Override
+    public State createState() {
+        return super.createState()
+                .setKey(dataKey)
+                .setCallerProvenance(CallerProvenance.NOT_WAN)
+                .setEntryProcessor(entryProcessor)
+                .setEntryProcessorOffload(offload);
+    }
+
+    @Override
+    public Step getStartingStep() {
+        return EntryOpSteps.EP_START;
+    }
+
+    @Override
+    public void applyState(State state) {
+        if (offload) {
+            return;
+        }
+        super.applyState(state);
+        response = state.getOperator().getResult();
     }
 
     @Override
@@ -313,41 +347,41 @@ EntryOperation extends LockAwareOperation
         out.writeObject(entryProcessor);
     }
 
-    private final class EntryOperationOffload extends Offload {
-        private Address callerAddress;
+    private Object getOldValueByInMemoryFormat(Object oldValue) {
+        InMemoryFormat inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
+        switch (inMemoryFormat) {
+            case NATIVE:
+                return toHeapData((Data) oldValue);
+            case OBJECT:
+                return getNodeEngine().getSerializationService()
+                        .toData(oldValue);
+            case BINARY:
+                return oldValue;
+            default:
+                throw new IllegalArgumentException("Unknown in memory format: " + inMemoryFormat);
+        }
+    }
 
-        private EntryOperationOffload(Address callerAddress) {
+    public final class EntryOperationOffload extends Offload {
+        private final Object oldValue;
+
+        public EntryOperationOffload(Object oldValue) {
             super(EntryOperation.this);
-            this.callerAddress = callerAddress;
+            this.oldValue = getOldValueByInMemoryFormat(oldValue);
         }
 
         @Override
         public void start() {
             verifyEntryProcessor();
 
-            Object oldValue = getOldValueByInMemoryFormat();
             String executorName = ((Offloadable) entryProcessor).getExecutorName();
-            executorName = executorName.equals(Offloadable.OFFLOADABLE_EXECUTOR) ? OFFLOADABLE_EXECUTOR : executorName;
+            executorName = executorName.equals(Offloadable.OFFLOADABLE_EXECUTOR)
+                    ? OFFLOADABLE_EXECUTOR : executorName;
 
             if (readOnly) {
                 executeReadOnlyEntryProcessor(oldValue, executorName);
             } else {
                 executeMutatingEntryProcessor(oldValue, executorName);
-            }
-        }
-
-        private Object getOldValueByInMemoryFormat() {
-            Object oldValue = recordStore.get(dataKey, false, callerAddress);
-            InMemoryFormat inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
-            switch (inMemoryFormat) {
-                case NATIVE:
-                    return toHeapData((Data) oldValue);
-                case OBJECT:
-                    return serializationService.toData(oldValue);
-                case BINARY:
-                    return oldValue;
-                default:
-                    throw new IllegalArgumentException("Unknown in memory format: " + inMemoryFormat);
             }
         }
 

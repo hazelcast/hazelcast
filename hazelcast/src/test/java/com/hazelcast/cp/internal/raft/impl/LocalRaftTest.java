@@ -491,6 +491,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
         RaftEndpoint leaderEndpoint = group.waitUntilLeaderElected().getLocalMember();
 
         int[] split = group.createMajoritySplitIndexes(false);
+        Arrays.sort(split);
         group.split(split);
 
         assertTrueEventually(() -> {

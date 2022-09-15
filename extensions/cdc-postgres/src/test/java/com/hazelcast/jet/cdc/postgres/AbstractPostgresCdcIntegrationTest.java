@@ -42,7 +42,7 @@ import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
 @RunWith(HazelcastSerialClassRunner.class)
 public abstract class AbstractPostgresCdcIntegrationTest extends AbstractCdcIntegrationTest {
 
-    public static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("debezium/example-postgres:1.3")
+    public static final DockerImageName DOCKER_IMAGE = DockerImageName.parse("debezium/example-postgres:1.7")
             .asCompatibleSubstituteFor("postgres");
 
     protected static final String DATABASE_NAME = "postgres";

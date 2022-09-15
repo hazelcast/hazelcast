@@ -69,13 +69,17 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
     }
 
     @Override
-    public void onRemoveRecord(@Nonnull Data key, R record) {
-        removeIndex(key, record, Index.OperationSource.USER);
+    public void onRemoveRecord(@Nonnull Data key, R record, boolean backup) {
+        if (!backup) {
+            removeIndex(key, record, Index.OperationSource.USER);
+        }
     }
 
     @Override
-    public void onEvictRecord(@Nonnull Data key, @Nonnull R record) {
-        removeIndex(key, record, Index.OperationSource.USER);
+    public void onEvictRecord(@Nonnull Data key, @Nonnull R record, boolean backup) {
+        if (!backup) {
+            removeIndex(key, record, Index.OperationSource.USER);
+        }
     }
 
     @Override
@@ -108,16 +112,19 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
      */
     private void clearGlobalIndexes(boolean destroy) {
         Indexes indexes = mapContainer.getIndexes(partitionId);
-        if (indexes.isGlobal()) {
-            if (destroy) {
-                indexes.destroyIndexes();
-            } else {
-                if (indexes.haveAtLeastOneIndex()) {
-                    // clears indexed data of this partition
-                    // from shared global index.
-                    fullScanLocalDataToClear(indexes);
-                }
-            }
+        if (!indexes.isGlobal()) {
+            return;
+        }
+
+        if (destroy) {
+            indexes.destroyIndexes();
+            return;
+        }
+
+        if (indexes.haveAtLeastOneIndex()) {
+            // clears indexed data of this partition
+            // from shared global index.
+            fullScanLocalDataToClear(indexes);
         }
     }
 
@@ -132,9 +139,10 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
 
         if (destroy) {
             indexes.destroyIndexes();
-        } else {
-            indexes.clearAll();
+            return;
         }
+
+        indexes.clearAll();
     }
 
     /**

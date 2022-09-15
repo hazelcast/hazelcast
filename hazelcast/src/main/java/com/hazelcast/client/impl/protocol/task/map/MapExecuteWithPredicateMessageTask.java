@@ -59,8 +59,8 @@ public class MapExecuteWithPredicateMessageTask
     @Override
     public PartitionIdSet getPartitions() {
         if (predicate instanceof PartitionPredicate) {
-            int partitionId = clientMessage.getPartitionId();
-            return new PartitionIdSet(1, Arrays.asList(partitionId));
+            PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
+            return clientEngine.getPartitionService().getPartitionIdSet(partitionPredicate.getPartitionKeys());
         }
 
         IPartition[] partitions = clientEngine.getPartitionService().getPartitions();

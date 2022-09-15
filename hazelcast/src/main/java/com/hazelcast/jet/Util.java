@@ -22,6 +22,7 @@ import com.hazelcast.cache.impl.journal.CacheEventJournalFunctions;
 import com.hazelcast.core.EntryEventType;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.impl.journal.MapEventJournalFunctions;
@@ -155,7 +156,7 @@ public final class Util {
         if (str == null || !ID_PATTERN.matcher(str).matches()) {
             return -1;
         }
-        str = str.replaceAll("-", "");
+        str = StringUtil.removeCharacter(str, '-');
         return Long.parseUnsignedLong(str, 16);
     }
 

@@ -47,7 +47,7 @@ public class QueryPartitionOperation extends MapOperation
 
         // we have to increment query count here manually since we are not even
         // trying to use indexes
-        Indexes indexes = mapServiceContext.getMapContainer(getName()).getIndexes();
+        Indexes indexes = mapContainer.getIndexes();
         if (indexes != null) {
             indexes.getIndexesStats().incrementQueryCount();
         }

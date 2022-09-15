@@ -72,6 +72,7 @@ import java.util.concurrent.Future;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.WatermarkPolicy.limitingLag;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static java.util.Arrays.asList;
@@ -117,6 +118,20 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
     public static void afterClass() {
         kafkaTestSupport.shutdownKafkaCluster();
         kafkaTestSupport = null;
+    }
+
+    // test for https://github.com/hazelcast/hazelcast/issues/21455
+    @Test
+    public void test_nonExistentTopic() {
+        Pipeline p = Pipeline.create();
+        p.readFrom(KafkaSources.kafka(properties(), "nonExistentTopic"))
+                .withoutTimestamps()
+                .writeTo(Sinks.list("sink"));
+
+        Job job = instance().getJet().newJob(p);
+
+        assertJobStatusEventually(job, RUNNING);
+        assertTrueAllTheTime(() -> assertEquals(RUNNING, job.getStatus()), 3);
     }
 
     @Test
@@ -335,7 +350,7 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         JobConfig config = new JobConfig();
         Job job = instances[0].getJet().newJob(p, config);
 
-        assertJobStatusEventually(job, JobStatus.RUNNING, 10);
+        assertJobStatusEventually(job, RUNNING, 10);
 
         int messageCount = 1000;
         for (int i = 0; i < messageCount; i++) {

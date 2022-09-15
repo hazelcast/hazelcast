@@ -17,6 +17,7 @@
 package com.hazelcast.jet.kafka.impl;
 
 import com.hazelcast.internal.util.OsHelper;
+import com.hazelcast.test.DockerTestUtil;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.NewPartitions;
@@ -32,7 +33,6 @@ import org.apache.kafka.common.serialization.IntegerDeserializer;
 import org.apache.kafka.common.serialization.IntegerSerializer;
 import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
-import org.testcontainers.DockerClientFactory;
 
 import java.io.IOException;
 import java.time.Duration;
@@ -61,13 +61,13 @@ public abstract class KafkaTestSupport {
     private KafkaProducer<String, String> stringStringProducer;
 
     public static KafkaTestSupport create() {
-        if (DockerClientFactory.instance().isDockerAvailable() && !OsHelper.isArmMac()) {
-            return new DockerizedKafkaTestSupport();
-        } else {
+        if (!DockerTestUtil.dockerEnabled() || OsHelper.isArmMac()) {
             if (System.getProperties().containsKey("test.kafka.version")) {
                 throw new IllegalArgumentException("'test.kafka.version' system property requires docker and x86_64 CPU");
             }
             return new EmbeddedKafkaTestSupport();
+        } else {
+            return new DockerizedKafkaTestSupport();
         }
     }
 
@@ -138,8 +138,8 @@ public abstract class KafkaTestSupport {
     }
 
     public <K, V> KafkaConsumer<K, V> createConsumer(
-            Class<? extends Deserializer<K>> keyDeserializerClass,
-            Class<? extends Deserializer<V>> valueDeserializerClass,
+            Class<? extends Deserializer<? super K>> keyDeserializerClass,
+            Class<? extends Deserializer<? super V>> valueDeserializerClass,
             Map<String, String> properties,
             String... topicIds
     ) {
@@ -181,8 +181,8 @@ public abstract class KafkaTestSupport {
     public <K, V> void assertTopicContentsEventually(
             String topic,
             Map<K, V> expected,
-            Class<? extends Deserializer<K>> keyDeserializerClass,
-            Class<? extends Deserializer<V>> valueDeserializerClass
+            Class<? extends Deserializer<? super K>> keyDeserializerClass,
+            Class<? extends Deserializer<? super V>> valueDeserializerClass
     ) {
         assertTopicContentsEventually(topic, expected, keyDeserializerClass, valueDeserializerClass, emptyMap());
     }
@@ -190,8 +190,8 @@ public abstract class KafkaTestSupport {
     public <K, V> void assertTopicContentsEventually(
             String topic,
             Map<K, V> expected,
-            Class<? extends Deserializer<K>> keyDeserializerClass,
-            Class<? extends Deserializer<V>> valueDeserializerClass,
+            Class<? extends Deserializer<? super K>> keyDeserializerClass,
+            Class<? extends Deserializer<? super V>> valueDeserializerClass,
             Map<String, String> consumerProperties
     ) {
         try (KafkaConsumer<K, V> consumer = createConsumer(

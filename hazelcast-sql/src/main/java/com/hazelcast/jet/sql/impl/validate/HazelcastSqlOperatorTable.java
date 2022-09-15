@@ -22,6 +22,8 @@ import com.hazelcast.jet.pipeline.file.ParquetFileFormat;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastAvgAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastCountAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastHopTableFunction;
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastJsonArrayAggFunction;
+import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastJsonObjectAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastMinMaxAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastSumAggFunction;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastTumbleTableFunction;
@@ -53,6 +55,7 @@ import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastDescOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastNullIfFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastUnaryOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastUnionOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.misc.HazelcastWithinGroupOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastAndOrPredicate;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastBetweenOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastComparisonPredicate;
@@ -64,6 +67,7 @@ import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastCollection
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastMapValueConstructor;
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastRowOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastSqlCase;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastToRowFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastValuesOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastConcatOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastConcatWSOperator;
@@ -245,6 +249,13 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlFunction JSON_VALUE = HazelcastJsonValueFunction.INSTANCE;
     public static final SqlFunction JSON_OBJECT = HazelcastJsonObjectFunction.INSTANCE;
     public static final SqlFunction JSON_ARRAY = HazelcastJsonArrayFunction.INSTANCE;
+    public static final SqlFunction JSON_ARRAYAGG_ABSENT_ON_NULL = HazelcastJsonArrayAggFunction.ABSENT_ON_NULL_INSTANCE;
+    public static final SqlFunction JSON_ARRAYAGG_NULL_ON_NULL = HazelcastJsonArrayAggFunction.NULL_ON_NULL_INSTANCE;
+    public static final SqlFunction JSON_OBJECTAGG_ABSENT_ON_NULL = HazelcastJsonObjectAggFunction.ABSENT_ON_NULL_INSTANCE;
+    public static final SqlFunction JSON_OBJECTAGG_NULL_ON_NULL = HazelcastJsonObjectAggFunction.NULL_ON_NULL_INSTANCE;
+
+    public static final SqlOperator WITHIN_GROUP = HazelcastWithinGroupOperator.INSTANCE;
+    public static final SqlOperator DOT = SqlStdOperatorTable.DOT;
 
     public static final SqlPostfixOperator DESC = HazelcastDescOperator.DESC;
 
@@ -298,6 +309,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlSpecialOperator ROW = new HazelcastRowOperator();
     public static final SqlSpecialOperator COLLECTION_TABLE = new HazelcastCollectionTableOperator("TABLE");
     public static final SqlSpecialOperator MAP_VALUE_CONSTRUCTOR = new HazelcastMapValueConstructor();
+    public static final SqlFunction TO_ROW = HazelcastToRowFunction.INSTANCE;
 
     // We use an operator that doesn't implement the HazelcastOperandTypeCheckerAware interface.
     // The reason is that HazelcastOperandTypeCheckerAware.prepareBinding() gets the operand type for

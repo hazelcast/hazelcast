@@ -21,6 +21,7 @@ import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientGetDistributedObjectsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetExistsDistributedObjectCodec;
+import com.hazelcast.client.impl.protocol.codec.JetGetJobAndSqlSummaryListCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSummaryListCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
@@ -85,6 +86,15 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     public List<JobSummary> getJobSummaryList() {
         return invokeRequestOnMasterAndDecodeResponse(JetGetJobSummaryListCodec.encodeRequest(),
                 JetGetJobSummaryListCodec::decodeResponse);
+    }
+
+    /**
+     * Returns a list of jobs and a summary of their details (including SQL ones).
+     */
+    @Nonnull
+    public List<JobAndSqlSummary> getJobAndSqlSummaryList() {
+        return invokeRequestOnMasterAndDecodeResponse(JetGetJobAndSqlSummaryListCodec.encodeRequest(),
+                JetGetJobAndSqlSummaryListCodec::decodeResponse);
     }
 
     @Nonnull

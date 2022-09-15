@@ -78,8 +78,8 @@ public class PartitionScanRunner {
                 ? (PagingPredicateImpl) predicate : null;
 
         PartitionContainer partitionContainer = mapServiceContext.getPartitionContainer(partitionId);
-        MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
         RecordStore<Record> recordStore = partitionContainer.getRecordStore(mapName);
+        MapContainer mapContainer = recordStore.getMapContainer();
         boolean nativeMemory = recordStore.getInMemoryFormat() == InMemoryFormat.NATIVE;
         boolean useCachedValues = isUseCachedDeserializedValuesEnabled(mapContainer, partitionId);
         Extractors extractors = mapServiceContext.getExtractors(mapName);

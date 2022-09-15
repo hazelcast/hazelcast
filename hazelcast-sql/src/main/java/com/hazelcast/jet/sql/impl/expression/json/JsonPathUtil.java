@@ -17,8 +17,10 @@
 package com.hazelcast.jet.sql.impl.expression.json;
 
 import com.fasterxml.jackson.jr.ob.JSON;
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
+import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+import com.hazelcast.sql.impl.QueryException;
 import org.jsfr.json.Collector;
 import org.jsfr.json.DefaultErrorHandlingStrategy;
 import org.jsfr.json.ErrorHandlingStrategy;
@@ -26,6 +28,7 @@ import org.jsfr.json.JacksonJrParser;
 import org.jsfr.json.JsonSurfer;
 import org.jsfr.json.ValueBox;
 import org.jsfr.json.compiler.JsonPathCompiler;
+import org.jsfr.json.exception.JsonPathCompilerException;
 import org.jsfr.json.exception.JsonSurfingException;
 import org.jsfr.json.path.JsonPath;
 import org.jsfr.json.provider.JacksonJrProvider;
@@ -34,9 +37,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
 
 public final class JsonPathUtil {
-    private static final long CACHE_SIZE = 50L;
+    private static final ILogger LOGGER = Logger.getLogger(JsonPathUtil.class);
+    private static final int CACHE_SIZE = 100;
     private static final ErrorHandlingStrategy ERROR_HANDLING_STRATEGY = new DefaultErrorHandlingStrategy() {
         @Override
         public void handleParsingException(Exception e) {
@@ -53,14 +59,20 @@ public final class JsonPathUtil {
 
     private JsonPathUtil() { }
 
-    public static Cache<String, JsonPath> makePathCache() {
-        return CacheBuilder.newBuilder()
-                .maximumSize(CACHE_SIZE)
-                .build();
+    public static ConcurrentInitialSetCache<String, JsonPath> makePathCache() {
+        return new ConcurrentInitialSetCache<>(CACHE_SIZE);
     }
 
     public static JsonPath compile(String path) {
-        return JsonPathCompiler.compile(path);
+        try {
+            return JsonPathCompiler.compile(path);
+        } catch (JsonPathCompilerException e) {
+            // We deliberately don't use the cause here. The reason is that exceptions from ANTLR are not always
+            // serializable, they can contain references to parser context and other objects, which are not.
+            // That's why we also log the exception here.
+            LOGGER.fine("JSON_QUERY JsonPath compilation failed", e);
+            throw QueryException.error("Invalid SQL/JSON path expression: " + e.getMessage());
+        }
     }
 
     public static Collection<Object> read(String json, JsonPath path) {
@@ -104,6 +116,56 @@ public final class JsonPathUtil {
         } catch (IOException e) {
             // should not happen
             throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * Implementation of fixed-capacity cache based on {@link ConcurrentHashMap}
+     * caching the initial set of keys.
+     * <p>
+     * The cache has no eviction policy, once an element is put into it, it stays
+     * there so long as the cache exists. Once the cache is full, no new items are
+     * cached.
+     * <p>
+     * It's designed for caching of compiled JSONPath expressions in the context of
+     * one query execution, based on the assumption that typically there's a low
+     * number of distinct expressions that fit into the cache and that the
+     * expressions come in arbitrary order. If there number of distinct expressions
+     * is larger than capacity, we assume that some are more common than others, and
+     * we're likely to observe those at the beginning and cache those. If the number
+     * of expressions exceeds the capacity many times, we'll cache arbitrary few of
+     * them and the rest will be calculated each time without caching - a similar
+     * behavior to what an LRU cache will provide, but without the overhead of usage
+     * tracking. Degenerate case is when items are sorted by the cache key - after
+     * the initial phase the cache will have zero hit rate.
+     * <p>
+     * Note: The size of the inner map may become bigger than maxCapacity if there
+     * are multiple concurrent computeIfAbsent executions. We don't address this for
+     * the purpose of optimizing the read performance. The amount the size can
+     * exceed the limit is bounded by the number of concurrent writers.
+     */
+    public static class ConcurrentInitialSetCache<K, V> {
+        // package-visible for tests
+        final Map<K, V> cache;
+        private final int capacity;
+
+        public ConcurrentInitialSetCache(int capacity) {
+            Preconditions.checkPositive("capacity", capacity);
+            this.capacity = capacity;
+            this.cache = new ConcurrentHashMap<>(capacity);
+        }
+
+        public V computeIfAbsent(K key, Function<? super K, ? extends V> valueFunction) {
+            V value = cache.get(key);
+            if (value == null) {
+                if (cache.size() < capacity) {
+                    // use CHM.computeIfAbsent to avoid duplicate calculation of a single key
+                    value = cache.computeIfAbsent(key, valueFunction);
+                } else {
+                    value = valueFunction.apply(key);
+                }
+            }
+            return value;
         }
     }
 }

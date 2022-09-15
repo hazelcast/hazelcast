@@ -50,10 +50,6 @@ public abstract class JetTable extends Table {
         return sqlConnector;
     }
 
-    public final boolean isStream() {
-        return sqlConnector.isStream();
-    }
-
     @Override
     public String toString() {
         return getSqlConnector().typeName() + "[" + getSchemaName() + "." + getSqlName() + ']';

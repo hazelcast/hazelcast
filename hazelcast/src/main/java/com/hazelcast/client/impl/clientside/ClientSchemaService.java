@@ -25,6 +25,7 @@ import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.logging.ILogger;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -41,7 +42,7 @@ public class ClientSchemaService implements SchemaService {
     }
 
     @Override
-    public Schema get(long schemaId) {
+    public @Nullable Schema get(long schemaId) {
         Schema schema = schemas.get(schemaId);
         if (schema != null) {
             return schema;
@@ -78,18 +79,18 @@ public class ClientSchemaService implements SchemaService {
         putIfAbsent(schema);
     }
 
-    private boolean putIfAbsent(Schema schema) {
+    private void putIfAbsent(Schema schema) {
         long schemaId = schema.getSchemaId();
         Schema existingSchema = schemas.putIfAbsent(schemaId, schema);
         if (existingSchema == null) {
-            return true;
+            return;
         }
+
         if (!schema.equals(existingSchema)) {
             throw new IllegalStateException("Schema with schemaId " + schemaId + " already exists. "
                     + "existing schema " + existingSchema
                     + "new schema " + schema);
         }
-        return false;
     }
 
     public void sendAllSchemas() {

@@ -28,7 +28,7 @@ enum ProcessorState {
      * Making calls to {@link Processor#tryProcessWatermark} until it returns
      * {@code true}.
      */
-    PROCESS_WATERMARK,
+    PROCESS_WATERMARKS,
 
     /**
      * Making calls to the zero-argument {@link Processor#tryProcess()} method

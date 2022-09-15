@@ -531,4 +531,22 @@ public final class StringUtil {
         }
         return s.substring(maxLength - 1) + '…';
     }
+
+    /**
+     * Removes all occurrence of {@code charToRemove} from {@code str}. This method is more efficient than
+     * {@link String#replaceAll(String, String)} which compiles a regex from the first parameter every invocation.
+     */
+    public static String removeCharacter(String str, char charToRemove) {
+        if (str == null || str.indexOf(charToRemove) == -1) {
+            return str;
+        }
+        char[] chars = str.toCharArray();
+        int pos = 0;
+        for (int i = 0; i < chars.length; i++) {
+            if (chars[i] != charToRemove) {
+                chars[pos++] = chars[i];
+            }
+        }
+        return new String(chars, 0, pos);
+    }
 }

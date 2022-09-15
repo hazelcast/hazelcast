@@ -101,6 +101,17 @@ class ClientInfoCollector implements MetricsCollector {
                         PhoneHomeMetrics.GO_CLIENT_VERSIONS
                 )
         );
+
+        CLIENT_TYPE_TO_HELPER.put(
+                ConnectionType.CL_CLIENT,
+                new ClientInfoCollectorHelper(
+                        PhoneHomeMetrics.ACTIVE_CL_CLIENTS_COUNT,
+                        PhoneHomeMetrics.OPENED_CL_CLIENT_CONNECTIONS_COUNT,
+                        PhoneHomeMetrics.CLOSED_CL_CLIENT_CONNECTIONS_COUNT,
+                        PhoneHomeMetrics.TOTAL_CL_CLIENT_CONNECTION_DURATION,
+                        PhoneHomeMetrics.CL_CLIENT_VERSIONS
+                )
+        );
     }
 
     @Override

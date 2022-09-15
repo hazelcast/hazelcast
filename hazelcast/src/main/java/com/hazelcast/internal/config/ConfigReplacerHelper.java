@@ -41,6 +41,9 @@ public final class ConfigReplacerHelper {
 
     private static void traverseChildrenAndReplaceVariables(Node root, ConfigReplacer replacer, boolean failFast,
                                                             DomVariableReplacer variableReplacer) {
+        if (root == null) {
+            return;
+        }
         NamedNodeMap attributes = root.getAttributes();
         if (attributes != null) {
             for (int k = 0; k < attributes.getLength(); k++) {

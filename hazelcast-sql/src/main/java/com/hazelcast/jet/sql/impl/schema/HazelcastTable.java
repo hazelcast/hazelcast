@@ -87,25 +87,15 @@ public class HazelcastTable extends AbstractTable {
     private final Table target;
     private final Statistic statistic;
     private final RexNode filter;
-    private final List<RexNode> projects;
+    private List<RexNode> projects;
 
-    private final RelDataType rowType;
+    private RelDataType rowType;
     private final Set<String> hiddenFieldNames = new HashSet<>();
 
     public HazelcastTable(Table target, Statistic statistic) {
         this.target = target;
         this.statistic = statistic;
         this.filter = null;
-
-        // produce default projects
-        int fieldCount = target.getFieldCount();
-        projects = new ArrayList<>(fieldCount);
-        for (int i = 0; i < fieldCount; i++) {
-            TableField field = target.getField(i);
-            RelDataType type = OptUtils.convert(field, HazelcastTypeFactory.INSTANCE);
-            projects.add(new RexInputRef(i, type));
-        }
-        rowType = computeRowType(projects);
     }
 
     private HazelcastTable(
@@ -122,6 +112,20 @@ public class HazelcastTable extends AbstractTable {
         this.filter = filter;
     }
 
+    private void initRowType() {
+        if (rowType == null) {
+            // produce default projects
+            int fieldCount = target.getFieldCount();
+            projects = new ArrayList<>(fieldCount);
+            for (int i = 0; i < fieldCount; i++) {
+                TableField field = target.getField(i);
+                RelDataType type = OptUtils.convert(field, HazelcastTypeFactory.INSTANCE);
+                projects.add(new RexInputRef(i, type));
+            }
+            rowType = computeRowType(projects);
+        }
+    }
+
     public HazelcastTable withProject(List<RexNode> projects, @Nullable RelDataType rowType) {
         return new HazelcastTable(target, statistic, projects, rowType, filter);
     }
@@ -132,6 +136,7 @@ public class HazelcastTable extends AbstractTable {
 
     @Nonnull
     public List<RexNode> getProjects() {
+        initRowType();
         return projects;
     }
 
@@ -146,6 +151,7 @@ public class HazelcastTable extends AbstractTable {
 
     @Override
     public RelDataType getRowType(RelDataTypeFactory typeFactory) {
+        initRowType();
         return rowType;
     }
 

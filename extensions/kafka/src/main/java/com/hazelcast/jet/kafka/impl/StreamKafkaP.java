@@ -29,6 +29,7 @@ import com.hazelcast.jet.kafka.KafkaProcessors;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
+import org.apache.kafka.common.PartitionInfo;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.TimeoutException;
 
@@ -127,7 +128,9 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
             int newPartitionCount;
             String topicName = topics.get(topicIndex);
             try {
-                newPartitionCount = consumer.partitionsFor(topicName, Duration.ofSeconds(1)).size();
+                List<PartitionInfo> partitionInfo = consumer.partitionsFor(topicName, Duration.ofSeconds(1));
+                // partitionInfo is null if the topic doesn't exist in Kafka
+                newPartitionCount = partitionInfo == null ? 0 : partitionInfo.size();
             } catch (TimeoutException e) {
                 // If we fail to get the metadata, don't try other topics (they are likely to fail too)
                 getLogger().warning("Unable to get partition metadata, ignoring: " + e, e);

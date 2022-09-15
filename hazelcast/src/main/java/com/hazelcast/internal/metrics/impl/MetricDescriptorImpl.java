@@ -33,8 +33,7 @@ import static com.hazelcast.internal.util.StringUtil.lowerCaseInternal;
 import static java.util.Objects.requireNonNull;
 
 /**
- * Default implementation of {@link MetricDescriptor} and
- * {@link MetricDescriptor}.
+ * Default implementation of {@link MetricDescriptor}.
  */
 @SuppressWarnings("checkstyle:MethodCount")
 public final class MetricDescriptorImpl implements MetricDescriptor {

@@ -17,16 +17,17 @@
 package com.hazelcast.internal.serialization.impl.compact;
 
 import com.hazelcast.config.SerializationConfig;
+import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
-import example.serialization.EmployeeDTO;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import example.serialization.ExternalizableEmployeeDTO;
 import example.serialization.InnerDTO;
 import example.serialization.MainDTO;
 import example.serialization.NamedDTO;
+import example.serialization.SerializableEmployeeDTO;
 
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
@@ -34,16 +35,24 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.OffsetDateTime;
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static com.hazelcast.internal.util.phonehome.TestUtil.getNode;
+import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 public final class CompactTestUtil {
 
     private CompactTestUtil() {
-
     }
 
     @Nonnull
@@ -104,7 +113,7 @@ public final class CompactTestUtil {
         NamedDTO[] nn = new NamedDTO[2];
         nn[0] = new NamedDTO("name", 123);
         nn[1] = new NamedDTO("name", 123);
-        InnerDTO inner = new InnerDTO(new boolean[]{true, false}, new byte[]{0, 1, 2},
+        InnerDTO inner = new InnerDTO(new boolean[]{true, false}, new byte[]{0, 1, 2}, new char[]{'0', 'a', 'b'},
                 new short[]{3, 4, 5}, new int[]{9, 8, 7, 6}, new long[]{0, 1, 5, 7, 9, 11},
                 new float[]{0.6543f, -3.56f, 45.67f}, new double[]{456.456, 789.789, 321.321},
                 new String[]{"test", null}, nn,
@@ -114,14 +123,14 @@ public final class CompactTestUtil {
                 new LocalDateTime[]{LocalDateTime.now(), null},
                 new OffsetDateTime[]{OffsetDateTime.now()},
                 new Boolean[]{true, false, null},
-                new Byte[]{0, 1, 2, null},
+                new Byte[]{0, 1, 2, null}, new Character[]{'i', null, '9'},
                 new Short[]{3, 4, 5, null}, new Integer[]{9, 8, 7, 6, null}, new Long[]{0L, 1L, 5L, 7L, 9L, 11L},
                 new Float[]{0.6543f, -3.56f, 45.67f}, new Double[]{456.456, 789.789, 321.321});
 
-        return new MainDTO((byte) 113, true, (short) -500, 56789, -50992225L, 900.5678f,
+        return new MainDTO((byte) 113, true, '\u1256', (short) -500, 56789, -50992225L, 900.5678f,
                 -897543.3678909d, "this is main object created for testing!", inner,
                 new BigDecimal("12312313"), LocalTime.now(), LocalDate.now(), LocalDateTime.now(), OffsetDateTime.now(),
-                (byte) 113, true, (short) -500, 56789, -50992225L, 900.5678f,
+                (byte) 113, true, '\u4567', (short) -500, 56789, -50992225L, 900.5678f,
                 -897543.3678909d);
     }
 
@@ -172,10 +181,48 @@ public final class CompactTestUtil {
                 .setConfig(serializationConfig)
                 .build();
 
-        EmployeeDTO object = new EmployeeDTO(1, 1);
+        SerializableEmployeeDTO object = new SerializableEmployeeDTO("John Doe", 1);
         Data data = serializationService.toData(object);
 
-        EmployeeDTO deserializedObject = serializationService.toObject(data);
+        assertTrue(data.isCompact());
+
+        SerializableEmployeeDTO deserializedObject = serializationService.toObject(data);
         assertEquals(object, deserializedObject);
+    }
+
+    public static void verifySerializationServiceBuilds(SerializationConfig serializationConfig) {
+        new DefaultSerializationServiceBuilder()
+                .setSchemaService(CompactTestUtil.createInMemorySchemaService())
+                .setConfig(serializationConfig)
+                .build();
+    }
+
+    public static void assertSchemasAvailable(Collection<HazelcastInstance> instances, Class<?>... classes) {
+        Collection<Schema> expectedSchemas = getSchemasFor(classes);
+        for (HazelcastInstance instance : instances) {
+            Collection<Schema> schemas = getNode(instance).getSchemaService().getAllSchemas();
+            assertThat(schemas, containsInAnyOrder(expectedSchemas.toArray()));
+        }
+    }
+
+    /**
+     * Can only return the schemas for classes that are serialized with
+     * reflective serializer.
+     */
+    public static Collection<Schema> getSchemasFor(Class<?>... classes) {
+        CompactStreamSerializer compactStreamSerializer = mock(CompactStreamSerializer.class);
+        when(compactStreamSerializer.canBeSerializedAsCompact(any())).thenReturn(true);
+        ReflectiveCompactSerializer serializer = new ReflectiveCompactSerializer(compactStreamSerializer);
+        ArrayList<Schema> schemas = new ArrayList<>(classes.length);
+        for (Class<?> clazz : classes) {
+            SchemaWriter writer = new SchemaWriter(clazz.getName());
+            try {
+                serializer.write(writer, clazz.getDeclaredConstructor().newInstance());
+            } catch (Throwable t) {
+                throw new RuntimeException(t);
+            }
+            schemas.add(writer.build());
+        }
+        return schemas;
     }
 }

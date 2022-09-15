@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package com.hazelcast.jet.kinesis;
 
 import com.amazonaws.SDKGlobalConfiguration;
@@ -41,7 +42,6 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.testcontainers.DockerClientFactory;
 import org.testcontainers.containers.localstack.LocalStackContainer;
 import org.testcontainers.containers.localstack.LocalStackContainer.Service;
 
@@ -62,13 +62,13 @@ import static com.amazonaws.services.kinesis.model.ShardIteratorType.TRIM_HORIZO
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.pipeline.test.Assertions.assertCollectedEventually;
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static java.util.concurrent.Executors.newFixedThreadPool;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.junit.Assume.assumeTrue;
 import static org.testcontainers.utility.DockerImageName.parse;
 
 public class KinesisIntegrationTest extends AbstractKinesisTest {
@@ -87,7 +87,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
 
     @BeforeClass
     public static void beforeClass() {
-        assumeTrue(DockerClientFactory.instance().isDockerAvailable());
+        assumeDockerEnabled();
 
         localStack = new LocalStackContainer(parse("localstack/localstack")
                 .withTag("0.12.3"))
@@ -140,18 +140,19 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
             Pipeline pipeline = Pipeline.create();
             pipeline.readFrom(kinesisSource().build())
                     .withNativeTimestamps(0)
-                    .window(WindowDefinition.sliding(500, 100))
+                    .window(WindowDefinition.sliding(500, 50))
                     .aggregate(counting())
                     .apply(assertCollectedEventually(ASSERT_TRUE_EVENTUALLY_TIMEOUT, windowResults -> {
-                        assertTrue(windowResults.size() > 1); //multiple windows, so watermark works
+                        // multiple windows, so watermark works
+                        assertGreaterOrEquals("Windows count", windowResults.size(), 1);
                     }));
 
             hz().getJet().newJob(pipeline).join();
             fail("Expected exception not thrown");
         } catch (CompletionException ce) {
             Throwable cause = peel(ce);
-            assertTrue(cause instanceof JetException);
-            assertTrue(cause.getCause() instanceof AssertionCompletedException);
+            assertInstanceOf(JetException.class, cause);
+            assertInstanceOf(AssertionCompletedException.class, cause.getCause());
         }
     }
 

@@ -92,7 +92,7 @@ public class PutFromLoadAllOperation extends MapOperation
                 callAfterPutInterceptors(value);
             }
 
-            if (isPostProcessing(recordStore)) {
+            if (isPostProcessingOrHasInterceptor(recordStore)) {
                 Record record = recordStore.getRecord(key);
                 checkNotNull(record, "Value loaded by a MapLoader cannot be null.");
                 value = record.getValue();
@@ -124,7 +124,7 @@ public class PutFromLoadAllOperation extends MapOperation
     }
 
     @Override
-    protected void afterRunInternal() {
+    public void afterRunInternal() {
         invalidateNearCache(invalidationKeys);
         evict(null);
 

@@ -95,6 +95,9 @@ public class SqlServiceImpl implements SqlService {
     }
 
     public void start() {
+        if (!Util.isJetEnabled(nodeEngine)) {
+            return;
+        }
         QueryResultRegistry resultRegistry = new QueryResultRegistry();
         optimizer = createOptimizer(nodeEngine, resultRegistry);
 
@@ -115,10 +118,16 @@ public class SqlServiceImpl implements SqlService {
     }
 
     public void reset() {
+        if (!Util.isJetEnabled(nodeEngine)) {
+            return;
+        }
         planCache.clear();
     }
 
     public void shutdown() {
+        if (!Util.isJetEnabled(nodeEngine)) {
+            return;
+        }
         planCache.clear();
         if (internalService != null) {
             internalService.shutdown();
@@ -245,23 +254,16 @@ public class SqlServiceImpl implements SqlService {
 
     private SqlPlan prepare(String schema, String sql, List<Object> arguments, SqlExpectedResultType expectedResultType) {
         List<List<String>> searchPaths = prepareSearchPaths(schema);
-
         PlanKey planKey = new PlanKey(searchPaths, sql);
-
         SqlPlan plan = planCache.get(planKey);
-
         if (plan == null) {
             SqlCatalog catalog = new SqlCatalog(optimizer.tableResolvers());
-
             plan = optimizer.prepare(new OptimizationTask(sql, arguments, searchPaths, catalog));
-
             if (plan.isCacheable()) {
                 planCache.put(planKey, plan);
             }
         }
-
         checkReturnType(plan, expectedResultType);
-
         return plan;
     }
 
@@ -341,5 +343,12 @@ public class SqlServiceImpl implements SqlService {
         } catch (ReflectiveOperationException e) {
             throw new HazelcastException("Failed to instantiate the optimizer class " + className + ": " + e.getMessage(), e);
         }
+    }
+
+    public void closeOnError(QueryId queryId) {
+        if (!Util.isJetEnabled(nodeEngine)) {
+            return;
+        }
+        getInternalService().getClientStateRegistry().closeOnError(queryId);
     }
 }

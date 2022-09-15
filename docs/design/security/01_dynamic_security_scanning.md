@@ -204,7 +204,7 @@ To have a possibility to scan the current codebase new Docker images will be pub
 on Docker push to our repositories (`hazelcast`, `hazelcast-enterprise`).
 Each repository will have a "snapshot counterpart" in the `hazelcast-dockerfiles` GitHub organization.
 The new snapshot repositories will contain `Dockerfiles` used to build the snapshot images.
-Branch names in snapshot repositories will mirror the names in the base reporitories.
+Branch names in snapshot repositories will mirror the names in the base repositories.
 
 Docker tags will be based on branch names. E.g.:
 * `master` -> `master` (+ `latest`)

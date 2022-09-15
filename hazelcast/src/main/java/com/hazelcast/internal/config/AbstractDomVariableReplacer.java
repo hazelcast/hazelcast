@@ -77,6 +77,9 @@ abstract class AbstractDomVariableReplacer implements DomVariableReplacer {
     }
 
     private boolean nonReplaceableNode(Node node) {
+        if (node == null) {
+            return true;
+        }
         if (node instanceof YamlElementAdapter) {
             YamlElementAdapter yamlElementAdapter = (YamlElementAdapter) node;
             if (yamlElementAdapter.getYamlNode() instanceof YamlScalarImpl) {

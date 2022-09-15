@@ -118,11 +118,11 @@ class CompositeMutationObserver<R extends Record> implements MutationObserver<R>
     }
 
     @Override
-    public void onRemoveRecord(Data key, R record) {
+    public void onRemoveRecord(Data key, R record, boolean backup) {
         Throwable throwable = null;
         for (int i = 0; i < mutationObservers.size(); i++) {
             try {
-                mutationObservers.get(i).onRemoveRecord(key, record);
+                mutationObservers.get(i).onRemoveRecord(key, record, backup);
             } catch (Throwable t) {
                 if (throwable == null) {
                     throwable = t;
@@ -136,11 +136,11 @@ class CompositeMutationObserver<R extends Record> implements MutationObserver<R>
     }
 
     @Override
-    public void onEvictRecord(Data key, R record) {
+    public void onEvictRecord(Data key, R record, boolean backup) {
         Throwable throwable = null;
         for (int i = 0; i < mutationObservers.size(); i++) {
             try {
-                mutationObservers.get(i).onEvictRecord(key, record);
+                mutationObservers.get(i).onEvictRecord(key, record, backup);
             } catch (Throwable t) {
                 if (throwable == null) {
                     throwable = t;

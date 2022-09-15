@@ -41,7 +41,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * Once instance created per map during migration.
+ * Once instance created per record-store during migration.
  */
 public class MapChunkContext {
 

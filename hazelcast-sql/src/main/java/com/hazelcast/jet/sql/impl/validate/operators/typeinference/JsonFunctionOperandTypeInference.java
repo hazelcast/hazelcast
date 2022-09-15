@@ -21,6 +21,8 @@ import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.type.SqlOperandTypeInference;
 import org.apache.calcite.sql.type.SqlTypeName;
 
+import static com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils.isNullOrUnknown;
+
 public final class JsonFunctionOperandTypeInference implements SqlOperandTypeInference {
 
     @Override
@@ -29,12 +31,12 @@ public final class JsonFunctionOperandTypeInference implements SqlOperandTypeInf
                                   final RelDataType[] operandTypes) {
         for (int i = 0; i < callBinding.getOperandCount(); i++) {
             operandTypes[i] = callBinding.getOperandType(i);
-            if (operandTypes[i].getSqlTypeName() == SqlTypeName.NULL) {
+            if (isNullOrUnknown(operandTypes[i].getSqlTypeName())) {
                 operandTypes[i] = callBinding.getTypeFactory().createSqlType(SqlTypeName.VARCHAR);
             }
         }
 
-        if (operandTypes[0].getSqlTypeName() == SqlTypeName.NULL) {
+        if (isNullOrUnknown(operandTypes[0].getSqlTypeName())) {
             operandTypes[0] = callBinding.getTypeFactory().createSqlType(SqlTypeName.VARCHAR);
         }
     }

@@ -17,9 +17,8 @@
 package com.hazelcast.internal.serialization.impl;
 
 import com.hazelcast.internal.serialization.impl.compact.DefaultCompactWriter;
-import com.hazelcast.nio.serialization.AbstractGenericRecord;
 import com.hazelcast.nio.serialization.FieldType;
-import com.hazelcast.nio.serialization.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 
 import java.util.Objects;
 
@@ -30,15 +29,15 @@ public interface FieldKindBasedOperations {
 
     int VARIABLE_SIZE = -1;
 
-    Object readObject(GenericRecord genericRecord, String fieldName);
+    default Object readAsLeafObjectOnQuery(InternalGenericRecord genericRecord, String fieldName) {
+        return readGenericRecordOrPrimitive(genericRecord, fieldName);
+    }
 
     /**
      * For primitives this will return boxed object.
      * This method will be overridden for Portable and Compact and will return GenericRecord representation of objects
      */
-    default Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
-        return readObject(genericRecord, fieldName);
-    }
+    Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName);
 
     default Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
         throw new UnsupportedOperationException("\"" + fieldName + "\" is not an array kind. It does not support indexed reads.");

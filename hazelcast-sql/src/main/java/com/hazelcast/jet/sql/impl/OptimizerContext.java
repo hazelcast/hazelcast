@@ -32,6 +32,7 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastSchemaUtils;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlValidator;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
+import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
 import com.hazelcast.sql.impl.schema.IMapResolver;
 import com.hazelcast.sql.impl.schema.SqlCatalog;
 import org.apache.calcite.config.CalciteConnectionConfig;
@@ -51,7 +52,11 @@ import org.apache.calcite.rel.metadata.RelMetadataProvider;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.tools.RuleSet;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Optimizer context which holds the whole environment for the given optimization session.
@@ -59,6 +64,8 @@ import java.util.List;
  */
 @SuppressWarnings({"checkstyle:ClassDataAbstractionCoupling", "checkstyle:ClassFanOutComplexity"})
 public final class OptimizerContext {
+
+    private static final ThreadLocal<OptimizerContext> THREAD_CONTEXT = new ThreadLocal<>();
 
     private static final RelMetadataProvider METADATA_PROVIDER = ChainedRelMetadataProvider.of(ImmutableList.of(
             HazelcastRelMdRowCount.SOURCE,
@@ -73,6 +80,8 @@ public final class OptimizerContext {
     private final QueryParser parser;
     private final QueryConverter converter;
     private final QueryPlanner planner;
+    private final Set<PlanObjectKey> usedViews = new HashSet<>();
+    private final Deque<String> viewExpansionStack = new ArrayDeque<>();
 
     private OptimizerContext(
             HazelcastRelOptCluster cluster,
@@ -127,6 +136,14 @@ public final class OptimizerContext {
         return new OptimizerContext(cluster, parser, converter, planner);
     }
 
+    public static void setThreadContext(OptimizerContext context) {
+        THREAD_CONTEXT.set(context);
+    }
+
+    public static OptimizerContext getThreadContext() {
+        return THREAD_CONTEXT.get();
+    }
+
     /**
      * Parse SQL statement.
      *
@@ -145,6 +162,10 @@ public final class OptimizerContext {
      */
     public QueryConvertResult convert(SqlNode node) {
         return converter.convert(node);
+    }
+
+    public RelNode convertView(SqlNode node) {
+        return converter.convertView(node);
     }
 
     /**
@@ -205,5 +226,13 @@ public final class OptimizerContext {
         cluster.setMetadataProvider(JaninoRelMetadataProvider.of(METADATA_PROVIDER));
 
         return cluster;
+    }
+
+    public Deque<String> getViewExpansionStack() {
+        return viewExpansionStack;
+    }
+
+    public Set<PlanObjectKey> getUsedViews() {
+        return usedViews;
     }
 }

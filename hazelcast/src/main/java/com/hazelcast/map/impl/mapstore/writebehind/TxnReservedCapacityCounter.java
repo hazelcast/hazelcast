@@ -41,6 +41,12 @@ import java.util.UUID;
 public interface TxnReservedCapacityCounter {
 
     /**
+     * Represents a null uuid. This is used in situations
+     * where passing vanilla null reference is not allowed.
+     */
+    UUID NULL_UUID = new UUID(0, 0);
+
+    /**
      * Used when {@link
      * com.hazelcast.config.MapStoreConfig#writeCoalescing} is enabled.
      */

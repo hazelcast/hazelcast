@@ -49,6 +49,8 @@ public class ClientMapSplitBrainProtectionReadTest extends MapSplitBrainProtecti
         if (clients != null) {
             clients.terminateAll();
         }
+        clients = null;
+
         shutdownTestEnvironment();
     }
 

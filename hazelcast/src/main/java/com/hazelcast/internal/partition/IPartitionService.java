@@ -16,18 +16,21 @@
 
 package com.hazelcast.internal.partition;
 
-import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.services.CoreService;
+import com.hazelcast.internal.util.collection.PartitionIdSet;
+import com.hazelcast.partition.MigrationListener;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.partition.PartitionLostListener;
-import com.hazelcast.internal.services.CoreService;
-
-import javax.annotation.Nonnull;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.stream.Stream;
+
+import javax.annotation.Nonnull;
 
 /**
  * An SPI service for accessing partition related information.
@@ -206,4 +209,26 @@ public interface IPartitionService extends CoreService {
      * @return array of {@link IPartition} instances
      */
     IPartition[] getPartitions();
+
+    /**
+     * Gets a PartitionIdSet from a collection of partition key objects
+     * @param keys the collection of key objects to map to an id set
+     * @return the mapped id set
+     */
+    default PartitionIdSet getPartitionIdSet(Collection<Object> keys) {
+        PartitionIdSet partitionIds = new PartitionIdSet(getPartitionCount());
+        keys.forEach(o -> partitionIds.add(getPartitionId(o)));
+        return partitionIds;
+    }
+
+    /**
+     * Gets a PartitionIdSet from a collection of partition key data objects
+     * @param keysData the stream of key data to map to an id set
+     * @return the mapped id set
+     */
+    default PartitionIdSet getPartitionIdSet(Stream<Data> keysData) {
+        PartitionIdSet partitionIds = new PartitionIdSet(getPartitionCount());
+        keysData.forEach(o -> partitionIds.add(getPartitionId(o)));
+        return partitionIds;
+    }
 }

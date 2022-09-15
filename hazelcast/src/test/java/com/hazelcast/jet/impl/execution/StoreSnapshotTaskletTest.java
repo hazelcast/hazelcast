@@ -136,6 +136,7 @@ public class StoreSnapshotTaskletTest extends JetTestSupport {
         ssContext.startNewSnapshotPhase1(2, "map", 0);
         assertEquals(2, sst.pendingSnapshotId);
         assertEquals(MADE_PROGRESS, sst.call());
+        assertEquals(MADE_PROGRESS, sst.call());
         mockSsWriter.hasPendingFlushes = false;
         assertEquals(MADE_PROGRESS, sst.call());
 
@@ -168,6 +169,7 @@ public class StoreSnapshotTaskletTest extends JetTestSupport {
         Entry<String, String> entry = entry("k", "v");
         init(asList(entry, new SnapshotBarrier(2, false)));
         ssContext.startNewSnapshotPhase1(2, "map", 0);
+        assertEquals(MADE_PROGRESS, sst.call());
         assertEquals(MADE_PROGRESS, sst.call());
         assertEquals(NO_PROGRESS, sst.call());
         assertTrue(mockSsWriter.hasPendingFlushes);

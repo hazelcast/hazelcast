@@ -158,7 +158,7 @@ public class ReceiverTasklet implements Tasklet {
         tracker.reset();
         tracker.notDone();
         tryFillInbox();
-        int ackItemLocal = 0;
+        long ackItemLocal = 0;
         for (ObjWithPtionIdAndSize o; (o = inbox.peek()) != null; ) {
             final Object item = o.getItem();
             if (item == DONE_ITEM) {

@@ -33,7 +33,7 @@
         <!-- needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
 
-        <org.springframework.version>5.3.16</org.springframework.version>
+        <org.springframework.version>5.3.22</org.springframework.version>
         <javax.annotation.version>1.3.2</javax.annotation.version>
         <maven-artifact.version>3.6.3</maven-artifact.version>
         <hazelcast.latest.version>4.0</hazelcast.latest.version>

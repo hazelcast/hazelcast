@@ -100,8 +100,8 @@ _Other usages of partition table stamp will be explained in [Other Changes](#3--
 
 #### 2.1 - Current Migration Mechanism
 
-When a new member joins or an existing member leaves the cluster, eventually a `RepartitioningTask` is scheduled on 
-migration thread. `RepartitioningTask` prepares the new partition table and schedules the individual `MigrationTask`s
+When a new member joins or an existing member leaves the cluster, eventually a `RedoPartitioningTask` is scheduled on 
+migration thread. `RedoPartitioningTask` prepares the new partition table and schedules the individual `MigrationTask`s
 to reach the target partition table. These `MigrationTask`s are executed serially by migration thread and they submit 
 migration operations to the migration participants. After each migration completion, migration is committed to the 
 destination, and partition table is updated. All of these steps are executed serially.
@@ -109,7 +109,7 @@ destination, and partition table is updated. All of these steps are executed ser
  
 #### 2.2 - Parallel Migrations Mechanism
 
-With parallel migrations, most the mechanism remains the same. `RepartitioningTask` prepares the migration plan using 
+With parallel migrations, most the mechanism remains the same. `RedoPartitioningTask` prepares the migration plan using 
 the target partition table. Instead of individual `MigrationTask`s, a single `MigrationPlanTask` will be scheduled. 
 `MigrationPlanTask` will submit parallel migration tasks and keep track of started/completed tasks. 
 
@@ -118,7 +118,7 @@ and safety guarantees while migrating/replicating partition data. For instance, 
 in the plan. Or replication to a missing backup replica is more important than a migration that is just to rebalance the load.
 _For more info please see [Avoid Data Loss on Migration](01-avoid-data-loss-on-migration.md)._   
 
-To achieve this, `RepartitioningTask` creates migration plan with a consistent order. And `MigrationPlanTask` will 
+To achieve this, `RedoPartitioningTask` creates migration plan with a consistent order. And `MigrationPlanTask` will 
 parallelize only migrations belonging to different partitions. Migrations belonging to the same partition will still be 
 executed serially. That's the upper limit of migration parallelization. But still we may want to limit parallel 
 migrations to keep heap memory usage under control and to avoid overload of network resources.

@@ -49,6 +49,8 @@ public class ClientCacheSplitBrainProtectionWriteTest extends CacheSplitBrainPro
         if (clients != null) {
             clients.terminateAll();
         }
+        clients = null;
+
         shutdownTestEnvironment();
     }
 

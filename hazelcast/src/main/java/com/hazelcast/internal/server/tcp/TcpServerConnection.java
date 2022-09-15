@@ -43,6 +43,7 @@ import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.TCP_METRIC_CONNECTION_CONNECTION_TYPE;
+import static com.hazelcast.internal.metrics.ProbeLevel.DEBUG;
 import static com.hazelcast.internal.metrics.ProbeUnit.ENUM;
 import static com.hazelcast.internal.nio.ConnectionType.MEMBER;
 import static com.hazelcast.internal.nio.ConnectionType.NONE;
@@ -132,7 +133,7 @@ public class TcpServerConnection implements ServerConnection {
         return connectionType;
     }
 
-    @Probe(name = TCP_METRIC_CONNECTION_CONNECTION_TYPE, unit = ENUM)
+    @Probe(name = TCP_METRIC_CONNECTION_CONNECTION_TYPE, unit = ENUM, level = DEBUG)
     private int getType() {
         return ConnectionType.getTypeId(connectionType);
     }
@@ -230,20 +231,24 @@ public class TcpServerConnection implements ServerConnection {
     }
 
     @Override
-    public boolean equals(Object o) {
-        if (this == o) {
-            return true;
-        }
-        if (!(o instanceof TcpServerConnection)) {
-            return false;
-        }
-        TcpServerConnection that = (TcpServerConnection) o;
-        return connectionId == that.getConnectionId();
+    public int hashCode() {
+        return Objects.hash(acceptorSide, connectionId);
     }
 
     @Override
-    public int hashCode() {
-        return connectionId;
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        TcpServerConnection other = (TcpServerConnection) obj;
+        return acceptorSide == other.acceptorSide && connectionId == other.connectionId
+                && Objects.equals(remoteAddress, other.remoteAddress);
     }
 
     @Override

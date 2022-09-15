@@ -28,25 +28,29 @@ public final class LogicalRules {
 
     public static RuleSet getRuleSet() {
         return RuleSets.ofList(
-                // Calc rules
-                CalcLogicalRule.INSTANCE,
-                CalcIntoScanLogicalRule.INSTANCE,
-                CalcMergeRule.INSTANCE,
-                CoreRules.CALC_REMOVE,
-                CoreRules.CALC_REDUCE_EXPRESSIONS,
-                // We need it to transpose RIGHT JOIN to the LEFT JOIN
-                CoreRules.PROJECT_TO_CALC,
-                SlidingWindowCalcSplitLogicalRule.STREAMING_FILTER_TRANSPOSE,
-
                 // Scan rules
                 FullScanLogicalRule.INSTANCE,
                 FunctionLogicalRules.SPECIFIC_FUNCTION_INSTANCE,
                 FunctionLogicalRules.DYNAMIC_FUNCTION_INSTANCE,
 
-                // Windowing rules
+                // Calc rules
+                CalcLogicalRule.INSTANCE,
+                CalcIntoScanLogicalRule.INSTANCE,
+                CalcMergeRule.INSTANCE,
+                CoreRules.CALC_REMOVE,
+                CalcReduceExprRule.INSTANCE,
+                // We need it to transpose RIGHT JOIN to the LEFT JOIN
+                CoreRules.PROJECT_TO_CALC,
+                SlidingWindowCalcSplitLogicalRule.STREAMING_FILTER_TRANSPOSE,
+                CalcDropLateItemsTransposeRule.INSTANCE,
+
+                // Watermark rules
                 WatermarkRules.IMPOSE_ORDER_INSTANCE,
                 WatermarkRules.WATERMARK_INTO_SCAN_INSTANCE,
+
+                // Windowing rules
                 FunctionLogicalRules.WINDOW_FUNCTION_INSTANCE,
+                SlidingWindowDropLateItemsMergeRule.INSTANCE,
 
                 // Aggregate rules
                 AggregateLogicalRule.INSTANCE,
@@ -63,6 +67,7 @@ public final class LogicalRules {
                 PruneEmptyRules.UNION_INSTANCE,
                 CoreRules.UNION_REMOVE,
                 CoreRules.UNION_PULL_UP_CONSTANTS,
+                UnionDropLateItemsTransposeRule.INSTANCE,
                 UnionLogicalRule.INSTANCE,
 
                 // Value rules
