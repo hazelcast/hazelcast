@@ -728,8 +728,9 @@ public class SqlJoinTest {
             assertRowsAnyOrder(sql, rows(4, 43, "bar", 43, "baz"));
 
             for (SqlRow r : sqlService.execute("explain " + sql)) {
-                if (r.getObject(0).toString().contains("IndexScanMapPhysicalRel"))
+                if (r.getObject(0).toString().contains("IndexScanMapPhysicalRel")) {
                     return; // success
+                }
             }
 
             fail("Index scan not found in the plan");
