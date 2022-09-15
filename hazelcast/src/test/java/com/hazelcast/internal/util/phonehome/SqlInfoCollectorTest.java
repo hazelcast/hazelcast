@@ -29,7 +29,7 @@ import org.mockito.junit.MockitoJUnitRunner;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.SQL_QUERIES_SUBMITTED;
-import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.SQL_STREAMING_QUERIES_SUBMITTED;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.SQL_STREAMING_QUERIES_EXECUTED;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 import static org.mockito.Mockito.when;
@@ -64,14 +64,14 @@ public class SqlInfoCollectorTest {
     public void test_SqlQueries() {
         // given
         when(sqlService.getSqlQueriesSubmittedCount()).thenReturn(5L);
-        when(sqlService.getSqlStreamingQueriesSubmittedCount()).thenReturn(3L);
+        when(sqlService.getSqlStreamingQueriesExecutedCount()).thenReturn(3L);
 
         // when
         sqlInfoCollector.forEachMetric(node, metricsConsumer);
 
         // then
         verify(metricsConsumer).accept(SQL_QUERIES_SUBMITTED, "5");
-        verify(metricsConsumer).accept(SQL_STREAMING_QUERIES_SUBMITTED, "3");
+        verify(metricsConsumer).accept(SQL_STREAMING_QUERIES_EXECUTED, "3");
         verifyNoMoreInteractions(metricsConsumer);
     }
 }

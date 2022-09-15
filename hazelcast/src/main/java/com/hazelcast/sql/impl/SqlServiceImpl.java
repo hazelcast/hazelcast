@@ -83,7 +83,7 @@ public class SqlServiceImpl implements SqlService {
     private SqlInternalService internalService;
 
     private final Counter sqlQueriesSubmitted = MwCounter.newMwCounter();
-    private final Counter sqlStreamingQueriesSubmitted = MwCounter.newMwCounter();
+    private final Counter sqlStreamingQueriesExecuted = MwCounter.newMwCounter();
 
     public SqlServiceImpl(NodeEngineImpl nodeEngine) {
         this.logger = nodeEngine.getLogger(getClass());
@@ -143,8 +143,8 @@ public class SqlServiceImpl implements SqlService {
         return sqlQueriesSubmitted.get();
     }
 
-    public long getSqlStreamingQueriesSubmittedCount() {
-        return sqlStreamingQueriesSubmitted.get();
+    public long getSqlStreamingQueriesExecutedCount() {
+        return sqlStreamingQueriesExecuted.get();
     }
 
     /**
@@ -216,7 +216,7 @@ public class SqlServiceImpl implements SqlService {
             );
             if (!skipStats && sqlResult instanceof AbstractSqlResult) {
                 if (((AbstractSqlResult) sqlResult).isInfiniteRows()) {
-                    sqlStreamingQueriesSubmitted.inc();
+                    sqlStreamingQueriesExecuted.inc();
                 }
             }
             return sqlResult;

@@ -88,7 +88,7 @@ public class SqlServiceImplTest {
         // Then
         assertThat(actualSqlResult).isEqualTo(sqlResult);
         assertThat(sqlService.getSqlQueriesSubmittedCount()).isEqualTo(1L);
-        assertThat(sqlService.getSqlStreamingQueriesSubmittedCount()).isEqualTo(0L);
+        assertThat(sqlService.getSqlStreamingQueriesExecutedCount()).isEqualTo(0L);
     }
 
     @Test
@@ -105,6 +105,6 @@ public class SqlServiceImplTest {
         // Then
         assertThat(actualSqlResult).isEqualTo(sqlResult);
         assertThat(sqlService.getSqlQueriesSubmittedCount()).isEqualTo(1L);
-        assertThat(sqlService.getSqlStreamingQueriesSubmittedCount()).isEqualTo(1L);
+        assertThat(sqlService.getSqlStreamingQueriesExecutedCount()).isEqualTo(1L);
     }
 }

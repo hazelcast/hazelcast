@@ -22,7 +22,7 @@ import com.hazelcast.sql.impl.SqlServiceImpl;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.SQL_QUERIES_SUBMITTED;
-import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.SQL_STREAMING_QUERIES_SUBMITTED;
+import static com.hazelcast.internal.util.phonehome.PhoneHomeMetrics.SQL_STREAMING_QUERIES_EXECUTED;
 
 public class SqlInfoCollector implements MetricsCollector {
 
@@ -33,7 +33,7 @@ public class SqlInfoCollector implements MetricsCollector {
         long sqlQueriesSubmittedCount = sqlService.getSqlQueriesSubmittedCount();
         metricsConsumer.accept(SQL_QUERIES_SUBMITTED, String.valueOf(sqlQueriesSubmittedCount));
 
-        long sqlStreamingQueriesSubmittedCount = sqlService.getSqlStreamingQueriesSubmittedCount();
-        metricsConsumer.accept(SQL_STREAMING_QUERIES_SUBMITTED, String.valueOf(sqlStreamingQueriesSubmittedCount));
+        long sqlStreamingQueriesExecutedCount = sqlService.getSqlStreamingQueriesExecutedCount();
+        metricsConsumer.accept(SQL_STREAMING_QUERIES_EXECUTED, String.valueOf(sqlStreamingQueriesExecutedCount));
     }
 }
