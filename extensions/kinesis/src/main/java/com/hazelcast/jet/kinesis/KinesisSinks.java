@@ -294,6 +294,8 @@ public final class KinesisSinks {
         /**
          * Specifies an executor service supplier that will be used by the {@link AwsConfig}
          * to construct an AWS async client.
+         *
+         * @since 5.2
          */
         @Nonnull
         public Builder<T> withExecutorServiceSupplier(@Nonnull SupplierEx<ExecutorService> executorSupplier) {

@@ -205,6 +205,7 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
                 .build();
 
         sendMessages(MESSAGES, sink);
+        assertTrueEventually(() -> assertEquals(MEMBER_COUNT, threadCounter.get()));
 
         try {
             Pipeline pipeline = Pipeline.create();
@@ -212,10 +213,10 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
                     .withoutTimestamps()
                     .groupingKey(key -> "sameKeyAllEntries")
                     .rollingAggregate(counting())
-                    .apply(assertCollectedEventually(ASSERT_TRUE_EVENTUALLY_TIMEOUT, windowResults -> {
-                        assertTrue((long) windowResults.size() == MESSAGES
-                                && threadCounter.get() == MEMBER_COUNT);
-                    }));
+                    .apply(assertCollectedEventually(
+                            ASSERT_TRUE_EVENTUALLY_TIMEOUT,
+                            windowResults -> assertEquals(MESSAGES, windowResults.size())
+                    ));
 
             hz().getJet().newJob(pipeline).join();
             fail("Expected exception not thrown");
