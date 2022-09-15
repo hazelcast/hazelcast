@@ -360,11 +360,4 @@ public class SqlServiceImpl implements SqlService {
         }
         getInternalService().getClientStateRegistry().closeOnError(queryId);
     }
-
-    /**
-     * Added for testing
-     */
-    void setOptimizer(SqlOptimizer optimizer) {
-        this.optimizer = optimizer;
-    }
 }
