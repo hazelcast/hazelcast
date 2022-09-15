@@ -31,7 +31,7 @@ import java.util.Set;
  * A class that includes all fields supported in compact serialization. This class the following extra fields compared
  * to {@link MainDTO} and they are only supported in reflective serializer:
  * - Char, Character (and arrays of these)
- * - Enum
+ * - Enum, Enum[]
  * - List
  * - Map
  * - Set
@@ -91,6 +91,7 @@ public class AllFieldsDTO {
     public Character[] nullableChars;
 
     public HiringStatus hiringStatus;
+    public HiringStatus[] arrayOfHiringStatus;
     public List<Integer> listOfNumbers;
     public Map<Integer, Integer> mapOfNumbers;
     public Set<Integer> setOfNumbers;
@@ -108,8 +109,8 @@ public class AllFieldsDTO {
                         Byte[] nullableBytes, Short[] nullableShorts, Integer[] nullableIntegers, Long[] nullableLongs,
                         Float[] nullableFloats, Double[] nullableDoubles, EmployeeDTO nestedCompact,
                         EmployeeDTO[] arrayOfNestedCompact, char c, char[] chars, Character nullableC,
-                        Character[] nullableChars, HiringStatus hiringStatus, List<Integer> listOfNumbers,
-                        Map<Integer, Integer> mapOfNumbers, Set<Integer> setOfNumbers) {
+                        Character[] nullableChars, HiringStatus hiringStatus, HiringStatus[] arrayOfHiringStatus,
+                        List<Integer> listOfNumbers, Map<Integer, Integer> mapOfNumbers, Set<Integer> setOfNumbers) {
         this.bool = bool;
         this.b = b;
         this.s = s;
@@ -157,6 +158,7 @@ public class AllFieldsDTO {
         this.nullableC = nullableC;
         this.nullableChars = nullableChars;
         this.hiringStatus = hiringStatus;
+        this.arrayOfHiringStatus = arrayOfHiringStatus;
         this.listOfNumbers = listOfNumbers;
         this.mapOfNumbers = mapOfNumbers;
         this.setOfNumbers = setOfNumbers;
@@ -190,8 +192,9 @@ public class AllFieldsDTO {
                 && Arrays.equals(nullableFloats, that.nullableFloats) && Arrays.equals(nullableDoubles, that.nullableDoubles)
                 && Objects.equals(nestedCompact, that.nestedCompact) && Arrays.equals(chars, that.chars)
                 && Objects.equals(nullableC, that.nullableC) && Arrays.equals(nullableChars, that.nullableChars)
-                && hiringStatus == that.hiringStatus && Objects.equals(listOfNumbers, that.listOfNumbers)
-                && Objects.equals(mapOfNumbers, that.mapOfNumbers) && Objects.equals(setOfNumbers, that.setOfNumbers);
+                && hiringStatus == that.hiringStatus && Arrays.equals(arrayOfHiringStatus, that.arrayOfHiringStatus)
+                && Objects.equals(listOfNumbers, that.listOfNumbers) && Objects.equals(mapOfNumbers, that.mapOfNumbers)
+                && Objects.equals(setOfNumbers, that.setOfNumbers);
     }
 
     @Override
@@ -221,6 +224,7 @@ public class AllFieldsDTO {
         result = 31 * result + Arrays.hashCode(nullableDoubles);
         result = 31 * result + Arrays.hashCode(chars);
         result = 31 * result + Arrays.hashCode(nullableChars);
+        result = 31 * result + Arrays.hashCode(arrayOfHiringStatus);
         return result;
     }
 }

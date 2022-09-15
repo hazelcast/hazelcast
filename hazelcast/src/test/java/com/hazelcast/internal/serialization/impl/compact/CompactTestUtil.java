@@ -181,7 +181,8 @@ public final class CompactTestUtil {
                 new Integer[]{9, 8, 7, 6, null}, new Long[]{0L, 1L, 5L, 7L, 9L, 11L}, new Float[]{0.6543f, -3.56f, 45.67f},
                 new Double[]{456.456, 789.789, 321.321}, new EmployeeDTO(123, 123L),
                 new EmployeeDTO[]{new EmployeeDTO(123, 123L), null}, '\u1256', new char[]{'0', 'a', 'b'}, '\u4567',
-                new Character[]{'i', null, '9'}, HiringStatus.HIRING, listOfIntegers, mapOfIntegers, setOfIntegers);
+                new Character[]{'i', null, '9'}, HiringStatus.HIRING, new HiringStatus[]{HiringStatus.HIRING,
+                HiringStatus.NOT_HIRING}, listOfIntegers, mapOfIntegers, setOfIntegers);
     }
 
     @Nonnull
