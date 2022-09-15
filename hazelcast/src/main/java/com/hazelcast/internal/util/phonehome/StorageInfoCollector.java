@@ -45,7 +45,7 @@ public class StorageInfoCollector implements MetricsCollector {
         Config config = nodeEngine.getConfig();
 
         memory(metricsConsumer, config, node.getNodeExtension());
-        licenseAndTieredStorage(metricsConsumer, config);
+        tieredStorage(metricsConsumer, config);
         dataMemoryCost(metricsConsumer, nodeEngine);
     }
 
@@ -67,7 +67,7 @@ public class StorageInfoCollector implements MetricsCollector {
         metricsConsumer.accept(MEMORY_FREE_HEAP_SIZE, String.valueOf(memoryStats.getFreeHeap()));
     }
 
-    private void licenseAndTieredStorage(BiConsumer<PhoneHomeMetrics, String> metricsConsumer, Config config) {
+    private void tieredStorage(BiConsumer<PhoneHomeMetrics, String> metricsConsumer, Config config) {
         boolean tieredStorageEnabled = config.getMapConfigs().values().stream()
                 .anyMatch(mapConfig -> mapConfig.getTieredStoreConfig().isEnabled());
         metricsConsumer.accept(TIERED_STORAGE_ENABLED, String.valueOf(tieredStorageEnabled));
