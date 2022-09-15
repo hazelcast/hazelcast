@@ -20,6 +20,7 @@ import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.OptimizerContext;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
+import com.hazelcast.jet.sql.impl.opt.logical.SelectByKeyMapLogicalRule;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRules;
 import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
@@ -40,6 +41,7 @@ import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.sql.SqlExplainLevel;
 import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.tools.RuleSets;
 
 import java.io.BufferedReader;
 import java.io.StringReader;
@@ -91,8 +93,15 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
     private static LogicalRel optimizeLogicalInternal(String sql, OptimizerContext context) {
         RelNode rel = preOptimizeInternal(sql, context);
 
-        return (LogicalRel) context
+        LogicalRel optimizedLogicalRel = (LogicalRel) context
                 .optimize(rel, LogicalRules.getRuleSet(), OptUtils.toLogicalConvention(rel.getTraitSet()));
+
+        // IMap keyed access optimization
+        return (LogicalRel) context
+                .optimize(
+                        optimizedLogicalRel,
+                        RuleSets.ofList(SelectByKeyMapLogicalRule.INSTANCE),
+                        OptUtils.toLogicalConvention(rel.getTraitSet()));
     }
 
     private static Result optimizePhysicalInternal(String sql, OptimizerContext context) {

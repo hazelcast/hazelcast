@@ -36,7 +36,8 @@
         <!-- Needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
 
-        <checkstyle.headerLocation>${project.parent.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
+        <checkstyle.headerLocation>${project.parent.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt
+        </checkstyle.headerLocation>
 
         <calcite.version>1.31.0</calcite.version>
         <confluent.version>6.2.2</confluent.version>
@@ -222,6 +223,8 @@
                                     <include>org.checkerframework:checker-qual</include>
                                     <include>com.hazelcast.jsurfer:jsurfer-core</include>
                                     <include>com.hazelcast.jsurfer:jsurfer-jackson-jr</include>
+                                    <include>com.hazelcast.jsurfer:jsurfer-jackson-jr</include>
+                                    <include>com.fasterxml.jackson.core:jackson-databind</include>
                                     <include>org.antlr:antlr4-runtime</include>
                                     <include>com.jayway.jsonpath:json-path</include>
                                     <include>commons-codec:commons-codec</include>
@@ -586,7 +589,7 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
-            <scope>provided</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.avro</groupId>
