@@ -190,7 +190,7 @@ public class HazelcastCommandLine implements Runnable {
         }
 
         HazelcastBootstrap.executeJar(
-                () -> getHazelcastClient(false, global.ignoreVersionMismatch),
+                () -> getHazelcastClient(false),
                 file.getAbsolutePath(), snapshotName, name, mainClass, params);
     }
 
@@ -444,7 +444,7 @@ public class HazelcastCommandLine implements Runnable {
                                   ConsumerEx<HazelcastInstance> consumer) {
         this.global.merge(global);
         configureLogging();
-        HazelcastInstance hz = getHazelcastClient(retryClusterConnectForever, global.ignoreVersionMismatch);
+        HazelcastInstance hz = getHazelcastClient(retryClusterConnectForever);
         try {
             consumer.accept(hz);
         } finally {
@@ -452,22 +452,26 @@ public class HazelcastCommandLine implements Runnable {
         }
     }
 
-    private HazelcastInstance getHazelcastClient(boolean retryClusterConnectForever, boolean ignoreVersionMismatch) {
+    private HazelcastInstance getHazelcastClient(boolean retryClusterConnectForever) {
         return uncheckCall(() -> {
             HazelcastInstance client = hzClientFn.apply(getClientConfig(retryClusterConnectForever));
-            HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
-
-            MemberVersion masterVersion = clientImpl.getClientClusterService().getMasterMember().getVersion();
-            String fullClientVersion = getBuildInfo().getVersion();
-
-            Version clientVersion = Version.of(fullClientVersion);
-            if (!ignoreVersionMismatch && !masterVersion.asVersion().equals(clientVersion)) {
-                throw new HazelcastException("Server and client must have matching minor version. "
-                        + "Server version " + masterVersion + ", hz-cli version " + fullClientVersion);
+            if (!global.ignoreVersionMismatch) {
+                checkVersionCompatibility(client);
             }
-
             return client;
         });
+    }
+
+    private void checkVersionCompatibility(HazelcastInstance client) {
+        HazelcastClientInstanceImpl clientImpl = getHazelcastClientInstanceImpl(client);
+        MemberVersion masterVersion = clientImpl.getClientClusterService().getMasterMember().getVersion();
+        String fullClientVersion = getBuildInfo().getVersion();
+
+        Version clientVersion = Version.of(fullClientVersion);
+        if (!masterVersion.asVersion().equals(clientVersion)) {
+            throw new HazelcastException("Server and client must have matching minor version. "
+                    + "Server version " + masterVersion + ", hz-cli version " + fullClientVersion);
+        }
     }
 
     @SuppressFBWarnings(value = "DLS_DEAD_LOCAL_STORE", justification = "Generates false positive")
