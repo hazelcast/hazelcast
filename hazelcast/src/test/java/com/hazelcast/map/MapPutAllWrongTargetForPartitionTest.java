@@ -53,7 +53,7 @@ public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
     private static final int INSTANCE_COUNT = 3;
 
     private TestHazelcastInstanceFactory factory;
-    private HazelcastInstance[] instances;
+    HazelcastInstance[] instances;
 
     @Before
     public void setUp() {
@@ -125,9 +125,9 @@ public class MapPutAllWrongTargetForPartitionTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                int totalBackups = 0;
+                long totalBackups = 0;
                 for (int i = 0; i < INSTANCE_COUNT; i++) {
-                    IMap map = instances[i].getMap(mapName);
+                    IMap<?, ?> map = instances[i].getMap(mapName);
                     assertEquals(format("Each member should own %d entries of the map", entriesPerPartition),
                             entriesPerPartition, map.getLocalMapStats().getOwnedEntryCount());
                     totalBackups += map.getLocalMapStats().getBackupEntryCount();

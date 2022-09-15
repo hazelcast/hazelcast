@@ -32,6 +32,7 @@ import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
+import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
@@ -147,6 +148,10 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
                 indexes,
                 false
         );
+        return new HazelcastTable(table, new HazelcastTableStatistic(rowCount));
+    }
+
+    protected static HazelcastTable streamingTable(Table table, long rowCount) {
         return new HazelcastTable(table, new HazelcastTableStatistic(rowCount));
     }
 

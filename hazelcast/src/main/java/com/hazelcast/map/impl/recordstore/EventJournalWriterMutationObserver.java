@@ -56,13 +56,13 @@ public class EventJournalWriterMutationObserver implements MutationObserver {
     }
 
     @Override
-    public void onRemoveRecord(Data key, Record record) {
+    public void onRemoveRecord(Data key, Record record, boolean backup) {
         eventJournal.writeRemoveEvent(eventJournalConfig, objectNamespace,
                 partitionId, key, record.getValue());
     }
 
     @Override
-    public void onEvictRecord(Data key, Record record) {
+    public void onEvictRecord(Data key, Record record, boolean backup) {
         eventJournal.writeEvictEvent(eventJournalConfig, objectNamespace,
                 partitionId, key, record.getValue());
     }
