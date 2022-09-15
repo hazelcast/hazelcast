@@ -51,7 +51,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
 
 import static com.amazonaws.services.kinesis.model.ShardIteratorType.AFTER_SEQUENCE_NUMBER;
@@ -62,6 +62,7 @@ import static com.amazonaws.services.kinesis.model.ShardIteratorType.TRIM_HORIZO
 import static com.hazelcast.jet.aggregate.AggregateOperations.counting;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.pipeline.test.Assertions.assertCollectedEventually;
+import static java.util.concurrent.Executors.newFixedThreadPool;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -73,6 +74,7 @@ import static org.testcontainers.utility.DockerImageName.parse;
 public class KinesisIntegrationTest extends AbstractKinesisTest {
 
     public static LocalStackContainer localStack;
+    public static final AtomicInteger threadCounter = new AtomicInteger(0);
 
     private static AwsConfig AWS_CONFIG;
     private static AmazonKinesisAsync KINESIS;
@@ -192,8 +194,11 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
     public void testCustomSinkExecutorService() throws Exception {
         HELPER.createStream(1);
 
-        SupplierEx<ExecutorService> sinkExecutorSupplier = () -> Executors.newFixedThreadPool(
-                1, r -> new Thread(r, "kinesis-sink-thread"));
+        threadCounter.set(0);
+        SupplierEx<ExecutorService> sinkExecutorSupplier = () -> newFixedThreadPool(
+                1,
+                r -> new Thread(r, "kinesis-sink-thread-" + threadCounter.getAndIncrement())
+        );
         Sink<Map.Entry<String, byte[]>> sink = kinesisSink()
                 .withExecutorServiceSupplier(sinkExecutorSupplier)
                 .build();
@@ -207,7 +212,8 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
                     .groupingKey(key -> "sameKeyAllEntries")
                     .rollingAggregate(counting())
                     .apply(assertCollectedEventually(ASSERT_TRUE_EVENTUALLY_TIMEOUT, windowResults -> {
-                        assertTrue((long) windowResults.size() == MESSAGES);
+                        assertTrue((long) windowResults.size() == MESSAGES
+                                && threadCounter.get() == MEMBER_COUNT);
                     }));
 
             hz().getJet().newJob(pipeline).join();
@@ -605,8 +611,11 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
         results.clear();
 
         // start a new job which reads records with custom executor service supplier
-        SupplierEx<ExecutorService> sourceExecutorSupplier = () -> Executors.newFixedThreadPool(
-                1, r -> new Thread(r, "kinesis-source-thread"));
+        threadCounter.set(0);
+        SupplierEx<ExecutorService> sourceExecutorSupplier = () -> newFixedThreadPool(
+                1,
+                r -> new Thread(r, "kinesis-source-thread-" + threadCounter.getAndIncrement())
+        );
         StreamSource<Map.Entry<String, byte[]>> source = kinesisSource()
                 .withExecutorServiceSupplier(sourceExecutorSupplier).build();
         Job job = hz().getJet().newJob(getPipeline(source));
@@ -615,6 +624,9 @@ public class KinesisIntegrationTest extends AbstractKinesisTest {
         // send some more messages and check that the job reads both old and new records
         HELPER.putRecords(messages(100, 200));
         assertMessages(expectedMessages(0, 200), true, false);
+
+        // single thread on each member should be created
+        assertEquals(MEMBER_COUNT, threadCounter.get());
     }
 
     private void assertOpenShards(int count, Shard... excludedShards) {
