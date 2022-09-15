@@ -465,7 +465,8 @@ public class SqlClientResult implements SqlResult {
         }
     }
 
-    public Boolean isInfiniteRows() {
-        return isInfiniteRows;
+    @Override
+    public boolean isInfiniteRows() {
+        return isInfiniteRows != null && isInfiniteRows;
     }
 }

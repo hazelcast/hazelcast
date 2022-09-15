@@ -98,4 +98,12 @@ public interface SqlResult extends Iterable<SqlRow>, AutoCloseable {
      */
     @Override
     void close();
+
+    /**
+     * Whether the result is possibly infinite, i.e. it may have an infinite number of rows, and creation of the next row
+     * may take infinite time. Set to {@code true} for Jet queries.
+     *
+     * @return {@code true} if the result is possibly infinite, {@code false} otherwise.
+     */
+    boolean isInfiniteRows();
 }

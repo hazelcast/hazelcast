@@ -214,10 +214,8 @@ public class SqlServiceImpl implements SqlService {
                     statement.getExpectedResultType(),
                     securityContext
             );
-            if (!skipStats && sqlResult instanceof AbstractSqlResult) {
-                if (((AbstractSqlResult) sqlResult).isInfiniteRows()) {
-                    sqlStreamingQueriesExecuted.inc();
-                }
+            if (!skipStats && sqlResult.isInfiniteRows()) {
+                sqlStreamingQueriesExecuted.inc();
             }
             return sqlResult;
         } catch (AccessControlException e) {
