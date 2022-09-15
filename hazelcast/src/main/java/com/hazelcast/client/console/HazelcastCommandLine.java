@@ -698,11 +698,6 @@ public class HazelcastCommandLine implements Runnable {
         }
     }
 
-    public static class TargetsMixin {
-
-
-    }
-
     static class ExceptionHandler<R> extends DefaultExceptionHandler<R> {
         @Override
         public R handleExecutionException(ExecutionException ex, ParseResult parseResult) {
