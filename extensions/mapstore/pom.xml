@@ -23,7 +23,6 @@
 
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-mapstore</artifactId>
-    <version>5.2-SNAPSHOT</version>
 
     <packaging>jar</packaging>
     <name>hazelcast-sql-mapstore</name>
