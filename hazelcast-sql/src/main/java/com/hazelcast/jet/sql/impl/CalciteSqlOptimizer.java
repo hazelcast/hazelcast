@@ -46,6 +46,7 @@ import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.WatermarkKeysAssigner;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
+import com.hazelcast.jet.sql.impl.opt.physical.AssignDiscriminatorToScansRule;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
@@ -97,10 +98,14 @@ import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.Convention;
+import org.apache.calcite.plan.RelOptCostImpl;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.plan.hep.HepPlanner;
+import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelShuttleImpl;
@@ -632,6 +637,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         }
 
         PhysicalRel physicalRel = optimizePhysical(context, logicalRel);
+        physicalRel = uniquifyScans(physicalRel);
+
         if (fineLogOn) {
             logger.fine("After physical opt:\n" + RelOptUtil.toString(physicalRel));
         }
@@ -665,6 +672,35 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 PhysicalRules.getRuleSet(),
                 OptUtils.toPhysicalConvention(rel.getTraitSet())
         );
+    }
+
+    /**
+     * Assign a discriminator to each scan in the plan. This is essentially hack
+     * to make the scans unique. We need this because in the MEMO structure, the
+     * plan can contain the same instance of a RelNode multiple times, if it's
+     * identical. This happens if the query, for example, reads the same table
+     * twice. The {@link WatermarkKeysAssigner} might need to assign a different
+     * key to two identical scans, and it can't do it if they are the same
+     * instance.
+     */
+    public static PhysicalRel uniquifyScans(PhysicalRel rel) {
+        HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
+
+        // Note that we must create a new instance of the rule for each optimization, because
+        // the rule has a state that is used during the "optimization".
+        AssignDiscriminatorToScansRule rule = new AssignDiscriminatorToScansRule();
+        hepProgramBuilder.addRuleInstance(rule);
+
+        HepPlanner planner = new HepPlanner(
+                hepProgramBuilder.build(),
+                Contexts.empty(),
+                true,
+                null,
+                RelOptCostImpl.FACTORY
+        );
+
+        planner.setRoot(rel);
+        return (PhysicalRel) planner.findBestExp();
     }
 
     private SqlRowMetadata createRowMetadata(
