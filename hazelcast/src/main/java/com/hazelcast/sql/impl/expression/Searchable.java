@@ -18,5 +18,5 @@ package com.hazelcast.sql.impl.expression;
 
 public interface Searchable<C extends Comparable<C>> {
 
-    boolean contains(C value);
+    Boolean contains(C value);
 }

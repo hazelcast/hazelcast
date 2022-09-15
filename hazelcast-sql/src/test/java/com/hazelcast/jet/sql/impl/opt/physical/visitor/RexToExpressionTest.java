@@ -195,6 +195,6 @@ public class RexToExpressionTest {
     }
 
     private static <C extends Comparable<C>> Range<C> range(C left, C right) {
-        return new Range<>(rangeSet(left, right));
+        return new Range<>(rangeSet(left, right), null);
     }
 }

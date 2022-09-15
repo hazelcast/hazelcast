@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.physical.visitor;
 
 import com.google.common.collect.RangeSet;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.expression.Range;
 import com.hazelcast.jet.sql.impl.expression.ToRowFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonArrayFunction;
@@ -85,6 +86,7 @@ import org.apache.calcite.avatica.util.TimeUnitRange;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexLiteral;
+import org.apache.calcite.rex.RexUnknownAs;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlJsonConstructorNullClause;
 import org.apache.calcite.sql.SqlJsonQueryEmptyOrErrorBehavior;
@@ -503,7 +505,7 @@ public final class RexToExpression {
     }
 
     @SuppressWarnings({"unchecked", "UnstableApiUsage"})
-    public static RangeSet extractRangeFromSearch(RexLiteral literal) {
+    public static Tuple2<RangeSet<?>, Boolean> extractRangeSetAndNullAsFromSearch(RexLiteral literal) {
         Sarg<?> sarg = literal.getValueAs(Sarg.class);
         if (sarg == null) {
             return null;
@@ -511,7 +513,7 @@ public final class RexToExpression {
 
         RelDataType literalType = literal.getType();
         SqlTypeName sqlType = literalType.getSqlTypeName();
-        return RangeSets.copy(sarg.rangeSet, value -> convertSargValue(value, sqlType));
+        return Tuple2.tuple2(RangeSets.copy(sarg.rangeSet, value -> convertSargValue(value, sqlType)), convertNullAs(sarg));
     }
 
     @SuppressWarnings({"unchecked", "UnstableApiUsage"})
@@ -521,7 +523,11 @@ public final class RexToExpression {
     ) {
         Sarg<CI> sarg = literal.getValueAs(Sarg.class);
         RangeSet<CO> mapped = RangeSets.copy(sarg.rangeSet, value -> (CO) convertSargValue(value, type.getSqlTypeName()));
-        return SearchableExpression.create(HazelcastTypeUtils.toHazelcastType(type), new Range<>(mapped));
+        return SearchableExpression.create(HazelcastTypeUtils.toHazelcastType(type), new Range<>(mapped, convertNullAs(sarg)));
+    }
+
+    private static Boolean convertNullAs(Sarg<?> sarg) {
+        return sarg.nullAs == RexUnknownAs.UNKNOWN ? null : sarg.nullAs.toBoolean();
     }
 
     @SuppressWarnings({"rawtypes", "checkstyle:ReturnCount"})

@@ -25,13 +25,18 @@ import java.io.Serializable;
 public class Range<C extends Comparable<C>> implements Searchable<C>, Serializable {
 
     private final RangeSet<C> set;
+    private final Boolean nullAs;
 
-    public Range(RangeSet<C> set) {
+    public Range(RangeSet<C> set, Boolean nullAs) {
         this.set = set;
+        this.nullAs = nullAs;
     }
 
     @Override
-    public boolean contains(C value) {
+    public Boolean contains(C value) {
+        if (value == null) {
+            return nullAs;
+        }
         return set.contains(value);
     }
 }

@@ -56,11 +56,8 @@ public final class SearchPredicate extends BiExpression<Boolean> implements Iden
     @SuppressWarnings({"rawtypes", "unchecked"})
     public Boolean eval(Row row, ExpressionEvalContext context) {
         Object left = operand1.eval(row, context);
-        if (left == null) {
-            return null;
-        }
-
         Object right = operand2.eval(row, context);
+
         if (right == null) {
             return null;
         }
