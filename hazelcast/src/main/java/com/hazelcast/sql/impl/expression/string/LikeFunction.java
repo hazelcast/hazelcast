@@ -60,7 +60,7 @@ public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDa
     private final Object mux = new Object();
 
     private boolean negated;
-    private volatile transient State state;
+    private transient volatile State state;
 
     public LikeFunction() {
         // No-op.
