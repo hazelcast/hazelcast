@@ -214,16 +214,22 @@ public class SqlServiceImpl implements SqlService {
                     statement.getExpectedResultType(),
                     securityContext
             );
-            if (!skipStats && sqlResult instanceof AbstractSqlResult) {
-                if (((AbstractSqlResult) sqlResult).isInfiniteRows()) {
-                    sqlStreamingQueriesExecuted.inc();
-                }
+            if (!skipStats) {
+                updateSqlStreamingQueriesExecuted(sqlResult);
             }
             return sqlResult;
         } catch (AccessControlException e) {
             throw e;
         } catch (Exception e) {
             throw QueryUtils.toPublicException(e, nodeServiceProvider.getLocalMemberId());
+        }
+    }
+
+    private void updateSqlStreamingQueriesExecuted(SqlResult sqlResult) {
+        if (sqlResult instanceof AbstractSqlResult) {
+            if (((AbstractSqlResult) sqlResult).isInfiniteRows()) {
+                sqlStreamingQueriesExecuted.inc();
+            }
         }
     }
 
