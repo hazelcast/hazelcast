@@ -38,6 +38,7 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.stream.StreamSupport;
 
+import static com.fasterxml.jackson.dataformat.csv.CsvParser.Feature.SKIP_EMPTY_LINES;
 import static com.hazelcast.jet.impl.util.Util.createFieldProjection;
 import static com.hazelcast.jet.impl.util.Util.uncheckRun;
 import static java.util.Spliterator.ORDERED;
@@ -68,6 +69,7 @@ public class CsvReadFileFnProvider implements ReadFileFnProvider {
             if (formatClazz == String[].class) {
                 ObjectReader reader = new CsvMapper().enable(Feature.WRAP_AS_ARRAY)
                                                      .readerFor(String[].class)
+                                                     .with(SKIP_EMPTY_LINES)
                                                      .with(CsvSchema.emptySchema().withSkipFirstDataRow(false));
 
                 iterator = reader.readValues(fis);
@@ -82,6 +84,7 @@ public class CsvReadFileFnProvider implements ReadFileFnProvider {
             } else {
                 iterator = new CsvMapper().readerFor(formatClazz)
                                           .withoutFeatures(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                                          .with(SKIP_EMPTY_LINES)
                                           .with(CsvSchema.emptySchema().withHeader())
                                           .readValues(fis);
             }
