@@ -16,13 +16,9 @@
 
 package com.hazelcast.internal.serialization.impl.compact.reader;
 
-import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.internal.serialization.impl.GenericRecordQueryReader;
-import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
-import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.query.impl.getters.MultiResult;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -40,6 +36,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createSerializationService;
 import static com.hazelcast.internal.serialization.impl.compact.reader.CompactValueReaderTestStructure.GroupObject;
 import static com.hazelcast.internal.serialization.impl.compact.reader.CompactValueReaderTestStructure.NestedGroupObject;
 import static com.hazelcast.internal.serialization.impl.compact.reader.CompactValueReaderTestStructure.PrimitiveFields;
@@ -132,11 +129,7 @@ public class CompactStreamSerializerValueReaderSpecTest extends HazelcastTestSup
         // it makes debugging easier since all scenarios are generated
         printlnScenarioDescription(resultToMatch);
 
-        SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
-        SerializationConfig serializationConfig = new SerializationConfig();
-        InternalSerializationService ss = new DefaultSerializationServiceBuilder()
-                .setConfig(serializationConfig)
-                .setSchemaService(schemaService).build();
+        InternalSerializationService ss = (InternalSerializationService) createSerializationService();
 
         Data data = ss.toData(inputObject);
         GenericRecordQueryReader reader = new GenericRecordQueryReader(ss.readAsInternalGenericRecord(data));

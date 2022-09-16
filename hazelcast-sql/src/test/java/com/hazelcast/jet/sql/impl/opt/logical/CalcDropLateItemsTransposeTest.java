@@ -23,11 +23,9 @@ import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.OptimizerTestSupport;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMetadataQuery;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
-import com.hazelcast.jet.sql.impl.schema.HazelcastTableStatistic;
 import com.hazelcast.jet.sql.impl.schema.TableResolverImpl;
 import com.hazelcast.jet.sql.impl.schema.TablesStorage;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableResolver;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.logical.LogicalCalc;
@@ -147,9 +145,5 @@ public class CalcDropLateItemsTransposeTest extends OptimizerTestSupport {
         assertThat(wmIndexes.iterator().next()).isEqualTo(2);
 
         assertRowsEventuallyInAnyOrder(sql, singletonList(new Row("1", 1, timestamp(1L), "1")));
-    }
-
-    private static HazelcastTable streamingTable(Table table, long rowCount) {
-        return new HazelcastTable(table, new HazelcastTableStatistic(rowCount));
     }
 }

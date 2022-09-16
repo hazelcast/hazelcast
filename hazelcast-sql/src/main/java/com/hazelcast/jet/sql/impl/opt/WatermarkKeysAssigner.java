@@ -102,14 +102,10 @@ public class WatermarkKeysAssigner {
                 if (scan.watermarkedColumnIndex() < 0) {
                     return;
                 }
-                scan.setWatermarkKey(keyCounter);
-                Map<Integer, MutableByte> res = singletonMap(scan.watermarkedColumnIndex(), new MutableByte(keyCounter));
+                MutableByte key = new MutableByte(keyCounter);
+                Map<Integer, MutableByte> res = singletonMap(scan.watermarkedColumnIndex(), key);
                 Map<Integer, MutableByte> oldValue = relToWmKeyMapping.put(scan, res);
-                if (oldValue != null) {
-                    // Calcite, thanks to the MEMO structure, can use the same rel in multiple
-                    // places in the tree. We don't support this for now, we need to rework it to use a different key.
-                    throw new UnsupportedOperationException("The same scan used twice in the execution plan");
-                }
+                assert oldValue == null : "The same scan used twice in the execution plan";
                 keyCounter++;
                 return;
             }

@@ -24,9 +24,6 @@ import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.steps.EntryOpSteps;
-import com.hazelcast.map.impl.operation.steps.engine.State;
-import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
@@ -88,23 +85,6 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
         } finally {
             recordStore.afterOperation();
         }
-    }
-
-    @Override
-    public State createState() {
-        return super.createState()
-                .setKey(dataKey)
-                .setOldValue(oldValue)
-                .setNewValue(newValue)
-                .setModificationTypeForEP(modificationType)
-                .setTtl(newTtl)
-                .setEntryOperator(null)
-                .setUnlockNeededForEP(true);
-    }
-
-    @Override
-    public Step getStartingStep() {
-        return EntryOpSteps.EP_START;
     }
 
     private void verifyLock() {

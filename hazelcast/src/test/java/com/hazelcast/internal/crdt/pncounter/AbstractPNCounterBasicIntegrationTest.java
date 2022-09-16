@@ -75,8 +75,8 @@ public abstract class AbstractPNCounterBasicIntegrationTest extends HazelcastTes
         assertCounterValueEventually(finalValue.longValue(), counter1);
         assertCounterValueEventually(finalValue.longValue(), counter2);
 
-        int increments = 0;
-        int decrements = 0;
+        long increments = 0;
+        long decrements = 0;
         for (HazelcastInstance member : getMembers()) {
             final PNCounterService service = getNodeEngineImpl(member).getService(PNCounterService.SERVICE_NAME);
             for (LocalPNCounterStats stats : service.getStats().values()) {

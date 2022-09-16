@@ -659,7 +659,7 @@ public class SqlOrderByTest extends SqlTestSupport {
             });
         }
 
-        assertOpenEventually(latch);
+        assertOpenEventually(latch, 240000);
         assertNull(exception.get());
         executor.shutdown();
     }
@@ -720,7 +720,7 @@ public class SqlOrderByTest extends SqlTestSupport {
             });
         }
 
-        assertOpenEventually(latch);
+        assertOpenEventually(latch, 240000);
         assertNull(exception.get());
         executor.shutdown();
     }

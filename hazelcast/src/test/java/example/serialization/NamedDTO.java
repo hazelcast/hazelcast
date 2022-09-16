@@ -57,7 +57,7 @@ public class NamedDTO {
 
     @Override
     public String toString() {
-        final StringBuilder sb = new StringBuilder("NamedPortable{");
+        final StringBuilder sb = new StringBuilder("NamedDTO{");
         sb.append("name='").append(name).append('\'');
         sb.append(", k=").append(myint);
         sb.append('}');

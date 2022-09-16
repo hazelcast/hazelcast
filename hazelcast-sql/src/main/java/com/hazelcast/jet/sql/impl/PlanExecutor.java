@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
+import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.JetServiceBackend;
@@ -588,6 +589,9 @@ public class PlanExecutor {
             }
             if (isTopologyException(t)) {
                 return SqlErrorCode.TOPOLOGY_CHANGE;
+            }
+            if (t instanceof RestartableException) {
+                return SqlErrorCode.RESTARTABLE_ERROR;
             }
             t = t.getCause();
         }
