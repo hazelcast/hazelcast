@@ -79,6 +79,7 @@ public class TestLoggerFactory extends LoggerFactorySupport {
         loggerContexts.clear();
     }
 
+    @Override
     protected ILogger createLogger(String name) {
         LoggerContext loggerContext = LogManager.getContext(null, false, configFile);
         loggerContexts.add(loggerContext);
@@ -126,6 +127,7 @@ public class TestLoggerFactory extends LoggerFactorySupport {
         public void finest(Throwable thrown) {
             long startNanos = System.nanoTime();
             delegate.finest(thrown);
+            ExceptionsCapturer.log(thrown);
             logOnSlowLogging(startNanos);
         }
 
@@ -133,6 +135,7 @@ public class TestLoggerFactory extends LoggerFactorySupport {
         public void finest(String message, Throwable thrown) {
             long startNanos = System.nanoTime();
             delegate.finest(message, thrown);
+            ExceptionsCapturer.log(thrown);
             logOnSlowLogging(startNanos);
         }
 
@@ -152,6 +155,7 @@ public class TestLoggerFactory extends LoggerFactorySupport {
         public void fine(Throwable thrown) {
             long startNanos = System.nanoTime();
             delegate.fine(thrown);
+            ExceptionsCapturer.log(thrown);
             logOnSlowLogging(startNanos);
         }
 
@@ -159,6 +163,7 @@ public class TestLoggerFactory extends LoggerFactorySupport {
         public void fine(String message, Throwable thrown) {
             long startNanos = System.nanoTime();
             delegate.fine(message, thrown);
+            ExceptionsCapturer.log(thrown);
             logOnSlowLogging(startNanos);
         }
 
@@ -178,6 +183,7 @@ public class TestLoggerFactory extends LoggerFactorySupport {
         public void info(String message, Throwable thrown) {
             long startNanos = System.nanoTime();
             delegate.info(message, thrown);
+            ExceptionsCapturer.log(thrown);
             logOnSlowLogging(startNanos);
         }
 
@@ -185,6 +191,7 @@ public class TestLoggerFactory extends LoggerFactorySupport {
         public void info(Throwable thrown) {
             long startNanos = System.nanoTime();
             delegate.info(thrown);
+            ExceptionsCapturer.log(thrown);
             logOnSlowLogging(startNanos);
         }
 
@@ -204,6 +211,7 @@ public class TestLoggerFactory extends LoggerFactorySupport {
         public void warning(Throwable thrown) {
             long startNanos = System.nanoTime();
             delegate.warning(thrown);
+            ExceptionsCapturer.log(thrown);
             logOnSlowLogging(startNanos);
         }
 
@@ -211,6 +219,7 @@ public class TestLoggerFactory extends LoggerFactorySupport {
         public void warning(String message, Throwable thrown) {
             long startNanos = System.nanoTime();
             delegate.warning(message, thrown);
+            ExceptionsCapturer.log(thrown);
             logOnSlowLogging(startNanos);
         }
 
@@ -230,6 +239,7 @@ public class TestLoggerFactory extends LoggerFactorySupport {
         public void severe(Throwable thrown) {
             long startNanos = System.nanoTime();
             delegate.severe(thrown);
+            ExceptionsCapturer.log(thrown);
             logOnSlowLogging(startNanos);
         }
 
@@ -237,6 +247,7 @@ public class TestLoggerFactory extends LoggerFactorySupport {
         public void severe(String message, Throwable thrown) {
             long startNanos = System.nanoTime();
             delegate.severe(message, thrown);
+            ExceptionsCapturer.log(thrown);
             logOnSlowLogging(startNanos);
         }
 
@@ -256,6 +267,7 @@ public class TestLoggerFactory extends LoggerFactorySupport {
         public void log(Level level, String message, Throwable thrown) {
             long startNanos = System.nanoTime();
             delegate.log(level, message, thrown);
+            ExceptionsCapturer.log(thrown);
             logOnSlowLogging(startNanos);
         }
 
