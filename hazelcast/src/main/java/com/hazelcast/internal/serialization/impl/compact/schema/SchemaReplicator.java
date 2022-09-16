@@ -18,13 +18,16 @@ package com.hazelcast.internal.serialization.impl.compact.schema;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.internal.util.InvocationUtil;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
@@ -43,7 +46,7 @@ public class SchemaReplicator {
     // that their contents are in valid states.
     private final Object mutex = new Object();
     private final ConcurrentHashMap<Long, SchemaReplication> replications = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Long, CompletableFuture<Void>> inFlightOperations = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, InternalCompletableFuture<Void>> inFlightOperations = new ConcurrentHashMap<>();
 
     // Not final due to late initialization with init method.
     private NodeEngine nodeEngine;
@@ -66,7 +69,7 @@ public class SchemaReplicator {
      * Clears the local state of the replicator.
      */
     public void clear() {
-        for (CompletableFuture<Void> future : inFlightOperations.values()) {
+        for (InternalCompletableFuture<Void> future : inFlightOperations.values()) {
             future.completeExceptionally(new HazelcastException("The state of the SchemaReplicator is being cleared."));
         }
         inFlightOperations.clear();
@@ -103,20 +106,20 @@ public class SchemaReplicator {
      * @return the future which will be completed once the replication process
      * ends.
      */
-    public CompletableFuture<Void> replicate(Schema schema) {
+    public InternalCompletableFuture<Void> replicate(Schema schema) {
         long schemaId = schema.getSchemaId();
         if (isSchemaReplicated(schemaId)) {
-            return CompletableFuture.completedFuture(null);
+            return InternalCompletableFuture.newCompletedFuture(null);
         }
 
-        CompletableFuture<Void> future = inFlightOperations.get(schemaId);
+        InternalCompletableFuture<Void> future = inFlightOperations.get(schemaId);
         if (future != null) {
             return future;
         }
 
         synchronized (mutex) {
             if (isSchemaReplicated(schemaId)) {
-                return CompletableFuture.completedFuture(null);
+                return InternalCompletableFuture.newCompletedFuture(null);
             }
 
             future = inFlightOperations.get(schemaId);
@@ -124,7 +127,7 @@ public class SchemaReplicator {
                 return future;
             }
 
-            future = new CompletableFuture<>();
+            future = new InternalCompletableFuture<>();
             inFlightOperations.put(schemaId, future);
         }
 
@@ -168,12 +171,21 @@ public class SchemaReplicator {
      *
      * @param schemas to replicate.
      */
-    public CompletableFuture<Void> replicateAll(List<Schema> schemas) {
-        CompletableFuture[] replications = schemas.stream()
+    public InternalCompletableFuture<Void> replicateAll(List<Schema> schemas) {
+        InternalCompletableFuture[] replications = schemas.stream()
                 .map(this::replicate)
-                .toArray(CompletableFuture[]::new);
+                .toArray(InternalCompletableFuture[]::new);
 
-        return CompletableFuture.allOf(replications);
+        InternalCompletableFuture<Void> future = new InternalCompletableFuture<>();
+        CompletableFuture.allOf(replications)
+                .whenCompleteAsync((result, throwable) -> {
+                    if (throwable == null) {
+                        future.complete(null);
+                    } else {
+                        future.completeExceptionally(throwable);
+                    }
+                }, ConcurrencyUtil.getDefaultAsyncExecutor());
+        return future;
     }
 
     /**
@@ -195,17 +207,9 @@ public class SchemaReplicator {
      * It assumes that there is already a replication registered for that schema
      * id.
      *
-     * @param schemaId                  to set the status.
-     * @param isLocalOperationExecution {@code true} if the call is made through
-     *                                  local execution of the operation
+     * @param schemaId to set the status.
      */
-    public void markSchemaAsReplicated(long schemaId, boolean isLocalOperationExecution) {
-        if (isLocalOperationExecution) {
-            // We will wait for setting the local replication status to
-            // replicated until all the operations we invoked are completed
-            return;
-        }
-
+    public void markSchemaAsReplicated(long schemaId) {
         SchemaReplication existing = replications.get(schemaId);
         if (existing == null) {
             // Can only happen after the #clear is called. At this point, we
@@ -259,7 +263,7 @@ public class SchemaReplicator {
         }
     }
 
-    private void doReplicate(Schema schema, CompletableFuture<Void> future) {
+    private void doReplicate(Schema schema, InternalCompletableFuture<Void> future) {
         long schemaId = schema.getSchemaId();
         try {
             prepareOnCaller(schema)
@@ -279,12 +283,12 @@ public class SchemaReplicator {
         }
     }
 
-    private CompletableFuture<Void> prepareOnCaller(Schema schema) {
+    private InternalCompletableFuture<Void> prepareOnCaller(Schema schema) {
         schemaService.putLocal(schema);
         return schemaService.persistSchemaToHotRestartAsync(schema);
     }
 
-    private void doReplicatePreparedSchema(Schema schema, CompletableFuture<Void> future) {
+    private void doReplicatePreparedSchema(Schema schema, InternalCompletableFuture<Void> future) {
         long schemaId = schema.getSchemaId();
         try {
             sendRequestForPreparation(schema)
@@ -300,22 +304,22 @@ public class SchemaReplicator {
         }
     }
 
-    private void completeInFlightOperation(long schemaId, CompletableFuture<Void> future) {
+    private void completeInFlightOperation(long schemaId, InternalCompletableFuture<Void> future) {
         synchronized (mutex) {
-            markSchemaAsReplicated(schemaId, false);
+            markSchemaAsReplicated(schemaId);
             inFlightOperations.remove(schemaId, future);
         }
         future.complete(null);
     }
 
-    private void completeInFlightOperationExceptionally(long schemaId, CompletableFuture<Void> future, Throwable t) {
+    private void completeInFlightOperationExceptionally(long schemaId, InternalCompletableFuture<Void> future, Throwable t) {
         inFlightOperations.remove(schemaId, future);
         future.completeExceptionally(t);
     }
 
     // Not private for tests
-    CompletableFuture<Void> sendRequestForPreparation(Schema schema) {
-        return InvocationUtil.invokeOnStableClusterSerial(
+    InternalCompletableFuture<Collection<UUID>> sendRequestForPreparation(Schema schema) {
+        return InvocationUtil.invokeOnStableClusterParallel(
                 nodeEngine,
                 new PrepareSchemaReplicationOperationSupplier(schema, nodeEngine),
                 MAX_RETRIES_FOR_REQUESTS
@@ -323,8 +327,8 @@ public class SchemaReplicator {
     }
 
     // Not private for tests
-    CompletableFuture<Void> sendRequestForAcknowledgment(long schemaId) {
-        return InvocationUtil.invokeOnStableClusterSerial(
+    InternalCompletableFuture<Collection<UUID>> sendRequestForAcknowledgment(long schemaId) {
+        return InvocationUtil.invokeOnStableClusterParallel(
                 nodeEngine,
                 new AckSchemaReplicationOperationSupplier(schemaId, nodeEngine),
                 MAX_RETRIES_FOR_REQUESTS
@@ -332,7 +336,7 @@ public class SchemaReplicator {
     }
 
     // Used in tests
-    ConcurrentHashMap<Long, CompletableFuture<Void>> getInFlightOperations() {
+    ConcurrentHashMap<Long, InternalCompletableFuture<Void>> getInFlightOperations() {
         return inFlightOperations;
     }
 

@@ -23,6 +23,7 @@ import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
@@ -30,7 +31,6 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -50,12 +50,10 @@ public class MemberSchemaService implements
     private final SchemaReplicator replicator = new SchemaReplicator(this);
 
     private ILogger logger;
-    private NodeEngine nodeEngine;
 
     @Override
     public void init(NodeEngine nodeEngine, Properties properties) {
         this.logger = nodeEngine.getLogger(SchemaService.class);
-        this.nodeEngine = nodeEngine;
 
         // Set the node engine reference to replicator as well.
         replicator.init(nodeEngine);
@@ -96,7 +94,7 @@ public class MemberSchemaService implements
      *
      * @param schema to replicate.
      */
-    public CompletableFuture<Void> putAsync(Schema schema) {
+    public InternalCompletableFuture<Void> putAsync(Schema schema) {
         return replicator.replicate(schema);
     }
 
@@ -106,9 +104,9 @@ public class MemberSchemaService implements
      *
      * @param schemas to replicate, if necessary
      */
-    public CompletableFuture<Void> putAllAsync(List<Schema> schemas) {
+    public InternalCompletableFuture<Void> putAllAsync(List<Schema> schemas) {
         if (schemas.size() == 0) {
-            return CompletableFuture.completedFuture(null);
+            return InternalCompletableFuture.newCompletedFuture(null);
         }
         if (logger.isFinestEnabled()) {
             logger.finest("Putting schemas to the cluster" + schemas);
@@ -210,13 +208,10 @@ public class MemberSchemaService implements
      * Called on the participant members to mark the replication status of the
      * schema as {@link SchemaReplicationStatus#REPLICATED}.
      *
-     * @param schemaId                  of the schema that is replicated to the
-     *                                  cluster.
-     * @param isLocalOperationExecution {@code true} if the call is made through
-     *                                  local execution of the operation
+     * @param schemaId of the schema that is replicated to the cluster.
      */
-    public void onSchemaAckRequest(long schemaId, boolean isLocalOperationExecution) {
-        replicator.markSchemaAsReplicated(schemaId, isLocalOperationExecution);
+    public void onSchemaAckRequest(long schemaId) {
+        replicator.markSchemaAsReplicated(schemaId);
     }
 
     /**
@@ -267,9 +262,9 @@ public class MemberSchemaService implements
         // no-op, actual implementation is in the EnterpriseMemberSchemaService
     }
 
-    protected CompletableFuture<Void> persistSchemaToHotRestartAsync(Schema schema) {
+    protected InternalCompletableFuture<Void> persistSchemaToHotRestartAsync(Schema schema) {
         // no-op, actual implementation is in the EnterpriseMemberSchemaService
-        return CompletableFuture.completedFuture(null);
+        return InternalCompletableFuture.newCompletedFuture(null);
     }
 
     // Used only for testing

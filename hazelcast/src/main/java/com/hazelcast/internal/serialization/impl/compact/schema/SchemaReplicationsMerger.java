@@ -18,10 +18,10 @@ package com.hazelcast.internal.serialization.impl.compact.schema;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.spi.impl.InternalCompletableFuture;
 
 import java.util.Collection;
 import java.util.List;
-import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -45,7 +45,7 @@ public final class SchemaReplicationsMerger implements Runnable {
     public void run() {
         try {
             // Filter out replications already present in the larger cluster.
-            List<CompletableFuture<Void>> replicationFutures = replications.stream()
+            List<InternalCompletableFuture<Void>> replicationFutures = replications.stream()
                     .filter(replication -> {
                         SchemaReplicationStatus status = replicator.getReplicationStatus(replication.getSchema());
                         if (status == null) {

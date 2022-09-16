@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static com.hazelcast.spi.properties.ClusterProperty.INVOCATION_RETRY_PAUSE;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
 import static org.mockito.Mockito.doThrow;
@@ -53,8 +54,8 @@ public class CompactSchemaReplicationSlowTest extends CompactSchemaReplicationTe
                 verify(service, atLeast(SchemaReplicator.MAX_RETRIES_FOR_REQUESTS)).onSchemaPreparationRequest(SCHEMA);
             }
 
-            // No-one should acknowledge it
-            verify(service, never()).onSchemaAckRequest(SCHEMA.getSchemaId(), instance == instance1);
+            // No-one should call onSchemaAckRequest
+            verify(service, never()).onSchemaAckRequest(SCHEMA.getSchemaId());
         }
     }
 
@@ -62,19 +63,21 @@ public class CompactSchemaReplicationSlowTest extends CompactSchemaReplicationTe
     public void testSchemaReplication_whenAMemberThrowsRetryableExceptionAllTheTime_duringAcknowledgmentPhase() {
         doThrow(new RetryableHazelcastException())
                 .when(getSchemaService(instance4))
-                .onSchemaAckRequest(SCHEMA.getSchemaId(), false);
+                .onSchemaAckRequest(SCHEMA.getSchemaId());
 
         assertThrows(HazelcastSerializationException.class, () -> fillMapUsing(instance1));
 
         for (HazelcastInstance instance : instances) {
             MemberSchemaService service = getSchemaService(instance);
 
-            // Everyone should prepare it
-            verify(service, atLeastOnce()).onSchemaPreparationRequest(SCHEMA);
+            // Everyone should call, apart from the initiator
+            if (instance != instance1) {
+                verify(service, atLeastOnce()).onSchemaPreparationRequest(SCHEMA);
+            }
 
             if (instance == instance4) {
                 // For instance4, it must fail all the time
-                verify(service, atLeast(SchemaReplicator.MAX_RETRIES_FOR_REQUESTS)).onSchemaAckRequest(SCHEMA.getSchemaId(), false);
+                verify(service, atLeast(SchemaReplicator.MAX_RETRIES_FOR_REQUESTS)).onSchemaAckRequest(SCHEMA.getSchemaId());
             }
         }
     }
@@ -84,6 +87,7 @@ public class CompactSchemaReplicationSlowTest extends CompactSchemaReplicationTe
         Config config = super.getConfig();
         // Jet prints too many logs during the test
         config.getJetConfig().setEnabled(false);
+        config.getProperties().setProperty(INVOCATION_RETRY_PAUSE.getName(), "100");
         return config;
     }
 }
