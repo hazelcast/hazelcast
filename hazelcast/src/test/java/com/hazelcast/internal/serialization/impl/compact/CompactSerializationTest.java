@@ -20,7 +20,6 @@ import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.compact.CompactReader;
 import com.hazelcast.nio.serialization.compact.CompactSerializer;
@@ -58,6 +57,7 @@ import java.util.OptionalDouble;
 import java.util.Set;
 import java.util.UUID;
 
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createSerializationService;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -72,15 +72,9 @@ import static org.mockito.Mockito.verify;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class CompactSerializationTest {
 
-    private final SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
-
     @Test
     public void testOverridingDefaultSerializers() {
-        SerializationConfig config = new SerializationConfig();
-        config.getCompactSerializationConfig()
-                .addSerializer(new IntegerSerializer());
-
-        assertThatThrownBy(() -> createSerializationService(config))
+        assertThatThrownBy(() -> createSerializationService(IntegerSerializer::new))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("overrides the default serializer");
     }
@@ -103,6 +97,17 @@ public class CompactSerializationTest {
     }
 
     @Test
+    public void testReadWhenFieldDoesNotExist() {
+        SerializationService service = createSerializationService(NonExistingFieldReadingSerializer::new);
+
+        Foo foo = new Foo(42);
+        Data data = service.toData(foo);
+
+        assertThatThrownBy(() -> service.toObject(data))
+                .isInstanceOf(HazelcastSerializationException.class)
+                .hasMessageContaining("Invalid field name");
+    }
+
     public void testSerializerRegistration_withDuplicateClasses() {
         SerializationConfig config = new SerializationConfig();
         assertThatThrownBy(() -> {
@@ -425,13 +430,6 @@ public class CompactSerializationTest {
         assertTrue(data.isCompact());
     }
 
-    private SerializationService createSerializationService(SerializationConfig config) {
-        return new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .setConfig(config)
-                .build();
-    }
-
     private static class IntegerSerializer implements CompactSerializer<Integer> {
         @Nonnull
         @Override
@@ -587,6 +585,31 @@ public class CompactSerializationTest {
 
         private UsesSerializableClassAsField(SerializableEmployeeDTO serializableClass) {
             this.serializableClass = serializableClass;
+        }
+    }
+
+    private static class NonExistingFieldReadingSerializer implements CompactSerializer<Foo> {
+        @Nonnull
+        @Override
+        public Foo read(@Nonnull CompactReader in) {
+            return new Foo(in.readInt32("nonExistingField"));
+        }
+
+        @Override
+        public void write(@Nonnull CompactWriter out, @Nonnull Foo object) {
+            out.writeInt32("bar", object.bar);
+        }
+
+        @Nonnull
+        @Override
+        public String getTypeName() {
+            return "foo";
+        }
+
+        @Nonnull
+        @Override
+        public Class<Foo> getCompactClass() {
+            return Foo.class;
         }
     }
 }
