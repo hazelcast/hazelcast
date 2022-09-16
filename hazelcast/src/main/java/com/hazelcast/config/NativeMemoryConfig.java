@@ -68,7 +68,7 @@ public class NativeMemoryConfig {
     public static final int INITIAL_MEMORY_SIZE = MIN_INITIAL_MEMORY_SIZE;
 
     private boolean enabled;
-    private Capacity size = new Capacity(INITIAL_MEMORY_SIZE, MemoryUnit.MEGABYTES);
+    private Capacity capacity = new Capacity(INITIAL_MEMORY_SIZE, MemoryUnit.MEGABYTES);
     private MemoryAllocatorType allocatorType = MemoryAllocatorType.POOLED;
 
     private int minBlockSize = DEFAULT_MIN_BLOCK_SIZE;
@@ -82,7 +82,7 @@ public class NativeMemoryConfig {
 
     public NativeMemoryConfig(NativeMemoryConfig nativeMemoryConfig) {
         enabled = nativeMemoryConfig.enabled;
-        size = nativeMemoryConfig.size;
+        capacity = nativeMemoryConfig.capacity;
         allocatorType = nativeMemoryConfig.allocatorType;
         minBlockSize = nativeMemoryConfig.minBlockSize;
         pageSize = nativeMemoryConfig.pageSize;
@@ -92,10 +92,11 @@ public class NativeMemoryConfig {
 
     /**
      * Returns size of the native memory region.
+     * @deprecated Use {@link #getCapacity()} instead.
      */
-    @SuppressWarnings("unchecked")
-    public <T extends Capacity> T getSize() {
-        return (T) new MemorySize(size.getValue(), size.getUnit());
+    @Deprecated
+    public MemorySize getSize() {
+        return new MemorySize(capacity.getValue(), capacity.getUnit());
     }
 
     /**
@@ -105,11 +106,35 @@ public class NativeMemoryConfig {
      * When native memory region is completely allocated and in-use, further allocation requests will fail
      * with {@link NativeOutOfMemoryError}.
      *
-     * @param size memory size
+     * @param capacity memory size
+     * @return this {@link NativeMemoryConfig} instance
+     * @deprecated Use {@link #setCapacity(Capacity)} instead.
+     */
+    @Deprecated
+    public NativeMemoryConfig setSize(MemorySize capacity) {
+        this.capacity = isNotNull(capacity, "size");
+        return this;
+    }
+
+    /**
+     * Returns size (capacity) of the native memory region.
+     */
+    public Capacity getCapacity() {
+        return capacity;
+    }
+
+    /**
+     * Sets size (capacity) of the native memory region.
+     * <p>
+     * Total size of the memory blocks allocated in native memory region cannot exceed this memory size.
+     * When native memory region is completely allocated and in-use, further allocation requests will fail
+     * with {@link NativeOutOfMemoryError}.
+     *
+     * @param capacity memory size
      * @return this {@link NativeMemoryConfig} instance
      */
-    public NativeMemoryConfig setSize(Capacity size) {
-        this.size = isNotNull(size, "size");
+    public NativeMemoryConfig setCapacity(Capacity capacity) {
+        this.capacity = isNotNull(capacity, "capacity");
         return this;
     }
 
@@ -342,7 +367,7 @@ public class NativeMemoryConfig {
         if (Float.compare(that.metadataSpacePercentage, metadataSpacePercentage) != 0) {
             return false;
         }
-        if (!Objects.equals(size, that.size)) {
+        if (!Objects.equals(capacity, that.capacity)) {
             return false;
         }
         if (!persistentMemoryConfig.equals(that.persistentMemoryConfig)) {
@@ -354,7 +379,7 @@ public class NativeMemoryConfig {
     @Override
     public final int hashCode() {
         int result = (enabled ? 1 : 0);
-        result = 31 * result + (size != null ? size.hashCode() : 0);
+        result = 31 * result + (capacity != null ? capacity.hashCode() : 0);
         result = 31 * result + (allocatorType != null ? allocatorType.hashCode() : 0);
         result = 31 * result + minBlockSize;
         result = 31 * result + pageSize;
@@ -367,7 +392,7 @@ public class NativeMemoryConfig {
     public String toString() {
         return "NativeMemoryConfig{"
                 + "enabled=" + enabled
-                + ", size=" + size
+                + ", size=" + capacity
                 + ", allocatorType=" + allocatorType
                 + ", minBlockSize=" + minBlockSize
                 + ", pageSize=" + pageSize
