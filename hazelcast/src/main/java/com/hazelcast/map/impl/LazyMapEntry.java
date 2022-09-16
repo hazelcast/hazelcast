@@ -63,9 +63,8 @@ public class LazyMapEntry<K, V> extends CachedQueryEntry<K, V>
 
     private static final long serialVersionUID = 0L;
 
-    private transient boolean modified;
-
     private transient long newTtl = UNSET;
+    private transient boolean modified;
     private transient boolean changeExpiryOnUpdate = true;
 
     public LazyMapEntry() {
@@ -105,19 +104,23 @@ public class LazyMapEntry<K, V> extends CachedQueryEntry<K, V>
         V oldValue = getValue();
         this.valueObject = value;
         this.valueData = null;
+        this.changeExpiryOnUpdate = true;
+        this.newTtl = UNSET;
         return oldValue;
     }
 
     @Override
     public V setValue(V value, long ttl, TimeUnit ttlUnit) {
+        V v = setValue(value);
         newTtl = ttlUnit.toMillis(ttl);
-        return setValue(value);
+        return v;
     }
 
     @Override
     public V setValueWithoutChangingExpiryTime(V value) {
+        V v = setValue(value);
         changeExpiryOnUpdate = false;
-        return setValue(value);
+        return v;
     }
 
     /**
