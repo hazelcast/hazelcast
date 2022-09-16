@@ -31,6 +31,7 @@ import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.impl.exception.EnteringPassiveClusterStateException;
 import com.hazelcast.jet.impl.exception.JetDisabledException;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
+import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
@@ -233,6 +234,7 @@ public final class ExceptionUtil {
     public static boolean isTechnicalCancellationException(Throwable t) {
         Throwable peeledFailure = peel(t);
         return peeledFailure instanceof CancellationException
-                || peeledFailure instanceof JobTerminateRequestedException;
+                || peeledFailure instanceof JobTerminateRequestedException
+                || peeledFailure instanceof TerminatedWithSnapshotException;
     }
 }
