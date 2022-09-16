@@ -26,6 +26,7 @@ import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.operation.steps.MultipleEntryOpSteps;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
+import com.hazelcast.map.impl.recordstore.StaticParams;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
@@ -73,7 +74,8 @@ public class MultipleEntryOperation extends MapOperation
                 .setKeys(keys)
                 .setPredicate(getPredicate())
                 .setCallerProvenance(CallerProvenance.NOT_WAN)
-                .setEntryProcessor(entryProcessor);
+                .setEntryProcessor(entryProcessor)
+                .setStaticPutParams(StaticParams.SET_WITH_NO_ACCESS_PARAMS);
     }
 
     @Override

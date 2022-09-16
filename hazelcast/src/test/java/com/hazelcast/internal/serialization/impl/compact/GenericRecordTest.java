@@ -43,6 +43,7 @@ import java.util.List;
 
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createCompactGenericRecord;
 import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createMainDTO;
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createSerializationService;
 import static com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder.compact;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -52,14 +53,11 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class GenericRecordTest {
 
-    SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
-
     @Test
     public void testGenericRecordToStringValidJson() throws IOException {
-        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig())
-                .build();
+        SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
+        InternalSerializationService serializationService = (InternalSerializationService)
+                createSerializationService(schemaService);
 
         MainDTO expectedDTO = createMainDTO();
         expectedDTO.nullableBool = null;
@@ -135,13 +133,6 @@ public class GenericRecordTest {
         assertEquals(1231L, clone.getInt64("bar"));
     }
 
-    private SerializationService createSerializationService() {
-        return new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig())
-                .build();
-    }
-
     @Test
     public void testBuildFromCompactInternalGenericRecord() throws IOException {
         InternalSerializationService serializationService = (InternalSerializationService) createSerializationService();
@@ -184,7 +175,7 @@ public class GenericRecordTest {
         builder.setInt32("foo", 1);
         assertSetterThrows(builder, "foo", 5, "Field can only be written once");
         builder.setInt64("bar", 1231L);
-        GenericRecord genericRecord = builder.build();
+        DeserializedGenericRecord genericRecord = (DeserializedGenericRecord) builder.build();
 
         verifyNewBuilder(genericRecord);
     }
@@ -233,5 +224,39 @@ public class GenericRecordTest {
         assertThatThrownBy(() -> builder.setInt32(fieldName, value))
                 .isInstanceOf(HazelcastSerializationException.class)
                 .hasMessageStartingWith(errorMessage);
+    }
+
+    @Test
+    public void testGetFieldThrowsExceptionWhenFieldDoesNotExist() throws IOException {
+        GenericRecord record = compact("test").build();
+        assertThatThrownBy(() -> {
+            record.getInt32("doesNotExist");
+        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Invalid field name");
+
+        InternalSerializationService serializationService = (InternalSerializationService) createSerializationService();
+        Data data = serializationService.toData(record);
+
+        InternalGenericRecord internalGenericRecord = serializationService.readAsInternalGenericRecord(data);
+
+        assertThatThrownBy(() -> {
+            internalGenericRecord.getInt32("doesNotExist");
+        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Invalid field name");
+    }
+
+    @Test
+    public void testGetFieldThrowsExceptionWhenFieldTypeDoesNotMatch() throws IOException {
+        GenericRecord record = compact("test").setInt32("foo", 123).build();
+        assertThatThrownBy(() -> {
+            record.getInt64("foo");
+        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Invalid field kind");
+
+        InternalSerializationService serializationService = (InternalSerializationService) createSerializationService();
+        Data data = serializationService.toData(record);
+
+        InternalGenericRecord internalGenericRecord = serializationService.readAsInternalGenericRecord(data);
+
+        assertThatThrownBy(() -> {
+            internalGenericRecord.getInt64("foo");
+        }).isInstanceOf(HazelcastSerializationException.class).hasMessageContaining("Invalid field kind");
     }
 }
