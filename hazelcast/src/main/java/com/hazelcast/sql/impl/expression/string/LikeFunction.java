@@ -57,8 +57,10 @@ public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDa
     /** Special characters which require escaping in Java. */
     private static final String ESCAPE_CHARACTERS_JAVA = "[]()|^+*?{}$\\.";
 
+    private final Object mux = new Object();
+
     private boolean negated;
-    private transient State state;
+    private volatile transient State state;
 
     public LikeFunction() {
         // No-op.
@@ -107,7 +109,11 @@ public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDa
         }
 
         if (state == null) {
-            state = new State();
+            synchronized (mux) {
+                if (state == null) {
+                    state = new State();
+                }
+            }
         }
 
         boolean res = state.like(source, pattern, escape);
