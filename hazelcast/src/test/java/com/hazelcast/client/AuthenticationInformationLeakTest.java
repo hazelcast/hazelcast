@@ -104,7 +104,11 @@ public class AuthenticationInformationLeakTest {
             String message = err.getMessage();
             assertInstanceOf(AuthenticationException.class, err.getCause());
             assertContains(message, "must authenticate before any operation");
-            assertNotContains(message.toLowerCase(), "connection");
+            String messageLowerCase = message.toLowerCase();
+            assertNotContains(messageLowerCase, "connection");
+            assertNotContains(messageLowerCase, "authenticated");
+            assertNotContains(messageLowerCase, "creationTime");
+            assertNotContains(messageLowerCase, "clientAttributes");
         }
     }
 
