@@ -74,4 +74,5 @@ public class SqlInfoCollectorTest {
         verify(metricsConsumer).accept(SQL_STREAMING_QUERIES_EXECUTED, "3");
         verifyNoMoreInteractions(metricsConsumer);
     }
+
 }
