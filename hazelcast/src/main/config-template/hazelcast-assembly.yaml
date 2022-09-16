@@ -113,7 +113,7 @@ hazelcast:
         enabled: false
     # Configuration for REST endpoints. When it's enabled, it will allow healthcheck calls over the HTTP protocol.
     rest-api:
-      enabled: @FILTER_BIND_ANY@
+      enabled: true
       endpoint-groups:
         HEALTH_CHECK:
           enabled: true

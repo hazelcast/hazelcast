@@ -174,7 +174,7 @@
         <!--
             Configuration for REST endpoints. When it's enabled, it will allow healthcheck calls over the HTTP protocol.
          -->
-        <rest-api enabled="@FILTER_BIND_ANY@">
+        <rest-api enabled="true">
             <endpoint-group name="HEALTH_CHECK" enabled="true"/>
             <endpoint-group name="CLUSTER_READ" enabled="false"/>
         </rest-api>
