@@ -176,6 +176,8 @@ public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDa
      * Helper class to execute LIKE function. Caches the last observed pattern to avoid constant re-compilation.
      */
     public static class State {
+        private final Object mux = new Object();
+
         /** Last observed pattern. */
         private String lastPattern;
 
@@ -194,16 +196,20 @@ public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDa
         }
 
         private Pattern convertToJavaPattern(String pattern, String escape) {
-            if (Objects.equals(pattern, lastPattern) && Objects.equals(escape, lastEscape)) {
-                return lastJavaPattern;
+            synchronized (mux) {
+                if (Objects.equals(pattern, lastPattern) && Objects.equals(escape, lastEscape)) {
+                    return lastJavaPattern;
+                }
             }
 
             String javaPatternStr = constructJavaPatternString(pattern, escape);
             Pattern javaPattern = Pattern.compile(javaPatternStr, Pattern.DOTALL);
 
-            lastPattern = pattern;
-            lastEscape = escape;
-            lastJavaPattern = javaPattern;
+            synchronized (mux) {
+                lastPattern = pattern;
+                lastEscape = escape;
+                lastJavaPattern = javaPattern;
+            }
 
             return javaPattern;
         }
