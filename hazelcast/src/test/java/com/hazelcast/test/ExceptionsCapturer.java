@@ -44,7 +44,7 @@ public class ExceptionsCapturer {
                 .stream()
                 .filter(e -> {
                     for (Class<? extends Throwable> ec : exceptionClasses) {
-                        if(ec.isAssignableFrom(e.getClass())) {
+                        if (ec.isAssignableFrom(e.getClass())) {
                             return true;
                         }
                     }
