@@ -45,7 +45,6 @@ public class SendSchemaMessageTask extends AbstractAsyncMessageTask<Schema, Coll
 
     @Override
     protected CompletableFuture<Collection<UUID>> processInternal() {
-        nodeEngine.getClusterService().getMembers();
         MemberSchemaService memberSchemaService = getService(getServiceName());
 
         // After replicating the schema, we will return the current member list

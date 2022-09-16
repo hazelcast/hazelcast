@@ -37,7 +37,7 @@ import static com.hazelcast.client.properties.ClientProperty.INVOCATION_RETRY_PA
 
 public class ClientSchemaService implements SchemaService {
 
-    private static final int MAX_PUT_RETRY_COUNT = 10;
+    private static final int MAX_PUT_RETRY_COUNT = 20;
     private final HazelcastClientInstanceImpl client;
     private final Map<Long, Schema> schemas = new ConcurrentHashMap<>();
     private final ILogger logger;
@@ -79,7 +79,7 @@ public class ClientSchemaService implements SchemaService {
             throw new IllegalStateException("The schema " + schema + " cannot be "
                     + "replicated in the cluster, after " + MAX_PUT_RETRY_COUNT
                     + " retries. It might be the case that the client is "
-                    + "connected to the to two halves of the cluster that is "
+                    + "connected to the two halves of the cluster that is "
                     + "experiencing a split-brain, and continue putting the "
                     + "data associated with that schema might result in data "
                     + "loss. It might be possible to replicate the schema "
@@ -139,7 +139,7 @@ public class ClientSchemaService implements SchemaService {
 
                     // correlation id will be set when the invoke method is
                     // called above
-                    clientMessage = clientMessage.copyWithUnsetCorrelationId();
+                    clientMessage = clientMessage.copyMessageWithSharedNonInitialFrames();
 
                     try {
                         Thread.sleep(retryPauseMillis);

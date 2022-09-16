@@ -335,7 +335,7 @@ public final class ClientMessage implements OutboundFrame {
     }
 
     /**
-     * Only deep copies the initial frame to not duplicated the rest of the
+     * Only deep copies the initial frame to not duplicate the rest of the
      * message to get rid of unnecessary allocations for the retry of the same
      * client message.
      * <p>
@@ -344,7 +344,7 @@ public final class ClientMessage implements OutboundFrame {
      *
      * @return the copied message
      */
-    public ClientMessage copyWithUnsetCorrelationId() {
+    public ClientMessage copyMessageWithSharedNonInitialFrames() {
         Frame initialFrameCopy = startFrame.deepCopy();
         ClientMessage newMessage = new ClientMessage(initialFrameCopy, endFrame);
 

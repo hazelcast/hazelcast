@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.compact.integration;
 
+import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
 import com.hazelcast.client.impl.spi.EventHandler;
@@ -46,6 +47,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CountDownLatch;
 
+import static com.hazelcast.client.properties.ClientProperty.INVOCATION_RETRY_PAUSE_MILLIS;
 import static com.hazelcast.instance.impl.TestUtil.getNode;
 import static com.hazelcast.test.SplitBrainTestSupport.blockCommunicationBetween;
 import static com.hazelcast.test.SplitBrainTestSupport.unblockCommunicationBetween;
@@ -127,7 +129,9 @@ public class ClientCompactSplitBrainTest extends ClientTestSupport {
 
         assertClusterSizeEventually(2, instance1, instance2);
 
-        HazelcastInstance client = factory.newHazelcastClient();
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.getProperties().setProperty(INVOCATION_RETRY_PAUSE_MILLIS.getName(), "5");
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
         Set<Member> members = client.getCluster().getMembers();
         assertEquals(2, members.size());
 
@@ -147,7 +151,7 @@ public class ClientCompactSplitBrainTest extends ClientTestSupport {
             map.put(1, new EmployeeDTO(1, 1));
         }).isInstanceOf(HazelcastSerializationException.class)
                 .hasRootCauseExactlyInstanceOf(IllegalStateException.class)
-                .hasStackTraceContaining("connected to the to two halves of the cluster");
+                .hasStackTraceContaining("connected to the two halves of the cluster");
 
         // Now the handler can run member list events
         latch.countDown();
