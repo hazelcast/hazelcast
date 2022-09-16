@@ -99,6 +99,15 @@ public class NativeMemoryConfig {
     }
 
     /**
+     * Returns size of the native memory region.
+     * @hidden
+     */
+    @SuppressWarnings("checkstyle:MethodName")
+    public MemorySize getSize$$bridge() {
+        return new MemorySize(size.getValue(), size.getUnit());
+    }
+
+    /**
      * Sets size of the native memory region.
      * <p>
      * Total size of the memory blocks allocated in native memory region cannot exceed this memory size.
