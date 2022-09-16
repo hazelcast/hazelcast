@@ -36,7 +36,7 @@ import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.config.security.JaasAuthenticationConfig;
 import com.hazelcast.config.security.RealmConfig;
 import com.hazelcast.internal.util.StringUtil;
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
 import org.w3c.dom.Node;
 
@@ -362,10 +362,10 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
         }
     }
 
-    protected MemorySize createMemorySize(Node node) {
+    protected Capacity createMemorySize(Node node) {
         final String value = getTextContent(getNamedItemNode(node, "value"));
         final MemoryUnit unit = MemoryUnit.valueOf(getTextContent(getNamedItemNode(node, "unit")));
-        return new MemorySize(Long.parseLong(value), unit);
+        return new Capacity(Long.parseLong(value), unit);
     }
 
     private void handlePersistentMemoryConfig(PersistentMemoryConfig persistentMemoryConfig, Node node) {

@@ -18,6 +18,7 @@ package com.hazelcast.config;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.map.IMap;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.memory.NativeOutOfMemoryError;
@@ -67,7 +68,7 @@ public class NativeMemoryConfig {
     public static final int INITIAL_MEMORY_SIZE = MIN_INITIAL_MEMORY_SIZE;
 
     private boolean enabled;
-    private MemorySize size = new MemorySize(INITIAL_MEMORY_SIZE, MemoryUnit.MEGABYTES);
+    private Capacity size = new Capacity(INITIAL_MEMORY_SIZE, MemoryUnit.MEGABYTES);
     private MemoryAllocatorType allocatorType = MemoryAllocatorType.POOLED;
 
     private int minBlockSize = DEFAULT_MIN_BLOCK_SIZE;
@@ -92,8 +93,9 @@ public class NativeMemoryConfig {
     /**
      * Returns size of the native memory region.
      */
-    public MemorySize getSize() {
-        return size;
+    @SuppressWarnings("unchecked")
+    public <T extends Capacity> T getSize() {
+        return (T) new MemorySize(size.getValue(), size.getUnit());
     }
 
     /**
@@ -106,7 +108,7 @@ public class NativeMemoryConfig {
      * @param size memory size
      * @return this {@link NativeMemoryConfig} instance
      */
-    public NativeMemoryConfig setSize(MemorySize size) {
+    public NativeMemoryConfig setSize(Capacity size) {
         this.size = isNotNull(size, "size");
         return this;
     }

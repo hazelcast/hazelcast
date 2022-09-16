@@ -16,6 +16,9 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.memory.Capacity;
+import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -26,6 +29,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
+import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -37,5 +41,21 @@ public class NativeMemoryConfigTest {
         EqualsVerifier.forClass(NativeMemoryConfig.class)
                       .suppress(Warning.NULL_FIELDS, Warning.NONFINAL_FIELDS)
                       .verify();
+    }
+
+    @Test
+    @SuppressWarnings("deprecation")
+    public void testSizeCompatibility() {
+        Capacity cap = new Capacity(128, MemoryUnit.BYTES);
+        MemorySize memSize = new MemorySize(128, MemoryUnit.BYTES);
+
+        NativeMemoryConfig conf = new NativeMemoryConfig();
+        conf.setSize(cap);
+        conf.setSize(memSize);
+        Capacity capacityReturned = conf.getSize();
+        MemorySize memorySizeReturned = conf.getSize();
+
+        assertThat(capacityReturned).isEqualToComparingFieldByField(cap);
+        assertThat(memorySizeReturned).isEqualToComparingFieldByField(memSize);
     }
 }
