@@ -25,6 +25,8 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.properties.HazelcastProperties;
+import com.hazelcast.spi.properties.HazelcastProperty;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
@@ -37,16 +39,21 @@ import static com.hazelcast.client.properties.ClientProperty.INVOCATION_RETRY_PA
 
 public class ClientSchemaService implements SchemaService {
 
-    private static final int MAX_PUT_RETRY_COUNT = 20;
+    public static final HazelcastProperty MAX_PUT_RETRY_COUNT =
+            new HazelcastProperty("hazelcast.client.schema.max.put.retry.count", 100);
+
     private final HazelcastClientInstanceImpl client;
     private final Map<Long, Schema> schemas = new ConcurrentHashMap<>();
     private final ILogger logger;
     private final long retryPauseMillis;
+    private final int maxPutRetryCount;
 
     public ClientSchemaService(HazelcastClientInstanceImpl client, ILogger logger) {
         this.client = client;
         this.logger = logger;
-        retryPauseMillis = client.getProperties().getPositiveMillisOrDefault(INVOCATION_RETRY_PAUSE_MILLIS);
+        HazelcastProperties properties = client.getProperties();
+        retryPauseMillis = properties.getPositiveMillisOrDefault(INVOCATION_RETRY_PAUSE_MILLIS);
+        maxPutRetryCount = properties.getInteger(MAX_PUT_RETRY_COUNT);
     }
 
     @Override
@@ -77,7 +84,7 @@ public class ClientSchemaService implements SchemaService {
 
         if (!replicateSchemaInCluster(schema)) {
             throw new IllegalStateException("The schema " + schema + " cannot be "
-                    + "replicated in the cluster, after " + MAX_PUT_RETRY_COUNT
+                    + "replicated in the cluster, after " + maxPutRetryCount
                     + " retries. It might be the case that the client is "
                     + "connected to the two halves of the cluster that is "
                     + "experiencing a split-brain, and continue putting the "
@@ -126,7 +133,7 @@ public class ClientSchemaService implements SchemaService {
     private boolean replicateSchemaInCluster(Schema schema) {
         ClientMessage clientMessage = ClientSendSchemaCodec.encodeRequest(schema);
         outer:
-        for (int i = 0; i < MAX_PUT_RETRY_COUNT; i++) {
+        for (int i = 0; i < maxPutRetryCount; i++) {
             ClientInvocation invocation = new ClientInvocation(client, clientMessage, SERVICE_NAME);
             ClientMessage response = invocation.invoke().joinInternal();
             Set<UUID> replicatedMemberUuids = ClientSendSchemaCodec.decodeResponse(response);

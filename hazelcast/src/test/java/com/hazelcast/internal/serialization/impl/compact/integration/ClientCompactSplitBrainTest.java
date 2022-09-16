@@ -17,6 +17,7 @@
 package com.hazelcast.internal.serialization.impl.compact.integration;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.clientside.ClientSchemaService;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.tcp.TcpClientConnection;
 import com.hazelcast.client.impl.spi.EventHandler;
@@ -130,7 +131,8 @@ public class ClientCompactSplitBrainTest extends ClientTestSupport {
         assertClusterSizeEventually(2, instance1, instance2);
 
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.getProperties().setProperty(INVOCATION_RETRY_PAUSE_MILLIS.getName(), "5");
+        clientConfig.getProperties().setProperty(INVOCATION_RETRY_PAUSE_MILLIS.getName(), "10");
+        clientConfig.getProperties().setProperty(ClientSchemaService.MAX_PUT_RETRY_COUNT.getName(), "50");
         HazelcastInstance client = factory.newHazelcastClient(clientConfig);
         Set<Member> members = client.getCluster().getMembers();
         assertEquals(2, members.size());
@@ -151,6 +153,7 @@ public class ClientCompactSplitBrainTest extends ClientTestSupport {
             map.put(1, new EmployeeDTO(1, 1));
         }).isInstanceOf(HazelcastSerializationException.class)
                 .hasRootCauseExactlyInstanceOf(IllegalStateException.class)
+                .hasStackTraceContaining("after 50 retries")
                 .hasStackTraceContaining("connected to the two halves of the cluster");
 
         // Now the handler can run member list events
