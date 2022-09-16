@@ -57,9 +57,10 @@ public interface InternalWanPublisher<T> extends WanPublisher<T> {
      * event or trigger processing.
      * NOTE: used only in Hazelcast Enterprise.
      *
-     * @param event the WAN anti-entropy event
+     * @param event              the WAN anti-entropy event
+     * @param wanReplicationName the WAN replication config name
      */
-    default void publishAntiEntropyEvent(WanAntiEntropyEvent event) {
+    default void publishAntiEntropyEvent(WanAntiEntropyEvent event, String wanReplicationName) {
     }
 
     /**
