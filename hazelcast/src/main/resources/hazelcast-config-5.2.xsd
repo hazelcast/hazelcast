@@ -4822,10 +4822,10 @@
                 </xs:annotation>
             </xs:element>
         </xs:choice>
-        <xs:attribute name="enabled" type="xs:boolean" use="required">
+        <xs:attribute name="enabled" type="xs:boolean" use="required" default="true">
             <xs:annotation>
                 <xs:documentation>
-                    Specifies whether the HTTP REST API is enabled. Default value is false.
+                    Specifies whether the HTTP REST API is enabled. Default value is true.
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>

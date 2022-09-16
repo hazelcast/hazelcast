@@ -728,7 +728,7 @@
           "properties": {
             "enabled": {
               "type": "boolean",
-              "default": false
+              "default": true
             },
             "endpoint-groups": {
               "$ref": "#/definitions/RestEndpointGroups"
