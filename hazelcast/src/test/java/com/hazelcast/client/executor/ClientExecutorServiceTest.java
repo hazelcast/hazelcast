@@ -227,7 +227,7 @@ public class ClientExecutorServiceTest {
                 latch.countDown();
             }
         });
-        assertTrue(latch.await(10, TimeUnit.SECONDS));
+        assertOpenEventually(latch);
     }
 
     @Test(expected = IllegalStateException.class)

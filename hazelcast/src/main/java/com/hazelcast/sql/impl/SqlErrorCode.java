@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl;
 
+import com.hazelcast.jet.RestartableException;
+
 /**
  * Error codes used in Hazelcast SQL.
  */
@@ -49,6 +51,9 @@ public final class SqlErrorCode {
 
     /** Topology of a cluster has changed during query execution. */
     public static final int TOPOLOGY_CHANGE = 1011;
+
+    /** An instance of {@link RestartableException} was thrown. */
+    public static final int RESTARTABLE_ERROR = 1012;
 
     /** An error with data conversion or transformation. */
     public static final int DATA_EXCEPTION = 2000;

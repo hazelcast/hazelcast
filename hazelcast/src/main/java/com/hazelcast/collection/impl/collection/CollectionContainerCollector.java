@@ -47,8 +47,8 @@ class CollectionContainerCollector extends AbstractNamedContainerCollector<Colle
     }
 
     @Override
-    protected int getMergingValueCount() {
-        int size = 0;
+    protected long getMergingValueCount() {
+        long size = 0;
         for (Collection<CollectionContainer> containers : getCollectedContainers().values()) {
             for (CollectionContainer container : containers) {
                 size += container.size();

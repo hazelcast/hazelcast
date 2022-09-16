@@ -184,7 +184,15 @@ public class CreateDagVisitor {
         collectObjectKeys(table);
 
         BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> policyProvider = rel.eventTimePolicyProvider();
-        Byte watermarkKey = rel.getWatermarkKey();
+        Map<Integer, MutableByte> fieldsKey = watermarkKeysAssigner.getWatermarkedFieldsKey(rel);
+        Byte wmKey;
+        if (fieldsKey != null) {
+            wmKey = fieldsKey.get(rel.watermarkedColumnIndex()).getValue();
+        } else {
+            assert rel.watermarkedColumnIndex() < 0;
+            wmKey = null;
+        }
+
         return getJetSqlConnector(table).fullScanReader(
                 dag,
                 table,
@@ -192,7 +200,7 @@ public class CreateDagVisitor {
                 rel.filter(parameterMetadata),
                 rel.projection(parameterMetadata),
                 policyProvider != null
-                        ? context -> policyProvider.apply(context, watermarkKey)
+                        ? context -> policyProvider.apply(context, wmKey)
                         : null
         );
     }

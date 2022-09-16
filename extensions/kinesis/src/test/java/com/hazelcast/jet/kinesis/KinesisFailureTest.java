@@ -245,7 +245,7 @@ public class KinesisFailureTest extends AbstractKinesisTest {
     private Job writeOneEntry(Entry<String, byte[]> entry) {
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(entry))
-                .writeTo(kinesisSink());
+                .writeTo(kinesisSink().build());
 
         return hz().getJet().newJob(p);
     }

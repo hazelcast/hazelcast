@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
+import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
 import com.hazelcast.jet.sql.impl.OptimizerContext;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
@@ -32,6 +33,7 @@ import com.hazelcast.sql.impl.ParameterConverter;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
+import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
@@ -99,6 +101,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         LogicalRel logicalRel = optimizeLogicalInternal(sql, context);
         PhysicalRel physicalRel = (PhysicalRel) context
                 .optimize(logicalRel, PhysicalRules.getRuleSet(), OptUtils.toPhysicalConvention(logicalRel.getTraitSet()));
+        physicalRel = CalciteSqlOptimizer.uniquifyScans(physicalRel);
         return new Result(logicalRel, physicalRel);
     }
 
@@ -147,6 +150,10 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
                 indexes,
                 false
         );
+        return new HazelcastTable(table, new HazelcastTableStatistic(rowCount));
+    }
+
+    protected static HazelcastTable streamingTable(Table table, long rowCount) {
         return new HazelcastTable(table, new HazelcastTableStatistic(rowCount));
     }
 

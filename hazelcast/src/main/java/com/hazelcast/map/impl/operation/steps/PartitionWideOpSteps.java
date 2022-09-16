@@ -93,7 +93,7 @@ public enum PartitionWideOpSteps implements Step<State> {
             entries.forEach(entry -> {
                 keysFromIndex.add(entry.getKeyData());
                 Record record = recordStore.getRecord(entry.getKeyData());
-                processInternal(state, toStore, toRemove, responses, entry.getKeyData(), record);
+                processInternal(state, entry.getKeyData(), record);
             });
 
             state.setKeysFromIndex(keysFromIndex);
@@ -114,13 +114,12 @@ public enum PartitionWideOpSteps implements Step<State> {
             state.setResult(responses);
 
             recordStore.forEach((key, record) -> {
-                processInternal(state, toStore, toRemove, responses, toHeapData(key), record);
+                processInternal(state, toHeapData(key), record);
 
             }, false);
         }
 
-        private void processInternal(State state, List<State> toStore, List<State> toRemove,
-                                     MapEntries responses, Data key, Record record) {
+        private void processInternal(State state, Data key, Record record) {
             State singleKeyState = new State(state);
             singleKeyState
                     .setKey(key)
@@ -129,6 +128,12 @@ public enum PartitionWideOpSteps implements Step<State> {
                             state.getEntryProcessor(), state.getPredicate()));
 
             EntryOpSteps.PROCESS.runStep(singleKeyState);
+            EntryOpSteps.DO_POST_OPERATE_OPS.runStep(singleKeyState);
+
+            // state from main State object
+            List<State> toStore = state.getToStore();
+            List<State> toRemove = state.getToRemove();
+            MapEntries responses = state.getMapEntries();
 
             EntryEventType eventType = singleKeyState.getOperator().getEventType();
             if (eventType == null) {
