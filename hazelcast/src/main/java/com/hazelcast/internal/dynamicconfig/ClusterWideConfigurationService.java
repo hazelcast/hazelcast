@@ -53,7 +53,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.version.Version;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
@@ -81,7 +80,7 @@ import static java.util.Collections.singleton;
 
 @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:methodcount", "checkstyle:classfanoutcomplexity"})
 public class ClusterWideConfigurationService implements
-        PreJoinAwareService,
+        PreJoinAwareService<DynamicConfigPreJoinOperation>,
         CoreService,
         ClusterVersionListener,
         ManagedService,
@@ -160,7 +159,7 @@ public class ClusterWideConfigurationService implements
     }
 
     @Override
-    public Operation getPreJoinOperation() {
+    public DynamicConfigPreJoinOperation getPreJoinOperation() {
         IdentifiedDataSerializable[] allConfigurations = collectAllDynamicConfigs();
         if (noConfigurationExist(allConfigurations)) {
             // there is no dynamic configuration -> no need to send an empty operation
