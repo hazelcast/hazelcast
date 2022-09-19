@@ -341,7 +341,9 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
         for (Node n : childElements(node)) {
             final String nodeName = cleanNodeName(n);
             if (matches("size", nodeName)) {
-                nativeMemoryConfig.setSize(createMemorySize(n));
+                nativeMemoryConfig.setCapacity(createCapacity(n));
+            } else if (matches("capacity", nodeName)) {
+                nativeMemoryConfig.setCapacity(createCapacity(n));
             } else if (matches("min-block-size", nodeName)) {
                 String value = getTextContent(n);
                 nativeMemoryConfig.setMinBlockSize(Integer.parseInt(value));
@@ -362,7 +364,7 @@ public abstract class AbstractDomConfigProcessor implements DomConfigProcessor {
         }
     }
 
-    protected Capacity createMemorySize(Node node) {
+    protected Capacity createCapacity(Node node) {
         final String value = getTextContent(getNamedItemNode(node, "value"));
         final MemoryUnit unit = MemoryUnit.valueOf(getTextContent(getNamedItemNode(node, "unit")));
         return new Capacity(Long.parseLong(value), unit);

@@ -940,7 +940,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(50, actualConfig.getMinBlockSize());
         assertEquals(100, actualConfig.getPageSize());
         assertEquals(new Capacity(20, MemoryUnit.MEGABYTES).getUnit(), actualConfig.getCapacity().getUnit());
-        assertEquals(new Capacity(20, MemoryUnit.MEGABYTES).getValue(), actualConfig.getCapacity()  .getValue());
+        assertEquals(new Capacity(20, MemoryUnit.MEGABYTES).getValue(), actualConfig.getCapacity().getValue());
         assertEquals(expectedConfig, actualConfig);
     }
 

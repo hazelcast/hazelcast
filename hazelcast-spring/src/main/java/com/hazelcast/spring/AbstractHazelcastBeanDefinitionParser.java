@@ -548,7 +548,9 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             for (Node child : childElements(node)) {
                 String nodeName = cleanNodeName(child);
                 if ("size".equals(nodeName)) {
-                    handleMemorySizeConfig(child, nativeMemoryConfigBuilder);
+                    handleCapacityConfig(child, nativeMemoryConfigBuilder);
+                } else if ("capacity".equals(nodeName)) {
+                    handleCapacityConfig(child, nativeMemoryConfigBuilder);
                 } else if ("persistent-memory".equals(nodeName)) {
                     handlePersistentMemoryConfig(child, pmemConfigBuilder, directories);
                 }
@@ -596,14 +598,14 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
             }
         }
 
-        private void handleMemorySizeConfig(Node node, BeanDefinitionBuilder nativeMemoryConfigBuilder) {
-            BeanDefinitionBuilder memorySizeConfigBuilder = createBeanBuilder(Capacity.class);
+        private void handleCapacityConfig(Node node, BeanDefinitionBuilder nativeMemoryConfigBuilder) {
+            BeanDefinitionBuilder capacityConfigBuilder = createBeanBuilder(Capacity.class);
             NamedNodeMap attributes = node.getAttributes();
             Node value = attributes.getNamedItem("value");
             Node unit = attributes.getNamedItem("unit");
-            memorySizeConfigBuilder.addConstructorArgValue(getTextContent(value));
-            memorySizeConfigBuilder.addConstructorArgValue(getTextContent(unit));
-            nativeMemoryConfigBuilder.addPropertyValue("capacity", memorySizeConfigBuilder.getBeanDefinition());
+            capacityConfigBuilder.addConstructorArgValue(getTextContent(value));
+            capacityConfigBuilder.addConstructorArgValue(getTextContent(unit));
+            nativeMemoryConfigBuilder.addPropertyValue("capacity", capacityConfigBuilder.getBeanDefinition());
         }
 
         protected void handleDiscoveryStrategies(Node node, BeanDefinitionBuilder joinConfigBuilder) {
