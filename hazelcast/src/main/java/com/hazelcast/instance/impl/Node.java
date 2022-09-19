@@ -692,10 +692,14 @@ public class Node implements ClusterTopologyIntentTracker {
     }
 
     public void changeNodeStateToPassive() {
-//        final ClusterState clusterState = clusterService.getClusterState();
-//        if (clusterState != ClusterState.PASSIVE) {
-//            throw new IllegalStateException("This method can be called only when cluster-state is " + clusterState);
-//        }
+        final ClusterState clusterState = clusterService.getClusterState();
+        if (clusterState != ClusterState.PASSIVE) {
+            throw new IllegalStateException("This method can be called only when cluster-state is " + clusterState);
+        }
+        state = NodeState.PASSIVE;
+    }
+
+    public void forceNodeStateToPassive() {
         state = NodeState.PASSIVE;
     }
 
