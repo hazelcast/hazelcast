@@ -44,6 +44,7 @@ public class StepSupplier implements Supplier<Runnable> {
 
     private volatile Runnable currentRunnable;
     private volatile Step currentStep;
+    private volatile boolean firstStep = true;
 
     /**
      * Only here to disable check for testing purposes.
@@ -131,8 +132,8 @@ public class StepSupplier implements Supplier<Runnable> {
     /**
      * Responsibilities of this method:
      * <lu>
-     *     <li>Runs passed step with passed state</li>
-     *     <li>Sets next step to run</li>
+     * <li>Runs passed step with passed state</li>
+     * <li>Sets next step to run</li>
      * </lu>
      */
     private void runStepWithState(Step step, State state) {
@@ -142,7 +143,7 @@ public class StepSupplier implements Supplier<Runnable> {
             try {
                 log(step, state);
 
-                if (runningOnPartitionThread && state.getThrowable() == null) {
+                if (runningOnPartitionThread && state.getThrowable() == null && firstStep) {
                     metWithPreconditions = operationRunner.metWithPreconditions(state.getOperation());
                     if (!metWithPreconditions) {
                         return;
@@ -177,6 +178,7 @@ public class StepSupplier implements Supplier<Runnable> {
      * otherwise finds next step by calling {@link Step#nextStep}
      */
     private Step nextStep(Step step) {
+        firstStep = false;
         if (state.getThrowable() != null
                 && currentStep != UtilSteps.HANDLE_ERROR) {
             return UtilSteps.HANDLE_ERROR;
