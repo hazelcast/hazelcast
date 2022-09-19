@@ -21,17 +21,20 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.MemberLeftException;
+import com.hazelcast.instance.SimpleMemberImpl;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterTopologyChangedException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.version.MemberVersion;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,6 +42,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.net.InetSocketAddress;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.UUID;
@@ -52,7 +56,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({QuickTest.class})
 public class ParallelOperationInvokerTest extends HazelcastTestSupport {
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
@@ -86,7 +90,7 @@ public class ParallelOperationInvokerTest extends HazelcastTestSupport {
                 0
         ).join();
 
-        Collection<UUID> expectedUuids = getExpectedUuids(instance1, instance2, instance3);
+        Collection<UUID> expectedUuids = getUuidsOfInstances(instance1, instance2, instance3);
         assertThat(uuids)
                 .containsExactlyInAnyOrderElementsOf(expectedUuids);
     }
@@ -105,7 +109,7 @@ public class ParallelOperationInvokerTest extends HazelcastTestSupport {
                 0
         ).join();
 
-        Collection<UUID> expectedUuids = getExpectedUuids(instance1);
+        Collection<UUID> expectedUuids = getUuidsOfInstances(instance1);
         assertThat(uuids)
                 .containsExactlyInAnyOrderElementsOf(expectedUuids);
     }
@@ -138,15 +142,34 @@ public class ParallelOperationInvokerTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testInvoke_withThrowingIgnorableException() {
+    public void testInvoke_withThrowingIgnorableHazelcastInstanceNotActiveException() {
+        assertExceptionIgnored(new HazelcastInstanceNotActiveException("expected"));
+    }
+
+    @Test
+    public void testInvoke_withThrowingIgnorableTargetNotMemberException() {
+        assertExceptionIgnored(new TargetNotMemberException("expected"));
+    }
+
+    @Test
+    public void testInvoke_withThrowingIgnorableMemberLeftException() {
+        SimpleMemberImpl member = new SimpleMemberImpl(
+                MemberVersion.UNKNOWN,
+                UUID.randomUUID(),
+                new InetSocketAddress("127.0.0.1", 55555)
+        );
+        assertExceptionIgnored(new MemberLeftException(member));
+    }
+
+    private void assertExceptionIgnored(Exception exception) {
         Node node = getNode(instance3);
         Collection<UUID> uuids = invokeOnStableClusterParallel(
                 node.getNodeEngine(),
-                () -> new ExceptionThrowingOperation(new HazelcastInstanceNotActiveException("expected")),
+                () -> new ExceptionThrowingOperation(exception),
                 2
         ).join();
 
-        Collection<UUID> expectedUuids = getExpectedUuids(instance1, instance2, instance3);
+        Collection<UUID> expectedUuids = getUuidsOfInstances(instance1, instance2, instance3);
         assertThat(uuids)
                 .containsExactlyInAnyOrderElementsOf(expectedUuids);
     }
@@ -158,11 +181,11 @@ public class ParallelOperationInvokerTest extends HazelcastTestSupport {
             invokeOnStableClusterParallel(
                     node.getNodeEngine(),
                     () -> new ExceptionThrowingOperation(new ClusterTopologyChangedException("expected")),
-                    2
+                    20
             ).join();
         }).isInstanceOf(CompletionException.class)
                 .hasCauseInstanceOf(HazelcastException.class)
-                .hasStackTraceContaining("Cluster topology was not stable");
+                .hasStackTraceContaining("Cluster topology was not stable for 20 retries");
     }
 
     @Test
@@ -177,7 +200,7 @@ public class ParallelOperationInvokerTest extends HazelcastTestSupport {
         HazelcastInstance instance4 = factory.newHazelcastInstance(config);
         assertClusterSizeEventually(4, instance1, instance2, instance3, instance4);
 
-        Collection<UUID> expectedUuids = getExpectedUuids(instance1, instance2, instance3, instance4);
+        Collection<UUID> expectedUuids = getUuidsOfInstances(instance1, instance2, instance3, instance4);
 
         Collection<UUID> uuids = future.join();
         assertThat(uuids)
@@ -196,14 +219,14 @@ public class ParallelOperationInvokerTest extends HazelcastTestSupport {
         instance3.shutdown();
         assertClusterSizeEventually(2, instance1, instance2);
 
-        Collection<UUID> expectedUuids = getExpectedUuids(instance1, instance2);
+        Collection<UUID> expectedUuids = getUuidsOfInstances(instance1, instance2);
 
         Collection<UUID> uuids = future.join();
         assertThat(uuids)
                 .containsExactlyInAnyOrderElementsOf(expectedUuids);
     }
 
-    private Collection<UUID> getExpectedUuids(HazelcastInstance... instances) {
+    private static Collection<UUID> getUuidsOfInstances(HazelcastInstance... instances) {
         return Arrays.stream(instances)
                 .map(instance -> instance.getLocalEndpoint().getUuid())
                 .collect(Collectors.toList());
