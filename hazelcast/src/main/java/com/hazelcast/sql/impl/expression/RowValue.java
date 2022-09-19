@@ -19,6 +19,7 @@ package com.hazelcast.sql.impl.expression;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 
 import java.io.IOException;
@@ -32,6 +33,7 @@ import java.util.Objects;
  * field names - names are part of the type, the value doesn't reference the
  * type.
  */
+@Beta
 public class RowValue implements Serializable, IdentifiedDataSerializable {
     private List<Object> values;
 

@@ -17,6 +17,7 @@
 package com.hazelcast.sql;
 
 import com.hazelcast.core.HazelcastJsonValue;
+import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.sql.impl.expression.RowValue;
 
 import javax.annotation.Nonnull;
@@ -83,6 +84,7 @@ public enum SqlColumnType {
     JSON(15, HazelcastJsonValue.class),
 
     /** ROW type, represented by {@link RowValue} */
+    @Beta
     ROW(16, RowValue.class);
 
     private static final SqlColumnType[] CACHED_VALUES = values();
