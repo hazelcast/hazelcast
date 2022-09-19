@@ -71,7 +71,7 @@ public class SqlLimitTest extends SqlTestSupport {
                 "SELECT name FROM " + tableName + " LIMIT 5",
                 asList(new Row("Alice"), new Row("Bob"), new Row("Joey"))
         );
-        assertNoJobsLeft(instance());
+        assertNoJobsLeftEventually(instance());
     }
 
     @Test
@@ -166,7 +166,7 @@ public class SqlLimitTest extends SqlTestSupport {
                 new Row(9L))
         );
 
-        assertNoJobsLeft(instance());
+        assertNoJobsLeftEventually(instance());
     }
 
     @Test
@@ -179,7 +179,7 @@ public class SqlLimitTest extends SqlTestSupport {
                         new Row(1L)
                 )
         );
-        assertNoJobsLeft(instance());
+        assertNoJobsLeftEventually(instance());
     }
 
     @Test
