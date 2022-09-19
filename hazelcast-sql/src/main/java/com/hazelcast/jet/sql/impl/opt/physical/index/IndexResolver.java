@@ -66,7 +66,6 @@ import org.apache.calcite.sql.type.SqlTypeName;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -634,7 +633,7 @@ public final class IndexResolver {
             RexNode operand1,
             RexNode operand2
     ) {
-        // SARG is supported only for literals, not for dynamic parameters
+        // for SARG we expect input reference on the left side, and a (Sarg) literal on the right side
         if (operand1.getKind() != SqlKind.INPUT_REF || operand2.getKind() != SqlKind.LITERAL) {
             return null;
         }
@@ -656,9 +655,8 @@ public final class IndexResolver {
                     singletonList(NULL),
                     singletonList(true)
             ));
-            if (ranges.size() == 1) {
-                IndexFilter singleRangeFilter = createIndexFilterForSingleRange(Iterables.getFirst(ranges, null), hazelcastType);
-                indexFilter = new IndexCompositeFilter(Arrays.asList(singleRangeFilter, isNullFilter));
+            if (ranges.size() == 0) {
+                indexFilter = isNullFilter;
             } else {
                 List<IndexFilter> indexFilters = new ArrayList<>(ranges.size() + 1);
                 indexFilters.add(isNullFilter);
