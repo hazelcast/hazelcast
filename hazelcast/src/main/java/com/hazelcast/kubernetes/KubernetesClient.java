@@ -690,6 +690,9 @@ class KubernetesClient {
          * Initializes and watches information about the StatefulSet in which Hazelcast is being executed.
          * See <a href="https://kubernetes.io/docs/reference/using-api/api-concepts/#efficient-detection-of-changes">
          * Efficient detection of changes on Kubernetes API reference</a>.
+         *
+         * Important: If this thread starves, then timely updates may be stalled and shutdown hook
+         * may not act on the latest cluster information.
          */
         @Override
         public void run() {

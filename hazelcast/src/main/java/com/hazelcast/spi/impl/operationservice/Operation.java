@@ -657,11 +657,11 @@ public abstract class Operation implements DataSerializable, Tenantable {
         } else if (e instanceof IllegalStateException) {
             // if start is not yet completed, do not warn about IllegalStateExceptions
             // due to cluster state being PASSIVE
-            final Level level = nodeEngine != null
-                    && nodeEngine.getClusterService().getClusterState() == ClusterState.PASSIVE
-                    && nodeEngine.isStartCompleted()
-                    && nodeEngine.isRunning()
-                    ? Level.WARNING : Level.FINE;
+            Level level = Level.WARNING;
+            if (nodeEngine.getClusterService().getClusterState() == ClusterState.PASSIVE
+                    && !nodeEngine.isStartCompleted()) {
+                level = Level.FINE;
+            }
             if (logger.isLoggable(level)) {
                 logger.log(level, e.getMessage(), e);
             }
