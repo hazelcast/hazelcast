@@ -92,7 +92,7 @@ class KubernetesClient {
         this.servicePerPodLabelValue = servicePerPodLabelValue;
         this.clusterTopologyIntentTracker = clusterTopologyIntentTracker;
         this.apiProvider =  buildKubernetesApiUrlProvider();
-        this.stsName = stsName();
+        this.stsName = extractStsName();
         this.stsMonitorThread = clusterTopologyIntentTracker != null
                 ? new Thread(new StsMonitor(), "hz-sts-monitor") : null;
     }
@@ -112,7 +112,7 @@ class KubernetesClient {
         this.servicePerPodLabelValue = servicePerPodLabelValue;
         this.apiProvider = apiProvider;
         this.stsMonitorThread = null;
-        this.stsName = stsName();
+        this.stsName = extractStsName();
         this.clusterTopologyIntentTracker = null;
     }
 
@@ -255,7 +255,7 @@ class KubernetesClient {
         return isKnownExceptionAlreadyLogged;
     }
 
-    private String stsName() {
+    private String extractStsName() {
         String stsName = System.getenv("HOSTNAME");
         int dashIndex = stsName.lastIndexOf('-');
         if (dashIndex > 0) {
@@ -265,7 +265,7 @@ class KubernetesClient {
     }
 
     @Nullable
-    private RuntimeContext parseStsList(JsonObject jsonObject) {
+    private RuntimeContext extractStsList(JsonObject jsonObject) {
         String resourceVersion = jsonObject.get("metadata").asObject().getString("resourceVersion",
                 null);
         // identify stateful set this pod belongs to
@@ -282,7 +282,7 @@ class KubernetesClient {
         return null;
     }
 
-    private RuntimeContext parseSts(JsonObject jsonObject) {
+    private RuntimeContext extractSts(JsonObject jsonObject) {
         int specReplicas = jsonObject.get("spec").asObject().getInt("replicas", UNKNOWN);
         int readyReplicas = jsonObject.get("status").asObject().getInt("readyReplicas", UNKNOWN);
         String resourceVersion = jsonObject.get("metadata").asObject().getString("resourceVersion", null);
@@ -693,7 +693,7 @@ class KubernetesClient {
             JsonObject jsonObject = callGet(stsUrlString);
             latestResourceVersion = jsonObject.get("metadata").asObject().getString("resourceVersion",
                     null);
-            latestRuntimeContext = parseStsList(jsonObject);
+            latestRuntimeContext = extractStsList(jsonObject);
             LOGGER.info("Initializing cluster topology tracker with initial context: "
                     + latestRuntimeContext);
             clusterTopologyIntentTracker.update(UNKNOWN,
@@ -734,11 +734,11 @@ class KubernetesClient {
             RuntimeContext ctx = null;
             switch (watchType) {
                 case "MODIFIED":
-                    ctx = parseSts(sts);
+                    ctx = extractSts(sts);
                     latestResourceVersion = ctx.getResourceVersion();
                     break;
                 case "DELETED":
-                    ctx = parseSts(sts);
+                    ctx = extractSts(sts);
                     latestResourceVersion = ctx.getResourceVersion();
                     ctx = new RuntimeContext(0, ctx.getReadyReplicas(), ctx.getResourceVersion());
                     break;
