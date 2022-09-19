@@ -17,16 +17,13 @@
 package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.impl.processor.TransformP;
-import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
@@ -34,8 +31,6 @@ import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
-import com.hazelcast.partition.Partition;
-import com.hazelcast.partition.PartitionService;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.security.permission.MapPermission;
@@ -63,9 +58,6 @@ import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_CREATE;
 import static com.hazelcast.security.permission.ActionConstants.ACTION_READ;
 import static java.util.Collections.singletonList;
-import static java.util.stream.Collectors.groupingBy;
-import static java.util.stream.Collectors.mapping;
-import static java.util.stream.Collectors.toList;
 
 @SuppressFBWarnings(
         value = {"SE_BAD_FIELD", "SE_NO_SERIALVERSIONID"},
@@ -76,7 +68,7 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
     private JetJoinInfo joinInfo;
     private String mapName;
     private int partitionCount;
-    private List<Integer> partitions;
+    private int[] partitions;
     private KvRowProjector.Supplier rightRowProjectorSupplier;
 
     private transient MapProxyImpl<Object, Object> map;
@@ -91,7 +83,7 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
             @Nonnull JetJoinInfo joinInfo,
             @Nonnull String mapName,
             int partitionCount,
-            @Nullable List<Integer> partitions,
+            @Nullable int[] partitions,
             @Nonnull KvRowProjector.Supplier rightRowProjectorSupplier
     ) {
         assert joinInfo.isEquiJoin() && (joinInfo.isInner() || joinInfo.isLeftOuter());
@@ -227,7 +219,7 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
         private String mapName;
         private KvRowProjector.Supplier rightRowProjectorSupplier;
 
-        private transient PartitionService partitionService;
+        private transient Map<Address, int[]> partitionAssignment;
 
         @SuppressWarnings("unused")
         private Supplier() {
@@ -247,36 +239,20 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
 
         @Override
         public void init(@Nonnull Context context) {
-            this.partitionService = context.hazelcastInstance().getPartitionService();
+            partitionAssignment = context.partitionAssignment();
         }
 
         @Nonnull
         @Override
         public Function<? super Address, ? extends ProcessorSupplier> get(@Nonnull List<Address> addresses) {
             if (joinInfo.isInner()) {
-                Set<Partition> partitions = partitionService.getPartitions();
-                int partitionCount = partitions.size();
-                Map<Address, List<Integer>> partitionsByMember = Util.assignPartitions(
-                        addresses,
-                        partitions.stream()
-                                .collect(groupingBy(
-                                        partition -> {
-                                            Member partitionOwner = partition.getOwner();
-                                            if (partitionOwner == null) {
-                                                throw new TopologyChangedException("Missing partition owner for partition"
-                                                        + partition.getPartitionId());
-                                            }
-                                            return partitionOwner.getAddress();
-                                        },
-                                        mapping(Partition::getPartitionId, toList()))
-                                )
-                );
+                int partitionCount = partitionAssignment.values().stream().mapToInt(a -> a.length).sum();
 
                 return address -> new JoinByEquiJoinProcessorSupplier(
                         joinInfo,
                         mapName,
                         partitionCount,
-                        partitionsByMember.get(address),
+                        partitionAssignment.get(address),
                         rightRowProjectorSupplier
                 );
             } else {
