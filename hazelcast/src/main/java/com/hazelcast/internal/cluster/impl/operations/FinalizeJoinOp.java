@@ -215,6 +215,11 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         clusterVersion = in.readObject();
         preJoinOp = readOnJoinOp(in);
         postJoinOp = readOnJoinOp(in);
+        if (deserializationFailure != null) {
+            // failure occurred while deserializing pre- or post-join ops
+            // stop deserializing now because outcome is undefined and run() will anyway fail
+            return;
+        }
         deferPartitionProcessing = in.readBoolean();
         if (clusterVersion.isGreaterOrEqual(V5_2)) {
             byte topologyIntentOrdinal = in.readByte();
