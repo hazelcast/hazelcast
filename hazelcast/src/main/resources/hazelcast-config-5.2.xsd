@@ -2595,7 +2595,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="page-size" type="memory-size" minOccurs="0">
+            <xs:element name="page-size" type="capacity" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
                         Page size of the index B+ Tree. Default value is 16 kB.
@@ -3313,7 +3313,8 @@
 
     <xs:complexType name="native-memory">
         <xs:all>
-            <xs:element name="size" type="memory-size" minOccurs="0"/>
+            <xs:element name="size" type="capacity" minOccurs="0"/>
+            <xs:element name="capacity" type="capacity" minOccurs="0"/>
             <xs:element name="min-block-size" type="xs:positiveInteger" minOccurs="0"/>
             <xs:element name="page-size" type="xs:positiveInteger" minOccurs="0"/>
             <xs:element name="metadata-space-percentage" minOccurs="0">
@@ -3333,7 +3334,7 @@
         <xs:attribute name="enabled" default="false" type="xs:boolean"/>
     </xs:complexType>
 
-    <xs:complexType name="memory-size">
+    <xs:complexType name="capacity">
         <xs:attribute name="value" type="non-negative-long" default="128"/>
         <xs:attribute name="unit" type="memory-unit" default="MEGABYTES"/>
     </xs:complexType>
@@ -4252,7 +4253,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
-            <xs:element name="capacity" minOccurs="0" type="memory-size">
+            <xs:element name="capacity" minOccurs="0" type="capacity">
                 <xs:annotation>
                     <xs:documentation>
                         Device capacity, i.e., what is the soft upper bound capacity of the device.
@@ -4313,7 +4314,7 @@
             </xs:documentation>
         </xs:annotation>
         <xs:all>
-            <xs:element name="capacity" minOccurs="0" type="memory-size">
+            <xs:element name="capacity" minOccurs="0" type="capacity">
                 <xs:annotation>
                     <xs:documentation>
                         Memory tier capacity, i.e., how much main memory should this tier consume at most.

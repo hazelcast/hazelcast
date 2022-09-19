@@ -2940,7 +2940,7 @@
         "migration"
       ]
     },
-    "MemorySize": {
+    "Capacity": {
       "type": "object",
       "properties": {
         "unit": {
