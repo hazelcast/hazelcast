@@ -17,18 +17,19 @@
 package com.hazelcast.jet.sql.impl.connector.map;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.cluster.Member;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.impl.processor.TransformP;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
-import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -41,6 +42,7 @@ import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.row.JetSqlRow;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import javax.annotation.Nonnull;
@@ -257,10 +259,17 @@ final class JoinByEquiJoinProcessorSupplier implements ProcessorSupplier, DataSe
                 Map<Address, List<Integer>> partitionsByMember = Util.assignPartitions(
                         addresses,
                         partitions.stream()
-                                  .collect(groupingBy(
-                                          partition -> partition.getOwner().getAddress(),
-                                          mapping(Partition::getPartitionId, toList()))
-                                  )
+                                .collect(groupingBy(
+                                        partition -> {
+                                            Member partitionOwner = partition.getOwner();
+                                            if (partitionOwner == null) {
+                                                throw new TopologyChangedException("Missing partition owner for partition"
+                                                        + partition.getPartitionId());
+                                            }
+                                            return partitionOwner.getAddress();
+                                        },
+                                        mapping(Partition::getPartitionId, toList()))
+                                )
                 );
 
                 return address -> new JoinByEquiJoinProcessorSupplier(

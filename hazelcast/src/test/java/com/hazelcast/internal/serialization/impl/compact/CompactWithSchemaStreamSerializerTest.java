@@ -16,11 +16,8 @@
 
 package com.hazelcast.internal.serialization.impl.compact;
 
-import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
-import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -33,6 +30,7 @@ import org.junit.runner.RunWith;
 
 import java.io.IOException;
 
+import static com.hazelcast.internal.serialization.impl.compact.CompactTestUtil.createSerializationService;
 import static com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder.compact;
 import static org.junit.Assert.assertEquals;
 
@@ -55,18 +53,10 @@ public class CompactWithSchemaStreamSerializerTest {
 
         // Create a second schema service so that schemas are not shared across these two
         // This is to make sure that toObject call will use the schema in the data
-        InternalSerializationService serializationService2 = createSerializationService();
+        SerializationService serializationService2 = createSerializationService();
 
         GenericRecord actual = serializationService2.toObject(data);
         assertEquals(expected, actual);
-    }
-
-    private InternalSerializationService createSerializationService() {
-        SchemaService schemaService = CompactTestUtil.createInMemorySchemaService();
-        return new DefaultSerializationServiceBuilder()
-                .setSchemaService(schemaService)
-                .setConfig(new SerializationConfig())
-                .build();
     }
 
     @Test

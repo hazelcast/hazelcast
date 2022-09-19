@@ -27,6 +27,7 @@ import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.operation.steps.PartitionWideOpSteps;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
+import com.hazelcast.map.impl.recordstore.StaticParams;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.query.Predicate;
@@ -88,7 +89,8 @@ public class PartitionWideEntryOperation extends MapOperation
         return super.createState()
                 .setPredicate(getPredicate())
                 .setCallerProvenance(CallerProvenance.NOT_WAN)
-                .setEntryProcessor(entryProcessor);
+                .setEntryProcessor(entryProcessor)
+                .setStaticPutParams(StaticParams.SET_WITH_NO_ACCESS_PARAMS);
     }
 
     @Override

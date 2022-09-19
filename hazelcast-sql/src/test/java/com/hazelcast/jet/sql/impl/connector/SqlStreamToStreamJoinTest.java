@@ -23,7 +23,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -538,17 +537,19 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
     }
 
     @Test
-    @Ignore // https://github.com/hazelcast/hazelcast/issues/21984
     public void test_selfJoin() {
         TestStreamSqlConnector.create(
-                sqlService, "stream1", singletonList("a"), singletonList(TIMESTAMP_WITH_TIME_ZONE),
+                sqlService,
+                "stream1",
+                singletonList("a"),
+                singletonList(TIMESTAMP_WITH_TIME_ZONE),
                 row(timestampTz(42L)));
 
         sqlService.execute("CREATE VIEW s AS " +
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0' SECONDS))");
 
-        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM s s1 JOIN s s2 ON s1.a=s2.a"))
-                .hasCauseInstanceOf(UnsupportedOperationException.class)
-                .hasMessageContaining("The same scan used twice in the execution plan");
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM s s1 JOIN s s2 ON s1.a=s2.a",
+                singletonList(new Row(timestampTz(42L), timestampTz(42L))));
     }
 }

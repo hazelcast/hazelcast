@@ -14,25 +14,33 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.sql.impl.opt.logical;
+package com.hazelcast.jet.sql.impl.opt.common;
 
+import com.hazelcast.jet.sql.impl.opt.FullScan;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import org.apache.calcite.plan.RelOptPredicateList;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.plan.RelRule.Config;
 import org.apache.calcite.rel.core.Calc;
+import org.apache.calcite.rel.core.Project;
 import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.rules.TransformationRule;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexProgram;
+import org.apache.calcite.rex.RexSimplify;
+import org.apache.calcite.util.Permutation;
 import org.immutables.value.Value;
 
 import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
+import static java.util.Arrays.asList;
+import static org.apache.calcite.rex.RexUtil.EXECUTOR;
 
 /**
  * Logical rule that pushes a {@link Calc} down into a {@link TableScan} to allow for constrained scans.
@@ -40,54 +48,72 @@ import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
  * <p>
  * Before:
  * <pre>
- * LogicalCalc[filter=exp1]
- *     LogicalScan[table[filter=exp2]]
+ * Calc[filter=exp1]
+ *     TableScan[table[filter=exp2]]
  * </pre>
  * After:
  * <pre>
- * LogicalScan[table[filter=exp1 AND exp2]]
+ * TableScan[table[filter=exp1 AND exp2]]
  * </pre>
  */
 @Value.Enclosing
-public final class CalcIntoScanLogicalRule extends RelRule<Config> implements TransformationRule {
+public final class CalcIntoScanRule extends RelRule<Config> implements TransformationRule {
 
     @Value.Immutable
     public interface Config extends RelRule.Config {
-        CalcIntoScanLogicalRule.Config DEFAULT = ImmutableCalcIntoScanLogicalRule.Config.builder()
-                .description(CalcIntoScanLogicalRule.class.getSimpleName())
+        CalcIntoScanRule.Config DEFAULT = ImmutableCalcIntoScanRule.Config.builder()
+                .description(CalcIntoScanRule.class.getSimpleName())
                 .operandSupplier(b0 -> b0
-                        .operand(CalcLogicalRel.class)
+                        .operand(Calc.class)
                         .trait(LOGICAL)
                         .inputs(b1 -> b1
-                                .operand(FullScanLogicalRel.class).anyInputs()))
+                                .operand(FullScan.class).anyInputs()))
                 .build();
 
         @Override
         default RelOptRule toRule() {
-            return new CalcIntoScanLogicalRule(this);
+            return new CalcIntoScanRule(this);
         }
     }
 
-    public static final CalcIntoScanLogicalRule INSTANCE = new CalcIntoScanLogicalRule(Config.DEFAULT);
+    public static final CalcIntoScanRule INSTANCE = new CalcIntoScanRule(Config.DEFAULT);
 
-    private CalcIntoScanLogicalRule(Config config) {
+    private CalcIntoScanRule(Config config) {
         super(config);
     }
 
     @Override
+    public boolean matches(RelOptRuleCall call) {
+        // we don't merge projections. Refuse to match the rule if the scan's projection isn't identity.
+        FullScan scan = call.rel(1);
+        HazelcastTable table = OptUtils.extractHazelcastTable(scan);
+        Permutation permutation = Project.getPermutation(table.getTarget().getFieldCount(), table.getProjects());
+        return permutation != null && permutation.isIdentity();
+    }
+
+    @Override
     public void onMatch(RelOptRuleCall call) {
-        CalcLogicalRel calc = call.rel(0);
-        FullScanLogicalRel scan = call.rel(1);
+        Calc calc = call.rel(0);
+        FullScan scan = call.rel(1);
 
         HazelcastTable table = OptUtils.extractHazelcastTable(scan);
-
         RexProgram program = calc.getProgram();
+        assert scan.getConvention() == LOGICAL; // support it for physical rels also.
 
         List<RexNode> newProjects = program.expandList(program.getProjectList());
         HazelcastTable newTable = table.withProject(newProjects, program.getOutputRowType());
 
+        // merge filters
         if (program.getCondition() != null) {
-            newTable = newTable.withFilter(program.expandLocalRef(program.getCondition()));
+            RexNode calcFilter = program.expandLocalRef(program.getCondition());
+            RexNode scanFilter = table.getFilter();
+
+            RexSimplify rexSimplify = new RexSimplify(
+                    call.builder().getRexBuilder(),
+                    RelOptPredicateList.EMPTY,
+                    EXECUTOR);
+            RexNode simplifiedCondition = rexSimplify.simplifyFilterPredicates(asList(calcFilter, scanFilter));
+            newTable = newTable.withFilter(simplifiedCondition);
         }
 
         HazelcastRelOptTable convertedTable = OptUtils.createRelTable(
@@ -96,13 +122,12 @@ public final class CalcIntoScanLogicalRule extends RelRule<Config> implements Tr
                 scan.getCluster().getTypeFactory()
         );
 
-        FullScanLogicalRel rel = new FullScanLogicalRel(
+        call.transformTo(new FullScanLogicalRel(
                 scan.getCluster(),
                 OptUtils.toLogicalConvention(scan.getTraitSet()),
                 convertedTable,
                 scan.eventTimePolicyProvider(),
                 OptUtils.getTargetField(program, scan.watermarkedColumnIndex())
-        );
-        call.transformTo(rel);
+        ));
     }
 }

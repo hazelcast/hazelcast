@@ -142,6 +142,7 @@ public enum MultipleEntryOpSteps implements Step<State> {
                                 state.getEntryProcessor(), state.getPredicate()));
 
                 EntryOpSteps.PROCESS.runStep(singleKeyState);
+                EntryOpSteps.DO_POST_OPERATE_OPS.runStep(singleKeyState);
 
                 EntryEventType eventType = singleKeyState.getOperator().getEventType();
                 if (eventType == null) {

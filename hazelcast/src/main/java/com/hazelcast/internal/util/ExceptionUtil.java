@@ -297,7 +297,12 @@ public final class ExceptionUtil {
             <T extends Throwable> T cloneWith(MethodHandle constructor, String message,
                                               @Nullable Throwable cause) throws Throwable {
                 T cloned = (T) constructor.invokeWithArguments(message);
-                cloned.initCause(cause);
+                try {
+                    cloned.initCause(cause);
+                } catch (IllegalStateException ignored) {
+                    // Cause can be already set by the exception. It can be set to null as well.
+                    // So doing null check is not the solution here. See https://github.com/hazelcast/hazelcast/issues/21414
+                }
                 return cloned;
             }
         },
@@ -312,7 +317,12 @@ public final class ExceptionUtil {
             <T extends Throwable> T cloneWith(MethodHandle constructor, String message,
                                               @Nullable Throwable cause) throws Throwable {
                 T cloned = (T) constructor.invokeWithArguments();
-                cloned.initCause(cause);
+                try {
+                    cloned.initCause(cause);
+                } catch (IllegalStateException ignored) {
+                    // Cause can be already set by the exception. It can be set to null as well.
+                    // So doing null check is not the solution here. See https://github.com/hazelcast/hazelcast/issues/21414
+                }
                 return cloned;
             }
         };
