@@ -54,6 +54,8 @@ public class ExceptionsCapturer {
     }
 
     public static void log(Throwable thrown) {
-        EXCEPTIONS.add(thrown);
+        if (thrown != null) {
+            EXCEPTIONS.add(thrown);
+        }
     }
 }
