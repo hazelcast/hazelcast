@@ -323,11 +323,30 @@ public final class ClientMessage implements OutboundFrame {
      * @return the copy message
      */
     public ClientMessage copyWithNewCorrelationId(long correlationId) {
-
         Frame initialFrameCopy = startFrame.deepCopy();
         ClientMessage newMessage = new ClientMessage(initialFrameCopy, endFrame);
 
         newMessage.setCorrelationId(correlationId);
+
+        newMessage.isRetryable = isRetryable;
+        newMessage.operationName = operationName;
+
+        return newMessage;
+    }
+
+    /**
+     * Only deep copies the initial frame to not duplicate the rest of the
+     * message to get rid of unnecessary allocations for the retry of the same
+     * client message.
+     * <p>
+     * It is expected that the correlation id for the returned message is set
+     * later.
+     *
+     * @return the copied message
+     */
+    public ClientMessage copyMessageWithSharedNonInitialFrames() {
+        Frame initialFrameCopy = startFrame.deepCopy();
+        ClientMessage newMessage = new ClientMessage(initialFrameCopy, endFrame);
 
         newMessage.isRetryable = isRetryable;
         newMessage.operationName = operationName;
