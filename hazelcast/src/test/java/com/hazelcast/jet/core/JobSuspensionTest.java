@@ -24,9 +24,10 @@ import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
-import com.hazelcast.test.ExceptionsCapturer;
+import com.hazelcast.test.ExceptionRecorder;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -41,10 +42,18 @@ import static org.assertj.core.api.Assertions.assertThat;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JobSuspensionTest extends SimpleTestInClusterSupport {
 
+    private static ExceptionRecorder recorder;
+
     @BeforeClass
-    public static void setUp() {
+    public static void setUpClass() {
         Config config = smallInstanceConfig();
         initialize(2, config);
+        recorder = new ExceptionRecorder(instances());
+    }
+
+    @Before
+    public void setUp() throws Exception {
+        recorder.clear();
     }
 
     @Test
@@ -64,7 +73,7 @@ public class JobSuspensionTest extends SimpleTestInClusterSupport {
         assertJobStatusEventually(job, SUSPENDED);
 
         // then
-        List<Throwable> exceptions = ExceptionsCapturer.exceptionsOfTypes(TerminatedWithSnapshotException.class);
+        List<Throwable> exceptions = recorder.exceptionsOfTypes(TerminatedWithSnapshotException.class);
         assertThat(exceptions).isEmpty();
     }
 
