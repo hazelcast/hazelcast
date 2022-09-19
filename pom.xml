@@ -109,7 +109,7 @@
         <kafka.version>2.8.1</kafka.version>
         <kotlin.version>1.7.10</kotlin.version>
         <log4j.version>1.2.17.redhat-00008</log4j.version>
-        <log4j2.version>2.18.0</log4j2.version>
+        <log4j2.version>2.19.0</log4j2.version>
         <mysql.connector.version>8.0.30</mysql.connector.version>
         <netty.version>4.1.79.Final</netty.version>
         <objenesis.version>3.2</objenesis.version>
