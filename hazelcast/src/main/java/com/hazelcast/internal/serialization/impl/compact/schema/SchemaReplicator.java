@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.serialization.impl.compact.schema;
 
+import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.util.ConcurrencyUtil;
@@ -31,6 +32,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 /**
  * Manages the replication of the schemas across the cluster.
@@ -46,7 +48,8 @@ public class SchemaReplicator {
     // that their contents are in valid states.
     private final Object mutex = new Object();
     private final ConcurrentHashMap<Long, SchemaReplication> replications = new ConcurrentHashMap<>();
-    private final ConcurrentHashMap<Long, InternalCompletableFuture<Void>> inFlightOperations = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<Long, InternalCompletableFuture<Collection<UUID>>>
+            inFlightOperations = new ConcurrentHashMap<>();
 
     // Not final due to late initialization with init method.
     private NodeEngine nodeEngine;
@@ -69,7 +72,7 @@ public class SchemaReplicator {
      * Clears the local state of the replicator.
      */
     public void clear() {
-        for (InternalCompletableFuture<Void> future : inFlightOperations.values()) {
+        for (InternalCompletableFuture<Collection<UUID>> future : inFlightOperations.values()) {
             future.completeExceptionally(new HazelcastException("The state of the SchemaReplicator is being cleared."));
         }
         inFlightOperations.clear();
@@ -106,20 +109,20 @@ public class SchemaReplicator {
      * @return the future which will be completed once the replication process
      * ends.
      */
-    public InternalCompletableFuture<Void> replicate(Schema schema) {
+    public InternalCompletableFuture<Collection<UUID>> replicate(Schema schema) {
         long schemaId = schema.getSchemaId();
         if (isSchemaReplicated(schemaId)) {
-            return InternalCompletableFuture.newCompletedFuture(null);
+            return InternalCompletableFuture.newCompletedFuture(getCurrenMemberUuids());
         }
 
-        InternalCompletableFuture<Void> future = inFlightOperations.get(schemaId);
+        InternalCompletableFuture<Collection<UUID>> future = inFlightOperations.get(schemaId);
         if (future != null) {
             return future;
         }
 
         synchronized (mutex) {
             if (isSchemaReplicated(schemaId)) {
-                return InternalCompletableFuture.newCompletedFuture(null);
+                return InternalCompletableFuture.newCompletedFuture(getCurrenMemberUuids());
             }
 
             future = inFlightOperations.get(schemaId);
@@ -141,7 +144,7 @@ public class SchemaReplicator {
             case REPLICATED:
                 // Schema is already known to be replicated across cluster
                 inFlightOperations.remove(schemaId, future);
-                future.complete(null);
+                future.complete(getCurrenMemberUuids());
                 break;
             case PREPARED:
                 // The schema is prepared, but we need to make sure that it is
@@ -263,7 +266,7 @@ public class SchemaReplicator {
         }
     }
 
-    private void doReplicate(Schema schema, InternalCompletableFuture<Void> future) {
+    private void doReplicate(Schema schema, InternalCompletableFuture<Collection<UUID>> future) {
         long schemaId = schema.getSchemaId();
         try {
             prepareOnCaller(schema)
@@ -272,7 +275,7 @@ public class SchemaReplicator {
                         return sendRequestForPreparation(schema);
                     })
                     .thenCompose(result -> sendRequestForAcknowledgment(schemaId))
-                    .thenRun(() -> completeInFlightOperation(schemaId, future))
+                    .thenAccept(result -> completeInFlightOperation(schemaId, future, result))
                     .exceptionally(throwable -> {
                         completeInFlightOperationExceptionally(schemaId, future, throwable);
                         return null;
@@ -288,12 +291,12 @@ public class SchemaReplicator {
         return schemaService.persistSchemaToHotRestartAsync(schema);
     }
 
-    private void doReplicatePreparedSchema(Schema schema, InternalCompletableFuture<Void> future) {
+    private void doReplicatePreparedSchema(Schema schema, InternalCompletableFuture<Collection<UUID>> future) {
         long schemaId = schema.getSchemaId();
         try {
             sendRequestForPreparation(schema)
                     .thenCompose(result -> sendRequestForAcknowledgment(schemaId))
-                    .thenRun(() -> completeInFlightOperation(schemaId, future))
+                    .thenAccept(result -> completeInFlightOperation(schemaId, future, result))
                     .exceptionally(throwable -> {
                         completeInFlightOperationExceptionally(schemaId, future, throwable);
                         return null;
@@ -304,15 +307,21 @@ public class SchemaReplicator {
         }
     }
 
-    private void completeInFlightOperation(long schemaId, InternalCompletableFuture<Void> future) {
+    private void completeInFlightOperation(long schemaId,
+                                           InternalCompletableFuture<Collection<UUID>> future,
+                                           Collection<UUID> memberUuids
+    ) {
         synchronized (mutex) {
             markSchemaAsReplicated(schemaId);
             inFlightOperations.remove(schemaId, future);
         }
-        future.complete(null);
+        future.complete(memberUuids);
     }
 
-    private void completeInFlightOperationExceptionally(long schemaId, InternalCompletableFuture<Void> future, Throwable t) {
+    private void completeInFlightOperationExceptionally(long schemaId,
+                                                        InternalCompletableFuture<Collection<UUID>> future,
+                                                        Throwable t
+    ) {
         inFlightOperations.remove(schemaId, future);
         future.completeExceptionally(t);
     }
@@ -335,8 +344,15 @@ public class SchemaReplicator {
         );
     }
 
+    private Collection<UUID> getCurrenMemberUuids() {
+        return nodeEngine.getClusterService().getMembers()
+                .stream()
+                .map(Member::getUuid)
+                .collect(Collectors.toList());
+    }
+
     // Used in tests
-    ConcurrentHashMap<Long, InternalCompletableFuture<Void>> getInFlightOperations() {
+    ConcurrentHashMap<Long, InternalCompletableFuture<Collection<UUID>>> getInFlightOperations() {
         return inFlightOperations;
     }
 

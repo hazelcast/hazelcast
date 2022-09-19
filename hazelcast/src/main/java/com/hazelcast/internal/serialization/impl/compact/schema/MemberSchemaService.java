@@ -31,6 +31,7 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
@@ -94,7 +95,7 @@ public class MemberSchemaService implements
      *
      * @param schema to replicate.
      */
-    public InternalCompletableFuture<Void> putAsync(Schema schema) {
+    public InternalCompletableFuture<Collection<UUID>> putAsync(Schema schema) {
         return replicator.replicate(schema);
     }
 
