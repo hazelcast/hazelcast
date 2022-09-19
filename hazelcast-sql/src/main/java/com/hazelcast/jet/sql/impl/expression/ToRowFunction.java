@@ -20,7 +20,6 @@ import com.hazelcast.jet.impl.util.ReflectionUtils;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
-import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -37,7 +36,6 @@ import java.util.Set;
 
 import static java.util.Collections.newSetFromMap;
 
-@Beta
 public class ToRowFunction extends UniExpressionWithType<RowValue> implements IdentifiedDataSerializable {
 
     public ToRowFunction() { }
