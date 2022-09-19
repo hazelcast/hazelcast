@@ -686,6 +686,11 @@ class KubernetesClient {
         private String latestResourceVersion;
         private RuntimeContext latestRuntimeContext;
 
+        /**
+         * Initializes and watches information about the StatefulSet in which Hazelcast is being executed.
+         * See <a href="https://kubernetes.io/docs/reference/using-api/api-concepts/#efficient-detection-of-changes">
+         * Efficient detection of changes on Kubernetes API reference</a>.
+         */
         @Override
         public void run() {
             String stsUrlString = String.format("%s/apis/apps/v1/namespaces/%s/statefulsets", kubernetesMaster,

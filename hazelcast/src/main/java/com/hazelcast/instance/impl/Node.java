@@ -146,7 +146,7 @@ import static java.security.AccessController.doPrivileged;
         "checkstyle:classfanoutcomplexity"})
 public class Node implements ClusterTopologyIntentTracker {
 
-    public static final String DISCOVERY_PROPERTY_THIS_NODE = "hazelcast.this.node";
+    public static final String DISCOVERY_PROPERTY_THIS_NODE = "hazelcast.internal.discovery.this.node";
 
     private static final int THREAD_SLEEP_DURATION_MS = 500;
     private static final String GRACEFUL_SHUTDOWN_EXECUTOR_NAME = "hz:graceful-shutdown";
@@ -790,30 +790,7 @@ public class Node implements ClusterTopologyIntentTracker {
                     logger.info("Running shutdown hook... Current node state: " + state
                                 + ", detected shutdown intent: " + shutdownIntent
                                 + ", cluster state: " + clusterState);
-                    // consider the detected shutdown intent before triggering node shutdown
-                    if (shutdownIntent == ClusterTopologyIntent.STABLE) {
-                        try {
-                            changeClusterState(ClusterState.FROZEN);
-                        } catch (Throwable t) {
-                            // let shutdown proceed even though we failed to switch to FROZEN state
-                            logger.warning("Could not switch to transient FROZEN state while cluster"
-                                    + "shutdown intent was " + shutdownIntent, t);
-                        }
-                    } else if (shutdownIntent == ClusterTopologyIntent.CLUSTER_SHUTDOWN) {
-                        try {
-                            changeClusterState(ClusterState.PASSIVE);
-                        } catch (Throwable t) {
-                            // let shutdown proceed even though we failed to switch to PASSIVE state
-                            // and wait for replica sync
-                            logger.warning("Could not switch to transient PASSIVE state while cluster"
-                                    + "shutdown intent was " + shutdownIntent, t);
-                        }
-                        if (clusterService.getClusterState() == ClusterState.PASSIVE) {
-                            long timeoutNanos = getProperties().getNanos(ClusterProperty.CLUSTER_SHUTDOWN_TIMEOUT_SECONDS);
-                            getNodeExtension().getInternalHotRestartService()
-                                    .waitPartitionReplicaSyncOnCluster(timeoutNanos, TimeUnit.NANOSECONDS);
-                        }
-                    }
+                    shutdownWithIntent(shutdownIntent);
                 } else {
                     logger.info("Running shutdown hook... Current node state: " + state);
                 }
@@ -829,6 +806,35 @@ public class Node implements ClusterTopologyIntentTracker {
                 }
             } catch (Exception e) {
                 logger.warning(e);
+            }
+        }
+
+        private void shutdownWithIntent(ClusterTopologyIntent shutdownIntent) {
+            // consider the detected shutdown intent before triggering node shutdown
+            if (shutdownIntent == ClusterTopologyIntent.STABLE) {
+                try {
+                    changeClusterState(ClusterState.FROZEN);
+                } catch (Throwable t) {
+                    // let shutdown proceed even though we failed to switch to FROZEN state
+                    logger.warning("Could not switch to transient FROZEN state while cluster"
+                            + "shutdown intent was " + shutdownIntent, t);
+                }
+            } else if (shutdownIntent == ClusterTopologyIntent.CLUSTER_SHUTDOWN) {
+                try {
+                    changeClusterState(ClusterState.PASSIVE);
+                } catch (Throwable t) {
+                    // let shutdown proceed even though we failed to switch to PASSIVE state
+                    // and wait for replica sync
+                    logger.warning("Could not switch to transient PASSIVE state while cluster"
+                            + "shutdown intent was " + shutdownIntent, t);
+                }
+                long timeoutNanos = getProperties().getNanos(ClusterProperty.CLUSTER_SHUTDOWN_TIMEOUT_SECONDS);
+                try {
+                    getNodeExtension().getInternalHotRestartService()
+                            .waitPartitionReplicaSyncOnCluster(timeoutNanos, TimeUnit.NANOSECONDS);
+                } catch (IllegalStateException e) {
+                    logger.severe("Failure while waiting for partition replica sync before shutdown", e);
+                }
             }
         }
     }
