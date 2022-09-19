@@ -144,16 +144,16 @@ public class ClientSchemaService implements SchemaService {
                     // is not known to be replicated yet. We should retry
                     // sending it in a random member.
 
-                    // correlation id will be set when the invoke method is
-                    // called above
-                    clientMessage = clientMessage.copyMessageWithSharedNonInitialFrames();
-
                     try {
                         Thread.sleep(retryPauseMillis);
                     } catch (InterruptedException e) {
                         Thread.currentThread().interrupt();
                         return false;
                     }
+
+                    // correlation id will be set when the invoke method is
+                    // called above
+                    clientMessage = clientMessage.copyMessageWithSharedNonInitialFrames();
 
                     continue outer;
                 }
