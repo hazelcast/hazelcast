@@ -121,6 +121,7 @@ public class IndexScanMapPhysicalRel extends TableScan implements HazelcastPhysi
         return filter(schema, remainderExp, parameterMetadata);
     }
 
+    @Override
     public List<Expression<?>> projection(QueryParameterMetadata parameterMetadata) {
         PlanNodeSchema schema = OptUtils.schema(getTable());
 

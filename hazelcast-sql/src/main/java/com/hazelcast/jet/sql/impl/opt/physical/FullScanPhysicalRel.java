@@ -73,6 +73,7 @@ public class FullScanPhysicalRel extends FullScan implements HazelcastPhysicalSc
         return filter(schema, filter, parameterMetadata);
     }
 
+    @Override
     public List<Expression<?>> projection(QueryParameterMetadata parameterMetadata) {
         PlanNodeSchema schema = OptUtils.schema(getTable());
 

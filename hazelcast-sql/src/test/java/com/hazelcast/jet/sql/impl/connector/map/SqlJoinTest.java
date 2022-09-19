@@ -719,7 +719,7 @@ public class SqlJoinTest {
             m2Map.put(43, "baz");
             // we need to add multiple entries to the map so that the index is created on all members
             for (int i = 44; i < 60; i++) {
-                m2Map.put(44, "boo" + i);
+                m2Map.put(i, "boo" + i);
             }
             createMapping(m1, Integer.class, String.class);
             createMapping(m2, Integer.class, String.class);
