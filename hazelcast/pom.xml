@@ -83,27 +83,6 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.jboss.bridger</groupId>
-                <artifactId>bridger</artifactId>
-                <version>1.6.Final</version>
-                <executions>
-                    <execution>
-                        <id>weave</id>
-                        <phase>process-classes</phase>
-                        <goals>
-                            <goal>transform</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <dependencies>
-                    <dependency>
-                        <groupId>org.ow2.asm</groupId>
-                        <artifactId>asm</artifactId>
-                        <version>9.3</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
 
             <plugin>
                 <artifactId>kotlin-maven-plugin</artifactId>
