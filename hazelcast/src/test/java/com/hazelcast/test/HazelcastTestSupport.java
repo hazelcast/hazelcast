@@ -1227,7 +1227,7 @@ public abstract class HazelcastTestSupport {
     public static void assertTrueEventually(String message, AssertTask task, long timeoutSeconds) {
         AssertionError error = null;
         // we are going to check five times a second
-        int sleepMillis = 200;
+        int sleepMillis = 50;
         long iterations = timeoutSeconds * 5;
         long deadline = System.currentTimeMillis() + SECONDS.toMillis(timeoutSeconds);
         for (int i = 0; i < iterations && System.currentTimeMillis() < deadline; i++) {
