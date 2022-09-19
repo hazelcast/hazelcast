@@ -39,7 +39,6 @@ import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.config.SocketInterceptorConfig;
 import com.hazelcast.internal.config.DomConfigHelper;
 import com.hazelcast.memory.Capacity;
-import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.query.impl.IndexUtils;
 import com.hazelcast.spring.config.ConfigFactory;
@@ -598,13 +597,13 @@ public abstract class AbstractHazelcastBeanDefinitionParser extends AbstractBean
         }
 
         private void handleMemorySizeConfig(Node node, BeanDefinitionBuilder nativeMemoryConfigBuilder) {
-            BeanDefinitionBuilder memorySizeConfigBuilder = createBeanBuilder(MemorySize.class);
+            BeanDefinitionBuilder memorySizeConfigBuilder = createBeanBuilder(Capacity.class);
             NamedNodeMap attributes = node.getAttributes();
             Node value = attributes.getNamedItem("value");
             Node unit = attributes.getNamedItem("unit");
             memorySizeConfigBuilder.addConstructorArgValue(getTextContent(value));
             memorySizeConfigBuilder.addConstructorArgValue(getTextContent(unit));
-            nativeMemoryConfigBuilder.addPropertyValue("size", memorySizeConfigBuilder.getBeanDefinition());
+            nativeMemoryConfigBuilder.addPropertyValue("capacity", memorySizeConfigBuilder.getBeanDefinition());
         }
 
         protected void handleDiscoveryStrategies(Node node, BeanDefinitionBuilder joinConfigBuilder) {

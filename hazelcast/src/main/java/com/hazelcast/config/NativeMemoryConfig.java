@@ -92,7 +92,7 @@ public class NativeMemoryConfig {
 
     /**
      * Returns size of the native memory region.
-     * @deprecated Use {@link #getCapacity()} instead.
+     * @deprecated Since 5.2, use {@link #getCapacity()} instead.
      */
     @Deprecated
     public MemorySize getSize() {
@@ -108,7 +108,7 @@ public class NativeMemoryConfig {
      *
      * @param capacity memory size
      * @return this {@link NativeMemoryConfig} instance
-     * @deprecated Use {@link #setCapacity(Capacity)} instead.
+     * @deprecated Since 5.2, use {@link #setCapacity(Capacity)} instead.
      */
     @Deprecated
     public NativeMemoryConfig setSize(MemorySize capacity) {

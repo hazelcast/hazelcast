@@ -22,7 +22,7 @@ import com.hazelcast.config.TieredStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.jet.config.JetConfig;
-import com.hazelcast.memory.MemorySize;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -101,7 +101,7 @@ public class PhoneHomeDifferentConfigTest extends HazelcastTestSupport {
     public void testHdStorage() {
         NativeMemoryConfig nativeMemoryConfig = new NativeMemoryConfig()
                 .setEnabled(true)
-                .setSize(new MemorySize(64L, MEGABYTES));
+                .setCapacity(new Capacity(64L, MEGABYTES));
         Config config = new Config()
                 .setNativeMemoryConfig(nativeMemoryConfig);
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
