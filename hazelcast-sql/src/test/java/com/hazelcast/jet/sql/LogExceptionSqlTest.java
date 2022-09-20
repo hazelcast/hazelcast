@@ -32,11 +32,12 @@ import org.junit.experimental.categories.Category;
 
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class LogExceptionTest extends SimpleTestInClusterSupport {
+public class LogExceptionSqlTest extends SimpleTestInClusterSupport {
 
     private static ExceptionRecorder recorder;
 
@@ -44,7 +45,7 @@ public class LogExceptionTest extends SimpleTestInClusterSupport {
     public static void setUpClass() {
         Config config = smallInstanceConfig();
         initialize(2, config);
-        recorder = new ExceptionRecorder(instances());
+        recorder = new ExceptionRecorder(instances(), Level.INFO);
     }
 
     @Before

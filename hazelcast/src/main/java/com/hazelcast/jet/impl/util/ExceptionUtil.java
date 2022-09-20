@@ -47,7 +47,6 @@ import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
@@ -234,8 +233,7 @@ public final class ExceptionUtil {
 
     public static boolean isTechnicalCancellationException(Throwable t) {
         Throwable peeledFailure = peel(t);
-        return peeledFailure instanceof CancellationException
-                || peeledFailure instanceof JobTerminateRequestedException
+        return peeledFailure instanceof JobTerminateRequestedException
                 || peeledFailure instanceof ResultLimitReachedException
                 || peeledFailure instanceof TerminatedWithSnapshotException;
     }

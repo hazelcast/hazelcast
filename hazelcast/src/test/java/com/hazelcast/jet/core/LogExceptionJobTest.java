@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
 import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -33,14 +34,16 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import java.util.List;
+import java.util.logging.Level;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
+import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class JobSuspensionTest extends SimpleTestInClusterSupport {
+public class LogExceptionJobTest extends SimpleTestInClusterSupport {
 
     private static ExceptionRecorder recorder;
 
@@ -48,7 +51,7 @@ public class JobSuspensionTest extends SimpleTestInClusterSupport {
     public static void setUpClass() {
         Config config = smallInstanceConfig();
         initialize(2, config);
-        recorder = new ExceptionRecorder(instances());
+        recorder = new ExceptionRecorder(instances(), Level.INFO);
     }
 
     @Before
@@ -57,7 +60,7 @@ public class JobSuspensionTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_jobIsSuspended_then_noExceptionIsThrown() {
+    public void when_jobIsSuspended_then_noExceptionIsLogged() {
         // given
         Pipeline pipeline = Pipeline.create()
                                     .readFrom(TestSources.itemStream(10))
@@ -74,6 +77,27 @@ public class JobSuspensionTest extends SimpleTestInClusterSupport {
 
         // then
         List<Throwable> exceptions = recorder.exceptionsOfTypes(TerminatedWithSnapshotException.class);
+        assertThat(exceptions).isEmpty();
+    }
+
+    @Test
+    public void when_jobIsCancelled_then_noExceptionIsLogged() {
+        // given
+        Pipeline pipeline = Pipeline.create()
+                                    .readFrom(TestSources.itemStream(10))
+                                    .withoutTimestamps()
+                                    .writeTo(Sinks.noop())
+                                    .getPipeline();
+        JobConfig jobConfig = new JobConfig().setProcessingGuarantee(EXACTLY_ONCE);
+        Job job = instance().getJet().newJob(pipeline, jobConfig);
+        assertJobStatusEventually(job, RUNNING);
+
+        // when
+        job.cancel();
+        assertJobStatusEventually(job, FAILED);
+
+        // then
+        List<Throwable> exceptions = recorder.exceptionsOfTypes(JobTerminateRequestedException.class);
         assertThat(exceptions).isEmpty();
     }
 }

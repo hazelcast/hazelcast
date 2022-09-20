@@ -45,10 +45,10 @@ public class ExceptionRecorder implements LogListener {
     @SuppressWarnings("UnstableApiUsage")
     private final Collection<Throwable> throwables = synchronizedCollection(EvictingQueue.create(100));
 
-    public ExceptionRecorder(HazelcastInstance[] instances) {
+    public ExceptionRecorder(HazelcastInstance[] instances, Level level) {
         this.instances = instances;
         for (HazelcastInstance instance : this.instances) {
-            instance.getLoggingService().addLogListener(Level.ALL, this);
+            instance.getLoggingService().addLogListener(level, this);
         }
     }
 
