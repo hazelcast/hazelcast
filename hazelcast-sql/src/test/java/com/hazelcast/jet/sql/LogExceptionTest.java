@@ -30,6 +30,7 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.util.Iterator;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -57,8 +58,10 @@ public class LogExceptionTest extends SimpleTestInClusterSupport {
         // when
         SqlService sql = instance().getSql();
         try (SqlResult result = sql.execute("select * from table(generate_stream(5)) limit 2")) {
-            for (SqlRow sqlRow : result) {
-                System.out.println(sqlRow);
+            Iterator<SqlRow> rows = result.iterator();
+            //noinspection WhileLoopReplaceableByForEach
+            while (rows.hasNext()) {
+                rows.next();
             }
         }
 
