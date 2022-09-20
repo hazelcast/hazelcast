@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the current metadata of a cluster.
  */
-@Generated("e7db06c655f9d456138d69d28a58bd6d")
+@Generated("eaf0b6e9d1d2f7f2b419c7af2ed59a29")
 public final class MCGetClusterMetadataCodec {
     //hex: 0x200E00
     public static final int REQUEST_MESSAGE_TYPE = 2100736;
@@ -54,7 +54,7 @@ public final class MCGetClusterMetadataCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("MC.GetClusterMetadata");
-        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
+        Frame initialFrame = new Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
@@ -77,22 +77,32 @@ public final class MCGetClusterMetadataCodec {
         /**
          * Current version of the member.
          */
-        public java.lang.String memberVersion;
+        public String memberVersion;
 
         /**
          * Current Jet version of the member.
          */
-        public @Nullable java.lang.String jetVersion;
+        public @Nullable String jetVersion;
 
         /**
          * Cluster-wide time in milliseconds.
          */
         public long clusterTime;
+
+        /**
+         * Cluster ID.
+         */
+        public String clusterId;
+
+        /**
+         * Cluster ID.
+         */
+        public String memberId;
     }
 
-    public static ClientMessage encodeResponse(byte currentState, java.lang.String memberVersion, @Nullable java.lang.String jetVersion, long clusterTime) {
+    public static ClientMessage encodeResponse(byte currentState, String memberVersion, @Nullable String jetVersion, long clusterTime, String clusterId, String memberId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
-        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
+        Frame initialFrame = new Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         encodeByte(initialFrame.content, RESPONSE_CURRENT_STATE_FIELD_OFFSET, currentState);
         encodeLong(initialFrame.content, RESPONSE_CLUSTER_TIME_FIELD_OFFSET, clusterTime);
@@ -100,17 +110,21 @@ public final class MCGetClusterMetadataCodec {
 
         StringCodec.encode(clientMessage, memberVersion);
         CodecUtil.encodeNullable(clientMessage, jetVersion, StringCodec::encode);
+        StringCodec.encode(clientMessage, clusterId);
+        StringCodec.encode(clientMessage, memberId);
         return clientMessage;
     }
 
-    public static MCGetClusterMetadataCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
+    public static ResponseParameters decodeResponse(ClientMessage clientMessage) {
+        ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
-        ClientMessage.Frame initialFrame = iterator.next();
+        Frame initialFrame = iterator.next();
         response.currentState = decodeByte(initialFrame.content, RESPONSE_CURRENT_STATE_FIELD_OFFSET);
         response.clusterTime = decodeLong(initialFrame.content, RESPONSE_CLUSTER_TIME_FIELD_OFFSET);
         response.memberVersion = StringCodec.decode(iterator);
         response.jetVersion = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+        response.clusterId = StringCodec.decode(iterator);
+        response.memberId = StringCodec.decode(iterator);
         return response;
     }
 }

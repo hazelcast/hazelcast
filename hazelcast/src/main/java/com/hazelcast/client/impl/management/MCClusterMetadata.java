@@ -22,6 +22,8 @@ public class MCClusterMetadata {
     private ClusterState currentState;
     private long clusterTime;
     private String memberVersion;
+    private String clusterId;
+    private String memberId;
 
     public ClusterState getCurrentState() {
         return currentState;
@@ -45,5 +47,21 @@ public class MCClusterMetadata {
 
     public void setMemberVersion(String memberVersion) {
         this.memberVersion = memberVersion;
+    }
+
+    public String getClusterId() {
+        return clusterId;
+    }
+
+    public void setClusterId(String clusterId) {
+        this.clusterId = clusterId;
+    }
+
+    public String getMemberId() {
+        return memberId;
+    }
+
+    public void setMemberId(String memberId) {
+        this.memberId = memberId;
     }
 }
