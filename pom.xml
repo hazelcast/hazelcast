@@ -123,7 +123,7 @@
         <slf4j.version>1.7.36</slf4j.version>
         <spring.version>4.3.0.RELEASE</spring.version>
         <snakeyaml.version>1.32</snakeyaml.version>
-        <snakeyaml.engine.version>2.3</snakeyaml.engine.version>
+        <snakeyaml.engine.version>2.4</snakeyaml.engine.version>
 
         <!-- test dependencies -->
         <activemq-artemis.version>2.11.0</activemq-artemis.version>
