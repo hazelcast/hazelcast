@@ -35,12 +35,12 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ConcurrentFixedCapacityCacheTest {
+public class ConcurrentInitialSetCacheTest {
     @Test
     public void when_addingElementsToCacheInSingleThread_then_properSizeAndElements() {
         int capacity = 20;
         int elementsToAdd = 100;
-        ConcurrentFixedCapacityCache<Integer, Integer> cache = new ConcurrentFixedCapacityCache<>(capacity);
+        ConcurrentInitialSetCache<Integer, Integer> cache = new ConcurrentInitialSetCache<>(capacity);
         for (int i = 0; i < elementsToAdd; i++) {
             cache.computeIfAbsent(i, Function.identity());
         }
@@ -56,7 +56,7 @@ public class ConcurrentFixedCapacityCacheTest {
         int capacity = 20;
         int elementsToAdd = 100;
         int threadCount = 10;
-        ConcurrentFixedCapacityCache<Integer, Integer> cache = new ConcurrentFixedCapacityCache<>(capacity);
+        ConcurrentInitialSetCache<Integer, Integer> cache = new ConcurrentInitialSetCache<>(capacity);
         Runnable runnable = () -> {
             for (int i = 0; i < elementsToAdd; i++) {
                 cache.computeIfAbsent(i, Function.identity());
@@ -77,6 +77,6 @@ public class ConcurrentFixedCapacityCacheTest {
 
     @Test
     public void when_creatingEmptyCache_then_fail() {
-        assertThrows(IllegalArgumentException.class, () -> new ConcurrentFixedCapacityCache<>(0));
+        assertThrows(IllegalArgumentException.class, () -> new ConcurrentInitialSetCache<>(0));
     }
 }

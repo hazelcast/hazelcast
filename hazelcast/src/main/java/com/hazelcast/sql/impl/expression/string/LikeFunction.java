@@ -22,7 +22,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.sql.impl.expression.ConcurrentFixedCapacityCache;
+import com.hazelcast.sql.impl.expression.ConcurrentInitialSetCache;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.TriExpression;
@@ -63,7 +63,7 @@ public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDa
 
     private boolean negated;
 
-    private transient ConcurrentFixedCapacityCache<Tuple2<String, String>, Pattern> patternCache;
+    private transient ConcurrentInitialSetCache<Tuple2<String, String>, Pattern> patternCache;
 
     public LikeFunction() {
         // No-op.
@@ -73,7 +73,7 @@ public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDa
         super(source, pattern, escape);
 
         this.negated = negated;
-        this.patternCache = new ConcurrentFixedCapacityCache<>(PATTERN_CACHE_SIZE);
+        this.patternCache = new ConcurrentInitialSetCache<>(PATTERN_CACHE_SIZE);
     }
 
     public static LikeFunction create(
@@ -148,13 +148,13 @@ public class LikeFunction extends TriExpression<Boolean> implements IdentifiedDa
         super.readData(in);
 
         negated = in.readBoolean();
-        patternCache = new ConcurrentFixedCapacityCache<>(PATTERN_CACHE_SIZE);
+        patternCache = new ConcurrentInitialSetCache<>(PATTERN_CACHE_SIZE);
     }
 
     private void readObject(ObjectInputStream stream) throws ClassNotFoundException, IOException {
         stream.defaultReadObject();
         // The transient fields are not initialized during Java deserialization, so we need to do it manually.
-        patternCache = new ConcurrentFixedCapacityCache<>(PATTERN_CACHE_SIZE);
+        patternCache = new ConcurrentInitialSetCache<>(PATTERN_CACHE_SIZE);
     }
 
     @Override

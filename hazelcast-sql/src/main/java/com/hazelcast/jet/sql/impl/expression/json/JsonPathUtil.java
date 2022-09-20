@@ -20,7 +20,7 @@ import com.fasterxml.jackson.jr.ob.JSON;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.expression.ConcurrentFixedCapacityCache;
+import com.hazelcast.sql.impl.expression.ConcurrentInitialSetCache;
 import org.jsfr.json.Collector;
 import org.jsfr.json.DefaultErrorHandlingStrategy;
 import org.jsfr.json.ErrorHandlingStrategy;
@@ -57,8 +57,8 @@ public final class JsonPathUtil {
 
     private JsonPathUtil() { }
 
-    public static ConcurrentFixedCapacityCache<String, JsonPath> makePathCache() {
-        return new ConcurrentFixedCapacityCache<>(CACHE_SIZE);
+    public static ConcurrentInitialSetCache<String, JsonPath> makePathCache() {
+        return new ConcurrentInitialSetCache<>(CACHE_SIZE);
     }
 
     public static JsonPath compile(String path) {

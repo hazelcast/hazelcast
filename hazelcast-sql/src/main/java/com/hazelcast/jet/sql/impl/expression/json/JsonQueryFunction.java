@@ -24,7 +24,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.QueryException;
-import com.hazelcast.sql.impl.expression.ConcurrentFixedCapacityCache;
+import com.hazelcast.sql.impl.expression.ConcurrentInitialSetCache;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -50,7 +50,7 @@ public class JsonQueryFunction extends VariExpression<HazelcastJsonValue> implem
     private static final ILogger LOGGER = Logger.getLogger(JsonQueryFunction.class);
     private static final Function<String, JsonPath> COMPILE_FUNCTION = JsonPathUtil::compile;
 
-    private transient ConcurrentFixedCapacityCache<String, JsonPath> pathCache;
+    private transient ConcurrentInitialSetCache<String, JsonPath> pathCache;
     private JsonPath constantPathCache;
 
     private SqlJsonQueryWrapperBehavior wrapperBehavior;

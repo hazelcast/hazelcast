@@ -50,12 +50,12 @@ import java.util.function.Function;
  * the purpose of optimizing the read performance. The amount the size can
  * exceed the limit is bounded by the number of concurrent writers.
  */
-public class ConcurrentFixedCapacityCache<K, V> {
+public class ConcurrentInitialSetCache<K, V> {
     // package-visible for tests
     final Map<K, V> cache;
     private final int capacity;
 
-    public ConcurrentFixedCapacityCache(int capacity) {
+    public ConcurrentInitialSetCache(int capacity) {
         Preconditions.checkPositive("capacity", capacity);
         this.capacity = capacity;
         this.cache = new ConcurrentHashMap<>(capacity);
