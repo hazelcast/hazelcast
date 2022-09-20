@@ -449,7 +449,8 @@ public class TestHazelcastInstanceFactory {
                 config = new XmlConfigBuilder().build();
             }
             config.getJetConfig().setEnabled(true);
-            System.setProperty("hazelcast.config.schema.validation.enabled", oldSchemaValidation);
+            System.setProperty("hazelcast.config.schema.validation.enabled", oldSchemaValidation == null ? "true" :
+                    oldSchemaValidation);
         }
         config.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         String gracefulShutdownMaxWaitValue = System.getProperty(ClusterProperty.GRACEFUL_SHUTDOWN_MAX_WAIT.getName(), "120");
