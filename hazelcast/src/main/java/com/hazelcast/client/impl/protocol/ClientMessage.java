@@ -135,6 +135,7 @@ public final class ClientMessage implements OutboundFrame {
     private transient boolean isRetryable;
     private transient String operationName;
     private transient Connection connection;
+    private transient boolean containsSerializedDataInRequest;
 
     private ClientMessage() {
 
@@ -280,6 +281,14 @@ public final class ClientMessage implements OutboundFrame {
 
     public void dropFragmentationFrame() {
         startFrame = startFrame.next;
+    }
+
+    public boolean isContainsSerializedDataInRequest() {
+        return containsSerializedDataInRequest;
+    }
+
+    public void setContainsSerializedDataInRequest(boolean containsSerializedDataInRequest) {
+        this.containsSerializedDataInRequest = containsSerializedDataInRequest;
     }
 
     @Override

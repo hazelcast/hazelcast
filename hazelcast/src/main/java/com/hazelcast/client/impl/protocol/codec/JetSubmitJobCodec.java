@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("11ce695accf2a457749dfa8a39e26f69")
+@Generated("0fbc699a96838a9ed9e4881cd2f9f236")
 public final class JetSubmitJobCodec {
     //hex: 0xFE0100
     public static final int REQUEST_MESSAGE_TYPE = 16646400;
@@ -77,6 +77,7 @@ public final class JetSubmitJobCodec {
 
     public static ClientMessage encodeRequest(long jobId, com.hazelcast.internal.serialization.Data dag, @Nullable com.hazelcast.internal.serialization.Data jobConfig, @Nullable java.util.UUID lightJobCoordinator) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
+        clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("Jet.SubmitJob");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
