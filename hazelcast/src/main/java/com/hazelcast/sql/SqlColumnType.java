@@ -83,7 +83,11 @@ public enum SqlColumnType {
     /** JSON type, represented by {@link HazelcastJsonValue} */
     JSON(15, HazelcastJsonValue.class),
 
-    /** ROW type, represented by {@link RowValue} */
+    /**
+     * This type and the value representing it is likely to change or be removed in the future release
+     * <p>
+     * ROW type, represented by {@link RowValue}
+     * */
     @Beta
     ROW(16, RowValue.class);
 
