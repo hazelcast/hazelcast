@@ -112,7 +112,7 @@ public class SchemaReplicator {
     public InternalCompletableFuture<Collection<UUID>> replicate(Schema schema) {
         long schemaId = schema.getSchemaId();
         if (isSchemaReplicated(schemaId)) {
-            return InternalCompletableFuture.newCompletedFuture(getCurrenMemberUuids());
+            return InternalCompletableFuture.newCompletedFuture(getCurrentMemberUuids());
         }
 
         InternalCompletableFuture<Collection<UUID>> future = inFlightOperations.get(schemaId);
@@ -122,7 +122,7 @@ public class SchemaReplicator {
 
         synchronized (mutex) {
             if (isSchemaReplicated(schemaId)) {
-                return InternalCompletableFuture.newCompletedFuture(getCurrenMemberUuids());
+                return InternalCompletableFuture.newCompletedFuture(getCurrentMemberUuids());
             }
 
             future = inFlightOperations.get(schemaId);
@@ -144,7 +144,7 @@ public class SchemaReplicator {
             case REPLICATED:
                 // Schema is already known to be replicated across cluster
                 inFlightOperations.remove(schemaId, future);
-                future.complete(getCurrenMemberUuids());
+                future.complete(getCurrentMemberUuids());
                 break;
             case PREPARED:
                 // The schema is prepared, but we need to make sure that it is
@@ -344,7 +344,7 @@ public class SchemaReplicator {
         );
     }
 
-    private Collection<UUID> getCurrenMemberUuids() {
+    private Collection<UUID> getCurrentMemberUuids() {
         return nodeEngine.getClusterService().getMembers()
                 .stream()
                 .map(Member::getUuid)
