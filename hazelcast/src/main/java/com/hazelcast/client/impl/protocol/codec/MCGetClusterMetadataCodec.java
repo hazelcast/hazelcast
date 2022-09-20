@@ -54,7 +54,7 @@ public final class MCGetClusterMetadataCodec {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("MC.GetClusterMetadata");
-        Frame initialFrame = new Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
+        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         clientMessage.add(initialFrame);
@@ -102,7 +102,7 @@ public final class MCGetClusterMetadataCodec {
 
     public static ClientMessage encodeResponse(byte currentState, String memberVersion, @Nullable String jetVersion, long clusterTime, String clusterId, String memberId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
-        Frame initialFrame = new Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
+        ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         encodeByte(initialFrame.content, RESPONSE_CURRENT_STATE_FIELD_OFFSET, currentState);
         encodeLong(initialFrame.content, RESPONSE_CLUSTER_TIME_FIELD_OFFSET, clusterTime);
@@ -115,10 +115,10 @@ public final class MCGetClusterMetadataCodec {
         return clientMessage;
     }
 
-    public static ResponseParameters decodeResponse(ClientMessage clientMessage) {
-        ForwardFrameIterator iterator = clientMessage.frameIterator();
+    public static MCGetClusterMetadataCodec.ResponseParameters decodeResponse(ClientMessage clientMessage) {
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
         ResponseParameters response = new ResponseParameters();
-        Frame initialFrame = iterator.next();
+        ClientMessage.Frame initialFrame = iterator.next();
         response.currentState = decodeByte(initialFrame.content, RESPONSE_CURRENT_STATE_FIELD_OFFSET);
         response.clusterTime = decodeLong(initialFrame.content, RESPONSE_CLUSTER_TIME_FIELD_OFFSET);
         response.memberVersion = StringCodec.decode(iterator);
