@@ -503,7 +503,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
                 + "    allocator-type: STANDARD\n"
                 + "    min-block-size: 32\n"
                 + "    page-size: 24\n"
-                + "    size:\n"
+                + "    capacity:\n"
                 + "      unit: BYTES\n"
                 + "      value: 256\n"
                 + "    metadata-space-percentage: 70";
@@ -674,7 +674,7 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
         String yaml = ""
                 + "hazelcast-client:\n"
                 + "  native-memory:\n"
-                + "    size:\n"
+                + "    capacity:\n"
                 + "      value: 1337\n"
                 + "      unit: GIGABYTES\n";
 

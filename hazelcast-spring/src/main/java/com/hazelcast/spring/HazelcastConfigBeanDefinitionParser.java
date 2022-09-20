@@ -1387,13 +1387,13 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
         }
 
         private void handleCapacity(Node node, BeanDefinitionBuilder nativeMemoryConfigBuilder) {
-            BeanDefinitionBuilder memorySizeConfigBuilder = createBeanBuilder(Capacity.class);
+            BeanDefinitionBuilder capacityConfigBuilder = createBeanBuilder(Capacity.class);
             NamedNodeMap attributes = node.getAttributes();
             Node value = attributes.getNamedItem("value");
             Node unit = attributes.getNamedItem("unit");
-            memorySizeConfigBuilder.addConstructorArgValue(getTextContent(value));
-            memorySizeConfigBuilder.addConstructorArgValue(getTextContent(unit));
-            nativeMemoryConfigBuilder.addPropertyValue("capacity", memorySizeConfigBuilder.getBeanDefinition());
+            capacityConfigBuilder.addConstructorArgValue(getTextContent(value));
+            capacityConfigBuilder.addConstructorArgValue(getTextContent(unit));
+            nativeMemoryConfigBuilder.addPropertyValue("capacity", capacityConfigBuilder.getBeanDefinition());
         }
 
         @SuppressWarnings("checkstyle:magicnumber")

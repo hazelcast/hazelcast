@@ -673,7 +673,7 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
     public void testNativeMemoryConfiguration_isBackwardCompatible() {
         String xml = HAZELCAST_CLIENT_START_TAG
                 + "<native-memory>\n"
-                + "  <size value=\"1337\" unit=\"GIGABYTES\" />\n"
+                + "  <capacity value=\"1337\" unit=\"GIGABYTES\" />\n"
                 + "</native-memory>\n"
                 + HAZELCAST_CLIENT_END_TAG;
 
