@@ -89,7 +89,7 @@ public final class ReflectionHelper {
             return AttributeType.SQL_LOCAL_DATE_TIME;
         } else if (klass == OffsetDateTime.class) {
             return AttributeType.SQL_OFFSET_DATE_TIME;
-        } else if (klass.isEnum()) {
+        } else if (Enum.class.isAssignableFrom(klass)) {
             return AttributeType.ENUM;
         } else if (klass == UUID.class) {
             return AttributeType.UUID;

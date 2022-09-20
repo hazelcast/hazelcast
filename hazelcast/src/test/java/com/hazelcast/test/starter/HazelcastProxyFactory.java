@@ -135,7 +135,7 @@ public class HazelcastProxyFactory {
         if (DELEGATION_WHITE_LIST.contains(className)) {
             return RETURN_SAME;
         }
-        if (NO_PROXYING_WHITELIST.containsKey(className) || delegateClass.isEnum()) {
+        if (NO_PROXYING_WHITELIST.containsKey(className) || Enum.class.isAssignableFrom(delegateClass)) {
             return ProxyPolicy.NO_PROXY;
         }
         if (SUBCLASS_PROXYING_WHITELIST.contains(className) || ifaces.length == 0) {
@@ -297,7 +297,7 @@ public class HazelcastProxyFactory {
                 } catch (Exception e) {
                     throw new IllegalStateException(e);
                 }
-            } else if (input.isEnum()) {
+            } else if (Enum.class.isAssignableFrom(input)) {
                 return new EnumConstructor(input);
             }
             throw new UnsupportedOperationException("Cannot construct target object for target " + input
