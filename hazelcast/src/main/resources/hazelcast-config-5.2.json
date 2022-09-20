@@ -3029,7 +3029,8 @@
           "description": "Type of the memory allocator. The default value is POOLED. Available values are as follows: \\n- STANDARD: Allocates/frees the memory using default OS memory manager, \\n- POOLED: Manages memory blocks in thread local pools"
         },
         "size": {
-          "$ref": "#/definitions/Capacity"
+          "$ref": "#/definitions/Capacity",
+          "description": "Deprecated, use 'capacity' instead."
         },
         "capacity": {
           "$ref": "#/definitions/Capacity"
