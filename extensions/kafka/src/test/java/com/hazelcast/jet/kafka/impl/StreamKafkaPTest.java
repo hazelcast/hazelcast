@@ -61,6 +61,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.time.Duration;
 import java.util.AbstractMap.SimpleImmutableEntry;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
@@ -78,6 +79,7 @@ import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.core.EventTimePolicy.eventTimePolicy;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.WatermarkPolicy.limitingLag;
 import static com.hazelcast.jet.impl.execution.WatermarkCoalescer.IDLE_MESSAGE;
 import static java.util.Arrays.asList;
@@ -629,6 +631,51 @@ public class StreamKafkaPTest extends SimpleTestInClusterSupport {
         kafkaTestSupport.produce(topic1Name, 0, "0").get();
         instance().getJet().newJob(p);
         assertTrueAllTheTime(() -> assertTrue(sinkList.isEmpty()), 2);
+    }
+
+    @Test
+    public void when_autoOffsetResetEarliest_then_startsFromEarliestAfterRestart() throws Exception {
+        IList<Entry<Integer, String>> sinkList = instance().getList("sinkList");
+        Pipeline p = Pipeline.create();
+        Properties properties = properties();
+        properties.setProperty("auto.offset.reset", "earliest");
+        p.readFrom(KafkaSources.<Integer, String>kafka(properties, topic1Name))
+                .withoutTimestamps()
+                .writeTo(Sinks.list(sinkList));
+
+        kafkaTestSupport.produce(topic1Name, 0, "0").get();
+        Job job = instance().getJet().newJob(p);
+        assertTrueEventually(() -> assertEquals(singletonList(entry(0, "0")), sinkList));
+        job.suspend();
+        assertJobStatusEventually(job, SUSPENDED);
+        kafkaTestSupport.produce(topic1Name, 0, "1").get();
+        sinkList.clear();
+        job.resume();
+        assertTrueEventually(() ->
+                assertEquals(asList(entry(0, "0"), entry(0, "1")), new ArrayList<>(sinkList)));
+    }
+
+    @Test
+    public void when_autoOffsetResetEarliestAndGroupIdSet_then_startsFromCommittedOffsetAfterRestart() throws Exception {
+        IList<Entry<Integer, String>> sinkList = instance().getList("sinkList");
+        Pipeline p = Pipeline.create();
+        Properties properties = properties();
+        properties.setProperty("auto.offset.reset", "earliest");
+        properties.setProperty("group.id", randomString());
+        p.readFrom(KafkaSources.<Integer, String>kafka(properties, topic1Name))
+                .withoutTimestamps()
+                .writeTo(Sinks.list(sinkList));
+
+        kafkaTestSupport.produce(topic1Name, 0, "0").get();
+        Job job = instance().getJet().newJob(p);
+        assertTrueEventually(() -> assertEquals(singletonList(entry(0, "0")), sinkList));
+        job.suspend();
+        assertJobStatusEventually(job, SUSPENDED);
+        kafkaTestSupport.produce(topic1Name, 0, "1").get();
+        sinkList.clear();
+        job.resume();
+        assertTrueEventually(() ->
+                assertEquals(singletonList(entry(0, "1")), new ArrayList<>(sinkList)));
     }
 
     @Test

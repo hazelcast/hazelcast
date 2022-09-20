@@ -129,7 +129,7 @@ public final class KafkaSources {
      * @param topicsConfig configuration for the topics to consume, at least one
      *                     topic must be specified in the configuration.
      *
-     * @since Jet 5.2
+     * @since 5.2
      */
     @Nonnull
     public static <K, V, T> StreamSource<T> kafka(
