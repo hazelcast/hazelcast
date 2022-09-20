@@ -17,28 +17,23 @@
 package com.hazelcast.client;
 
 import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.impl.clientside.ClientConnectionManagerFactory;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 
 public class HazelcastClientUtil {
 
-    public static HazelcastInstance newHazelcastClient(AddressProvider addressProvider, ClientConfig clientConfig) {
-        return HazelcastClient.newHazelcastClientInternal(addressProvider, clientConfig, null);
+    public static HazelcastInstance newHazelcastClient(ClientConfig config, AddressProvider addressProvider) {
+        return HazelcastClient.newHazelcastClientInternal(config, null, null, addressProvider);
     }
 
-    public static String getInstanceName(ClientConfig config) {
-        return HazelcastClient.getInstanceName(config, null);
-    }
-
-    public static void registerProxyFuture(String instanceName,
-                                           HazelcastInstanceFactory.InstanceFuture future) {
-        HazelcastClient.getClients().put(instanceName, future);
-    }
-
-    public static boolean hasRegisteredClientWithName(String instanceName) {
-        return HazelcastClient.getClients().containsKey(instanceName);
+    public static HazelcastInstance newHazelcastClient(
+            ClientConfig config,
+            ClientConnectionManagerFactory connectionManagerFactory,
+            AddressProvider addressProvider
+    ) {
+        return HazelcastClient.newHazelcastClientInternal(config, null, connectionManagerFactory, addressProvider);
     }
 
     public static ClientMessage.Frame fastForwardToEndFrame(ClientMessage.ForwardFrameIterator iterator) {

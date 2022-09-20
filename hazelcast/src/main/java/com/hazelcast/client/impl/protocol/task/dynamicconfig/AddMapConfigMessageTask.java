@@ -53,7 +53,7 @@ public class AddMapConfigMessageTask
     }
 
     @Override
-    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
+    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity", "checkstyle:MethodLength"})
     protected IdentifiedDataSerializable getConfig() {
         MapConfig config = new MapConfig(parameters.name);
         config.setAsyncBackupCount(parameters.asyncBackupCount);
@@ -108,6 +108,12 @@ public class AddMapConfigMessageTask
         }
         config.setWanReplicationRef(parameters.wanReplicationRef);
         config.setMetadataPolicy(MetadataPolicy.getById(parameters.metadataPolicy));
+        if (parameters.isDataPersistenceConfigExists) {
+            config.setDataPersistenceConfig(parameters.dataPersistenceConfig);
+        }
+        if (parameters.isTieredStoreConfigExists) {
+            config.setTieredStoreConfig(parameters.tieredStoreConfig);
+        }
         return config;
     }
 

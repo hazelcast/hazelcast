@@ -125,7 +125,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         this.allowOverrideDefaultSerializers = builder.allowOverrideDefaultSerializers;
         CompactSerializationConfig compactSerializationCfg = builder.compactSerializationConfig == null
                 ? new CompactSerializationConfig() : builder.compactSerializationConfig;
-        compactStreamSerializer = new CompactStreamSerializer(compactSerializationCfg,
+        compactStreamSerializer = new CompactStreamSerializer(this, compactSerializationCfg,
                 managedContext, builder.schemaService, classLoader);
         this.compactWithSchemaSerializerAdapter = new CompactWithSchemaStreamSerializerAdapter(compactStreamSerializer);
         this.compactSerializerAdapter = new CompactStreamSerializerAdapter(compactStreamSerializer);
@@ -570,7 +570,10 @@ public abstract class AbstractSerializationService implements InternalSerializat
             return nullSerializerAdapter;
         }
         final Class type = object.getClass();
+        return serializerForClass(type, includeSchema);
+    }
 
+    public SerializerAdapter serializerForClass(Class type, boolean includeSchema) {
         //2-Default serializers, Dataserializable, Compact, Portable, primitives, arrays, String and
         // some helper Java types(BigInteger etc)
         SerializerAdapter serializer = lookupDefaultSerializer(type, includeSchema);
@@ -594,7 +597,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
         }
 
         //6-Compact serializer
-        if (serializer == null && compactStreamSerializer.isEnabled()) {
+        if (serializer == null) {
             serializer = getCompactSerializer(includeSchema);
         }
 
@@ -614,8 +617,8 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     private SerializerAdapter lookupDefaultSerializer(Class type, boolean includeSchema) {
-        if (compactStreamSerializer.isEnabled()
-                && (CompactGenericRecord.class.isAssignableFrom(type) || compactStreamSerializer.isRegisteredAsCompact(type))) {
+        if ((CompactGenericRecord.class.isAssignableFrom(type)
+                || compactStreamSerializer.isRegisteredAsCompact(type))) {
             return getCompactSerializer(includeSchema);
         }
         if (DataSerializable.class.isAssignableFrom(type)) {
@@ -690,6 +693,27 @@ public abstract class AbstractSerializationService implements InternalSerializat
         return null;
     }
 
+    /**
+     * Makes sure that the classes registered as Compact serializable are not
+     * overriding the default serializers.
+     * <p>
+     * Must be called in the constructor of the child classes after they
+     * complete registering default serializers.
+     */
+    protected void verifyDefaultSerializersNotOverriddenWithCompact() {
+        for (Class clazz : compactStreamSerializer.getCompactSerializableClasses()) {
+            if (!constantTypesMap.containsKey(clazz)) {
+                continue;
+            }
+
+            throw new IllegalArgumentException("Compact serializer for the "
+                    + "class '" + clazz + " can not be registered as it "
+                    + "overrides the default serializer for that class "
+                    + "provided by Hazelcast."
+            );
+        }
+    }
+
     public abstract static class Builder<T extends Builder<T>> {
         private InputOutputFactory inputOutputFactory;
         private byte version;
@@ -757,8 +781,9 @@ public abstract class AbstractSerializationService implements InternalSerializat
          * Sets whether the serialization service should (de)serialize in the
          * compatibility (3.x) format.
          *
-         * @param isCompatibility {@code true} if the serialized format should conform to the
-         *                        3.x serialization format, {@code false} otherwise
+         * @param isCompatibility {@code true} if the serialized format should
+         *                        conform to the 3.x serialization format,
+         *                        {@code false} otherwise
          * @return this builder
          */
         public final T withCompatibility(boolean isCompatibility) {
@@ -767,8 +792,9 @@ public abstract class AbstractSerializationService implements InternalSerializat
         }
 
         /**
-         * @return {@code true} if the serialized format of the serialization service should
-         * conform to the 3.x serialization format, {@code false} otherwise.
+         * @return {@code true} if the serialized format of the serialization
+         * service should conform to the 3.x serialization format, {@code false}
+         * otherwise.
          */
         public boolean isCompatibility() {
             return isCompatibility;

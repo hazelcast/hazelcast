@@ -1260,7 +1260,6 @@ public final class AggregateOperations {
                 .withCreate(PickAnyAccumulator<T>::new)
                 .<T>andAccumulate(PickAnyAccumulator::accumulate)
                 .andCombine(PickAnyAccumulator::combine)
-                .andDeduct(PickAnyAccumulator::deduct)
                 .andExportFinish(PickAnyAccumulator::get);
     }
 

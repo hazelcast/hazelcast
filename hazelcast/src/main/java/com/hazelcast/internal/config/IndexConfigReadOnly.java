@@ -16,6 +16,7 @@
 
 package com.hazelcast.internal.config;
 
+import com.hazelcast.config.BTreeIndexConfig;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 
@@ -58,5 +59,10 @@ public class IndexConfigReadOnly extends IndexConfig {
     @Override
     public IndexConfig setAttributes(List<String> attributes) {
         throw new UnsupportedOperationException("This config is read-only");
+    }
+
+    @Override
+    public BTreeIndexConfig getBTreeIndexConfig() {
+        return new BTreeIndexConfigReadOnly(super.getBTreeIndexConfig());
     }
 }

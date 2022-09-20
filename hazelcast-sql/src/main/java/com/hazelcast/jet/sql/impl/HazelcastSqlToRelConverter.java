@@ -35,7 +35,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
 import org.apache.calcite.plan.RelOptCluster;
-import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.prepare.Prepare;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.TableModify;
@@ -113,14 +112,13 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
     private final Set<SqlNode> callSet = Collections.newSetFromMap(new IdentityHashMap<>());
 
     public HazelcastSqlToRelConverter(
-            RelOptTable.ViewExpander viewExpander,
             SqlValidator validator,
             Prepare.CatalogReader catalogReader,
             RelOptCluster cluster,
             SqlRexConvertletTable convertletTable,
             Config config
     ) {
-        super(viewExpander, validator, catalogReader, cluster, convertletTable, config);
+        super(null, validator, catalogReader, cluster, convertletTable, config);
     }
 
     @Override
@@ -279,8 +277,7 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
                     (SqlInOperator) call.getOperator()
             );
         }
-        throw QueryException.error(SqlErrorCode.GENERIC,
-                "Sub-queries are not supported for IN operator.");
+        throw QueryException.error("Sub-queries are not supported for IN operator.");
     }
 
     /**

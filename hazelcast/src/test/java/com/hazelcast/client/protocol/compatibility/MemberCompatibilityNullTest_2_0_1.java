@@ -6470,6 +6470,7 @@ public class MemberCompatibilityNullTest_2_0_1 {
         assertTrue(isEqual(aString, parameters.mergePolicy));
         assertTrue(isEqual(anInt, parameters.mergeBatchSize));
         assertFalse(parameters.isStatisticsEnabledExists);
+        assertFalse(parameters.isCapacityPolicyExists);
     }
 
     @Test
@@ -6540,6 +6541,8 @@ public class MemberCompatibilityNullTest_2_0_1 {
         assertTrue(isEqual(null, parameters.merkleTreeConfig));
         assertTrue(isEqual(anInt, parameters.metadataPolicy));
         assertFalse(parameters.isPerEntryStatsEnabledExists);
+        assertFalse(parameters.isDataPersistenceConfigExists);
+        assertFalse(parameters.isTieredStoreConfigExists);
     }
 
     @Test
@@ -6603,6 +6606,7 @@ public class MemberCompatibilityNullTest_2_0_1 {
         assertTrue(isEqual(null, parameters.eventJournalConfig));
         assertTrue(isEqual(null, parameters.hotRestartConfig));
         assertFalse(parameters.isMerkleTreeConfigExists);
+        assertFalse(parameters.isDataPersistenceConfigExists);
     }
 
     @Test

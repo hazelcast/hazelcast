@@ -60,11 +60,12 @@ import com.hazelcast.test.annotation.QuickTest;
 @Category({ QuickTest.class })
 public class ProtocolNegotiationTest {
 
-    private final BytesCountingServer bcServer = new BytesCountingServer(createServerSocket());
+    private volatile BytesCountingServer bcServer;
     private final TestAwareInstanceFactory factory = new TestAwareInstanceFactory();
 
     @Before
     public void before() {
+        bcServer = new BytesCountingServer(createServerSocket());
         new Thread(bcServer).start();
     }
 

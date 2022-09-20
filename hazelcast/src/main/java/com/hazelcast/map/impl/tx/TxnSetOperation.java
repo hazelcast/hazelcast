@@ -22,7 +22,11 @@ import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.operation.BasePutOperation;
+import com.hazelcast.map.impl.operation.steps.TxnSetOpSteps;
+import com.hazelcast.map.impl.operation.steps.engine.State;
+import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.record.Record;
+import com.hazelcast.map.impl.recordstore.StaticParams;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -88,6 +92,32 @@ public class TxnSetOperation extends BasePutOperation
             recordStore.setTxn(dataKey, dataValue, ttl, UNSET, transactionId);
             shouldBackup = true;
         }
+    }
+
+    @Override
+    public State createState() {
+        return super.createState()
+                .setStaticPutParams(getStaticParams())
+                .setTxnId(transactionId)
+                .setOwnerUuid(ownerUuid)
+                .setVersion(version)
+                .setTtl(ttl);
+    }
+
+    @Override
+    public Step getStartingStep() {
+        return TxnSetOpSteps.READ;
+    }
+
+    @Override
+    protected StaticParams getStaticParams() {
+        return StaticParams.TXN_SET_PARAMS;
+    }
+
+    @Override
+    public void applyState(State state) {
+        super.applyState(state);
+        shouldBackup = state.getEntryEventType() != null;
     }
 
     @Override

@@ -63,6 +63,13 @@ public enum Operation {
     }
 
     /**
+     * Returns the Debezium operation code as String.
+     */
+    public String code() {
+        return String.valueOf(id);
+    }
+
+    /**
      * Parses the string present in a CDC message into the corresponding
      * {@code Operation} enum member.
      * <p>

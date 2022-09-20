@@ -123,4 +123,10 @@ public interface ClientEndpoint extends Client, DynamicMetricsProvider {
      * @return the time this endpoint is created
      */
     long getCreationTime();
+
+    /**
+     * Similar to {@link ClientEndpointImpl#toString()} but lacks some information due to security reasons.
+     * Used when handling unauthenticated requests.
+     */
+    String toSecureString();
 }

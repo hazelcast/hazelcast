@@ -29,19 +29,19 @@ import java.lang.reflect.Constructor;
 public final class JavaRecordReader {
 
     private final Constructor<?> recordConstructor;
-    private final ComponentReader[] componentReaders;
+    private final ComponentReaderWriter[] componentReaderWriters;
 
-    public JavaRecordReader(Constructor<?> recordConstructor, ComponentReader[] componentReaders) {
+    public JavaRecordReader(Constructor<?> recordConstructor, ComponentReaderWriter[] componentReaderWriters) {
         this.recordConstructor = recordConstructor;
-        this.componentReaders = componentReaders;
+        this.componentReaderWriters = componentReaderWriters;
     }
 
     public Object readRecord(CompactReader compactReader, Schema schema) {
-        Object[] components = new Object[componentReaders.length];
+        Object[] components = new Object[componentReaderWriters.length];
 
         try {
-            for (int i = 0; i < componentReaders.length; i++) {
-                components[i] = componentReaders[i].readComponent(compactReader, schema);
+            for (int i = 0; i < componentReaderWriters.length; i++) {
+                components[i] = componentReaderWriters[i].readComponent(compactReader, schema);
             }
             return recordConstructor.newInstance(components);
         } catch (Exception e) {

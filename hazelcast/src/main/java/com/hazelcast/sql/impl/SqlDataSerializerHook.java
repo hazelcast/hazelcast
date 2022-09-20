@@ -30,8 +30,11 @@ import com.hazelcast.sql.impl.expression.CaseExpression;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.FieldAccessExpression;
 import com.hazelcast.sql.impl.expression.ParameterExpression;
-import com.hazelcast.sql.impl.expression.SearchableExpression;
+import com.hazelcast.sql.impl.expression.RowExpression;
+import com.hazelcast.sql.impl.expression.RowValue;
+import com.hazelcast.sql.impl.expression.SargExpression;
 import com.hazelcast.sql.impl.expression.datetime.ExtractFunction;
 import com.hazelcast.sql.impl.expression.datetime.ToEpochMillisFunction;
 import com.hazelcast.sql.impl.expression.datetime.ToTimestampTzFunction;
@@ -77,6 +80,7 @@ import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.HeapRow;
 import com.hazelcast.sql.impl.schema.Mapping;
 import com.hazelcast.sql.impl.schema.MappingField;
+import com.hazelcast.sql.impl.schema.type.Type;
 import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
@@ -166,12 +170,17 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int MAPPING = 57;
     public static final int MAPPING_FIELD = 58;
 
-    public static final int EXPRESSION_SEARCHABLE = 59;
-    public static final int EXPRESSION_SEARCH = 60;
-
+    public static final int SARG_EXPRESSION = 59;
+    public static final int SEARCH_PREDICATE = 60;
     public static final int VIEW = 61;
+    public static final int EXPRESSION_FIELD_ACCESS = 62;
+    public static final int TYPE = 63;
+    public static final int TYPE_FIELD = 64;
+    public static final int EXPRESSION_ROW = 65;
+    public static final int ROW_VALUE = 66;
+    public static final int QUERY_DATA_TYPE_FIELD = 67;
 
-    public static final int LEN = VIEW + 1;
+    public static final int LEN = QUERY_DATA_TYPE_FIELD + 1;
 
     @Override
     public int getFactoryId() {
@@ -255,10 +264,15 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[MAPPING] = arg -> new Mapping();
         constructors[MAPPING_FIELD] = arg -> new MappingField();
 
-        constructors[EXPRESSION_SEARCHABLE] = arg -> new SearchableExpression<>();
-        constructors[EXPRESSION_SEARCH] = arg -> new SearchPredicate();
-
+        constructors[SARG_EXPRESSION] = arg -> new SargExpression<>();
+        constructors[SEARCH_PREDICATE] = arg -> new SearchPredicate();
         constructors[VIEW] = arg -> new View();
+        constructors[EXPRESSION_FIELD_ACCESS] = arg -> new FieldAccessExpression<>();
+        constructors[TYPE] = arg -> new Type();
+        constructors[TYPE_FIELD] = arg -> new Type.TypeField();
+        constructors[EXPRESSION_ROW] = arg -> new RowExpression();
+        constructors[ROW_VALUE] = arg -> new RowValue();
+        constructors[QUERY_DATA_TYPE_FIELD] = arg -> new QueryDataType.QueryDataTypeField();
 
         return new ArrayDataSerializableFactory(constructors);
     }

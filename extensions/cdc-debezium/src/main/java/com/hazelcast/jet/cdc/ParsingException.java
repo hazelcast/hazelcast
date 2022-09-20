@@ -24,7 +24,7 @@ import com.hazelcast.jet.annotation.EvolvingApi;
  * @since Jet 4.2
  */
 @EvolvingApi
-public class ParsingException extends Exception {
+public class ParsingException extends RuntimeException {
 
     private static final long serialVersionUID = 1L;
 

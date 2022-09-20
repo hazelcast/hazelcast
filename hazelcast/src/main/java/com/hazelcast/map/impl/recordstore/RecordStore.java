@@ -33,6 +33,7 @@ import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
+import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
@@ -311,8 +312,9 @@ public interface RecordStore<R extends Record> {
      * does not intercept.
      *
      * @param dataKey key to remove
+     * @param backup {@code true} if a backup partition, otherwise {@code false}.
      */
-    void removeReplicatedRecord(Data dataKey);
+    void removeReplicatedRecord(Data dataKey, boolean backup);
 
     void forEach(BiConsumer<Data, R> consumer, boolean backup);
 
@@ -631,9 +633,10 @@ public interface RecordStore<R extends Record> {
      * <p>
      * Clears data in this record store.
      *
+     * @param backup  {@code true} if a backup partition, otherwise {@code false}.
      * @return number of cleared entries.
      */
-    int clear();
+    int clear(boolean backup);
 
     /**
      * Resets the record store to it's initial state.
@@ -666,4 +669,12 @@ public interface RecordStore<R extends Record> {
     default void afterOperation() {
         // no-op
     }
+
+    Set<MapOperation> getOffloadedOperations();
+
+    void incMapStoreOffloadedOperationsCount();
+
+    void decMapStoreOffloadedOperationsCount();
+
+    long getMapStoreOffloadedOperationsCount();
 }

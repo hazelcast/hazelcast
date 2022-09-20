@@ -67,6 +67,8 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
               .setMaxSize(100);
         config.getQueueConfig("testOfferWithTimeout*")
               .setMaxSize(100);
+        config.getQueueConfig("testAddAll_whenExceedingConstraint*")
+              .setMaxSize(100);
 
         instances = newInstances(config);
         HazelcastInstance local = instances[0];
@@ -419,6 +421,17 @@ public abstract class QueueAbstractTest extends HazelcastTestSupport {
         assertContains(queue, new VersionedObject<>("item3", 3));
         queue.addAll(list);
         assertEquals(11, queue.size());
+    }
+
+    @Test
+    public void testAddAll_whenExceedingConstraint() {
+        final List<VersionedObject<String>> list = Collections.nCopies(101, new VersionedObject<>("Hello"));
+        assertThrows(IllegalStateException.class, () -> {
+                queue.addAll(list);
+        });
+        List<VersionedObject<String>> drainTo = new ArrayList<>();
+        queue.drainTo(drainTo);
+        assertEquals(0, drainTo.size());
     }
 
     // ================ retainAll ==============================

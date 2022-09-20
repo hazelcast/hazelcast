@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.logical;
 
 import com.google.common.collect.Iterables;
-import com.hazelcast.function.FunctionEx;
+import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.WatermarkPolicy;
 import com.hazelcast.jet.impl.util.Util;
@@ -38,8 +38,6 @@ import org.apache.calcite.rel.logical.LogicalTableFunctionScan;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
-
-import java.util.Map;
 
 import static com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdWatermarkedFields.watermarkedFieldByIndex;
 import static com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider.FAILING_FIELD_TYPE_PROVIDER;
@@ -80,33 +78,29 @@ final class WatermarkRules {
                 call.transformTo(wmRel);
                 return;
             }
-            WatermarkedFields watermarkedFields = watermarkedFieldByIndex(wmRel, wmIndex);
+            WatermarkedFields watermarkedFields = watermarkedFieldByIndex(wmIndex);
             if (watermarkedFields == null || watermarkedFields.isEmpty()) {
                 call.transformTo(wmRel);
                 return;
             }
 
-            Map.Entry<Integer, RexNode> watermarkedField = watermarkedFields.findFirst();
-            if (watermarkedField == null) {
-                call.transformTo(wmRel);
-                return;
-            }
+            int watermarkedField = watermarkedFields.findFirst();
 
             DropLateItemsLogicalRel dropLateItemsRel = new DropLateItemsLogicalRel(
                     scan.getCluster(),
                     OptUtils.toLogicalConvention(scan.getTraitSet()),
                     wmRel,
-                    watermarkedField.getValue()
+                    watermarkedField
             );
             call.transformTo(dropLateItemsRel);
         }
 
-        private FunctionEx<ExpressionEvalContext, EventTimePolicy<JetSqlRow>> toEventTimePolicyProvider(
+        private BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> toEventTimePolicyProvider(
                 LogicalTableFunctionScan function
         ) {
             int orderingColumnFieldIndex = orderingColumnFieldIndex(function);
             Expression<?> lagExpression = lagExpression(function);
-            return context -> {
+            return (context, watermarkKey) -> {
                 // todo [viliam] move this to CreateDagVisitor
                 long lagMs = WindowUtils.extractMillis(lagExpression, context);
                 return EventTimePolicy.eventTimePolicy(
@@ -115,7 +109,8 @@ final class WatermarkRules {
                         WatermarkPolicy.limitingLag(lagMs),
                         lagMs,
                         0,
-                        EventTimePolicy.DEFAULT_IDLE_TIMEOUT);
+                        EventTimePolicy.DEFAULT_IDLE_TIMEOUT,
+                        watermarkKey);
             };
         }
 

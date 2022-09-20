@@ -58,6 +58,9 @@ public class AddScheduledExecutorConfigMessageTask
         config.setStatisticsEnabled(statsEnabled);
         MergePolicyConfig mergePolicyConfig = mergePolicyConfig(parameters.mergePolicy, parameters.mergeBatchSize);
         config.setMergePolicyConfig(mergePolicyConfig);
+        if (parameters.isCapacityPolicyExists) {
+            config.setCapacityPolicy(ScheduledExecutorConfig.CapacityPolicy.getById(parameters.capacityPolicy));
+        }
         return config;
     }
 

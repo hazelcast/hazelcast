@@ -107,7 +107,7 @@ public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
     private Traverser<R> flatMapEvent(T event) {
         long timestamp = timestampFn.applyAsLong(event);
         if (timestamp < currentWm && ttl != Long.MAX_VALUE) {
-            logLateEvent(getLogger(), currentWm, event);
+            logLateEvent(getLogger(), (byte) 0, currentWm, event);
             lateEventsDropped.inc();
             return Traversers.empty();
         }
@@ -126,6 +126,7 @@ public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
+        keyedWatermarkCheck(watermark);
         return wmFlatMapper.tryProcess(watermark);
     }
 

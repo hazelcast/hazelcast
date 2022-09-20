@@ -35,6 +35,15 @@ class SingleRecordStoreForcedEviction implements ForcedEviction {
 
     @Override
     public boolean forceEvictAndRun(MapOperation mapOperation, double evictionPercentage) {
+        return forceEvictAndRun0(mapOperation, evictionPercentage, null);
+    }
+
+    @Override
+    public boolean forceEvictAndRun(MapOperation mapOperation, double evictionPercentage, Runnable runnable) {
+        return forceEvictAndRun0(mapOperation, evictionPercentage, runnable);
+    }
+
+    private boolean forceEvictAndRun0(MapOperation mapOperation, double evictionPercentage, Runnable runnable) {
         assert evictionPercentage > 0 && evictionPercentage <= 1;
 
         RecordStore recordStore = mapOperation.recordStore;
@@ -58,7 +67,11 @@ class SingleRecordStoreForcedEviction implements ForcedEviction {
             try {
                 Evictor evictor = recordStore.getMapContainer().getEvictor();
                 evictor.forceEvictByPercentage(recordStore, evictionPercentage);
-                mapOperation.runInternal();
+                if (runnable != null) {
+                    runnable.run();
+                } else {
+                    mapOperation.runInternal();
+                }
                 return true;
             } catch (NativeOutOfMemoryError e) {
                 ignore(e);

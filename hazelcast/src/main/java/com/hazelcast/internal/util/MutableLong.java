@@ -35,6 +35,15 @@ public class MutableLong {
         return instance;
     }
 
+    public long addAndGet(long value) {
+        this.value += value;
+        return this.value;
+    }
+
+    public long getAndInc() {
+        return value++;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) {

@@ -17,20 +17,17 @@
 package com.hazelcast.jet.cdc.impl;
 
 import com.hazelcast.jet.cdc.ChangeRecord;
+import com.hazelcast.jet.cdc.Operation;
 import com.hazelcast.jet.core.EventTimePolicy;
-import io.debezium.transforms.ExtractNewRecordState;
+import org.apache.kafka.connect.data.Schema;
+import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.data.Values;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
 import java.util.Properties;
-import java.util.Set;
+import java.util.function.Supplier;
 
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
@@ -39,7 +36,6 @@ public class ChangeRecordCdcSourceP extends CdcSourceP<ChangeRecord> {
     public static final String DB_SPECIFIC_EXTRA_FIELDS_PROPERTY = "db.specific.extra.fields";
 
     private final SequenceExtractor sequenceExtractor;
-    private final ExtractNewRecordState<SourceRecord> transform;
 
     public ChangeRecordCdcSourceP(
             @Nonnull Properties properties,
@@ -50,7 +46,6 @@ public class ChangeRecordCdcSourceP extends CdcSourceP<ChangeRecord> {
         try {
             sequenceExtractor = newInstance(properties.getProperty(SEQUENCE_EXTRACTOR_CLASS_PROPERTY),
                     "sequence extractor ");
-            transform = initTransform(properties.getProperty(DB_SPECIFIC_EXTRA_FIELDS_PROPERTY));
         } catch (Exception e) {
             throw rethrow(e);
         }
@@ -59,7 +54,6 @@ public class ChangeRecordCdcSourceP extends CdcSourceP<ChangeRecord> {
     @Nullable
     @Override
     protected ChangeRecord map(SourceRecord record) {
-        record = transform.apply(record);
         if (record == null) {
             return null;
         }
@@ -67,26 +61,37 @@ public class ChangeRecordCdcSourceP extends CdcSourceP<ChangeRecord> {
         long sequenceSource = sequenceExtractor.source(record.sourcePartition(), record.sourceOffset());
         long sequenceValue = sequenceExtractor.sequence(record.sourceOffset());
         String keyJson = Values.convertToString(record.keySchema(), record.key());
-        String valueJson = Values.convertToString(record.valueSchema(), record.value());
-        return new ChangeRecordImpl(sequenceSource, sequenceValue, keyJson, valueJson);
+        Struct value = (Struct) record.value();
+        Struct source = (Struct) value.get("source");
+
+        Operation operation = Operation.get(value.getString("op"));
+        Schema valueSchema = record.valueSchema();
+
+        Object before = value.get("before");
+        Object after = value.get("after");
+        Supplier<String> oldValueJson = before == null
+                ? null
+                : () -> Values.convertToString(valueSchema.field("before").schema(), before);
+        Supplier<String> newValueJson = after == null
+                ? null
+                : () -> Values.convertToString(valueSchema.field("after").schema(), after);
+        return new ChangeRecordImpl(
+                value.getInt64("ts_ms"),
+                sequenceSource,
+                sequenceValue,
+                operation,
+                keyJson,
+                oldValueJson,
+                newValueJson,
+                fieldOrNull(source, "table"),
+                fieldOrNull(source, "schema"),
+                fieldOrNull(source, "db")
+        );
     }
 
-    private static ExtractNewRecordState<SourceRecord> initTransform(String dbSpecificExtraFields) {
-        ExtractNewRecordState<SourceRecord> transform = new ExtractNewRecordState<>();
-
-        Map<String, String> config = new HashMap<>();
-        config.put("add.fields", String.join(",", extraFields(dbSpecificExtraFields)));
-        config.put("delete.handling.mode", "rewrite");
-        transform.configure(config);
-
-        return transform;
-    }
-
-    private static Collection<String> extraFields(String dbSpecificExtraFields) {
-        Set<String> extraFields = new HashSet<>(Arrays.asList("db", "table", "op", "ts_ms"));
-        if (dbSpecificExtraFields != null) {
-            extraFields.addAll(Arrays.asList(dbSpecificExtraFields.split(",")));
-        }
-        return extraFields;
+    private static String fieldOrNull(Struct struct, String fieldName) {
+        return struct.schema().field(fieldName) != null
+                ? struct.getString(fieldName)
+                : null;
     }
 }

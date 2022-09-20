@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
+import com.hazelcast.jet.sql.impl.opt.common.CalcIntoScanRule;
 import org.apache.calcite.rel.rules.CoreRules;
 import org.apache.calcite.rel.rules.PruneEmptyRules;
 import org.apache.calcite.tools.RuleSet;
@@ -35,17 +36,20 @@ public final class LogicalRules {
 
                 // Calc rules
                 CalcLogicalRule.INSTANCE,
-                CalcIntoScanLogicalRule.INSTANCE,
+                CalcIntoScanRule.INSTANCE,
                 CalcMergeRule.INSTANCE,
                 CoreRules.CALC_REMOVE,
-                CoreRules.CALC_REDUCE_EXPRESSIONS,
+                CalcReduceExprRule.INSTANCE,
                 // We need it to transpose RIGHT JOIN to the LEFT JOIN
                 CoreRules.PROJECT_TO_CALC,
                 SlidingWindowCalcSplitLogicalRule.STREAMING_FILTER_TRANSPOSE,
+                CalcDropLateItemsTransposeRule.INSTANCE,
 
-                // Windowing rules
+                // Watermark rules
                 WatermarkRules.IMPOSE_ORDER_INSTANCE,
                 WatermarkRules.WATERMARK_INTO_SCAN_INSTANCE,
+
+                // Windowing rules
                 FunctionLogicalRules.WINDOW_FUNCTION_INSTANCE,
                 SlidingWindowDropLateItemsMergeRule.INSTANCE,
 
@@ -81,7 +85,6 @@ public final class LogicalRules {
                 DeleteLogicalRule.INSTANCE,
 
                 // imap-by-key access optimization rules
-                SelectByKeyMapLogicalRules.INSTANCE,
                 InsertMapLogicalRule.INSTANCE,
                 SinkMapLogicalRule.INSTANCE,
                 UpdateByKeyMapLogicalRule.INSTANCE,

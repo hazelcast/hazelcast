@@ -283,6 +283,16 @@ public final class ClientEndpointImpl implements ClientEndpoint {
     }
 
     @Override
+    public String toSecureString() {
+        return "ClientEndpoint{"
+                + "clientUuid=" + clientUuid
+                + ", clientName=" + clientName
+                + ", clientVersion=" + clientVersion
+                + ", labels=" + labels
+                + '}';
+    }
+
+    @Override
     public void provideDynamicMetrics(MetricDescriptor descriptor, MetricsCollectionContext context) {
         ClientStatistics clientStatistics = statsRef.get();
         if (clientStatistics != null && clientStatistics.metricsBlob() != null) {

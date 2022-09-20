@@ -76,8 +76,9 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
         try {
             verifyLock();
             try {
-                operator(this).init(dataKey, oldValue, newValue, null, modificationType, null, newTtl)
-                    .doPostOperateOps();
+                operator(this).init(dataKey, oldValue, newValue,
+                                null, modificationType, null, newTtl)
+                        .doPostOperateOps();
             } finally {
                 unlockKey();
             }
@@ -88,14 +89,14 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
 
     private void verifyLock() {
         if (!recordStore.isLockedBy(dataKey, caller, threadId)) {
-            // we can't send a RetryableHazelcastException explicitly since it would retry this opertation and we want to retry
+            // we can't send a RetryableHazelcastException explicitly since it would retry this operation, and we want to retry
             // the preceding EntryOperation that this operation is part of.
             throw new EntryOffloadableLockMismatchException(
                     String.format("The key is not locked by the caller=%s and threadId=%d", caller, threadId));
         }
     }
 
-    private void unlockKey() {
+    public void unlockKey() {
         boolean unlocked = recordStore.unlock(dataKey, caller, threadId, getCallId());
         if (!unlocked) {
             throw new IllegalStateException(
@@ -118,7 +119,8 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
 
     @Override
     public boolean returnsResponse() {
-        // this has to be true, otherwise the calling side won't be notified about the exception thrown by this operation
+        // this has to be true, otherwise the calling side won't be
+        // notified about the exception thrown by this operation
         return true;
     }
 
