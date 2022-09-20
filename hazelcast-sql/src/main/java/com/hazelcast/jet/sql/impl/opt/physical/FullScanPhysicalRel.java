@@ -17,10 +17,11 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.schema.TableField;
@@ -44,7 +45,7 @@ import java.util.List;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static com.hazelcast.jet.sql.impl.opt.cost.CostUtils.TABLE_SCAN_CPU_MULTIPLIER;
 
-public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
+public class FullScanPhysicalRel extends TableScan implements HazelcastPhysicalScan {
 
     FullScanPhysicalRel(
             RelOptCluster cluster,
@@ -54,6 +55,7 @@ public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
         super(cluster, traitSet, table);
     }
 
+    @Override
     public Expression<Boolean> filter(QueryParameterMetadata parameterMetadata) {
         PlanNodeSchema schema = OptUtils.schema(getTable());
 
@@ -62,6 +64,7 @@ public class FullScanPhysicalRel extends TableScan implements PhysicalRel {
         return filter(schema, filter, parameterMetadata);
     }
 
+    @Override
     public List<Expression<?>> projection(QueryParameterMetadata parameterMetadata) {
         PlanNodeSchema schema = OptUtils.schema(getTable());
 
