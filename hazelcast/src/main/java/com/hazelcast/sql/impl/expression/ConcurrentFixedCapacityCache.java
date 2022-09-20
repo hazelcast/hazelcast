@@ -30,17 +30,20 @@ import java.util.function.Function;
  * there so long as the cache exists. Once the cache is full, no new items are
  * cached.
  * <p>
- * It's designed for caching in expressions in the context of
- * one query execution, based on the assumption that typically there's a low
- * number of distinct expressions that fit into the cache and that the
- * expressions come in arbitrary order. If there number of distinct expressions
- * is larger than capacity, we assume that some are more common than others, and
- * we're likely to observe those at the beginning and cache those. If the number
- * of expressions exceeds the capacity many times, we'll cache arbitrary few of
- * them and the rest will be calculated each time without caching - a similar
- * behavior to what an LRU cache will provide, but without the overhead of usage
- * tracking. Degenerate case is when items are sorted by the cache key - after
- * the initial phase the cache will have zero hit rate.
+ * It's designed for caching in scenarios where we can assume that there's a low
+ * number of keys that typically fit into the cache, and if not, that the keys
+ * come in arbitrary order. If the number of keys is larger than capacity, we
+ * assume that those that are more common are more likely to be observed at the
+ * beginning than those that are not, and we're likely to cache those items. If
+ * the number of expressions exceeds the capacity many times, we'll cache
+ * arbitrary few of them and the rest will be recalculated each time without
+ * caching - a similar behavior to what an LRU cache will provide, but without
+ * the overhead of usage tracking. Degenerate case is when items are sorted by
+ * the cache key - after the initial phase the cache will have zero hit rate.
+ * <p>
+ * The above assumptions are common for right-hand operand of SQL LIKE operator,
+ * JsonPath, XPath or regular expression, in the context of a single query
+ * execution and of a single operator evaluating them.
  * <p>
  * Note: The size of the inner map may become bigger than maxCapacity if there
  * are multiple concurrent computeIfAbsent executions. We don't address this for
