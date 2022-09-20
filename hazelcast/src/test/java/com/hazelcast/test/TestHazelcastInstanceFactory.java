@@ -439,7 +439,7 @@ public class TestHazelcastInstanceFactory {
 
     public static Config initOrCreateConfig(Config config) {
         if (config == null) {
-            String oldSchemaValidation = System.getProperty("hazelcast.config.schema.validation.enabled");
+            String oldValue = System.getProperty("hazelcast.config.schema.validation.enabled");
             System.setProperty("hazelcast.config.schema.validation.enabled", "false");
             if (System.getProperty(SYSPROP_MEMBER_CONFIG) != null
                     && isAcceptedSuffixConfigured(System.getProperty(SYSPROP_MEMBER_CONFIG), YAML_ACCEPTED_SUFFIXES)
@@ -449,8 +449,7 @@ public class TestHazelcastInstanceFactory {
                 config = new XmlConfigBuilder().build();
             }
             config.getJetConfig().setEnabled(true);
-            System.setProperty("hazelcast.config.schema.validation.enabled", oldSchemaValidation == null ? "true" :
-                    oldSchemaValidation);
+            System.setProperty("hazelcast.config.schema.validation.enabled", oldValue == null ? "true" : oldValue);
         }
         config.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         String gracefulShutdownMaxWaitValue = System.getProperty(ClusterProperty.GRACEFUL_SHUTDOWN_MAX_WAIT.getName(), "120");
