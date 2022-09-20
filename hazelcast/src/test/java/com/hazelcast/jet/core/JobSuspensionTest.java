@@ -57,7 +57,7 @@ public class JobSuspensionTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void no_exception_on_suspend() {
+    public void when_jobIsSuspended_then_noExceptionIsThrown() {
         // given
         Pipeline pipeline = Pipeline.create()
                                     .readFrom(TestSources.itemStream(10))
