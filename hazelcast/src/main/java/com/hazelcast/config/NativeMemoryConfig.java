@@ -126,7 +126,7 @@ public class NativeMemoryConfig {
     /**
      * Sets size (capacity) of the native memory region.
      * <p>
-     * Total size of the memory blocks allocated in native memory region cannot exceed this memory size.
+     * Total capacity of the memory blocks allocated in native memory region cannot exceed this memory size.
      * When native memory region is completely allocated and in-use, further allocation requests will fail
      * with {@link NativeOutOfMemoryError}.
      *

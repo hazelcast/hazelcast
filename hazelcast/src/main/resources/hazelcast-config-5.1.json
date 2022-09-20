@@ -1497,7 +1497,7 @@
                 "additionalProperties": false,
                 "properties": {
                   "capacity": {
-                    "$ref": "#/definitions/Capacity",
+                    "$ref": "#/definitions/MemorySize",
                     "description": "Memory tier capacity, i.e., how much main memory should this tier consume at most. The default is 256 megabytes."
                   }
                 }
@@ -3749,7 +3749,7 @@
             "description": "Device base directory that will be used for tiered-store."
           },
           "capacity": {
-            "$ref": "#/definitions/Capacity",
+            "$ref": "#/definitions/MemorySize",
             "description": "Device capacity, i.e., what is the soft upper bound capacity of the device. The default is 256 gigabytes."
           },
           "block-size": {
