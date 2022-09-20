@@ -17,21 +17,26 @@
 package com.hazelcast.jet.sql.impl.expression;
 
 import com.google.common.collect.RangeSet;
-import com.hazelcast.sql.impl.expression.Searchable;
+import com.hazelcast.sql.impl.expression.AbstractSarg;
 
 import java.io.Serializable;
 
 @SuppressWarnings("UnstableApiUsage")
-public class Range<C extends Comparable<C>> implements Searchable<C>, Serializable {
+public class Sarg<C extends Comparable<C>> implements AbstractSarg<C>, Serializable {
 
     private final RangeSet<C> set;
+    private final Boolean nullAs;
 
-    public Range(RangeSet<C> set) {
+    public Sarg(RangeSet<C> set, Boolean nullAs) {
         this.set = set;
+        this.nullAs = nullAs;
     }
 
     @Override
-    public boolean contains(C value) {
+    public Boolean contains(C value) {
+        if (value == null) {
+            return nullAs;
+        }
         return set.contains(value);
     }
 }
