@@ -52,7 +52,7 @@ public class LogExceptionTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void no_exception_on_limit() {
+    public void when_limitInQueryReached_then_noExceptionIsThrown() {
 
         // when
         SqlService sql = instance().getSql();
