@@ -523,6 +523,9 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
     @Test(expected = InvalidConfigurationException.class)
     public abstract void testPersistentMemoryConfiguration_NotExistingModeThrows();
 
+    @Test
+    public abstract void testNativeMemoryConfiguration_isBackwardCompatible();
+
     @Test(expected = InvalidConfigurationException.class)
     public abstract void testPersistentMemoryDirectoryConfiguration_SystemMemoryModeThrows();
 

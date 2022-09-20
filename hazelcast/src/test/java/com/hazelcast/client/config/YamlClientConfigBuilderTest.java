@@ -34,6 +34,7 @@ import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
 import com.hazelcast.internal.util.RootCauseMatcher;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
@@ -58,6 +59,8 @@ import java.util.Properties;
 import static com.hazelcast.config.PersistentMemoryMode.MOUNTED;
 import static com.hazelcast.config.PersistentMemoryMode.SYSTEM_MEMORY;
 import static com.hazelcast.internal.nio.IOUtil.delete;
+import static com.hazelcast.memory.MemoryUnit.GIGABYTES;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -663,6 +666,21 @@ public class YamlClientConfigBuilderTest extends AbstractClientConfigBuilderTest
                 + "      mode: NOT_EXISTING_MODE\n";
 
         buildConfig(yaml);
+    }
+
+    @Test
+    @Override
+    public void testNativeMemoryConfiguration_isBackwardCompatible() {
+        String yaml = ""
+                + "hazelcast-client:\n"
+                + "  native-memory:\n"
+                + "    size:\n"
+                + "      value: 1337\n"
+                + "      unit: GIGABYTES\n";
+
+        ClientConfig clientConfig = buildConfig(yaml);
+        assertThat(clientConfig.getNativeMemoryConfig().getCapacity())
+                .isEqualToComparingFieldByField(Capacity.of(1337, GIGABYTES));
     }
 
     @Override
