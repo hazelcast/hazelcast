@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the current metadata of a cluster.
  */
-@Generated("eaf0b6e9d1d2f7f2b419c7af2ed59a29")
+@Generated("671b3d3b524ebe7a7227d85ba8819a7c")
 public final class MCGetClusterMetadataCodec {
     //hex: 0x200E00
     public static final int REQUEST_MESSAGE_TYPE = 2100736;
@@ -93,14 +93,9 @@ public final class MCGetClusterMetadataCodec {
          * Cluster ID.
          */
         public String clusterId;
-
-        /**
-         * Cluster ID.
-         */
-        public String memberId;
     }
 
-    public static ClientMessage encodeResponse(byte currentState, String memberVersion, @Nullable String jetVersion, long clusterTime, String clusterId, String memberId) {
+    public static ClientMessage encodeResponse(byte currentState, String memberVersion, @Nullable String jetVersion, long clusterTime, String clusterId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
@@ -111,7 +106,6 @@ public final class MCGetClusterMetadataCodec {
         StringCodec.encode(clientMessage, memberVersion);
         CodecUtil.encodeNullable(clientMessage, jetVersion, StringCodec::encode);
         StringCodec.encode(clientMessage, clusterId);
-        StringCodec.encode(clientMessage, memberId);
         return clientMessage;
     }
 
@@ -124,7 +118,6 @@ public final class MCGetClusterMetadataCodec {
         response.memberVersion = StringCodec.decode(iterator);
         response.jetVersion = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         response.clusterId = StringCodec.decode(iterator);
-        response.memberId = StringCodec.decode(iterator);
         return response;
     }
 }

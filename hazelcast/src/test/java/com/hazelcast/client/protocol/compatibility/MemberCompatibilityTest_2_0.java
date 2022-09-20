@@ -7032,7 +7032,7 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_MCGetClusterMetadataCodec_encodeResponse() {
         int fileClientMessageIndex = 786;
-        ClientMessage encoded = MCGetClusterMetadataCodec.encodeResponse(aByte, aString, aString, aLong, aString, aString);
+        ClientMessage encoded = MCGetClusterMetadataCodec.encodeResponse(aByte, aString, aString, aLong, aString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
