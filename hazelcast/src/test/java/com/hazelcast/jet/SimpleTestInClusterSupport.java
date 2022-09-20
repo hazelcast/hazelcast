@@ -103,7 +103,8 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
             jetServiceBackend.getJobExecutionService().cancelAllExecutions("ditching all jobs after a test");
             jetServiceBackend.getJobExecutionService().waitAllExecutionsTerminated();
         }
-        Collection<DistributedObject> objects = instances()[0].getDistributedObjects();
+        Collection<DistributedObject> objects = client != null ? client.getDistributedObjects()
+                : instances()[0].getDistributedObjects();
         SUPPORT_LOGGER.info("Destroying " + objects.size()
                 + " distributed objects in SimpleTestInClusterSupport.@After: "
                 + objects.stream().map(o -> o.getServiceName() + "/" + o.getName())
