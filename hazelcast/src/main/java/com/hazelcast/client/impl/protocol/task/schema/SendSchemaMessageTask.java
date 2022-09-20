@@ -19,7 +19,6 @@ package com.hazelcast.client.impl.protocol.task.schema;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.ClientSendSchemaCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractAsyncMessageTask;
-import com.hazelcast.cluster.Member;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
@@ -30,7 +29,6 @@ import java.security.Permission;
 import java.util.Collection;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.stream.Collectors;
 
 public class SendSchemaMessageTask extends AbstractAsyncMessageTask<Schema, Collection<UUID>> {
 
@@ -46,12 +44,7 @@ public class SendSchemaMessageTask extends AbstractAsyncMessageTask<Schema, Coll
     @Override
     protected CompletableFuture<Collection<UUID>> processInternal() {
         MemberSchemaService memberSchemaService = getService(getServiceName());
-
-        // After replicating the schema, we will return the current member list
-        // in this member, as we for sure that the schema is replicated in these
-        // members.
-        return memberSchemaService.putAsync(parameters)
-                .thenApply(ignored -> getCurrentMemberUuids());
+        return memberSchemaService.putAsync(parameters);
     }
 
     @Override
@@ -82,12 +75,5 @@ public class SendSchemaMessageTask extends AbstractAsyncMessageTask<Schema, Coll
     @Override
     public Object[] getParameters() {
         return null;
-    }
-
-    private Collection<UUID> getCurrentMemberUuids() {
-        return nodeEngine.getClusterService().getMembers()
-                .stream()
-                .map(Member::getUuid)
-                .collect(Collectors.toList());
     }
 }
