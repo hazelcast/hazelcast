@@ -174,36 +174,34 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
         getLogger().info("New partition(s) assigned: " + newAssignments);
         eventTimeMapper.addPartitions(newAssignments.size());
         consumer.assign(currentAssignment.keySet());
-        if (oldTopicOffsets.length == 0 && !isRestoring) {
-            // Attempt to initialize partitions offsets only when processor is starting.
-            initializeOffsetsAndSeek(topicName, newAssignments);
-        } else if (oldTopicOffsets.length > 0 && !isRestoring) {
-            // For partitions detected later during the runtime we seek to their
-            // beginning. It can happen that a partition is added, and some messages
-            // are added to it before we start consuming from it. If we started at the
-            // current position, we will miss those, so we explicitly seek to the
-            // beginning.
-            getLogger().info("Seeking to the beginning of newly-discovered partitions: " + newAssignments);
-            consumer.seekToBeginning(newAssignments);
+        if (!isRestoring) {
+            if (oldTopicOffsets.length > 0) {
+                // For partitions detected later during the runtime we seek to their
+                // beginning. It can happen that a partition is added, and some messages
+                // are added to it before we start consuming from it. If we started at the
+                // current position, we will miss those, so we explicitly seek to the
+                // beginning.
+                getLogger().info("Seeking to the beginning of newly-discovered partitions: " + newAssignments);
+                consumer.seekToBeginning(newAssignments);
+            } else {
+                seekToInitialOffsets(newAssignments);
+            }
         }
         logFinest(getLogger(), "Currently assigned partitions: %s", currentAssignment);
     }
 
-    private void initializeOffsetsAndSeek(String topicName, Collection<TopicPartition> newAssignments) {
-        for (TopicPartition newAssignment : newAssignments) {
-            int partition = newAssignment.partition();
-            Long initialOffset = topicsConfig.getInitialOffsetFor(topicName, partition);
+    private void seekToInitialOffsets(Collection<TopicPartition> newAssignments) {
+        for (TopicPartition topicPartition : newAssignments) {
+            int partition = topicPartition.partition();
+            Long initialOffset = topicsConfig.getInitialOffsetFor(topicPartition.topic(), partition);
             if (initialOffset == null || initialOffset < 0) {
                 continue;
             }
-            long[] topicOffsets = offsets.get(topicName);
-            if (topicOffsets == null || topicOffsets.length < partition) {
-                continue;
-            }
+            long[] topicOffsets = offsets.get(topicPartition.topic());
+            assert topicOffsets != null && topicOffsets.length > partition;
             topicOffsets[partition] = initialOffset;
-            getLogger().info("Seeking to specified initial offset: "
-                    + initialOffset + " of topic partition: " + newAssignment);
-            consumer.seek(newAssignment, initialOffset);
+            getLogger().info("Seeking to specified initial offset: " + initialOffset + " of topic-partition: " + topicPartition);
+            consumer.seek(topicPartition, initialOffset);
         }
     }
 

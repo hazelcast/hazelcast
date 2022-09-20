@@ -59,6 +59,8 @@ public final class KafkaProcessors {
     /**
      * Returns a supplier of processors for {@link
      * KafkaSources#kafka(Properties, FunctionEx, TopicsConfig)}}.
+     *
+     * @since 5.3
      */
     public static <K, V, T> ProcessorMetaSupplier streamKafkaP(
             @Nonnull Properties properties,
