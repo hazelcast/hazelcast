@@ -39,6 +39,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -91,20 +92,20 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
             @Nonnull List<String> topics,
             @Nonnull FunctionEx<? super ConsumerRecord<K, V>, ? extends T> projectionFn,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy
-    )  {
-        this(properties, projectionFn, eventTimePolicy, new TopicsConfig().addTopics(topics));
+    ) {
+        this(properties, new TopicsConfig().addTopics(topics), projectionFn, eventTimePolicy);
     }
 
     public StreamKafkaP(
             @Nonnull Properties properties,
+            @Nonnull TopicsConfig topicsConfig,
             @Nonnull FunctionEx<? super ConsumerRecord<K, V>, ? extends T> projectionFn,
-            @Nonnull EventTimePolicy<? super T> eventTimePolicy,
-            @Nonnull TopicsConfig topicsConfig
+            @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
         this.properties = properties;
+        this.topicsConfig = topicsConfig;
         this.projectionFn = projectionFn;
         this.eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
-        this.topicsConfig = topicsConfig;
     }
 
     @Override
@@ -115,6 +116,9 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
     @Override
     protected void init(@Nonnull Context context) {
         topics = new ArrayList<>(topicsConfig.getTopicNames());
+        // Make sure all members have the same order of topics. It is important for distributing
+        // the topic-partitions - members don't coordinate, but take a subset based on the index.
+        Collections.sort(topics);
         for (String topic : topics) {
             offsets.put(topic, new long[0]);
         }
@@ -350,7 +354,7 @@ public final class StreamKafkaP<K, V, T> extends AbstractProcessor {
             @Nonnull FunctionEx<? super ConsumerRecord<K, V>, ? extends T> projectionFn,
             @Nonnull EventTimePolicy<? super T> eventTimePolicy
     ) {
-        return () -> new StreamKafkaP<>(properties, projectionFn, eventTimePolicy, topicsConfig);
+        return () -> new StreamKafkaP<>(properties, topicsConfig, projectionFn, eventTimePolicy);
     }
 
     private boolean handledByThisProcessor(int topicIndex, int partition) {

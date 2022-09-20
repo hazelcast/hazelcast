@@ -31,8 +31,8 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.Collections.unmodifiableMap;
 
 /**
- * Contains the configuration for all Kafka topics that will be consumed
- * by the {@linkplain KafkaProcessors#streamKafkaP Kafka processor}.
+ * Contains the configuration for all Kafka topics that will be consumed by the
+ * {@linkplain KafkaProcessors#streamKafkaP Kafka source processor}.
  */
 public class TopicsConfig implements Serializable {
 
@@ -71,13 +71,11 @@ public class TopicsConfig implements Serializable {
      * is saved under the topic name.
      */
     public TopicsConfig addTopicConfig(TopicConfig config) {
-        topicConfigs.compute(config.topicName, (k, oldConfig) -> {
-            if (oldConfig != null) {
-                LOGGER.warning("Duplicated topic configs for topic name: '"
-                        + k + "' was found, only the last added config will be kept.");
-            }
-            return config;
-        });
+        TopicConfig oldConfig = topicConfigs.put(config.topicName, config);
+        if (oldConfig != null) {
+            LOGGER.warning("Duplicate topic configs for topic: '"
+                    + config.topicName + "' found, the last added one will be used");
+        }
         return this;
     }
 
@@ -102,9 +100,9 @@ public class TopicsConfig implements Serializable {
     }
 
     /**
-     * Returns initial offset value for given topic and partition combination.
+     * Returns initial offset value for the given topic and partition combination.
      * If configuration for specified topic does not exist, or if initial offset is
-     * not defined for given partition then {@code null} value is returned.
+     * not defined for the given partition then {@code null} is returned.
      */
     @Nullable
     public Long getInitialOffsetFor(String topicName, int partition) {
