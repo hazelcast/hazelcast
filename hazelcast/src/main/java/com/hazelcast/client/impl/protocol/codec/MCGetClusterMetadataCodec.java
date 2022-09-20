@@ -77,12 +77,12 @@ public final class MCGetClusterMetadataCodec {
         /**
          * Current version of the member.
          */
-        public String memberVersion;
+        public java.lang.String memberVersion;
 
         /**
          * Current Jet version of the member.
          */
-        public @Nullable String jetVersion;
+        public @Nullable java.lang.String jetVersion;
 
         /**
          * Cluster-wide time in milliseconds.
@@ -92,10 +92,10 @@ public final class MCGetClusterMetadataCodec {
         /**
          * Cluster ID.
          */
-        public String clusterId;
+        public java.lang.String clusterId;
     }
 
-    public static ClientMessage encodeResponse(byte currentState, String memberVersion, @Nullable String jetVersion, long clusterTime, String clusterId) {
+    public static ClientMessage encodeResponse(byte currentState, java.lang.String memberVersion, @Nullable java.lang.String jetVersion, long clusterTime, java.lang.String clusterId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
