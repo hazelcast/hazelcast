@@ -61,7 +61,7 @@ public abstract class AsyncOperation extends Operation implements IdentifiedData
         future.whenComplete(withTryCatch(getLogger(), (r, f) -> {
             if (f != null) {
                 Throwable peeledFailure = peel(f);
-                if (!(isTechnicalCancellationException(f))) {
+                if (!isTechnicalCancellationException(f)) {
                     logError(peeledFailure);
                 }
                 doSendResponse(peeledFailure);
