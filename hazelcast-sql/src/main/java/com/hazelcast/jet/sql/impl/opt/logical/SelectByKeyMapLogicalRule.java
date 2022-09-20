@@ -29,26 +29,27 @@ import static org.apache.calcite.plan.RelOptRule.none;
 import static org.apache.calcite.plan.RelOptRule.operandJ;
 
 /**
- * A collection of planner rules that match single key, constant expression,
- * {@link PartitionedMapTable} SELECT.
- * <p>For example,</p>
+ * A planner rule that matches a single-key, constant-expression, {@link
+ * PartitionedMapTable} SELECT.
+ * <p>
+ * For example,
  * <blockquote><code>SELECT * FROM map WHERE __key = 1</code></blockquote>
  * or
  * <blockquote><code>SELECT this + 1 FROM map WHERE __key = 1</code></blockquote>
  * <p>
  * Such SELECT is translated to optimized, direct-key {@code IMap} operation
- * which does not involve starting any job.
+ * which does not involve starting a Jet job.
  */
-final class SelectByKeyMapLogicalRules {
+public final class SelectByKeyMapLogicalRule {
 
-    static final RelOptRule INSTANCE = new RelOptRule(
+    public static final RelOptRule INSTANCE = new RelOptRule(
             operandJ(
                     TableScan.class,
                     null,
                     scan -> !OptUtils.requiresJob(scan) && OptUtils.hasTableType(scan, PartitionedMapTable.class),
                     none()
             ),
-            SelectByKeyMapLogicalRules.class.getSimpleName()
+            SelectByKeyMapLogicalRule.class.getSimpleName()
     ) {
         @Override
         public void onMatch(RelOptRuleCall call) {
@@ -71,6 +72,6 @@ final class SelectByKeyMapLogicalRules {
         }
     };
 
-    private SelectByKeyMapLogicalRules() {
+    private SelectByKeyMapLogicalRule() {
     }
 }

@@ -27,6 +27,7 @@ import com.hazelcast.core.ReadOnly;
 import com.hazelcast.cp.IAtomicLong;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.internal.util.FutureUtil;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationMonitor;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -93,15 +94,22 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
     @Parameter(2)
     public int asyncBackupCount;
 
+    @Parameter(3)
+    public boolean runWithForceOffload;
+
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
-    @Parameters(name = "{index}: {0} sync={1} async={2}")
+    @Parameters(name = "{index}: {0} sync={1} async={2} runWithForceOffload={3}")
     public static Collection<Object[]> data() {
         return asList(new Object[][]{
-                {BINARY, 0, 0}, {OBJECT, 0, 0},
-                {BINARY, 1, 0}, {OBJECT, 1, 0},
-                {BINARY, 0, 1}, {OBJECT, 0, 1},
+                {BINARY, 0, 0, false},
+                {OBJECT, 0, 0, false},
+                {BINARY, 1, 0, false},
+                {OBJECT, 1, 0, false},
+                {BINARY, 0, 1, false},
+                {OBJECT, 0, 1, false},
+                {OBJECT, 1, 1, true},
         });
     }
 
@@ -112,6 +120,9 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
     @Override
     public Config getConfig() {
         Config config = smallInstanceConfig();
+        config.setProperty(MapServiceContext.FORCE_OFFLOAD_ALL_OPERATIONS.getName(),
+                String.valueOf(runWithForceOffload));
+        config.getMetricsConfig().setEnabled(false);
         MapConfig mapConfig = new MapConfig(MAP_NAME);
         mapConfig.setInMemoryFormat(inMemoryFormat);
         mapConfig.setAsyncBackupCount(asyncBackupCount);
@@ -730,7 +741,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
 
         // not locked -> will offload
         String thread = map.executeOnKey(key, new ThreadSneakingOffloadableEntryProcessor<>());
-        assertTrue(thread.contains("cached.thread"));
+        assertTrue(thread, thread.contains("cached.thread"));
 
         // locked -> won't offload
         map.lock(key);
@@ -745,12 +756,12 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
 
         // not locked -> will offload
         String thread = map.executeOnKey(key, new ThreadSneakingOffloadableReadOnlyEntryProcessor<>());
-        assertTrue(thread.contains("cached.thread"));
+        assertTrue(thread, thread.contains("cached.thread"));
 
         // locked -> will offload
         map.lock(key);
         thread = map.executeOnKey(key, new ThreadSneakingOffloadableReadOnlyEntryProcessor<>());
-        assertTrue(thread.contains("cached.thread"));
+        assertTrue(thread, thread.contains("cached.thread"));
     }
 
     private static class ThreadSneakingOffloadableEntryProcessor<K, V>
@@ -787,7 +798,7 @@ public class EntryProcessorOffloadableTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testEntryProcessorWithKey_localNotReentrant() throws ExecutionException, InterruptedException {
+    public void testEntryProcessorWithKey_localNotReentrant() {
         String key = init();
         IMap<String, SimpleValue> map = instances[1].getMap(MAP_NAME);
         int count = 100;

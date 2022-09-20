@@ -702,6 +702,30 @@ public class SqlFilterProjectTest extends SqlTestSupport {
                 .hasMessageContaining("Unexpected parameter count: expected 1, got 2");
     }
 
+    @Test // for https://github.com/hazelcast/hazelcast/issues/21640
+    public void test_selectByKey_deoptToFullScan() {
+        String mapOneName = "mapOne";
+        createMapping(mapOneName, int.class, String.class);
+
+        String mapTwoName = "mapTwo";
+        createMapping(mapTwoName, int.class, String.class);
+
+        instance().getMap(mapOneName).put(1, "value-1");
+        instance().getMap(mapOneName).put(2, "value-2");
+        instance().getMap(mapOneName).put(3, "value-3");
+
+        instance().getMap(mapTwoName).put(1, "value-1");
+        instance().getMap(mapTwoName).put(2, "value-2");
+        instance().getMap(mapTwoName).put(3, "value-3");
+
+        assertRowsAnyOrder(
+                "SELECT o.this as mId FROM mapOne AS o" +
+                        " JOIN mapTwo AS a ON o.__key = a.__key" +
+                        " WHERE a.__key IN (1)",
+                singletonList(new Row("value-1"))
+        );
+    }
+
     @Test
     // test for https://github.com/hazelcast/hazelcast/issues/19983
     // Checks the case when select-by-key optimization is used, but the __key (the 0-th) field isn't selected.

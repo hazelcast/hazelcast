@@ -87,11 +87,13 @@ import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 import javax.transaction.xa.Xid;
 
@@ -899,6 +901,8 @@ public class ReferenceObjects {
     public static List<ScheduledTaskHandler> aListOfScheduledTaskHandler = Collections.singletonList(aScheduledTaskHandler);
     public static List<Xid> aListOfXids = Collections.singletonList(anXid);
     public static List<ClientBwListEntryDTO> aListOfClientBwListEntries = Collections.singletonList(aClientBwListEntry);
+
+    public static Set<UUID> aSetOfUUIDs = new HashSet<>(Collections.singletonList(aUUID));
     public static MergePolicyConfig aMergePolicyConfig = new MergePolicyConfig(aString, anInt);
     public static CacheConfigHolder aCacheConfigHolder = new CacheConfigHolder(aString, aString, aString, anInt, anInt,
             aString, anEvictionConfigHolder, aWanReplicationRef, aString, aString, aData, aData, aData, aBoolean,
