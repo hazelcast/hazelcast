@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.idToString;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -80,6 +81,16 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         }
         initialize(memberCount, config);
         client = factory.newHazelcastClient(clientConfig);
+    }
+
+    protected void assertNoJobsLeftEventually(HazelcastInstance instance) {
+        assertTrueEventually(() -> {
+            List<Job> runningJobs = instance.getJet().getJobs().stream()
+                                            .filter(j -> !j.getFuture().isDone() && !j.getStatus().isTerminal())
+                                            .collect(toList());
+            int size = runningJobs.size();
+            assertEquals("at this point no running jobs were expected, but got: " + runningJobs, 0, size);
+        });
     }
 
     @After
