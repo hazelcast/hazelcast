@@ -39,6 +39,7 @@ import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.predicates.QueryOptimizerFactory;
+import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 
@@ -1786,6 +1787,7 @@ public final class ClusterProperty {
      *
      * @since 5.2
      */
+    @Beta
     public static final HazelcastProperty SQL_CUSTOM_TYPES_ENABLED = new HazelcastProperty(
             "hazelcast.sql.experimental.custom.types.enabled", false);
 
