@@ -103,6 +103,10 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
             jetServiceBackend.getJobExecutionService().cancelAllExecutions("ditching all jobs after a test");
             jetServiceBackend.getJobExecutionService().waitAllExecutionsTerminated();
         }
+        // If the client was created and used any proxy to a distributed object, we need to destroy that object through
+        // client, so the proxy in client's internals was destroyed as well. Without going through client, if we use
+        // the same distributed object in more than one test, we are not going to invoke InitializeDistributedObjectOperation
+        // one second and following tests.
         Collection<DistributedObject> objects = client != null ? client.getDistributedObjects()
                 : instances()[0].getDistributedObjects();
         SUPPORT_LOGGER.info("Destroying " + objects.size()
