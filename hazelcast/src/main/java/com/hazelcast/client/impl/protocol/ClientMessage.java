@@ -339,6 +339,7 @@ public final class ClientMessage implements OutboundFrame {
 
         newMessage.isRetryable = isRetryable;
         newMessage.operationName = operationName;
+        newMessage.containsSerializedDataInRequest = containsSerializedDataInRequest;
 
         return newMessage;
     }
@@ -359,6 +360,7 @@ public final class ClientMessage implements OutboundFrame {
 
         newMessage.isRetryable = isRetryable;
         newMessage.operationName = operationName;
+        newMessage.containsSerializedDataInRequest = containsSerializedDataInRequest;
 
         return newMessage;
     }
@@ -380,6 +382,9 @@ public final class ClientMessage implements OutboundFrame {
         if (isRetryable != message.isRetryable) {
             return false;
         }
+        if (containsSerializedDataInRequest != message.containsSerializedDataInRequest) {
+            return false;
+        }
         if (!Objects.equals(operationName, message.operationName)) {
             return false;
         }
@@ -390,6 +395,7 @@ public final class ClientMessage implements OutboundFrame {
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (isRetryable ? 1 : 0);
+        result = 31 * result + (containsSerializedDataInRequest ? 1 : 0);
         result = 31 * result + (operationName != null ? operationName.hashCode() : 0);
         result = 31 * result + (connection != null ? connection.hashCode() : 0);
         return result;
