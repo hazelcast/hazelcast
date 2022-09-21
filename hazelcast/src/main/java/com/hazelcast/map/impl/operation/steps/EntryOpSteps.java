@@ -34,7 +34,7 @@ public enum EntryOpSteps implements Step<State> {
         public void runStep(State state) {
             EntryOperator operator = operator(state.getOperation(), state.getEntryProcessor());
             operator.init(state.getKey(), state.getOldValue(), state.getNewValue(),
-                    null, null, null, state.getTtl());
+                    null, null, null, state.isChangeExpiryOnUpdate(), state.getTtl());
             state.setEntryOperator(operator);
 
             if (operator.belongsAnotherPartition(state.getKey())) {
@@ -136,12 +136,14 @@ public enum EntryOpSteps implements Step<State> {
 
             EntryOperator entryOperator = state.getOperator();
             entryOperator.init(state.getKey(), state.getOldValue(),
-                    null, null, null, recordStore.isLocked(state.getKey()), state.getTtl());
+                    null, null, null, recordStore.isLocked(state.getKey()),
+                    state.isChangeExpiryOnUpdate(), state.getTtl());
 
             Object clonedOldValue = entryOperator.clonedOrRawOldValue();
 
             entryOperator.init(state.getKey(), clonedOldValue,
-                    null, null, null, recordStore.isLocked(state.getKey()), state.getTtl());
+                    null, null, null, recordStore.isLocked(state.getKey()),
+                    state.isChangeExpiryOnUpdate(), state.getTtl());
 
             if (!entryOperator.checkCanProceed()) {
                 entryOperator.onTouched();
@@ -186,6 +188,7 @@ public enum EntryOpSteps implements Step<State> {
                                 state.getOldValue(), newValue);
                         state.setNewValue(newValue);
                         state.setTtl(entryOperator.getEntry().getNewTtl());
+                        state.setChangeExpiryOnUpdate(entryOperator.getEntry().isChangeExpiryOnUpdate());
                         break;
                     case REMOVED:
                         DeleteOpSteps.READ.runStep(state);

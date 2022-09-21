@@ -444,9 +444,11 @@ public class EntryOperation extends LockAwareOperation
                         EntryEventType modificationType = entryOperator.getEventType();
                         if (modificationType != null) {
                             long newTtl = entryOperator.getEntry().getNewTtl();
+                            boolean changeExpiryOnUpdate = entryOperator.getEntry().isChangeExpiryOnUpdate();
                             Data newValue = serializationService.toData(entryOperator.getByPreferringDataNewValue());
                             updateAndUnlock(serializationService.toData(oldValue),
-                                    newValue, modificationType, newTtl, finalCaller, finalThreadId, result, finalBegin);
+                                    newValue, modificationType, changeExpiryOnUpdate, newTtl, finalCaller,
+                                    finalThreadId, result, finalBegin);
                         } else {
                             unlockOnly(result, finalCaller, finalThreadId, finalBegin);
                         }
@@ -495,16 +497,19 @@ public class EntryOperation extends LockAwareOperation
         }
 
         private void unlockOnly(final Object result, UUID caller, long threadId, long now) {
-            updateAndUnlock(null, null, null, UNSET, caller, threadId, result, now);
+            updateAndUnlock(null, null, null,
+                    true, UNSET, caller, threadId, result, now);
         }
 
-        @SuppressWarnings({"unchecked", "checkstyle:methodlength"})
+        @SuppressWarnings({"unchecked", "checkstyle:methodlength", "checkstyle:parameternumber"})
         private void updateAndUnlock(Data previousValue, Data newValue,
                                      EntryEventType modificationType,
+                                     boolean changeExpiryOnUpdate,
                                      long newTtl, UUID caller,
                                      long threadId, final Object result, long now) {
-            EntryOffloadableSetUnlockOperation updateOperation = new EntryOffloadableSetUnlockOperation(name, modificationType,
-                    newTtl, dataKey, previousValue, newValue, caller,
+            EntryOffloadableSetUnlockOperation updateOperation
+                    = new EntryOffloadableSetUnlockOperation(name, modificationType,
+                    changeExpiryOnUpdate, newTtl, dataKey, previousValue, newValue, caller,
                     threadId, now, entryProcessor.getBackupProcessor());
 
             updateOperation.setPartitionId(getPartitionId());

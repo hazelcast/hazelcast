@@ -147,14 +147,14 @@ public final class EntryOperator {
     }
 
     public EntryOperator init(Data dataKey, Object oldValue, Object newValue, Data result,
-                              EntryEventType eventType, Boolean locked, long ttl) {
+                              EntryEventType eventType, Boolean locked, boolean changeExpiryOnUpdate, long ttl) {
         this.dataKey = dataKey;
         this.oldValue = oldValue;
         this.eventType = eventType;
         this.result = result;
         this.didMatchPredicate = true;
         this.entry.init(ss, dataKey, newValue != null ? newValue : oldValue,
-                mapContainer.getExtractors(), locked, ttl);
+                mapContainer.getExtractors(), locked, ttl, changeExpiryOnUpdate);
         return this;
     }
 
@@ -167,7 +167,8 @@ public final class EntryOperator {
     }
 
     public EntryOperator operateOnKey(Data dataKey) {
-        init(dataKey, null, null, null, null, null, UNSET);
+        init(dataKey, null, null, null, null,
+                null, true, UNSET);
 
         if (belongsAnotherPartition(dataKey)) {
             return this;
@@ -182,7 +183,8 @@ public final class EntryOperator {
         }
 
         Boolean locked = recordStore.isLocked(dataKey);
-        init(dataKey, clonedOrRawOldValue(), null, null, null, locked, UNSET);
+        init(dataKey, clonedOrRawOldValue(), null, null, null,
+                locked, true, UNSET);
         return operateOnKeyValueInternal();
     }
 
@@ -202,7 +204,7 @@ public final class EntryOperator {
     }
 
     public EntryOperator operateOnKeyValue(Data dataKey, Object oldValue) {
-        init(dataKey, oldValue, null, null, null, null, UNSET);
+        init(dataKey, oldValue, null, null, null, null, true, UNSET);
         return operateOnKeyValueInternal();
     }
 
@@ -289,9 +291,11 @@ public final class EntryOperator {
     private void onAddedOrUpdated() {
         Object newValue = extractNewValue();
         if (backup) {
-            recordStore.putBackup(dataKey, newValue, entry.getNewTtl(), UNSET, UNSET, NOT_WAN);
+            recordStore.putBackup(dataKey, newValue, entry.isChangeExpiryOnUpdate(),
+                    entry.getNewTtl(), UNSET, UNSET, NOT_WAN);
         } else {
-            recordStore.setWithUncountedAccess(dataKey, newValue, entry.getNewTtl(), UNSET);
+            recordStore.setWithUncountedAccess(dataKey, newValue, entry.isChangeExpiryOnUpdate(),
+                    entry.getNewTtl(), UNSET);
             onAddedOrUpdated0(newValue);
         }
     }
