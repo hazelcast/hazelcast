@@ -42,7 +42,7 @@ public class GetClusterMetadataMessageTask extends AbstractCallableMessageTask<V
         metadata.setCurrentState(nodeEngine.getClusterService().getClusterState());
         metadata.setMemberVersion(BuildInfoProvider.getBuildInfo().getVersion());
         metadata.setClusterTime(nodeEngine.getClusterService().getClusterTime());
-        metadata.setClusterId(nodeEngine.getClusterService().getClusterId().toString());
+        metadata.setClusterId(nodeEngine.getClusterService().getClusterId());
         return metadata;
     }
 

@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the current metadata of a cluster.
  */
-@Generated("3c049401c9075435e73eb0a54de7c656")
+@Generated("49d508e232aa7346e0a57243d8fd0d30")
 public final class MCGetClusterMetadataCodec {
     //hex: 0x200E00
     public static final int REQUEST_MESSAGE_TYPE = 2100736;
@@ -45,7 +45,8 @@ public final class MCGetClusterMetadataCodec {
     private static final int REQUEST_INITIAL_FRAME_SIZE = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int RESPONSE_CURRENT_STATE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_CLUSTER_TIME_FIELD_OFFSET = RESPONSE_CURRENT_STATE_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
-    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_CLUSTER_TIME_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_CLUSTER_ID_FIELD_OFFSET = RESPONSE_CLUSTER_TIME_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_CLUSTER_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
 
     private MCGetClusterMetadataCodec() {
     }
@@ -92,7 +93,7 @@ public final class MCGetClusterMetadataCodec {
         /**
          * Cluster ID.
          */
-        public java.lang.String clusterId;
+        public java.util.UUID clusterId;
 
         /**
          * True if the clusterId is received from the member, false otherwise.
@@ -101,17 +102,17 @@ public final class MCGetClusterMetadataCodec {
         public boolean isClusterIdExists;
     }
 
-    public static ClientMessage encodeResponse(byte currentState, java.lang.String memberVersion, @Nullable java.lang.String jetVersion, long clusterTime, java.lang.String clusterId) {
+    public static ClientMessage encodeResponse(byte currentState, java.lang.String memberVersion, @Nullable java.lang.String jetVersion, long clusterTime, java.util.UUID clusterId) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         encodeByte(initialFrame.content, RESPONSE_CURRENT_STATE_FIELD_OFFSET, currentState);
         encodeLong(initialFrame.content, RESPONSE_CLUSTER_TIME_FIELD_OFFSET, clusterTime);
+        encodeUUID(initialFrame.content, RESPONSE_CLUSTER_ID_FIELD_OFFSET, clusterId);
         clientMessage.add(initialFrame);
 
         StringCodec.encode(clientMessage, memberVersion);
         CodecUtil.encodeNullable(clientMessage, jetVersion, StringCodec::encode);
-        StringCodec.encode(clientMessage, clusterId);
         return clientMessage;
     }
 
@@ -121,14 +122,14 @@ public final class MCGetClusterMetadataCodec {
         ClientMessage.Frame initialFrame = iterator.next();
         response.currentState = decodeByte(initialFrame.content, RESPONSE_CURRENT_STATE_FIELD_OFFSET);
         response.clusterTime = decodeLong(initialFrame.content, RESPONSE_CLUSTER_TIME_FIELD_OFFSET);
-        response.memberVersion = StringCodec.decode(iterator);
-        response.jetVersion = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        if (iterator.hasNext()) {
-            response.clusterId = StringCodec.decode(iterator);
+        if (initialFrame.content.length >= RESPONSE_CLUSTER_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES) {
+            response.clusterId = decodeUUID(initialFrame.content, RESPONSE_CLUSTER_ID_FIELD_OFFSET);
             response.isClusterIdExists = true;
         } else {
             response.isClusterIdExists = false;
         }
+        response.memberVersion = StringCodec.decode(iterator);
+        response.jetVersion = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         return response;
     }
 }

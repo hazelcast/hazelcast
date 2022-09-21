@@ -18,11 +18,13 @@ package com.hazelcast.client.impl.management;
 
 import com.hazelcast.cluster.ClusterState;
 
+import java.util.UUID;
+
 public class MCClusterMetadata {
     private ClusterState currentState;
     private long clusterTime;
     private String memberVersion;
-    private String clusterId;
+    private UUID clusterId;
 
     public ClusterState getCurrentState() {
         return currentState;
@@ -48,11 +50,11 @@ public class MCClusterMetadata {
         this.memberVersion = memberVersion;
     }
 
-    public String getClusterId() {
+    public UUID getClusterId() {
         return clusterId;
     }
 
-    public void setClusterId(String clusterId) {
+    public void setClusterId(UUID clusterId) {
         this.clusterId = clusterId;
     }
 }
