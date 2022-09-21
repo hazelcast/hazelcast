@@ -85,7 +85,7 @@ public class SqlResubmissionStreamTest extends SqlResubmissionTestSupport {
 
     @Test
     public void when_failingSelectAfterSomeDataIsFetched() {
-        SqlStatement statement = new SqlStatement("select * from table(generate_stream("+ VALUES_PER_SECOND + "))");
+        SqlStatement statement = new SqlStatement("select * from table(generate_stream(" + VALUES_PER_SECOND + "))");
         SqlResult rows = client.getSql().execute(statement);
 
         try {
@@ -111,9 +111,9 @@ public class SqlResubmissionStreamTest extends SqlResubmissionTestSupport {
             }
             assertTrue("resubmission didn't happen", resubmitted);
         } catch (HazelcastSqlException e) {
-           if (!shouldFailAfterSomeDataIsFetched(resubmissionMode)) {
-               throw e;
-           } // else the error is expected
+            if (!shouldFailAfterSomeDataIsFetched(resubmissionMode)) {
+                throw e;
+            } // else the error is expected
         } finally {
             clusterFailure.cleanUp();
         }
