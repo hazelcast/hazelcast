@@ -208,6 +208,8 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
             assertEquals(COMMON_MAP_SIZE, expectedValue);
             assertTrue("resubmission didn't happen", resubmitted);
         } catch (HazelcastSqlException e) {
+            // This may be expected (for example: when resubmissionMode == NEVER), so we need to check if in current
+            // resubmissionMode an exception should be thrown.
            if (!shouldFailAfterSomeDataIsFetched(resubmissionMode)) {
                throw e;
            } // else the error is expected

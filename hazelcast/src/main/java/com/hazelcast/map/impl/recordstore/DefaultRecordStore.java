@@ -246,39 +246,41 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public Record putBackup(Data dataKey, Record newRecord, ExpiryMetadata expiryMetadata,
                             boolean putTransient, CallerProvenance provenance) {
-        return putBackupInternal(dataKey, newRecord.getValue(),
-                expiryMetadata.getTtl(), expiryMetadata.getMaxIdle(), expiryMetadata.getExpirationTime(),
-                putTransient, provenance, null);
+        return putBackupInternal(dataKey, newRecord.getValue(), true,
+                expiryMetadata.getTtl(), expiryMetadata.getMaxIdle(),
+                expiryMetadata.getExpirationTime(), putTransient, provenance, null);
     }
 
     @Override
     public Record putBackup(Data dataKey, Record record, long ttl,
                             long maxIdle, long nowOrExpiryTime, CallerProvenance provenance) {
-        return putBackupInternal(dataKey, record.getValue(),
+        return putBackupInternal(dataKey, record.getValue(), true,
                 ttl, maxIdle, nowOrExpiryTime, false, provenance, null);
     }
 
     @Override
     public Record putBackupTxn(Data dataKey, Record newRecord, ExpiryMetadata expiryMetadata,
                                boolean putTransient, CallerProvenance provenance, UUID transactionId) {
-        return putBackupInternal(dataKey, newRecord.getValue(),
-                expiryMetadata.getTtl(), expiryMetadata.getMaxIdle(), expiryMetadata.getExpirationTime(),
-                putTransient, provenance, transactionId);
+        return putBackupInternal(dataKey, newRecord.getValue(), true,
+                expiryMetadata.getTtl(), expiryMetadata.getMaxIdle(),
+                expiryMetadata.getExpirationTime(), putTransient, provenance, transactionId);
     }
 
     @Override
-    public Record putBackup(Data key, Object value, long ttl, long maxIdle,
+    public Record putBackup(Data key, Object value, boolean changeExpiryOnUpdate, long ttl, long maxIdle,
                             long nowOrExpiryTime, CallerProvenance provenance) {
-        return putBackupInternal(key, value, ttl, maxIdle, nowOrExpiryTime,
-                false, provenance, null);
+        return putBackupInternal(key, value, changeExpiryOnUpdate, ttl, maxIdle,
+                nowOrExpiryTime, false, provenance, null);
     }
 
-    private Record putBackupInternal(Data key, Object value, long ttl, long maxIdle, long expiryTime,
+    @SuppressWarnings("checkstyle:parameternumber")
+    private Record putBackupInternal(Data key, Object value, boolean changeExpiryOnUpdate,
+                                     long ttl, long maxIdle, long expiryTime,
                                      boolean putTransient, CallerProvenance provenance,
                                      UUID transactionId) {
         long now = getNow();
-        putInternal(key, value, ttl, maxIdle, expiryTime, now,
-                null, null, null, PUT_BACKUP_PARAMS);
+        putInternal(key, value, changeExpiryOnUpdate, ttl, maxIdle, expiryTime,
+                now, null, null, null, PUT_BACKUP_PARAMS);
 
         Record record = getRecord(key);
 
@@ -854,38 +856,38 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public boolean setTtl(Data key, long ttl) {
         long now = getNow();
-        Object oldValue = putInternal(key, null, ttl, UNSET, UNSET, now,
-                null, null, null, StaticParams.SET_TTL_PARAMS);
+        Object oldValue = putInternal(key, null, true, ttl, UNSET, UNSET,
+                now, null, null, null, StaticParams.SET_TTL_PARAMS);
         return oldValue != null;
     }
 
     @Override
     public boolean setTtlBackup(Data key, long ttl) {
         long now = getNow();
-        Object oldValue = putInternal(key, null, ttl, UNSET, UNSET, now,
-                null, null, null, StaticParams.SET_TTL_BACKUP_PARAMS);
+        Object oldValue = putInternal(key, null, true, ttl, UNSET, UNSET,
+                now, null, null, null, StaticParams.SET_TTL_BACKUP_PARAMS);
         return oldValue != null;
     }
 
     @Override
     public Object set(Data dataKey, Object value, long ttl, long maxIdle) {
         long now = getNow();
-        return putInternal(dataKey, value, ttl, maxIdle, UNSET, now,
-                null, null, null, StaticParams.SET_PARAMS);
+        return putInternal(dataKey, value, true, ttl, maxIdle, UNSET,
+                now, null, null, null, StaticParams.SET_PARAMS);
     }
 
     @Override
     public Object setTxn(Data dataKey, Object value, long ttl, long maxIdle, UUID transactionId) {
         long now = getNow();
-        return putInternal(dataKey, value, ttl, maxIdle, UNSET, now,
-                null, transactionId, null, StaticParams.SET_PARAMS);
+        return putInternal(dataKey, value, true, ttl, maxIdle, UNSET,
+                now, null, transactionId, null, StaticParams.SET_PARAMS);
     }
 
     @Override
     public Object put(Data key, Object value, long ttl, long maxIdle) {
         long now = getNow();
-        return putInternal(key, value, ttl, maxIdle, UNSET, now,
-                null, null, null, StaticParams.PUT_PARAMS);
+        return putInternal(key, value, true, ttl, maxIdle, UNSET,
+                now, null, null, null, StaticParams.PUT_PARAMS);
     }
 
     /**
@@ -895,7 +897,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
      */
     @SuppressWarnings({"checkstyle:npathcomplexity",
             "checkstyle:parameternumber", "checkstyle:cyclomaticcomplexity"})
-    private Object putInternal(Data key, Object newValue, long ttl,
+    private Object putInternal(Data key, Object newValue, boolean changeExpiryOnUpdate, long ttl,
                                long maxIdle, long expiryTime, long now, Object expectedValue,
                                @Nullable UUID transactionId, Address callerAddress,
                                StaticParams staticParams) {
@@ -947,9 +949,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                     transactionId, staticParams.isPutFromLoad() ? LOADED : ADDED,
                     staticParams.isStore(), staticParams.isBackup());
         } else {
-            oldValue = updateRecord(record, key, oldValue, newValue, ttl, maxIdle, expiryTime, now,
-                    transactionId, staticParams.isStore(),
-                    staticParams.isCountAsAccess(), staticParams.isBackup());
+            oldValue = updateRecord(record, key, oldValue, newValue, changeExpiryOnUpdate,
+                    ttl, maxIdle, expiryTime, now, transactionId,
+                    staticParams.isStore(), staticParams.isCountAsAccess(), staticParams.isBackup());
         }
         return oldValue;
     }
@@ -985,7 +987,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @SuppressWarnings("checkstyle:parameternumber")
     protected Object updateRecord(Record record, Data key, Object oldValue, Object newValue,
-                                  long ttl, long maxIdle, long expiryTime, long now, UUID transactionId,
+                                  boolean changeExpiryOnUpdate, long ttl, long maxIdle,
+                                  long expiryTime, long now, UUID transactionId,
                                   boolean store, boolean countAsAccess, boolean backup) {
         updateRecord0(record, now, countAsAccess);
 
@@ -994,7 +997,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                     ttl, maxIdle, now, transactionId);
         }
 
-        updateMemory(record, key, oldValue, newValue, ttl, maxIdle, expiryTime, now, backup);
+        updateMemory(record, key, oldValue, newValue, changeExpiryOnUpdate,
+                ttl, maxIdle, expiryTime, now, backup);
         return oldValue;
     }
 
@@ -1009,9 +1013,12 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
 
     @SuppressWarnings("checkstyle:parameternumber")
     public void updateMemory(Record record, Data key, Object oldValue, Object newValue,
-                             long ttl, long maxIdle, long expiryTime, long now, boolean backup) {
+                             boolean changeExpiryOnUpdate, long ttl, long maxIdle,
+                             long expiryTime, long now, boolean backup) {
         storage.updateRecordValue(key, record, newValue);
-        expirySystem.add(key, ttl, maxIdle, expiryTime, now, now);
+        if (changeExpiryOnUpdate) {
+            expirySystem.add(key, ttl, maxIdle, expiryTime, now, now);
+        }
         mutationObserver.onUpdateRecord(key, record, oldValue, newValue, backup);
     }
 
@@ -1090,8 +1097,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
 
             boolean persist = persistenceEnabledFor(provenance);
-            updateRecord(record, key, oldValue, newValue, UNSET, UNSET, UNSET, now,
-                    null, persist, true, false);
+            updateRecord(record, key, oldValue, newValue, true, UNSET, UNSET, UNSET,
+                    now, null, persist, true, false);
         }
 
         return newValue != null;
@@ -1100,23 +1107,23 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     @Override
     public Object replace(Data key, Object update) {
         long now = getNow();
-        return putInternal(key, update, UNSET, UNSET, UNSET, now,
-                null, null, null, StaticParams.REPLACE_PARAMS);
+        return putInternal(key, update, true, UNSET, UNSET, UNSET,
+                now, null, null, null, StaticParams.REPLACE_PARAMS);
     }
 
     @Override
     public boolean replace(Data key, Object expect, Object update) {
         long now = getNow();
-        Object oldValue = putInternal(key, update, UNSET, UNSET, UNSET, now,
-                expect, null, null, StaticParams.REPLACE_IF_SAME_PARAMS);
+        Object oldValue = putInternal(key, update, true, UNSET, UNSET, UNSET,
+                now, expect, null, null, StaticParams.REPLACE_IF_SAME_PARAMS);
         return oldValue != null;
     }
 
     @Override
     public Object putTransient(Data key, Object value, long ttl, long maxIdle) {
         long now = getNow();
-        Object oldValue = putInternal(key, value, ttl, maxIdle, UNSET, now,
-                null, null, null, StaticParams.PUT_TRANSIENT_PARAMS);
+        Object oldValue = putInternal(key, value, true, ttl, maxIdle, UNSET,
+                now, null, null, null, StaticParams.PUT_TRANSIENT_PARAMS);
         mapDataStore.addTransient(key, now);
         return oldValue;
     }
@@ -1166,8 +1173,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         }
 
         long now = getNow();
-        Object oldValue = putInternal(key, newValue, ttl, maxIdle, UNSET, now,
-                null, null, null, staticParams);
+        Object oldValue = putInternal(key, newValue, true, ttl, maxIdle, UNSET,
+                now, null, null, null, staticParams);
 
         if (!staticParams.isBackup() && mapEventPublisher.hasEventListener(name)) {
             Record record = getRecord(key);
@@ -1192,10 +1199,11 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     }
 
     @Override
-    public boolean setWithUncountedAccess(Data dataKey, Object value, long ttl, long maxIdle) {
+    public boolean setWithUncountedAccess(Data dataKey, Object value,
+                                          boolean changeExpiryOnUpdate, long ttl, long maxIdle) {
         long now = getNow();
-        Object oldValue = putInternal(dataKey, value, ttl, maxIdle, UNSET, now,
-                null, null, null, StaticParams.SET_WITH_NO_ACCESS_PARAMS);
+        Object oldValue = putInternal(dataKey, value, changeExpiryOnUpdate, ttl, maxIdle, UNSET,
+                now, null, null, null, StaticParams.SET_WITH_NO_ACCESS_PARAMS);
         return oldValue == null;
     }
 
@@ -1203,8 +1211,8 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
     public Object putIfAbsent(Data key, Object value, long ttl,
                               long maxIdle, Address callerAddress) {
         long now = getNow();
-        return putInternal(key, value, ttl, maxIdle, UNSET, now,
-                null, null, callerAddress, StaticParams.PUT_IF_ABSENT_PARAMS);
+        return putInternal(key, value, true, ttl, maxIdle, UNSET,
+                now, null, null, callerAddress, StaticParams.PUT_IF_ABSENT_PARAMS);
     }
 
     protected Object removeRecord(Data key, @Nonnull Record record,

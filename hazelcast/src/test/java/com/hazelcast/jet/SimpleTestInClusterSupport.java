@@ -40,6 +40,7 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.idToString;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -82,6 +83,16 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         client = factory.newHazelcastClient(clientConfig);
     }
 
+    protected void assertNoJobsLeftEventually(HazelcastInstance instance) {
+        assertTrueEventually(() -> {
+            List<Job> runningJobs = instance.getJet().getJobs().stream()
+                                            .filter(j -> !j.getFuture().isDone() && !j.getStatus().isTerminal())
+                                            .collect(toList());
+            int size = runningJobs.size();
+            assertEquals("at this point no running jobs were expected, but got: " + runningJobs, 0, size);
+        });
+    }
+
     @After
     public void supportAfter() {
         if (instances == null) {
@@ -103,7 +114,12 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
             jetServiceBackend.getJobExecutionService().cancelAllExecutions("ditching all jobs after a test");
             jetServiceBackend.getJobExecutionService().waitAllExecutionsTerminated();
         }
-        Collection<DistributedObject> objects = instances()[0].getDistributedObjects();
+        // If the client was created and used any proxy to a distributed object, we need to destroy that object through
+        // client, so the proxy in client's internals was destroyed as well. Without going through client, if we use
+        // the same distributed object in more than one test, we are not going to invoke InitializeDistributedObjectOperation
+        // one second and following tests.
+        Collection<DistributedObject> objects = client != null ? client.getDistributedObjects()
+                : instances()[0].getDistributedObjects();
         SUPPORT_LOGGER.info("Destroying " + objects.size()
                 + " distributed objects in SimpleTestInClusterSupport.@After: "
                 + objects.stream().map(o -> o.getServiceName() + "/" + o.getName())

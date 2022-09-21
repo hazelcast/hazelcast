@@ -81,6 +81,9 @@ public class ClientTestSupport extends HazelcastTestSupport {
     }
 
     protected static HazelcastClientInstanceImpl getHazelcastClientInstanceImpl(HazelcastInstance client) {
+        if (client instanceof HazelcastClientInstanceImpl) {
+            return (HazelcastClientInstanceImpl) client;
+        }
         HazelcastClientProxy clientProxy = (HazelcastClientProxy) client;
         return clientProxy.client;
     }

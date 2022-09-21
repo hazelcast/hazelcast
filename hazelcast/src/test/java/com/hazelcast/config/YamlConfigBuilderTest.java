@@ -32,7 +32,6 @@ import com.hazelcast.internal.config.SchemaViolationConfigurationException;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
 import com.hazelcast.memory.Capacity;
-import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionOn;
 import com.hazelcast.splitbrainprotection.impl.ProbabilisticSplitBrainProtectionFunction;
@@ -3332,7 +3331,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals("my-device", localDeviceConfig.getName());
         assertEquals(new File(baseDir).getAbsolutePath(), localDeviceConfig.getBaseDir().getAbsolutePath());
         assertEquals(blockSize, localDeviceConfig.getBlockSize());
-        assertEquals(new MemorySize(100, MemoryUnit.GIGABYTES), localDeviceConfig.getCapacity());
+        assertEquals(new Capacity(100, MemoryUnit.GIGABYTES), localDeviceConfig.getCapacity());
         assertEquals(readIOThreadCount, localDeviceConfig.getReadIOThreadCount());
         assertEquals(writeIOThreadCount, localDeviceConfig.getWriteIOThreadCount());
 
@@ -3360,7 +3359,7 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
         assertEquals(blockSize * device0Multiplier, localDeviceConfig.getBlockSize());
         assertEquals(readIOThreadCount * device0Multiplier, localDeviceConfig.getReadIOThreadCount());
         assertEquals(writeIOThreadCount * device0Multiplier, localDeviceConfig.getWriteIOThreadCount());
-        assertEquals(new MemorySize(1234567890, MemoryUnit.MEGABYTES), localDeviceConfig.getCapacity());
+        assertEquals(new Capacity(1234567890, MemoryUnit.MEGABYTES), localDeviceConfig.getCapacity());
 
         localDeviceConfig = config.getDeviceConfig("device1");
         assertEquals(blockSize * device1Multiplier, localDeviceConfig.getBlockSize());

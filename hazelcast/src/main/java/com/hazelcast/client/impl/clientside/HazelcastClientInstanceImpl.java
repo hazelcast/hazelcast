@@ -895,6 +895,13 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         clientStatisticsService.collectAndSendStatsNow();
     }
 
+    /**
+     * Returns {@code true} if we need to check the urgent invocations, by
+     * examining the local registry of the schema service.
+     */
+    public boolean shouldCheckUrgentInvocations() {
+        return schemaService.hasAnySchemas();
+    }
 
     public void waitForInitialMembershipEvents() {
         clusterService.waitInitialMemberListFetched();

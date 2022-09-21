@@ -135,6 +135,7 @@ public final class ClientMessage implements OutboundFrame {
     private transient boolean isRetryable;
     private transient String operationName;
     private transient Connection connection;
+    private transient boolean containsSerializedDataInRequest;
 
     private ClientMessage() {
 
@@ -282,6 +283,14 @@ public final class ClientMessage implements OutboundFrame {
         startFrame = startFrame.next;
     }
 
+    public boolean isContainsSerializedDataInRequest() {
+        return containsSerializedDataInRequest;
+    }
+
+    public void setContainsSerializedDataInRequest(boolean containsSerializedDataInRequest) {
+        this.containsSerializedDataInRequest = containsSerializedDataInRequest;
+    }
+
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("ClientMessage{");
@@ -330,6 +339,7 @@ public final class ClientMessage implements OutboundFrame {
 
         newMessage.isRetryable = isRetryable;
         newMessage.operationName = operationName;
+        newMessage.containsSerializedDataInRequest = containsSerializedDataInRequest;
 
         return newMessage;
     }
@@ -350,6 +360,7 @@ public final class ClientMessage implements OutboundFrame {
 
         newMessage.isRetryable = isRetryable;
         newMessage.operationName = operationName;
+        newMessage.containsSerializedDataInRequest = containsSerializedDataInRequest;
 
         return newMessage;
     }
@@ -371,6 +382,9 @@ public final class ClientMessage implements OutboundFrame {
         if (isRetryable != message.isRetryable) {
             return false;
         }
+        if (containsSerializedDataInRequest != message.containsSerializedDataInRequest) {
+            return false;
+        }
         if (!Objects.equals(operationName, message.operationName)) {
             return false;
         }
@@ -381,6 +395,7 @@ public final class ClientMessage implements OutboundFrame {
     public int hashCode() {
         int result = super.hashCode();
         result = 31 * result + (isRetryable ? 1 : 0);
+        result = 31 * result + (containsSerializedDataInRequest ? 1 : 0);
         result = 31 * result + (operationName != null ? operationName.hashCode() : 0);
         result = 31 * result + (connection != null ? connection.hashCode() : 0);
         return result;
