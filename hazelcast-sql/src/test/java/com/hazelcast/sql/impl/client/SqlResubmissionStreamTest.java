@@ -111,6 +111,8 @@ public class SqlResubmissionStreamTest extends SqlResubmissionTestSupport {
             }
             assertTrue("resubmission didn't happen", resubmitted);
         } catch (HazelcastSqlException e) {
+            // This may be expected (for example: when resubmissionMode == NEVER), so we need to check if in current
+            // resubmissionMode an exception should be thrown.
             if (!shouldFailAfterSomeDataIsFetched(resubmissionMode)) {
                 throw e;
             } // else the error is expected

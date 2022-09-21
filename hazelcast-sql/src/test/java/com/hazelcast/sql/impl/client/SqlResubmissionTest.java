@@ -178,7 +178,7 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
         }
     };
 
-    @Test
+    @Test(timeout = 10_000)
     public void when_failingSelectAfterSomeDataIsFetched() {
         SqlStatement statement = new SqlStatement("select * from " + COMMON_MAP_NAME + " ORDER BY __key");
         statement.setCursorBufferSize(1);
@@ -208,6 +208,8 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
             assertEquals(COMMON_MAP_SIZE, expectedValue);
             assertTrue("resubmission didn't happen", resubmitted);
         } catch (HazelcastSqlException e) {
+            // This may be expected (for example: when resubmissionMode == NEVER), so we need to check if in current
+            // resubmissionMode an exception should be thrown.
            if (!shouldFailAfterSomeDataIsFetched(resubmissionMode)) {
                throw e;
            } // else the error is expected
