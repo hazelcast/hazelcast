@@ -71,7 +71,7 @@ public class MethodGetterTest {
         hand = new Limb("hand", whiteNail, blackNail);
 
         unnamedLimb = new Limb(null);
-        body = new Body("bodyName", leg, hand, unnamedLimb);
+        body = new Body("bodyName", Health.SPLENDID, leg, hand, unnamedLimb);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -95,6 +95,17 @@ public class MethodGetterTest {
     @Test(expected = IllegalArgumentException.class)
     public void constructor_whenModifierIsPositionAndMethodReturnTypeIsCollection_thenThrowIllegalArgumentException() {
         new MethodGetter(null, limbCollectionMethod, "[0]", null);
+    }
+
+    @Test
+    public void getValue_whenFieldIsEnum()
+        throws Exception {
+      MethodGetter limbGetter = new MethodGetter(null, limbArrayMethod, "[any]", null);
+      MethodGetter nailGetter = new MethodGetter(limbGetter, nailArrayMethod, "[any]", null);
+
+      MultiResult result = (MultiResult) nailGetter.getValue(body);
+
+      assertContainsInAnyOrder(result, whiteNail, blackNail, redNail, greenNail, null);
     }
 
     @Test
@@ -270,13 +281,23 @@ public class MethodGetterTest {
         }
     }
 
+    enum Health {
+        SICK,
+        SPLENDID
+    }
+
     @SuppressWarnings("unused")
     static class Body {
         String name;
         Limb[] limbArray;
         Collection<Limb> limbCollection;
 
+        Health health;
+
         Body(String name, Limb... limbs) {
+            this(name, Health.SPLENDID, limbs);
+        }
+        Body(String name, Health health, Limb... limbs) {
             this.name = name;
             this.limbCollection = Arrays.asList(limbs);
             this.limbArray = limbs;

@@ -85,7 +85,7 @@ public class ExtractionInCollectionSpecTest extends AbstractExtractionTest {
     private static final Person HUNT_NULL_LIMB = person("Hunt");
 
     private static final Person HUNT_NULL_FIRST = person("Hunt",
-            null, limb("left", tattoos(null, "cross"), null, finger("thumbie"))
+        (ComplexTestDataStructure.Health) null, null, limb("left", tattoos(null, "cross"), null, finger("thumbie"))
     );
 
     private static final Person HUNT_PRIMITIVE_NULL_FIRST = person("Hunt",
