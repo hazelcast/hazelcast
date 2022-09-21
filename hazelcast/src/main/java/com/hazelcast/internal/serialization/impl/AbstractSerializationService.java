@@ -164,6 +164,10 @@ public abstract class AbstractSerializationService implements InternalSerializat
         }
         if (obj instanceof Data) {
             Data data = (Data) obj;
+            if (data.getType() == SerializationConstants.TYPE_COMPACT_WITH_SCHEMA) {
+                return (B) data;
+            }
+
             // we need to deserialize and serialize back completely to include
             // all the schemas, even if the top level class is not Compact, in
             // case the Compact is used with other serialization mechanisms

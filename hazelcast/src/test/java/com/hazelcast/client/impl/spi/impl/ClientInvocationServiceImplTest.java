@@ -41,7 +41,6 @@ import java.util.UUID;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
@@ -77,13 +76,13 @@ public class ClientInvocationServiceImplTest extends ClientTestSupport {
     }
 
     private ClientConnection closedConnection() {
-        ClientConnection conn = mock(ClientConnection.class, RETURNS_DEEP_STUBS);
+        ClientConnection conn = mock(ClientConnection.class);
         when(conn.isAlive()).thenReturn(false);
         return conn;
     }
 
     private ClientConnection mockConnection() {
-        ClientConnection connection = mock(ClientConnection.class, RETURNS_DEEP_STUBS);
+        ClientConnection connection = mock(ClientConnection.class);
         when(connection.write(any())).thenReturn(true);
         return connection;
     }
