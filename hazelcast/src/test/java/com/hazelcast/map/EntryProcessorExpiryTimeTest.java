@@ -162,14 +162,15 @@ public class EntryProcessorExpiryTimeTest extends HazelcastTestSupport {
 
     private void test(Set<Integer> keySet, boolean update,
                       EntryProcessor entryProcessor, boolean expectShiftExpiry, RUN_METHOD runMethod) {
-        HazelcastInstance[] hazelcastInstances = createHazelcastInstances(getConfig(), 2);
-        HazelcastInstance instance1 = hazelcastInstances[0];
-        HazelcastInstance instance2 = hazelcastInstances[1];
+        HazelcastInstance[] hazelcastInstances = createHazelcastInstances(getConfig(), 3);
+        HazelcastInstance instance = hazelcastInstances[2];
+        waitAllForSafeState(hazelcastInstances);
+        warmUpPartitions(Arrays.asList(hazelcastInstances));
 
         MapBackupAccessor mapBackupAccessor = (MapBackupAccessor) TestBackupUtils
                 .newMapAccessor(hazelcastInstances, mapName, 1);
 
-        IMap<Integer, Integer> instance1Map = instance1.getMap(mapName);
+        IMap<Integer, Integer> instance1Map = instance.getMap(mapName);
         Map<Integer, EntryView> cacheEntryViewPerKey1 = null;
 
         // when update is true, first create entries
