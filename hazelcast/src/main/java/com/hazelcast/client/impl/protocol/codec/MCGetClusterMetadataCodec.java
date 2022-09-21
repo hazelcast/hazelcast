@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Gets the current metadata of a cluster.
  */
-@Generated("671b3d3b524ebe7a7227d85ba8819a7c")
+@Generated("3c049401c9075435e73eb0a54de7c656")
 public final class MCGetClusterMetadataCodec {
     //hex: 0x200E00
     public static final int REQUEST_MESSAGE_TYPE = 2100736;
@@ -93,6 +93,12 @@ public final class MCGetClusterMetadataCodec {
          * Cluster ID.
          */
         public java.lang.String clusterId;
+
+        /**
+         * True if the clusterId is received from the member, false otherwise.
+         * If this is false, clusterId has the default value for its type.
+         */
+        public boolean isClusterIdExists;
     }
 
     public static ClientMessage encodeResponse(byte currentState, java.lang.String memberVersion, @Nullable java.lang.String jetVersion, long clusterTime, java.lang.String clusterId) {
@@ -117,7 +123,12 @@ public final class MCGetClusterMetadataCodec {
         response.clusterTime = decodeLong(initialFrame.content, RESPONSE_CLUSTER_TIME_FIELD_OFFSET);
         response.memberVersion = StringCodec.decode(iterator);
         response.jetVersion = CodecUtil.decodeNullable(iterator, StringCodec::decode);
-        response.clusterId = StringCodec.decode(iterator);
+        if (iterator.hasNext()) {
+            response.clusterId = StringCodec.decode(iterator);
+            response.isClusterIdExists = true;
+        } else {
+            response.isClusterIdExists = false;
+        }
         return response;
     }
 }
