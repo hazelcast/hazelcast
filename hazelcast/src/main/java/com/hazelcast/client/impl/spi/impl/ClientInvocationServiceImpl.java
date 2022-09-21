@@ -295,19 +295,19 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
     }
 
     void checkUrgentInvocationAllowed(ClientInvocation invocation) {
-        if (!client.shouldCheckUrgentInvocations()) {
-            // If there were no Compact schemas to begin with, we don't need
-            // to perform the checks below. If the client didn't send a Compact
-            // schema up until this point, the retries or listener registrations
-            // could not send a schema, because if they were, we wouldn't hit
-            // this line.
-            return;
-        }
-
         if (connectionManager.clientInitializedOnCluster()) {
             // If the client is initialized on the cluster, that means we
             // have sent all the schemas to the cluster, even if we are
             // reconnected to it
+            return;
+        }
+
+        if (!client.shouldCheckUrgentInvocations()) {
+            // If there were no Compact schemas to begin with, we don't need
+            // to perform the check below. If the client didn't send a Compact
+            // schema up until this point, the retries or listener registrations
+            // could not send a schema, because if they were, we wouldn't hit
+            // this line.
             return;
         }
 
@@ -320,7 +320,7 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
         // is initialized on the cluster, which means schemas are replicated
         // in the cluster.
         if (invocation.getClientMessage().isContainsSerializedDataInRequest()) {
-            throw new InvocationMightContainCompactDataException();
+            throw new InvocationMightContainCompactDataException(invocation);
         }
     }
 

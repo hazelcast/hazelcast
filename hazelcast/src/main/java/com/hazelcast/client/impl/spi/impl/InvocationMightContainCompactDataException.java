@@ -25,9 +25,9 @@ import com.hazelcast.core.HazelcastException;
  * reconnects or retries urgent invocations.
  */
 class InvocationMightContainCompactDataException extends HazelcastException {
-    InvocationMightContainCompactDataException() {
-        super("The invocation might contain Compact serialized data and it is "
-                + "not safe to invoke it when the client is not yet initialized "
-                + "on the cluster");
+    InvocationMightContainCompactDataException(ClientInvocation invocation) {
+        super("The invocation" + invocation +" might contain Compact serialized "
+                + "data and it is not safe to invoke it when the client is not "
+                + "yet initialized on the cluster");
     }
 }
