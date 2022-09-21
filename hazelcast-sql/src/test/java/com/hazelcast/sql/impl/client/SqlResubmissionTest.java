@@ -178,7 +178,7 @@ public class SqlResubmissionTest extends SqlResubmissionTestSupport {
         }
     };
 
-    @Test(timeout = 10_000)
+    @Test
     public void when_failingSelectAfterSomeDataIsFetched() {
         SqlStatement statement = new SqlStatement("select * from " + COMMON_MAP_NAME + " ORDER BY __key");
         statement.setCursorBufferSize(1);

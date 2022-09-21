@@ -83,7 +83,7 @@ public class SqlResubmissionStreamTest extends SqlResubmissionTestSupport {
         client = clusterFailure.createClient(clientConfig);
     }
 
-    @Test
+    @Test(timeout = 10_000)
     public void when_failingSelectAfterSomeDataIsFetched() {
         SqlStatement statement = new SqlStatement("select * from table(generate_stream(" + VALUES_PER_SECOND + "))");
         SqlResult rows = client.getSql().execute(statement);
