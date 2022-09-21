@@ -164,15 +164,15 @@ public abstract class AbstractSerializationService implements InternalSerializat
         }
         if (obj instanceof Data) {
             Data data = (Data) obj;
-            if (data.getType() == SerializationConstants.TYPE_COMPACT) {
-                // we need to deserialize and serialize back completely because the root schema
-                // is not enough to deserialize an data. Because nested levels, there could be multiple schemas
-                // accompanying the single data
-                obj = toObject(data);
-            } else {
-                // for other types data and data with schema is same
+            if (data.getType() == SerializationConstants.TYPE_COMPACT_WITH_SCHEMA) {
                 return (B) data;
             }
+
+            // we need to deserialize and serialize back completely to include
+            // all the schemas, even if the top level class is not Compact, in
+            // case the Compact is used with other serialization mechanisms
+            // (like array list of Compact serialized objects).
+            obj = toObject(data);
         }
         byte[] bytes = toBytes(obj, 0, true, globalPartitioningStrategy, getByteOrder(), true);
         return (B) new HeapData(bytes);

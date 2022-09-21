@@ -130,6 +130,10 @@ public class ClientSchemaService implements SchemaService {
         invocation.invokeUrgent().joinInternal();
     }
 
+    public boolean hasAnySchemas() {
+        return !schemas.isEmpty();
+    }
+
     private boolean replicateSchemaInCluster(Schema schema) {
         ClientMessage clientMessage = ClientSendSchemaCodec.encodeRequest(schema);
         outer:
