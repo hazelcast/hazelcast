@@ -17,9 +17,11 @@
 package com.hazelcast.it.hibernate;
 
 import com.hazelcast.hibernate.HazelcastCacheRegionFactory;
+import com.hazelcast.hibernate.HazelcastLocalCacheRegionFactory;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
 import org.hibernate.Session;
@@ -33,20 +35,35 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(NightlyTest.class)
 public class HibernateIT extends HazelcastTestSupport {
 
     private static final ILogger log = Logger.getLogger(HibernateIT.class);
+
+    @Parameterized.Parameter
+    public Class<?> cacheRegionFactoryClass;
+
+    @Parameterized.Parameters(name = "cacheRegionFactory: {0}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {HazelcastCacheRegionFactory.class},
+                {HazelcastLocalCacheRegionFactory.class},
+        });
+    }
 
     private Process process;
     private String clusterName;
@@ -57,7 +74,7 @@ public class HibernateIT extends HazelcastTestSupport {
         assumeThatNoWindowsOS();
         clusterName = this.getClass().getSimpleName() + "_" + UUID.randomUUID();
         startHzMember();
-        sessionFactory = createSessionFactory(getCacheProperties());
+        sessionFactory = createSessionFactory(getCacheProperties(cacheRegionFactoryClass.getName()));
     }
 
     @Test
@@ -93,9 +110,9 @@ public class HibernateIT extends HazelcastTestSupport {
         return sessionFactory;
     }
 
-    private Properties getCacheProperties() {
+    private Properties getCacheProperties(String cacheRegionFactory) {
         Properties props = new Properties();
-        props.setProperty(Environment.CACHE_REGION_FACTORY, HazelcastCacheRegionFactory.class.getName());
+        props.setProperty(Environment.CACHE_REGION_FACTORY, cacheRegionFactory);
         props.setProperty("hibernate.cache.hazelcast.native_client_cluster_name", clusterName);
         return props;
     }
