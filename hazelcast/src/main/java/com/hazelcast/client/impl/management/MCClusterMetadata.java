@@ -57,4 +57,5 @@ public class MCClusterMetadata {
     public void setClusterId(UUID clusterId) {
         this.clusterId = clusterId;
     }
+
 }
