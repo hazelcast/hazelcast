@@ -60,12 +60,12 @@ import static java.util.Arrays.asList;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ExtractionInSingleValueSpecTest extends AbstractExtractionTest {
 
-    private static final Person BOND = person("Bond",
+    private static final Person BOND = person("Bond",  ComplexTestDataStructure.Health.SICK,
             limb("left-hand", tattoos(), finger("thumb"), finger(null)),
             limb("right-hand", tattoos("knife"), finger("middle"), finger("index"))
     );
 
-    private static final Person KRUEGER = person("Krueger",
+    private static final Person KRUEGER = person("Krueger", ComplexTestDataStructure.Health.DEAD,
             limb("linke-hand", tattoos("bratwurst"), finger("Zeigefinger"), finger("Mittelfinger")),
             limb("rechte-hand", tattoos(), finger("Ringfinger"), finger("Daumen"))
     );
@@ -170,6 +170,13 @@ public class ExtractionInSingleValueSpecTest extends AbstractExtractionTest {
         execute(Input.of(matching, new ReflectiveAttributeTestObject("f", false)),
                 Query.of(Predicates.equal("name", "e"), mv),
                 Expected.of(matching));
+    }
+
+    @Test
+    public void enumWithMembers() {
+        execute(Input.of(BOND, KRUEGER),
+                Query.of(Predicates.equal("health", ComplexTestDataStructure.Health.DEAD), mv),
+                Expected.of(KRUEGER));
     }
 
     @Parameterized.Parameters(name = "{index}: {0}, {1}, {2}")
