@@ -177,8 +177,9 @@ public interface NodeExtension {
     boolean isStartCompleted();
 
     /**
-     * todo
-     * @return
+     * Check whether this instance is ready to start accepting requests. Use this
+     * method as a readiness probe.
+     * @return {@code true} when this instance is ready to accept requests, {@code false} otherwise.
      */
     boolean isReady();
 
