@@ -997,8 +997,9 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
                 return false;
             }
             boolean persist = persistenceEnabledFor(provenance);
-            putNewRecord(key, null, newValue, UNSET, UNSET, UNSET, now,
+            Record newRecord = putNewRecord(key, null, newValue, UNSET, UNSET, UNSET, now,
                     null, ADDED, persist, false);
+            mergeRecordExpiration(key, newRecord, mergingEntry, now);
         } else {
             oldValue = record.getValue();
             ExpiryMetadata expiredMetadata = expirySystem.getExpiredMetadata(key);
