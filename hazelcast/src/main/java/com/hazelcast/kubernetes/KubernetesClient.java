@@ -29,6 +29,7 @@ import com.hazelcast.spi.utils.RestClient;
 import com.hazelcast.spi.utils.RetryUtils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -126,23 +127,33 @@ class KubernetesClient {
     }
 
     /**
-     * Retrieves POD addresses for all services in the specified {@code namespace} filtered by {@code serviceLabel}
-     * and {@code serviceLabelValue}.
+     * Retrieves POD addresses for all services in the specified {@code namespace} filtered by {@code serviceLabels}
+     * and {@code serviceLabelValues}.
      *
-     * @param serviceLabel      label used to filter responses
-     * @param serviceLabelValue label value used to filter responses
-     * @return all POD addresses from the specified {@code namespace} filtered by the label
+     * @param serviceLabels      comma separated labels used to filter responses
+     * @param serviceLabelValues comma separated label values used to filter responses
+     * @return all POD addresses from the specified {@code namespace} filtered by the labels
      * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#list-143">Kubernetes Endpoint API</a>
      */
-    List<Endpoint> endpointsByServiceLabel(String serviceLabel, String serviceLabelValue) {
+    List<Endpoint> endpointsByServiceLabel(String serviceLabels, String serviceLabelValues) {
         try {
-            String param = String.format("labelSelector=%s=%s", serviceLabel, serviceLabelValue);
+            String param = getLabelSelectorParameter(serviceLabels, serviceLabelValues);
             String urlString = String.format(apiProvider.getEndpointsByServiceLabelUrlString(),
                     kubernetesMaster, namespace, param);
             return enrichWithPublicAddresses(apiProvider.parseEndpointsList(callGet(urlString)));
         } catch (RestClientException e) {
             return handleKnownException(e);
         }
+    }
+
+    private static String getLabelSelectorParameter(String labelNames, String labelValues) {
+        List<String> labelNameList = new ArrayList<>(Arrays.asList(labelNames.split(",")));
+        List<String> labelValueList = new ArrayList<>(Arrays.asList(labelValues.split(",")));
+        List<String> selectorList = new ArrayList<>(labelNameList.size());
+        for (int i = 0; i < labelNameList.size(); i++) {
+            selectorList.add(i, String.format("%s=%s", labelNameList.get(i), labelValueList.get(i)));
+        }
+        return String.format("labelSelector=%s", String.join(",", selectorList));
     }
 
     /**
@@ -163,17 +174,17 @@ class KubernetesClient {
     }
 
     /**
-     * Retrieves POD addresses for all services in the specified {@code namespace} filtered by {@code podLabel}
-     * and {@code podLabelValue}.
+     * Retrieves POD addresses for all services in the specified {@code namespace} filtered by {@code podLabels}
+     * and {@code podLabelValues}.
      *
-     * @param podLabel      label used to filter responses
-     * @param podLabelValue label value used to filter responses
-     * @return all POD addresses from the specified {@code namespace} filtered by the label
+     * @param podLabels      comma separated labels used to filter responses
+     * @param podLabelValues comma separated label values used to filter responses
+     * @return all POD addresses from the specified {@code namespace} filtered by the labels
      * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#list-143">Kubernetes Endpoint API</a>
      */
-    List<Endpoint> endpointsByPodLabel(String podLabel, String podLabelValue) {
+    List<Endpoint> endpointsByPodLabel(String podLabels, String podLabelValues) {
         try {
-            String param = String.format("labelSelector=%s=%s", podLabel, podLabelValue);
+            String param = getLabelSelectorParameter(podLabels, podLabelValues);
             String urlString = String.format("%s/api/v1/namespaces/%s/pods?%s", kubernetesMaster, namespace, param);
             return enrichWithPublicAddresses(parsePodsList(callGet(urlString)));
         } catch (RestClientException e) {
