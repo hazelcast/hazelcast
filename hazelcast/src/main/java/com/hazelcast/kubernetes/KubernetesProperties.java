@@ -70,12 +70,12 @@ public final class KubernetesProperties {
     public static final PropertyDefinition SERVICE_NAME = property("service-name", STRING);
     /**
      * <p>Configuration key: <code>service-label-name</code></p>
-     * Defines the service label to lookup through the Service Discovery REST API of Kubernetes.
+     * Defines the comma separated service labels to lookup through the Service Discovery REST API of Kubernetes.
      */
     public static final PropertyDefinition SERVICE_LABEL_NAME = property("service-label-name", STRING);
     /**
      * <p>Configuration key: <code>service-label-value</code></p>
-     * Defines the service label value to lookup through the Service Discovery REST API of Kubernetes.
+     * Defines the comma separated service label values to lookup through the Service Discovery REST API of Kubernetes.
      */
     public static final PropertyDefinition SERVICE_LABEL_VALUE = property("service-label-value", STRING);
 
@@ -87,12 +87,12 @@ public final class KubernetesProperties {
 
     /**
      * <p>Configuration key: <code>pod-label-name</code></p>
-     * Defines the pod label to lookup through the Service Discovery REST API of Kubernetes.
+     * Defines the comma separated pod labels to lookup through the Service Discovery REST API of Kubernetes.
      */
     public static final PropertyDefinition POD_LABEL_NAME = property("pod-label-name", STRING);
     /**
      * <p>Configuration key: <code>pod-label-value</code></p>
-     * Defines the pod label value to lookup through the Service Discovery REST API of Kubernetes.
+     * Defines the comma separated pod label values to lookup through the Service Discovery REST API of Kubernetes.
      */
     public static final PropertyDefinition POD_LABEL_VALUE = property("pod-label-value", STRING);
 
