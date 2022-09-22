@@ -6223,6 +6223,7 @@ public class ClientCompatibilityTest_2_1 {
         assertTrue(isEqual(aString, parameters.memberVersion));
         assertTrue(isEqual(aString, parameters.jetVersion));
         assertTrue(isEqual(aLong, parameters.clusterTime));
+        assertFalse(parameters.isClusterIdExists);
     }
 
     @Test

@@ -6301,6 +6301,7 @@ public class ClientCompatibilityTest_2_4 {
         assertTrue(isEqual(aString, parameters.memberVersion));
         assertTrue(isEqual(aString, parameters.jetVersion));
         assertTrue(isEqual(aLong, parameters.clusterTime));
+        assertFalse(parameters.isClusterIdExists);
     }
 
     @Test

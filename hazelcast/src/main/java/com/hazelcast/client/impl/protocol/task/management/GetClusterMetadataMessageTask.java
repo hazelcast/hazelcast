@@ -42,6 +42,7 @@ public class GetClusterMetadataMessageTask extends AbstractCallableMessageTask<V
         metadata.setCurrentState(nodeEngine.getClusterService().getClusterState());
         metadata.setMemberVersion(BuildInfoProvider.getBuildInfo().getVersion());
         metadata.setClusterTime(nodeEngine.getClusterService().getClusterTime());
+        metadata.setClusterId(nodeEngine.getClusterService().getClusterId());
         return metadata;
     }
 
@@ -57,7 +58,8 @@ public class GetClusterMetadataMessageTask extends AbstractCallableMessageTask<V
                 metadata.getCurrentState().getId(),
                 metadata.getMemberVersion(),
                 null,
-                metadata.getClusterTime());
+                metadata.getClusterTime(),
+                metadata.getClusterId());
     }
 
     @Override

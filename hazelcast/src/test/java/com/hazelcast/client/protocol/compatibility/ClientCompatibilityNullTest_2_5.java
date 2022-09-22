@@ -6357,6 +6357,8 @@ public class ClientCompatibilityNullTest_2_5 {
         assertTrue(isEqual(aString, parameters.memberVersion));
         assertTrue(isEqual(null, parameters.jetVersion));
         assertTrue(isEqual(aLong, parameters.clusterTime));
+        assertTrue(parameters.isClusterIdExists);
+        assertTrue(isEqual(aUUID, parameters.clusterId));
     }
 
     @Test
