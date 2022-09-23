@@ -19,9 +19,8 @@ objects. This is contrary to traditional RDBMS, where denormalized structures
 are typically used. This made the feature very useful for our user base.
 
 User Defined Types are meant to provide users with ability to query nested
-fields inside their OBJECT mappings, by providing both SQL Backend and
-Frontend with necessary type information required for validation and execution
-of queries.
+fields within their OBJECT fields, by providing both backend and frontend with
+necessary type information required for validation and execution of queries.
 
 The original motivation was to support queries like `SELECT
 (organization).office.name FROM users` where `organization` would be an OBJECT
@@ -66,7 +65,7 @@ they can be used.
 ## Current status
 
 SQL currently supports the `OBJECT` type. This type is used for all fields that
-don't have one of the more specific type (we call them SQL primitive types). 
+don't have one of the more specific types (we call them SQL primitive types).
 
 Behavior of `OBJECT`:
 
@@ -81,7 +80,7 @@ Behavior of `OBJECT`:
   `GenericRecord` is returned. They are only supported in java client, other
   clients will fail (TODO confirm)
 
-- they can be used for dynamic arguments
+- they can be used for dynamic arguments from the Java client
 
 - they can be assigned (`UPDATE t SET objectField1=objectField2`)
 
@@ -93,9 +92,7 @@ remain `OBJECT`.
 
 We'll add user-defined types (UDTs). The user will need to create a type before
 it can be used. He will also need to specify serialization options, in the same
-way as it is specified for mappings. (Serialization options are mandatory for
-now, we consider making Compact format the default in the future, but it's out
-of scope here).
+way as it is specified for mappings.
 
 ```sql
 CREATE TYPE foo_type (
@@ -106,27 +103,33 @@ CREATE TYPE foo_type (
 )
 ```
 
-The field list is optional, if it can be extracted from the options (e.g. by
-reflecting the java class, or by listing Portable fields, if the class
-definition is known). On the other hand, the user can specify a new portable or
-compact type by specifying the field list and providing appropriate options.
+The serialization options should in all aspects behave the same as in mappings
+(TODO use the same code):
 
-If the user provides the field list, and the field list is also known to the
-cluster, it will be validated - fields can be omitted in the field list, but
-those that are present must exist in the class and have a matching type.
+- The field list is optional, if it can be extracted from the options (e.g. by
+  reflecting the java class, or by listing Portable fields, if the class
+  definition is known), in the same way as in mappings.
 
-The order of the fields matters - it is important when converting to ROW values.
+- The user can specify a new portable or compact type by specifying the field
+  list and providing appropriate options
 
-The types are schema objects. They share the namespace with tables and views,
+- If the user provides the field list, and the field list is also known to the
+  cluster, it will be validated - fields can be omitted in the field list, but
+  those that are present must exist in the class and have a matching type.
+
+- The order of the fields matters - it is important when converting to ROW
+  values.
+
+The types are schema objects. They share the namespace with mappings and views,
 and are scoped to schemas. Currently, they can be created only in `public`
 schema, as all other objects.
 
 ### No mixing of formats
 
-Type Formats can not be mixed together. For example a `java` type can not be
+Type formats can not be mixed together. For example a `java` type can not be
 used as column inside of `portable` type or mapping or vice-versa. Violations
 are reported at runtime when using such mapping/type in a statement, not when
-executing the DDL.
+executing the DDL. (TODO test)
 
 ## References to types are symbolic
 
@@ -136,8 +139,9 @@ types. When creating a mapping, types are validated at mapping-creation time.
 
 As is the case with other schema objects, we don't track dependencies at DDL
 time, mainly due to the lack of a consistent transactional metadata store, so if
-the type a type or mapping depends on is modified or dropped later, it will fail
-at run-time when that mapping is used.
+the type a type or mapping depends on is modified or dropped later, it will not
+fail when the type is dropped, but at run-time when that type is about to be
+used and is missing.
 
 ## Behavior of custom types
 
@@ -149,7 +153,7 @@ This has notable consequences:
 
 - when a custom-typed value is returned to the client, the value will be the
   java instance or a `GenericRecord`. Non-java clients must use `TO_ROW`
-  function.
+  function, an object can't be deserialized by a non-java client.
 
 - comparison operators (and most notably, the `=` operator) will compare the
   java instances, not the values field-by-field. Again, one can use `TO_ROW` to
@@ -179,11 +183,6 @@ gives the impression that identifiers are case-insensitive. Quoted identifiers
 are always case-sensitive. The conversion to canonical case is optional in the
 SQL standard, Hazelcast doesn't do it for legacy reasons.
 
-## Automatic resolution
-
-When a mapping or another type is auto-resolved, for non-primitive types we
-check the SQL catalog if a type exists.
-
 ## UDTs and the top-level fields
 
 Currently, if the top-level `__key` or `this` field of an imap isn't a SQL
@@ -196,7 +195,24 @@ Person>`, then the mapping will have these fields:
 - `name`, `birthDate`, ... (all fields of the `Person` class)
 
 This behavior remains unchanged, that is, even if there is a UDT for `Person`,
-`this` will have `OBJECT` type. 
+`this` will have `OBJECT` type. In this case, the top-level OBJECT fields cannot
+be assigned in an INSERT/UPDATE stmt (TODO test this).
+
+The user can explicitly map the complex key or value to a UDT (TODO test this):
+
+```sql
+CREATE TYPE Person_Type AS (name VARCHAR, birthdate ...);
+
+CREATE MAPPING foo_map (
+  __key BIGINT,
+  this Person_Type
+)
+TYPE IMap
+OPTIONS (...)
+```
+
+In this case the Person's field cannot be mapped. I.e. mapping `this` as
+`Person_Type`, and also mapping `name` will throw an error (TODO test).
 
 ## ROW values
 
@@ -204,7 +220,7 @@ The SQL standards specifies the ROW type. A ROW value contains an array of
 values, but doesn't contain field names. It is important to note that UDT values
 aren't ROW values. However, they can be converted both ways:
 
-- `TO_ROW` function converts an UDT value to `ROW` value
+- `TO_ROW` function converts a UDT value to `ROW` value
 
 - `CAST(rowExpression AS <UDT name>)`: converts a `ROW` value to a UDT value.
   The ROW value must have the same number and types of fields as the UDT, in the
@@ -264,6 +280,44 @@ fields are equal, any field determines the result.
 ### Issues with `CAST(field AS ROW)`
 
 For some reason we weren't able to implement this (TODO ivan).
+
+## DML operations
+
+### INSERT/SINK
+
+For inserting with SQL literals, one can use ROW values (TODO test):
+
+```sql
+INSERT INTO foo_map(__key, udtField) VALUES(1, ('value1', 'value2'))
+```
+
+It is not possible to use nested fields in the insert command
+
+```sql
+INSERT INTO foo_map(__key, udtField.fieldA, udtField.fieldB)
+VALUES (1, 'value1', 'value2');
+--> ERROR
+```
+
+### UPDATE
+
+When updating, it is possible to set the whole field using a ROW literal, or to
+set subfields directly:
+
+```sql
+UPDATE foo_map
+SET udtField=('value1', 'value2');
+
+UPDATE foo_map
+SET udtField.fieldA='value1', udtField.fieldB='value2';
+```
+
+It is not possible to assign to a UDT and to its fields at the same time:
+
+```sql
+UPDATE ... SET udtField=('value1', 'value2'), udtField.fieldA='value3'; 
+--> ERROR
+```
 
 ## Information schema
 

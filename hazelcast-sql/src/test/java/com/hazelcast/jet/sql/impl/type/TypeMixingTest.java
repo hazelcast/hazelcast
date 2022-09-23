@@ -24,7 +24,7 @@ public class TypeMixingTest extends SqlTestSupport {
         execute("create type t1(a int) options('format'='java', 'javaClass'='" + Person.class.getName() + "')");
         execute("create type t2(a int) options('format'='java', 'javaClass'='" + Person.class.getName() + "')");
 
-        continue here
+//        continue here
     }
 
     void execute(String sql) {
