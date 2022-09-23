@@ -1794,7 +1794,7 @@ public final class ClusterProperty {
     /**
      * When {@code true}, enables monitoring of the runtime environment to detect the intent of shutdown
      * and automate cluster state management decisions.
-     * Currently supported when persistence is enabled and Hazelcast is executed in a Kubernetes
+     * Supported when persistence is enabled and Hazelcast is executed in a Kubernetes
      * <a href="https://kubernetes.io/docs/concepts/workloads/controllers/statefulset/">StatefulSet</a>.
      * <p/>
      * The default value is {@code true}.

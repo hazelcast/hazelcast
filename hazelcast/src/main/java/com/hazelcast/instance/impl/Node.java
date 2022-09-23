@@ -340,7 +340,10 @@ public class Node implements ClusterTopologyIntentTracker {
         ILogger logger = getLogger(DiscoveryService.class);
 
         final Map attributes = new HashMap<>(localMember.getAttributes());
-        attributes.put(DISCOVERY_PROPERTY_THIS_NODE, this);
+        if (properties.getBoolean(ClusterProperty.PERSISTENCE_SHUTDOWN_INTENT)
+            && config.getPersistenceConfig().isEnabled()) {
+            attributes.put(DISCOVERY_PROPERTY_THIS_NODE, this);
+        }
         DiscoveryNode thisDiscoveryNode = new SimpleDiscoveryNode(localMember.getAddress(), attributes);
 
         DiscoveryServiceSettings settings = new DiscoveryServiceSettings()
