@@ -49,7 +49,7 @@ public class EvictOperation extends LockAwareOperation implements MutatingOperat
     }
 
     @Override
-    protected void afterRunInternal() {
+    public void afterRunInternal() {
         if (!evicted) {
             return;
         }

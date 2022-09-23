@@ -77,18 +77,6 @@ public class TestOutboxTest {
     }
 
     @Test
-    public void when_resetNotCalled_then_offerFails() {
-        TestOutbox outbox = new TestOutbox(1);
-        // When
-        assertTrue(outbox.offer(1));
-        assertFalse(outbox.offer(2));
-
-        // Then
-        exception.expectMessage("offer() called again");
-        assertFalse(outbox.offer(2));
-    }
-
-    @Test
     public void when_offeredToMinusOne_then_offeredToAll() {
         TestOutbox outbox = new TestOutbox(2);
         assertTrue(outbox.offer(-1, "foo"));

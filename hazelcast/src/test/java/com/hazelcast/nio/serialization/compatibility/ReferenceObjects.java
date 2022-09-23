@@ -16,28 +16,34 @@
 
 package com.hazelcast.nio.serialization.compatibility;
 
+import static java.util.Arrays.asList;
+
 import com.hazelcast.aggregation.Aggregators;
 import com.hazelcast.core.EntryEventType;
-import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.serialization.impl.HeapData;
+import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
 import com.hazelcast.nio.serialization.Portable;
 import com.hazelcast.projection.Projections;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects;
+import example.serialization.MainDTO;
+import example.serialization.AllFieldsDTO;
 
 import java.io.Externalizable;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.nio.CharBuffer;
-import java.time.LocalTime;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
 import java.util.AbstractMap;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -61,8 +67,6 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.LinkedTransferQueue;
 import java.util.concurrent.PriorityBlockingQueue;
 import java.util.concurrent.SynchronousQueue;
-
-import static java.util.Arrays.asList;
 
 class ReferenceObjects {
 
@@ -163,6 +167,7 @@ class ReferenceObjects {
         calendar.set(1990, Calendar.FEBRUARY, 1, 0, 0, 0);
         calendar.set(Calendar.MILLISECOND, 0);
         calendar.set(Calendar.ZONE_OFFSET, 0);
+        calendar.set(Calendar.DST_OFFSET, 0);
         aDate = calendar.getTime();
         aLocalDate = LocalDate.of(2021, 6, 28);
         aLocalTime = LocalTime.of(11, 22, 41, 123456789);
@@ -236,11 +241,22 @@ class ReferenceObjects {
     static SynchronousQueue synchronousQueue = new SynchronousQueue();
     static LinkedTransferQueue linkedTransferQueue = new LinkedTransferQueue(nonNullList);
 
+    static MainDTO aCompact;
+    static {
+        aCompact = CompactTestUtil.createMainDTO();
+        aCompact.localDate = aLocalDate;
+        aCompact.localTime = aLocalTime;
+        aCompact.localDateTime = aLocalDateTime;
+        aCompact.offsetDateTime = aOffsetDateTime;
+    }
+
+    static AllFieldsDTO aReflectiveCompact = CompactTestUtil.createAllFieldsDTO();
+
     static Object[] allTestObjects = {
             aNullObject, aBoolean, aByte, aChar, aDouble, aShort, aFloat, anInt, aLong, aString, aUUID, anInnerPortable,
             aSimpleMapEntry, aSimpleImmutableMapEntry, booleans, bytes, chars, doubles, shorts, floats, ints, longs, strings,
             aCustomStreamSerializable, aCustomByteArraySerializable,
-            anIdentifiedDataSerializable, aPortable,
+            anIdentifiedDataSerializable, aPortable, aCompact, aReflectiveCompact,
             aDate, aLocalDate, aLocalTime, aLocalDateTime, aOffsetDateTime, aBigInteger, aBigDecimal, aClass,
             aFullOptional, anEnum, serializable, externalizable,
             arrayList, linkedList, copyOnWriteArrayList, concurrentSkipListMap, concurrentHashMap, linkedHashMap, treeMap,
@@ -260,6 +276,7 @@ class ReferenceObjects {
             Predicates.in(aSmallString, aComparable, aComparable),
             Predicates.regex(aSmallString, aSmallString),
             Predicates.partitionPredicate(aComparable, Predicates.greaterThan(aSmallString, aComparable)),
+            Predicates.multiPartitionPredicate(new HashSet<>(Arrays.asList(aComparable)), Predicates.greaterThan(aSmallString, aComparable)),
             Predicates.and(Predicates.sql(anSqlString),
                     Predicates.equal(aSmallString, aComparable),
                     Predicates.notEqual(aSmallString, aComparable),

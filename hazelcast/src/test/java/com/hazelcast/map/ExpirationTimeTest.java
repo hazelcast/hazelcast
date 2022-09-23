@@ -599,6 +599,72 @@ public class ExpirationTimeTest extends HazelcastTestSupport {
         }
     }
 
+    @Test
+    public void no_expiration_happens_when_max_idle_is_int_max() {
+        IMap<Integer, Integer> map = createMapWithMaxIdleSeconds(Integer.MAX_VALUE);
+
+        map.set(1, 1);
+
+        long expirationTimeAfterPut = getExpirationTime(map, 1);
+
+        assertEquals(Long.MAX_VALUE, expirationTimeAfterPut);
+    }
+
+    @Test
+    public void no_expiration_happens_when_max_idle_is_zero() {
+        IMap<Integer, Integer> map = createMapWithMaxIdleSeconds(0);
+
+        map.set(1, 1);
+
+        long expirationTimeAfterPut = getExpirationTime(map, 1);
+
+        assertEquals(Long.MAX_VALUE, expirationTimeAfterPut);
+    }
+
+    @Test
+    public void no_expiration_happens_when_max_idle_is_close_to_int_max() {
+        IMap<Integer, Integer> map = createMapWithMaxIdleSeconds(Integer.MAX_VALUE - 100);
+
+        map.set(1, 1);
+
+        long expirationTimeAfterPut = getExpirationTime(map, 1);
+
+        assertEquals(Long.MAX_VALUE, expirationTimeAfterPut);
+    }
+
+    @Test
+    public void no_expiration_happens_when_ttl_is_int_max() {
+        IMap<Integer, Integer> map = createMapWithTTLSeconds(Integer.MAX_VALUE);
+
+        map.set(1, 1);
+
+        long expirationTimeAfterPut = getExpirationTime(map, 1);
+
+        assertEquals(Long.MAX_VALUE, expirationTimeAfterPut);
+    }
+
+    @Test
+    public void no_expiration_happens_when_ttl_is_zero() {
+        IMap<Integer, Integer> map = createMapWithTTLSeconds(0);
+
+        map.set(1, 1);
+
+        long expirationTimeAfterPut = getExpirationTime(map, 1);
+
+        assertEquals(Long.MAX_VALUE, expirationTimeAfterPut);
+    }
+
+    @Test
+    public void no_expiration_happens_when_ttl_is_close_to_int_max() {
+        IMap<Integer, Integer> map = createMapWithTTLSeconds(Integer.MAX_VALUE - 100);
+
+        map.set(1, 1);
+
+        long expirationTimeAfterPut = getExpirationTime(map, 1);
+
+        assertEquals(Long.MAX_VALUE, expirationTimeAfterPut);
+    }
+
     protected InMemoryFormat inMemoryFormat() {
         return BINARY;
     }

@@ -39,7 +39,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * in the collection, and vice-versa. This method is always executed by a distributed query, so it may throw a
  * QueryResultSizeExceededException if query result size limit is configured.
  */
-@Generated("e556617145faa66ec5f1792cf2973eaf")
+@Generated("8dce73c4a1ddeb905894fb001cbe4ae3")
 public final class MapKeySetWithPagingPredicateCodec {
     //hex: 0x013400
     public static final int REQUEST_MESSAGE_TYPE = 78848;
@@ -67,6 +67,7 @@ public final class MapKeySetWithPagingPredicateCodec {
 
     public static ClientMessage encodeRequest(java.lang.String name, com.hazelcast.client.impl.protocol.codec.holder.PagingPredicateHolder predicate) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
+        clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Map.KeySetWithPagingPredicate");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);

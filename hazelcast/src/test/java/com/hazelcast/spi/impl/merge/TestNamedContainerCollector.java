@@ -53,7 +53,7 @@ class TestNamedContainerCollector extends AbstractNamedContainerCollector<Object
     }
 
     @Override
-    protected int getMergingValueCount() {
+    protected long getMergingValueCount() {
         return getCollectedContainers().size();
     }
 }

@@ -86,6 +86,7 @@ import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FAC
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.PORTABLE_FORMAT;
 import static com.hazelcast.sql.impl.ResultIterator.HasNextResult.YES;
+import static java.lang.String.format;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
@@ -374,6 +375,14 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
         createMapping(instance(), name, keyClass, valueClass);
     }
 
+    public static void createType(String name, Class<?> clazz) {
+        createType(instance(), name, clazz);
+    }
+
+    public static void createType(HazelcastInstance instance, String name, Class<?> clazz) {
+        instance.getSql().execute(format("CREATE TYPE \"%s\" OPTIONS ('format'='java', 'javaClass'='%s')", name, clazz.getName()));
+    }
+
     /**
      * Create an IMap mapping with the given {@code name} that uses
      * java serialization for both key and value with the given classes.
@@ -631,7 +640,7 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
         private final Object[] values;
 
-        private Row(SqlRow row) {
+        public Row(SqlRow row) {
             values = new Object[row.getMetadata().getColumnCount()];
             for (int i = 0; i < values.length; i++) {
                 values[i] = row.getObject(i);

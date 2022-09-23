@@ -6470,6 +6470,7 @@ public class MemberCompatibilityTest_2_0 {
         assertTrue(isEqual(aString, parameters.mergePolicy));
         assertTrue(isEqual(anInt, parameters.mergeBatchSize));
         assertFalse(parameters.isStatisticsEnabledExists);
+        assertFalse(parameters.isCapacityPolicyExists);
     }
 
     @Test
@@ -6540,6 +6541,8 @@ public class MemberCompatibilityTest_2_0 {
         assertTrue(isEqual(aMerkleTreeConfig, parameters.merkleTreeConfig));
         assertTrue(isEqual(anInt, parameters.metadataPolicy));
         assertFalse(parameters.isPerEntryStatsEnabledExists);
+        assertFalse(parameters.isDataPersistenceConfigExists);
+        assertFalse(parameters.isTieredStoreConfigExists);
     }
 
     @Test
@@ -6603,6 +6606,7 @@ public class MemberCompatibilityTest_2_0 {
         assertTrue(isEqual(anEventJournalConfig, parameters.eventJournalConfig));
         assertTrue(isEqual(aHotRestartConfig, parameters.hotRestartConfig));
         assertFalse(parameters.isMerkleTreeConfigExists);
+        assertFalse(parameters.isDataPersistenceConfigExists);
     }
 
     @Test
@@ -7028,7 +7032,7 @@ public class MemberCompatibilityTest_2_0 {
     @Test
     public void test_MCGetClusterMetadataCodec_encodeResponse() {
         int fileClientMessageIndex = 786;
-        ClientMessage encoded = MCGetClusterMetadataCodec.encodeResponse(aByte, aString, aString, aLong);
+        ClientMessage encoded = MCGetClusterMetadataCodec.encodeResponse(aByte, aString, aString, aLong, aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }

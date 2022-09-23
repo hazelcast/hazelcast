@@ -611,7 +611,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         if (connection != null) {
             write = context.outboundOperationHandler.send(op, connection);
         } else {
-            write = context.outboundOperationHandler.send(op, targetAddress);
+            write = context.outboundOperationHandler.send(op, targetAddress, connectionManager);
         }
 
         if (!write) {
@@ -688,6 +688,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         context.invocationRegistry.retire(this);
     }
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     private void handleRetry(Object cause) {
         context.retryCount.inc();
 
@@ -708,7 +709,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
                     context.invocationMonitor.execute(retryTask);
                 } else {
                     // progressive retry delay
-                    long delayMillis = Math.min(1 << (invokeCount - MAX_FAST_INVOCATION_COUNT), tryPauseMillis);
+                    long delayMillis = Math.min(1L << Math.min(62, invokeCount - MAX_FAST_INVOCATION_COUNT), tryPauseMillis);
                     context.invocationMonitor.schedule(retryTask, delayMillis);
                 }
             } catch (RejectedExecutionException e) {

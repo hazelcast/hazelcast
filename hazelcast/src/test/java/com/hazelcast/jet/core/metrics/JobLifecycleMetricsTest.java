@@ -22,13 +22,15 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.core.TestProcessors;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -45,7 +47,7 @@ import static com.hazelcast.jet.core.TestProcessors.reset;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.fail;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JobLifecycleMetricsTest extends JetTestSupport {
 
@@ -62,6 +64,11 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
         config.getMetricsConfig().setCollectionFrequencySeconds(1);
 
         hzInstances = createHazelcastInstances(config, MEMBER_COUNT);
+    }
+
+    @After
+    public void after() {
+        TestProcessors.assertNoErrorsInProcessors();
     }
 
     @Test
@@ -162,7 +169,7 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
     private Pipeline batchPipeline() {
         Pipeline p = Pipeline.create();
         p.readFrom(TestSources.items(1, 2, 3))
-                .writeTo(Sinks.logger());
+         .writeTo(Sinks.logger());
         return p;
     }
 
@@ -182,7 +189,7 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
     }
 
     private void assertJobStatsOnMember(HazelcastInstance instance, int submitted, int executionsStarted,
-                                   int executionsTerminated, int completedSuccessfully, int completedWithFailure) {
+                                        int executionsTerminated, int completedSuccessfully, int completedWithFailure) {
         try {
             JmxMetricsChecker jmxChecker = new JmxMetricsChecker(instance.getName());
             jmxChecker.assertMetricValue(MetricNames.JOBS_SUBMITTED, submitted);

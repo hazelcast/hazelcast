@@ -31,6 +31,7 @@ import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.TestAwareInstanceFactory;
+import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
@@ -65,7 +66,7 @@ import static org.junit.Assert.assertTrue;
  * Tests HTTP REST API.
  */
 @RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class RestTest {
 
     private static final String MAP_WITH_TTL = "mapWithTtl";

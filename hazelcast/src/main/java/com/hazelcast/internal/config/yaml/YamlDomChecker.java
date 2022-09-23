@@ -24,6 +24,8 @@ import com.hazelcast.internal.yaml.YamlScalar;
 import com.hazelcast.internal.yaml.YamlSequence;
 import com.hazelcast.internal.yaml.YamlUtil;
 
+import java.util.Set;
+
 /**
  * Utility class for checking the provided YAML DOM for {@code null}
  * scalar values and mappings or sequences with {@code null} child nodes.
@@ -34,21 +36,25 @@ public final class YamlDomChecker {
     }
 
     /**
-     * Performs {code @null} checks on the provided YAML node recursively.
+     * Performs {@code null} checks on the provided on YAML node recursively.
+     * This check is skipped on the nodes defined as nullable.
      *
      * @param node The YAML node to check for {@code null}s
+     * @param nullableNodes The names of nodes on which null check is not performed
+     *
      */
-    public static void check(YamlNode node) {
+    public static void check(YamlNode node, Set<String> nullableNodes) {
         if (node instanceof YamlMapping) {
             for (YamlNameNodePair nodePair : ((YamlMapping) node).childrenPairs()) {
                 YamlNode child = nodePair.childNode();
                 if (child == null) {
+                    if (nullableNodes.contains(nodePair.nodeName())) {
+                        return;
+                    }
                     String path = YamlUtil.constructPath(node, nodePair.nodeName());
                     reportNullEntryOnConcretePath(path);
                 }
-
-                check(nodePair.childNode());
-
+                check(child, nullableNodes);
             }
         } else if (node instanceof YamlSequence) {
             for (YamlNode child : ((YamlSequence) node).children()) {
@@ -57,8 +63,7 @@ public final class YamlDomChecker {
                             + ". Please check if the provided YAML configuration is well-indented and no blocks started without "
                             + "sub-nodes.");
                 }
-
-                check(child);
+                check(child, nullableNodes);
             }
         } else {
             if (((YamlScalar) node).nodeValue() == null) {

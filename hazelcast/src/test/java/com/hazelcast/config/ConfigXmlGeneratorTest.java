@@ -34,13 +34,13 @@ import com.hazelcast.config.security.SimpleAuthenticationConfig;
 import com.hazelcast.config.security.TlsAuthenticationConfig;
 import com.hazelcast.config.security.TokenEncoding;
 import com.hazelcast.config.security.TokenIdentityConfig;
+import com.hazelcast.datastore.impl.ExternalDataStoreServiceImplTest;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.util.TriTuple;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.memory.Capacity;
-import com.hazelcast.memory.MemorySize;
 import com.hazelcast.memory.MemoryUnit;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -53,7 +53,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import example.serialization.EmployeeDTO;
 import example.serialization.EmployeeDTOSerializer;
 import example.serialization.EmployerDTO;
 import org.junit.Test;
@@ -81,10 +80,10 @@ import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 // Please also take a look at the DynamicConfigXmlGeneratorTest.
@@ -831,37 +830,32 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config config = new Config();
 
         CompactSerializationConfig expected = new CompactSerializationConfig();
-        expected.setEnabled(true);
-        expected.register(EmployerDTO.class);
-        expected.register(EmployeeDTO.class, "employee", new EmployeeDTOSerializer());
+        expected.addClass(EmployerDTO.class);
+        expected.addSerializer(new EmployeeDTOSerializer());
 
         config.getSerializationConfig().setCompactSerializationConfig(expected);
 
         CompactSerializationConfig actual = getNewConfigViaXMLGenerator(config).getSerializationConfig().getCompactSerializationConfig();
-        assertEquals(expected.isEnabled(), actual.isEnabled());
 
-        // Since we don't have APIs of the form register(String) or register(String, String, String) in the
-        // compact serialization config, when we read the config from XML/YAML, we store registered classes
-        // in a different map.
-        Map<String, TriTuple<String, String, String>> namedRegistries
-                = CompactSerializationConfigAccessor.getNamedRegistrations(actual);
+        // Since we don't have APIs to register string class names in the
+        // compact serialization config, when we read the config from XML/YAML,
+        // we store registered classes/serializers in different lists.
+        List<String> serializerClassNames
+                = CompactSerializationConfigAccessor.getSerializerClassNames(actual);
+        List<String> compactSerializableClassNames
+                = CompactSerializationConfigAccessor.getCompactSerializableClassNames(actual);
 
         Map<String, TriTuple<Class, String, CompactSerializer>> registrations
                 = CompactSerializationConfigAccessor.getRegistrations(actual);
 
-        for (Map.Entry<String, TriTuple<Class, String, CompactSerializer>> entry : registrations.entrySet()) {
-            String key = entry.getKey();
-            TriTuple<Class, String, CompactSerializer> expectedRegistration = entry.getValue();
-            TriTuple<String, String, String> actualRegistration = namedRegistries.get(key);
-
-            assertEquals(expectedRegistration.element1.getName(), actualRegistration.element1);
-            assertEquals(expectedRegistration.element2, actualRegistration.element2);
-
-            CompactSerializer serializer = expectedRegistration.element3;
+        for (TriTuple<Class, String, CompactSerializer> registration : registrations.values()) {
+            CompactSerializer serializer = registration.element3;
             if (serializer != null) {
-                assertEquals(serializer.getClass().getName(), actualRegistration.element3);
+                assertThat(serializerClassNames)
+                        .contains(serializer.getClass().getName());
             } else {
-                assertNull(actualRegistration.element3);
+                assertThat(compactSerializableClassNames)
+                        .contains(registration.element1.getName());
             }
         }
     }
@@ -934,7 +928,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         expectedConfig.setMetadataSpacePercentage(12.5f);
         expectedConfig.setMinBlockSize(50);
         expectedConfig.setPageSize(100);
-        expectedConfig.setSize(new MemorySize(20, MemoryUnit.MEGABYTES));
+        expectedConfig.setCapacity(new Capacity(20, MemoryUnit.MEGABYTES));
 
         Config config = new Config().setNativeMemoryConfig(expectedConfig);
         Config xmlConfig = getNewConfigViaXMLGenerator(config);
@@ -945,8 +939,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(12.5, actualConfig.getMetadataSpacePercentage(), 0.0001);
         assertEquals(50, actualConfig.getMinBlockSize());
         assertEquals(100, actualConfig.getPageSize());
-        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getUnit(), actualConfig.getSize().getUnit());
-        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getValue(), actualConfig.getSize().getValue());
+        assertEquals(new Capacity(20, MemoryUnit.MEGABYTES).getUnit(), actualConfig.getCapacity().getUnit());
+        assertEquals(new Capacity(20, MemoryUnit.MEGABYTES).getValue(), actualConfig.getCapacity().getValue());
         assertEquals(expectedConfig, actualConfig);
     }
 
@@ -958,7 +952,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         expectedConfig.setMetadataSpacePercentage(12.5f);
         expectedConfig.setMinBlockSize(50);
         expectedConfig.setPageSize(100);
-        expectedConfig.setSize(new MemorySize(20, MemoryUnit.MEGABYTES));
+        expectedConfig.setCapacity(new Capacity(20, MemoryUnit.MEGABYTES));
         PersistentMemoryConfig origPmemConfig = expectedConfig.getPersistentMemoryConfig();
         origPmemConfig.setEnabled(true);
         origPmemConfig.addDirectoryConfig(new PersistentMemoryDirectoryConfig("/mnt/pmem0", 0));
@@ -973,8 +967,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(12.5, actualConfig.getMetadataSpacePercentage(), 0.0001);
         assertEquals(50, actualConfig.getMinBlockSize());
         assertEquals(100, actualConfig.getPageSize());
-        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getUnit(), actualConfig.getSize().getUnit());
-        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getValue(), actualConfig.getSize().getValue());
+        assertEquals(new Capacity(20, MemoryUnit.MEGABYTES).getUnit(), actualConfig.getCapacity().getUnit());
+        assertEquals(new Capacity(20, MemoryUnit.MEGABYTES).getValue(), actualConfig.getCapacity().getValue());
 
         PersistentMemoryConfig pmemConfig = actualConfig.getPersistentMemoryConfig();
         assertTrue(pmemConfig.isEnabled());
@@ -997,7 +991,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         expectedConfig.setMetadataSpacePercentage(12.5f);
         expectedConfig.setMinBlockSize(50);
         expectedConfig.setPageSize(100);
-        expectedConfig.setSize(new MemorySize(20, MemoryUnit.MEGABYTES));
+        expectedConfig.setCapacity(new Capacity(20, MemoryUnit.MEGABYTES));
         expectedConfig.getPersistentMemoryConfig().setMode(PersistentMemoryMode.SYSTEM_MEMORY);
 
         Config config = new Config().setNativeMemoryConfig(expectedConfig);
@@ -1009,8 +1003,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(12.5, actualConfig.getMetadataSpacePercentage(), 0.0001);
         assertEquals(50, actualConfig.getMinBlockSize());
         assertEquals(100, actualConfig.getPageSize());
-        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getUnit(), actualConfig.getSize().getUnit());
-        assertEquals(new MemorySize(20, MemoryUnit.MEGABYTES).getValue(), actualConfig.getSize().getValue());
+        assertEquals(new Capacity(20, MemoryUnit.MEGABYTES).getUnit(), actualConfig.getCapacity().getUnit());
+        assertEquals(new Capacity(20, MemoryUnit.MEGABYTES).getValue(), actualConfig.getCapacity().getValue());
 
         PersistentMemoryConfig pmemConfig = actualConfig.getPersistentMemoryConfig();
         assertFalse(pmemConfig.isEnabled());
@@ -1090,7 +1084,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setMissingCPMemberAutoRemovalSeconds(120)
                 .setFailOnIndeterminateOperationState(true)
                 .setPersistenceEnabled(true)
-                .setBaseDir(new File("/custom-dir"));
+                .setBaseDir(new File("/custom-dir"))
+                .setCPMemberPriority(-1);
 
         config.getCPSubsystemConfig()
                 .getRaftAlgorithmConfig()
@@ -1467,6 +1462,24 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         assertEquals(expected, actual);
     }
 
+    @Test
+    public void testExternalDataStoreConfig() {
+        Config expectedConfig = new Config();
+
+        Properties properties = new Properties();
+        properties.put("jdbcUrl", "jdbc:h2:mem:" + ExternalDataStoreServiceImplTest.class.getSimpleName());
+        ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
+                .setName("test-data-store")
+                .setClassName("com.hazelcast.datastore.JdbcDataStoreFactory")
+                .setProperties(properties);
+
+        expectedConfig.addExternalDataStoreConfig(externalDataStoreConfig);
+
+        Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
+
+        assertEquals(expectedConfig.getExternalDataStoreConfigs(), actualConfig.getExternalDataStoreConfigs());
+    }
+
     private Config getNewConfigViaXMLGenerator(Config config) {
         return getNewConfigViaXMLGenerator(config, true);
     }
@@ -1478,7 +1491,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         return new InMemoryXmlConfig(xml);
     }
 
-    private static TcpIpConfig tcpIpConfig() {
+    public static TcpIpConfig tcpIpConfig() {
         return new TcpIpConfig()
                 .setEnabled(true)
                 .setConnectionTimeoutSeconds(10)
@@ -1486,7 +1499,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setRequiredMember("10.11.11.2");
     }
 
-    private static MulticastConfig multicastConfig() {
+    public static MulticastConfig multicastConfig() {
         return new MulticastConfig()
                 .setEnabled(true)
                 .setMulticastTimeoutSeconds(10)
@@ -1497,7 +1510,7 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
                 .setTrustedInterfaces(newHashSet("*"));
     }
 
-    private static void assertFailureDetectorConfigEquals(IcmpFailureDetectorConfig expected,
+    public static void assertFailureDetectorConfigEquals(IcmpFailureDetectorConfig expected,
                                                           IcmpFailureDetectorConfig actual) {
         assertEquals(expected.isEnabled(), actual.isEnabled());
         assertEquals(expected.getIntervalMilliseconds(), actual.getIntervalMilliseconds());

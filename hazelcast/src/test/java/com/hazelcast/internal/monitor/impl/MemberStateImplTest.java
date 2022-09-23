@@ -84,6 +84,7 @@ public class MemberStateImplTest extends HazelcastTestSupport {
         client.uuid = clientUuid;
         client.address = "localhost";
         client.clientType = "undefined";
+        client.clientVersion = "5.2";
         client.name = "aClient";
         client.labels = new HashSet<>(Collections.singletonList("label"));
         client.ipAddress = "10.176.167.34";

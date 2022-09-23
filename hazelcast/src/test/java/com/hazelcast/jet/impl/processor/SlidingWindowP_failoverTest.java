@@ -64,7 +64,8 @@ public class SlidingWindowP_failoverTest {
                 0L,
                 aggrOp,
                 KeyedWindowResult::new,
-                true);
+                true,
+                (byte) 0);
 
         Outbox outbox = new TestOutbox(128);
         Context context = new TestProcessorContext()

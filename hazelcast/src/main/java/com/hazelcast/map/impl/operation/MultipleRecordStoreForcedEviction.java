@@ -39,6 +39,15 @@ class MultipleRecordStoreForcedEviction implements ForcedEviction {
 
     @Override
     public boolean forceEvictAndRun(MapOperation mapOperation, double evictionPercentage) {
+        return forceEvictAndRun0(mapOperation, evictionPercentage, null);
+    }
+
+    @Override
+    public boolean forceEvictAndRun(MapOperation mapOperation, double evictionPercentage, Runnable runnable) {
+        return forceEvictAndRun0(mapOperation, evictionPercentage, runnable);
+    }
+
+    private boolean forceEvictAndRun0(MapOperation mapOperation, double evictionPercentage, Runnable runnable) {
         assert evictionPercentage > 0 && evictionPercentage <= 1;
 
         int partitionCount = numberOfPartitions(mapOperation);
@@ -69,7 +78,11 @@ class MultipleRecordStoreForcedEviction implements ForcedEviction {
                         }
                     }
                 }
-                mapOperation.runInternal();
+                if (runnable != null) {
+                    runnable.run();
+                } else {
+                    mapOperation.runInternal();
+                }
                 return true;
             } catch (NativeOutOfMemoryError e) {
                 // see #retryCount javaDoc

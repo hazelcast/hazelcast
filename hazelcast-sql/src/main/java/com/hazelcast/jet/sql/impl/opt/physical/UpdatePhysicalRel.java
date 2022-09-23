@@ -58,6 +58,13 @@ public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
                 .collect(toMap(i -> getUpdateColumnList().get(i), projects::get));
     }
 
+    public Map<String, RexNode> updatesAsRex() {
+        List<RexNode> updates = getSourceExpressionList();
+        return IntStream.range(0, updates.size())
+                        .boxed()
+                        .collect(toMap(i -> getUpdateColumnList().get(i), updates::get));
+    }
+
     @Override
     public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
         throw new UnsupportedOperationException();

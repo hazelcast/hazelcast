@@ -216,6 +216,7 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         } catch (HazelcastSqlException e) {
             assertTrue(expectedErrorMessage.length() != 0);
             assertNotNull(e.getMessage());
+            logger.info("Error caught", e);
             assertTrue(
                     "\nExpected: " + expectedErrorMessage + "\nActual: " + e.getMessage(),
                     e.getMessage().contains(expectedErrorMessage)
@@ -238,7 +239,7 @@ public abstract class ExpressionTestSupport extends SqlTestSupport {
         TestCase.assertNotNull(columnTypes);
 
         StringJoiner joiner = new StringJoiner(", ");
-        Arrays.stream(columnTypes).forEach((columnType) -> joiner.add(columnType == SqlColumnType.NULL ? "UNKNOWN" : columnType.toString()));
+        Arrays.stream(columnTypes).forEach(columnType -> joiner.add(columnType.toString()));
 
         return "Cannot apply '" + operatorName + "' operator to [" + joiner + "] (consider adding an explicit CAST)";
     }

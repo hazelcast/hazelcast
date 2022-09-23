@@ -47,8 +47,8 @@ class QueueContainerCollector extends AbstractNamedContainerCollector<QueueConta
     }
 
     @Override
-    protected int getMergingValueCount() {
-        int size = 0;
+    protected long getMergingValueCount() {
+        long size = 0;
         for (Collection<QueueContainer> containers : getCollectedContainers().values()) {
             for (QueueContainer container : containers) {
                 size += container.size();

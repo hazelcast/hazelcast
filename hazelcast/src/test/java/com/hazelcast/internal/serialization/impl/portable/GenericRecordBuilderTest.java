@@ -23,8 +23,8 @@ import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuil
 import com.hazelcast.internal.serialization.impl.TestSerializationConstants;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
-import com.hazelcast.nio.serialization.GenericRecord;
-import com.hazelcast.nio.serialization.GenericRecordBuilder;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -68,7 +68,7 @@ public class GenericRecordBuilderTest {
                                                    .setString("name", "foo")
                                                    .setInt32("myint", 123).build();
 
-        GenericRecordBuilder builder = record.cloneWithBuilder().setString("name", "foo2");
+        GenericRecordBuilder builder = record.newBuilderWithClone().setString("name", "foo2");
         assertThrows(HazelcastSerializationException.class, () -> builder.setString("name", "foo3"));
     }
 

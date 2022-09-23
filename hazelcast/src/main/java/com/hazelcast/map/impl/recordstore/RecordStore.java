@@ -33,6 +33,7 @@ import com.hazelcast.map.impl.MapEntries;
 import com.hazelcast.map.impl.iterator.MapEntriesWithCursor;
 import com.hazelcast.map.impl.iterator.MapKeysWithCursor;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
+import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.record.RecordFactory;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
@@ -88,8 +89,8 @@ public interface RecordStore<R extends Record> {
      * @param provenance origin of call to this method.
      * @return current record after put.
      */
-    R putBackup(Data key, Object value, long ttl, long maxIdle,
-                long nowOrExpiryTime, CallerProvenance provenance);
+    R putBackup(Data key, Object value, boolean changeExpiryOnUpdate,
+                long ttl, long maxIdle, long nowOrExpiryTime, CallerProvenance provenance);
 
     /**
      * @return current record after put.
@@ -110,7 +111,8 @@ public interface RecordStore<R extends Record> {
      * Does exactly the same thing as {@link #set(Data, Object, long, long)} except the invocation is not counted as
      * a read access while updating the access statics.
      */
-    boolean setWithUncountedAccess(Data dataKey, Object value, long ttl, long maxIdle);
+    boolean setWithUncountedAccess(Data dataKey, Object value,
+                                   boolean changeExpiryOnUpdate, long ttl, long maxIdle);
 
     /**
      * @param key        the key to be removed
@@ -128,7 +130,9 @@ public interface RecordStore<R extends Record> {
 
     boolean remove(Data dataKey, Object testValue);
 
-    boolean setTtl(Data key, long ttl, boolean backup);
+    boolean setTtl(Data key, long ttl);
+
+    boolean setTtlBackup(Data key, long ttl);
 
     /**
      * Callback which is called when the record is being accessed from the record or index store.
@@ -309,8 +313,9 @@ public interface RecordStore<R extends Record> {
      * does not intercept.
      *
      * @param dataKey key to remove
+     * @param backup {@code true} if a backup partition, otherwise {@code false}.
      */
-    void removeReplicatedRecord(Data dataKey);
+    void removeReplicatedRecord(Data dataKey, boolean backup);
 
     void forEach(BiConsumer<Data, R> consumer, boolean backup);
 
@@ -629,9 +634,10 @@ public interface RecordStore<R extends Record> {
      * <p>
      * Clears data in this record store.
      *
+     * @param backup  {@code true} if a backup partition, otherwise {@code false}.
      * @return number of cleared entries.
      */
-    int clear();
+    int clear(boolean backup);
 
     /**
      * Resets the record store to it's initial state.
@@ -664,4 +670,12 @@ public interface RecordStore<R extends Record> {
     default void afterOperation() {
         // no-op
     }
+
+    Set<MapOperation> getOffloadedOperations();
+
+    void incMapStoreOffloadedOperationsCount();
+
+    void decMapStoreOffloadedOperationsCount();
+
+    long getMapStoreOffloadedOperationsCount();
 }

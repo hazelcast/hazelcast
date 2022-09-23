@@ -18,6 +18,7 @@ package com.hazelcast.client.config;
 
 import com.hazelcast.internal.config.SchemaViolationConfigurationException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.Rule;
@@ -90,6 +91,16 @@ public class YamlClientFailoverConfigBuilderTest extends AbstractClientFailoverC
         System.setProperty("try-count", "11");
         ClientFailoverConfig config = buildConfig(yaml);
         assertEquals(11, config.getTryCount());
+    }
+
+    @Test
+    public void testEmptyYamlConfig() {
+        String emptyYaml = "hazelcast-client-failover:\n";
+        ClientFailoverConfig emptyFailoverConfig = buildConfig(emptyYaml);
+        ClientFailoverConfig defaultFailoverConfig = new ClientFailoverConfig();
+
+        assertEquals(emptyFailoverConfig.getTryCount(), defaultFailoverConfig.getTryCount());
+        HazelcastTestSupport.assertContainsAll(emptyFailoverConfig.getClientConfigs(), defaultFailoverConfig.getClientConfigs());
     }
 
     @Override

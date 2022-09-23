@@ -22,7 +22,9 @@ import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.config.MergePolicyConfig;
 import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.cluster.ClusterStateListener;
 import com.hazelcast.internal.metrics.impl.MetricsService;
 import com.hazelcast.internal.nio.Packet;
@@ -48,6 +50,7 @@ import com.hazelcast.spi.impl.operationservice.LiveOperations;
 import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.DiscardMergePolicy;
+import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.io.IOException;
@@ -61,6 +64,7 @@ import java.util.function.Consumer;
 import java.util.function.Supplier;
 
 import static com.hazelcast.cluster.ClusterState.PASSIVE;
+import static com.hazelcast.config.MapConfig.DISABLED_TTL_SECONDS;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.JobRepository.INTERNAL_JET_OBJECTS_PREFIX;
 import static com.hazelcast.jet.impl.JobRepository.JOB_METRICS_MAP_NAME;
@@ -74,6 +78,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         LiveOperationsTracker, Consumer<Packet> {
 
     public static final String SERVICE_NAME = "hz:impl:jetService";
+    public static final String SQL_CATALOG_MAP_NAME = "__sql.catalog";
     public static final int MAX_PARALLEL_ASYNC_OPS = 1000;
 
     private static final int NOTIFY_MEMBER_SHUTDOWN_DELAY = 5;
@@ -152,7 +157,18 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
 
         config.addMapConfig(internalMapConfig)
                 .addMapConfig(resultsMapConfig)
-                .addMapConfig(metricsMapConfig);
+                .addMapConfig(metricsMapConfig)
+                .addMapConfig(initializeSqlCatalog(config.getMapConfig(SQL_CATALOG_MAP_NAME)));
+    }
+
+    static MapConfig initializeSqlCatalog(MapConfig config) {
+        return config
+                .setName(SQL_CATALOG_MAP_NAME)
+                .setBackupCount(MapConfig.MAX_BACKUP_COUNT)
+                .setTimeToLiveSeconds(DISABLED_TTL_SECONDS)
+                .setReadBackupData(true)
+                .setMergePolicyConfig(new MergePolicyConfig().setPolicy(LatestUpdateMergePolicy.class.getName()))
+                .setPerEntryStatsEnabled(true);
     }
 
     /**
@@ -180,13 +196,19 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         nodeEngine.getOperationService()
                   .invokeOnTarget(JetServiceBackend.SERVICE_NAME, op, nodeEngine.getClusterService().getMasterAddress())
                   .whenCompleteAsync((response, throwable) -> {
-                      if (throwable != null) {
+                      // if there is an error and the node is still ACTIVE, try again. If the node isn't ACTIVE, log & ignore.
+                      NodeState nodeState = nodeEngine.getNode().getState();
+                      if (throwable != null && nodeState == NodeState.ACTIVE) {
                           logger.warning("Failed to notify master member that this member is shutting down," +
                                   " will retry in " + NOTIFY_MEMBER_SHUTDOWN_DELAY + " seconds", throwable);
                           // recursive call
                           nodeEngine.getExecutionService().schedule(
                                   () -> notifyMasterWeAreShuttingDown(future), NOTIFY_MEMBER_SHUTDOWN_DELAY, SECONDS);
                       } else {
+                          if (throwable != null) {
+                              logger.warning("Failed to notify master member that this member is shutting down," +
+                                      " but this member is " + nodeState + ", so not retrying", throwable);
+                          }
                           future.complete(null);
                       }
                   });

@@ -24,6 +24,7 @@ import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.instance.BuildInfo;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.operations.AuthenticationFailureOp;
 import com.hazelcast.internal.cluster.impl.operations.BeforeJoinCheckFailureOp;
@@ -530,9 +531,11 @@ public class ClusterJoinManager {
 
             if (clusterService.isJoined()) {
                 if (logger.isFineEnabled()) {
-                    logger.fine(format("Ignoring master response %s from %s, this node is already joined",
-                            masterAddress, callerAddress));
+                    logger.fine(format("Master address information (%s) came from %s. This node is already joined. "
+                            + "The received master address will be suggested as a temporary member address "
+                            + "in the TCP joiner configuration.", masterAddress, callerAddress));
                 }
+                suggestAddressToKnownMembers(masterAddress);
                 return;
             }
 
@@ -568,6 +571,19 @@ public class ClusterJoinManager {
             }
         } finally {
             clusterServiceLock.unlock();
+        }
+    }
+
+    private void suggestAddressToKnownMembers(Address masterAddress) {
+        if (node.getThisAddress().equals(masterAddress)) {
+            return;
+        }
+        Joiner joiner = node.getJoiner();
+        if (joiner != null && joiner.getClass() == TcpIpJoiner.class) {
+            logger.info(
+                    format("The address (%s) will be added as a temporary member address to the TCP-IP joiner configuration.",
+                            masterAddress));
+            ((TcpIpJoiner) joiner).addTemporaryMemberAddress(masterAddress);
         }
     }
 
@@ -866,6 +882,7 @@ public class ClusterJoinManager {
             logger.info("We should merge to " + joinMessage.getAddress()
                     + " because their data member count is bigger than ours ["
                     + (targetDataMemberCount + " > " + currentDataMemberCount) + ']');
+            suggestAddressToKnownMembers(joinMessage.getAddress());
             return LOCAL_NODE_SHOULD_MERGE;
         }
 
@@ -880,6 +897,7 @@ public class ClusterJoinManager {
         if (shouldMergeTo(node.getThisAddress(), joinMessage.getAddress())) {
             logger.info("We should merge to " + joinMessage.getAddress()
                     + ", both have the same data member count: " + currentDataMemberCount);
+            suggestAddressToKnownMembers(joinMessage.getAddress());
             return LOCAL_NODE_SHOULD_MERGE;
         }
 

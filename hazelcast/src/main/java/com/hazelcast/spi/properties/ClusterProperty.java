@@ -39,9 +39,12 @@ import com.hazelcast.map.impl.query.QueryResultSizeLimiter;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.IndexCopyBehavior;
 import com.hazelcast.query.impl.predicates.QueryOptimizerFactory;
+import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.OperationService;
 
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import java.util.concurrent.locks.LockSupport;
 import java.util.function.Function;
@@ -51,9 +54,6 @@ import static java.util.concurrent.TimeUnit.DAYS;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
-
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 
 /**
  * Defines the name and default value for Hazelcast properties.
@@ -371,6 +371,17 @@ public final class ClusterProperty {
      */
     public static final HazelcastProperty TCP_JOIN_PORT_TRY_COUNT
             = new HazelcastProperty("hazelcast.tcp.join.port.try.count", 3);
+
+    /**
+     * Specifies how long the address of a member that has previously joined the
+     * cluster will be retained/remembered in the TcpIpJoiner after it leaves the
+     * cluster. The remembered member addresses is used to discover other cluster
+     * by split-brain handler.
+     */
+    public static final HazelcastProperty TCP_PREVIOUSLY_JOINED_MEMBER_ADDRESS_RETENTION_DURATION
+            = new HazelcastProperty("hazelcast.tcp.join.previously.joined.member.address.retention.seconds",
+            14400, SECONDS);
+
 
     /**
      * Allows explicitly control if the {@link java.net.MulticastSocket#setInterface(java.net.InetAddress)} method is called in
@@ -822,8 +833,7 @@ public final class ClusterProperty {
             = new HazelcastProperty("hazelcast.mc.executor.thread.count", 2);
 
     /**
-     * Enables collecting debug metrics. Debug metrics are sent to the
-     * diagnostics only.
+     * Enables collecting debug metrics.
      */
     public static final HazelcastProperty METRICS_DEBUG
             = new HazelcastProperty("hazelcast.metrics.debug.enabled");
@@ -1769,6 +1779,17 @@ public final class ClusterProperty {
      */
     public static final HazelcastProperty SECURITY_RECOMMENDATIONS = new HazelcastProperty(
             "hazelcast.security.recommendations");
+
+    /**
+     * Enable experimental support for accessing nested fields by using custom
+     * types in SQL. The feature is unstable in 5.2, this property will be
+     * removed once the feature is stable.
+     *
+     * @since 5.2
+     */
+    @Beta
+    public static final HazelcastProperty SQL_CUSTOM_TYPES_ENABLED = new HazelcastProperty(
+            "hazelcast.sql.experimental.custom.types.enabled", false);
 
     private ClusterProperty() {
     }

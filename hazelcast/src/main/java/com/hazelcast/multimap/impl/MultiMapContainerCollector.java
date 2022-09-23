@@ -57,8 +57,8 @@ class MultiMapContainerCollector extends AbstractContainerCollector<MultiMapCont
     }
 
     @Override
-    protected int getMergingValueCount() {
-        int size = 0;
+    protected long getMergingValueCount() {
+        long size = 0;
         for (Collection<MultiMapContainer> containers : getCollectedContainers().values()) {
             for (MultiMapContainer container : containers) {
                 size += container.size();

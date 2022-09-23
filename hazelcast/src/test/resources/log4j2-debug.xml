@@ -27,6 +27,7 @@
         </Root>
         <Logger name="com.hazelcast.instance" level="debug"/>
         <Logger name="com.hazelcast.cluster" level="debug"/>
+        <Logger name="com.hazelcast.internal.ascii" level="debug"/>
         <Logger name="com.hazelcast.internal.cluster" level="debug"/>
         <Logger name="com.hazelcast.internal.partition" level="debug"/>
         <Logger name="com.hazelcast.internal.hotrestart.cluster" level="debug"/>

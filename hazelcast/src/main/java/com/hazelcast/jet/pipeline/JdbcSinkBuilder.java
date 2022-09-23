@@ -19,7 +19,8 @@ package com.hazelcast.jet.pipeline;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.processor.SinkProcessors;
-import com.hazelcast.jet.impl.connector.DataSourceFromConnectionSupplier;
+import com.hazelcast.jet.impl.connector.DataSourceFromJdbcUrl;
+import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import javax.sql.CommonDataSource;
@@ -51,6 +52,7 @@ public class JdbcSinkBuilder<T> {
     private SupplierEx<? extends CommonDataSource> dataSourceSupplier;
     private boolean exactlyOnce = DEFAULT_EXACTLY_ONCE;
     private int batchLimit = DEFAULT_BATCH_LIMIT;
+    private ExternalDataStoreRef externalDataStoreRef;
 
     JdbcSinkBuilder() {
     }
@@ -118,6 +120,8 @@ public class JdbcSinkBuilder<T> {
     @Nonnull
     public JdbcSinkBuilder<T> jdbcUrl(String connectionUrl) {
         this.jdbcUrl = connectionUrl;
+        this.dataSourceSupplier = null;
+        this.externalDataStoreRef = null;
         return this;
     }
 
@@ -139,6 +143,8 @@ public class JdbcSinkBuilder<T> {
     @Nonnull
     public JdbcSinkBuilder<T> dataSourceSupplier(SupplierEx<? extends CommonDataSource> dataSourceSupplier) {
         this.dataSourceSupplier = dataSourceSupplier;
+        this.jdbcUrl = null;
+        this.externalDataStoreRef = null;
         return this;
     }
 
@@ -179,19 +185,75 @@ public class JdbcSinkBuilder<T> {
     }
 
     /**
+     * Sets the reference to the configured external dataStore of {@link ExternalDataStoreRef} from which
+     * the instance of the {@link javax.sql.DataSource} will be retrieved.
+     * <p>
+     * Example:
+     * <p>
+     * (Prerequisite) External dataStore configuration:
+     * <pre>{@code
+     *      Config config = smallInstanceConfig();
+     *      Properties properties = new Properties();
+     *      properties.put("jdbcUrl", jdbcUrl);
+     *      properties.put("username", username);
+     *      properties.put("password", password);
+     *      ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
+     *              .setName("my-jdbc-data-store")
+     *              .setClassName(JdbcDataStoreFactory.class.getName())
+     *              .setProperties(properties);
+     *      config.getExternalDataStoreConfigs().put(name, externalDataStoreConfig);
+     * }</pre>
+     * </p>
+     * <p>Pipeline configuration
+     * <pre>{@code
+     *
+     *         p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
+     *                 .map(item -> entry(item, item.toString()))
+     *                 .writeTo(Sinks.<Entry<Integer, String>>jdbcBuilder()
+     *                         .updateQuery("INSERT INTO " + tableName + " VALUES(?, ?)")
+     *                         .externalDataStoreRef(externalDataStoreRef("my-jdbc-data-store"))
+     *                         .bindFn((stmt, item1) -> {
+     *                             stmt.setInt(1, item1.getKey());
+     *                             stmt.setString(2, item1.getValue());
+     *                         })
+     *                         .build());
+     * }</pre>
+     * </p>
+     *
+     * @param externalDataStoreRef the reference to the configured external dataStore
+     * @return this instance for fluent API
+     * @since 5.2
+     */
+    @Nonnull
+    @Beta
+    public JdbcSinkBuilder<T> externalDataStoreRef(ExternalDataStoreRef externalDataStoreRef) {
+        this.dataSourceSupplier = null;
+        this.jdbcUrl = null;
+        this.externalDataStoreRef = externalDataStoreRef;
+        return this;
+    }
+
+    /**
      * Creates and returns the JDBC {@link Sink} with the supplied components.
      */
     @Nonnull
     public Sink<T> build() {
-        if (dataSourceSupplier == null && jdbcUrl == null) {
-            throw new IllegalStateException("Neither jdbcUrl() nor dataSourceSupplier() set");
+        if (dataSourceSupplier == null && jdbcUrl == null && externalDataStoreRef == null) {
+            throw new IllegalStateException("Neither jdbcUrl() nor dataSourceSupplier() nor externalDataStoreRef() set");
         }
-        if (dataSourceSupplier == null) {
+        if (jdbcUrl != null) {
             String connectionUrl = jdbcUrl;
-            dataSourceSupplier = () -> new DataSourceFromConnectionSupplier(connectionUrl);
+            dataSourceSupplier = () -> new DataSourceFromJdbcUrl(connectionUrl);
         }
+        if (dataSourceSupplier != null) {
+            return Sinks.fromProcessor("jdbcSink",
+                    SinkProcessors.writeJdbcP(jdbcUrl, updateQuery, dataSourceSupplier, bindFn,
+                            exactlyOnce, batchLimit));
+        }
+
         return Sinks.fromProcessor("jdbcSink",
-                SinkProcessors.writeJdbcP(jdbcUrl, updateQuery, dataSourceSupplier, bindFn,
+                SinkProcessors.writeJdbcP(updateQuery, externalDataStoreRef, bindFn,
                         exactlyOnce, batchLimit));
+
     }
 }

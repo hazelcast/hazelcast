@@ -17,7 +17,9 @@
 package com.hazelcast.jet.sql.impl.opt.physical.visitor;
 
 import com.google.common.collect.RangeSet;
-import com.hazelcast.jet.sql.impl.expression.Range;
+import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.sql.impl.expression.Sarg;
+import com.hazelcast.jet.sql.impl.expression.ToRowFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonArrayFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonObjectFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonParseFunction;
@@ -33,7 +35,8 @@ import com.hazelcast.sql.impl.expression.CaseExpression;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
-import com.hazelcast.sql.impl.expression.SearchableExpression;
+import com.hazelcast.sql.impl.expression.RowExpression;
+import com.hazelcast.sql.impl.expression.SargExpression;
 import com.hazelcast.sql.impl.expression.SymbolExpression;
 import com.hazelcast.sql.impl.expression.datetime.ExtractField;
 import com.hazelcast.sql.impl.expression.datetime.ExtractFunction;
@@ -83,6 +86,7 @@ import org.apache.calcite.avatica.util.TimeUnitRange;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexCall;
 import org.apache.calcite.rex.RexLiteral;
+import org.apache.calcite.rex.RexUnknownAs;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlJsonConstructorNullClause;
 import org.apache.calcite.sql.SqlJsonQueryEmptyOrErrorBehavior;
@@ -95,7 +99,6 @@ import org.apache.calcite.sql.type.SqlTypeName;
 import org.apache.calcite.util.DateString;
 import org.apache.calcite.util.NlsString;
 import org.apache.calcite.util.RangeSets;
-import org.apache.calcite.util.Sarg;
 import org.apache.calcite.util.TimeString;
 import org.apache.calcite.util.TimestampString;
 
@@ -486,9 +489,13 @@ public final class RexToExpression {
                     final Expression<?>[] fields = Arrays.copyOfRange(operands, 1, operands.length);
 
                     return JsonArrayFunction.create(fields, nullClause);
+                } else if (function == HazelcastSqlOperatorTable.TO_ROW) {
+                    return ToRowFunction.create(operands[0]);
                 }
 
                 break;
+            case ROW:
+                return RowExpression.create(operands);
             default:
                 break;
         }
@@ -497,15 +504,15 @@ public final class RexToExpression {
     }
 
     @SuppressWarnings({"unchecked", "UnstableApiUsage"})
-    public static RangeSet extractRangeFromSearch(RexLiteral literal) {
-        Sarg<?> sarg = literal.getValueAs(Sarg.class);
+    public static Tuple2<RangeSet<?>, Boolean> extractRangeSetAndNullAsFromSearch(RexLiteral literal) {
+        org.apache.calcite.util.Sarg<?> sarg = literal.getValueAs(org.apache.calcite.util.Sarg.class);
         if (sarg == null) {
             return null;
         }
 
         RelDataType literalType = literal.getType();
         SqlTypeName sqlType = literalType.getSqlTypeName();
-        return RangeSets.copy(sarg.rangeSet, value -> convertSargValue(value, sqlType));
+        return Tuple2.tuple2(RangeSets.copy(sarg.rangeSet, value -> convertSargValue(value, sqlType)), convertNullAs(sarg));
     }
 
     @SuppressWarnings({"unchecked", "UnstableApiUsage"})
@@ -513,9 +520,13 @@ public final class RexToExpression {
             RexLiteral literal,
             RelDataType type
     ) {
-        Sarg<CI> sarg = literal.getValueAs(Sarg.class);
+        org.apache.calcite.util.Sarg<CI> sarg = literal.getValueAs(org.apache.calcite.util.Sarg.class);
         RangeSet<CO> mapped = RangeSets.copy(sarg.rangeSet, value -> (CO) convertSargValue(value, type.getSqlTypeName()));
-        return SearchableExpression.create(HazelcastTypeUtils.toHazelcastType(type), new Range<>(mapped));
+        return SargExpression.create(HazelcastTypeUtils.toHazelcastType(type), new Sarg<>(mapped, convertNullAs(sarg)));
+    }
+
+    private static Boolean convertNullAs(org.apache.calcite.util.Sarg<?> sarg) {
+        return sarg.nullAs == RexUnknownAs.UNKNOWN ? null : sarg.nullAs.toBoolean();
     }
 
     @SuppressWarnings({"rawtypes", "checkstyle:ReturnCount"})

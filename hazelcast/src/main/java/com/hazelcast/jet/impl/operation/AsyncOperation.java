@@ -27,6 +27,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.isTechnicalCancellationException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.stackTraceToString;
@@ -57,7 +58,17 @@ public abstract class AsyncOperation extends Operation implements IdentifiedData
             doSendResponse(e);
             return;
         }
-        future.whenComplete(withTryCatch(getLogger(), (r, f) -> doSendResponse(f != null ? peel(f) : r)));
+        future.whenComplete(withTryCatch(getLogger(), (r, f) -> {
+            if (f != null) {
+                Throwable peeledFailure = peel(f);
+                if (!isTechnicalCancellationException(f)) {
+                    logError(peeledFailure);
+                }
+                doSendResponse(peeledFailure);
+            } else {
+                doSendResponse(r);
+            }
+        }));
     }
 
     protected abstract CompletableFuture<?> doRun() throws Exception;

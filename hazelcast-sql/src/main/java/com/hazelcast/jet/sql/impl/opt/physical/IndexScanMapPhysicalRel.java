@@ -20,6 +20,7 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
@@ -53,7 +54,7 @@ import static java.util.stream.Collectors.toList;
 /**
  * Map index scan operator.
  */
-public class IndexScanMapPhysicalRel extends TableScan implements PhysicalRel {
+public class IndexScanMapPhysicalRel extends TableScan implements HazelcastPhysicalScan {
 
     private final MapTableIndex index;
     private final IndexFilter indexFilter;
@@ -114,11 +115,13 @@ public class IndexScanMapPhysicalRel extends TableScan implements PhysicalRel {
         return descending;
     }
 
+    @Override
     public Expression<Boolean> filter(QueryParameterMetadata parameterMetadata) {
         PlanNodeSchema schema = OptUtils.schema(getTable());
         return filter(schema, remainderExp, parameterMetadata);
     }
 
+    @Override
     public List<Expression<?>> projection(QueryParameterMetadata parameterMetadata) {
         PlanNodeSchema schema = OptUtils.schema(getTable());
 

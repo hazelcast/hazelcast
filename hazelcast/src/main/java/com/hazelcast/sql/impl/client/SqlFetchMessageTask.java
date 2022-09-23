@@ -25,6 +25,8 @@ import com.hazelcast.sql.impl.SqlInternalService;
 import java.security.AccessControlException;
 import java.security.Permission;
 
+import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
+
 /**
  * SQL query fetch task.
  */
@@ -65,7 +67,7 @@ public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.Re
             return super.encodeException(throwable);
         }
 
-        nodeEngine.getSqlService().getInternalService().getClientStateRegistry().closeOnError(parameters.queryId);
+        nodeEngine.getSqlService().closeOnError(parameters.queryId);
 
         if (throwable instanceof AccessControlException) {
             return super.encodeException(throwable);
@@ -74,7 +76,7 @@ public class SqlFetchMessageTask extends SqlAbstractMessageTask<SqlFetchCodec.Re
         if (!(throwable instanceof Exception)) {
             return super.encodeException(throwable);
         }
-
+        logFine(logger, "Client SQL error: %s", throwable);
         SqlError error = SqlClientUtils.exceptionToClientError((Exception) throwable, nodeEngine.getLocalMember().getUuid());
 
         return SqlFetchCodec.encodeResponse(

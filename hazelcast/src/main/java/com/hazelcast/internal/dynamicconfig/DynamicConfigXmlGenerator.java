@@ -24,6 +24,7 @@ import com.hazelcast.config.CacheSimpleEntryListenerConfig;
 import com.hazelcast.config.CardinalityEstimatorConfig;
 import com.hazelcast.config.CollectionConfig;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigAccessor;
 import com.hazelcast.config.ConfigXmlGenerator;
 import com.hazelcast.config.DataPersistenceConfig;
 import com.hazelcast.config.DiscoveryConfig;
@@ -34,6 +35,7 @@ import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.EvictionConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.ItemListenerConfig;
 import com.hazelcast.config.ListenerConfig;
@@ -400,6 +402,17 @@ public final class DynamicConfigXmlGenerator {
         }
     }
 
+    public static void externalDataStoreXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, Config config) {
+        for (ExternalDataStoreConfig externalDataStoreConfig : config.getExternalDataStoreConfigs().values()) {
+            gen.open("external-data-store", "name", externalDataStoreConfig.getName())
+                    .node("class-name", externalDataStoreConfig.getClassName())
+                    .node("shared", externalDataStoreConfig.isShared())
+                    .appendProperties(externalDataStoreConfig.getProperties())
+                    .close();
+        }
+    }
+
+
     public static void wanReplicationXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, Config config) {
         for (WanReplicationConfig wan : config.getWanReplicationConfigs().values()) {
             gen.open("wan-replication", "name", wan.getName());
@@ -607,7 +620,7 @@ public final class DynamicConfigXmlGenerator {
                 gen.node("serialize-keys", queryCacheConfig.isSerializeKeys());
 
                 evictionConfigXmlGenerator(gen, queryCacheConfig.getEvictionConfig());
-                IndexUtils.generateXml(gen, queryCacheConfig.getIndexConfigs());
+                IndexUtils.generateXml(gen, queryCacheConfig.getIndexConfigs(), false);
                 mapQueryCachePredicateConfigXmlGenerator(gen, queryCacheConfig);
 
                 entryListenerConfigXmlGenerator(gen, queryCacheConfig.getEntryListenerConfigs());
@@ -662,7 +675,7 @@ public final class DynamicConfigXmlGenerator {
     }
 
     private static void indexConfigXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, MapConfig m) {
-        IndexUtils.generateXml(gen, m.getIndexConfigs());
+        IndexUtils.generateXml(gen, m.getIndexConfigs(), true);
     }
 
     private static void attributeConfigXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, MapConfig m) {
@@ -711,6 +724,7 @@ public final class DynamicConfigXmlGenerator {
                     .node("class-name", clazz)
                     .node("factory-class-name", factoryClass)
                     .node("write-coalescing", s.isWriteCoalescing())
+                    .node("offload", s.isOffload())
                     .node("write-delay-seconds", s.getWriteDelaySeconds())
                     .node("write-batch-size", s.getWriteBatchSize())
                     .appendProperties(s.getProperties())
@@ -801,6 +815,10 @@ public final class DynamicConfigXmlGenerator {
             }
         }
         gen.close();
+    }
+
+    public static void tcpIpConfigXmlGenerator(ConfigXmlGenerator.XmlGenerator gen, Config config) {
+        ConfigXmlGenerator.tcpIpConfigXmlGenerator(gen, ConfigAccessor.getActiveMemberNetworkConfig(config).getJoin());
     }
 
     public static String classNameOrImplClass(String className, Object impl) {

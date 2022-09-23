@@ -23,6 +23,7 @@ import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.config.DurableExecutorConfig;
 import com.hazelcast.config.EventJournalConfig;
 import com.hazelcast.config.ExecutorConfig;
+import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.config.FlakeIdGeneratorConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ListConfig;
@@ -40,6 +41,7 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.cluster.ClusterVersionListener;
+import com.hazelcast.internal.management.operation.UpdateTcpIpMemberListOperation;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.services.CoreService;
@@ -69,6 +71,7 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.cluster.Versions.V4_0;
+import static com.hazelcast.internal.cluster.Versions.V5_2;
 import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.internal.util.FutureUtil.waitForever;
 import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
@@ -115,6 +118,7 @@ public class ClusterWideConfigurationService implements
     private final ConcurrentMap<String, ReliableTopicConfig> reliableTopicConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, CacheSimpleConfig> cacheSimpleConfigs = new ConcurrentHashMap<>();
     private final ConcurrentMap<String, FlakeIdGeneratorConfig> flakeIdGeneratorConfigs = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, ExternalDataStoreConfig> externalDataStoreConfigs = new ConcurrentHashMap<>();
 
     private final ConfigPatternMatcher configPatternMatcher;
 
@@ -136,6 +140,7 @@ public class ClusterWideConfigurationService implements
             cacheSimpleConfigs,
             flakeIdGeneratorConfigs,
             pnCounterConfigs,
+            externalDataStoreConfigs,
     };
 
     private volatile Version version;
@@ -212,12 +217,12 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public ConfigUpdateResult update(@Nullable Config newConfig) {
-        throw new UnsupportedOperationException("Configuration Reload requires Hazelcast Enterprise Edition");
+        throw new UnsupportedOperationException("Configuration Update requires Hazelcast Enterprise Edition");
     }
 
     @Override
     public UUID updateAsync(String configPatch) {
-        throw new UnsupportedOperationException("Configuration Reload requires Hazelcast Enterprise Edition");
+        throw new UnsupportedOperationException("Configuration Update requires Hazelcast Enterprise Edition");
     }
 
     public InternalCompletableFuture<Object> broadcastConfigAsync(IdentifiedDataSerializable config) {
@@ -324,6 +329,9 @@ public class ClusterWideConfigurationService implements
         } else if (newConfig instanceof PNCounterConfig) {
             PNCounterConfig config = (PNCounterConfig) newConfig;
             currentConfig = pnCounterConfigs.putIfAbsent(config.getName(), config);
+        } else if (newConfig instanceof ExternalDataStoreConfig) {
+            ExternalDataStoreConfig config = (ExternalDataStoreConfig) newConfig;
+            currentConfig = externalDataStoreConfigs.putIfAbsent(config.getName(), config);
         } else {
             throw new UnsupportedOperationException("Unsupported config type: " + newConfig);
         }
@@ -526,12 +534,34 @@ public class ClusterWideConfigurationService implements
     }
 
     @Override
+    public ExternalDataStoreConfig findExternalDataStoreConfig(String baseName) {
+        return lookupByPattern(configPatternMatcher, externalDataStoreConfigs, baseName);
+    }
+
+    @Override
+    public Map<String, ExternalDataStoreConfig> getExternalDataStoreConfigs() {
+        return externalDataStoreConfigs;
+    }
+
+    @Override
     public Runnable prepareMergeRunnable() {
         IdentifiedDataSerializable[] allConfigurations = collectAllDynamicConfigs();
         if (noConfigurationExist(allConfigurations)) {
             return null;
         }
         return new Merger(nodeEngine, allConfigurations);
+    }
+
+    @Override
+    public void updateTcpIpConfigMemberList(List<String> memberList) {
+        if (version.isLessThan(V5_2)) {
+            throw new UnsupportedOperationException("TCP-IP member list update is not supported"
+                    + " for the cluster version less than 5.2");
+        }
+        invokeOnStableClusterSerial(
+                nodeEngine,
+                () -> new UpdateTcpIpMemberListOperation(memberList), CONFIG_PUBLISH_MAX_ATTEMPT_COUNT
+        ).join();
     }
 
     public static class Merger implements Runnable {
@@ -581,6 +611,7 @@ public class ClusterWideConfigurationService implements
         configToVersion.put(FlakeIdGeneratorConfig.class, V4_0);
         configToVersion.put(PNCounterConfig.class, V4_0);
         configToVersion.put(MerkleTreeConfig.class, V4_0);
+        configToVersion.put(ExternalDataStoreConfig.class, V5_2);
 
         return Collections.unmodifiableMap(configToVersion);
     }

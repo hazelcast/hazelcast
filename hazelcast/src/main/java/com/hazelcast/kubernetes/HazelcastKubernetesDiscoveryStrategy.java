@@ -32,9 +32,9 @@ final class HazelcastKubernetesDiscoveryStrategy
         extends AbstractDiscoveryStrategy {
     private final KubernetesClient client;
     private final EndpointResolver endpointResolver;
-    private KubernetesConfig config;
+    private final KubernetesConfig config;
 
-    private final Map<String, String> memberMetadata = new HashMap<String, String>();
+    private final Map<String, String> memberMetadata = new HashMap<>();
 
     HazelcastKubernetesDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties) {
         super(logger, properties);
@@ -58,7 +58,7 @@ final class HazelcastKubernetesDiscoveryStrategy
     }
 
     private static KubernetesClient buildKubernetesClient(KubernetesConfig config) {
-        return new KubernetesClient(config.getNamespace(), config.getKubernetesMasterUrl(), config.getKubernetesApiToken(),
+        return new KubernetesClient(config.getNamespace(), config.getKubernetesMasterUrl(), config.getTokenProvider(),
                 config.getKubernetesCaCertificate(), config.getKubernetesApiRetries(), config.getExposeExternallyMode(),
                 config.isUseNodeNameAsExternalAddress(), config.getServicePerPodLabelName(), config.getServicePerPodLabelValue());
     }

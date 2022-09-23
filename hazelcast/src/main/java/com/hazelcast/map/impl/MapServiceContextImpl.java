@@ -21,7 +21,6 @@ import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.internal.eviction.ExpirationManager;
-import com.hazelcast.internal.monitor.impl.LocalMapStatsImpl;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.DataType;
@@ -32,7 +31,6 @@ import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.internal.util.ContextMutexFactory;
 import com.hazelcast.internal.util.InvocationUtil;
 import com.hazelcast.internal.util.LocalRetryableExecution;
-import com.hazelcast.internal.util.Timer;
 import com.hazelcast.internal.util.collection.PartitionIdSet;
 import com.hazelcast.internal.util.comparators.ValueComparator;
 import com.hazelcast.internal.util.comparators.ValueComparatorUtil;
@@ -47,13 +45,9 @@ import com.hazelcast.map.impl.journal.RingbufferMapEventJournalImpl;
 import com.hazelcast.map.impl.mapstore.MapDataStore;
 import com.hazelcast.map.impl.mapstore.writebehind.NodeWideUsedCapacityCounter;
 import com.hazelcast.map.impl.nearcache.MapNearCacheManager;
-import com.hazelcast.map.impl.operation.BasePutOperation;
-import com.hazelcast.map.impl.operation.BaseRemoveOperation;
-import com.hazelcast.map.impl.operation.GetOperation;
 import com.hazelcast.map.impl.operation.MapOperationProvider;
 import com.hazelcast.map.impl.operation.MapOperationProviders;
 import com.hazelcast.map.impl.operation.MapPartitionDestroyOperation;
-import com.hazelcast.map.impl.operation.SetOperation;
 import com.hazelcast.map.impl.query.AccumulationExecutor;
 import com.hazelcast.map.impl.query.AggregationResult;
 import com.hazelcast.map.impl.query.AggregationResultProcessor;
@@ -84,7 +78,6 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -155,6 +148,7 @@ class MapServiceContextImpl implements MapServiceContext {
      * @see {@link MapKeyLoader#DEFAULT_LOADED_KEY_LIMIT_PER_NODE}
      */
     private final Semaphore nodeWideLoadedKeyLimiter;
+    private final boolean forceOffloadEnabled;
 
     private MapService mapService;
 
@@ -186,8 +180,21 @@ class MapServiceContextImpl implements MapServiceContext {
         this.nodeWideLoadedKeyLimiter = new Semaphore(checkPositive(PROP_LOADED_KEY_LIMITER_PER_NODE,
                 nodeEngine.getProperties().getInteger(LOADED_KEY_LIMITER_PER_NODE)));
         this.logger = nodeEngine.getLogger(getClass());
+        this.forceOffloadEnabled = nodeEngine.getProperties()
+                .getBoolean(FORCE_OFFLOAD_ALL_OPERATIONS);
+        if (this.forceOffloadEnabled) {
+            logger.info("Force offload is enabled for all maps. This "
+                    + "means all map operations will run as if they have map-store configured. "
+                    + "The intended usage for this flag is testing purposes.");
+        }
     }
 
+    @Override
+    public boolean isForceOffloadEnabled() {
+        return forceOffloadEnabled;
+    }
+
+    @Override
     public ExecutorStats getOffloadedEntryProcessorExecutorStats() {
         return offloadedExecutorStats;
     }
@@ -577,11 +584,6 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public Data toDataWithSchema(Object object) {
-        return serializationService.toDataWithSchema(object);
-    }
-
-    @Override
     public MapClearExpiredRecordsTask getClearExpiredRecordsTask() {
         return clearExpiredRecordsTask;
     }
@@ -796,21 +798,6 @@ class MapServiceContextImpl implements MapServiceContext {
     public Extractors getExtractors(String mapName) {
         MapContainer mapContainer = getMapContainer(mapName);
         return mapContainer.getExtractors();
-    }
-
-    @Override
-    public void incrementOperationStats(long startTimeNanos, LocalMapStatsImpl localMapStats, String mapName,
-                                        Operation operation) {
-        final long durationNanos = Timer.nanosElapsed(startTimeNanos);
-        if (operation instanceof SetOperation) {
-            localMapStats.incrementSetLatencyNanos(durationNanos);
-        } else if (operation instanceof BasePutOperation) {
-            localMapStats.incrementPutLatencyNanos(durationNanos);
-        } else if (operation instanceof BaseRemoveOperation) {
-            localMapStats.incrementRemoveLatencyNanos(durationNanos);
-        } else if (operation instanceof GetOperation) {
-            localMapStats.incrementGetLatencyNanos(durationNanos);
-        }
     }
 
     @Override

@@ -17,6 +17,7 @@
 package com.hazelcast.client.impl.connection;
 
 import com.hazelcast.client.HazelcastClientOfflineException;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionListenable;
 
@@ -55,6 +56,12 @@ public interface ClientConnectionManager extends ConnectionListenable<ClientConn
      */
     void checkInvocationAllowed() throws IOException;
 
+    /**
+     * Returns {@code true} if the client is initialized on the cluster, by
+     * sending its local state, if necessary.
+     */
+    boolean clientInitializedOnCluster();
+
     Collection<Connection> getActiveConnections();
 
     UUID getClientUuid();
@@ -79,4 +86,6 @@ public interface ClientConnectionManager extends ConnectionListenable<ClientConn
     ClientConnection getConnectionForSql();
 
     String getConnectionType();
+
+    void addClientConnectionProcessListener(ClientConnectionProcessListener listener);
 }

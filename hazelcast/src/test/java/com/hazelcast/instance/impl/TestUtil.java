@@ -31,11 +31,13 @@ import com.hazelcast.test.starter.HazelcastStarter;
 import java.io.IOException;
 import java.net.DatagramSocket;
 import java.net.ServerSocket;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.test.HazelcastTestSupport.sleepMillis;
 import static java.lang.reflect.Proxy.isProxyClass;
 import static org.junit.Assert.fail;
@@ -250,5 +252,12 @@ public final class TestUtil {
      */
     public static String setSystemProperty(String key, String value) {
         return value == null ? System.clearProperty(key) : System.setProperty(key, value);
+    }
+
+    public static byte[] byteBufferToBytes(ByteBuffer buffer) {
+        upcast(buffer).flip();
+        byte[] requestBytes = new byte[buffer.limit()];
+        buffer.get(requestBytes);
+        return requestBytes;
     }
 }

@@ -71,7 +71,7 @@ public interface JetService {
      * active job with equal name, in which case it throws {@link
      * JobAlreadyExistsException}. Job is active if it is running,
      * suspended or waiting to be run; that is it has not completed or failed.
-     * Thus there can be at most one active job with a given name at a time and
+     * Thus, there can be at most one active job with a given name at a time, and
      * you can re-use the job name after the previous job completed.
      * <p>
      * See also {@link #newJobIfAbsent}.
@@ -90,7 +90,7 @@ public interface JetService {
      * active job with equal name, in which case it throws {@link
      * JobAlreadyExistsException}. Job is active if it is running,
      * suspended or waiting to be run; that is it has not completed or failed.
-     * Thus there can be at most one active job with a given name at a time and
+     * Thus, there can be at most one active job with a given name at a time, and
      * you can re-use the job name after the previous job completed.
      * <p>
      * See also {@link #newJobIfAbsent}.
@@ -113,7 +113,7 @@ public interface JetService {
      * not running multiple times in parallel.
      * <p>
      * This method is useful for microservices deployment when each package
-     * contains a jet member and the job and you want the job to run only once.
+     * contains a jet member and the job, and you want the job to run only once.
      * But if the job is a batch job and runs very quickly, it can happen that
      * it executes multiple times, because the job name can be reused after a
      * previous execution completed.
@@ -137,7 +137,7 @@ public interface JetService {
      * not running multiple times in parallel.
      * <p>
      * This method is useful for microservices deployment when each package
-     * contains a jet member and the job and you want the job to run only once.
+     * contains a jet member and the job, and you want the job to run only once.
      * But if the job is a batch job and runs very quickly, it can happen that
      * it executes multiple times, because the job name can be reused after a
      * previous execution completed.

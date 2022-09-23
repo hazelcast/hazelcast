@@ -33,7 +33,7 @@ import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_403;
 import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_404;
 import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_500;
 import static com.hazelcast.internal.ascii.rest.HttpStatusCode.SC_503;
-import static com.hazelcast.internal.nio.IOUtil.copyToHeapBuffer;
+import static com.hazelcast.internal.nio.IOUtil.copyFromHeapBuffer;
 import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static com.hazelcast.internal.util.StringUtil.stringToBytes;
 
@@ -268,7 +268,7 @@ public abstract class HttpCommand extends AbstractTextCommand {
 
     @Override
     public boolean writeTo(ByteBuffer dst) {
-        copyToHeapBuffer(response, dst);
+        copyFromHeapBuffer(response, dst);
         return !response.hasRemaining();
     }
 

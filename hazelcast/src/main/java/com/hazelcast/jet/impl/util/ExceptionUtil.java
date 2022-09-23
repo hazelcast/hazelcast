@@ -30,12 +30,15 @@ import com.hazelcast.jet.core.TopologyChangedException;
 import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.impl.exception.EnteringPassiveClusterStateException;
 import com.hazelcast.jet.impl.exception.JetDisabledException;
+import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
+import com.hazelcast.jet.impl.exception.TerminatedWithSnapshotException;
 import com.hazelcast.jet.impl.operation.InitExecutionOperation;
 import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.sql.impl.ResultLimitReachedException;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -68,10 +71,13 @@ public final class ExceptionUtil {
      * Returns true if the exception is one of a kind upon which the job
      * restarts rather than fails.
      */
+    @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
     public static boolean isRestartableException(Throwable t) {
         return isTopologyException(t)
                 || t instanceof RestartableException
-                || t instanceof JetException && t.getCause() instanceof RestartableException;
+                || t instanceof JetException && t.getCause() instanceof RestartableException
+                || t instanceof CompletionException && t.getCause() instanceof RestartableException
+                ;
     }
 
     @SuppressWarnings("checkstyle:booleanexpressioncomplexity")
@@ -212,5 +218,23 @@ public final class ExceptionUtil {
         }
 
         throw e;
+    }
+
+    /**
+     * Checks, if {@code t} itself or any exception in its cause chain is an
+     * instance of {@code classToFind}.
+     */
+    public static boolean isOrHasCause(Throwable t, Class<?> classToFind) {
+        while (t != null && t.getCause() != t && !classToFind.isAssignableFrom(t.getClass())) {
+            t = t.getCause();
+        }
+        return t != null && classToFind.isAssignableFrom(t.getClass());
+    }
+
+    public static boolean isTechnicalCancellationException(Throwable t) {
+        Throwable peeledFailure = peel(t);
+        return peeledFailure instanceof JobTerminateRequestedException
+                || peeledFailure instanceof ResultLimitReachedException
+                || peeledFailure instanceof TerminatedWithSnapshotException;
     }
 }

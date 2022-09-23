@@ -21,6 +21,7 @@ import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.management.ManagementDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
+import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
@@ -50,7 +51,11 @@ public class UpdatePermissionConfigOperation extends AbstractManagementOperation
     @Override
     public void run() throws Exception {
         Node node = ((NodeEngineImpl) getNodeEngine()).getNode();
-        node.securityContext.refreshPermissions(permissionConfigs);
+        try {
+            node.securityContext.refreshPermissions(permissionConfigs);
+        } catch (IllegalStateException e) {
+            throw new RetryableHazelcastException("Permission refresh was not allowed at this time", e);
+        }
     }
 
     @Override
