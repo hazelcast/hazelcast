@@ -82,4 +82,30 @@ public class ExceptionUtilTest extends HazelcastTestSupport {
         assertEquals(result.getClass(), IllegalStateException.class);
         assertEquals(result.getCause(), expectedException);
     }
+
+    @Test
+    public void testCanCreateExceptionsWithMessageAndCauseWhenExceptionHasCauseSetImplicitlyByNoArgumentConstructor() {
+        ExceptionUtil.tryCreateExceptionWithMessageAndCause(
+                ExceptionThatHasCauseImplicitlyByNoArgumentConstructor.class, "", new RuntimeException()
+        );
+    }
+
+    @Test
+    public void testCanCreateExceptionsWithMessageAndCauseWhenExceptionHasCauseSetImplicitlyByMessageConstructor() {
+        ExceptionUtil.tryCreateExceptionWithMessageAndCause(
+                ExceptionThatHasCauseImplicitlyByMessageConstructor.class, "", new RuntimeException()
+        );
+    }
+
+    public static class ExceptionThatHasCauseImplicitlyByNoArgumentConstructor extends RuntimeException {
+        public ExceptionThatHasCauseImplicitlyByNoArgumentConstructor() {
+            super((Throwable) null);
+        }
+    }
+
+    public static class ExceptionThatHasCauseImplicitlyByMessageConstructor extends RuntimeException {
+        public ExceptionThatHasCauseImplicitlyByMessageConstructor(String message) {
+            super(message, null);
+        }
+    }
 }
