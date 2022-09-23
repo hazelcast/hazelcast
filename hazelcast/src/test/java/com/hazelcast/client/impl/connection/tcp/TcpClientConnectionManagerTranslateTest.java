@@ -22,7 +22,7 @@ import com.hazelcast.client.HazelcastClientUtil;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.connection.AddressProvider;
 import com.hazelcast.client.impl.connection.Addresses;
-import com.hazelcast.client.impl.management.ClientConnectionProcessListener;
+import com.hazelcast.client.impl.management.ClientConnectionProcessListenerRunner;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.client.test.ClientTestSupport;
 import com.hazelcast.cluster.Address;
@@ -209,7 +209,7 @@ public class TcpClientConnectionManagerTranslateTest extends ClientTestSupport {
         }
 
         @Override
-        public Addresses loadAddresses(ClientConnectionProcessListener listener) {
+        public Addresses loadAddresses(ClientConnectionProcessListenerRunner listenerRunner) {
             try {
                 return new Addresses(ImmutableList.of(new Address("127.0.0.1", 5701)));
             } catch (UnknownHostException e) {

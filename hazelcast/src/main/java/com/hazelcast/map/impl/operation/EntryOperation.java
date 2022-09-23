@@ -32,6 +32,7 @@ import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.operation.steps.EntryOpSteps;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
+import com.hazelcast.map.impl.recordstore.StaticParams;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
@@ -89,10 +90,12 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
  * - EntryOperation fetches the entry and locks the given key on partition-thread
  * - Then the processing is offloaded to the given executor
  * - When the processing finishes
- * if there is a change to the entry, a EntryOffloadableSetUnlockOperation is spawned
- * which sets the new value and unlocks the given key on partition-thread
- * if there is no change to the entry, a UnlockOperation is spawned, which just unlocks the kiven key
- * on partition thread
+ * <ul>
+ * <li> if there is a change to the entry, a EntryOffloadableSetUnlockOperation is spawned
+ * which sets the new value and unlocks the given key on partition-thread </li>
+ * <li> if there is no change to the entry, a UnlockOperation is spawned, which just unlocks the given key
+ * on partition thread </li>
+ * </ul>
  * <p>
  * There will not be a conflict on a write due to the pessimistic locking of the key.
  * The threading looks as follows:
@@ -158,6 +161,7 @@ public class EntryOperation extends LockAwareOperation
     private transient boolean readOnly;
     private transient int setUnlockRetryCount;
     private transient long begin;
+    private transient boolean mapStoreOffloadEnabled;
 
     public EntryOperation() {
     }
@@ -177,6 +181,15 @@ public class EntryOperation extends LockAwareOperation
         SerializationService serializationService = getNodeEngine().getSerializationService();
         ManagedContext managedContext = serializationService.getManagedContext();
         entryProcessor = (EntryProcessor) managedContext.initialize(entryProcessor);
+
+        // When EP is readOnly and entry is in memory, we
+        // don't expect any map-store api call, so no need
+        // to enter map-store-api-offloading procedure.
+        if (readOnly && recordStore.existInMemory(dataKey)) {
+            mapStoreOffloadEnabled = false;
+        } else {
+            mapStoreOffloadEnabled = isMapStoreOffloadEnabled();
+        }
     }
 
     // TODO: EP no forced eviction for EP?
@@ -190,7 +203,11 @@ public class EntryOperation extends LockAwareOperation
         // to EntryOffloadableSetUnlockOperation
         disposeDeferredBlocks = !offload;
 
-        if (isMapStoreOffloadEnabled()) {
+        // When mapStoreOffloadEnabled is true, run all procedure
+        // in this class, including EP-offload, as a series
+        // of Steps. See EntryOpSteps to check how it works.
+        if (mapStoreOffloadEnabled) {
+            assert recordStore != null;
             return offloadOperation();
         }
 
@@ -212,7 +229,8 @@ public class EntryOperation extends LockAwareOperation
                 .setKey(dataKey)
                 .setCallerProvenance(CallerProvenance.NOT_WAN)
                 .setEntryProcessor(entryProcessor)
-                .setEntryProcessorOffload(offload);
+                .setEntryProcessorOffload(offload)
+                .setStaticPutParams(StaticParams.SET_WITH_NO_ACCESS_PARAMS);
     }
 
     @Override
@@ -222,10 +240,6 @@ public class EntryOperation extends LockAwareOperation
 
     @Override
     public void applyState(State state) {
-        if (offload) {
-            return;
-        }
-        super.applyState(state);
         response = state.getOperator().getResult();
     }
 
@@ -267,7 +281,7 @@ public class EntryOperation extends LockAwareOperation
 
     @Override
     public Object getResponse() {
-        if (offload) {
+        if (offload && !mapStoreOffloadEnabled) {
             return null;
         }
         return response;
@@ -275,7 +289,7 @@ public class EntryOperation extends LockAwareOperation
 
     @Override
     public boolean returnsResponse() {
-        if (offload) {
+        if (offload && !mapStoreOffloadEnabled) {
             // This has to be false, since the operation uses the
             // deferred-response mechanism. This method returns false, but
             // the response will be send later on using the response handler
@@ -287,7 +301,7 @@ public class EntryOperation extends LockAwareOperation
 
     @Override
     public void onExecutionFailure(Throwable e) {
-        if (offload) {
+        if (offload && !mapStoreOffloadEnabled) {
             // This is required since if the returnsResponse() method returns
             // false there won't be any response sent to the invoking
             // party - this means that the operation won't be retried if
@@ -303,19 +317,21 @@ public class EntryOperation extends LockAwareOperation
             value = {"RCN_REDUNDANT_NULLCHECK_OF_NONNULL_VALUE"},
             justification = "backupProcessor can indeed be null so check is not redundant")
     public Operation getBackupOperation() {
-        if (offload) {
+        if (offload && !mapStoreOffloadEnabled) {
             return null;
         }
         EntryProcessor backupProcessor = entryProcessor.getBackupProcessor();
-        return backupProcessor != null ? new EntryBackupOperation(name, dataKey, backupProcessor) : null;
+        return backupProcessor != null
+                ? new EntryBackupOperation(name, dataKey, backupProcessor) : null;
     }
 
     @Override
     public boolean shouldBackup() {
-        if (offload) {
+        if (offload && !mapStoreOffloadEnabled) {
             return false;
         }
-        return mapContainer.getTotalBackupCount() > 0 && entryProcessor.getBackupProcessor() != null;
+        return mapContainer.getTotalBackupCount() > 0
+                && entryProcessor.getBackupProcessor() != null;
     }
 
     @Override
@@ -345,7 +361,7 @@ public class EntryOperation extends LockAwareOperation
         out.writeObject(entryProcessor);
     }
 
-    private Object getOldValueByInMemoryFormat(Object oldValue) {
+    public Object getOldValueByInMemoryFormat(Object oldValue) {
         InMemoryFormat inMemoryFormat = mapContainer.getMapConfig().getInMemoryFormat();
         switch (inMemoryFormat) {
             case NATIVE:
@@ -428,9 +444,11 @@ public class EntryOperation extends LockAwareOperation
                         EntryEventType modificationType = entryOperator.getEventType();
                         if (modificationType != null) {
                             long newTtl = entryOperator.getEntry().getNewTtl();
+                            boolean changeExpiryOnUpdate = entryOperator.getEntry().isChangeExpiryOnUpdate();
                             Data newValue = serializationService.toData(entryOperator.getByPreferringDataNewValue());
                             updateAndUnlock(serializationService.toData(oldValue),
-                                    newValue, modificationType, newTtl, finalCaller, finalThreadId, result, finalBegin);
+                                    newValue, modificationType, changeExpiryOnUpdate, newTtl, finalCaller,
+                                    finalThreadId, result, finalBegin);
                         } else {
                             unlockOnly(result, finalCaller, finalThreadId, finalBegin);
                         }
@@ -479,16 +497,19 @@ public class EntryOperation extends LockAwareOperation
         }
 
         private void unlockOnly(final Object result, UUID caller, long threadId, long now) {
-            updateAndUnlock(null, null, null, UNSET, caller, threadId, result, now);
+            updateAndUnlock(null, null, null,
+                    true, UNSET, caller, threadId, result, now);
         }
 
-        @SuppressWarnings({"unchecked", "checkstyle:methodlength"})
+        @SuppressWarnings({"unchecked", "checkstyle:methodlength", "checkstyle:parameternumber"})
         private void updateAndUnlock(Data previousValue, Data newValue,
                                      EntryEventType modificationType,
+                                     boolean changeExpiryOnUpdate,
                                      long newTtl, UUID caller,
                                      long threadId, final Object result, long now) {
-            EntryOffloadableSetUnlockOperation updateOperation = new EntryOffloadableSetUnlockOperation(name, modificationType,
-                    newTtl, dataKey, previousValue, newValue, caller,
+            EntryOffloadableSetUnlockOperation updateOperation
+                    = new EntryOffloadableSetUnlockOperation(name, modificationType,
+                    changeExpiryOnUpdate, newTtl, dataKey, previousValue, newValue, caller,
                     threadId, now, entryProcessor.getBackupProcessor());
 
             updateOperation.setPartitionId(getPartitionId());

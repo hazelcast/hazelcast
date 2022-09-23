@@ -44,8 +44,11 @@ import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.WatermarkKeysAssigner;
+import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
+import com.hazelcast.jet.sql.impl.opt.logical.SelectByKeyMapLogicalRule;
+import com.hazelcast.jet.sql.impl.opt.physical.AssignDiscriminatorToScansRule;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
@@ -97,10 +100,14 @@ import com.hazelcast.sql.impl.schema.TableResolver;
 import com.hazelcast.sql.impl.schema.map.AbstractMapTable;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.Convention;
+import org.apache.calcite.plan.RelOptCostImpl;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.plan.hep.HepPlanner;
+import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelShuttleImpl;
@@ -111,6 +118,7 @@ import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
 import org.apache.calcite.sql.util.SqlString;
+import org.apache.calcite.tools.RuleSets;
 
 import javax.annotation.Nullable;
 import java.security.Permission;
@@ -548,7 +556,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         } else if (physicalRel instanceof TableModify) {
             checkDmlOperationWithView(physicalRel);
             Operation operation = ((TableModify) physicalRel).getOperation();
-            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(physicalRel, parameterMetadata);
+            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(physicalRel, parameterMetadata, context.getUsedViews());
             return new DmlPlan(
                     operation,
                     planKey,
@@ -561,7 +569,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     permissions
             );
         } else {
-            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(new RootRel(physicalRel), parameterMetadata);
+            Tuple2<DAG, Set<PlanObjectKey>> dagAndKeys = createDag(new RootRel(physicalRel), parameterMetadata,
+                    context.getUsedViews());
             SqlRowMetadata rowMetadata = createRowMetadata(
                     fieldNames,
                     physicalRel.schema(parameterMetadata).getTypes(),
@@ -630,7 +639,14 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             logger.fine("After logical opt:\n" + RelOptUtil.toString(logicalRel));
         }
 
-        PhysicalRel physicalRel = optimizePhysical(context, logicalRel);
+        LogicalRel logicalRel2 = optimizeIMapKeyedAccess(context, logicalRel);
+        if (fineLogOn && logicalRel != logicalRel2) {
+            logger.fine("After IMap keyed access opt:\n" + RelOptUtil.toString(logicalRel2));
+        }
+
+        PhysicalRel physicalRel = optimizePhysical(context, logicalRel2);
+        physicalRel = uniquifyScans(physicalRel);
+
         if (fineLogOn) {
             logger.fine("After physical opt:\n" + RelOptUtil.toString(physicalRel));
         }
@@ -651,6 +667,17 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         );
     }
 
+    private LogicalRel optimizeIMapKeyedAccess(OptimizerContext context, LogicalRel rel) {
+        if (!(rel instanceof FullScanLogicalRel)) {
+            return rel;
+        }
+        return (LogicalRel) context.optimize(
+                rel,
+                RuleSets.ofList(SelectByKeyMapLogicalRule.INSTANCE),
+                OptUtils.toLogicalConvention(rel.getTraitSet())
+        );
+    }
+
     /**
      * Perform physical optimization.
      * This is where proper access methods and algorithms for joins and aggregations are chosen.
@@ -665,6 +692,36 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 OptUtils.toPhysicalConvention(rel.getTraitSet())
         );
     }
+
+    /**
+     * Assign a discriminator to each scan in the plan. This is essentially hack
+     * to make the scans unique. We need this because in the MEMO structure, the
+     * plan can contain the same instance of a RelNode multiple times, if it's
+     * identical. This happens if the query, for example, reads the same table
+     * twice. The {@link WatermarkKeysAssigner} might need to assign a different
+     * key to two identical scans, and it can't do it if they are the same
+     * instance.
+     */
+    public static PhysicalRel uniquifyScans(PhysicalRel rel) {
+        HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
+
+        // Note that we must create a new instance of the rule for each optimization, because
+        // the rule has a state that is used during the "optimization".
+        AssignDiscriminatorToScansRule rule = new AssignDiscriminatorToScansRule();
+        hepProgramBuilder.addRuleInstance(rule);
+
+        HepPlanner planner = new HepPlanner(
+                hepProgramBuilder.build(),
+                Contexts.empty(),
+                true,
+                null,
+                RelOptCostImpl.FACTORY
+        );
+
+        planner.setRoot(rel);
+        return (PhysicalRel) planner.findBestExp();
+    }
+
 
     private SqlRowMetadata createRowMetadata(
             List<String> columnNames,
@@ -688,7 +745,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
     private Tuple2<DAG, Set<PlanObjectKey>> createDag(
             PhysicalRel physicalRel,
-            QueryParameterMetadata parameterMetadata
+            QueryParameterMetadata parameterMetadata,
+            Set<PlanObjectKey> usedViews
     ) {
         WatermarkKeysAssigner wmKeysAssigner = new WatermarkKeysAssigner(physicalRel);
         // we should assign watermark keys also for bounded jobs, but due to the
@@ -699,7 +757,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             logger.finest("Watermark keys assigned");
         }
 
-        CreateDagVisitor visitor = new CreateDagVisitor(nodeEngine, parameterMetadata, wmKeysAssigner);
+        CreateDagVisitor visitor = new CreateDagVisitor(nodeEngine, parameterMetadata, wmKeysAssigner, usedViews);
         physicalRel.accept(visitor);
         visitor.optimizeFinishedDag();
         return tuple2(visitor.getDag(), visitor.getObjectKeys());

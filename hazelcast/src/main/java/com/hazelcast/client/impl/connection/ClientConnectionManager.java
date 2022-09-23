@@ -56,6 +56,12 @@ public interface ClientConnectionManager extends ConnectionListenable<ClientConn
      */
     void checkInvocationAllowed() throws IOException;
 
+    /**
+     * Returns {@code true} if the client is initialized on the cluster, by
+     * sending its local state, if necessary.
+     */
+    boolean clientInitializedOnCluster();
+
     Collection<Connection> getActiveConnections();
 
     UUID getClientUuid();

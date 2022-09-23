@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a map configuration with the given {@code name} already exists, then
  * the new configuration is ignored and the existing one is preserved.
  */
-@Generated("036e4bd18f2a155e900af6d842045286")
+@Generated("56ec2bc81aa8adf45d58ed177ac4f1bc")
 public final class DynamicConfigAddMapConfigCodec {
     //hex: 0x1B0C00
     public static final int REQUEST_MESSAGE_TYPE = 1772544;
@@ -243,6 +243,7 @@ public final class DynamicConfigAddMapConfigCodec {
 
     public static ClientMessage encodeRequest(java.lang.String name, int backupCount, int asyncBackupCount, int timeToLiveSeconds, int maxIdleSeconds, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.EvictionConfigHolder evictionConfig, boolean readBackupData, java.lang.String cacheDeserializedValues, java.lang.String mergePolicy, int mergeBatchSize, java.lang.String inMemoryFormat, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> listenerConfigs, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.ListenerConfigHolder> partitionLostListenerConfigs, boolean statisticsEnabled, @Nullable java.lang.String splitBrainProtectionName, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.MapStoreConfigHolder mapStoreConfig, @Nullable com.hazelcast.client.impl.protocol.task.dynamicconfig.NearCacheConfigHolder nearCacheConfig, @Nullable com.hazelcast.config.WanReplicationRef wanReplicationRef, @Nullable java.util.Collection<com.hazelcast.config.IndexConfig> indexConfigs, @Nullable java.util.Collection<com.hazelcast.config.AttributeConfig> attributeConfigs, @Nullable java.util.Collection<com.hazelcast.client.impl.protocol.task.dynamicconfig.QueryCacheConfigHolder> queryCacheConfigs, @Nullable java.lang.String partitioningStrategyClassName, @Nullable com.hazelcast.internal.serialization.Data partitioningStrategyImplementation, @Nullable com.hazelcast.config.HotRestartConfig hotRestartConfig, @Nullable com.hazelcast.config.EventJournalConfig eventJournalConfig, @Nullable com.hazelcast.config.MerkleTreeConfig merkleTreeConfig, int metadataPolicy, boolean perEntryStatsEnabled, com.hazelcast.config.DataPersistenceConfig dataPersistenceConfig, com.hazelcast.config.TieredStoreConfig tieredStoreConfig) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
+        clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("DynamicConfig.AddMapConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);

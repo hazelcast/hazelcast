@@ -69,13 +69,17 @@ public class IndexingMutationObserver<R extends Record> implements MutationObser
     }
 
     @Override
-    public void onRemoveRecord(@Nonnull Data key, R record) {
-        removeIndex(key, record, Index.OperationSource.USER);
+    public void onRemoveRecord(@Nonnull Data key, R record, boolean backup) {
+        if (!backup) {
+            removeIndex(key, record, Index.OperationSource.USER);
+        }
     }
 
     @Override
-    public void onEvictRecord(@Nonnull Data key, @Nonnull R record) {
-        removeIndex(key, record, Index.OperationSource.USER);
+    public void onEvictRecord(@Nonnull Data key, @Nonnull R record, boolean backup) {
+        if (!backup) {
+            removeIndex(key, record, Index.OperationSource.USER);
+        }
     }
 
     @Override

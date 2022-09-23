@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Submits the task to the member that owns the partition with the given id.
  */
-@Generated("ed8e212313bd71af9850e5ba57fd6c28")
+@Generated("9bf49e4560e4272f3fcbcba2161ace74")
 public final class ExecutorServiceSubmitToPartitionCodec {
     //hex: 0x080500
     public static final int REQUEST_MESSAGE_TYPE = 525568;
@@ -70,6 +70,7 @@ public final class ExecutorServiceSubmitToPartitionCodec {
 
     public static ClientMessage encodeRequest(java.lang.String name, java.util.UUID uuid, com.hazelcast.internal.serialization.Data callable) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
+        clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(false);
         clientMessage.setOperationName("ExecutorService.SubmitToPartition");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);

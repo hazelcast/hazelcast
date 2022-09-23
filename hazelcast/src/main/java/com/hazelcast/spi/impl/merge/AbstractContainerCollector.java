@@ -170,7 +170,7 @@ public abstract class AbstractContainerCollector<C> {
      *
      * @return the number of collected merge values
      */
-    protected abstract int getMergingValueCount();
+    protected abstract long getMergingValueCount();
 
     /**
      * Determines if the container should be merged.

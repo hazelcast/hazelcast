@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
+import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.JetServiceBackend;
@@ -519,6 +520,9 @@ public class PlanExecutor {
                 }
             }
         } else if (SqlConnector.COMPACT_FORMAT.equals(format)) {
+            if (plan.columns().isEmpty()) {
+                throw QueryException.error("Column list is required to create Compact-based Types");
+            }
             type = new Type();
             type.setKind(TypeKind.COMPACT);
             type.setName(plan.name());
@@ -587,6 +591,9 @@ public class PlanExecutor {
             }
             if (isTopologyException(t)) {
                 return SqlErrorCode.TOPOLOGY_CHANGE;
+            }
+            if (t instanceof RestartableException) {
+                return SqlErrorCode.RESTARTABLE_ERROR;
             }
             t = t.getCause();
         }

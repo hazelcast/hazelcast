@@ -62,7 +62,8 @@ public class ClientClusterViewListenerService implements ConnectionListener {
         connectionManager.addConnectionListener(this);
     }
 
-    private final class ClusterViewListenerHandler extends ClientAddClusterViewListenerCodec.AbstractEventHandler
+    // public for tests
+    public final class ClusterViewListenerHandler extends ClientAddClusterViewListenerCodec.AbstractEventHandler
             implements EventHandler<ClientMessage> {
 
         private final ClientConnection connection;

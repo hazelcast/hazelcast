@@ -34,7 +34,7 @@ import com.hazelcast.sql.impl.expression.FieldAccessExpression;
 import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.expression.RowExpression;
 import com.hazelcast.sql.impl.expression.RowValue;
-import com.hazelcast.sql.impl.expression.SearchableExpression;
+import com.hazelcast.sql.impl.expression.SargExpression;
 import com.hazelcast.sql.impl.expression.datetime.ExtractFunction;
 import com.hazelcast.sql.impl.expression.datetime.ToEpochMillisFunction;
 import com.hazelcast.sql.impl.expression.datetime.ToTimestampTzFunction;
@@ -170,8 +170,8 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int MAPPING = 57;
     public static final int MAPPING_FIELD = 58;
 
-    public static final int EXPRESSION_SEARCHABLE = 59;
-    public static final int EXPRESSION_SEARCH = 60;
+    public static final int SARG_EXPRESSION = 59;
+    public static final int SEARCH_PREDICATE = 60;
     public static final int VIEW = 61;
     public static final int EXPRESSION_FIELD_ACCESS = 62;
     public static final int TYPE = 63;
@@ -264,8 +264,8 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[MAPPING] = arg -> new Mapping();
         constructors[MAPPING_FIELD] = arg -> new MappingField();
 
-        constructors[EXPRESSION_SEARCHABLE] = arg -> new SearchableExpression<>();
-        constructors[EXPRESSION_SEARCH] = arg -> new SearchPredicate();
+        constructors[SARG_EXPRESSION] = arg -> new SargExpression<>();
+        constructors[SEARCH_PREDICATE] = arg -> new SearchPredicate();
         constructors[VIEW] = arg -> new View();
         constructors[EXPRESSION_FIELD_ACCESS] = arg -> new FieldAccessExpression<>();
         constructors[TYPE] = arg -> new Type();

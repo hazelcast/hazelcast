@@ -72,6 +72,9 @@ public class SqlClientResult implements SqlResult {
     /** Fetch descriptor. Available when the fetch operation is in progress. */
     private SqlFetchResult fetch;
 
+    /** Whether the last fetch() invoked resubmission. */
+    private boolean lastFetchResubmitted;
+
     public SqlClientResult(
             SqlClientService service,
             Connection connection,
@@ -249,6 +252,7 @@ public class SqlClientResult implements SqlResult {
      * Fetches the next page.
      */
     private SqlPage fetch(long timeoutNanos) {
+        lastFetchResubmitted = false;
         synchronized (mux) {
             if (fetch != null) {
                 if (fetch.getError() != null) {
@@ -283,6 +287,7 @@ public class SqlClientResult implements SqlResult {
                 if (resubmissionResult == null) {
                     throw wrap(fetch.getError());
                 }
+                lastFetchResubmitted = true;
                 onResubmissionResponse(resubmissionResult);
 
                 // In onResubmissionResponse we change currentPage on iterator, so we now need to return it.
@@ -379,11 +384,15 @@ public class SqlClientResult implements SqlResult {
             if (currentPosition == currentRowCount) {
                 // Reached end of the page. Try fetching the next one if possible.
                 if (!last) {
-                    SqlPage page = fetch(timeUnit.toNanos(timeout));
-                    if (page == null) {
-                        return HasNextResult.TIMEOUT;
-                    }
-                    onNextPage(page);
+                    do {
+                        SqlPage page = fetch(timeUnit.toNanos(timeout));
+                        if (page == null) {
+                            return HasNextResult.TIMEOUT;
+                        }
+                        onNextPage(page);
+                        // The fetch() method may invoke resubmission that invokes SqlExecute operation. The SqlExecute may end
+                        // without any results in the buffer. In that case we need to invoke fetch() again.
+                    } while (lastFetchResubmitted && (!last && currentPosition == currentRowCount));
                 } else {
                     // No more pages expected, so return false.
                     return HasNextResult.DONE;

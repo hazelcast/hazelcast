@@ -44,7 +44,7 @@ public class AckSchemaReplicationOperation extends AbstractSchemaReplicationOper
     @Override
     protected void runInternal() {
         MemberSchemaService service = getService();
-        service.onSchemaAckRequest(schemaId, executedLocally());
+        service.onSchemaAckRequest(schemaId);
     }
 
     @Override

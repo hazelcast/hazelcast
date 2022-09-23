@@ -1379,6 +1379,7 @@ public final class ValueReaderWriters {
             if (value == null) {
                 keyReaderWriter.write(writer, null);
                 valueReaderWriter.write(writer, null);
+                return;
             }
 
             Object keys = Array.newInstance(keyComponentType, value.size());

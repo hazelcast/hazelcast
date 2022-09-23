@@ -18,16 +18,22 @@ package com.hazelcast.internal.util;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.cluster.ClusterService;
+import com.hazelcast.internal.cluster.impl.ClusterTopologyChangedException;
 import com.hazelcast.internal.util.futures.ChainingFuture;
 import com.hazelcast.internal.util.iterator.RestartingMemberIterator;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.properties.ClusterProperty;
 
+import java.util.Collection;
 import java.util.Iterator;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
@@ -108,6 +114,42 @@ public final class InvocationUtil {
         final LocalRetryableExecution execution = new LocalRetryableExecution(nodeEngine, operation);
         execution.run();
         return execution;
+    }
+
+    /**
+     * Invokes the given operation on all cluster members (excluding this
+     * member), in parallel.
+     * <p>
+     * The operation is retried until the cluster is stable between the start
+     * and the end of the invocations.
+     * <p>
+     * The operations invoked with this method should be idempotent.
+     * <p>
+     * If one of the invocations throw any exception other than the
+     * {@link ClusterTopologyChangedException}, {@link MemberLeftException},
+     * {@link TargetNotMemberException}, or
+     * {@link HazelcastInstanceNotActiveException} the method fails with that
+     * exception. When invocations fail with <b>only</b>
+     * {@code ClusterTopologyChangedException}, the invocations are retried.
+     * When invocations fail with <b>only<b/> {@code MemberLeftException},
+     * {@code TargetNotMemberException}, or
+     * {@code HazelcastInstanceNotActiveException} the exceptions are ignored
+     * and the method returns the current member UUIDs, in a similar manner to
+     * {@link #invokeOnStableClusterSerial(NodeEngine, Supplier, int)}.
+     * <p>
+     * Between each retry, the parallel invocations are delayed for
+     * {@link ClusterProperty#INVOCATION_RETRY_PAUSE} milliseconds.
+     *
+     * @return the collection of the member UUIDs that the operations are
+     * invoked on
+     */
+    public static InternalCompletableFuture<Collection<UUID>> invokeOnStableClusterParallel(
+            NodeEngine nodeEngine,
+            Supplier<Operation> operationSupplier,
+            int maxRetries
+    ) {
+        ParallelOperationInvoker invoker = new ParallelOperationInvoker(nodeEngine, operationSupplier, maxRetries);
+        return invoker.invoke();
     }
 
     private static class InvokeOnMemberFunction implements Function<Member, InternalCompletableFuture<Object>> {

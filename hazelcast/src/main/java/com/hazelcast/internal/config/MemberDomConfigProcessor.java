@@ -528,7 +528,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             if (matches("base-dir", name)) {
                 localDeviceConfig.setBaseDir(new File(getTextContent(n)).getAbsoluteFile());
             } else if (matches("capacity", name)) {
-                localDeviceConfig.setCapacity(createMemorySize(n));
+                localDeviceConfig.setCapacity(createCapacity(n));
             } else if (matches(blockSizeName, name)) {
                 localDeviceConfig.setBlockSize(getIntegerValue(blockSizeName, getTextContent(n)));
             } else if (matches(readIOThreadCountName, name)) {
@@ -566,7 +566,7 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             String name = cleanNodeName(n);
 
             if (matches("capacity", name)) {
-                return memoryTierConfig.setCapacity(createMemorySize(n));
+                return memoryTierConfig.setCapacity(createCapacity(n));
             }
         }
         return memoryTierConfig;

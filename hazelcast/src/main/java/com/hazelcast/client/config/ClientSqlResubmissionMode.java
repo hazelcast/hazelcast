@@ -22,6 +22,7 @@ package com.hazelcast.client.config;
  *     <li>{@link com.hazelcast.sql.impl.SqlErrorCode#CONNECTION_PROBLEM}</li>
  *     <li>{@link com.hazelcast.sql.impl.SqlErrorCode#PARTITION_DISTRIBUTION}</li>
  *     <li>{@link com.hazelcast.sql.impl.SqlErrorCode#TOPOLOGY_CHANGE}</li>
+ *     <li>{@link com.hazelcast.sql.impl.SqlErrorCode#RESTARTABLE_ERROR}</li>
  * </ul>
  *
  * @since 5.2

@@ -414,7 +414,7 @@ public class MemberCompatibilityTest_2_5 {
     @Test
     public void test_ClientSendSchemaCodec_encodeResponse() {
         int fileClientMessageIndex = 44;
-        ClientMessage encoded = ClientSendSchemaCodec.encodeResponse();
+        ClientMessage encoded = ClientSendSchemaCodec.encodeResponse(aSetOfUUIDs);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -7205,7 +7205,7 @@ public class MemberCompatibilityTest_2_5 {
     @Test
     public void test_MCGetClusterMetadataCodec_encodeResponse() {
         int fileClientMessageIndex = 806;
-        ClientMessage encoded = MCGetClusterMetadataCodec.encodeResponse(aByte, aString, aString, aLong);
+        ClientMessage encoded = MCGetClusterMetadataCodec.encodeResponse(aByte, aString, aString, aLong, aUUID);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
