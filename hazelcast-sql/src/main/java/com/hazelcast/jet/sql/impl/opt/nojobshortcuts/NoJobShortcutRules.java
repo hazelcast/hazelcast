@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.opt.nojobshortcuts;
 
-import com.hazelcast.jet.sql.impl.opt.logical.CalcIntoScanLogicalRule;
+import com.hazelcast.jet.sql.impl.opt.common.CalcIntoScanRule;
 import com.hazelcast.jet.sql.impl.opt.logical.ValuesLogicalRules;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.rel.rules.CoreRules;
@@ -40,7 +40,7 @@ public final class NoJobShortcutRules {
                 MapSizeRule.INSTANCE,
 
                 // auxiliary rules
-                CalcIntoScanLogicalRule.INSTANCE,
+                CalcIntoScanRule.INSTANCE,
                 CoreRules.PROJECT_MERGE,
                 CoreRules.FILTER_MERGE,
 

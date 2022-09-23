@@ -21,6 +21,7 @@ import com.hazelcast.jet.sql.impl.OptimizerContext;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.nojobshortcuts.NoJobShortcutRules;
+import com.hazelcast.jet.sql.impl.opt.nojobshortcuts.SelectByKeyMapRules;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRules;
 import com.hazelcast.jet.sql.impl.parse.QueryParseResult;
@@ -42,6 +43,7 @@ import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.sql.SqlExplainLevel;
 import org.apache.calcite.sql.parser.SqlParserPos;
+import org.apache.calcite.tools.RuleSets;
 
 import java.io.BufferedReader;
 import java.io.StringReader;
@@ -96,7 +98,6 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
                 .optimizeHep(rel, NoJobShortcutRules.getRules());
     }
 
-    private static LogicalRel optimizeLogicalInternal(String sql, OptimizerContext context) {
     static RelNode preOptimizeInternal(String sql, OptimizerContext context) {
         QueryParseResult parseResult = context.parse(sql);
         return context.convert(parseResult.getNode()).getRel();
@@ -106,11 +107,14 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         RelNode rel = preOptimizeInternal(sql, context);
 
         LogicalRel optimizedLogicalRel = (LogicalRel) context
-                .optimize(rel, LogicalRules.getRuleSet(), OptUtils.toLogicalConvention(rel.getTraitSet()));
+                .optimizeVolcano(rel, LogicalRules.getRuleSet(), OptUtils.toLogicalConvention(rel.getTraitSet()));
 
         // IMap keyed access optimization
         return (LogicalRel) context
-                .optimizeVolcano(rel, LogicalRules.getRuleSet(), OptUtils.toLogicalConvention(rel.getTraitSet()));
+                .optimizeVolcano(
+                        optimizedLogicalRel,
+                        RuleSets.ofList(SelectByKeyMapRules.INSTANCE),
+                        OptUtils.toLogicalConvention(rel.getTraitSet()));
     }
 
     private static Result optimizePhysicalInternal(String sql, OptimizerContext context) {

@@ -30,12 +30,15 @@ public class SqlError {
     private final boolean suggestionExists;
     private final String suggestion;
 
+    public SqlError(int code, String message, UUID originatingMemberId) {
+        this(code, message, originatingMemberId, false, null);
+    }
+
     public SqlError(
             int code,
             String message,
             UUID originatingMemberId,
-            boolean suggestionExists,
-            String suggestion
+            boolean suggestionExists, String suggestion
     ) {
         this.code = code;
         this.message = message;

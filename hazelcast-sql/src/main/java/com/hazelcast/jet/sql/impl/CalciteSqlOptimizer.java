@@ -45,10 +45,8 @@ import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.WatermarkKeysAssigner;
 import com.hazelcast.jet.sql.impl.opt.cost.CostFactory;
-import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
-import com.hazelcast.jet.sql.impl.opt.logical.SelectByKeyMapLogicalRule;
 import com.hazelcast.jet.sql.impl.opt.nojobshortcuts.DeleteByKeyMapRel;
 import com.hazelcast.jet.sql.impl.opt.nojobshortcuts.InsertMapRel;
 import com.hazelcast.jet.sql.impl.opt.nojobshortcuts.NoJobShortcutRules;
@@ -121,7 +119,6 @@ import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
 import org.apache.calcite.sql.util.SqlString;
-import org.apache.calcite.tools.RuleSets;
 
 import javax.annotation.Nullable;
 import java.security.Permission;
@@ -653,12 +650,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             logger.fine("After logical opt:\n" + RelOptUtil.toString(logicalRel));
         }
 
-        LogicalRel logicalRel2 = optimizeIMapKeyedAccess(context, logicalRel);
-        if (fineLogOn && logicalRel != logicalRel2) {
-            logger.fine("After IMap keyed access opt:\n" + RelOptUtil.toString(logicalRel2));
-        }
-
-        PhysicalRel physicalRel = optimizePhysical(context, logicalRel2);
+        PhysicalRel physicalRel = optimizePhysical(context, logicalRel);
         physicalRel = uniquifyScans(physicalRel);
 
         if (fineLogOn) {
@@ -710,17 +702,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         return (LogicalRel) context.optimizeVolcano(
                 rel,
                 LogicalRules.getRuleSet(),
-                OptUtils.toLogicalConvention(rel.getTraitSet())
-        );
-    }
-
-    private LogicalRel optimizeIMapKeyedAccess(OptimizerContext context, LogicalRel rel) {
-        if (!(rel instanceof FullScanLogicalRel)) {
-            return rel;
-        }
-        return (LogicalRel) context.optimize(
-                rel,
-                RuleSets.ofList(SelectByKeyMapLogicalRule.INSTANCE),
                 OptUtils.toLogicalConvention(rel.getTraitSet())
         );
     }
