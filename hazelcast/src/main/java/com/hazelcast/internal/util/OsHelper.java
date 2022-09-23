@@ -85,4 +85,13 @@ public final class OsHelper {
             return false;
         }
     }
+
+    /**
+     * Returns {@code true} if the system is a Windows.
+     *
+     * @return {@code true} if the current system is a Windows one.
+     */
+    public static boolean isWindows() {
+        return OS.contains("windows");
+    }
 }
