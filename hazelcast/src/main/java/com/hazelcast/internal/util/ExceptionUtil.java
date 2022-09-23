@@ -249,7 +249,12 @@ public final class ExceptionUtil {
         try {
             constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT_STRING);
             T clone = (T) constructor.invokeWithArguments(message);
-            clone.initCause(cause);
+            try {
+                clone.initCause(cause);
+            } catch (IllegalStateException ignored) {
+                // Cause can be already set by the exception. It can be set to null as well.
+                // So doing null check is not the solution here. See https://github.com/hazelcast/hazelcast/issues/21414
+            }
             return clone;
         } catch (ClassCastException | WrongMethodTypeException
                 | IllegalAccessException | SecurityException | NoSuchMethodException ignored) {
@@ -259,7 +264,12 @@ public final class ExceptionUtil {
         try {
             constructor = LOOKUP.findConstructor(exceptionClass, MT_INIT);
             T clone = (T) constructor.invokeWithArguments();
-            clone.initCause(cause);
+            try {
+                clone.initCause(cause);
+            } catch (IllegalStateException ignored) {
+                // Cause can be already set by the exception. It can be set to null as well.
+                // So doing null check is not the solution here. See https://github.com/hazelcast/hazelcast/issues/21414
+            }
             return clone;
         } catch (ClassCastException | WrongMethodTypeException
                 | IllegalAccessException | SecurityException | NoSuchMethodException ignored) {
