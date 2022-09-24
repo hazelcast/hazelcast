@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.sql.impl.expression.misc;
 
-import com.hazelcast.sql.impl.expression.CaseExpression;
-import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
+import com.hazelcast.sql.impl.expression.CaseExpression;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
 import org.junit.Test;
 
 import java.time.LocalDate;

@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.sql.impl;
 
+import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
-import com.hazelcast.jet.sql.SqlTestSupport;
 import org.junit.BeforeClass;
 import org.junit.Test;
 

@@ -18,8 +18,8 @@ package com.hazelcast.jet.sql.impl.validate.operators.misc;
 
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.operand.TypedOperandChecker;
-import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ReplaceUnknownOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastPrefixOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ReplaceUnknownOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastIntegerType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.rel.type.RelDataType;

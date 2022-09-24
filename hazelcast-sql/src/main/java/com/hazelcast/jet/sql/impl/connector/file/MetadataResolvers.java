@@ -17,8 +17,8 @@
 package com.hazelcast.jet.sql.impl.connector.file;
 
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
-import com.hazelcast.sql.impl.schema.MappingField;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.schema.MappingField;
 
 import java.util.Arrays;
 import java.util.List;
