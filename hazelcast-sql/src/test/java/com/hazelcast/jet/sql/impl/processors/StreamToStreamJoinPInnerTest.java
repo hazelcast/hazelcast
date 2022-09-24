@@ -263,6 +263,32 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
     }
 
     @Test
+    public void test_nonLateItemOutOfLimit_hasMatchInBuffer() {
+        // l.time=r.time
+        postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 0L));
+        postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
+        ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(1, 1));
+
+        TestSupport.verifyProcessor(processorSupplier)
+                .disableSnapshots()
+                .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
+                .expectExactOutput(
+                        in(0, jetRow(0L)),
+                        in(0, wm(10L, (byte) 0)),
+                        out(wm(0L, (byte) 0)),
+                        // this item is:
+                        // 1. not late
+                        // 2. can't possibly match a future row from #0, therefore doesn't go to the buffer
+                        // 3. but matches a buffered row from #0
+                        in(1, jetRow(0L)),
+                        out(jetRow(0L, 0L)),
+                        processorAssertion((StreamToStreamJoinP processor) ->
+                                assertEquals(0, processor.buffer[1].size()))
+                );
+    }
+
+
+    @Test
     public void test_dropLateItems() {
         // Join condition:
         //     l.time BETWEEN r.time - 1 AND r.time + 1

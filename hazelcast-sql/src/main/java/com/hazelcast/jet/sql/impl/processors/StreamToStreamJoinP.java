@@ -39,6 +39,7 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
@@ -52,7 +53,6 @@ import java.util.Set;
 
 import static com.hazelcast.internal.util.CollectionUtil.hasNonEmptyIntersection;
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
-import static java.lang.Long.MAX_VALUE;
 
 /**
  * See {@code docs/design/sql/15-stream-to-stream-join.md}.
@@ -63,6 +63,13 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     final Object2LongHashMap<Byte> lastReceivedWm = new Object2LongHashMap<>(Long.MIN_VALUE);
     final Object2LongHashMap<Byte> lastEmittedWm = new Object2LongHashMap<>(Long.MIN_VALUE);
 
+    /**
+     * Maps wmKey to minimum buffer time for all items in the {@link #buffer}
+     * for that WM. Must be updated when adding and removing anything to/from
+     * the buffer.
+     */
+    final Object2LongHashMap<Byte> minimumBufferTimes = new Object2LongHashMap<>(Long.MIN_VALUE);
+
     // NOTE: we are using LinkedList, because we are expecting:
     //  (1) removals at any position,
     //  (2) no index-based access, only full traversal
@@ -71,8 +78,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
     private final JetJoinInfo joinInfo;
     private final int outerJoinSide;
-    private final Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors;
-    private final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors;
+    private final List<Entry<Byte, ToLongFunctionEx<JetSqlRow>>> leftTimeExtractors;
+    private final List<Entry<Byte, ToLongFunctionEx<JetSqlRow>>> rightTimeExtractors;
     private final Map<Byte, Map<Byte, Long>> postponeTimeMap;
     private final Tuple2<Integer, Integer> columnCounts;
     private long maxProcessorAccumulatedRecords;
@@ -96,8 +103,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             final Tuple2<Integer, Integer> columnCounts
     ) {
         this.joinInfo = joinInfo;
-        this.leftTimeExtractors = leftTimeExtractors;
-        this.rightTimeExtractors = rightTimeExtractors;
+        this.leftTimeExtractors = new ArrayList<>(leftTimeExtractors.entrySet());
+        this.rightTimeExtractors = new ArrayList<>(rightTimeExtractors.entrySet());
         this.postponeTimeMap = postponeTimeMap;
         this.columnCounts = columnCounts;
 
@@ -120,6 +127,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             wmState.put(wmKey, Long.MIN_VALUE + 1);
             lastEmittedWm.put(wmKey, Long.MIN_VALUE + 1);
             lastReceivedWm.put(wmKey, Long.MIN_VALUE + 1);
+            minimumBufferTimes.put(wmKey, Long.MAX_VALUE);
         }
 
         // no key must be on both sides
@@ -166,35 +174,39 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             throw new AccumulationLimitExceededException();
         }
 
+        boolean avoidBuffer = false;
         if (currItem == null) {
             // drop the event, if it's late according to any watermarked value it contains
-            for (Entry<Byte, ToLongFunctionEx<JetSqlRow>> en : timeExtractors(ordinal).entrySet()) {
-                long wmValue = lastReceivedWm.getValue(en.getKey());
-                long time = en.getValue().applyAsLong((JetSqlRow) item);
-                if (time < wmValue) {
-                    logLateEvent(getLogger(), en.getKey(), wmValue, item);
+            List<Entry<Byte, ToLongFunctionEx<JetSqlRow>>> extractors = timeExtractors(ordinal);
+            long[] times = new long[extractors.size()];
+
+            for (int i = 0; i < extractors.size(); i++) {
+                long wmValue = lastReceivedWm.getValue(extractors.get(i).getKey());
+                times[i] = extractors.get(i).getValue().applyAsLong((JetSqlRow) item);
+                if (times[i] < wmValue) {
+                    logLateEvent(getLogger(), extractors.get(i).getKey(), wmValue, item);
                     return true;
                 }
             }
 
             // if the item is not late, but would already be removed from the buffer, don't add it to the buffer
-            for (Entry<Byte, ToLongFunctionEx<JetSqlRow>> en : timeExtractors(ordinal).entrySet()) {
-                long joinTimeLimit = wmState.get(en.getKey());
-                long time = en.getValue().applyAsLong((JetSqlRow) item);
-                if (time < joinTimeLimit) {
-                    if (!joinInfo.isInner()) {
-                        JetSqlRow joinedRow = composeRowWithNulls((JetSqlRow) item, ordinal);
-                        if (joinedRow != null && !tryEmit(joinedRow)) {
-                            pendingOutput.add(joinedRow);
-                            return false;
-                        }
-                    }
-                    return true;
-                }
+            for (int i = 0; i < extractors.size(); i++) {
+                long joinTimeLimit = wmState.get(extractors.get(i).getKey());
+                long time = times[i];
+                avoidBuffer |= time < joinTimeLimit;
             }
 
             currItem = (JetSqlRow) item;
-            buffer[ordinal].add(currItem);
+            if (!avoidBuffer) {
+                buffer[ordinal].add(currItem);
+                // update the minimumBufferTimes when adding to buffer
+                for (int i = 0; i < extractors.size(); i++) {
+                    Byte wmKey = extractors.get(i).getKey();
+                    if (times[i] < minimumBufferTimes.get(wmKey)) {
+                        minimumBufferTimes.put(wmKey, times[i]);
+                    }
+                }
+            }
             // we'll emit joined rows from currItem and the buffered rows from the opposite side
             iterator = buffer[1 - ordinal].iterator();
             if (ordinal == outerJoinSide) {
@@ -230,6 +242,15 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
         iterator = null;
         currItem = null;
+
+        if (avoidBuffer && !joinInfo.isInner()) {
+            JetSqlRow joinedRow = composeRowWithNulls((JetSqlRow) item, ordinal);
+            if (joinedRow != null && !tryEmit(joinedRow)) {
+                pendingOutput.add(joinedRow);
+                return false;
+            }
+        }
+
         return true;
     }
 
@@ -255,7 +276,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
         // Note: We can't immediately emit current WM, as it could render items in buffers late.
         for (Byte wmKey : wmState.keySet()) {
-            long minimumBufferTime = findMinimumBufferTime(wmKey);
+            long minimumBufferTime = minimumBufferTimes.get(wmKey);
             long lastReceivedWm = this.lastReceivedWm.getValue(wmKey);
             long newWmTime = Math.min(minimumBufferTime, lastReceivedWm);
             if (newWmTime > lastEmittedWm.getValue(wmKey)) {
@@ -302,47 +323,31 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         return modified;
     }
 
-    private long findMinimumBufferTime(byte key) {
-        // TODO optimization: use PriorityQueues. At least in case of a single WM key.
-        ToLongFunctionEx<JetSqlRow> extractor = leftTimeExtractors.get(key);
-        int ordinal = 0;
-        if (extractor == null) {
-            extractor = rightTimeExtractors.get(key);
-            ordinal = 1;
-        } else {
-            assert !rightTimeExtractors.containsKey(key) : "extractor for the same key on both inputs";
-        }
-
-        long min = MAX_VALUE;
-        for (JetSqlRow row : buffer[ordinal]) {
-            min = Math.min(min, extractor.applyAsLong(row));
-        }
-        return min;
-    }
-
     private void clearExpiredItemsInBuffer(int ordinal) {
-        if (buffer[ordinal].isEmpty()) {
-            return;
-        }
+        List<Entry<Byte, ToLongFunctionEx<JetSqlRow>>> extractors = timeExtractors(ordinal);
+        long[] limits = new long[extractors.size()];
+        // when removing from the buffer, we'll also recalculate the minimum buffer times
+        long[] newMinimums = new long[extractors.size()];
+        Arrays.fill(newMinimums, Long.MAX_VALUE);
 
-        // Compute new maximum for each output WM in the `wmState`.
-        Map<Byte, ToLongFunctionEx<JetSqlRow>> currExtractors = timeExtractors(ordinal);
-        @SuppressWarnings("unchecked")
-        ToLongFunctionEx<JetSqlRow>[] extractors = new ToLongFunctionEx[currExtractors.values().size()];
-        long[] limits = new long[currExtractors.values().size()];
-
-        int i = 0;
-        for (Map.Entry<Byte, ToLongFunctionEx<JetSqlRow>> entry : currExtractors.entrySet()) {
-            extractors[i] = entry.getValue();
+        for (int i = 0; i < extractors.size(); i++) {
             // TODO ignore time fields not in WM state
-            limits[i] = wmState.getOrDefault(entry.getKey(), Long.MIN_VALUE);
-            ++i;
+            limits[i] = wmState.getOrDefault(extractors.get(i).getKey(), Long.MIN_VALUE);
         }
 
         // Remove all expired events in left & right buffers
-        buffer[ordinal].removeIf(row -> {
-            for (int idx = 0; idx < extractors.length; idx++) {
-                if (extractors[idx].applyAsLong(row) < limits[idx]) {
+        // 5.4 : If doing an outer join, emit events removed from the buffer,
+        // with `null`s for the other side, if the event was never joined.
+        // TODO optimization: use PriorityQueues. At least in case of a single WM key.
+        final Iterator<JetSqlRow> iterator = buffer[ordinal].iterator();
+        long[] times = new long[extractors.size()];
+        while (iterator.hasNext()) {
+            JetSqlRow row = iterator.next();
+            boolean remove = false;
+            for (int idx = 0; idx < extractors.size(); idx++) {
+                times[idx] = extractors.get(idx).getValue().applyAsLong(row);
+                if (times[idx] < limits[idx]) {
+                    remove = true;
                     if (outerJoinSide == ordinal && unusedEventsTracker.remove(row)) {
                         // 5.4 : If doing an outer join, emit events removed from the buffer,
                         // with `null`s for the other side, if the event was never joined.
@@ -351,14 +356,24 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                             pendingOutput.add(joinedRow);
                         }
                     }
-                    return true;
                 }
             }
-            return false;
-        });
+
+            if (remove) {
+                iterator.remove();
+            } else {
+                for (int i = 0; i < times.length; i++) {
+                    newMinimums[i] = Math.min(times[i], newMinimums[i]);
+                }
+            }
+        }
+
+        for (int i = 0; i < extractors.size(); i++) {
+            minimumBufferTimes.put(extractors.get(i).getKey(), newMinimums[i]);
+        }
     }
 
-    private Map<Byte, ToLongFunctionEx<JetSqlRow>> timeExtractors(int ordinal) {
+    private List<Entry<Byte, ToLongFunctionEx<JetSqlRow>>> timeExtractors(int ordinal) {
         return ordinal == 0 ? leftTimeExtractors : rightTimeExtractors;
     }
 
