@@ -59,18 +59,18 @@ public class StreamToStreamJoinPhysicalRuleTest extends SqlTestSupport {
                 new SqlIntervalQualifier(TimeUnit.SECOND, TimeUnit.SECOND, SqlParserPos.ZERO));
 
         // leftTime >= rightTime
-        assertEquals(ImmutableMap.of(0, ImmutableMap.of(2, 0L)),
+        assertEquals(ImmutableMap.of(2, ImmutableMap.of(0, 0L)),
                 call(b.makeCall(GREATER_THAN_OR_EQUAL, leftTime, rightTime)));
         // leftTime <= rightTime + 10 ==> rightTime >= leftTime - 10
-        assertEquals(ImmutableMap.of(2, ImmutableMap.of(0, 10L)),
+        assertEquals(ImmutableMap.of(0, ImmutableMap.of(2, 10L)),
                 call(b.makeCall(LESS_THAN_OR_EQUAL, leftTime, b.makeCall(PLUS, rightTime, intervalTen))));
 
         // leftTime - rightTime < 10 ==> rightTime > leftTime - 10
-        assertEquals(ImmutableMap.of(2, ImmutableMap.of(0, 10L)),
+        assertEquals(ImmutableMap.of(0, ImmutableMap.of(2, 10L)),
                 call(b.makeCall(LESS_THAN, b.makeCall(MINUS, leftTime, rightTime), intervalTen)));
 
         // leftTime - rightTime + 10 < 0 ==> rightTime > leftTime + 10
-        assertEquals(ImmutableMap.of(2, ImmutableMap.of(0, -10L)),
+        assertEquals(ImmutableMap.of(0, ImmutableMap.of(2, -10L)),
                 call(b.makeCall(LESS_THAN,
                         b.makeCall(PLUS,
                                 b.makeCall(MINUS, leftTime, rightTime),
@@ -78,7 +78,7 @@ public class StreamToStreamJoinPhysicalRuleTest extends SqlTestSupport {
                         intervalZero)));
 
         // leftTime + 10 > rightTime + 10 - 10 ==> leftTime > rightTime - 10
-        assertEquals(ImmutableMap.of(0, ImmutableMap.of(2, 10L)),
+        assertEquals(ImmutableMap.of(2, ImmutableMap.of(0, 10L)),
                 call(b.makeCall(GREATER_THAN,
                         b.makeCall(PLUS, leftTime, intervalTen),
                         b.makeCall(MINUS,
@@ -86,7 +86,7 @@ public class StreamToStreamJoinPhysicalRuleTest extends SqlTestSupport {
                                 intervalTen))));
 
         // leftTime = rightTime + 10 ==> leftTime >= rightTime + 10 AND rightTime >= leftTime - 10
-        assertEquals(ImmutableMap.of(0, ImmutableMap.of(2, -10L), 2, ImmutableMap.of(0, +10L)),
+        assertEquals(ImmutableMap.of(0, ImmutableMap.of(2, +10L), 2, ImmutableMap.of(0, -10L)),
                 call(b.makeCall(EQUALS, leftTime, b.makeCall(PLUS, rightTime, intervalTen))));
 
         assertEquals(emptyMap(), call(intervalTen));

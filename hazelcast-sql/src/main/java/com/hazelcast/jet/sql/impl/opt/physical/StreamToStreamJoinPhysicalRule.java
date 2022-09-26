@@ -239,14 +239,14 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
 
         if (isLt) {
             postponeTimeMap
-                    .computeIfAbsent(positiveField[0], x -> new HashMap<>())
-                    .merge(negativeField[0], constantsSum[0], Long::min);
+                    .computeIfAbsent(negativeField[0], x -> new HashMap<>())
+                    .merge(positiveField[0], constantsSum[0], Long::min);
         }
 
         if (isGt) {
             postponeTimeMap
-                    .computeIfAbsent(negativeField[0], x -> new HashMap<>())
-                    .merge(positiveField[0], -constantsSum[0], Long::min);
+                    .computeIfAbsent(positiveField[0], x -> new HashMap<>())
+                    .merge(negativeField[0], -constantsSum[0], Long::min);
         }
     }
 
@@ -255,7 +255,8 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
             Integer[] positiveField,
             Integer[] negativeField,
             long[] constantsSum,
-            boolean inverse) {
+            boolean inverse
+    ) {
         if (expr instanceof RexLiteral) {
             RexLiteral literal = (RexLiteral) expr;
             if (!SqlTypeName.DAY_INTERVAL_TYPES.contains(literal.getType().getSqlTypeName())
