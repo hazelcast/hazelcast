@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.opt.FullScan;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
@@ -45,7 +46,7 @@ import java.util.List;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static com.hazelcast.jet.sql.impl.opt.cost.CostUtils.TABLE_SCAN_CPU_MULTIPLIER;
 
-public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
+public class FullScanPhysicalRel extends FullScan implements HazelcastPhysicalScan {
 
     FullScanPhysicalRel(
             RelOptCluster cluster,
@@ -58,6 +59,7 @@ public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
         super(cluster, traitSet, table, eventTimePolicyProvider, watermarkedColumnIndex);
     }
 
+    @Override
     public Expression<Boolean> filter(QueryParameterMetadata parameterMetadata) {
         PlanNodeSchema schema = OptUtils.schema(getTable());
 
@@ -66,6 +68,7 @@ public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
         return filter(schema, filter, parameterMetadata);
     }
 
+    @Override
     public List<Expression<?>> projection(QueryParameterMetadata parameterMetadata) {
         PlanNodeSchema schema = OptUtils.schema(getTable());
 

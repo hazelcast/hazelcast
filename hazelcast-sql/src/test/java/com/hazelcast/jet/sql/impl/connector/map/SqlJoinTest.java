@@ -16,12 +16,14 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.jet.sql.impl.connector.map.model.PersonId;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
 import com.hazelcast.map.IMap;
+import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
@@ -42,6 +44,7 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.junit.Assert.fail;
 
 @RunWith(Enclosed.class)
 public class SqlJoinTest {
@@ -758,6 +761,36 @@ public class SqlJoinTest {
             assertRowsAnyOrder("SELECT * FROM " + leftName + " l JOIN (VALUES (1, 1)) AS r ON true",
                     singletonList(new Row(1, 1, (byte) 1, (byte) 1))
             );
+        }
+
+        @Test
+        // test for https://github.com/hazelcast/hazelcast/issues/22160
+        public void test_indexScanOnRightHandOfNestedLoopJoin() {
+            String m1 = "m1_" + randomName();
+            String m2 = "m2_" + randomName();
+            IMap<Object, Object> m1Map = instance().getMap(m1);
+            m1Map.put(42, "foo");
+            m1Map.put(43, "bar");
+            IMap<Object, Object> m2Map = instance().getMap(m2);
+            m2Map.addIndex(IndexType.HASH, "this");
+            m2Map.put(43, "baz");
+            // we need to add multiple entries to the map so that the index is created on all members
+            for (int i = 44; i < 60; i++) {
+                m2Map.put(i, "boo" + i);
+            }
+            createMapping(m1, Integer.class, String.class);
+            createMapping(m2, Integer.class, String.class);
+
+            String sql = "select * from " + m1 + " m1 join " + m2 + " m2 on m1.__key=m2.__key where m2.this='baz'";
+            assertRowsAnyOrder(sql, rows(4, 43, "bar", 43, "baz"));
+
+            for (SqlRow r : sqlService.execute("explain " + sql)) {
+                if (r.getObject(0).toString().contains("IndexScanMapPhysicalRel")) {
+                    return; // success
+                }
+            }
+
+            fail("Index scan not found in the plan");
         }
     }
 

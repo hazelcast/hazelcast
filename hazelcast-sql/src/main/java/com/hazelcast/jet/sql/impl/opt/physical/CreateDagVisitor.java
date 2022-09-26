@@ -36,6 +36,7 @@ import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
@@ -377,7 +378,7 @@ public class CreateDagVisitor {
     }
 
     public Vertex onNestedLoopJoin(JoinNestedLoopPhysicalRel rel) {
-        assert rel.getRight() instanceof FullScanPhysicalRel : rel.getRight().getClass();
+        assert rel.getRight() instanceof HazelcastPhysicalScan : rel.getRight().getClass();
 
         Table rightTable = rel.getRight().getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(rightTable);
