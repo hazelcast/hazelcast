@@ -16,10 +16,12 @@
 
 package com.hazelcast.jet.sql.impl.connector.map;
 
+import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.jet.sql.impl.connector.map.model.PersonId;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
+import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.QueryException;
 import org.junit.BeforeClass;
@@ -905,5 +907,27 @@ public class SqlJoinTest extends SqlTestSupport {
 
                 )
         );
+    }
+
+    @Test
+    // test for https://github.com/hazelcast/hazelcast/issues/22160
+    public void test_indexScanOnRightHandOfNestedLoopJoin() {
+        String m1 = "m1_" + randomName();
+        String m2 = "m2_" + randomName();
+        IMap<Object, Object> m1Map = instance().getMap(m1);
+        m1Map.put(42, "foo");
+        m1Map.put(43, "bar");
+        IMap<Object, Object> m2Map = instance().getMap(m2);
+        m2Map.addIndex(IndexType.HASH, "this");
+        m2Map.put(43, "baz");
+        // we need to add multiple entries to the map so that the index is created on all members
+        for (int i = 44; i < 60; i++) {
+            m2Map.put(i, "boo" + i);
+        }
+        createMapping(m1, Integer.class, String.class);
+        createMapping(m2, Integer.class, String.class);
+
+        String sql = "select * from " + m1 + " m1 join " + m2 + " m2 on m1.__key=m2.__key where m2.this='baz'";
+        assertRowsAnyOrder(sql, singletonList(new Row(43, "bar", 43, "baz")));
     }
 }

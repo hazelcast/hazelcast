@@ -31,14 +31,15 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.SimpleExpressionEvalContext;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector.VertexWithInputConfig;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.optimizer.PlanObjectKey;
@@ -283,7 +284,7 @@ public class CreateDagVisitor {
     }
 
     public Vertex onNestedLoopJoin(JoinNestedLoopPhysicalRel rel) {
-        assert rel.getRight() instanceof FullScanPhysicalRel : rel.getRight().getClass();
+        assert rel.getRight() instanceof HazelcastPhysicalScan : rel.getRight().getClass();
 
         Table rightTable = rel.getRight().getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(rightTable);

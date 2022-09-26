@@ -17,9 +17,10 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
@@ -49,11 +50,11 @@ public class JoinNestedLoopPhysicalRel extends Join implements PhysicalRel {
     }
 
     public Expression<Boolean> rightFilter(QueryParameterMetadata parameterMetadata) {
-        return ((FullScanPhysicalRel) getRight()).filter(parameterMetadata);
+        return ((HazelcastPhysicalScan) getRight()).filter(parameterMetadata);
     }
 
     public List<Expression<?>> rightProjection(QueryParameterMetadata parameterMetadata) {
-        return ((FullScanPhysicalRel) getRight()).projection(parameterMetadata);
+        return ((HazelcastPhysicalScan) getRight()).projection(parameterMetadata);
     }
 
     public JetJoinInfo joinInfo(QueryParameterMetadata parameterMetadata) {
