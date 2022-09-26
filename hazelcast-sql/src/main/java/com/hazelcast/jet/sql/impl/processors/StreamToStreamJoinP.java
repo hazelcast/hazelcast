@@ -246,6 +246,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         if (avoidBuffer && !joinInfo.isInner() && unusedEventsTracker.remove(currItem)) {
             JetSqlRow joinedRow = composeRowWithNulls(currItem, ordinal);
             if (joinedRow != null && !tryEmit(joinedRow)) {
+                currItem = null;
                 pendingOutput.add(joinedRow);
                 return false;
             }
@@ -349,7 +350,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                 times[idx] = extractors.get(idx).getValue().applyAsLong(row);
                 if (times[idx] < limits[idx]) {
                     remove = true;
-                    if (unusedEventsTracker.remove(row) && outerJoinSide == ordinal) {
+                    if (outerJoinSide == ordinal && unusedEventsTracker.remove(row)) {
                         // 5.4 : If doing an outer join, emit events removed from the buffer,
                         // with `null`s for the other side, if the event was never joined.
                         JetSqlRow joinedRow = composeRowWithNulls(row, ordinal);
