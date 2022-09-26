@@ -167,8 +167,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     @Override
     public boolean tryProcess(int ordinal, @Nonnull Object item) {
         assert ordinal == 0 || ordinal == 1; // bad DAG
-        if (!pendingOutput.isEmpty()) {
-            return processPendingOutput();
+        if (!processPendingOutput()) {
+            return false;
         }
 
         if (buffer[0].size() + buffer[1].size() >= maxProcessorAccumulatedRecords) {
@@ -241,18 +241,16 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             }
         }
 
-        iterator = null;
-
         if (avoidBuffer && !joinInfo.isInner() && unusedEventsTracker.remove(currItem)) {
             JetSqlRow joinedRow = composeRowWithNulls(currItem, ordinal);
             if (joinedRow != null && !tryEmit(joinedRow)) {
-                currItem = null;
                 pendingOutput.add(joinedRow);
                 return false;
             }
         }
-        currItem = null;
 
+        iterator = null;
+        currItem = null;
         return true;
     }
 
