@@ -114,11 +114,11 @@ public class TpcBootstrap {
             readHandlerSuppliers.put(eventloop, readHandlerSupplier);
 
             try {
-                int port = toPort(nodeEngine.getThisAddress(), k);
                 NioAsyncServerSocket serverSocket = NioAsyncServerSocket.open(eventloop);
                 serverSockets.add(serverSocket);
                 serverSocket.receiveBufferSize(socketConfig.receiveBufferSize);
                 serverSocket.reuseAddress(true);
+                int port = toPort(nodeEngine.getThisAddress(), k);
                 serverSocket.bind(new InetSocketAddress(thisAddress.getInetAddress(), port));
                 serverSocket.accept(socket -> {
                     socket.readHandler(readHandlerSuppliers.get(eventloop).get());
@@ -127,6 +127,7 @@ public class TpcBootstrap {
                     socket.sendBufferSize(socketConfig.sendBufferSize);
                     socket.receiveBufferSize(socketConfig.receiveBufferSize);
                     socket.tcpNoDelay(socketConfig.tcpNoDelay);
+                    socket.keepAlive(true);
                     socket.activate(eventloop);
                 });
             } catch (IOException e) {

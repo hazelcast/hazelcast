@@ -243,6 +243,7 @@ public class RequestService {
                     socket.sendBufferSize(socketConfig.sendBufferSize);
                     socket.receiveBufferSize(socketConfig.receiveBufferSize);
                     socket.tcpNoDelay(socketConfig.tcpNoDelay);
+                    socket.keepAlive(true);
                     socket.activate(eventloop);
                 });
             } catch (IOException e) {
@@ -285,6 +286,7 @@ public class RequestService {
                     socket.sendBufferSize(socketConfig.sendBufferSize);
                     socket.receiveBufferSize(socketConfig.receiveBufferSize);
                     socket.tcpNoDelay(socketConfig.tcpNoDelay);
+                    socket.keepAlive(true);
                     socket.activate(eventloop);
                 });
             } catch (IOException e) {
@@ -323,6 +325,7 @@ public class RequestService {
                     socket.sendBufferSize(socketConfig.sendBufferSize);
                     socket.receiveBufferSize(socketConfig.receiveBufferSize);
                     socket.tcpNoDelay(socketConfig.tcpNoDelay);
+                    socket.keepAlive(true);
                     socket.activate(eventloop);
                 });
             } catch (IOException e) {
