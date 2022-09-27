@@ -14,28 +14,22 @@ import java.util.Collection;
 import java.util.UUID;
 
 
-public class ClientNioReadHandler extends NioAsyncReadHandler {
+public class ClientNioAsyncReadHandler extends NioAsyncReadHandler {
 
     private Connection connection;
     private final ClientEngine clientEngine;
     private final ClientMessageReader clientMessageReader = new ClientMessageReader(0);
     private boolean protocolBytesReceived = false;
 
-    public ClientNioReadHandler(ClientEngine clientEngine) {
+    public ClientNioAsyncReadHandler(ClientEngine clientEngine) {
         this.clientEngine = clientEngine;
     }
 
     @Override
     public void onRead(ByteBuffer buffer) {
-
         // Currently we just consume the protocol bytes; we don't do anything with it.
         if (!protocolBytesReceived) {
-            StringBuffer sb = new StringBuffer();
-            for (int k = 0; k < 3; k++) {
-                sb.append((char) buffer.get());
-            }
-            System.out.println("protocol: [" + sb + "]");
-            protocolBytesReceived = true;
+            consumeProtocolBytes(buffer);
         }
 
         for (; ; ) {
@@ -49,13 +43,7 @@ public class ClientNioReadHandler extends NioAsyncReadHandler {
             clientMessageReader.reset();
 
             if (connection == null) {
-                UUID clientUUID = FixedSizeTypesCodec.decodeUUID(message.startFrame.content, 0);
-                ClientEndpoint clientEndpoint = findClientEndpoint(clientUUID);
-                if (clientEndpoint == null) {
-                    throw new IllegalStateException("Could not find connection for client-uuid:" + clientUUID);
-                }
-                System.out.println("-----------------Attaching client " + socket + " to client connection " + connection);
-                connection = clientEndpoint.getConnection();
+                loadConnection(message);
                 // now we need to install the socket on the connection
             } else {
                 message.setConnection(connection);
@@ -63,6 +51,25 @@ public class ClientNioReadHandler extends NioAsyncReadHandler {
                 clientEngine.accept(message);
             }
         }
+    }
+
+    private void loadConnection(ClientMessage message) {
+        UUID clientUUID = FixedSizeTypesCodec.decodeUUID(message.startFrame.content, 0);
+        ClientEndpoint clientEndpoint = findClientEndpoint(clientUUID);
+        if (clientEndpoint == null) {
+            throw new IllegalStateException("Could not find connection for client-uuid:" + clientUUID);
+        }
+        System.out.println("-----------------Attaching client " + socket + " to client connection " + connection);
+        connection = clientEndpoint.getConnection();
+    }
+
+    private void consumeProtocolBytes(ByteBuffer buffer) {
+        StringBuffer sb = new StringBuffer();
+        for (int k = 0; k < 3; k++) {
+            sb.append((char) buffer.get());
+        }
+        System.out.println("protocol: [" + sb + "]");
+        protocolBytesReceived = true;
     }
 
     @Nullable

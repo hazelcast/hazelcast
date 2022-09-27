@@ -64,7 +64,6 @@ import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.impl.client.SqlAbstractMessageTask;
 import com.hazelcast.tpc.engine.iobuffer.ConcurrentIOBufferAllocator;
 import com.hazelcast.tpc.engine.iobuffer.IOBufferAllocator;
-import com.hazelcast.tpc.engine.iobuffer.NonConcurrentIOBufferAllocator;
 import com.hazelcast.transaction.TransactionManagerService;
 
 import javax.annotation.Nonnull;
@@ -122,8 +121,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     private final ClientLifecycleMonitor lifecycleMonitor;
     private final Map<UUID, Consumer<Long>> backupListeners = new ConcurrentHashMap<>();
     private final AddressChecker addressChecker;
-    private final IOBufferAllocator responseAllocator = new ConcurrentIOBufferAllocator(4096,true);
-
+    private final IOBufferAllocator responseBufAllocator = new ConcurrentIOBufferAllocator(4096,true);
 
     // not final for the testing purposes
     private ClientEndpointStatisticsManager endpointStatisticsManager;
@@ -231,7 +229,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         if(messageTask instanceof AbstractMessageTask){
             AbstractMessageTask abstractMessageTask = (AbstractMessageTask) messageTask;
             abstractMessageTask.asyncSocket = clientMessage.asyncSocket;
-            abstractMessageTask.responseBufAllocator = responseAllocator;
+            abstractMessageTask.responseBufAllocator = responseBufAllocator;
         }
         OperationServiceImpl operationService = nodeEngine.getOperationService();
         if (isUrgent(messageTask)) {

@@ -14,7 +14,6 @@ import com.hazelcast.tpc.engine.nio.NioEventloop;
 import com.hazelcast.tpc.requestservice.RequestService;
 import com.hazelcast.tpc.requestservice.SocketConfig;
 import com.hazelcast.tpc.requestservice.TPCEventloopThread;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -106,10 +105,9 @@ public class TpcBootstrap {
             NioEventloop eventloop = (NioEventloop) engine.eventloop(k);
 
             Supplier<NioAsyncReadHandler> readHandlerSupplier = () -> {
-                out.println("TPC Server: Making ClientNioReadHandler");
+                out.println("TPC Server: Making ClientNioAsyncReadHandler");
                 //todo: we need to figure out the connection
-                ClientNioReadHandler readHandler = new ClientNioReadHandler(nodeEngine.getNode().clientEngine);
-                return readHandler;
+                return new ClientNioAsyncReadHandler(nodeEngine.getNode().clientEngine);
             };
             readHandlerSuppliers.put(eventloop, readHandlerSupplier);
 
