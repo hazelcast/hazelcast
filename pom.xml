@@ -126,7 +126,7 @@
         <snakeyaml.engine.version>2.3</snakeyaml.engine.version>
 
         <!-- test dependencies -->
-        <activemq-artemis.version>2.11.0</activemq-artemis.version>
+        <activemq-artemis.version>2.26.0</activemq-artemis.version>
         <activemq.version>5.15.11</activemq.version>
         <assertj.version>3.15.0</assertj.version>
         <atomikos.version>3.9.3</atomikos.version>
