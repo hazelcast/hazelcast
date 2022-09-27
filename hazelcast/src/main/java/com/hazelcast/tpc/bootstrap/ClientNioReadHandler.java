@@ -17,9 +17,8 @@ import java.util.UUID;
 public class ClientNioReadHandler extends NioAsyncReadHandler {
 
     private Connection connection;
-    private ClientEndpoint clientEndpoint;
-    private ClientEngine clientEngine;
-    private ClientMessageReader clientMessageReader = new ClientMessageReader(0);
+    private final ClientEngine clientEngine;
+    private final ClientMessageReader clientMessageReader = new ClientMessageReader(0);
     private boolean protocolBytesReceived = false;
 
     public ClientNioReadHandler(ClientEngine clientEngine) {
@@ -28,14 +27,14 @@ public class ClientNioReadHandler extends NioAsyncReadHandler {
 
     @Override
     public void onRead(ByteBuffer buffer) {
-        //System.out.println("ClientNioReadHandler onRead " + buffer.limit());
 
-        if(!protocolBytesReceived){
+        // Currently we just consume the protocol bytes; we don't do anything with it.
+        if (!protocolBytesReceived) {
             StringBuffer sb = new StringBuffer();
-            for(int k=0;k<3;k++){
-                sb.append((char)buffer.get());
+            for (int k = 0; k < 3; k++) {
+                sb.append((char) buffer.get());
             }
-            System.out.println("protocol: ["+sb+"]");
+            System.out.println("protocol: [" + sb + "]");
             protocolBytesReceived = true;
         }
 
@@ -50,8 +49,8 @@ public class ClientNioReadHandler extends NioAsyncReadHandler {
             clientMessageReader.reset();
 
             if (connection == null) {
-                UUID clientUUID = FixedSizeTypesCodec.decodeUUID(message.frameIterator().next().content, 0);
-                clientEndpoint = findClientEndpoint(clientUUID);
+                UUID clientUUID = FixedSizeTypesCodec.decodeUUID(message.startFrame.content, 0);
+                ClientEndpoint clientEndpoint = findClientEndpoint(clientUUID);
                 if (clientEndpoint == null) {
                     throw new IllegalStateException("Could not find connection for client-uuid:" + clientUUID);
                 }
