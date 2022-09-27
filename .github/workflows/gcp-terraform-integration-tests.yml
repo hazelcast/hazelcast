@@ -25,7 +25,7 @@ jobs:
     steps:
       # SET UP JDK
       - name: Setup JDK
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3.5.1
         with:
           java-version: ${{ matrix.java }}
           architecture: ${{ matrix.architecture }}
