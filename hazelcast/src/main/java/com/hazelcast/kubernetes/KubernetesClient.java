@@ -276,7 +276,16 @@ class KubernetesClient {
                 int specReplicas = item.asObject().get("spec").asObject().getInt("replicas", UNKNOWN);
                 int readyReplicas = item.asObject().get("status").asObject().getInt("readyReplicas",
                         UNKNOWN);
-                return new RuntimeContext(specReplicas, readyReplicas, resourceVersion);
+                int currentReplicas = item.asObject().get("status").asObject().getInt("currentReplicas",
+                        UNKNOWN);
+                int updatedReplicas = item.asObject().get("status").asObject().getInt("updatedReplicas",
+                        UNKNOWN);
+                String currentRevision = item.asObject().get("status").asObject().getString("currentRevision", "");
+                String updateRevision = item.asObject().get("status").asObject().getString("updateRevision", "");
+                if (!updateRevision.equals(currentRevision)) {
+                    currentReplicas += updatedReplicas;
+                }
+                return new RuntimeContext(specReplicas, readyReplicas, currentReplicas, resourceVersion);
             }
         }
         return null;
@@ -286,7 +295,16 @@ class KubernetesClient {
         int specReplicas = jsonObject.get("spec").asObject().getInt("replicas", UNKNOWN);
         int readyReplicas = jsonObject.get("status").asObject().getInt("readyReplicas", UNKNOWN);
         String resourceVersion = jsonObject.get("metadata").asObject().getString("resourceVersion", null);
-        return new RuntimeContext(specReplicas, readyReplicas, resourceVersion);
+        int currentReplicas = jsonObject.get("status").asObject().getInt("currentReplicas",
+                UNKNOWN);
+        int updatedReplicas = jsonObject.get("status").asObject().getInt("updatedReplicas",
+                UNKNOWN);
+        String currentRevision = jsonObject.get("status").asObject().getString("currentRevision", "");
+        String updateRevision = jsonObject.get("status").asObject().getString("updateRevision", "");
+        if (!updateRevision.equals(currentRevision)) {
+            currentReplicas += updatedReplicas;
+        }
+        return new RuntimeContext(specReplicas, readyReplicas, currentReplicas, resourceVersion);
     }
 
     private static List<Endpoint> parsePodsList(JsonObject podsListJson) {
@@ -706,7 +724,7 @@ class KubernetesClient {
                     + latestRuntimeContext);
             clusterTopologyIntentTracker.update(UNKNOWN,
                     latestRuntimeContext.getDesiredNumberOfMembers(),
-                    latestRuntimeContext.getReadyReplicas());
+                    latestRuntimeContext.getReadyReplicas(), latestRuntimeContext.getCurrentReplicas());
             while (true) {
                 if (Thread.interrupted()) {
                     break;
@@ -748,7 +766,8 @@ class KubernetesClient {
                 case "DELETED":
                     ctx = extractSts(sts);
                     latestResourceVersion = ctx.getResourceVersion();
-                    ctx = new RuntimeContext(0, ctx.getReadyReplicas(), ctx.getResourceVersion());
+                    ctx = new RuntimeContext(0, ctx.getReadyReplicas(),
+                            ctx.getCurrentReplicas(), ctx.getResourceVersion());
                     break;
                 case "ADDED":
                     throw new IllegalStateException("A new sts with same name as this cannot be added");
@@ -759,7 +778,7 @@ class KubernetesClient {
                 LOGGER.info("Updating cluster topology tracker with previous: "
                     + latestRuntimeContext + ", updated: " + ctx);
                 clusterTopologyIntentTracker.update(latestRuntimeContext.getDesiredNumberOfMembers(),
-                        ctx.getDesiredNumberOfMembers(), ctx.getReadyReplicas());
+                        ctx.getDesiredNumberOfMembers(), ctx.getReadyReplicas(), ctx.getCurrentReplicas());
             }
             latestRuntimeContext = ctx;
         }

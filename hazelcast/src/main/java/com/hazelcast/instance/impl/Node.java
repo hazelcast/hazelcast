@@ -29,6 +29,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.EndpointConfig;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ListenerConfig;
 import com.hazelcast.config.MemberAttributeConfig;
@@ -114,6 +115,7 @@ import java.util.Properties;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -137,6 +139,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.DISCOVERY_SPI_PUBLIC_
 import static com.hazelcast.spi.properties.ClusterProperty.GRACEFUL_SHUTDOWN_MAX_WAIT;
 import static com.hazelcast.spi.properties.ClusterProperty.LOGGING_ENABLE_DETAILS;
 import static com.hazelcast.spi.properties.ClusterProperty.LOGGING_TYPE;
+import static com.hazelcast.spi.properties.ClusterProperty.PERSISTENCE_AUTO_CLUSTER_STATE_STRATEGY;
 import static com.hazelcast.spi.properties.ClusterProperty.SHUTDOWNHOOK_ENABLED;
 import static com.hazelcast.spi.properties.ClusterProperty.SHUTDOWNHOOK_POLICY;
 import static java.lang.Thread.currentThread;
@@ -186,6 +189,10 @@ public class Node implements ClusterTopologyIntentTracker {
     private final LocalAddressRegistry localAddressRegistry;
     private final AtomicReference<ClusterTopologyIntent> clusterTopologyIntent =
             new AtomicReference<>(ClusterTopologyIntent.NOT_IN_MANAGED_CONTEXT);
+    // single-threaded executor for actions in response to cluster topology intent changes
+    private final ExecutorService clusterTopologyExecutor;
+    // applies when automatic cluster state management is enabled (with persistence in kubernetes)
+    private final ClusterState clusterStateForMissingMembers;
     private ManagementCenterService managementCenterService;
 
     // it can be changed on cluster service reset see: ClusterServiceImpl#resetLocalMemberUuid
@@ -213,6 +220,11 @@ public class Node implements ClusterTopologyIntentTracker {
         // Version can be overridden via system property. That's why BuildInfo should be parsed for each Node.
         this.buildInfo = BuildInfoProvider.getBuildInfo();
         this.version = MemberVersion.of(buildInfo.getVersion());
+        this.clusterStateForMissingMembers = properties.getEnum(PERSISTENCE_AUTO_CLUSTER_STATE_STRATEGY, ClusterState.class);
+        if (clusterStateForMissingMembers != ClusterState.FROZEN || clusterStateForMissingMembers != ClusterState.NO_MIGRATION) {
+            throw new InvalidConfigurationException("Value of property " + PERSISTENCE_AUTO_CLUSTER_STATE_STRATEGY.getName()
+                    + " was " + clusterStateForMissingMembers + " but should be one of FROZEN, NO_MIGRATION.");
+        }
 
         String loggingType = properties.getString(LOGGING_TYPE);
         boolean detailsEnabled = properties.getBoolean(LOGGING_ENABLE_DETAILS);
@@ -282,6 +294,7 @@ public class Node implements ClusterTopologyIntentTracker {
             textCommandService = nodeExtension.createTextCommandService();
             multicastService = createMulticastService(addressPicker.getBindAddress(MEMBER), this, config, logger);
             joiner = nodeContext.createJoiner(this);
+            clusterTopologyExecutor = Executors.newSingleThreadExecutor();
         } catch (Throwable e) {
             try {
                 if (tmpLogger == null) {
@@ -340,7 +353,7 @@ public class Node implements ClusterTopologyIntentTracker {
         ILogger logger = getLogger(DiscoveryService.class);
 
         final Map attributes = new HashMap<>(localMember.getAttributes());
-        if (properties.getBoolean(ClusterProperty.PERSISTENCE_SHUTDOWN_INTENT)
+        if (properties.getBoolean(ClusterProperty.PERSISTENCE_AUTO_CLUSTER_STATE)
             && config.getPersistenceConfig().isEnabled()) {
             attributes.put(DISCOVERY_PROPERTY_THIS_NODE, this);
         }
@@ -639,6 +652,9 @@ public class Node implements ClusterTopologyIntentTracker {
         if (healthMonitor != null) {
             healthMonitor.stop();
         }
+        if (clusterTopologyExecutor != null) {
+            clusterTopologyExecutor.shutdown();
+        }
     }
 
     private void mergeEnvironmentProvidedMemberMetadata() {
@@ -788,7 +804,8 @@ public class Node implements ClusterTopologyIntentTracker {
                 }
                 final ClusterTopologyIntent shutdownIntent = clusterTopologyIntent.get();
                 if (getNodeExtension().getInternalHotRestartService().isEnabled()
-                        && shutdownIntent != ClusterTopologyIntent.UNKNOWN) {
+                        && shutdownIntent != ClusterTopologyIntent.UNKNOWN
+                        && shutdownIntent != ClusterTopologyIntent.NOT_IN_MANAGED_CONTEXT) {
                     final ClusterState clusterState = clusterService.getClusterState();
                     logger.info("Running shutdown hook... Current node state: " + state
                                 + ", detected shutdown intent: " + shutdownIntent
@@ -814,15 +831,23 @@ public class Node implements ClusterTopologyIntentTracker {
 
         private void shutdownWithIntent(ClusterTopologyIntent shutdownIntent) {
             // consider the detected shutdown intent before triggering node shutdown
-            if (shutdownIntent == ClusterTopologyIntent.STABLE) {
+            if (shutdownIntent == ClusterTopologyIntent.STABLE
+                || shutdownIntent == ClusterTopologyIntent.MISSING_MEMBERS) {
                 try {
-                    changeClusterState(ClusterState.FROZEN);
+                    long timeoutNanos = getProperties().getNanos(ClusterProperty.CLUSTER_SHUTDOWN_TIMEOUT_SECONDS);
+                    while (!nodeEngine.getPartitionService().isPartitionTableHealthy()
+                            && timeoutNanos > 0) {
+                        sleep(TimeUnit.SECONDS.toMillis(1));
+                        timeoutNanos -= TimeUnit.SECONDS.toNanos(1);
+                    }
+                    changeClusterState(clusterStateForMissingMembers);
                 } catch (Throwable t) {
                     // let shutdown proceed even though we failed to switch to FROZEN state
                     logger.warning("Could not switch to transient FROZEN state while cluster"
                             + "shutdown intent was " + shutdownIntent, t);
                 }
-            } else if (shutdownIntent == ClusterTopologyIntent.CLUSTER_SHUTDOWN) {
+            } else if (shutdownIntent == ClusterTopologyIntent.CLUSTER_SHUTDOWN
+                    || shutdownIntent == ClusterTopologyIntent.CLUSTER_SHUTDOWN_WITH_MISSING_MEMBERS) {
                 try {
                     changeClusterState(ClusterState.PASSIVE);
                 } catch (Throwable t) {
@@ -844,6 +869,16 @@ public class Node implements ClusterTopologyIntentTracker {
 
     public ClusterTopologyIntent getClusterTopologyIntent() {
         return clusterTopologyIntent.get();
+    }
+
+    public void initializeClusterTopologyIntent(ClusterTopologyIntent clusterTopologyIntent) {
+        ClusterTopologyIntent current = this.clusterTopologyIntent.get();
+        logger.info("Current node cluster topology intent is " + current);
+        // if not UNKNOWN, then it was already initialized
+        if (current == ClusterTopologyIntent.UNKNOWN) {
+            logger.info("Initializing this node's cluster topology to " + clusterTopologyIntent);
+            this.clusterTopologyIntent.set(clusterTopologyIntent);
+        }
     }
 
     public SplitBrainJoinMessage createSplitBrainJoinMessage() {
@@ -1002,7 +1037,7 @@ public class Node implements ClusterTopologyIntentTracker {
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     @Override
     public void update(int previousClusterSpecSize, int currentClusterSpecSize,
-                       int readyNodesCount) {
+                       int readyNodesCount, int currentNodesCount) {
         if (previousClusterSpecSize == UNKNOWN) {
             if (currentClusterSpecSize > 0
                     && (readyNodesCount == UNKNOWN || readyNodesCount == 0)) {
@@ -1016,9 +1051,12 @@ public class Node implements ClusterTopologyIntentTracker {
             return;
         }
         final ClusterTopologyIntent previous = clusterTopologyIntent.get();
-        ClusterTopologyIntent newTopologyIntent = null;
+        ClusterTopologyIntent newTopologyIntent;
         if (currentClusterSpecSize == 0) {
-            newTopologyIntent = ClusterTopologyIntent.CLUSTER_SHUTDOWN;
+            newTopologyIntent = previous == ClusterTopologyIntent.MISSING_MEMBERS
+                        || previous == ClusterTopologyIntent.CLUSTER_SHUTDOWN_WITH_MISSING_MEMBERS
+                    ? ClusterTopologyIntent.CLUSTER_SHUTDOWN_WITH_MISSING_MEMBERS
+                    : ClusterTopologyIntent.CLUSTER_SHUTDOWN;
         } else if (previousClusterSpecSize == currentClusterSpecSize) {
             if (previous == ClusterTopologyIntent.SCALING
                 || previous == ClusterTopologyIntent.UNKNOWN) {
@@ -1036,15 +1074,35 @@ public class Node implements ClusterTopologyIntentTracker {
                         + readyNodesCount + " is less than required by spec and cluster is still starting");
                 return;
             }
-            newTopologyIntent = ClusterTopologyIntent.STABLE;
+            newTopologyIntent = (readyNodesCount < currentClusterSpecSize) || (currentNodesCount < currentClusterSpecSize)
+                ? ClusterTopologyIntent.MISSING_MEMBERS : ClusterTopologyIntent.STABLE;
         } else {
             newTopologyIntent = ClusterTopologyIntent.SCALING;
         }
         if (clusterTopologyIntent.compareAndSet(previous, newTopologyIntent)) {
-            logger.info("Cluster topology intent: " + previous + "-> " + newTopologyIntent);
-            if (isMaster() && newTopologyIntent == ClusterTopologyIntent.SCALING) {
-                changeClusterState(ClusterState.ACTIVE);
-            }
+            logger.info("Cluster topology intent: " + previous + " -> " + newTopologyIntent);
+            clusterTopologyExecutor.submit(() -> {
+                nodeExtension.getInternalHotRestartService().onClusterTopologyIntentChange();
+                if (!isMaster()) {
+                    return;
+                }
+                if (newTopologyIntent == ClusterTopologyIntent.SCALING) {
+                    changeClusterState(ClusterState.ACTIVE);
+                } else if (newTopologyIntent == ClusterTopologyIntent.STABLE) {
+                    if (clusterService.getClusterState() != ClusterState.ACTIVE) {
+                        executeOrScheduleClusterStateChange(ClusterState.ACTIVE);
+                    } else if (!partitionService.isPartitionTableHealthy()) {
+                        partitionService.getMigrationManager().triggerControlTask();
+                    }
+                }
+            });
+        }
+    }
+
+    private void executeOrScheduleClusterStateChange(ClusterState newClusterState) {
+        if (!getNodeExtension().getInternalHotRestartService().setDeferredClusterState(newClusterState)) {
+            // hot restart recovery is completed, just apply the new cluster state here
+            changeClusterState(newClusterState);
         }
     }
 

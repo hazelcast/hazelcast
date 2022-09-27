@@ -16,6 +16,7 @@
 
 package com.hazelcast.spi.properties;
 
+import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
@@ -1801,8 +1802,18 @@ public final class ClusterProperty {
      *
      * @since 5.2
      */
-    public static final HazelcastProperty PERSISTENCE_SHUTDOWN_INTENT = new HazelcastProperty(
-            "hazelcast.persistence.shutdown.intent", true);
+    public static final HazelcastProperty PERSISTENCE_AUTO_CLUSTER_STATE = new HazelcastProperty(
+            "hazelcast.persistence.auto.cluster.state", true);
+
+    /**
+     * Select which cluster state to use when dealing with missing members in a managed runtime environment.
+     * Used when {@link #PERSISTENCE_AUTO_CLUSTER_STATE} and persistence are both enabled.
+     * Valid values are {@code FROZEN} or {@code NO_MIGRATION}.
+     *
+     * @since 5.2
+     */
+    public static final HazelcastProperty PERSISTENCE_AUTO_CLUSTER_STATE_STRATEGY = new HazelcastProperty(
+            "hazelcast.persistence.auto.cluster.state.strategy", ClusterState.NO_MIGRATION);
 
     private ClusterProperty() {
     }

@@ -971,6 +971,11 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     }
 
     @Override
+    public boolean isPartitionTableHealthy() {
+        return partitionReplicaStateChecker.getPartitionTableState() == PartitionServiceState.SAFE;
+    }
+
+    @Override
     public boolean hasOnGoingMigration() {
         return hasOnGoingMigrationLocal()
                 || (!isLocalMemberMaster() && partitionReplicaStateChecker.hasOnGoingMigrationMaster(Level.FINEST));

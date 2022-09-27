@@ -163,6 +163,8 @@ public interface IPartitionService extends CoreService {
      */
     boolean isMemberStateSafe();
 
+    boolean isPartitionTableHealthy();
+
     /**
      * Returns maximum allowed backup count according to current
      * cluster formation and partition group configuration.

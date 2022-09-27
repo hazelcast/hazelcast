@@ -50,8 +50,10 @@ public interface ClusterTopologyIntentTracker {
      * @param previousClusterSpecSize   previously requested cluster size
      * @param currentClusterSpecSize    currently requested cluster size
      * @param readyNodesCount           number of members that currently ready and participate in the cluster.
+     * @param currentNodesCount
      *
      * @see NodeExtension#isReady()
      */
-    void update(int previousClusterSpecSize, int currentClusterSpecSize, int readyNodesCount);
+    void update(int previousClusterSpecSize, int currentClusterSpecSize, int readyNodesCount,
+                int currentNodesCount);
 }

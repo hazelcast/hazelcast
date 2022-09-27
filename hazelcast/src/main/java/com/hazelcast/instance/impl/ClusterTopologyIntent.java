@@ -30,6 +30,11 @@ public enum ClusterTopologyIntent {
      */
     STABLE,
     /**
+     * No change to the number of Hazelcast members in the cluster is intended,
+     * but some members are missing from the cluster
+     */
+    MISSING_MEMBERS,
+    /**
      * Full cluster shutdown is intended
      */
     CLUSTER_SHUTDOWN,
@@ -37,6 +42,11 @@ public enum ClusterTopologyIntent {
      * Cluster is starting up
      */
     CLUSTER_START,
+    /**
+     * Cluster is shutting down, but had some missing members before
+     * cluster-wide shutdown.
+     */
+    CLUSTER_SHUTDOWN_WITH_MISSING_MEMBERS,
     /**
      * Hazelcast cluster is being scaled up or down
      */
