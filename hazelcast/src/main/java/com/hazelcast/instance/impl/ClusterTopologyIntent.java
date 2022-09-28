@@ -16,6 +16,12 @@
 
 package com.hazelcast.instance.impl;
 
+/**
+ * This class represents the estimated intent of topology changes
+ * performed in a managed runtime context (kubernetes) that may affect the cluster.
+ *
+ * @see ClusterTopologyIntentTracker *
+ */
 public enum ClusterTopologyIntent {
     /**
      * Hazelcast is not deployed in a managed context

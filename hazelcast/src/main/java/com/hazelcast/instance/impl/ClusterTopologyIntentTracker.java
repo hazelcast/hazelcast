@@ -16,6 +16,11 @@
 
 package com.hazelcast.instance.impl;
 
+/**
+ * Receives updates about the context in which Hazelcast is executed
+ * in order to detect what is the intent of topology changes from the
+ * runtime environment that may affect how the Hazelcast cluster should react.
+ */
 public interface ClusterTopologyIntentTracker {
 
     int UNKNOWN = -1;
@@ -56,4 +61,16 @@ public interface ClusterTopologyIntentTracker {
      */
     void update(int previousClusterSpecSize, int currentClusterSpecSize, int readyNodesCount,
                 int currentNodesCount);
+
+    ClusterTopologyIntent getClusterTopologyIntent();
+
+    void initializeClusterTopologyIntent(ClusterTopologyIntent clusterTopologyIntent);
+
+    void shutdownWithIntent(ClusterTopologyIntent clusterTopologyIntent);
+
+    boolean isEnabled();
+
+    int getCurrentClusterSpecSize();
+
+    void setCurrentClusterSpecSize(int currentClusterSpecSize);
 }
