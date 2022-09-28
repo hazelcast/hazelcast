@@ -16,12 +16,12 @@
 
 package com.hazelcast.internal.hotrestart;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.HotRestartPersistenceConfig;
-import com.hazelcast.instance.impl.ClusterTopologyState;
+import com.hazelcast.instance.impl.ClusterTopologyIntent;
 import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 
 import java.util.Set;
@@ -156,7 +156,7 @@ public interface InternalHotRestartService {
      */
     void deferPostJoinOps(OnJoinOp postJoinOp);
 
-    void setClusterTopologyStateOnMaster(ClusterTopologyState clusterTopologyState);
+    void setClusterTopologyIntentOnMaster(ClusterTopologyIntent clusterTopologyIntent);
 
     boolean isStartingFromPersistence();
 
