@@ -71,6 +71,12 @@ public class MapScanMigrationStressTest extends JetTestSupport {
     }
 
     private static Config createFastRetryConfig() {
+        // The stress test should end in 10 minutes, the mutator thread is replacing additional member every 2 seconds,
+        // the migration tasks may last up to 5 seconds. The retrying mechanism implemented in Invocation.handleRetry uses
+        // progressive retry delay (next delay is twice as long as previous one). The maximum delay time is configured with
+        // hazelcast.invocation.retry.pause.millis property with 500ms default. If during test the retry delay goes up to that
+        // 500ms, we retry operation just twice a second. This may cause the test fails with timeout. To give the
+        // MapFetchIndexOperation better chance to succeed we decrease the maximum delay time.
         return smallInstanceConfig()
                 .setProperty("hazelcast.invocation.retry.pause.millis", "10");
     }
