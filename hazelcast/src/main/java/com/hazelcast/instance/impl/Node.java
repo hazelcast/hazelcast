@@ -221,7 +221,7 @@ public class Node implements ClusterTopologyIntentTracker {
         this.buildInfo = BuildInfoProvider.getBuildInfo();
         this.version = MemberVersion.of(buildInfo.getVersion());
         this.clusterStateForMissingMembers = properties.getEnum(PERSISTENCE_AUTO_CLUSTER_STATE_STRATEGY, ClusterState.class);
-        if (clusterStateForMissingMembers != ClusterState.FROZEN || clusterStateForMissingMembers != ClusterState.NO_MIGRATION) {
+        if (clusterStateForMissingMembers != ClusterState.FROZEN && clusterStateForMissingMembers != ClusterState.NO_MIGRATION) {
             throw new InvalidConfigurationException("Value of property " + PERSISTENCE_AUTO_CLUSTER_STATE_STRATEGY.getName()
                     + " was " + clusterStateForMissingMembers + " but should be one of FROZEN, NO_MIGRATION.");
         }
