@@ -3,9 +3,7 @@ package com.hazelcast.tpc.engine.iouring;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.tpc.engine.AsyncFile;
 import com.hazelcast.tpc.engine.iouring.IOUringEventloop.IOUringConfiguration;
-import io.netty.channel.unix.Buffer;
 
-import java.nio.ByteBuffer;
 import java.nio.file.FileSystems;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,11 +11,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.BiConsumer;
-
-import static com.hazelcast.tpc.engine.AsyncFile.pageSize;
-import static com.hazelcast.tpc.util.Util.toPageAlignedAddress;
 
 public class AsyncFileNopBenchmark {
 
@@ -49,14 +43,14 @@ public class AsyncFileNopBenchmark {
         long sequentialOperations = operations / concurrency;
 
         CountDownLatch latch = new CountDownLatch(concurrency);
-        eventloop.execute(() -> {
+        eventloop.offer(() -> {
             for (int k = 0; k < concurrency; k++) {
                 NopLoop loop = new NopLoop();
                 loop.latch = latch;
                 loop.sequentialOperations = sequentialOperations;
                 loop.eventloop = eventloop;
                 loop.file = files.get(k % files.size());
-                eventloop.execute(loop);
+                eventloop.offer(loop);
             }
         });
 
@@ -68,7 +62,7 @@ public class AsyncFileNopBenchmark {
 
     private static AsyncFile initFile(IOUringEventloop eventloop, String dir) throws ExecutionException, InterruptedException {
         CompletableFuture<AsyncFile> initFuture = new CompletableFuture<>();
-        eventloop.execute(() -> {
+        eventloop.offer(() -> {
             AsyncFile file = eventloop.unsafe().newAsyncFile(randomTmpFile(dir));
             file.open(openFlags)
                     .then((o, o2) -> file.fallocate(0, 0, 100 * 1024 * AsyncFile.pageSize())
@@ -104,7 +98,7 @@ public class AsyncFileNopBenchmark {
                 System.exit(1);
             }
 
-            eventloop.execute(this);
+            eventloop.offer(this);
         }
     }
 

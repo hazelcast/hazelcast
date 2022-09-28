@@ -341,7 +341,7 @@ public final class TPCOperationExecutor implements OperationExecutor, StaticMetr
         } else {
             Eventloop eventloop = engine.eventloop(toPartitionThreadIndex(partitionId));
 
-            eventloop.execute(() -> {
+            eventloop.offer(() -> {
                 try {
                     OperationRunner runner = partitionOperationRunners[partitionId];
                     if (task instanceof Operation) {
@@ -367,7 +367,7 @@ public final class TPCOperationExecutor implements OperationExecutor, StaticMetr
 
         for (int k = 0; k < engine.eventloopCount(); k++) {
             Eventloop eventloop = engine.eventloop(k);
-            eventloop.execute(task);
+            eventloop.offer(task);
         }
     }
 

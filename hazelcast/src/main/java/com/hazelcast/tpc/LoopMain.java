@@ -20,8 +20,6 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.tpc.engine.Eventloop;
 import com.hazelcast.tpc.engine.nio.NioEventloop;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.function.BiConsumer;
 
 public class LoopMain {
@@ -30,7 +28,7 @@ public class LoopMain {
         Eventloop eventloop = new NioEventloop();
         eventloop.start();
 
-        eventloop.execute(() -> eventloop.unsafe().loop(new FunctionEx<>() {
+        eventloop.offer(() -> eventloop.unsafe().loop(new FunctionEx<>() {
             int x = 0;
 
             @Override

@@ -17,12 +17,10 @@
 package com.hazelcast.tpc.engine.nio;
 
 import com.hazelcast.tpc.engine.AsyncServerSocket;
-import com.hazelcast.tpc.engine.Eventloop;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketAddress;
-import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
@@ -145,7 +143,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     public void accept(Consumer<NioAsyncSocket> consumer) {
-        eventloop.execute(() -> {
+        eventloop.offer(() -> {
             try {
                 serverSocketChannel.register(selector, OP_ACCEPT, new EventloopHandler(consumer));
 

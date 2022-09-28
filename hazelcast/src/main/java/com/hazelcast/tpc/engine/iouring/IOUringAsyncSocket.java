@@ -213,7 +213,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
         IOUringEventloop eventloop = (IOUringEventloop) l;
         this.eventloop = eventloop;
         this.eventloopThread = eventloop.eventloopThread();
-        this.eventloop.execute(() -> {
+        this.eventloop.offer(() -> {
             ByteBuf iovArrayBuffer = eventloop.iovArrayBufferAllocator.directBuffer(1024 * IovArray.IOV_SIZE);
             iovArray = new IovArray(iovArrayBuffer);
             sq = eventloop.sq;
@@ -233,7 +233,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
             if (currentThread == eventloopThread) {
                 eventloop.localRunQueue.add(eventloopHandler);
             } else {
-                eventloop.execute(eventloopHandler);
+                eventloop.offer(eventloopHandler);
             }
         }
     }
@@ -249,7 +249,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
 
         if (!unflushedBufs.isEmpty()) {
             if (flushThread.compareAndSet(null, Thread.currentThread())) {
-                eventloop.execute(eventloopHandler);
+                eventloop.offer(eventloopHandler);
             }
         }
     }
@@ -352,7 +352,7 @@ public final class IOUringAsyncSocket extends AsyncSocket {
                     logger.info("Connected from " + localAddress + "->" + remoteAddress);
                 }
 
-                eventloop.execute(() -> sq_addRead());
+                eventloop.offer(() -> sq_addRead());
 
                 future.complete(this);
             } else {

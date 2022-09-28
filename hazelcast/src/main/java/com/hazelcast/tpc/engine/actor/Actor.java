@@ -84,7 +84,7 @@ public abstract class Actor implements Runnable {
         mailbox.offer(msg);
 
         if (!scheduled.get() && scheduled.compareAndSet(false, true)) {
-            eventloop.execute(this);
+            eventloop.offer(this);
         }
     }
 
@@ -111,10 +111,10 @@ public abstract class Actor implements Runnable {
             }
 
             if (scheduled.compareAndSet(false, true)) {
-                eventloop.execute(this);
+                eventloop.offer(this);
             }
         } else {
-            eventloop.execute(this);
+            eventloop.offer(this);
         }
     }
 

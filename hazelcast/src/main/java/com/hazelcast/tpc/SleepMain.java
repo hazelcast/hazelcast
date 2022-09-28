@@ -27,7 +27,7 @@ public class SleepMain {
         Eventloop eventloop = new NioEventloop();
         eventloop.start();
 
-        eventloop.execute(() -> {
+        eventloop.offer(() -> {
             eventloop.unsafe().sleep(10, SECONDS).then((o, o2) -> {
                 System.out.println("Slept 10");
             });

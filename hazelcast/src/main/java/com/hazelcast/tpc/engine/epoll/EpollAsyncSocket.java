@@ -215,7 +215,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
             throw new IllegalStateException("Can't activate socket, eventloop is not running");
         }
 
-        eventloop.execute(() -> {
+        eventloop.offer(() -> {
             //selector = eventloop.selector;
             receiveBuffer = ByteBuffer.allocateDirect(receiveBufferSize());
 
@@ -257,7 +257,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
             } else if (writeThrough) {
                 eventLoopHandler.run();
             } else {
-                eventloop.execute(eventLoopHandler);
+                eventloop.offer(eventLoopHandler);
             }
         }
     }
@@ -267,7 +267,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
 
         if (!unflushedBufs.isEmpty()) {
             if (flushThread.compareAndSet(null, Thread.currentThread())) {
-                eventloop.execute(eventLoopHandler);
+                eventloop.offer(eventLoopHandler);
             }
         }
     }
@@ -350,7 +350,7 @@ public final class EpollAsyncSocket extends AsyncSocket {
             if (!socket.connect(address)) {
                 future.completeExceptionally(new RuntimeException("Failed to connect to " + address));
             } else {
-                eventloop.execute(() -> {
+                eventloop.offer(() -> {
                     try {
 
                         if (!eventloop.registerResource(EpollAsyncSocket.this)) {

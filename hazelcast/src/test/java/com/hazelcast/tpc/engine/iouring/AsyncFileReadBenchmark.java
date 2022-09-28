@@ -46,7 +46,7 @@ public class AsyncFileReadBenchmark {
         long sequentialOperations = operations / concurrency;
 
         CountDownLatch latch = new CountDownLatch(concurrency);
-        eventloop.execute(new Runnable() {
+        eventloop.offer(new Runnable() {
             @Override
             public void run() {
                 for (int k = 0; k < concurrency; k++) {
@@ -55,7 +55,7 @@ public class AsyncFileReadBenchmark {
                     loop.file = files.get(k % files.size());
                     loop.sequentialOperations = sequentialOperations;
                     loop.eventloop = eventloop;
-                    eventloop.execute(loop);
+                    eventloop.offer(loop);
                 }
             }
         });
@@ -70,7 +70,7 @@ public class AsyncFileReadBenchmark {
 
     private static AsyncFile initFile(IOUringEventloop eventloop, String path) throws ExecutionException, InterruptedException {
         CompletableFuture<AsyncFile> initFuture = new CompletableFuture<>();
-        eventloop.execute(() -> {
+        eventloop.offer(() -> {
             AsyncFile file = eventloop.unsafe().newAsyncFile(path);
             file.open(openFlags).then(new BiConsumer() {
                 @Override
@@ -113,7 +113,7 @@ public class AsyncFileReadBenchmark {
                 System.exit(1);
             }
 
-            eventloop.execute(this);
+            eventloop.offer(this);
         }
     }
 

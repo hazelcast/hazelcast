@@ -237,7 +237,7 @@ public final class NioAsyncSocket extends AsyncSocket {
             throw new IllegalStateException("Can't activate NioAsynSocket, eventloop not active");
         }
 
-        eventloop.execute(() -> {
+        eventloop.offer(() -> {
             selector = eventloop.selector;
             receiveBuffer = ByteBuffer.allocateDirect(receiveBufferSize());
 
@@ -260,7 +260,7 @@ public final class NioAsyncSocket extends AsyncSocket {
             } else if (writeThrough) {
                 eventLoopHandler.run();
             } else if (regularSchedule) {
-                eventloop.execute(eventLoopHandler);
+                eventloop.offer(eventLoopHandler);
             } else {
                 key.interestOps(key.interestOps() | OP_WRITE);
                 eventloop.wakeup();
@@ -273,7 +273,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
         if (!unflushedBufs.isEmpty()) {
             if (flushThread.compareAndSet(null, Thread.currentThread())) {
-                eventloop.execute(eventLoopHandler);
+                eventloop.offer(eventLoopHandler);
             }
         }
     }
@@ -347,7 +347,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         }
 
         CompletableFuture<AsyncSocket> future = new CompletableFuture<>();
-        eventloop.execute(() -> {
+        eventloop.offer(() -> {
             try {
                 key = socketChannel.register(selector, OP_CONNECT, eventLoopHandler);
                 connectFuture = future;

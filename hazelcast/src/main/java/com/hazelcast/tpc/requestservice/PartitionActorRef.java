@@ -25,10 +25,7 @@ import com.hazelcast.tpc.engine.Eventloop;
 import com.hazelcast.tpc.engine.actor.ActorRef;
 import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 
-import java.util.concurrent.CompletableFuture;
-
 import static com.hazelcast.internal.util.HashUtil.hashToIndex;
-import static com.hazelcast.tpc.requestservice.FrameCodec.OFFSET_REQ_CALL_ID;
 
 /**
  * An {@link ActorRef} that routes messages to the {@link PartitionActor}.
@@ -69,7 +66,7 @@ public final class PartitionActorRef extends ActorRef<IOBuffer> {
         Address address = partitionService.getPartitionOwner(partitionId);
         if (address.equals(thisAddress)) {
             //TODO: deal with return value
-            eventloop.execute(request);
+            eventloop.offer(request);
         } else {
             // todo: this should in theory not be needed. We could use the last
             // address and only in case of a redirect, we update.

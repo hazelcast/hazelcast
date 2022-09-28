@@ -25,6 +25,7 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 import com.hazelcast.tpc.util.CircularQueue;
 import org.jctools.queues.MpmcArrayQueue;
+import org.jetbrains.annotations.NotNull;
 
 import java.io.Closeable;
 import java.util.BitSet;
@@ -37,6 +38,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Executor;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -58,7 +61,7 @@ import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater
  * <p>
  * A single eventloop can deal with many server ports.
  */
-public abstract class Eventloop {
+public abstract class Eventloop implements Executor {
 
     private static final Runnable SHUTDOWN_TASK = () -> {
     };
@@ -311,14 +314,22 @@ public abstract class Eventloop {
         return resources;
     }
 
+    @Override
+    public void execute(Runnable command) {
+        if (!offer(command)) {
+            throw new RejectedExecutionException("Task " + command.toString() +
+                    " rejected from " + toString());
+        }
+    }
+
     /**
-     * Executes an EventloopTask on this Eventloop.
+     * Offers a task to be executed on this Eventloop.
      *
      * @param task the task to execute.
      * @return true if the task was accepted, false otherwise.
      * @throws NullPointerException if task is null.
      */
-    public final boolean execute(Runnable task) {
+    public final boolean offer(Runnable task) {
         if (Thread.currentThread() == eventloopThread) {
             return localRunQueue.offer(task);
         } else if (concurrentRunQueue.offer(task)) {
@@ -330,14 +341,16 @@ public abstract class Eventloop {
     }
 
     /**
-     * Executes a request on this eventloop.
+     * Offers a IOBuffer to be processed by this Eventloop.
      *
-     * @param request the request to execute.
-     * @return true if the task was accepted, false otherwise.
-     * @throws NullPointerException if request is null.
+     * @param buff the buffer to process.
+     * @return true if the buffer was accepted, false otherwise.
+     * @throws NullPointerException if buff is null.
      */
-    public final boolean execute(IOBuffer request) {
-        if (concurrentRunQueue.offer(request)) {
+    public final boolean offer(IOBuffer buff) {
+        //todo: Don't want to add localRunQueue optimization like the offer(Runnable)?
+
+        if (concurrentRunQueue.offer(buff)) {
             wakeup();
             return true;
         } else {

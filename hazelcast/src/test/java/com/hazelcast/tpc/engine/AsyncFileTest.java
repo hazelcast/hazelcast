@@ -3,6 +3,7 @@ package com.hazelcast.tpc.engine;
 import io.netty.channel.unix.Buffer;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -68,7 +69,7 @@ public abstract class AsyncFileTest {
                 System.out.println(file.path());
             }
         };
-        eventloop.execute(task);
+        eventloop.offer(task);
 
         assertCompletesEventually(task);
         assertNoProblems(task);
@@ -106,7 +107,7 @@ public abstract class AsyncFileTest {
                 System.out.println(file.path());
             }
         };
-        eventloop.execute(task);
+        eventloop.offer(task);
 
         assertOpenEventually(completed);
     }
@@ -142,7 +143,7 @@ public abstract class AsyncFileTest {
                 });
             }
         };
-        eventloop.execute(task);
+        eventloop.offer(task);
 
         assertCompletesEventually(task);
         assertNoProblems(task);
@@ -180,7 +181,7 @@ public abstract class AsyncFileTest {
                 });
             }
         };
-        eventloop.execute(task);
+        eventloop.offer(task);
 
         assertCompletesEventually(task);
         assertNoProblems(task);

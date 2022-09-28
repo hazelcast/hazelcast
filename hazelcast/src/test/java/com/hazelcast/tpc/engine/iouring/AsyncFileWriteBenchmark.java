@@ -83,7 +83,7 @@ public class AsyncFileWriteBenchmark {
         long sequentialOperations = operationsPerThread / concurrencyPerThread;
 
         CountDownLatch completionLatch = new CountDownLatch(concurrencyPerThread);
-        eventloop.execute(() -> {
+        eventloop.offer(() -> {
             for (int k = 0; k < concurrencyPerThread; k++) {
                 PWriteLoop loop = new PWriteLoop();
                 loop.latch = completionLatch;
@@ -91,7 +91,7 @@ public class AsyncFileWriteBenchmark {
                 loop.sequentialOperations = sequentialOperations;
                 loop.eventloop = eventloop;
                 loop.file = files.get(k % files.size());
-                eventloop.execute(loop);
+                eventloop.offer(loop);
             }
         });
 
@@ -100,7 +100,7 @@ public class AsyncFileWriteBenchmark {
 
     private static AsyncFile createFile(IOUringEventloop eventloop, String dir) throws ExecutionException, InterruptedException {
         CompletableFuture<AsyncFile> initFuture = new CompletableFuture<>();
-        eventloop.execute(() -> {
+        eventloop.offer(() -> {
             AsyncFile file = eventloop.unsafe().newAsyncFile(randomTmpFile(dir));
             file.open(openFlags)
                     .then((o, o2) -> file.fallocate(0, 0, 100 * 1024 * AsyncFile.pageSize())
@@ -142,7 +142,7 @@ public class AsyncFileWriteBenchmark {
                 System.exit(1);
             }
 
-            eventloop.execute(this);
+            eventloop.offer(this);
         }
     }
 

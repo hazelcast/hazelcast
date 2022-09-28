@@ -60,7 +60,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
                 throw new IllegalStateException("EventLoop is not running");
             }
 
-            eventloop.execute(() -> {
+            eventloop.offer(() -> {
                 eventloop.completionListeners.put(serverSocket.intValue(), new EventloopHandler());
                 sq = eventloop.sq;
             });
@@ -182,7 +182,7 @@ public final class IOUringAsyncServerSocket extends AsyncServerSocket {
     }
 
     public void accept(Consumer<IOUringAsyncSocket> consumer) {
-        eventloop.execute(() -> {
+        eventloop.offer(() -> {
             this.consumer = consumer;
             sq_addAccept();
             if(logger.isInfoEnabled()) {

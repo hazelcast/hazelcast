@@ -57,7 +57,7 @@ public class EngineTest {
     public void shutdown_whenRunning() throws InterruptedException {
         engine = new Engine();
         engine.start();
-        engine.eventloop(0).execute(() -> {
+        engine.eventloop(0).offer(() -> {
             sleepMillis(1000);
         });
         engine.shutdown();
@@ -70,7 +70,7 @@ public class EngineTest {
     public void shutdown_whenShutdown() throws InterruptedException {
         engine = new Engine();
         engine.start();
-        engine.eventloop(0).execute(() -> {
+        engine.eventloop(0).offer(() -> {
             sleepMillis(1000);
         });
         engine.shutdown();
