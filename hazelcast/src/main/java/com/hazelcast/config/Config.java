@@ -724,7 +724,7 @@ public class Config {
      */
     public MapConfig findMapConfig(String name) {
         name = getBaseName(name);
-        MapConfig config = lookupByPattern(configPatternMatcher, mapConfigs, name);
+        MapConfig config = lookupByPattern(configPatternMatcher, mapConfigs, name, MapConfig.class);
         if (config != null) {
             return new MapConfigReadOnly(config);
         }
@@ -746,7 +746,7 @@ public class Config {
      */
     public MapConfig getMapConfigOrNull(String name) {
         name = getBaseName(name);
-        return lookupByPattern(configPatternMatcher, mapConfigs, name);
+        return lookupByPattern(configPatternMatcher, mapConfigs, name, MapConfig.class);
     }
 
     /**
@@ -842,7 +842,7 @@ public class Config {
      */
     public CacheSimpleConfig findCacheConfig(String name) {
         name = getBaseName(name);
-        final CacheSimpleConfig config = lookupByPattern(configPatternMatcher, cacheConfigs, name);
+        final CacheSimpleConfig config = lookupByPattern(configPatternMatcher, cacheConfigs, name, CacheSimpleConfig.class);
         if (config != null) {
             return new CacheSimpleConfigReadOnly(config);
         }
@@ -864,7 +864,7 @@ public class Config {
      */
     public CacheSimpleConfig findCacheConfigOrNull(String name) {
         name = getBaseName(name);
-        return lookupByPattern(configPatternMatcher, cacheConfigs, name);
+        return lookupByPattern(configPatternMatcher, cacheConfigs, name, CacheSimpleConfig.class);
     }
 
     /**
@@ -962,7 +962,7 @@ public class Config {
      */
     public QueueConfig findQueueConfig(String name) {
         name = getBaseName(name);
-        QueueConfig config = lookupByPattern(configPatternMatcher, queueConfigs, name);
+        QueueConfig config = lookupByPattern(configPatternMatcher, queueConfigs, name, QueueConfig.class);
         if (config != null) {
             return new QueueConfigReadOnly(config);
         }
@@ -1062,7 +1062,7 @@ public class Config {
      */
     public ListConfig findListConfig(String name) {
         name = getBaseName(name);
-        ListConfig config = lookupByPattern(configPatternMatcher, listConfigs, name);
+        ListConfig config = lookupByPattern(configPatternMatcher, listConfigs, name, ListConfig.class);
         if (config != null) {
             return new ListConfigReadOnly(config);
         }
@@ -1162,7 +1162,7 @@ public class Config {
      */
     public SetConfig findSetConfig(String name) {
         name = getBaseName(name);
-        SetConfig config = lookupByPattern(configPatternMatcher, setConfigs, name);
+        SetConfig config = lookupByPattern(configPatternMatcher, setConfigs, name, SetConfig.class);
         if (config != null) {
             return new SetConfigReadOnly(config);
         }
@@ -1262,7 +1262,7 @@ public class Config {
      */
     public MultiMapConfig findMultiMapConfig(String name) {
         name = getBaseName(name);
-        MultiMapConfig config = lookupByPattern(configPatternMatcher, multiMapConfigs, name);
+        MultiMapConfig config = lookupByPattern(configPatternMatcher, multiMapConfigs, name, MultiMapConfig.class);
         if (config != null) {
             return new MultiMapConfigReadOnly(config);
         }
@@ -1362,7 +1362,7 @@ public class Config {
      */
     public ReplicatedMapConfig findReplicatedMapConfig(String name) {
         name = getBaseName(name);
-        ReplicatedMapConfig config = lookupByPattern(configPatternMatcher, replicatedMapConfigs, name);
+        ReplicatedMapConfig config = lookupByPattern(configPatternMatcher, replicatedMapConfigs, name, ReplicatedMapConfig.class);
         if (config != null) {
             return new ReplicatedMapConfigReadOnly(config);
         }
@@ -1463,7 +1463,7 @@ public class Config {
      */
     public RingbufferConfig findRingbufferConfig(String name) {
         name = getBaseName(name);
-        RingbufferConfig config = lookupByPattern(configPatternMatcher, ringbufferConfigs, name);
+        RingbufferConfig config = lookupByPattern(configPatternMatcher, ringbufferConfigs, name, RingbufferConfig.class);
         if (config != null) {
             return new RingbufferConfigReadOnly(config);
         }
@@ -1564,7 +1564,7 @@ public class Config {
      */
     public TopicConfig findTopicConfig(String name) {
         name = getBaseName(name);
-        TopicConfig config = lookupByPattern(configPatternMatcher, topicConfigs, name);
+        TopicConfig config = lookupByPattern(configPatternMatcher, topicConfigs, name, TopicConfig.class);
         if (config != null) {
             return new TopicConfigReadOnly(config);
         }
@@ -1635,7 +1635,7 @@ public class Config {
      */
     public ReliableTopicConfig findReliableTopicConfig(String name) {
         name = getBaseName(name);
-        ReliableTopicConfig config = lookupByPattern(configPatternMatcher, reliableTopicConfigs, name);
+        ReliableTopicConfig config = lookupByPattern(configPatternMatcher, reliableTopicConfigs, name, ReliableTopicConfig.class);
         if (config != null) {
             return new ReliableTopicConfigReadOnly(config);
         }
@@ -1763,7 +1763,7 @@ public class Config {
      */
     public ExecutorConfig findExecutorConfig(String name) {
         name = getBaseName(name);
-        ExecutorConfig config = lookupByPattern(configPatternMatcher, executorConfigs, name);
+        ExecutorConfig config = lookupByPattern(configPatternMatcher, executorConfigs, name, ExecutorConfig.class);
         if (config != null) {
             return new ExecutorConfigReadOnly(config);
         }
@@ -1789,7 +1789,8 @@ public class Config {
      */
     public DurableExecutorConfig findDurableExecutorConfig(String name) {
         name = getBaseName(name);
-        DurableExecutorConfig config = lookupByPattern(configPatternMatcher, durableExecutorConfigs, name);
+        DurableExecutorConfig config = lookupByPattern(configPatternMatcher, durableExecutorConfigs, name,
+                DurableExecutorConfig.class);
         if (config != null) {
             return new DurableExecutorConfigReadOnly(config);
         }
@@ -1815,7 +1816,8 @@ public class Config {
      */
     public ScheduledExecutorConfig findScheduledExecutorConfig(String name) {
         name = getBaseName(name);
-        ScheduledExecutorConfig config = lookupByPattern(configPatternMatcher, scheduledExecutorConfigs, name);
+        ScheduledExecutorConfig config = lookupByPattern(configPatternMatcher, scheduledExecutorConfigs, name,
+                ScheduledExecutorConfig.class);
         if (config != null) {
             return new ScheduledExecutorConfigReadOnly(config);
         }
@@ -1842,7 +1844,8 @@ public class Config {
      */
     public CardinalityEstimatorConfig findCardinalityEstimatorConfig(String name) {
         name = getBaseName(name);
-        CardinalityEstimatorConfig config = lookupByPattern(configPatternMatcher, cardinalityEstimatorConfigs, name);
+        CardinalityEstimatorConfig config = lookupByPattern(configPatternMatcher, cardinalityEstimatorConfigs, name,
+                CardinalityEstimatorConfig.class);
         if (config != null) {
             return new CardinalityEstimatorConfigReadOnly(config);
         }
@@ -1869,7 +1872,7 @@ public class Config {
      */
     public PNCounterConfig findPNCounterConfig(String name) {
         name = getBaseName(name);
-        PNCounterConfig config = lookupByPattern(configPatternMatcher, pnCounterConfigs, name);
+        PNCounterConfig config = lookupByPattern(configPatternMatcher, pnCounterConfigs, name, PNCounterConfig.class);
         if (config != null) {
             return new PNCounterConfigReadOnly(config);
         }
@@ -2358,7 +2361,8 @@ public class Config {
      */
     public SplitBrainProtectionConfig findSplitBrainProtectionConfig(String name) {
         name = getBaseName(name);
-        SplitBrainProtectionConfig config = lookupByPattern(configPatternMatcher, splitBrainProtectionConfigs, name);
+        SplitBrainProtectionConfig config = lookupByPattern(configPatternMatcher, splitBrainProtectionConfigs, name,
+                SplitBrainProtectionConfig.class);
         if (config != null) {
             return config;
         }
@@ -2507,7 +2511,8 @@ public class Config {
      */
     public FlakeIdGeneratorConfig findFlakeIdGeneratorConfig(String name) {
         String baseName = getBaseName(name);
-        FlakeIdGeneratorConfig config = lookupByPattern(configPatternMatcher, flakeIdGeneratorConfigMap, baseName);
+        FlakeIdGeneratorConfig config = lookupByPattern(configPatternMatcher, flakeIdGeneratorConfigMap, baseName,
+                FlakeIdGeneratorConfig.class);
         if (config != null) {
             return config;
         }
@@ -3209,7 +3214,8 @@ public class Config {
     @Beta
     public ExternalDataStoreConfig findExternalDataStoreConfig(String name) {
         name = getBaseName(name);
-        ExternalDataStoreConfig config = lookupByPattern(configPatternMatcher, externalDataStoreConfigs, name);
+        ExternalDataStoreConfig config = lookupByPattern(configPatternMatcher, externalDataStoreConfigs, name,
+                ExternalDataStoreConfig.class);
         if (config != null) {
             return new ExternalDataStoreConfigReadOnly(config);
         }

@@ -62,6 +62,8 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
+import com.hazelcast.internal.config.ConfigUtils;
+import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.config.ExecutorConfigReadOnly;
 import com.hazelcast.internal.config.ExternalDataStoreConfigReadOnly;
 import com.hazelcast.internal.config.FlakeIdGeneratorConfigReadOnly;
@@ -84,6 +86,7 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.File;
 import java.net.URL;
 import java.util.List;
@@ -111,6 +114,13 @@ public class DynamicConfigurationAwareConfig extends Config {
         @Override
         public MapConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
             return staticConfig.getMapConfigOrNull(name);
+        }
+
+        @Nullable
+        @Override
+        public MapConfig lookupByPattern(@Nonnull Config staticConfig,
+                                         @Nonnull ConfigPatternMatcher configPatternMatcher, @Nonnull String name) {
+            return ConfigUtils.lookupByPattern(configPatternMatcher, staticConfig.getMapConfigs(), name, MapConfig.class);
         }
 
         @Override
@@ -254,7 +264,9 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     private MapConfig getMapConfigInternal(String name, String fallbackName) {
-        return (MapConfig) configSearcher.getConfig(name, fallbackName, supplierFor(MapConfig.class));
+        MapConfig mapConfig = (MapConfig) configSearcher.getConfig(name, fallbackName, supplierFor(MapConfig.class));
+        DataPersistenceAndHotRestartMerger.merge(mapConfig.getHotRestartConfig(), mapConfig.getDataPersistenceConfig());
+        return mapConfig;
     }
 
     @Override

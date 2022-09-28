@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -94,5 +95,35 @@ public class ConfigUtilsTest extends HazelcastTestSupport {
         assertEquals(5, newConfig.getBackupCount());
         assertEquals(1, queueConfigs.size());
         assertTrue(queueConfigs.containsKey("newConfig"));
+    }
+
+    @Test
+    public void getConfigMatchingWildcard() {
+        QueueConfig wildcardConfig = new QueueConfig("fivebackups.*");
+        wildcardConfig.setBackupCount(5);
+        queueConfigs.put(wildcardConfig.getName(), wildcardConfig);
+
+        String matchingName = "fivebackups.test";
+        QueueConfig matchingConfig = ConfigUtils.lookupByPattern(configPatternMatcher, queueConfigs,
+                matchingName, QueueConfig.class);
+        assertEquals(5, matchingConfig.getBackupCount());
+        assertEquals(matchingName, matchingConfig.getName());
+        assertTrue(queueConfigs.containsKey(matchingName));
+    }
+
+    @Test
+    public void getConfigMatchingWildcard_whenNoCloneRequested() {
+        QueueConfig wildcardConfig = new QueueConfig("fivebackups.*");
+        wildcardConfig.setBackupCount(5);
+        queueConfigs.put(wildcardConfig.getName(), wildcardConfig);
+
+        String matchingName = "fivebackups.test";
+        QueueConfig matchingConfig = ConfigUtils.lookupByPatternWithoutCloning(configPatternMatcher, queueConfigs,
+                matchingName);
+        assertEquals(5, matchingConfig.getBackupCount());
+        // name was not set
+        assertEquals("fivebackups.*", matchingConfig.getName());
+        // and was not added to config catalog
+        assertFalse(queueConfigs.containsKey(matchingName));
     }
 }

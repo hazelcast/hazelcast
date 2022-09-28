@@ -375,7 +375,7 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public MultiMapConfig findMultiMapConfig(String name) {
-        return lookupByPattern(configPatternMatcher, multiMapConfigs, name);
+        return lookupByPattern(configPatternMatcher, multiMapConfigs, name, MultiMapConfig.class);
     }
 
     @Override
@@ -385,7 +385,7 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public MapConfig findMapConfig(String name) {
-        return lookupByPattern(configPatternMatcher, mapConfigs, name);
+        return lookupByPattern(configPatternMatcher, mapConfigs, name, MapConfig.class);
     }
 
     @Override
@@ -395,7 +395,7 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public TopicConfig findTopicConfig(String name) {
-        return lookupByPattern(configPatternMatcher, topicConfigs, name);
+        return lookupByPattern(configPatternMatcher, topicConfigs, name, TopicConfig.class);
     }
 
     @Override
@@ -405,7 +405,7 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public CardinalityEstimatorConfig findCardinalityEstimatorConfig(String name) {
-        return lookupByPattern(configPatternMatcher, cardinalityEstimatorConfigs, name);
+        return lookupByPattern(configPatternMatcher, cardinalityEstimatorConfigs, name, CardinalityEstimatorConfig.class);
     }
 
     @Override
@@ -415,7 +415,7 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public PNCounterConfig findPNCounterConfig(String name) {
-        return lookupByPattern(configPatternMatcher, pnCounterConfigs, name);
+        return lookupByPattern(configPatternMatcher, pnCounterConfigs, name, PNCounterConfig.class);
     }
 
     @Override
@@ -425,7 +425,7 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public ExecutorConfig findExecutorConfig(String name) {
-        return lookupByPattern(configPatternMatcher, executorConfigs, name);
+        return lookupByPattern(configPatternMatcher, executorConfigs, name, ExecutorConfig.class);
     }
 
     @Override
@@ -435,7 +435,7 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public ScheduledExecutorConfig findScheduledExecutorConfig(String name) {
-        return lookupByPattern(configPatternMatcher, scheduledExecutorConfigs, name);
+        return lookupByPattern(configPatternMatcher, scheduledExecutorConfigs, name, ScheduledExecutorConfig.class);
     }
 
     @Override
@@ -445,7 +445,7 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public DurableExecutorConfig findDurableExecutorConfig(String name) {
-        return lookupByPattern(configPatternMatcher, durableExecutorConfigs, name);
+        return lookupByPattern(configPatternMatcher, durableExecutorConfigs, name, DurableExecutorConfig.class);
     }
 
     @Override
@@ -455,7 +455,7 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public RingbufferConfig findRingbufferConfig(String name) {
-        return lookupByPattern(configPatternMatcher, ringbufferConfigs, name);
+        return lookupByPattern(configPatternMatcher, ringbufferConfigs, name, RingbufferConfig.class);
     }
 
     @Override
@@ -465,7 +465,7 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public ListConfig findListConfig(String name) {
-        return lookupByPattern(configPatternMatcher, listConfigs, name);
+        return lookupByPattern(configPatternMatcher, listConfigs, name, ListConfig.class);
     }
 
     @Override
@@ -475,7 +475,7 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public QueueConfig findQueueConfig(String name) {
-        return lookupByPattern(configPatternMatcher, queueConfigs, name);
+        return lookupByPattern(configPatternMatcher, queueConfigs, name, QueueConfig.class);
     }
 
     @Override
@@ -485,7 +485,7 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public SetConfig findSetConfig(String name) {
-        return lookupByPattern(configPatternMatcher, setConfigs, name);
+        return lookupByPattern(configPatternMatcher, setConfigs, name, SetConfig.class);
     }
 
     @Override
@@ -495,7 +495,7 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public ReplicatedMapConfig findReplicatedMapConfig(String name) {
-        return lookupByPattern(configPatternMatcher, replicatedMapConfigs, name);
+        return lookupByPattern(configPatternMatcher, replicatedMapConfigs, name, ReplicatedMapConfig.class);
     }
 
     @Override
@@ -505,7 +505,7 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public ReliableTopicConfig findReliableTopicConfig(String name) {
-        return lookupByPattern(configPatternMatcher, reliableTopicConfigs, name);
+        return lookupByPattern(configPatternMatcher, reliableTopicConfigs, name, ReliableTopicConfig.class);
     }
 
     @Override
@@ -515,7 +515,7 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public CacheSimpleConfig findCacheSimpleConfig(String name) {
-        return lookupByPattern(configPatternMatcher, cacheSimpleConfigs, name);
+        return lookupByPattern(configPatternMatcher, cacheSimpleConfigs, name, CacheSimpleConfig.class);
     }
 
     @Override
@@ -525,7 +525,7 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public FlakeIdGeneratorConfig findFlakeIdGeneratorConfig(String baseName) {
-        return lookupByPattern(configPatternMatcher, flakeIdGeneratorConfigs, baseName);
+        return lookupByPattern(configPatternMatcher, flakeIdGeneratorConfigs, baseName, FlakeIdGeneratorConfig.class);
     }
 
     @Override
@@ -535,7 +535,7 @@ public class ClusterWideConfigurationService implements
 
     @Override
     public ExternalDataStoreConfig findExternalDataStoreConfig(String baseName) {
-        return lookupByPattern(configPatternMatcher, externalDataStoreConfigs, baseName);
+        return lookupByPattern(configPatternMatcher, externalDataStoreConfigs, baseName, ExternalDataStoreConfig.class);
     }
 
     @Override

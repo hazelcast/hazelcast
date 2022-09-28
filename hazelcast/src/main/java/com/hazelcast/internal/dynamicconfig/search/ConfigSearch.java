@@ -35,6 +35,7 @@ import com.hazelcast.config.RingbufferConfig;
 import com.hazelcast.config.ScheduledExecutorConfig;
 import com.hazelcast.config.SetConfig;
 import com.hazelcast.config.TopicConfig;
+import com.hazelcast.internal.config.ConfigUtils;
 import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -69,6 +70,13 @@ public final class ConfigSearch {
                 return staticConfig.getMapConfig(name);
             }
 
+            @Nullable
+            @Override
+            public MapConfig lookupByPattern(@Nonnull Config staticConfig,
+                                             @Nonnull ConfigPatternMatcher configPatternMatcher, @Nonnull String name) {
+                return ConfigUtils.lookupByPattern(configPatternMatcher, staticConfig.getMapConfigs(), name, MapConfig.class);
+            }
+
             @Override
             public Map<String, MapConfig> getStaticConfigs(@Nonnull Config staticConfig) {
                 return staticConfig.getMapConfigs();
@@ -83,6 +91,14 @@ public final class ConfigSearch {
             @Override
             public CacheSimpleConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
                 return staticConfig.getCacheConfig(name);
+            }
+
+            @Nullable
+            @Override
+            public CacheSimpleConfig lookupByPattern(@Nonnull Config staticConfig,
+                                                     @Nonnull ConfigPatternMatcher configPatternMatcher, @Nonnull String name) {
+                return ConfigUtils.lookupByPattern(configPatternMatcher, staticConfig.getCacheConfigs(),
+                        name, CacheSimpleConfig.class);
             }
 
             @Override
@@ -101,6 +117,14 @@ public final class ConfigSearch {
                 return staticConfig.getQueueConfig(name);
             }
 
+            @Nullable
+            @Override
+            public QueueConfig lookupByPattern(@Nonnull Config staticConfig,
+                                               @Nonnull ConfigPatternMatcher configPatternMatcher, @Nonnull String name) {
+                return ConfigUtils.lookupByPattern(configPatternMatcher, staticConfig.getQueueConfigs(),
+                        name, QueueConfig.class);
+            }
+
             @Override
             public Map<String, QueueConfig> getStaticConfigs(@Nonnull Config staticConfig) {
                 return staticConfig.getQueueConfigs();
@@ -115,6 +139,14 @@ public final class ConfigSearch {
             @Override
             public ListConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
                 return staticConfig.getListConfig(name);
+            }
+
+            @Nullable
+            @Override
+            public ListConfig lookupByPattern(@Nonnull Config staticConfig,
+                                              @Nonnull ConfigPatternMatcher configPatternMatcher, @Nonnull String name) {
+                return ConfigUtils.lookupByPattern(configPatternMatcher, staticConfig.getListConfigs(),
+                        name, ListConfig.class);
             }
 
             @Override
@@ -133,6 +165,14 @@ public final class ConfigSearch {
                 return staticConfig.getSetConfig(name);
             }
 
+            @Nullable
+            @Override
+            public SetConfig lookupByPattern(@Nonnull Config staticConfig,
+                                             @Nonnull ConfigPatternMatcher configPatternMatcher, @Nonnull String name) {
+                return ConfigUtils.lookupByPattern(configPatternMatcher, staticConfig.getSetConfigs(),
+                        name, SetConfig.class);
+            }
+
             @Override
             public Map<String, SetConfig> getStaticConfigs(@Nonnull Config staticConfig) {
                 return staticConfig.getSetConfigs();
@@ -147,6 +187,14 @@ public final class ConfigSearch {
             @Override
             public MultiMapConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
                 return staticConfig.getMultiMapConfig(name);
+            }
+
+            @Nullable
+            @Override
+            public MultiMapConfig lookupByPattern(@Nonnull Config staticConfig,
+                                                  @Nonnull ConfigPatternMatcher configPatternMatcher, @Nonnull String name) {
+                return ConfigUtils.lookupByPattern(configPatternMatcher, staticConfig.getMultiMapConfigs(),
+                        name, MultiMapConfig.class);
             }
 
             @Override
@@ -166,6 +214,14 @@ public final class ConfigSearch {
                 return staticConfig.getReplicatedMapConfig(name);
             }
 
+            @Nullable
+            @Override
+            public ReplicatedMapConfig lookupByPattern(@Nonnull Config staticConfig,
+                                                       @Nonnull ConfigPatternMatcher configPatternMatcher, @Nonnull String name) {
+                return ConfigUtils.lookupByPattern(configPatternMatcher, staticConfig.getReplicatedMapConfigs(),
+                        name, ReplicatedMapConfig.class);
+            }
+
             @Override
             public Map<String, ReplicatedMapConfig> getStaticConfigs(@Nonnull Config staticConfig) {
                 return staticConfig.getReplicatedMapConfigs();
@@ -182,6 +238,14 @@ public final class ConfigSearch {
                 return staticConfig.getRingbufferConfig(name);
             }
 
+            @Nullable
+            @Override
+            public RingbufferConfig lookupByPattern(@Nonnull Config staticConfig,
+                                                    @Nonnull ConfigPatternMatcher configPatternMatcher, @Nonnull String name) {
+                return ConfigUtils.lookupByPattern(configPatternMatcher, staticConfig.getRingbufferConfigs(),
+                        name, RingbufferConfig.class);
+            }
+
             @Override
             public Map<String, RingbufferConfig> getStaticConfigs(@Nonnull Config staticConfig) {
                 return staticConfig.getRingbufferConfigs();
@@ -196,6 +260,14 @@ public final class ConfigSearch {
             @Override
             public TopicConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
                 return staticConfig.getTopicConfig(name);
+            }
+
+            @Nullable
+            @Override
+            public TopicConfig lookupByPattern(@Nonnull Config staticConfig,
+                                               @Nonnull ConfigPatternMatcher configPatternMatcher, @Nonnull String name) {
+                return ConfigUtils.lookupByPattern(configPatternMatcher, staticConfig.getTopicConfigs(),
+                        name, TopicConfig.class);
             }
 
             @Override
@@ -215,6 +287,14 @@ public final class ConfigSearch {
                 return staticConfig.getReliableTopicConfig(name);
             }
 
+            @Nullable
+            @Override
+            public ReliableTopicConfig lookupByPattern(@Nonnull Config staticConfig,
+                                                       @Nonnull ConfigPatternMatcher configPatternMatcher, @Nonnull String name) {
+                return ConfigUtils.lookupByPattern(configPatternMatcher, staticConfig.getReliableTopicConfigs(),
+                        name, ReliableTopicConfig.class);
+            }
+
             @Override
             public Map<String, ReliableTopicConfig> getStaticConfigs(@Nonnull Config staticConfig) {
                 return staticConfig.getReliableTopicConfigs();
@@ -229,6 +309,14 @@ public final class ConfigSearch {
             @Override
             public ExecutorConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
                 return staticConfig.getExecutorConfig(name);
+            }
+
+            @Nullable
+            @Override
+            public ExecutorConfig lookupByPattern(@Nonnull Config staticConfig,
+                                                  @Nonnull ConfigPatternMatcher configPatternMatcher, @Nonnull String name) {
+                return ConfigUtils.lookupByPattern(configPatternMatcher, staticConfig.getExecutorConfigs(),
+                        name, ExecutorConfig.class);
             }
 
             @Override
@@ -248,6 +336,15 @@ public final class ConfigSearch {
                 return staticConfig.getDurableExecutorConfig(name);
             }
 
+            @Nullable
+            @Override
+            public DurableExecutorConfig lookupByPattern(
+                    @Nonnull Config staticConfig,
+                    @Nonnull ConfigPatternMatcher configPatternMatcher, @Nonnull String name) {
+                return ConfigUtils.lookupByPattern(configPatternMatcher, staticConfig.getDurableExecutorConfigs(),
+                        name, DurableExecutorConfig.class);
+            }
+
             @Override
             public Map<String, DurableExecutorConfig> getStaticConfigs(@Nonnull Config staticConfig) {
                 return staticConfig.getDurableExecutorConfigs();
@@ -263,6 +360,15 @@ public final class ConfigSearch {
             @Override
             public ScheduledExecutorConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
                 return staticConfig.getScheduledExecutorConfig(name);
+            }
+
+            @Nullable
+            @Override
+            public ScheduledExecutorConfig lookupByPattern(
+                    @Nonnull Config staticConfig,
+                    @Nonnull ConfigPatternMatcher configPatternMatcher, @Nonnull String name) {
+                return ConfigUtils.lookupByPattern(configPatternMatcher, staticConfig.getScheduledExecutorConfigs(),
+                        name, ScheduledExecutorConfig.class);
             }
 
             @Override
@@ -282,6 +388,15 @@ public final class ConfigSearch {
                 return staticConfig.getCardinalityEstimatorConfig(name);
             }
 
+            @Nullable
+            @Override
+            public CardinalityEstimatorConfig lookupByPattern(
+                    @Nonnull Config staticConfig,
+                    @Nonnull ConfigPatternMatcher configPatternMatcher, @Nonnull String name) {
+                return ConfigUtils.lookupByPattern(configPatternMatcher, staticConfig.getCardinalityEstimatorConfigs(),
+                        name, CardinalityEstimatorConfig.class);
+            }
+
             @Override
             public Map<String, CardinalityEstimatorConfig> getStaticConfigs(@Nonnull Config staticConfig) {
                 return staticConfig.getCardinalityEstimatorConfigs();
@@ -297,6 +412,15 @@ public final class ConfigSearch {
             @Override
             public FlakeIdGeneratorConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
                 return staticConfig.getFlakeIdGeneratorConfig(name);
+            }
+
+            @Nullable
+            @Override
+            public FlakeIdGeneratorConfig lookupByPattern(
+                    @Nonnull Config staticConfig,
+                    @Nonnull ConfigPatternMatcher configPatternMatcher, @Nonnull String name) {
+                return ConfigUtils.lookupByPattern(configPatternMatcher, staticConfig.getFlakeIdGeneratorConfigs(),
+                        name, FlakeIdGeneratorConfig.class);
             }
 
             @Override
@@ -315,6 +439,14 @@ public final class ConfigSearch {
                 return staticConfig.getPNCounterConfig(name);
             }
 
+            @Nullable
+            @Override
+            public PNCounterConfig lookupByPattern(@Nonnull Config staticConfig,
+                                                   @Nonnull ConfigPatternMatcher configPatternMatcher, @Nonnull String name) {
+                return ConfigUtils.lookupByPattern(configPatternMatcher, staticConfig.getPNCounterConfigs(),
+                        name, PNCounterConfig.class);
+            }
+
             @Override
             public Map<String, PNCounterConfig> getStaticConfigs(@Nonnull Config staticConfig) {
                 return staticConfig.getPNCounterConfigs();
@@ -331,6 +463,15 @@ public final class ConfigSearch {
             @Override
             public ExternalDataStoreConfig getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name) {
                 return staticConfig.getExternalDataStoreConfig(name);
+            }
+
+            @Nullable
+            @Override
+            public ExternalDataStoreConfig lookupByPattern(
+                    @Nonnull Config staticConfig,
+                    @Nonnull ConfigPatternMatcher configPatternMatcher, @Nonnull String name) {
+                return ConfigUtils.lookupByPattern(configPatternMatcher, staticConfig.getExternalDataStoreConfigs(),
+                        name, ExternalDataStoreConfig.class);
             }
 
             @Override

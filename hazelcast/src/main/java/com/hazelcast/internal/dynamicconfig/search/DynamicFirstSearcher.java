@@ -22,9 +22,7 @@ import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
 import javax.annotation.Nonnull;
-import java.util.Map;
 
-import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
 import static com.hazelcast.partition.strategy.StringPartitioningStrategy.getBaseName;
 
 class DynamicFirstSearcher<T extends IdentifiedDataSerializable> implements Searcher<T> {
@@ -42,10 +40,9 @@ class DynamicFirstSearcher<T extends IdentifiedDataSerializable> implements Sear
     @Override
     public T getConfig(@Nonnull String name, String fallbackName, @Nonnull ConfigSupplier<T> configSupplier) {
         String baseName = getBaseName(name);
-        Map<String, T> staticCacheConfigs = configSupplier.getStaticConfigs(staticConfig);
         T config = configSupplier.getDynamicConfig(configurationService, baseName);
         if (config == null) {
-            config = lookupByPattern(configPatternMatcher, staticCacheConfigs, baseName);
+            config = configSupplier.lookupByPattern(staticConfig, configPatternMatcher, baseName);
         }
         if (config == null) {
             config = configSupplier.getStaticConfig(staticConfig, fallbackName);

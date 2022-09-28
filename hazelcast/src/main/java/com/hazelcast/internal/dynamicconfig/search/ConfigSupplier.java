@@ -17,6 +17,7 @@
 package com.hazelcast.internal.dynamicconfig.search;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.ConfigPatternMatcher;
 import com.hazelcast.internal.dynamicconfig.ConfigurationService;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
@@ -51,6 +52,11 @@ public interface ConfigSupplier<T extends IdentifiedDataSerializable> {
      */
     @Nullable
     T getStaticConfig(@Nonnull Config staticConfig, @Nonnull String name);
+
+    @Nullable
+    T lookupByPattern(@Nonnull Config staticConfig,
+                      @Nonnull ConfigPatternMatcher configPatternMatcher,
+                      @Nonnull String name);
 
     /**
      * Get all static configs for the given config type.

@@ -610,7 +610,8 @@ public class CPSubsystemConfig {
      * @return the CP {@link ISemaphore} configuration
      */
     public SemaphoreConfig findSemaphoreConfig(String name) {
-        return lookupByPattern(configPatternMatcher, semaphoreConfigs, getBaseName(name));
+        return lookupByPattern(configPatternMatcher, semaphoreConfigs, getBaseName(name), SemaphoreConfig.class,
+                SemaphoreConfig::setName);
     }
 
     /**
@@ -663,7 +664,8 @@ public class CPSubsystemConfig {
      * @return the {@link FencedLock} configuration
      */
     public FencedLockConfig findLockConfig(String name) {
-        return lookupByPattern(configPatternMatcher, lockConfigs, getBaseName(name));
+        return lookupByPattern(configPatternMatcher, lockConfigs, getBaseName(name), FencedLockConfig.class,
+                FencedLockConfig::setName);
     }
 
     /**

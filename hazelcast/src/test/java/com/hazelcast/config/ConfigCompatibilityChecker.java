@@ -49,7 +49,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static com.hazelcast.internal.config.AliasedDiscoveryConfigUtils.aliasedDiscoveryConfigsFrom;
-import static com.hazelcast.internal.config.ConfigUtils.lookupByPattern;
+import static com.hazelcast.internal.config.ConfigUtils.lookupByPatternWithoutCloning;
 import static java.text.MessageFormat.format;
 import static java.util.Collections.singletonMap;
 import static org.codehaus.groovy.runtime.InvokerHelper.asList;
@@ -172,8 +172,8 @@ public class ConfigCompatibilityChecker {
         configNames.addAll(configs2.keySet());
 
         for (String name : configNames) {
-            T config1 = lookupByPattern(c1.getConfigPatternMatcher(), configs1, name);
-            T config2 = lookupByPattern(c2.getConfigPatternMatcher(), configs2, name);
+            T config1 = lookupByPatternWithoutCloning(c1.getConfigPatternMatcher(), configs1, name);
+            T config2 = lookupByPatternWithoutCloning(c2.getConfigPatternMatcher(), configs2, name);
             if (config1 != null && config2 != null && !checker.check(config1, config2)) {
                 throw new HazelcastException(format("Incompatible " + type + " config :\n{0}\n vs \n{1}", config1, config2));
             }

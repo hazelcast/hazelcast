@@ -83,7 +83,8 @@ public class NodeQueryCacheConfigurator extends AbstractQueryCacheConfigurator {
             allQueryCacheConfigs.put(queryCacheConfig.getName(), queryCacheConfig);
         }
 
-        return ConfigUtils.lookupByPattern(config.getConfigPatternMatcher(), allQueryCacheConfigs, cacheName);
+        return ConfigUtils.lookupByPattern(config.getConfigPatternMatcher(), allQueryCacheConfigs, cacheName,
+                QueryCacheConfig.class);
     }
 
     @Override

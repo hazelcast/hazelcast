@@ -44,7 +44,18 @@ public final class ConfigUtils {
     private ConfigUtils() {
     }
 
-    public static <T> T lookupByPattern(ConfigPatternMatcher configPatternMatcher, Map<String, T> configPatterns,
+    /**
+     * Lookup {@code itemName} in {@code configPatterns}, according to matching rules applied by
+     * {@code configPatternMatcher}.
+     * <p/>
+     * Probably this is NOT the method you are looking for: it returns the object located in {@code configPatterns}
+     * without cloning it or settings its name first. If you need to lookup configuration based on wildcards,
+     * the safe way is to use the variants that require a {@code Class} argument.
+     * @see #lookupByPattern(ConfigPatternMatcher, Map, String, Class)
+     * @see #lookupByPattern(ConfigPatternMatcher, Map, String, Class, BiConsumer)
+     */
+    public static <T> T lookupByPatternWithoutCloning(ConfigPatternMatcher configPatternMatcher,
+                                        @Nonnull Map<String, T> configPatterns,
                                         String itemName) {
         T candidate = configPatterns.get(itemName);
         if (candidate != null) {
@@ -53,6 +64,40 @@ public final class ConfigUtils {
         String configPatternKey = configPatternMatcher.matches(configPatterns.keySet(), itemName);
         if (configPatternKey != null) {
             return configPatterns.get(configPatternKey);
+        }
+        if (!"default".equals(itemName) && !itemName.startsWith("hz:")) {
+            LOGGER.finest("No configuration found for " + itemName + ", using default config!");
+        }
+        return null;
+    }
+
+    public static <T> T lookupByPattern(ConfigPatternMatcher configPatternMatcher,
+                                        @Nonnull Map<String, T> configPatterns,
+                                        String itemName, Class clazz) {
+        return lookupByPattern(configPatternMatcher, configPatterns,
+                itemName, clazz, (BiConsumer<T, String>) DEFAULT_NAME_SETTER);
+    }
+
+    // nameSetter argument is required for Config objects that do not implement NamedConfig
+    public static <T> T lookupByPattern(ConfigPatternMatcher configPatternMatcher,
+                                        @Nonnull Map<String, T> configPatterns,
+                                        String itemName, Class clazz, BiConsumer<T, String> nameSetter) {
+        T candidate = configPatterns.get(itemName);
+        if (candidate != null) {
+            return candidate;
+        }
+        String configPatternKey = configPatternMatcher.matches(configPatterns.keySet(), itemName);
+        if (configPatternKey != null) {
+            T baseConfig = configPatterns.get(configPatternKey);
+            try {
+                candidate = cloneWithName(configPatterns, itemName, clazz, nameSetter, baseConfig);
+                return candidate;
+            } catch (NoSuchMethodException | InstantiationException
+                     | IllegalAccessException | InvocationTargetException e) {
+                LOGGER.severe("Could not create class " + clazz.getName());
+                assert false;
+                return null;
+            }
         }
         if (!"default".equals(itemName) && !itemName.startsWith("hz:")) {
             LOGGER.finest("No configuration found for " + itemName + ", using default config!");
@@ -103,7 +148,7 @@ public final class ConfigUtils {
                                   Map<String, T> configs, String name,
                                   Class clazz, BiConsumer<T, String> nameSetter) {
         name = getBaseName(name);
-        T config = lookupByPattern(configPatternMatcher, configs, name);
+        T config = lookupByPattern(configPatternMatcher, configs, name, clazz);
         if (config != null) {
             return config;
         }
@@ -114,11 +159,7 @@ public final class ConfigUtils {
                 nameSetter.accept(defConfig, "default");
                 configs.put("default", defConfig);
             }
-            Constructor copyConstructor = clazz.getDeclaredConstructor(clazz);
-            copyConstructor.setAccessible(true);
-            config = (T) copyConstructor.newInstance(defConfig);
-            nameSetter.accept(config, name);
-            configs.put(name, config);
+            config = cloneWithName(configs, name, clazz, nameSetter, defConfig);
             return config;
         } catch (NoSuchMethodException | InstantiationException
                 | IllegalAccessException | InvocationTargetException e) {
@@ -126,6 +167,19 @@ public final class ConfigUtils {
             assert false;
             return null;
         }
+    }
+
+    @Nonnull
+    private static <T> T cloneWithName(Map<String, T> configs, String name, Class clazz, BiConsumer<T,
+            String> nameSetter, T defConfig)
+            throws NoSuchMethodException, InstantiationException, IllegalAccessException, InvocationTargetException {
+        T config;
+        Constructor copyConstructor = clazz.getDeclaredConstructor(clazz);
+        copyConstructor.setAccessible(true);
+        config = (T) copyConstructor.newInstance(defConfig);
+        nameSetter.accept(config, name);
+        configs.put(name, config);
+        return config;
     }
 
     /**
