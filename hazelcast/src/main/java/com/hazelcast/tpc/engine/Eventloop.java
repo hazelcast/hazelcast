@@ -25,7 +25,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 import com.hazelcast.tpc.util.CircularQueue;
 import org.jctools.queues.MpmcArrayQueue;
-import org.jetbrains.annotations.NotNull;
 
 import java.io.Closeable;
 import java.util.BitSet;
@@ -112,7 +111,7 @@ public abstract class Eventloop implements Executor {
         this.localRunQueue = new CircularQueue<>(config.localRunQueueCapacity);
         this.concurrentRunQueue = new MpmcArrayQueue(config.concurrentRunQueueCapacity);
         scheduler.eventloop(this);
-        this.eventloopThread = config.threadFactory.newThread(new EventloopThreadTask());
+        this.eventloopThread = config.threadFactory.newThread(new EventloopTask());
         if (config.threadName != null) {
             eventloopThread.setName(config.threadName);
         }
@@ -318,7 +317,7 @@ public abstract class Eventloop implements Executor {
     public void execute(Runnable command) {
         if (!offer(command)) {
             throw new RejectedExecutionException("Task " + command.toString() +
-                    " rejected from " + toString());
+                    " rejected from " + this);
         }
     }
 
@@ -483,7 +482,7 @@ public abstract class Eventloop implements Executor {
     /**
      * The {@link Runnable} executed by the eventloop {@link Thread}.
      */
-    private final class EventloopThreadTask implements Runnable {
+    private final class EventloopTask implements Runnable {
 
         @Override
         public void run() {

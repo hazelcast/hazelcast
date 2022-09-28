@@ -22,13 +22,16 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.tpc.engine.iobuffer.IOBuffer;
 
 import java.io.Closeable;
+import java.io.IOException;
 import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.Executor;
 import java.util.concurrent.atomic.AtomicBoolean;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
 /**
@@ -44,6 +47,8 @@ public abstract class AsyncSocket implements Closeable {
 
     protected volatile SocketAddress remoteAddress;
     protected volatile SocketAddress localAddress;
+    private CloseListener closeListener;
+    private Executor closeExecutor;
 
     protected final SwCounter ioBuffersWritten = newSwCounter();
 
@@ -91,9 +96,9 @@ public abstract class AsyncSocket implements Closeable {
 
     /**
      * Returns the remote address.
-     *
+     * <p>
      * If the AsyncSocket isn't connected, null is returned.
-     *
+     * <p>
      * This method is thread-safe.
      *
      * @return the remote address.
@@ -104,9 +109,9 @@ public abstract class AsyncSocket implements Closeable {
 
     /**
      * Returns the local address.
-     *
+     * <p>
      * If the AsyncSocket isn't connected, null is returned.
-     *
+     * <p>
      * This method is thread-safe.
      *
      * @return the local address.
@@ -138,10 +143,29 @@ public abstract class AsyncSocket implements Closeable {
     public abstract void readHandler(ReadHandler readHandler);
 
     /**
+     * Configures the CloseListener.
+     * <p>
+     * Call should be made before {@link #activate(Eventloop)} is called. This method is not
+     * threadsafe.
+     *
+     * @param listener the CloseListener
+     * @param executor the executor used to execute the {@link CloseListener#close()} method.
+     * @throws NullPointerException if listener or executor is null.
+     */
+    public final void setCloseListener(CloseListener listener, Executor executor) {
+        checkNotNull(listener, "listener can't be null");
+        checkNotNull(executor, "executor can't be null");
+
+        this.closeListener = listener;
+        this.closeExecutor = executor;
+    }
+
+
+    /**
      * Activates an AsyncSocket by hooking it up to an EventLoop.
-     *
+     * <p>
      * This method should only be called once.
-     *
+     * <p>
      * This method is not thread-safe.
      *
      * @param eventloop the Eventloop this AsyncSocket belongs to.
@@ -152,11 +176,11 @@ public abstract class AsyncSocket implements Closeable {
 
     /**
      * Ensures that any scheduled IOBuffers are flushed to the socket.
-     *
+     * <p>
      * What happens under the hood is that the AsyncSocket is scheduled in the
      * {@link Eventloop} where at some point in the future the IOBuffers get written
      * to the socket.
-     *
+     * <p>
      * This method is thread-safe.
      */
     public abstract void flush();
@@ -164,13 +188,13 @@ public abstract class AsyncSocket implements Closeable {
     /**
      * Writes a IOBuffer to the AsyncSocket without scheduling the AsyncSocket
      * in the eventloop.
-     *
+     * <p>
      * This call can be used to buffer a series of IOBuffers and then call
      * {@link #flush()} to trigger the actual writing to the socket.
-     *
+     * <p>
      * There is no guarantee that IOBuffer is actually going to be received by the caller after
      * the AsyncSocket has accepted the IOBuffer. E.g. when the TCP/IP connection is dropped.
-     *
+     * <p>
      * This method is thread-safe.
      *
      * @param buf the IOBuffer to write.
@@ -182,12 +206,12 @@ public abstract class AsyncSocket implements Closeable {
 
     /**
      * Writes a IOBuffer and flushes it.
-     *
+     * <p>
      * This is the same as calling {@link #write(IOBuffer)} followed by a {@link #flush()}.
-     *
+     * <p>
      * There is no guarantee that IOBuffer is actually going to be received by the caller if
      * the AsyncSocket has accepted the IOBuffer. E.g. when the connection closes.
-     *
+     * <p>
      * This method is thread-safe.
      *
      * @param buf the IOBuffer to write.
@@ -197,7 +221,7 @@ public abstract class AsyncSocket implements Closeable {
 
     /**
      * Writes a IOBuffer and ensure it gets written.
-     *
+     * <p>
      * Should only be called from within the Eventloop.
      */
     public abstract boolean unsafeWriteAndFlush(IOBuffer buf);
@@ -212,22 +236,55 @@ public abstract class AsyncSocket implements Closeable {
 
     /**
      * Closes this {@link AsyncSocket}.
-     *
+     * <p>
      * This method is thread-safe.
-     *
+     * <p>
      * If the AsyncSocket is already closed, the call is ignored.
      */
-    public abstract void close();
+    public final void close() {
+        if (!closed.compareAndSet(false, true)) {
+            return;
+        }
+
+        if (logger.isInfoEnabled()) {
+            logger.info("Closing  " + this);
+        }
+
+        doClose();
+
+        if (closeListener != null) {
+            try {
+                closeExecutor.execute(() -> {
+                    try {
+                        closeListener.onClose(AsyncSocket.this);
+                    } catch (Throwable e) {
+                        logger.warning(e);
+                    }
+                });
+            } catch (Throwable e) {
+                logger.warning(e);
+            }
+        }
+    }
+
+    /**
+     * Takes care of the actual closing.
+     */
+    protected abstract void doClose();
 
     /**
      * Checks if this AsyncSocket is closed.
-     *
+     * <p>
      * This method is thread-safe.
      *
      * @return true if closed, false otherwise.
      */
     public final boolean isClosed() {
         return closed.get();
+    }
+
+    interface CloseListener {
+        void onClose(AsyncSocket socket);
     }
 
     @Override
