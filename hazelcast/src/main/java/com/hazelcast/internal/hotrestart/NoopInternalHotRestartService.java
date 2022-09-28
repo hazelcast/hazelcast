@@ -16,11 +16,11 @@
 
 package com.hazelcast.internal.hotrestart;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
-import com.hazelcast.instance.impl.ClusterTopologyIntent;
+import com.hazelcast.instance.impl.ClusterTopologyState;
 import com.hazelcast.internal.cluster.impl.operations.OnJoinOp;
 import com.hazelcast.internal.management.dto.ClusterHotRestartStatusDTO;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.partition.PartitionRuntimeState;
 
 import java.util.Collections;
@@ -102,7 +102,7 @@ public class NoopInternalHotRestartService implements InternalHotRestartService 
     }
 
     @Override
-    public void setClusterTopologyIntentOnMaster(ClusterTopologyIntent clusterTopologyIntent) {
+    public void setClusterTopologyStateOnMaster(ClusterTopologyState clusterTopologyState) {
     }
 
     @Override

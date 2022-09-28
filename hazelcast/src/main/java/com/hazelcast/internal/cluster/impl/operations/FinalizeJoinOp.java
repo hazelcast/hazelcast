@@ -19,6 +19,7 @@ package com.hazelcast.internal.cluster.impl.operations;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.instance.impl.ClusterTopologyIntent;
+import com.hazelcast.instance.impl.ClusterTopologyState;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.cluster.impl.ClusterDataSerializerHook;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
@@ -62,7 +63,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
     private Version clusterVersion;
     private boolean deferPartitionProcessing;
     // The detected cluster topology intent as observed by master member
-    private ClusterTopologyIntent clusterTopologyIntent;
+    private ClusterTopologyState clusterTopologyState;
 
     private transient boolean finalized;
     private transient Exception deserializationFailure;
@@ -74,7 +75,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
     public FinalizeJoinOp(UUID targetUuid, MembersView members, OnJoinOp preJoinOp, OnJoinOp postJoinOp,
                           long masterTime, UUID clusterId, long clusterStartTime, ClusterState clusterState,
                           Version clusterVersion, PartitionRuntimeState partitionRuntimeState,
-                          boolean deferPartitionProcessing, ClusterTopologyIntent clusterTopologyIntent) {
+                          boolean deferPartitionProcessing, ClusterTopologyState clusterTopologyState) {
         super(targetUuid, members, masterTime, partitionRuntimeState, true);
         this.preJoinOp = preJoinOp;
         this.postJoinOp = postJoinOp;
@@ -83,7 +84,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         this.clusterState = clusterState;
         this.clusterVersion = clusterVersion;
         this.deferPartitionProcessing = deferPartitionProcessing;
-        this.clusterTopologyIntent = clusterTopologyIntent;
+        this.clusterTopologyState = clusterTopologyState;
     }
 
     @Override
@@ -101,7 +102,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         if (hrServiceEnabled) {
             // notify hot restart before setting initial cluster state
             hrService.setRejoiningActiveCluster(deferPartitionProcessing);
-            hrService.setClusterTopologyIntentOnMaster(clusterTopologyIntent);
+            hrService.setClusterTopologyStateOnMaster(clusterTopologyState);
         }
         finalized = clusterService.finalizeJoin(getMembersView(), callerAddress, callerUuid, targetUuid, clusterId, clusterState,
                 clusterVersion, clusterStartTime, masterTime, preJoinOp);
@@ -201,7 +202,8 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         out.writeObject(postJoinOp);
         out.writeBoolean(deferPartitionProcessing);
         if (clusterVersion.isGreaterOrEqual(V5_2)) {
-            out.writeByte(clusterTopologyIntent.ordinal());
+            out.writeByte(clusterTopologyState.getClusterTopologyIntent().ordinal());
+            out.writeInt(clusterTopologyState.getDesiredNumberOfReplicas());
         }
     }
 
@@ -223,7 +225,9 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         deferPartitionProcessing = in.readBoolean();
         if (clusterVersion.isGreaterOrEqual(V5_2)) {
             byte topologyIntentOrdinal = in.readByte();
-            clusterTopologyIntent = ClusterTopologyIntent.values()[topologyIntentOrdinal];
+            int desiredNumberOfReplicas = in.readInt();
+            clusterTopologyState = ClusterTopologyState.of(ClusterTopologyIntent.values()[topologyIntentOrdinal],
+                    desiredNumberOfReplicas);
         }
     }
 
