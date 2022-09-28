@@ -17,8 +17,8 @@
 package com.hazelcast.jet.sql.impl.aggregate.function;
 
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
-import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ReplaceUnknownOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastAggFunction;
+import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ReplaceUnknownOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.param.NoOpParameterConverter;
 import org.apache.calcite.sql.SqlDynamicParam;
 import org.apache.calcite.sql.SqlFunctionCategory;

@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.schema;
 
-import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.jet.sql.impl.TestTableResolver;
+import com.hazelcast.sql.impl.QueryUtils;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

@@ -16,10 +16,10 @@
 
 package com.hazelcast.jet.sql.impl.validate.literal;
 
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastIntegerType;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.type.converter.BigDecimalConverter;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.type.SqlTypeName;

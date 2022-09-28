@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.sql_slow;
 
-import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.jet.sql.impl.connector.map.index.SqlIndexAbstractTest;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;

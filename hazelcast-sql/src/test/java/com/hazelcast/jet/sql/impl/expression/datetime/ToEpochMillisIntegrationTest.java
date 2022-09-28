@@ -16,9 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.expression.datetime;
 
+import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
