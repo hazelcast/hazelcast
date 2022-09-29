@@ -274,18 +274,9 @@ class KubernetesClient {
             if (stsName.equals(itemName)) {
                 // identified the stateful set
                 int specReplicas = item.asObject().get("spec").asObject().getInt("replicas", UNKNOWN);
-                int readyReplicas = item.asObject().get("status").asObject().getInt("readyReplicas",
-                        UNKNOWN);
-                int currentReplicas = item.asObject().get("status").asObject().getInt("currentReplicas",
-                        UNKNOWN);
-                int updatedReplicas = item.asObject().get("status").asObject().getInt("updatedReplicas",
-                        UNKNOWN);
-                String currentRevision = item.asObject().get("status").asObject().getString("currentRevision", "");
-                String updateRevision = item.asObject().get("status").asObject().getString("updateRevision", "");
-                if (!updateRevision.equals(currentRevision)) {
-                    currentReplicas += updatedReplicas;
-                }
-                return new RuntimeContext(specReplicas, readyReplicas, currentReplicas, resourceVersion);
+                int readyReplicas = item.asObject().get("status").asObject().getInt("readyReplicas", UNKNOWN);
+                int replicas = item.asObject().get("status").asObject().getInt("currentReplicas", UNKNOWN);
+                return new RuntimeContext(specReplicas, readyReplicas, replicas, resourceVersion);
             }
         }
         return null;
@@ -295,16 +286,8 @@ class KubernetesClient {
         int specReplicas = jsonObject.get("spec").asObject().getInt("replicas", UNKNOWN);
         int readyReplicas = jsonObject.get("status").asObject().getInt("readyReplicas", UNKNOWN);
         String resourceVersion = jsonObject.get("metadata").asObject().getString("resourceVersion", null);
-        int currentReplicas = jsonObject.get("status").asObject().getInt("currentReplicas",
-                UNKNOWN);
-        int updatedReplicas = jsonObject.get("status").asObject().getInt("updatedReplicas",
-                UNKNOWN);
-        String currentRevision = jsonObject.get("status").asObject().getString("currentRevision", "");
-        String updateRevision = jsonObject.get("status").asObject().getString("updateRevision", "");
-        if (!updateRevision.equals(currentRevision)) {
-            currentReplicas += updatedReplicas;
-        }
-        return new RuntimeContext(specReplicas, readyReplicas, currentReplicas, resourceVersion);
+        int replicas = jsonObject.get("status").asObject().getInt("currentReplicas", UNKNOWN);
+        return new RuntimeContext(specReplicas, readyReplicas, replicas, resourceVersion);
     }
 
     private static List<Endpoint> parsePodsList(JsonObject podsListJson) {
@@ -750,6 +733,9 @@ class KubernetesClient {
         }
 
         private void onMessage(String message) {
+            if (LOGGER.isFinestEnabled()) {
+                LOGGER.finest("Complete message from kubernetes API: " + message);
+            }
             JsonObject jsonObject = Json.parse(message).asObject();
             JsonObject sts = jsonObject.get("object").asObject();
             String itemName = sts.asObject().get("metadata").asObject().getString("name", null);

@@ -31,6 +31,8 @@ public class RuntimeContext {
     // number of ready replicas. Corresponds to StatefulSetStatus.readyReplicas
     private final int readyReplicas;
 
+    // number of replicas created by the current revision of the StatefulSet.
+    // Populated from StatefulSetStatus.currentReplicas
     private final int currentReplicas;
 
     @Nullable

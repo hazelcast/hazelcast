@@ -98,6 +98,7 @@ public class ClusterTopologyIntentTrackerImpl implements ClusterTopologyIntentTr
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     @Override
     public void update(int previousClusterSpecSize, int currentClusterSpecSize, int readyNodesCount, int currentNodesCount) {
+        this.currentClusterSpecSize = currentClusterSpecSize;
         if (previousClusterSpecSize == UNKNOWN) {
             if (currentClusterSpecSize > 0
                     && (readyNodesCount == UNKNOWN || readyNodesCount == 0)) {
@@ -113,29 +114,12 @@ public class ClusterTopologyIntentTrackerImpl implements ClusterTopologyIntentTr
         final ClusterTopologyIntent previous = clusterTopologyIntent.get();
         ClusterTopologyIntent newTopologyIntent;
         if (currentClusterSpecSize == 0) {
-            newTopologyIntent = previous == ClusterTopologyIntent.CLUSTER_STABLE_WITH_MISSING_MEMBERS
-                    || previous == ClusterTopologyIntent.CLUSTER_SHUTDOWN_WITH_MISSING_MEMBERS
-                    ? ClusterTopologyIntent.CLUSTER_SHUTDOWN_WITH_MISSING_MEMBERS
-                    : ClusterTopologyIntent.CLUSTER_SHUTDOWN;
+            newTopologyIntent = nextIntentWhenShuttingDown(previous);
         } else if (previousClusterSpecSize == currentClusterSpecSize) {
-            if (previous == ClusterTopologyIntent.SCALING
-                    || previous == ClusterTopologyIntent.IN_MANAGED_CONTEXT_UNKNOWN) {
-                // only switch to STABLE when ready nodes count equals number of currentClusterSpecSize
-                if (readyNodesCount != currentClusterSpecSize) {
-                    logger.info("Ignoring state change because readyNodesCount "
-                            + readyNodesCount + ", while spec requires " + currentClusterSpecSize);
-                    return;
-                }
-            }
-            if (previous == ClusterTopologyIntent.CLUSTER_START
-                    && readyNodesCount < currentClusterSpecSize) {
-                // cluster start is not done yet, don't switch to STABLE
-                logger.info("Ignoring state change because readyNodesCount "
-                        + readyNodesCount + " is less than required by spec and cluster is still starting");
+            if (ignoreUpdateWhenClusterSpecEqual(previous, readyNodesCount)) {
                 return;
             }
-            newTopologyIntent = (readyNodesCount < currentClusterSpecSize) || (currentNodesCount < currentClusterSpecSize)
-                    ? ClusterTopologyIntent.CLUSTER_STABLE_WITH_MISSING_MEMBERS : ClusterTopologyIntent.CLUSTER_STABLE;
+            newTopologyIntent = nextIntentWhenClusterSpecEqual(previous, readyNodesCount, currentNodesCount);
         } else {
             newTopologyIntent = ClusterTopologyIntent.SCALING;
         }
@@ -156,6 +140,50 @@ public class ClusterTopologyIntentTrackerImpl implements ClusterTopologyIntentTr
                     }
                 }
             });
+        }
+    }
+
+    private ClusterTopologyIntent nextIntentWhenShuttingDown(ClusterTopologyIntent previous) {
+        // if members were previously missing, next intent is CLUSTER_SHUTDOWN_WITH_MISSING_MEMBERS
+        // otherwise plain CLUSTER_SHUTDOWN
+        return previous == ClusterTopologyIntent.CLUSTER_STABLE_WITH_MISSING_MEMBERS
+                || previous == ClusterTopologyIntent.CLUSTER_SHUTDOWN_WITH_MISSING_MEMBERS
+                ? ClusterTopologyIntent.CLUSTER_SHUTDOWN_WITH_MISSING_MEMBERS
+                : ClusterTopologyIntent.CLUSTER_SHUTDOWN;
+    }
+
+    /**
+     * Decide whether an update from managed context should be ignored when cluster spec size stays the same.
+     * @return {@code true} if update should be ignored, otherwise {@code false}.
+     */
+    private boolean ignoreUpdateWhenClusterSpecEqual(ClusterTopologyIntent previous,
+                                                     int readyNodesCount) {
+        if (readyNodesCount != currentClusterSpecSize
+            && (previous == ClusterTopologyIntent.SCALING
+                || previous == ClusterTopologyIntent.IN_MANAGED_CONTEXT_UNKNOWN
+                || previous == ClusterTopologyIntent.CLUSTER_START)) {
+            logger.info("Ignoring update because readyNodesCount is "
+                    + readyNodesCount + ", while spec requires " + currentClusterSpecSize
+                    + " and previous cluster topology intent is" + previous);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * @return next {@code ClusterTopologyIntent} according to rules applicable while there is no change
+     * in cluster size specification in managed context. (ie StatefulSetSpec.size remains the same, so
+     * user does not intend a change in cluster size).
+     */
+    private ClusterTopologyIntent nextIntentWhenClusterSpecEqual(ClusterTopologyIntent previous,
+                                                                 int readyNodesCount,
+                                                                 int currentNodesCount) {
+        if (readyNodesCount == currentClusterSpecSize && previous != ClusterTopologyIntent.CLUSTER_STABLE) {
+            return ClusterTopologyIntent.CLUSTER_STABLE;
+        } else if (previous == ClusterTopologyIntent.CLUSTER_STABLE && currentNodesCount < currentClusterSpecSize) {
+            return ClusterTopologyIntent.CLUSTER_STABLE_WITH_MISSING_MEMBERS;
+        } else {
+            return previous;
         }
     }
 
