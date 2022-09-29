@@ -38,6 +38,7 @@ public class JdbcDataStoreFactory implements ExternalDataStoreFactory<DataSource
     private ExternalDataStoreConfig config;
     private DataSource shareDataSource;
 
+    @Override
     public void init(ExternalDataStoreConfig config) {
         this.config = config;
         if (config.isShared()) {

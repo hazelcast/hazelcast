@@ -17,14 +17,17 @@
 package com.hazelcast.datastore;
 
 import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.sql.DataSource;
+import java.io.Closeable;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -32,6 +35,23 @@ import static org.assertj.core.api.Assertions.assertThat;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JdbcDataStoreFactoryTest {
+
+    DataSource dataStore1;
+    DataSource dataStore2;
+
+    @After
+    public void tearDown() throws Exception {
+        closeDataStore(dataStore1);
+        closeDataStore(dataStore2);
+    }
+
+    private static void closeDataStore(DataSource dataSource) {
+        if (!(dataSource instanceof Closeable)) {
+            return;
+        }
+
+        IOUtil.closeResource(((Closeable) dataSource));
+    }
 
     @Test
     public void should_return_same_DataStore_when_shared() {
@@ -43,8 +63,8 @@ public class JdbcDataStoreFactoryTest {
                 .setShared(true);
         jdbcDataStoreFactory.init(config);
 
-        DataSource dataStore1 = jdbcDataStoreFactory.getDataStore();
-        DataSource dataStore2 = jdbcDataStoreFactory.getDataStore();
+        dataStore1 = jdbcDataStoreFactory.getDataStore();
+        dataStore2 = jdbcDataStoreFactory.getDataStore();
 
         assertThat(dataStore1).isNotNull();
         assertThat(dataStore2).isNotNull();
@@ -61,8 +81,8 @@ public class JdbcDataStoreFactoryTest {
                 .setShared(false);
         jdbcDataStoreFactory.init(config);
 
-        DataSource dataStore1 = jdbcDataStoreFactory.getDataStore();
-        DataSource dataStore2 = jdbcDataStoreFactory.getDataStore();
+        dataStore1 = jdbcDataStoreFactory.getDataStore();
+        dataStore2 = jdbcDataStoreFactory.getDataStore();
 
         assertThat(dataStore1).isNotNull();
         assertThat(dataStore2).isNotNull();

@@ -132,7 +132,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
     private final ConcurrencyDetection concurrencyDetection;
     private final TenantControlServiceImpl tenantControlService;
-    private final ExternalDataStoreService externalDataStoreService;
+    private final ExternalDataStoreServiceImpl externalDataStoreService;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
     public NodeEngineImpl(Node node) {
@@ -576,6 +576,8 @@ public class NodeEngineImpl implements NodeEngine {
         if (diagnostics != null) {
             diagnostics.shutdown();
         }
+
+        externalDataStoreService.shutDown(terminate);
     }
 
     @Override
