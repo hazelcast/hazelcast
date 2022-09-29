@@ -36,17 +36,19 @@ public class ClientNearCacheConfigTest {
         final ClientConfig clientConfig = new ClientConfig();
         final NearCacheConfig genericNearCacheConfig = new NearCacheConfig();
         genericNearCacheConfig.setName("map*");
+        genericNearCacheConfig.setMaxIdleSeconds(1337);
         clientConfig.addNearCacheConfig(genericNearCacheConfig);
 
         final NearCacheConfig specificNearCacheConfig = new NearCacheConfig();
         specificNearCacheConfig.setName("mapStudent*");
+        genericNearCacheConfig.setMaxIdleSeconds(1234);
         clientConfig.addNearCacheConfig(specificNearCacheConfig);
 
         final NearCacheConfig mapFoo = clientConfig.getNearCacheConfig("mapFoo");
         final NearCacheConfig mapStudentFoo = clientConfig.getNearCacheConfig("mapStudentFoo");
 
-        assertEquals(genericNearCacheConfig, mapFoo);
-        assertEquals(specificNearCacheConfig, mapStudentFoo);
+        assertEquals(genericNearCacheConfig.getMaxIdleSeconds(), mapFoo.getMaxIdleSeconds());
+        assertEquals(specificNearCacheConfig.getMaxIdleSeconds(), mapStudentFoo.getMaxIdleSeconds());
     }
 
     @Test
@@ -54,35 +56,39 @@ public class ClientNearCacheConfigTest {
         final ClientConfig clientConfig = new ClientConfig();
         final NearCacheConfig genericNearCacheConfig = new NearCacheConfig();
         genericNearCacheConfig.setName("*Map");
+        genericNearCacheConfig.setMaxIdleSeconds(1337);
         clientConfig.addNearCacheConfig(genericNearCacheConfig);
 
         final NearCacheConfig specificNearCacheConfig = new NearCacheConfig();
         specificNearCacheConfig.setName("*MapStudent");
+        genericNearCacheConfig.setMaxIdleSeconds(1234);
         clientConfig.addNearCacheConfig(specificNearCacheConfig);
 
         final NearCacheConfig mapFoo = clientConfig.getNearCacheConfig("fooMap");
         final NearCacheConfig mapStudentFoo = clientConfig.getNearCacheConfig("fooMapStudent");
 
-        assertEquals(genericNearCacheConfig, mapFoo);
-        assertEquals(specificNearCacheConfig, mapStudentFoo);
+        assertEquals(genericNearCacheConfig.getMaxIdleSeconds(), mapFoo.getMaxIdleSeconds());
+        assertEquals(specificNearCacheConfig.getMaxIdleSeconds(), mapStudentFoo.getMaxIdleSeconds());
     }
 
     @Test
     public void testSpecificNearCacheConfig_whenAsteriskInTheMiddle() {
         final ClientConfig clientConfig = new ClientConfig();
         final NearCacheConfig genericNearCacheConfig = new NearCacheConfig();
+        genericNearCacheConfig.setMaxIdleSeconds(1337);
         genericNearCacheConfig.setName("map*Bar");
         clientConfig.addNearCacheConfig(genericNearCacheConfig);
 
         final NearCacheConfig specificNearCacheConfig = new NearCacheConfig();
         specificNearCacheConfig.setName("mapStudent*Bar");
+        genericNearCacheConfig.setMaxIdleSeconds(1234);
         clientConfig.addNearCacheConfig(specificNearCacheConfig);
 
         final NearCacheConfig mapFoo = clientConfig.getNearCacheConfig("mapFooBar");
         final NearCacheConfig mapStudentFoo = clientConfig.getNearCacheConfig("mapStudentFooBar");
 
-        assertEquals(genericNearCacheConfig, mapFoo);
-        assertEquals(specificNearCacheConfig, mapStudentFoo);
+        assertEquals(genericNearCacheConfig.getMaxIdleSeconds(), mapFoo.getMaxIdleSeconds());
+        assertEquals(specificNearCacheConfig.getMaxIdleSeconds(), mapStudentFoo.getMaxIdleSeconds());
     }
 
 }

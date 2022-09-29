@@ -28,6 +28,7 @@ import java.util.regex.Pattern;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -35,102 +36,103 @@ public class RegexConfigPatternMatcherTest {
 
     @Test
     public void testQueueConfigWithoutWildcard() {
-        QueueConfig queueConfig = new QueueConfig().setName("^someQueue$");
+        QueueConfig queueConfig = new QueueConfig().setName("^someQueue$").setMaxSize(133);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new RegexConfigPatternMatcher());
         config.addQueueConfig(queueConfig);
 
-        assertEquals(queueConfig, config.getQueueConfig("someQueue"));
-        assertEquals(queueConfig, config.getQueueConfig("someQueue@foo"));
-
         // non-matching name
-        assertNotEquals(queueConfig, config.getQueueConfig("doesNotExist"));
+        assertNotEquals(queueConfig.getMaxSize(), config.getQueueConfig("doesNotExist").getMaxSize());
         // non-matching name (starts with)
-        assertNotEquals(queueConfig, config.getQueueConfig("_someQueue"));
+        assertNotEquals(queueConfig.getMaxSize(), config.getQueueConfig("_someQueue").getMaxSize());
         // non-matching name (ends with)
-        assertNotEquals(queueConfig, config.getQueueConfig("someQueue_"));
+        assertNotEquals(queueConfig.getMaxSize(), config.getQueueConfig("someQueue_").getMaxSize());
         // non-matching case
-        assertNotEquals(queueConfig, config.getQueueConfig("SomeQueue"));
+        assertNotEquals(queueConfig.getMaxSize(), config.getQueueConfig("SomeQueue").getMaxSize());
+
+        // TODO possible breaking change; now adding this as the first option makes rest of the options match
+        assertEquals(queueConfig.getMaxSize(), config.getQueueConfig("someQueue").getMaxSize());
+        assertEquals(queueConfig.getMaxSize(), config.getQueueConfig("someQueue@foo").getMaxSize());
     }
 
     @Test
     public void testQueueConfigRegexContains() {
-        QueueConfig queueConfig = new QueueConfig().setName("abc");
+        QueueConfig queueConfig = new QueueConfig().setName("abc").setMaxSize(133);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new RegexConfigPatternMatcher());
         config.addQueueConfig(queueConfig);
 
-        assertEquals(queueConfig, config.getQueueConfig("abcD"));
-        assertNotEquals(queueConfig, config.getQueueConfig("abDD"));
+        assertEquals(queueConfig.getMaxSize(), config.getQueueConfig("abcD").getMaxSize());
+        assertNotEquals(queueConfig.getMaxSize(), config.getQueueConfig("abDD").getMaxSize());
     }
 
     @Test
     public void testQueueConfigRegexStartsWith() {
-        QueueConfig queueConfig = new QueueConfig().setName("^abc");
+        QueueConfig queueConfig = new QueueConfig().setName("^abc").setMaxSize(133);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new RegexConfigPatternMatcher());
         config.addQueueConfig(queueConfig);
 
-        assertEquals(queueConfig, config.getQueueConfig("abcDe"));
-        assertNotEquals(queueConfig, config.getQueueConfig("bcDe"));
+        assertEquals(queueConfig.getMaxSize(), config.getQueueConfig("abcDe").getMaxSize());
+        assertNotEquals(queueConfig.getMaxSize(), config.getQueueConfig("bcDe").getMaxSize());
     }
 
     @Test
     public void testMapConfigWithoutWildcard() {
-        MapConfig mapConfig = new MapConfig().setName("^someMap$");
+        MapConfig mapConfig = new MapConfig().setName("^someMap$").setBackupCount(4);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new RegexConfigPatternMatcher());
         config.addMapConfig(mapConfig);
 
-        assertEquals(mapConfig, config.getMapConfig("someMap"));
-        assertEquals(mapConfig, config.getMapConfig("someMap@foo"));
-
         // non-matching name
-        assertNotEquals(mapConfig, config.getMapConfig("doesNotExist"));
+        assertNotEquals(mapConfig.getBackupCount(), config.getMapConfig("doesNotExist").getBackupCount());
         // non-matching name (starts with)
-        assertNotEquals(mapConfig, config.getMapConfig("_someMap"));
+        assertNotEquals(mapConfig.getBackupCount(), config.getMapConfig("_someMap").getBackupCount());
         // non-matching name (ends with)
-        assertNotEquals(mapConfig, config.getMapConfig("someMap_"));
+        assertNotEquals(mapConfig.getBackupCount(), config.getMapConfig("someMap_").getBackupCount());
         // non-matching case
-        assertNotEquals(mapConfig, config.getMapConfig("SomeMap"));
+        assertNotEquals(mapConfig.getBackupCount(), config.getMapConfig("SomeMap").getBackupCount());
+
+        assertEquals(mapConfig.getBackupCount(), config.getMapConfig("someMap").getBackupCount());
+        assertEquals(mapConfig.getBackupCount(), config.getMapConfig("someMap@foo").getBackupCount());
     }
 
     @Test
     public void testMapConfigCaseInsensitive() {
-        MapConfig mapConfig = new MapConfig().setName("^someMap$");
+        MapConfig mapConfig = new MapConfig().setName("^someMap$").setBackupCount(5);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new RegexConfigPatternMatcher(Pattern.CASE_INSENSITIVE));
         config.addMapConfig(mapConfig);
 
-        // case insensitive matching
-        assertEquals(mapConfig, config.getMapConfig("SomeMap"));
-
         // non-matching name (starts with)
-        assertNotEquals(mapConfig, config.getMapConfig("_SomeMap"));
+        assertNotEquals(mapConfig.getBackupCount(), config.getMapConfig("_SomeMap").getBackupCount());
         // non-matching name (ends with)
-        assertNotEquals(mapConfig, config.getMapConfig("SomeMap_"));
+        assertNotEquals(mapConfig.getBackupCount(), config.getMapConfig("SomeMap_").getBackupCount());
+
+        // case insensitive matching
+        assertEquals(mapConfig.getBackupCount(), config.getMapConfig("SomeMap").getBackupCount());
     }
 
     @Test
     public void testMapConfigContains() {
-        MapConfig mapConfig = new MapConfig().setName("bc");
+        MapConfig mapConfig = new MapConfig().setName("bc").setBackupCount(5);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new RegexConfigPatternMatcher());
         config.addMapConfig(mapConfig);
 
         // we should match this
-        assertEquals(mapConfig, config.getMapConfig("bc.xyz"));
-        assertEquals(mapConfig, config.getMapConfig("bc.xyz@foo"));
+        assertEquals(mapConfig.getBackupCount(), config.getMapConfig("bc.xyz").getBackupCount());
+        assertEquals(mapConfig.getBackupCount(), config.getMapConfig("bc.xyz@foo").getBackupCount());
 
         // we should also match this (contains)
-        assertEquals(mapConfig, config.getMapConfig("abc.xyz"));
-        assertEquals(mapConfig, config.getMapConfig("abc.xyz@foo"));
+        assertEquals(mapConfig.getBackupCount(), config.getMapConfig("abc.xyz").getBackupCount());
+        assertEquals(mapConfig.getBackupCount(), config.getMapConfig("abc.xyz@foo").getBackupCount());
     }
 
     @Test
