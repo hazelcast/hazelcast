@@ -319,6 +319,9 @@
                     <excludes>
                         <exclude>**/package-info.java</exclude>
                     </excludes>
+                    <testExcludes>
+                        <exclude>**/package-info.java</exclude>
+                    </testExcludes>
                 </configuration>
             </plugin>
 
