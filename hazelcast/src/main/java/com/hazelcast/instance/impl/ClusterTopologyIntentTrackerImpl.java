@@ -35,9 +35,35 @@ import static java.lang.Thread.sleep;
 /**
  * Implementation of {@link ClusterTopologyIntentTracker} that automates cluster state management
  * according to intent of topology changes detected in kubernetes environment.
+ * <br/>
+ * Example flow of change in detected intent and associated {@code currentClusterSpecSize} on a cluster's master member:
+ * (User action on left, detected intent with cluster spec size in parenthese on the right side).
+ * <pre>
+ * {@code
+ * +-----------------------------------------------------------------+---------------------------------+
+ * | $ helm install hz --set cluster.memberCount=3 \                 | NOT_IN_MANAGED_CONTEXT(-1) ->   |
+ * |             hazelcast-enterprise-5.3.1-gcs.tgz                  | CLUSTER_START(3) ->             |
+ * |                                                                 | (after pods are started)        |
+ * |                                                                 | STABLE(3)                       |
+ * +-----------------------------------------------------------------+---------------------------------+
+ * | $ kubectl scale sts hz-hazelcast-enterprise --replicas 5        | SCALING(5) ->                   |
+ * |                                                                 | (after new pods are started)    |
+ * |                                                                 | STABLE(5)                       |
+ * +-----------------------------------------------------------------+---------------------------------+
+ * | $ kubectl delete pod hz-hazelcast-enterprise-2                  | MISSING_MEMBERS(5) ->           |
+ * |   (simulating kubernetes deleted a pod)                         | (after pod is restarted)        |
+ * |                                                                 | STABLE(5)                       |
+ * +-----------------------------------------------------------------+---------------------------------+
+ * | $ kubectl scale sts hz-hazelcast-enterprise --replicas 0        | CLUSTER_SHUTDOWN(0)             |
+ * +-----------------------------------------------------------------+---------------------------------+
+ * }
+ * </pre>
  */
 public class ClusterTopologyIntentTrackerImpl implements ClusterTopologyIntentTracker {
 
+    /**
+     * Currently detected cluster topology intent.
+     */
     private final AtomicReference<ClusterTopologyIntent> clusterTopologyIntent =
             new AtomicReference<>(ClusterTopologyIntent.NOT_IN_MANAGED_CONTEXT);
     // single-threaded executor for actions in response to cluster topology intent changes
@@ -46,6 +72,10 @@ public class ClusterTopologyIntentTrackerImpl implements ClusterTopologyIntentTr
     private final ClusterState clusterStateForMissingMembers;
     private final ILogger logger;
     private final Node node;
+    /**
+     * The desired number of members, as specified in the runtime environment. eg in kubernetes
+     * {@code kubectl scale sts hz --replicas 5} means {@code currentClusterSpecSize} is 5.
+     */
     private volatile int currentClusterSpecSize = UNKNOWN;
 
     public ClusterTopologyIntentTrackerImpl(Node node) {

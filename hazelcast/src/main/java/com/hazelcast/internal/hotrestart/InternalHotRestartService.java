@@ -60,6 +60,9 @@ public interface InternalHotRestartService {
      */
     boolean setDeferredClusterState(ClusterState newClusterState);
 
+    /**
+     * @return {@code true} when recovery process is completed and all members reached final state, otherwise {@code false}.
+     */
     boolean isStartCompleted();
 
     /**
@@ -156,9 +159,21 @@ public interface InternalHotRestartService {
      */
     void deferPostJoinOps(OnJoinOp postJoinOp);
 
-    void setClusterTopologyIntentOnMaster(ClusterTopologyIntent clusterTopologyIntent);
-
+    /**
+     * @return {@code true} if data were found on disk, otherwise {@code false}.
+     */
     boolean isStartingFromPersistence();
 
+    /**
+     * Invoked each time an enabled {@link com.hazelcast.instance.impl.ClusterTopologyIntentTracker}
+     * detects a change of cluster topology in the runtime environment. Only used when running in a
+     * managed context (Kubernetes).
+     */
     void onClusterTopologyIntentChange();
+
+    /**
+     * Conveys information about the detected cluster topology intent on master member.
+     * @param clusterTopologyIntent the cluster topology intent, as detected by master member.
+     */
+    void setClusterTopologyIntentOnMaster(ClusterTopologyIntent clusterTopologyIntent);
 }

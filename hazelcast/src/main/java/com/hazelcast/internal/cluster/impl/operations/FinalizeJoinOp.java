@@ -141,9 +141,10 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
 
         final boolean shouldExecutePostJoinOp = preparePostOp(postJoinOp);
         if (getInternalHotRestartService() != null && getInternalHotRestartService().isEnabled()) {
-            // If recovery is still in progress do not execute now the post-join ops.
-            // For all operations, this is enforced in OperationRunnerImpl#checkNodeState. However,
-            // post-join ops are executed without any node state checks by OnJoinOp, therefore we
+            // Do not execute now the post-join ops either because master requested that (deferPartitionProcessing)
+            // or because recovery is not yet complete.
+            // For other operations, OperationRunnerImpl#checkNodeState enforces not allowing execution during
+            // recovery. However, post-join ops are executed without any node state checks by OnJoinOp, so we
             // need to explicitly defer execution after recovery from persistence is done.
             if (deferPartitionProcessing || !getInternalHotRestartService().isStartCompleted()) {
                 getInternalHotRestartService().deferPostJoinOps(postJoinOp);
