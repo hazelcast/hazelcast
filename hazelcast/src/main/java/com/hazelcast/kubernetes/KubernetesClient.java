@@ -763,8 +763,27 @@ class KubernetesClient {
             if (latestRuntimeContext != null && ctx != null) {
                 LOGGER.info("Updating cluster topology tracker with previous: "
                     + latestRuntimeContext + ", updated: " + ctx);
-                clusterTopologyIntentTracker.update(latestRuntimeContext.getDesiredNumberOfMembers(),
-                        ctx.getDesiredNumberOfMembers(), ctx.getReadyReplicas(), ctx.getCurrentReplicas());
+                // check for stable + missing coalesced event
+                if (ctx.getDesiredNumberOfMembers() == latestRuntimeContext.getDesiredNumberOfMembers() // same spec size
+                    && ctx.getReadyReplicas() > latestRuntimeContext.getReadyReplicas() // now more ready replicas then previous
+                    && ctx.getReadyReplicas() == ctx.getDesiredNumberOfMembers() // and ready replicas == spec size
+                    && ctx.getCurrentReplicas() < latestRuntimeContext.getCurrentReplicas() // and fewer current pods than previous
+                    ) {
+                    // todo this event unbundling is for rolling-restart and should only apply when NO_MIGRATION missing-member
+                    //  state applies. When using FROZEN as missing-member-state, it probably does no harm, but it might slow
+                    //  down RR due to switching to ACTIVE state in between
+                    // unbundle this into two events
+                    // 1. ready replicas == spec size with same "currentReplicas" as previous
+                    clusterTopologyIntentTracker.update(latestRuntimeContext.getDesiredNumberOfMembers(),
+                            ctx.getDesiredNumberOfMembers(), ctx.getReadyReplicas(), latestRuntimeContext.getCurrentReplicas());
+                    Thread.yield();
+                    // 2. current replicas updated to lower number (-> missing member)
+                    clusterTopologyIntentTracker.update(latestRuntimeContext.getDesiredNumberOfMembers(),
+                            ctx.getDesiredNumberOfMembers(), ctx.getReadyReplicas(), ctx.getCurrentReplicas());
+                } else {
+                    clusterTopologyIntentTracker.update(latestRuntimeContext.getDesiredNumberOfMembers(),
+                            ctx.getDesiredNumberOfMembers(), ctx.getReadyReplicas(), ctx.getCurrentReplicas());
+                }
             }
             latestRuntimeContext = ctx;
         }
