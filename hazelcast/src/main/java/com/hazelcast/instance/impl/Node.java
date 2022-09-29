@@ -791,7 +791,7 @@ public class Node {
                 final ClusterTopologyIntent shutdownIntent = clusterTopologyIntentTracker.getClusterTopologyIntent();
                 if (clusterTopologyIntentTracker.isEnabled()
                         && getNodeExtension().getInternalHotRestartService().isEnabled()
-                        && shutdownIntent != ClusterTopologyIntent.UNKNOWN
+                        && shutdownIntent != ClusterTopologyIntent.IN_MANAGED_CONTEXT_UNKNOWN
                         && shutdownIntent != ClusterTopologyIntent.NOT_IN_MANAGED_CONTEXT) {
                     final ClusterState clusterState = clusterService.getClusterState();
                     logger.info("Running shutdown hook... Current node state: " + state

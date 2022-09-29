@@ -106,7 +106,7 @@ public class ClusterTopologyIntentTrackerImpl implements ClusterTopologyIntentTr
                 clusterTopologyIntent.set(ClusterTopologyIntent.CLUSTER_START);
             } else {
                 logger.info("Member starting in managed context");
-                clusterTopologyIntent.set(ClusterTopologyIntent.UNKNOWN);
+                clusterTopologyIntent.set(ClusterTopologyIntent.IN_MANAGED_CONTEXT_UNKNOWN);
             }
             return;
         }
@@ -119,7 +119,7 @@ public class ClusterTopologyIntentTrackerImpl implements ClusterTopologyIntentTr
                     : ClusterTopologyIntent.CLUSTER_SHUTDOWN;
         } else if (previousClusterSpecSize == currentClusterSpecSize) {
             if (previous == ClusterTopologyIntent.SCALING
-                    || previous == ClusterTopologyIntent.UNKNOWN) {
+                    || previous == ClusterTopologyIntent.IN_MANAGED_CONTEXT_UNKNOWN) {
                 // only switch to STABLE when ready nodes count equals number of currentClusterSpecSize
                 if (readyNodesCount != currentClusterSpecSize) {
                     logger.info("Ignoring state change because readyNodesCount "
@@ -169,7 +169,7 @@ public class ClusterTopologyIntentTrackerImpl implements ClusterTopologyIntentTr
         ClusterTopologyIntent current = this.clusterTopologyIntent.get();
         logger.info("Current node cluster topology intent is " + current);
         // if not UNKNOWN, then it was already initialized
-        if (current == ClusterTopologyIntent.UNKNOWN) {
+        if (current == ClusterTopologyIntent.IN_MANAGED_CONTEXT_UNKNOWN) {
             logger.info("Initializing this node's cluster topology to " + clusterTopologyIntent);
             this.clusterTopologyIntent.set(clusterTopologyIntent);
         }
