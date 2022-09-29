@@ -722,7 +722,7 @@ public final class FieldOperations {
         ALL[FieldKind.COMPACT.getId()] = new FieldKindBasedOperations() {
             @Override
             public Object readAsLeafObjectOnQuery(InternalGenericRecord genericRecord, String fieldName) {
-                return genericRecord.getObject(fieldName);
+                return genericRecord.getInternalGenericRecord(fieldName);
             }
 
             @Override
