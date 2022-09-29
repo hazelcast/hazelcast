@@ -202,7 +202,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         out.writeObject(postJoinOp);
         out.writeBoolean(deferPartitionProcessing);
         if (clusterVersion.isGreaterOrEqual(V5_2)) {
-            out.writeByte(clusterTopologyIntent.ordinal());
+            out.writeByte(clusterTopologyIntent.getId());
         }
     }
 
@@ -223,8 +223,8 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         }
         deferPartitionProcessing = in.readBoolean();
         if (clusterVersion.isGreaterOrEqual(V5_2)) {
-            byte topologyIntentOrdinal = in.readByte();
-            clusterTopologyIntent = ClusterTopologyIntent.values()[topologyIntentOrdinal];
+            byte topologyIntentId = in.readByte();
+            clusterTopologyIntent = ClusterTopologyIntent.of(topologyIntentId);
         }
     }
 

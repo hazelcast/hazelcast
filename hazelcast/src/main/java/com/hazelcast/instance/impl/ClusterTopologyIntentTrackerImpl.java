@@ -113,7 +113,7 @@ public class ClusterTopologyIntentTrackerImpl implements ClusterTopologyIntentTr
         final ClusterTopologyIntent previous = clusterTopologyIntent.get();
         ClusterTopologyIntent newTopologyIntent;
         if (currentClusterSpecSize == 0) {
-            newTopologyIntent = previous == ClusterTopologyIntent.MISSING_MEMBERS
+            newTopologyIntent = previous == ClusterTopologyIntent.CLUSTER_STABLE_WITH_MISSING_MEMBERS
                     || previous == ClusterTopologyIntent.CLUSTER_SHUTDOWN_WITH_MISSING_MEMBERS
                     ? ClusterTopologyIntent.CLUSTER_SHUTDOWN_WITH_MISSING_MEMBERS
                     : ClusterTopologyIntent.CLUSTER_SHUTDOWN;
@@ -135,7 +135,7 @@ public class ClusterTopologyIntentTrackerImpl implements ClusterTopologyIntentTr
                 return;
             }
             newTopologyIntent = (readyNodesCount < currentClusterSpecSize) || (currentNodesCount < currentClusterSpecSize)
-                    ? ClusterTopologyIntent.MISSING_MEMBERS : ClusterTopologyIntent.STABLE;
+                    ? ClusterTopologyIntent.CLUSTER_STABLE_WITH_MISSING_MEMBERS : ClusterTopologyIntent.CLUSTER_STABLE;
         } else {
             newTopologyIntent = ClusterTopologyIntent.SCALING;
         }
@@ -148,7 +148,7 @@ public class ClusterTopologyIntentTrackerImpl implements ClusterTopologyIntentTr
                 }
                 if (newTopologyIntent == ClusterTopologyIntent.SCALING) {
                     changeClusterState(ClusterState.ACTIVE);
-                } else if (newTopologyIntent == ClusterTopologyIntent.STABLE) {
+                } else if (newTopologyIntent == ClusterTopologyIntent.CLUSTER_STABLE) {
                     if (getClusterService().getClusterState() != ClusterState.ACTIVE) {
                         executeOrScheduleClusterStateChange(ClusterState.ACTIVE);
                     } else if (!getPartitionService().isPartitionTableHealthy()) {
@@ -178,8 +178,8 @@ public class ClusterTopologyIntentTrackerImpl implements ClusterTopologyIntentTr
     @Override
     public void shutdownWithIntent(ClusterTopologyIntent shutdownIntent) {
         // consider the detected shutdown intent before triggering node shutdown
-        if (shutdownIntent == ClusterTopologyIntent.STABLE
-                || shutdownIntent == ClusterTopologyIntent.MISSING_MEMBERS) {
+        if (shutdownIntent == ClusterTopologyIntent.CLUSTER_STABLE
+                || shutdownIntent == ClusterTopologyIntent.CLUSTER_STABLE_WITH_MISSING_MEMBERS) {
             try {
                 long timeoutNanos = node.getProperties().getNanos(ClusterProperty.CLUSTER_SHUTDOWN_TIMEOUT_SECONDS);
                 while (!getPartitionService().isPartitionTableHealthy()
