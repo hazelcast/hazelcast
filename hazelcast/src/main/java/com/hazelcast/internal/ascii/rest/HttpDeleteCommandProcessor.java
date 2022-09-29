@@ -71,8 +71,13 @@ public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteC
     private void handleQueue(HttpDeleteCommand command, String uri) throws UnsupportedEncodingException {
         // Poll an item from the default queue in 3 seconds
         // http://127.0.0.1:5701/hazelcast/rest/queues/default/3
+        uri = StringUtil.stripTrailingSlash(uri);
         int indexEnd = uri.indexOf('/', URI_QUEUES.length());
         command.getExecutionDetails().setObjectType(QUEUE);
+        if (indexEnd == -1) {
+            // /queues/queueName usage
+            indexEnd = uri.length();
+        }
         String queueName = urlDecode(uri.substring(URI_QUEUES.length(), indexEnd));
         command.getExecutionDetails().setObjectName(queueName);
         String secondStr = (uri.length() > (indexEnd + 1)) ? urlDecode(uri.substring(indexEnd + 1)) : null;

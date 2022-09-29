@@ -198,6 +198,26 @@ public class HTTPCommunicator {
         return doGet(url);
     }
 
+    public ConnectionResponse queuePollViaDelete(String queueName, boolean endWithSlash) throws IOException {
+        String url = getUrl(URI_QUEUES + queueName);
+        if (endWithSlash) {
+            url += "/";
+        }
+        return doDelete(url);
+    }
+
+    public ConnectionResponse queuePollViaDelete(String queueName) throws IOException {
+        return queuePollViaDelete(queueName, false);
+    }
+
+    public ConnectionResponse queuePollViaDelete(String queueName, long timeout, boolean endWithSlash) throws IOException {
+        String url = getUrl(URI_QUEUES + queueName + "/" + timeout);
+        if (endWithSlash) {
+            url += "/";
+        }
+        return doDelete(url);
+    }
+
     public int queueSize(String queueName) throws IOException {
         String url = getUrl(URI_QUEUES + queueName + "/size");
         return Integer.parseInt(doGet(url).response);
@@ -206,6 +226,11 @@ public class HTTPCommunicator {
     public int queueOffer(String queueName, String data) throws IOException {
         final String url = getUrl(URI_QUEUES + queueName);
         return doPost(url, data).responseCode;
+    }
+
+    public int queueOffer(String queueName) throws IOException {
+        final String url = getUrl(URI_QUEUES + queueName);
+        return doPost(url).responseCode;
     }
 
     public String mapGetAndResponse(String mapName, String key) throws IOException {

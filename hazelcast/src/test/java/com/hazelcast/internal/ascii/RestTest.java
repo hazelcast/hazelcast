@@ -25,6 +25,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.ascii.HTTPCommunicator.ConnectionResponse;
+import com.hazelcast.internal.ascii.rest.RestValue;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
@@ -44,6 +45,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_JSON;
 import static com.hazelcast.internal.nio.IOUtil.readFully;
@@ -58,6 +60,7 @@ import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static com.hazelcast.test.HazelcastTestSupport.sleepAtLeastSeconds;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_OK;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -403,6 +406,115 @@ public class RestTest {
         } finally {
             socket.close();
         }
+    }
+
+    @Test
+    public void testMapGetWithEscapedName() throws IOException {
+        String mapName = randomMapName();
+        IMap<String, String> map = instance.getMap(mapName + " a");
+        map.put("key 1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+        ConnectionResponse response = communicator.mapGet(mapName + "%20a", "key%201");
+        assertEquals(HTTP_OK, response.responseCode);
+        assertEquals(response.response, "value1");
+    }
+
+    @Test
+    public void testQueueGetWithEscapedName() throws IOException {
+        String queueName = randomString();
+        IQueue<String> queue = instance.getQueue(queueName + " a");
+        assertTrue(queue.offer("value 1"));
+        assertTrue(queue.offer("value2"));
+        assertTrue(queue.offer("value3"));
+        ConnectionResponse response = communicator.queuePoll(queueName + "%20a", 10);
+        assertEquals(HTTP_OK, response.responseCode);
+        assertEquals(response.response, "value 1");
+    }
+
+    @Test
+    public void testQueueOfferWithEscapedNameAndSimpleValue() throws IOException {
+        String queueName = randomString();
+        IQueue<Object> queue = instance.getQueue(queueName + " a");
+        assertEquals(HTTP_OK, communicator.queueOffer(queueName + "%20a" + "/value%201"));
+        assertEquals(queue.size(), 1);
+
+        ConnectionResponse response = communicator.queuePoll(queueName + "%20a", 10);
+        assertEquals(HTTP_OK, response.responseCode);
+        assertEquals(response.response, "value 1");
+    }
+
+    @Test
+    public void testMapPutWithEscapedNameAndKey() throws IOException {
+        String mapName = randomMapName();
+        IMap<String, RestValue> map = instance.getMap(mapName + " a");
+        assertEquals(HTTP_OK, communicator.mapPut(mapName + "%20a", "key%201", "value1"));
+        assertEquals(1, map.size());
+        assertArrayEquals(map.get("key 1").getValue(), "value1".getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    public void testDeleteAllMapWithEscapedName() throws IOException {
+        String mapName = randomMapName();
+        IMap<String, String> map = instance.getMap(mapName + " a");
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+        assertEquals(HTTP_OK, communicator.mapDeleteAll(mapName + "%20a"));
+        assertEquals(0, map.size());
+    }
+
+    @Test
+    public void testDeleteMapWithEscapedName() throws IOException {
+        String mapName = randomMapName();
+        IMap<String, String> map = instance.getMap(mapName + " a");
+        map.put("key 1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+        assertEquals(HTTP_OK, communicator.mapDelete(mapName + "%20a", "key%201"));
+        assertEquals(2, map.size());
+    }
+
+    @Test
+    public void testPollQueueWithEscapedName() throws IOException {
+        String queueName = randomString();
+        IQueue<String> queue = instance.getQueue(queueName + " a");
+        assertTrue(queue.offer("value 1"));
+        assertTrue(queue.offer("value 2"));
+        assertTrue(queue.offer("value 3"));
+        ConnectionResponse response = communicator.queuePollViaDelete(queueName + "%20a");
+        assertEquals(HTTP_OK, response.responseCode);
+        assertEquals("value 1", response.response);
+        assertEquals(2, queue.size());
+    }
+
+    @Test
+    public void testPollQueueViaDelete() throws IOException {
+        String queueName = randomString();
+        IQueue<String> queue = instance.getQueue(queueName);
+        assertTrue(queue.offer("value1"));
+        assertTrue(queue.offer("value2"));
+        assertTrue(queue.offer("value3"));
+        assertTrue(queue.offer("value4"));
+        ConnectionResponse response = communicator.queuePollViaDelete(queueName, false);
+        assertEquals(HTTP_OK, response.responseCode);
+        assertEquals("value1", response.response);
+        assertEquals(3, queue.size());
+
+        ConnectionResponse response2 = communicator.queuePollViaDelete(queueName, true);
+        assertEquals(HTTP_OK, response2.responseCode);
+        assertEquals("value2", response2.response);
+        assertEquals(2, queue.size());
+
+        ConnectionResponse response3 = communicator.queuePollViaDelete(queueName, 10, false);
+        assertEquals(HTTP_OK, response3.responseCode);
+        assertEquals("value3", response3.response);
+        assertEquals(1, queue.size());
+
+        ConnectionResponse response4 = communicator.queuePollViaDelete(queueName, 20, true);
+        assertEquals(HTTP_OK, response4.responseCode);
+        assertEquals("value4", response4.response);
+        assertEquals(0, queue.size());
     }
 
     private JsonObject assertJsonContains(String json, String... attributesAndValues) {
