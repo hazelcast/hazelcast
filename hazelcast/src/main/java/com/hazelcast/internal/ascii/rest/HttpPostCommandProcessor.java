@@ -253,7 +253,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         getNode().hazelcastInstance.shutdown();
     }
 
-    private void handleQueue(HttpPostCommand command, String uri) {
+    private void handleQueue(HttpPostCommand command, String uri) throws UnsupportedEncodingException {
         String simpleValue = null;
         String suffix;
         int baseUriLength = URI_QUEUES.length();
@@ -273,8 +273,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         if (indexSlash == -1) {
             queueName = suffix;
         } else {
-            queueName = suffix.substring(0, indexSlash);
-            simpleValue = suffix.substring(indexSlash + 1);
+            queueName = urlDecode(suffix.substring(0, indexSlash));
+            simpleValue = urlDecode(suffix.substring(indexSlash + 1));
         }
         command.getExecutionDetails().setObjectName(queueName);
         byte[] data;
@@ -294,16 +294,16 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         }
     }
 
-    private void handleMap(HttpPostCommand command, String uri) {
+    private void handleMap(HttpPostCommand command, String uri) throws UnsupportedEncodingException {
         command.getExecutionDetails().setObjectType(MAP);
         uri = StringUtil.stripTrailingSlash(uri);
         int indexEnd = uri.indexOf('/', URI_MAPS.length());
         if (indexEnd == -1) {
             throw new HttpBadRequestException("Missing map name");
         }
-        String mapName = uri.substring(URI_MAPS.length(), indexEnd);
+        String mapName = urlDecode(uri.substring(URI_MAPS.length(), indexEnd));
         command.getExecutionDetails().setObjectName(mapName);
-        String key = uri.substring(indexEnd + 1);
+        String key = urlDecode(uri.substring(indexEnd + 1));
         byte[] data = command.getData();
         textCommandService.put(mapName, key, new RestValue(data, command.getContentType()), -1);
         command.send200();

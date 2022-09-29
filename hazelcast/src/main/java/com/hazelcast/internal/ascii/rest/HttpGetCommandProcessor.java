@@ -41,6 +41,7 @@ import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
 
+import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
@@ -375,12 +376,12 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         prepareResponse(command, new JsonObject().add("name", textCommandService.getInstanceName()));
     }
 
-    private void handleQueue(HttpGetCommand command, String uri) {
+    private void handleQueue(HttpGetCommand command, String uri) throws UnsupportedEncodingException {
         command.getExecutionDetails().setObjectType(QUEUE);
         int indexEnd = uri.indexOf('/', URI_QUEUES.length());
-        String queueName = uri.substring(URI_QUEUES.length(), indexEnd);
+        String queueName = urlDecode(uri.substring(URI_QUEUES.length(), indexEnd));
         command.getExecutionDetails().setObjectName(queueName);
-        String secondStr = (uri.length() > (indexEnd + 1)) ? uri.substring(indexEnd + 1) : null;
+        String secondStr = (uri.length() > (indexEnd + 1)) ? urlDecode(uri.substring(indexEnd + 1)) : null;
 
         if (equalsIgnoreCase(QUEUE_SIZE_COMMAND, secondStr)) {
             int size = textCommandService.size(queueName);
@@ -392,13 +393,13 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         }
     }
 
-    private void handleMap(HttpGetCommand command, String uri) {
+    private void handleMap(HttpGetCommand command, String uri) throws UnsupportedEncodingException {
         command.getExecutionDetails().setObjectType(MAP);
         uri = StringUtil.stripTrailingSlash(uri);
         int indexEnd = uri.indexOf('/', URI_MAPS.length());
-        String mapName = uri.substring(URI_MAPS.length(), indexEnd);
+        String mapName = urlDecode(uri.substring(URI_MAPS.length(), indexEnd));
         command.getExecutionDetails().setObjectName(mapName);
-        String key = uri.substring(indexEnd + 1);
+        String key = urlDecode(uri.substring(indexEnd + 1));
         Object value = textCommandService.get(mapName, key);
         prepareResponse(command, value);
     }
