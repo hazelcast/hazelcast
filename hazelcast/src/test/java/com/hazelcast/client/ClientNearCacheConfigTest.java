@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -47,8 +48,8 @@ public class ClientNearCacheConfigTest {
         final NearCacheConfig mapFoo = clientConfig.getNearCacheConfig("mapFoo");
         final NearCacheConfig mapStudentFoo = clientConfig.getNearCacheConfig("mapStudentFoo");
 
-        assertEquals(genericNearCacheConfig.getMaxIdleSeconds(), mapFoo.getMaxIdleSeconds());
-        assertEquals(specificNearCacheConfig.getMaxIdleSeconds(), mapStudentFoo.getMaxIdleSeconds());
+        assertEquals(genericNearCacheConfig, mapFoo);
+        assertEquals(specificNearCacheConfig, mapStudentFoo);
     }
 
     @Test
@@ -67,8 +68,8 @@ public class ClientNearCacheConfigTest {
         final NearCacheConfig mapFoo = clientConfig.getNearCacheConfig("fooMap");
         final NearCacheConfig mapStudentFoo = clientConfig.getNearCacheConfig("fooMapStudent");
 
-        assertEquals(genericNearCacheConfig.getMaxIdleSeconds(), mapFoo.getMaxIdleSeconds());
-        assertEquals(specificNearCacheConfig.getMaxIdleSeconds(), mapStudentFoo.getMaxIdleSeconds());
+        assertEquals(genericNearCacheConfig, mapFoo);
+        assertEquals(specificNearCacheConfig, mapStudentFoo);
     }
 
     @Test
@@ -87,8 +88,10 @@ public class ClientNearCacheConfigTest {
         final NearCacheConfig mapFoo = clientConfig.getNearCacheConfig("mapFooBar");
         final NearCacheConfig mapStudentFoo = clientConfig.getNearCacheConfig("mapStudentFooBar");
 
-        assertEquals(genericNearCacheConfig.getMaxIdleSeconds(), mapFoo.getMaxIdleSeconds());
-        assertEquals(specificNearCacheConfig.getMaxIdleSeconds(), mapStudentFoo.getMaxIdleSeconds());
+        assertEquals(genericNearCacheConfig, mapFoo);
+        assertEquals(specificNearCacheConfig, mapStudentFoo);
     }
-
+    public static void assertEquals(NearCacheConfig expected, NearCacheConfig actual) {
+        assertThat(actual).isEqualToIgnoringGivenFields(expected, "name");
+    }
 }
