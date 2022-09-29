@@ -24,6 +24,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
@@ -33,7 +34,7 @@ public class WildcardConfigPatternMatcherTest {
 
     @Test
     public void testQueueConfigWithoutWildcard() {
-        QueueConfig queueConfig = new QueueConfig().setName("someQueue");
+        QueueConfig queueConfig = new QueueConfig().setName("someQueue").setMaxSize(1337);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new WildcardConfigPatternMatcher());
@@ -43,14 +44,14 @@ public class WildcardConfigPatternMatcherTest {
         assertEquals(queueConfig, config.getQueueConfig("someQueue@foo"));
 
         // non-matching name
-        assertNotEquals(queueConfig, config.getQueueConfig("doesNotExist"));
+        assertNotEquals(queueConfig.getMaxSize(), config.getQueueConfig("doesNotExist").getMaxSize());
         // non-matching case
-        assertNotEquals(queueConfig, config.getQueueConfig("SomeQueue"));
+        assertNotEquals(queueConfig.getMaxSize(), config.getQueueConfig("SomeQueue").getMaxSize());
     }
 
     @Test
     public void testQueueConfigWildcardDocumentationExample1() {
-        QueueConfig queueConfig = new QueueConfig().setName("*hazelcast.test.myQueue");
+        QueueConfig queueConfig = new QueueConfig().setName("*hazelcast.test.myQueue").setMaxSize(1337);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new WildcardConfigPatternMatcher());
@@ -61,7 +62,7 @@ public class WildcardConfigPatternMatcherTest {
 
     @Test
     public void testQueueConfigWildcardDocumentationExample2() {
-        QueueConfig queueConfig = new QueueConfig().setName("com.hazelcast.*.myQueue");
+        QueueConfig queueConfig = new QueueConfig().setName("com.hazelcast.*.myQueue").setMaxSize(1337);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new WildcardConfigPatternMatcher());
@@ -72,7 +73,7 @@ public class WildcardConfigPatternMatcherTest {
 
     @Test
     public void testQueueConfigWildcard() {
-        QueueConfig queueConfig = new QueueConfig().setName("abc*");
+        QueueConfig queueConfig = new QueueConfig().setName("abc*").setMaxSize(1337);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new WildcardConfigPatternMatcher());
@@ -84,7 +85,7 @@ public class WildcardConfigPatternMatcherTest {
 
     @Test
     public void testQueueConfigWildcardSamePrefixAndSuffix() {
-        QueueConfig queueConfig = new QueueConfig().setName("abc*abc");
+        QueueConfig queueConfig = new QueueConfig().setName("abc*abc").setMaxSize(1337);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new WildcardConfigPatternMatcher());
@@ -97,7 +98,7 @@ public class WildcardConfigPatternMatcherTest {
 
     @Test
     public void testMapConfigWithoutWildcard() {
-        MapConfig mapConfig = new MapConfig().setName("someMap");
+        MapConfig mapConfig = new MapConfig().setName("someMap").setMaxIdleSeconds(1337);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new WildcardConfigPatternMatcher());
@@ -114,7 +115,7 @@ public class WildcardConfigPatternMatcherTest {
 
     @Test
     public void testMapConfigWildcardDocumentationExample1() {
-        MapConfig mapConfig = new MapConfig().setName("com.hazelcast.test.*");
+        MapConfig mapConfig = new MapConfig().setName("com.hazelcast.test.*").setMaxIdleSeconds(1337);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new WildcardConfigPatternMatcher());
@@ -125,7 +126,7 @@ public class WildcardConfigPatternMatcherTest {
 
     @Test
     public void testMapConfigWildcardDocumentationExample2() {
-        MapConfig mapConfig = new MapConfig().setName("com.hazel*");
+        MapConfig mapConfig = new MapConfig().setName("com.hazel*").setMaxIdleSeconds(1337);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new WildcardConfigPatternMatcher());
@@ -136,7 +137,7 @@ public class WildcardConfigPatternMatcherTest {
 
     @Test
     public void testMapConfigWildcardDocumentationExample3() {
-        MapConfig mapConfig = new MapConfig().setName("*.test.myMap");
+        MapConfig mapConfig = new MapConfig().setName("*.test.myMap").setMaxIdleSeconds(1337);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new WildcardConfigPatternMatcher());
@@ -158,9 +159,9 @@ public class WildcardConfigPatternMatcherTest {
 
     @Test(expected = InvalidConfigurationException.class)
     public void testMapConfigWildcardMultipleAmbiguousConfigs() {
-        MapConfig mapConfig1 = new MapConfig().setName("com.hazelcast.*");
-        MapConfig mapConfig2 = new MapConfig().setName("com.hazelcast.test.*");
-        MapConfig mapConfig3 = new MapConfig().setName("com.hazelcast.test.sub.*");
+        MapConfig mapConfig1 = new MapConfig().setName("com.hazelcast.*").setMaxIdleSeconds(1337);
+        MapConfig mapConfig2 = new MapConfig().setName("com.hazelcast.test.*").setMaxIdleSeconds(1337);
+        MapConfig mapConfig3 = new MapConfig().setName("com.hazelcast.test.sub.*").setMaxIdleSeconds(1337);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new WildcardConfigPatternMatcher());
@@ -173,7 +174,7 @@ public class WildcardConfigPatternMatcherTest {
 
     @Test
     public void testMapConfigWildcardStartsWith() {
-        MapConfig mapConfig = new MapConfig().setName("bc*");
+        MapConfig mapConfig = new MapConfig().setName("bc*").setMaxIdleSeconds(1337);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new WildcardConfigPatternMatcher());
@@ -207,12 +208,19 @@ public class WildcardConfigPatternMatcherTest {
 
     @Test
     public void testMapConfigWildcardOnly() {
-        MapConfig mapConfig = new MapConfig().setName("*");
+        MapConfig mapConfig = new MapConfig().setName("*").setMaxIdleSeconds(1337);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new WildcardConfigPatternMatcher());
         config.addMapConfig(mapConfig);
 
         assertEquals(mapConfig, config.getMapConfig("com.hazelcast.myMap"));
+    }
+
+    public static void assertEquals(MapConfig expected, MapConfig actual) {
+        assertThat(actual).isEqualToIgnoringGivenFields(expected, "name");
+    }
+    public static void assertEquals(QueueConfig expected, QueueConfig actual) {
+        assertThat(actual).isEqualToIgnoringGivenFields(expected, "name");
     }
 }

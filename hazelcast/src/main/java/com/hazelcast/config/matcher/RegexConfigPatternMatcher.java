@@ -22,6 +22,8 @@ import com.hazelcast.internal.config.ConfigUtils;
 
 import java.util.regex.Pattern;
 
+import static java.lang.Character.isLetter;
+
 /**
  * This {@code ConfigPatternMatcher} uses Java regular expressions for matching.
  * <p>
@@ -43,7 +45,13 @@ public class RegexConfigPatternMatcher implements ConfigPatternMatcher {
     public String matches(Iterable<String> configPatterns, String itemName) throws InvalidConfigurationException {
         String candidate = null;
         for (String pattern : configPatterns) {
-            if (Pattern.compile(pattern, flags).matcher(itemName).find()) {
+            String exactPattern = pattern;
+            boolean startsWithLetter = isLetter(pattern.charAt(0));
+            boolean endsWithLetter = isLetter(pattern.charAt(pattern.length() - 1));
+            if (startsWithLetter && endsWithLetter) {
+                exactPattern = "^" + exactPattern + "$";
+            }
+            if (Pattern.compile(exactPattern, flags).matcher(itemName).find()) {
                 if (candidate != null) {
                     throw ConfigUtils.createAmbiguousConfigurationException(itemName, candidate, pattern);
                 }
