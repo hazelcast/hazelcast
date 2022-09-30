@@ -40,6 +40,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -50,7 +51,10 @@ import static org.junit.Assert.fail;
 @Category(SlowTest.class)
 public class MapScanMigrationStressTest extends JetTestSupport {
     private static final int ITEM_COUNT = 500_000;
+    private static final int MIN_PROGRESS_BETWEEN_MUTATIONS = 10_000;
     private static final String MAP_NAME = "map";
+
+    private AtomicInteger progress;
 
     private AtomicReference<Throwable> mutatorException;
     private TestHazelcastFactory factory;
@@ -68,6 +72,7 @@ public class MapScanMigrationStressTest extends JetTestSupport {
         SqlTestSupport.createMapping(instances[0], MAP_NAME, Integer.class, Integer.class);
         map = instances[0].getMap(MAP_NAME);
         mutatorException = new AtomicReference<>(null);
+        progress = new AtomicInteger();
     }
 
     private static Config createFastRetryConfig() {
@@ -106,7 +111,7 @@ public class MapScanMigrationStressTest extends JetTestSupport {
         }
         map.putAll(temp);
 
-        mutator = new MutatorThread(1000L);
+        mutator = new MutatorThread();
 
         assertRowsAnyOrder("SELECT __key, Concat_WS('-', __key, this) FROM " + MAP_NAME , expected, mutator);
 
@@ -128,7 +133,7 @@ public class MapScanMigrationStressTest extends JetTestSupport {
         IndexConfig indexConfig = new IndexConfig(IndexType.HASH, "this").setName(randomName());
         map.addIndex(indexConfig);
 
-        mutator = new MutatorThread(2000L);
+        mutator = new MutatorThread();
 
         // Awful performance of such a query, but still a good load for test.
         assertRowsAnyOrder("SELECT * FROM " + MAP_NAME + " WHERE this = 1", expected, mutator);
@@ -151,7 +156,7 @@ public class MapScanMigrationStressTest extends JetTestSupport {
         IndexConfig indexConfig = new IndexConfig(IndexType.SORTED, "this").setName(randomName());
         map.addIndex(indexConfig);
 
-        mutator = new MutatorThread(2000L);
+        mutator = new MutatorThread();
         assertRowsOrdered("SELECT * FROM " + MAP_NAME + " ORDER BY this DESC", expected, mutator);
 
         mutator.terminate();
@@ -162,10 +167,8 @@ public class MapScanMigrationStressTest extends JetTestSupport {
     private class MutatorThread extends Thread {
         private boolean firstLaunch = true;
         private volatile boolean active = true;
-        private final long delay;
 
-        private MutatorThread(long delay) {
-            this.delay = delay;
+        private MutatorThread() {
         }
 
         private synchronized void terminate() {
@@ -175,6 +178,8 @@ public class MapScanMigrationStressTest extends JetTestSupport {
         @Override
         @SuppressWarnings("BusyWait")
         public void run() {
+            int lastProgressSeen = 0;
+            int currentProgress = 0;
             while (active) {
                 try {
                     if (!firstLaunch) {
@@ -184,7 +189,10 @@ public class MapScanMigrationStressTest extends JetTestSupport {
                     }
                     instances[3] = factory.newHazelcastInstance(createFastRetryConfig());
 
-                    Thread.sleep(delay);
+                    while (active && (currentProgress = progress.get()) < lastProgressSeen + MIN_PROGRESS_BETWEEN_MUTATIONS) {
+                        // spinning and waiting
+                    }
+                    lastProgressSeen = currentProgress;
                 } catch (Exception e) {
                     mutatorException.set(e);
                     e.printStackTrace();
@@ -215,11 +223,10 @@ public class MapScanMigrationStressTest extends JetTestSupport {
 
         mutator.start();
 
-        int i = 0;
         while (rowIterator.hasNext()) {
             SqlRow row = rowIterator.next();
             actualRows.add(new Row(row.getObject(0), row.getObject(1)));
-            i++;
+            int i = progress.incrementAndGet();
             if (i % 10_000 == 0) {
                 logger.info("received " + i + " rows");
             }
