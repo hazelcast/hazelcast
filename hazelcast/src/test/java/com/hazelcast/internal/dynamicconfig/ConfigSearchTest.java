@@ -824,7 +824,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
         testTemplate(testCase);
     }
 
-    static abstract class TestCase<T> {
+    abstract static class TestCase<T> {
 
         final T staticConfig;
         final T dynamicConfig;
