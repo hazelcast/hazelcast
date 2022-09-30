@@ -666,7 +666,7 @@ public class HTTPCommunicator {
     }
 
     public ConnectionResponse deleteBadRequestURI() throws IOException {
-        String url = getUrl(URI_QUEUES + "name");
+        String url = getUrl(URI_QUEUES);
         return doDelete(url);
     }
 
