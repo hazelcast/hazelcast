@@ -99,7 +99,7 @@ public class DynamicConfigSearchOrderTest extends HazelcastTestSupport {
 
         assertEquals("Static wildcard settings should match", STATIC_MAX_IDLE,
                 hazelcastInstance.getConfig().getMapConfig(NON_EXISTENT_NAME).getMaxIdleSeconds());
-        assertEquals("Static exact name should match", DYNAMIC_MAX_IDLE,
+        assertEquals("Static exact name should match", STATIC_MAX_IDLE,
                 hazelcastInstance.getConfig().getMapConfig(STATIC_NAME).getMaxIdleSeconds());
     }
 }

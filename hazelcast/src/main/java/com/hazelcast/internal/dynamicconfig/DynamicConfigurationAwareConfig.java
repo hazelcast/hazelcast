@@ -256,7 +256,6 @@ public class DynamicConfigurationAwareConfig extends Config {
 
     private MapConfig getMapConfigInternal(String name, String fallbackName) {
         MapConfig mapConfig = (MapConfig) configSearcher.getConfig(name, fallbackName, supplierFor(MapConfig.class));
-        mapConfig = new MapConfig(mapConfig.setName(name));
         DataPersistenceAndHotRestartMerger.merge(mapConfig.getHotRestartConfig(), mapConfig.getDataPersistenceConfig());
         return mapConfig;
     }
