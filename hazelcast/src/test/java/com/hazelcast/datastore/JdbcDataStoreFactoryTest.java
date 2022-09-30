@@ -17,7 +17,6 @@
 package com.hazelcast.datastore;
 
 import com.hazelcast.config.ExternalDataStoreConfig;
-import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -27,10 +26,8 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.sql.DataSource;
-import java.io.Closeable;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -39,57 +36,91 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JdbcDataStoreFactoryTest {
 
-    DataSource dataStore1;
-    DataSource dataStore2;
+    DataStoreSupplier<DataSource> dataStore1;
+    DataStoreSupplier<DataSource> dataStore2;
+    JdbcDataStoreFactory jdbcDataStoreFactory = new JdbcDataStoreFactory();
 
     @After
     public void tearDown() throws Exception {
-        closeDataStore(dataStore1);
-        closeDataStore(dataStore2);
+        close(dataStore1);
+        close(dataStore2);
+        jdbcDataStoreFactory.close();
     }
 
-    private static void closeDataStore(DataSource dataSource) {
-        if (!(dataSource instanceof Closeable)) {
-            return;
+    private static void close(DataStoreSupplier<DataSource> dataStore) throws Exception {
+        if (dataStore != null) {
+            dataStore.close();
         }
-
-        IOUtil.closeResource(((Closeable) dataSource));
     }
 
     @Test
     public void should_return_same_DataStore_when_shared() {
         JdbcDataStoreFactory jdbcDataStoreFactory = new JdbcDataStoreFactory();
-        Properties properties = new Properties();
-        properties.put("jdbcUrl", "jdbc:h2:mem:" + JdbcDataStoreFactoryTest.class.getSimpleName() + "_shared");
         ExternalDataStoreConfig config = new ExternalDataStoreConfig()
-                .setProperties(properties)
+                .setProperty("jdbcUrl", "jdbc:h2:mem:" + JdbcDataStoreFactoryTest.class.getSimpleName() + "_shared")
                 .setShared(true);
         jdbcDataStoreFactory.init(config);
 
         dataStore1 = jdbcDataStoreFactory.getDataStore();
         dataStore2 = jdbcDataStoreFactory.getDataStore();
 
-        assertThat(dataStore1).isNotNull();
-        assertThat(dataStore2).isNotNull();
-        assertThat(dataStore1).isSameAs(dataStore2);
+        assertThat(dataStore1.get()).isNotNull();
+        assertThat(dataStore2.get()).isNotNull();
+        assertThat(dataStore1.get()).isSameAs(dataStore2.get());
+    }
+
+    @Test
+    public void should_NOT_return_closing_datastore_when_shared() throws Exception {
+        JdbcDataStoreFactory jdbcDataStoreFactory = new JdbcDataStoreFactory();
+        ExternalDataStoreConfig config = new ExternalDataStoreConfig()
+                .setProperty("jdbcUrl", "jdbc:h2:mem:" + JdbcDataStoreFactoryTest.class.getSimpleName() + "_shared")
+                .setShared(true);
+        jdbcDataStoreFactory.init(config);
+
+        DataStoreSupplier<DataSource> dataStoreSupplier = jdbcDataStoreFactory.getDataStore();
+        dataStoreSupplier.close();
+
+        ResultSet resultSet = executeQuery(dataStoreSupplier, "select 'some-name' as name");
+        resultSet.next();
+        String actualName = resultSet.getString(1);
+
+        assertThat(actualName).isEqualTo("some-name");
+
+    }
+
+    @Test
+    public void should_return_closing_datastore_when_not_shared() throws Exception {
+        JdbcDataStoreFactory jdbcDataStoreFactory = new JdbcDataStoreFactory();
+        ExternalDataStoreConfig config = new ExternalDataStoreConfig()
+                .setProperty("jdbcUrl", "jdbc:h2:mem:" + JdbcDataStoreFactoryTest.class.getSimpleName() + "_shared")
+                .setShared(false);
+        jdbcDataStoreFactory.init(config);
+
+        DataStoreSupplier<DataSource> dataStoreSupplier = jdbcDataStoreFactory.getDataStore();
+        dataStoreSupplier.close();
+
+        assertThatThrownBy(() -> executeQuery(dataStoreSupplier, "select 'some-name' as name"))
+                .isInstanceOf(SQLException.class).hasMessage("HikariDataSource HikariDataSource (HikariPool-1) has been closed.");
+    }
+
+    private ResultSet executeQuery(DataStoreSupplier<DataSource> dataStoreSupplier, String sql) throws SQLException {
+        return dataStoreSupplier.get().getConnection().prepareStatement(sql).executeQuery();
     }
 
     @Test
     public void should_return_different_DataStore_when_NOT_shared() {
         JdbcDataStoreFactory jdbcDataStoreFactory = new JdbcDataStoreFactory();
-        Properties properties = new Properties();
-        properties.put("jdbcUrl", "jdbc:h2:mem:" + JdbcDataStoreFactoryTest.class.getSimpleName() + "_not_shared");
         ExternalDataStoreConfig config = new ExternalDataStoreConfig()
-                .setProperties(properties)
+                .setProperty("jdbcUrl", "jdbc:h2:mem:" + JdbcDataStoreFactoryTest.class.getSimpleName() + "_not_shared")
                 .setShared(false);
         jdbcDataStoreFactory.init(config);
 
         dataStore1 = jdbcDataStoreFactory.getDataStore();
         dataStore2 = jdbcDataStoreFactory.getDataStore();
 
-        assertThat(dataStore1).isNotNull();
-        assertThat(dataStore2).isNotNull();
-        assertThat(dataStore1).isNotSameAs(dataStore2);
+        assertThat(dataStore1.get()).isNotNull();
+        assertThat(dataStore2.get()).isNotNull();
+        assertThat(dataStore1.get()).isNotSameAs(dataStore2.get());
     }
 
     @Test
@@ -100,7 +131,7 @@ public class JdbcDataStoreFactoryTest {
                 .setShared(true);
         jdbcDataStoreFactory.init(config);
 
-        DataSource dataSource = jdbcDataStoreFactory.getDataStore();
+        DataSource dataSource = jdbcDataStoreFactory.getDataStore().get();
         jdbcDataStoreFactory.close();
 
         assertThatThrownBy(() -> executeQuery(dataSource, "select 'some-name' as name"))

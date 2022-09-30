@@ -577,6 +577,10 @@ public class NodeEngineImpl implements NodeEngine {
             diagnostics.shutdown();
         }
 
+        closeExternalDataStoreService();
+    }
+
+    private void closeExternalDataStoreService() {
         try {
             externalDataStoreService.close();
         } catch (Exception e) {

@@ -47,8 +47,8 @@ public class JdbcDataStoreFactory implements ExternalDataStoreFactory<DataSource
     }
 
     @Override
-    public DataSource getDataStore() {
-        return config.isShared() ? sharedDataSource : createDataSource();
+    public DataStoreSupplier<DataSource> getDataStore() {
+        return config.isShared() ? DataStoreSupplier.nonClosing(sharedDataSource) : DataStoreSupplier.closing(createDataSource());
     }
 
     private HikariDataSource createDataSource() {
@@ -58,6 +58,8 @@ public class JdbcDataStoreFactory implements ExternalDataStoreFactory<DataSource
 
     @Override
     public void close() throws Exception {
-        sharedDataSource.close();
+        if (sharedDataSource != null) {
+            sharedDataSource.close();
+        }
     }
 }

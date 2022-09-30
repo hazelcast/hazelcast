@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.datastore.DataStoreSupplier;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
@@ -118,7 +119,8 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
     public static <T> ProcessorMetaSupplier metaSupplier(
             @Nullable String jdbcUrl,
             @Nonnull String updateQuery,
-            @Nonnull FunctionEx<ProcessorMetaSupplier.Context, ? extends CommonDataSource> dataSourceSupplier,
+            @Nonnull FunctionEx<ProcessorMetaSupplier.Context,
+                    ? extends DataStoreSupplier<? extends CommonDataSource>> dataSourceSupplier,
             @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
             boolean exactlyOnce,
             int batchLimit
@@ -130,19 +132,25 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
         return ProcessorMetaSupplier.preferLocalParallelismOne(
                 ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE),
                 new ProcessorSupplier() {
-                    private transient CommonDataSource dataSource;
+                    private transient DataStoreSupplier<? extends CommonDataSource> dataSource;
 
                     @Override
                     public void init(@Nonnull Context context) {
                         dataSource = dataSourceSupplier.apply(context);
                     }
 
-                    @Nonnull @Override
+                    @Override
+                    public void close(Throwable error) throws Exception {
+                        dataSource.close();
+                    }
+
+                    @Nonnull
+                    @Override
                     public Collection<? extends Processor> get(int count) {
                         return IntStream.range(0, count)
-                                        .mapToObj(i -> new WriteJdbcP<>(updateQuery, dataSource, bindFn,
-                                                               exactlyOnce, batchLimit))
-                                        .collect(Collectors.toList());
+                                .mapToObj(i -> new WriteJdbcP<>(updateQuery, dataSource.get(), bindFn,
+                                        exactlyOnce, batchLimit))
+                                .collect(Collectors.toList());
                     }
 
                     @Override

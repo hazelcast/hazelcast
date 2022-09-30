@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.pipeline;
 
+import com.hazelcast.datastore.DataStoreSupplier;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.processor.SinkProcessors;
@@ -49,7 +50,7 @@ public class JdbcSinkBuilder<T> {
     private String updateQuery;
     private String jdbcUrl;
     private BiConsumerEx<PreparedStatement, T> bindFn;
-    private SupplierEx<? extends CommonDataSource> dataSourceSupplier;
+    private SupplierEx<DataStoreSupplier<CommonDataSource>> dataSourceSupplier;
     private boolean exactlyOnce = DEFAULT_EXACTLY_ONCE;
     private int batchLimit = DEFAULT_BATCH_LIMIT;
     private ExternalDataStoreRef externalDataStoreRef;
@@ -142,7 +143,7 @@ public class JdbcSinkBuilder<T> {
      */
     @Nonnull
     public JdbcSinkBuilder<T> dataSourceSupplier(SupplierEx<? extends CommonDataSource> dataSourceSupplier) {
-        this.dataSourceSupplier = dataSourceSupplier;
+        this.dataSourceSupplier = () -> DataStoreSupplier.closing(dataSourceSupplier.get());
         this.jdbcUrl = null;
         this.externalDataStoreRef = null;
         return this;
@@ -243,7 +244,7 @@ public class JdbcSinkBuilder<T> {
         }
         if (jdbcUrl != null) {
             String connectionUrl = jdbcUrl;
-            dataSourceSupplier = () -> new DataSourceFromJdbcUrl(connectionUrl);
+            dataSourceSupplier = () -> DataStoreSupplier.closing(new DataSourceFromJdbcUrl(connectionUrl));
         }
         if (dataSourceSupplier != null) {
             return Sinks.fromProcessor("jdbcSink",
