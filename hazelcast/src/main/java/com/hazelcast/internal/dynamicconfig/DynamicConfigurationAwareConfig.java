@@ -62,6 +62,7 @@ import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
+import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.config.ExecutorConfigReadOnly;
 import com.hazelcast.internal.config.ExternalDataStoreConfigReadOnly;
 import com.hazelcast.internal.config.FlakeIdGeneratorConfigReadOnly;
@@ -254,7 +255,10 @@ public class DynamicConfigurationAwareConfig extends Config {
     }
 
     private MapConfig getMapConfigInternal(String name, String fallbackName) {
-        return (MapConfig) configSearcher.getConfig(name, fallbackName, supplierFor(MapConfig.class));
+        MapConfig mapConfig = (MapConfig) configSearcher.getConfig(name, fallbackName, supplierFor(MapConfig.class));
+        mapConfig = new MapConfig(mapConfig.setName(name));
+        DataPersistenceAndHotRestartMerger.merge(mapConfig.getHotRestartConfig(), mapConfig.getDataPersistenceConfig());
+        return mapConfig;
     }
 
     @Override

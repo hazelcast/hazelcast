@@ -85,11 +85,13 @@ public class ConfigTest extends HazelcastTestSupport {
         assertEqualsStringFormat("Expected %d sync backups, but found %d", 3, binaryMapConfig.getBackupCount());
         assertEqualsStringFormat("Expected %s in-memory format, but found %s",
           MapConfig.DEFAULT_IN_MEMORY_FORMAT, binaryMapConfig.getInMemoryFormat());
+        assertEquals("myBinaryMap", binaryMapConfig.getName());
 
         MapConfig objectMapConfig = hz.getConfig().findMapConfig("myObjectMap");
         assertEqualsStringFormat("Expected %d sync backups, but found %d", 5, objectMapConfig.getBackupCount());
         assertEqualsStringFormat("Expected %s in-memory format, but found %s",
           InMemoryFormat.OBJECT, objectMapConfig.getInMemoryFormat());
+        assertEquals("myObjectMap", objectMapConfig.getName());
     }
 
     @Test
