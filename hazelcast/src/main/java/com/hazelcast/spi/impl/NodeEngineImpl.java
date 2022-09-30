@@ -132,7 +132,7 @@ public class NodeEngineImpl implements NodeEngine {
     private final SplitBrainMergePolicyProvider splitBrainMergePolicyProvider;
     private final ConcurrencyDetection concurrencyDetection;
     private final TenantControlServiceImpl tenantControlService;
-    private final ExternalDataStoreServiceImpl externalDataStoreService;
+    private final ExternalDataStoreService externalDataStoreService;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
     public NodeEngineImpl(Node node) {
@@ -577,7 +577,11 @@ public class NodeEngineImpl implements NodeEngine {
             diagnostics.shutdown();
         }
 
-        externalDataStoreService.shutDown(terminate);
+        try {
+            externalDataStoreService.close();
+        } catch (Exception e) {
+            logger.warning("Closing data stores failed", e);
+        }
     }
 
     @Override

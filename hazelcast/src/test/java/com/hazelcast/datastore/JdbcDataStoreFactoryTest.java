@@ -28,9 +28,12 @@ import org.junit.runner.RunWith;
 
 import javax.sql.DataSource;
 import java.io.Closeable;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -87,5 +90,25 @@ public class JdbcDataStoreFactoryTest {
         assertThat(dataStore1).isNotNull();
         assertThat(dataStore2).isNotNull();
         assertThat(dataStore1).isNotSameAs(dataStore2);
+    }
+
+    @Test
+    public void should_close_shared_datasource_on_close() throws Exception {
+        JdbcDataStoreFactory jdbcDataStoreFactory = new JdbcDataStoreFactory();
+        ExternalDataStoreConfig config = new ExternalDataStoreConfig()
+                .setProperty("jdbcUrl", "jdbc:h2:mem:" + JdbcDataStoreFactoryTest.class.getSimpleName() + "_shared")
+                .setShared(true);
+        jdbcDataStoreFactory.init(config);
+
+        DataSource dataSource = jdbcDataStoreFactory.getDataStore();
+        jdbcDataStoreFactory.close();
+
+        assertThatThrownBy(() -> executeQuery(dataSource, "select 'some-name' as name"))
+                .isInstanceOf(SQLException.class)
+                .hasMessage("HikariDataSource HikariDataSource (HikariPool-1) has been closed.");
+    }
+
+    private ResultSet executeQuery(DataSource dataSource, String sql) throws SQLException {
+        return dataSource.getConnection().prepareStatement(sql).executeQuery();
     }
 }

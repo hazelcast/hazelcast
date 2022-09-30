@@ -22,9 +22,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.datastore.ExternalDataStoreFactory;
 import com.hazelcast.datastore.ExternalDataStoreService;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
-import com.hazelcast.internal.nio.IOUtil;
 
-import java.io.Closeable;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -67,16 +65,10 @@ public class ExternalDataStoreServiceImpl implements ExternalDataStoreService {
         return externalDataStoreFactory;
     }
 
-    public void shutDown(boolean terminate) {
-        if (terminate) {
-            return;
-        }
-
+    @Override
+    public void close() throws Exception {
         for (ExternalDataStoreFactory<?> dataStoreFactory : dataStoreFactories.values()) {
-            Object dataStore = dataStoreFactory.getDataStore();
-            if (dataStore instanceof Closeable) {
-                IOUtil.closeResource(((Closeable) dataStore));
-            }
+            dataStoreFactory.close();
         }
     }
 }

@@ -25,7 +25,7 @@ import com.hazelcast.spi.annotation.Beta;
  * @since 5.2
  */
 @Beta
-public interface ExternalDataStoreService {
+public interface ExternalDataStoreService extends AutoCloseable {
     /**
      * Returns external data store factory with given name.
      *
