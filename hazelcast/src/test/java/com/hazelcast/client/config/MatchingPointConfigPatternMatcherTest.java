@@ -17,7 +17,9 @@
 package com.hazelcast.client.config;
 
 import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.NearCacheConfig;
+import com.hazelcast.config.QueueConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -26,7 +28,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -57,8 +59,8 @@ public class MatchingPointConfigPatternMatcherTest {
         config.setConfigPatternMatcher(new MatchingPointConfigPatternMatcher());
         config.addNearCacheConfig(nearCacheConfig);
 
-        assertEquals(nearCacheConfig.getMaxIdleSeconds(),
-                config.getNearCacheConfig("com.hazelcast.test.myNearCache").getMaxIdleSeconds());
+        assertEquals(nearCacheConfig,
+                config.getNearCacheConfig("com.hazelcast.test.myNearCache"));
     }
 
     @Test
@@ -69,8 +71,8 @@ public class MatchingPointConfigPatternMatcherTest {
         config.setConfigPatternMatcher(new MatchingPointConfigPatternMatcher());
         config.addNearCacheConfig(nearCacheConfig);
 
-        assertEquals(nearCacheConfig.getMaxIdleSeconds(),
-                config.getNearCacheConfig("com.hazelcast.test.myNearCache").getMaxIdleSeconds());
+        assertEquals(nearCacheConfig,
+                config.getNearCacheConfig("com.hazelcast.test.myNearCache"));
     }
 
     @Test
@@ -81,8 +83,8 @@ public class MatchingPointConfigPatternMatcherTest {
         config.setConfigPatternMatcher(new MatchingPointConfigPatternMatcher());
         config.addNearCacheConfig(nearCacheConfig);
 
-        assertEquals(nearCacheConfig.getMaxIdleSeconds(),
-                config.getNearCacheConfig("com.hazelcast.test.myNearCache").getMaxIdleSeconds());
+        assertEquals(nearCacheConfig,
+                config.getNearCacheConfig("com.hazelcast.test.myNearCache"));
     }
 
     @Test
@@ -98,12 +100,12 @@ public class MatchingPointConfigPatternMatcherTest {
         config.addNearCacheConfig(nearCacheConfig3);
 
         // we should get the best matching result
-        assertEquals(nearCacheConfig1.getMaxIdleSeconds(),
-                config.getNearCacheConfig("com.hazelcast.myNearCache").getMaxIdleSeconds());
-        assertEquals(nearCacheConfig2.getMaxIdleSeconds(),
-                config.getNearCacheConfig("com.hazelcast.test.myNearCache").getMaxIdleSeconds());
-        assertEquals(nearCacheConfig3.getMaxIdleSeconds(),
-                config.getNearCacheConfig("com.hazelcast.test.sub.myNearCache").getMaxIdleSeconds());
+        assertEquals(nearCacheConfig1,
+                config.getNearCacheConfig("com.hazelcast.myNearCache"));
+        assertEquals(nearCacheConfig2,
+                config.getNearCacheConfig("com.hazelcast.test.myNearCache"));
+        assertEquals(nearCacheConfig3,
+                config.getNearCacheConfig("com.hazelcast.test.sub.myNearCache"));
     }
 
     @Test(expected = InvalidConfigurationException.class)
@@ -163,8 +165,8 @@ public class MatchingPointConfigPatternMatcherTest {
         config.setConfigPatternMatcher(new MatchingPointConfigPatternMatcher());
         config.addNearCacheConfig(nearCacheConfig);
 
-        assertEquals(nearCacheConfig.getMaxIdleSeconds(),
-                config.getNearCacheConfig("com.hazelcast.myNearCache").getMaxIdleSeconds());
+        assertEquals(nearCacheConfig,
+                config.getNearCacheConfig("com.hazelcast.myNearCache"));
     }
 
     @Test
@@ -178,7 +180,17 @@ public class MatchingPointConfigPatternMatcherTest {
         config.addNearCacheConfig(nearCacheConfig2);
 
         // we should get the best matching result
-        assertEquals(nearCacheConfig2.getMaxIdleSeconds(),
-                config.getNearCacheConfig("com.hazelcast.myNearCache").getMaxIdleSeconds());
+        assertEquals(nearCacheConfig2,
+                config.getNearCacheConfig("com.hazelcast.myNearCache"));
+    }
+
+    public static void assertEquals(MapConfig expected, MapConfig actual) {
+        assertThat(actual).isEqualToIgnoringGivenFields(expected, "name");
+    }
+    public static void assertEquals(QueueConfig expected, QueueConfig actual) {
+        assertThat(actual).isEqualToIgnoringGivenFields(expected, "name");
+    }
+    public static void assertEquals(NearCacheConfig expected, NearCacheConfig actual) {
+        assertThat(actual).isEqualToIgnoringGivenFields(expected, "name");
     }
 }

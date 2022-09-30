@@ -24,7 +24,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static org.junit.Assert.assertEquals;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -33,7 +33,7 @@ public class MatchingPointConfigPatternMatcherTest {
 
     @Test
     public void testQueueConfigWithoutWildcard() {
-        QueueConfig queueConfig = new QueueConfig().setName("someQueue");
+        QueueConfig queueConfig = new QueueConfig().setName("someQueue").setMaxSize(1337);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new MatchingPointConfigPatternMatcher());
@@ -50,7 +50,7 @@ public class MatchingPointConfigPatternMatcherTest {
 
     @Test
     public void testQueueConfigWildcardDocumentationExample1() {
-        QueueConfig queueConfig = new QueueConfig().setName("*hazelcast.test.myQueue");
+        QueueConfig queueConfig = new QueueConfig().setName("*hazelcast.test.myQueue").setMaxSize(1337);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new MatchingPointConfigPatternMatcher());
@@ -61,7 +61,7 @@ public class MatchingPointConfigPatternMatcherTest {
 
     @Test
     public void testQueueConfigWildcardDocumentationExample2() {
-        QueueConfig queueConfig = new QueueConfig().setName("com.hazelcast.*.myQueue");
+        QueueConfig queueConfig = new QueueConfig().setName("com.hazelcast.*.myQueue").setMaxSize(1337);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new MatchingPointConfigPatternMatcher());
@@ -72,7 +72,7 @@ public class MatchingPointConfigPatternMatcherTest {
 
     @Test
     public void testQueueConfigWildcard() {
-        QueueConfig queueConfig = new QueueConfig().setName("abc*");
+        QueueConfig queueConfig = new QueueConfig().setName("abc*").setMaxSize(1337);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new MatchingPointConfigPatternMatcher());
@@ -84,7 +84,7 @@ public class MatchingPointConfigPatternMatcherTest {
 
     @Test
     public void testMapConfigWithoutWildcard() {
-        MapConfig mapConfig = new MapConfig().setName("someMap");
+        MapConfig mapConfig = new MapConfig().setName("someMap").setMaxIdleSeconds(1337);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new MatchingPointConfigPatternMatcher());
@@ -101,7 +101,7 @@ public class MatchingPointConfigPatternMatcherTest {
 
     @Test
     public void testMapConfigWildcardDocumentationExample1() {
-        MapConfig mapConfig = new MapConfig().setName("com.hazelcast.test.*");
+        MapConfig mapConfig = new MapConfig().setName("com.hazelcast.test.*").setMaxIdleSeconds(1234);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new MatchingPointConfigPatternMatcher());
@@ -112,7 +112,7 @@ public class MatchingPointConfigPatternMatcherTest {
 
     @Test
     public void testMapConfigWildcardDocumentationExample2() {
-        MapConfig mapConfig = new MapConfig().setName("com.hazel*");
+        MapConfig mapConfig = new MapConfig().setName("com.hazel*").setMaxIdleSeconds(1234);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new MatchingPointConfigPatternMatcher());
@@ -123,7 +123,7 @@ public class MatchingPointConfigPatternMatcherTest {
 
     @Test
     public void testMapConfigWildcardDocumentationExample3() {
-        MapConfig mapConfig = new MapConfig().setName("*.test.myMap");
+        MapConfig mapConfig = new MapConfig().setName("*.test.myMap").setMaxIdleSeconds(1234);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new MatchingPointConfigPatternMatcher());
@@ -134,7 +134,7 @@ public class MatchingPointConfigPatternMatcherTest {
 
     @Test
     public void testMapConfigWildcardDocumentationExample4() {
-        MapConfig mapConfig = new MapConfig().setName("com.*test.myMap");
+        MapConfig mapConfig = new MapConfig().setName("com.*test.myMap").setMaxIdleSeconds(1234);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new MatchingPointConfigPatternMatcher());
@@ -145,9 +145,9 @@ public class MatchingPointConfigPatternMatcherTest {
 
     @Test
     public void testMapConfigWildcardMultipleConfigs() {
-        MapConfig mapConfig1 = new MapConfig().setName("com.hazelcast.*");
-        MapConfig mapConfig2 = new MapConfig().setName("com.hazelcast.test.*");
-        MapConfig mapConfig3 = new MapConfig().setName("com.hazelcast.test.sub.*");
+        MapConfig mapConfig1 = new MapConfig().setName("com.hazelcast.*").setMaxIdleSeconds(12);
+        MapConfig mapConfig2 = new MapConfig().setName("com.hazelcast.test.*").setMaxIdleSeconds(13);
+        MapConfig mapConfig3 = new MapConfig().setName("com.hazelcast.test.sub.*").setMaxIdleSeconds(14);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new MatchingPointConfigPatternMatcher());
@@ -163,8 +163,8 @@ public class MatchingPointConfigPatternMatcherTest {
 
     @Test(expected = InvalidConfigurationException.class)
     public void testMapConfigWildcardMultipleAmbiguousConfigs() {
-        MapConfig mapConfig1 = new MapConfig().setName("com.hazelcast*");
-        MapConfig mapConfig2 = new MapConfig().setName("*com.hazelcast");
+        MapConfig mapConfig1 = new MapConfig().setName("com.hazelcast*").setMaxIdleSeconds(1234);
+        MapConfig mapConfig2 = new MapConfig().setName("*com.hazelcast").setMaxIdleSeconds(1235);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new MatchingPointConfigPatternMatcher());
@@ -176,7 +176,7 @@ public class MatchingPointConfigPatternMatcherTest {
 
     @Test
     public void testMapConfigWildcardStartsWith() {
-        MapConfig mapConfig = new MapConfig().setName("bc*");
+        MapConfig mapConfig = new MapConfig().setName("bc*").setMaxIdleSeconds(1234);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new MatchingPointConfigPatternMatcher());
@@ -193,7 +193,7 @@ public class MatchingPointConfigPatternMatcherTest {
 
     @Test
     public void testMapConfigWildcardEndsWith() {
-        MapConfig mapConfig = new MapConfig().setName("*ab");
+        MapConfig mapConfig = new MapConfig().setName("*ab").setMaxIdleSeconds(1234);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new MatchingPointConfigPatternMatcher());
@@ -210,12 +210,19 @@ public class MatchingPointConfigPatternMatcherTest {
 
     @Test
     public void testMapConfigWildcardOnly() {
-        MapConfig mapConfig = new MapConfig().setName("*");
+        MapConfig mapConfig = new MapConfig().setName("*").setMaxIdleSeconds(1234);
 
         Config config = new Config();
         config.setConfigPatternMatcher(new MatchingPointConfigPatternMatcher());
         config.addMapConfig(mapConfig);
 
         assertEquals(mapConfig, config.getMapConfig("com.hazelcast.myMap"));
+    }
+
+    public static void assertEquals(MapConfig expected, MapConfig actual) {
+        assertThat(actual).isEqualToIgnoringGivenFields(expected, "name");
+    }
+    public static void assertEquals(QueueConfig expected, QueueConfig actual) {
+        assertThat(actual).isEqualToIgnoringGivenFields(expected, "name");
     }
 }
