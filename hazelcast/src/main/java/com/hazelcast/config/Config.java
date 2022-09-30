@@ -778,7 +778,9 @@ public class Config {
      * @see #getConfigPatternMatcher()
      */
     public MapConfig getMapConfig(String name) {
-        return ConfigUtils.getConfig(configPatternMatcher, mapConfigs, name, MapConfig.class);
+        MapConfig config = ConfigUtils.getConfig(configPatternMatcher, mapConfigs, name, MapConfig.class);
+        DataPersistenceAndHotRestartMerger.merge(config.getHotRestartConfig(), config.getDataPersistenceConfig());
+        return config;
     }
 
     /**
@@ -1095,7 +1097,7 @@ public class Config {
      *                                       found
      * @see StringPartitioningStrategy#getBaseName(java.lang.String)
      * @see #setConfigPatternMatcher(ConfigPatternMatcher)
-     * @see #getConfigPatternMatcher()
+     * @see #getConfigPatternMatcher()`
      */
     public ListConfig getListConfig(String name) {
         return ConfigUtils.getConfig(configPatternMatcher, listConfigs, name, ListConfig.class);
