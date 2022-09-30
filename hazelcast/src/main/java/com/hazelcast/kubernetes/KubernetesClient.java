@@ -733,9 +733,9 @@ class KubernetesClient {
         }
 
         private void onMessage(String message) {
-            if (LOGGER.isFinestEnabled()) {
-                LOGGER.finest("Complete message from kubernetes API: " + message);
-            }
+//            if (LOGGER.isFinestEnabled()) {
+                LOGGER.info("Complete message from kubernetes API: " + message);
+//            }
             JsonObject jsonObject = Json.parse(message).asObject();
             JsonObject sts = jsonObject.get("object").asObject();
             String itemName = sts.asObject().get("metadata").asObject().getString("name", null);
