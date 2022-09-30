@@ -178,7 +178,8 @@ public class MapScanMigrationStressTest extends JetTestSupport {
                     instances[3] = factory.newHazelcastInstance(smallInstanceConfig());
 
                     while (active && (currentProgress = progress.get()) < lastProgressSeen + MIN_PROGRESS_BETWEEN_MUTATIONS) {
-                        // spinning and waiting for proper progress
+                        // Waiting for proper progress
+                        Thread.sleep(1);
                     }
                     lastProgressSeen = currentProgress;
                 } catch (Exception e) {
