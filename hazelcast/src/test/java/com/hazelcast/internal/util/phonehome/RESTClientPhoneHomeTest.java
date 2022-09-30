@@ -135,7 +135,7 @@ public class RESTClientPhoneHomeTest {
         assertEquals(200, http.queuePoll("my-queue", 10).responseCode);
         assertEquals(200, http.queuePoll("my-queue", 10).responseCode);
         assertEquals(204, http.doDelete(http.getUrl(URI_QUEUES) + "my-queue/10").responseCode);
-        assertEquals(400, http.doDelete(http.getUrl(URI_QUEUES) + "my-queue").responseCode);
+        assertEquals(204, http.doDelete(http.getUrl(URI_QUEUES) + "my-queue").responseCode);
 
         PhoneHome phoneHome = new PhoneHome(getNode(instance), "http://localhost:" + port + "/ping");
         phoneHome.phoneHome(false);
@@ -148,8 +148,8 @@ public class RESTClientPhoneHomeTest {
                 .withRequestBody(containingParam("restrequestct", "7"))
                 .withRequestBody(containingParam("restqueuepostsucc", "2"))
                 .withRequestBody(containingParam("restqueuepostfail", "1"))
-                .withRequestBody(containingParam("restqueuedeletesucc", "1"))
-                .withRequestBody(containingParam("restqueuedeletefail", "1"))
+                .withRequestBody(containingParam("restqueuedeletesucc", "2"))
+                .withRequestBody(containingParam("restqueuedeletefail", "0"))
                 .withRequestBody(containingParam("restqueuegetsucc", "2"))
                 .withRequestBody(containingParam("restqueuect", "1"))
         );
