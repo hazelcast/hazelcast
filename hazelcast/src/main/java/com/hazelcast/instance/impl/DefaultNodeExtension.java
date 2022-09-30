@@ -538,6 +538,7 @@ public class DefaultNodeExtension implements NodeExtension {
         if (service != null) {
             service.onMemberListChange();
         }
+        node.clusterTopologyIntentTracker.onMembershipChange();
     }
 
     @Override

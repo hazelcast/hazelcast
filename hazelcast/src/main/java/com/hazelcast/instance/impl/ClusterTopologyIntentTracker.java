@@ -64,13 +64,33 @@ public interface ClusterTopologyIntentTracker {
 
     ClusterTopologyIntent getClusterTopologyIntent();
 
+    /**
+     * Initialize explicitly the cluster topology intent.
+     * @param clusterTopologyIntent
+     */
     void initializeClusterTopologyIntent(ClusterTopologyIntent clusterTopologyIntent);
 
+    /**
+     * Handle Hazelcast node shutdown with the given cluster topology intent.
+     * @param clusterTopologyIntent
+     */
     void shutdownWithIntent(ClusterTopologyIntent clusterTopologyIntent);
 
+    /**
+     * @return {@code true} if this instance of {@code ClusterTopologyIntentTracker} is active and tracking
+     *         cluster topology changes in a managed context, otherwise {@code false}.
+     */
     boolean isEnabled();
 
+    /**
+     * @return  the number of requested Hazelcast members in the cluster, as determined by the specification
+     *          that is managed by the runtime context. When running Hazelcast in a Kubernetes StatefulSet,
+     *          this corresponds to the value in {@code StatefulSetSpec.size}.
+     */
     int getCurrentClusterSpecSize();
 
-    void setCurrentClusterSpecSize(int currentClusterSpecSize);
+    /**
+     * Notifies the {@link ClusterTopologyIntentTracker} that Hazelcast members list has changed.
+     */
+    void onMembershipChange();
 }

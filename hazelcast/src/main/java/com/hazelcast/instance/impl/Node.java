@@ -168,6 +168,7 @@ public class Node {
      */
     public final Address address;
     public final SecurityContext securityContext;
+    final ClusterTopologyIntentTracker clusterTopologyIntentTracker;
 
     private final ILogger logger;
     private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
@@ -182,7 +183,6 @@ public class Node {
     private final HealthMonitor healthMonitor;
     private final Joiner joiner;
     private final LocalAddressRegistry localAddressRegistry;
-    private final ClusterTopologyIntentTracker clusterTopologyIntentTracker;
     private ManagementCenterService managementCenterService;
 
     // it can be changed on cluster service reset see: ClusterServiceImpl#resetLocalMemberUuid

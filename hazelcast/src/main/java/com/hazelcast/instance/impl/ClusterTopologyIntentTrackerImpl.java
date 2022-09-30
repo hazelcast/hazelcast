@@ -20,10 +20,12 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.spi.utils.RetryUtils;
 
+import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
@@ -77,6 +79,15 @@ public class ClusterTopologyIntentTrackerImpl implements ClusterTopologyIntentTr
      * {@code kubectl scale sts hz --replicas 5} means {@code currentClusterSpecSize} is 5.
      */
     private volatile int currentClusterSpecSize = UNKNOWN;
+    /**
+     * The last known cluster spec size while cluster was detected in {@link ClusterTopologyIntent#CLUSTER_STABLE} intent.
+     * Used during cluster-wide shutdown, while {@link #currentClusterSpecSize} is {@code 0}.
+     */
+    private volatile int lastKnownStableClusterSpecSize = UNKNOWN;
+    /**
+     * Current Hazelcast cluster size, as observed by {@link com.hazelcast.internal.cluster.ClusterService}.
+     */
+    private volatile int currentClusterSize;
 
     public ClusterTopologyIntentTrackerImpl(Node node) {
         this.clusterStateForMissingMembers = node.getProperties()
@@ -98,6 +109,7 @@ public class ClusterTopologyIntentTrackerImpl implements ClusterTopologyIntentTr
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     @Override
     public void update(int previousClusterSpecSize, int currentClusterSpecSize, int readyNodesCount, int currentNodesCount) {
+        final int previousClusterSpecSizeValue = this.currentClusterSpecSize;
         this.currentClusterSpecSize = currentClusterSpecSize;
         if (previousClusterSpecSize == UNKNOWN) {
             if (currentClusterSpecSize > 0
@@ -114,6 +126,9 @@ public class ClusterTopologyIntentTrackerImpl implements ClusterTopologyIntentTr
         final ClusterTopologyIntent previous = clusterTopologyIntent.get();
         ClusterTopologyIntent newTopologyIntent;
         if (currentClusterSpecSize == 0) {
+            if (previousClusterSpecSizeValue > 0) {
+                this.lastKnownStableClusterSpecSize = previousClusterSpecSizeValue;
+            }
             newTopologyIntent = nextIntentWhenShuttingDown(previous);
         } else if (previousClusterSpecSize == currentClusterSpecSize) {
             if (ignoreUpdateWhenClusterSpecEqual(previous, readyNodesCount)) {
@@ -209,36 +224,84 @@ public class ClusterTopologyIntentTrackerImpl implements ClusterTopologyIntentTr
         if (shutdownIntent == ClusterTopologyIntent.CLUSTER_STABLE
                 || shutdownIntent == ClusterTopologyIntent.CLUSTER_STABLE_WITH_MISSING_MEMBERS) {
             try {
-                long timeoutNanos = node.getProperties().getNanos(ClusterProperty.CLUSTER_SHUTDOWN_TIMEOUT_SECONDS);
-                while (!getPartitionService().isPartitionTableHealthy()
-                        && timeoutNanos > 0) {
-                    sleep(TimeUnit.SECONDS.toMillis(1));
-                    timeoutNanos -= TimeUnit.SECONDS.toNanos(1);
-                }
+                // wait for partition table to be healthy before switching to NO_MIGRATION
+                // eg in "rollout restart" case, node is shutdown in NO_MIGRATION state
+                executeWithShutdownTimeout(() -> getPartitionService().isPartitionTableHealthy());
                 changeClusterState(clusterStateForMissingMembers);
             } catch (Throwable t) {
                 // let shutdown proceed even though we failed to switch to FROZEN state
                 logger.warning("Could not switch to transient FROZEN state while cluster"
                         + "shutdown intent was " + shutdownIntent, t);
             }
-        } else if (shutdownIntent == ClusterTopologyIntent.CLUSTER_SHUTDOWN
-                || shutdownIntent == ClusterTopologyIntent.CLUSTER_SHUTDOWN_WITH_MISSING_MEMBERS) {
-            try {
-                changeClusterState(ClusterState.PASSIVE);
-            } catch (Throwable t) {
-                // let shutdown proceed even though we failed to switch to PASSIVE state
-                // and wait for replica sync
-                logger.warning("Could not switch to transient PASSIVE state while cluster"
-                        + "shutdown intent was " + shutdownIntent, t);
-            }
-            long timeoutNanos = node.getProperties().getNanos(ClusterProperty.CLUSTER_SHUTDOWN_TIMEOUT_SECONDS);
-            try {
-                getNodeExtension().getInternalHotRestartService()
-                        .waitPartitionReplicaSyncOnCluster(timeoutNanos, TimeUnit.NANOSECONDS);
-            } catch (IllegalStateException e) {
-                logger.severe("Failure while waiting for partition replica sync before shutdown", e);
-            }
+        } else if (shutdownIntent == ClusterTopologyIntent.CLUSTER_SHUTDOWN) {
+            clusterWideShutdown();
+        } else if (shutdownIntent == ClusterTopologyIntent.CLUSTER_SHUTDOWN_WITH_MISSING_MEMBERS) {
+            // if cluster is shutting down with missing members, it is possible that a member might
+            // rejoin while attempting the graceful shutdown. In this case, races may occur, which may
+            // lead to lack of progress on the shutting-down member.
+            waitForMissingMember();
+            clusterWideShutdownWithMissingMember(shutdownIntent);
         }
+    }
+
+    private void clusterWideShutdownWithMissingMember(ClusterTopologyIntent shutdownIntent) {
+        try {
+            // The do-while loop ensures that we wait for partition table to be healthy after successfully
+            // switching to PASSIVE cluster state (during which attempts of missing members to rejoin will
+            // be denied), otherwise we retry by switching to ACTIVE cluster state.
+            do {
+                logger.info("Waiting for partition table to be healthy");
+                if (!getPartitionService().isPartitionTableHealthy()) {
+                    logger.warning("Switching to ACTIVE state in order to allow for partition table to be healthy");
+                    changeClusterState(ClusterState.ACTIVE);
+                    executeWithShutdownTimeout(() -> getPartitionService().isPartitionTableHealthy());
+                }
+                changeClusterState(ClusterState.PASSIVE);
+            } while (!getPartitionService().isPartitionTableHealthy());
+        } catch (Throwable t) {
+            // let shutdown proceed even though we failed to switch to PASSIVE state
+            // and wait for replica sync
+            logger.warning("Could not switch to transient PASSIVE state while cluster"
+                    + "shutdown intent was " + shutdownIntent, t);
+        }
+        long timeoutNanos = node.getProperties().getNanos(ClusterProperty.CLUSTER_SHUTDOWN_TIMEOUT_SECONDS);
+        try {
+            getNodeExtension().getInternalHotRestartService()
+                    .waitPartitionReplicaSyncOnCluster(timeoutNanos, TimeUnit.NANOSECONDS);
+        } catch (IllegalStateException e) {
+            logger.severe("Failure while waiting for partition replica sync before shutdown", e);
+        }
+    }
+
+    private void clusterWideShutdown() {
+        try {
+            changeClusterState(ClusterState.PASSIVE);
+        } catch (Throwable t) {
+            // let shutdown proceed even though we failed to switch to PASSIVE state
+            logger.warning("Could not switch to transient PASSIVE state while cluster "
+                    + "shutdown intent was CLUSTER_SHUTDOWN.", t);
+        }
+        long timeoutNanos = node.getProperties().getNanos(ClusterProperty.CLUSTER_SHUTDOWN_TIMEOUT_SECONDS);
+        try {
+            // wait for replica sync
+            getNodeExtension().getInternalHotRestartService()
+                    .waitPartitionReplicaSyncOnCluster(timeoutNanos, TimeUnit.NANOSECONDS);
+        } catch (IllegalStateException e) {
+            logger.severe("Failure while waiting for partition replica sync before shutdown.", e);
+        }
+    }
+
+    private void waitForMissingMember() {
+        if (getClusterService().getClusterState() == ClusterState.PASSIVE) {
+            // cluster is already in PASSIVE state and shutting down, so don't wait
+            return;
+        }
+        if (lastKnownStableClusterSpecSize == currentClusterSize) {
+            return;
+        }
+        logger.info("Waiting for missing members: lastKnownStableClusterSpecSize: " + lastKnownStableClusterSpecSize + ", "
+                + "currentClusterSize " + currentClusterSize);
+        executeWithShutdownTimeout(() -> lastKnownStableClusterSpecSize == currentClusterSize);
     }
 
     @Override
@@ -252,8 +315,8 @@ public class ClusterTopologyIntentTrackerImpl implements ClusterTopologyIntentTr
     }
 
     @Override
-    public void setCurrentClusterSpecSize(int currentClusterSpecSize) {
-        this.currentClusterSpecSize = currentClusterSpecSize;
+    public void onMembershipChange() {
+        currentClusterSize = getClusterService().getSize();
     }
 
     private void executeOrScheduleClusterStateChange(ClusterState newClusterState) {
@@ -261,6 +324,34 @@ public class ClusterTopologyIntentTrackerImpl implements ClusterTopologyIntentTr
             // hot restart recovery is completed, just apply the new cluster state here
             changeClusterState(newClusterState);
         }
+    }
+
+    /**
+     *
+     * @param callable  {@link Callable<Boolean>} that returns {@code true} when its condition is completed and
+     *                  control should return to caller.
+     * @return {@code true} if completed because callable completed normally or {@code false} if timeout passed or
+     *         thread was interrupted.
+     */
+    private boolean executeWithShutdownTimeout(Callable<Boolean> callable) {
+        boolean callableCompleted;
+        long timeoutNanos = node.getProperties().getNanos(ClusterProperty.CLUSTER_SHUTDOWN_TIMEOUT_SECONDS);
+        while (true) {
+            try {
+                callableCompleted = callable.call();
+                if (callableCompleted || timeoutNanos < 0) break;
+            } catch (Exception e) {
+                throw ExceptionUtil.rethrow(e);
+            }
+            try {
+                sleep(TimeUnit.SECONDS.toMillis(1));
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                break;
+            }
+            timeoutNanos -= TimeUnit.SECONDS.toNanos(1);
+        }
+        return callableCompleted;
     }
 
     /**

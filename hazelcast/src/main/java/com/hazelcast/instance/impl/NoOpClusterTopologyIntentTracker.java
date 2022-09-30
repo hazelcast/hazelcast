@@ -46,6 +46,6 @@ public class NoOpClusterTopologyIntentTracker implements ClusterTopologyIntentTr
     }
 
     @Override
-    public void setCurrentClusterSpecSize(int currentClusterSpecSize) {
+    public void onMembershipChange() {
     }
 }
