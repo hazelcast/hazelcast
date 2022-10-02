@@ -48,7 +48,7 @@ public class LocalStatsDelegateTest extends HazelcastTestSupport {
     @Before
     public void setUp() {
         hz = createHazelcastInstance();
-        done = new AtomicBoolean(false);
+        done = new AtomicBoolean();
     }
 
     @Test

@@ -103,7 +103,7 @@ public class ClientCacheClearTest extends CacheClearTest {
             assertEquals(expectedValue, actualValue);
         }
 
-        final AtomicInteger counter = new AtomicInteger(0);
+        final AtomicInteger counter = new AtomicInteger();
 
         CacheConfig config = cache.getConfiguration(CacheConfig.class);
 
@@ -153,7 +153,7 @@ public class ClientCacheClearTest extends CacheClearTest {
             assertEquals(expectedValue, actualValue);
         }
 
-        final AtomicInteger counter = new AtomicInteger(0);
+        final AtomicInteger counter = new AtomicInteger();
 
         CacheConfig config = cache.getConfiguration(CacheConfig.class);
 

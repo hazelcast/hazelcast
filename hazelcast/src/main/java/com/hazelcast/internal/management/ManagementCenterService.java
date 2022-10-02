@@ -160,7 +160,7 @@ public class ManagementCenterService {
 
     private final AtomicReference<String> tmsJson = new AtomicReference<>();
     private final TimedMemberStateFactory tmsFactory;
-    private final AtomicBoolean tmsFactoryInitialized = new AtomicBoolean(false);
+    private final AtomicBoolean tmsFactoryInitialized = new AtomicBoolean();
     private final ConsoleCommandHandler commandHandler;
     private final ClientBwListConfigHandler bwListConfigHandler;
     private final MCEventStore eventStore;

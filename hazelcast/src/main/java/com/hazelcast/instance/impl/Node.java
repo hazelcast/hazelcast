@@ -166,7 +166,7 @@ public class Node {
     public final SecurityContext securityContext;
 
     private final ILogger logger;
-    private final AtomicBoolean shuttingDown = new AtomicBoolean(false);
+    private final AtomicBoolean shuttingDown = new AtomicBoolean();
     private final NodeShutdownHookThread shutdownHookThread;
     private final MemberSchemaService schemaService;
     private final InternalSerializationService serializationService;

@@ -302,7 +302,7 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
         final HazelcastInstance node1 = factory.newHazelcastInstance(config);
         factory.newHazelcastInstance(config);
 
-        AtomicBoolean stop = new AtomicBoolean(false);
+        AtomicBoolean stop = new AtomicBoolean();
         int availableProcessors = Math.min(4, RuntimeAvailableProcessors.get());
         ExecutorService executorService = Executors.newFixedThreadPool(availableProcessors);
 

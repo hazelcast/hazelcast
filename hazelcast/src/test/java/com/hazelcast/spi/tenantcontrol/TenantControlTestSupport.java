@@ -43,7 +43,7 @@ public abstract class TenantControlTestSupport extends HazelcastTestSupport {
     protected static final AtomicInteger clearedThreadInfoCount = new AtomicInteger();
     protected static final AtomicInteger tenantAvailableCount = new AtomicInteger();
     protected static final AtomicBoolean tenantAvailable = new AtomicBoolean();
-    protected static final AtomicReference<DestroyEventContext> destroyEventContext = new AtomicReference<>(null);
+    protected static final AtomicReference<DestroyEventContext> destroyEventContext = new AtomicReference<>();
 
     protected static volatile boolean classesAlwaysAvailable;
 

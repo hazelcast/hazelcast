@@ -294,7 +294,7 @@ public class MapTransactionTest extends HazelcastTestSupport {
         final HazelcastInstance h2 = factory.newHazelcastInstance(config);
         final HazelcastInstance h3 = factory.newHazelcastInstance(config);
         final int size = 50;
-        final AtomicBoolean result = new AtomicBoolean(false);
+        final AtomicBoolean result = new AtomicBoolean();
 
         Runnable runnable = new Runnable() {
             public void run() {

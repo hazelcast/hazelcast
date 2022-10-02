@@ -40,7 +40,7 @@ import static org.junit.Assert.fail;
 public class ContextMutexFactoryTest {
 
     private ContextMutexFactory contextMutexFactory;
-    private final AtomicBoolean testFailed = new AtomicBoolean(false);
+    private final AtomicBoolean testFailed = new AtomicBoolean();
 
     @Before
     public void setup() {

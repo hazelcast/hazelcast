@@ -284,7 +284,7 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
 
     private class QueryCacheAdditionListener implements EntryAddedListener {
 
-        private final AtomicInteger addedEventCount = new AtomicInteger(0);
+        private final AtomicInteger addedEventCount = new AtomicInteger();
 
         QueryCacheAdditionListener() {
         }
@@ -301,7 +301,7 @@ public class QueryCacheListenerTest extends AbstractQueryCacheTestSupport {
 
     private class QueryCacheRemovalListener implements EntryRemovedListener {
 
-        private final AtomicInteger removedEventCount = new AtomicInteger(0);
+        private final AtomicInteger removedEventCount = new AtomicInteger();
 
         QueryCacheRemovalListener() {
         }

@@ -130,8 +130,8 @@ public class TestCacheManager extends HazelcastTestSupport {
 
     public static class DummyBean implements IDummyBean {
 
-        final AtomicBoolean nullCall = new AtomicBoolean(false);
-        final AtomicBoolean firstCall = new AtomicBoolean(false);
+        final AtomicBoolean nullCall = new AtomicBoolean();
+        final AtomicBoolean firstCall = new AtomicBoolean();
 
         @Override
         public String getName(int k) {

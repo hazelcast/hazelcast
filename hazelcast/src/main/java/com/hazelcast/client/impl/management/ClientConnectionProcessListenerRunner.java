@@ -48,7 +48,7 @@ public final class ClientConnectionProcessListenerRunner {
     public ClientConnectionProcessListenerRunner(HazelcastClientInstanceImpl client) {
         this.client = client;
         listeners = new CopyOnWriteArrayList<>();
-        hasListeners = new AtomicBoolean(false);
+        hasListeners = new AtomicBoolean();
     }
 
     /**

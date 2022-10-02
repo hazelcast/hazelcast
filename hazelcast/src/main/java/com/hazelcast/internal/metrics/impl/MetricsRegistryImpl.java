@@ -75,7 +75,7 @@ public class MetricsRegistryImpl implements MetricsRegistry {
 
     private final DefaultMetricDescriptorSupplier staticDescriptorSupplier = new DefaultMetricDescriptorSupplier();
 
-    private final AtomicReference<MetricDescriptorReusableData> metricDescriptorReusableData = new AtomicReference<>(null);
+    private final AtomicReference<MetricDescriptorReusableData> metricDescriptorReusableData = new AtomicReference<>();
 
     /**
      * Creates a MetricsRegistryImpl instance.

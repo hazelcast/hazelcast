@@ -186,7 +186,7 @@ public class CacheClearTest extends CacheTestSupport {
             assertEquals(expectedValue, actualValue);
         }
 
-        final AtomicInteger counter = new AtomicInteger(0);
+        final AtomicInteger counter = new AtomicInteger();
 
         final CacheConfig config = cache.getConfiguration(CacheConfig.class);
 

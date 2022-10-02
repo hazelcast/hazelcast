@@ -71,7 +71,7 @@ public class WriteBehindStore extends AbstractMapDataStore<Data, Object> {
     /**
      * Sequence number of store operations.
      */
-    private final AtomicLong sequence = new AtomicLong(0);
+    private final AtomicLong sequence = new AtomicLong();
 
     /**
      * @see {@link com.hazelcast.config.MapStoreConfig#setWriteCoalescing(boolean)}

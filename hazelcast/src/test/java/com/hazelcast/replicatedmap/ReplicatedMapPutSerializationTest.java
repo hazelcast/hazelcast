@@ -40,7 +40,7 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ReplicatedMapPutSerializationTest extends HazelcastTestSupport {
 
-    static AtomicInteger deSerializationCount = new AtomicInteger(0);
+    static AtomicInteger deSerializationCount = new AtomicInteger();
 
     @Test
     public void testPutShouldNotDeserializeData() {

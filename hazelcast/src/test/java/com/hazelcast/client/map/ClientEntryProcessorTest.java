@@ -159,7 +159,7 @@ public class ClientEntryProcessorTest extends AbstractClientMapTest {
      */
     private static class IndexedTestPredicate implements IndexAwarePredicate {
 
-        static final AtomicBoolean INDEX_CALLED = new AtomicBoolean(false);
+        static final AtomicBoolean INDEX_CALLED = new AtomicBoolean();
 
         @Override
         public Set<QueryableEntry> filter(QueryContext queryContext) {

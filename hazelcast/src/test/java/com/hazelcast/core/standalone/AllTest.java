@@ -61,8 +61,8 @@ public class AllTest {
     private final Logger logger = Logger.getLogger("All-test");
     private final List<Runnable> operations = new ArrayList<Runnable>();
     private final Random random = new Random();
-    private final AtomicInteger messagesReceived = new AtomicInteger(0);
-    private final AtomicInteger messagesSend = new AtomicInteger(0);
+    private final AtomicInteger messagesReceived = new AtomicInteger();
+    private final AtomicInteger messagesSend = new AtomicInteger();
 
     private final int nThreads;
     private final ExecutorService ex;

@@ -30,7 +30,7 @@ public class ClusterDiscoveryService {
     private final int maxTryCount;
     private final LifecycleService lifecycleService;
     private final List<CandidateClusterContext> candidateClusters;
-    private final AtomicInteger index = new AtomicInteger(0);
+    private final AtomicInteger index = new AtomicInteger();
 
     public ClusterDiscoveryService(List<CandidateClusterContext> candidateClusters,
                                    int maxTryCount, LifecycleService lifecycleService) {

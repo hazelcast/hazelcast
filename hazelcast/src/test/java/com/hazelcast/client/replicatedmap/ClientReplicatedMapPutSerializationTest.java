@@ -49,7 +49,7 @@ public class ClientReplicatedMapPutSerializationTest extends HazelcastTestSuppor
         factory.terminateAll();
     }
 
-    private static AtomicInteger deSerializationCount = new AtomicInteger(0);
+    private static AtomicInteger deSerializationCount = new AtomicInteger();
 
     @Test
     public void testPutShouldNotDeserializeData() {

@@ -92,7 +92,7 @@ public class ConnectionTest extends HazelcastTestSupport {
         };
         st.start();
 
-        final AtomicBoolean flag = new AtomicBoolean(false);
+        final AtomicBoolean flag = new AtomicBoolean();
         for (int i = 0; i < count; i++) {
             final Socket clientSocket = new Socket();
             Thread t = new Thread("client-socket-" + i) {
@@ -139,7 +139,7 @@ public class ConnectionTest extends HazelcastTestSupport {
         final AtomicInteger connected = new AtomicInteger();
         final AtomicInteger cc = new AtomicInteger();
 
-        final AtomicBoolean flag = new AtomicBoolean(false);
+        final AtomicBoolean flag = new AtomicBoolean();
 
         for (int i = 0; i < count; i++) {
             final Socket clientSocket = new Socket();

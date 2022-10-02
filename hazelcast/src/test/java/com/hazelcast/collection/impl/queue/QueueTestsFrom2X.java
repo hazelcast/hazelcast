@@ -505,7 +505,7 @@ public class QueueTestsFrom2X extends HazelcastTestSupport {
                 context.rollbackTransaction();
             }
         });
-        AtomicBoolean fail = new AtomicBoolean(false);
+        AtomicBoolean fail = new AtomicBoolean();
         Thread t2 = new Thread(() -> {
             TransactionContext context = hz.newTransactionContext();
             try {

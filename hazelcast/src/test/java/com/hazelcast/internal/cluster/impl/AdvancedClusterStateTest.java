@@ -365,7 +365,7 @@ public class AdvancedClusterStateTest extends HazelcastTestSupport {
     public void changeClusterState_shouldFail_whenStartupIsNotCompleted() throws Exception {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
 
-        AtomicBoolean startupDone = new AtomicBoolean(false);
+        AtomicBoolean startupDone = new AtomicBoolean();
 
         HazelcastInstance instance = HazelcastInstanceFactory.newHazelcastInstance(new Config(), randomName(),
                 new MockNodeContext(factory.getRegistry(), new Address("127.0.0.1", 5555)) {

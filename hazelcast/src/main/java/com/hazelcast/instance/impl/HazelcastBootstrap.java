@@ -119,7 +119,7 @@ public final class HazelcastBootstrap {
     private static ConcurrentMemoizingSupplier<BootstrappedInstanceProxy> supplier;
 
     private static final ILogger LOGGER = Logger.getLogger(Hazelcast.class.getName());
-    private static final AtomicBoolean LOGGING_CONFIGURED = new AtomicBoolean(false);
+    private static final AtomicBoolean LOGGING_CONFIGURED = new AtomicBoolean();
     private static final int JOB_START_CHECK_INTERVAL_MILLIS = 1_000;
     private static final EnumSet<JobStatus> STARTUP_STATUSES = EnumSet.of(NOT_RUNNING, STARTING);
 

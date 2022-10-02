@@ -51,7 +51,7 @@ class ParallelOperationInvoker {
     private final Supplier<Operation> operationSupplier;
     private final int maxRetries;
     private final long retryDelayMillis;
-    private final AtomicInteger retryCount = new AtomicInteger(0);
+    private final AtomicInteger retryCount = new AtomicInteger();
     private final InternalCompletableFuture<Collection<UUID>> future = new InternalCompletableFuture<>();
     private volatile Set<Member> members;
 

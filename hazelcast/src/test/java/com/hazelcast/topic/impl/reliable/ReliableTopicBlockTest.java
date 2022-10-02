@@ -65,7 +65,7 @@ public class ReliableTopicBlockTest extends HazelcastTestSupport {
 
     @Test
     public void testBlockingAsync() {
-        AtomicInteger count = new AtomicInteger(0);
+        AtomicInteger count = new AtomicInteger();
         topic.addMessageListener(message -> count.incrementAndGet());
         for (int i = 0; i < 10; i++) {
             topic.publish("message");

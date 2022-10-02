@@ -60,7 +60,7 @@ public class FirewallingServer
     private final Set<Address> blockedAddresses = newSetFromMap(new ConcurrentHashMap<>());
 
     private final Consumer<Packet> packetConsumer;
-    private final AtomicReference<ServerConnectionManager> connectionManagerRef = new AtomicReference<>(null);
+    private final AtomicReference<ServerConnectionManager> connectionManagerRef = new AtomicReference<>();
 
     @SuppressWarnings("unchecked")
     public FirewallingServer(Server delegate, Set<Address> initiallyBlockedAddresses) {

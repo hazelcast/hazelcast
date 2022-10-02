@@ -26,9 +26,9 @@ import java.util.concurrent.atomic.AtomicLong;
 public class CacheContext {
 
     private final AtomicBoolean implicitMerkleTreeEnableLogged = new AtomicBoolean();
-    private final AtomicLong entryCount = new AtomicLong(0L);
-    private final AtomicInteger cacheEntryListenerCount = new AtomicInteger(0);
-    private final AtomicInteger invalidationListenerCount = new AtomicInteger(0);
+    private final AtomicLong entryCount = new AtomicLong();
+    private final AtomicInteger cacheEntryListenerCount = new AtomicInteger();
+    private final AtomicInteger invalidationListenerCount = new AtomicInteger();
 
     public long getEntryCount() {
         return entryCount.get();

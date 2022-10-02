@@ -25,7 +25,7 @@ import static com.hazelcast.internal.util.EmptyStatement.ignore;
 public class PoolExecutorThreadFactory extends AbstractExecutorThreadFactory {
 
     private final String threadNamePrefix;
-    private final AtomicInteger idGen = new AtomicInteger(0);
+    private final AtomicInteger idGen = new AtomicInteger();
     // to reuse previous thread IDs
     private final Queue<Integer> idQ = new LinkedBlockingQueue<Integer>(1000);
 

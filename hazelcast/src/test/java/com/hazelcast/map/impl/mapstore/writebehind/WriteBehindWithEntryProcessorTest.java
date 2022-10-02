@@ -271,7 +271,7 @@ public class WriteBehindWithEntryProcessorTest extends HazelcastTestSupport {
 
         private CustomerDataStore(long customerId) {
             this.store = new ConcurrentHashMap<>();
-            this.storeCallCount = new AtomicInteger(0);
+            this.storeCallCount = new AtomicInteger();
             this.customerId = customerId;
         }
 

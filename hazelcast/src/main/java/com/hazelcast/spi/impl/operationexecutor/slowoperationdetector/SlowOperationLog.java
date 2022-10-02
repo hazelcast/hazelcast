@@ -42,7 +42,7 @@ final class SlowOperationLog {
 
     private static final int SHORT_STACKTRACE_LENGTH = 200;
 
-    final AtomicInteger totalInvocations = new AtomicInteger(0);
+    final AtomicInteger totalInvocations = new AtomicInteger();
 
     final String operation;
     final String stackTrace;

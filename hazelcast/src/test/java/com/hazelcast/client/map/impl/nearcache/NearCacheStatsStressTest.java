@@ -55,7 +55,7 @@ public class NearCacheStatsStressTest extends HazelcastTestSupport {
     private static final int KEY_SPACE = 1000;
 
     private final TestHazelcastFactory factory = new TestHazelcastFactory();
-    private final AtomicBoolean stop = new AtomicBoolean(false);
+    private final AtomicBoolean stop = new AtomicBoolean();
 
     private InternalSerializationService ss;
     private NearCache<Object, Object> nearCache;

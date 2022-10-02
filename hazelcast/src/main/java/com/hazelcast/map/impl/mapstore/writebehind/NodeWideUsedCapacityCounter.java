@@ -34,7 +34,7 @@ import static java.lang.String.format;
  */
 public class NodeWideUsedCapacityCounter {
     private final long maxPerNodeCapacity;
-    private final AtomicLong nodeWideUsedCapacityCounter = new AtomicLong(0);
+    private final AtomicLong nodeWideUsedCapacityCounter = new AtomicLong();
 
     public NodeWideUsedCapacityCounter(HazelcastProperties properties) {
         this.maxPerNodeCapacity = properties.getLong(ClusterProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY);
