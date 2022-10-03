@@ -102,7 +102,7 @@ public final class SinkProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier writeRemoteMapP(
-        @Nonnull String mapName, @Nonnull ClientConfig clientConfig
+            @Nonnull String mapName, @Nonnull ClientConfig clientConfig
     ) {
         return writeRemoteMapP(mapName, clientConfig, identity(), identity());
     }
@@ -168,7 +168,7 @@ public final class SinkProcessors {
     /**
      * Returns a supplier of processors for
      * {@link Sinks#remoteMapWithUpdating(String, ClientConfig, FunctionEx
-     * , BiFunctionEx)}.
+     *, BiFunctionEx)}.
      */
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier updateRemoteMapP(
@@ -333,8 +333,8 @@ public final class SinkProcessors {
      * The returned processor will have preferred local parallelism of 1. It
      * will not participate in state saving for fault tolerance.
      *
-     * @param createFn     supplies the writer. The argument to this function
-     *                     is the context for the given processor.
+     * @param createFn    supplies the writer. The argument to this function
+     *                    is the context for the given processor.
      * @param onReceiveFn function that Jet calls upon receiving each item for the sink
      * @param flushFn     function that flushes the writer
      * @param destroyFn   function that destroys the writer
@@ -390,7 +390,7 @@ public final class SinkProcessors {
     public static <T> ProcessorMetaSupplier writeJdbcP(
             @Nullable String jdbcUrl,
             @Nonnull String updateQuery,
-            @Nonnull SupplierEx<DataStoreSupplier<CommonDataSource>> dataSourceSupplier,
+            @Nonnull SupplierEx<? extends CommonDataSource> dataSourceSupplier,
             @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
             boolean exactlyOnce,
             int batchLimit
@@ -399,7 +399,7 @@ public final class SinkProcessors {
         checkNotNull(dataSourceSupplier, "dataSourceSupplier");
         checkNotNull(bindFn, "bindFn");
         checkPositive(batchLimit, "batchLimit");
-        return WriteJdbcP.metaSupplier(jdbcUrl, updateQuery, ctx -> dataSourceSupplier.get(), bindFn, exactlyOnce, batchLimit);
+        return WriteJdbcP.metaSupplier(jdbcUrl, updateQuery, ctx -> DataStoreSupplier.closing(dataSourceSupplier.get()), bindFn, exactlyOnce, batchLimit);
     }
 
     /**

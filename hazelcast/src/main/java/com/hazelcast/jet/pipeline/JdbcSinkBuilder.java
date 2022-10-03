@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.pipeline;
 
-import com.hazelcast.datastore.DataStoreSupplier;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.core.processor.SinkProcessors;
@@ -50,7 +49,7 @@ public class JdbcSinkBuilder<T> {
     private String updateQuery;
     private String jdbcUrl;
     private BiConsumerEx<PreparedStatement, T> bindFn;
-    private SupplierEx<DataStoreSupplier<CommonDataSource>> dataSourceSupplier;
+    private SupplierEx<? extends CommonDataSource> dataSourceSupplier;
     private boolean exactlyOnce = DEFAULT_EXACTLY_ONCE;
     private int batchLimit = DEFAULT_BATCH_LIMIT;
     private ExternalDataStoreRef externalDataStoreRef;
@@ -138,12 +137,12 @@ public class JdbcSinkBuilder<T> {
      * the entire job execution.
      *
      * @param dataSourceSupplier the supplier of data source. The function must
-     *     be stateless.
+     *                           be stateless.
      * @return this instance for fluent API
      */
     @Nonnull
     public JdbcSinkBuilder<T> dataSourceSupplier(SupplierEx<? extends CommonDataSource> dataSourceSupplier) {
-        this.dataSourceSupplier = () -> DataStoreSupplier.closing(dataSourceSupplier.get());
+        this.dataSourceSupplier = dataSourceSupplier;
         this.jdbcUrl = null;
         this.externalDataStoreRef = null;
         return this;
@@ -244,7 +243,7 @@ public class JdbcSinkBuilder<T> {
         }
         if (jdbcUrl != null) {
             String connectionUrl = jdbcUrl;
-            dataSourceSupplier = () -> DataStoreSupplier.closing(new DataSourceFromJdbcUrl(connectionUrl));
+            dataSourceSupplier = () -> new DataSourceFromJdbcUrl(connectionUrl);
         }
         if (dataSourceSupplier != null) {
             return Sinks.fromProcessor("jdbcSink",
