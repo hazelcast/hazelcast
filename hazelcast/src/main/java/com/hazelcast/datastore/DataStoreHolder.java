@@ -21,16 +21,16 @@ import com.hazelcast.spi.annotation.Beta;
 import java.util.function.Supplier;
 
 /**
- * Wrapper for supplying a data store and handling the close of the wrapped datastore
+ * Holder of a data store and which handles the close of the wrapped datastore
  *
- * @param <DS> - Data store type supplied by the object of this class
+ * @param <DS> - Data store type hold by the object of this class
  * @since 5.2
  */
 @Beta
-public interface DataStoreSupplier<DS> extends Supplier<DS>, AutoCloseable {
+public interface DataStoreHolder<DS> extends Supplier<DS>, AutoCloseable {
 
-    static <DS> DataStoreSupplier<DS> closing(DS datastore) {
-        return new DataStoreSupplier<DS>() {
+    static <DS> DataStoreHolder<DS> closing(DS datastore) {
+        return new DataStoreHolder<DS>() {
             @Override
             public DS get() {
                 return datastore;
@@ -45,8 +45,8 @@ public interface DataStoreSupplier<DS> extends Supplier<DS>, AutoCloseable {
         };
     }
 
-    static <DS> DataStoreSupplier<DS> nonClosing(DS datastore) {
-        return new DataStoreSupplier<DS>() {
+    static <DS> DataStoreHolder<DS> nonClosing(DS datastore) {
+        return new DataStoreHolder<DS>() {
             @Override
             public DS get() {
                 return datastore;

@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.datastore.DataStoreSupplier;
+import com.hazelcast.datastore.DataStoreHolder;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
@@ -140,7 +140,7 @@ public class JdbcSqlConnector implements SqlConnector {
                 options.get(OPTION_EXTERNAL_DATASTORE_REF),
                 OPTION_EXTERNAL_DATASTORE_REF + " must be set"
         );
-        try (DataStoreSupplier<DataSource> dataSource = (DataStoreSupplier<DataSource>) nodeEngine.getExternalDataStoreService()
+        try (DataStoreHolder<DataSource> dataSource = (DataStoreHolder<DataSource>) nodeEngine.getExternalDataStoreService()
                 .getExternalDataStoreFactory(externalDataStoreRef)
                 .createDataStore();
              Connection connection = dataSource.get().getConnection();
@@ -232,7 +232,7 @@ public class JdbcSqlConnector implements SqlConnector {
 
     private SqlDialect resolveDialect(NodeEngine nodeEngine, String externalDataStoreRef) {
 
-        try (DataStoreSupplier<DataSource> dataSource = (DataStoreSupplier<DataSource>) nodeEngine.getExternalDataStoreService()
+        try (DataStoreHolder<DataSource> dataSource = (DataStoreHolder<DataSource>) nodeEngine.getExternalDataStoreService()
                 .getExternalDataStoreFactory(externalDataStoreRef)
                 .createDataStore(); Connection connection = dataSource.get().getConnection()) {
 

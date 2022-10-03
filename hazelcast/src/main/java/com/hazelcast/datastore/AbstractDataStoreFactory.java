@@ -32,8 +32,8 @@ public abstract class AbstractDataStoreFactory<DS> implements ExternalDataStoreF
     }
 
     @Override
-    public DataStoreSupplier<DS> createDataStore() {
-        return config.isShared() ? DataStoreSupplier.nonClosing(sharedDataStore) : DataStoreSupplier.closing(createDataSource());
+    public DataStoreHolder<DS> createDataStore() {
+        return config.isShared() ? DataStoreHolder.nonClosing(sharedDataStore) : DataStoreHolder.closing(createDataSource());
     }
 
 }

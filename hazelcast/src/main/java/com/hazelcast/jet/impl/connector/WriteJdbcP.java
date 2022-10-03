@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.datastore.DataStoreSupplier;
+import com.hazelcast.datastore.DataStoreHolder;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
@@ -120,7 +120,7 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
             @Nullable String jdbcUrl,
             @Nonnull String updateQuery,
             @Nonnull FunctionEx<ProcessorMetaSupplier.Context,
-                    ? extends DataStoreSupplier<? extends CommonDataSource>> dataSourceSupplier,
+                    ? extends DataStoreHolder<? extends CommonDataSource>> dataSourceSupplier,
             @Nonnull BiConsumerEx<? super PreparedStatement, ? super T> bindFn,
             boolean exactlyOnce,
             int batchLimit
@@ -132,7 +132,7 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
         return ProcessorMetaSupplier.preferLocalParallelismOne(
                 ConnectorPermission.jdbc(jdbcUrl, ACTION_WRITE),
                 new ProcessorSupplier() {
-                    private transient DataStoreSupplier<? extends CommonDataSource> dataSource;
+                    private transient DataStoreHolder<? extends CommonDataSource> dataSource;
 
                     @Override
                     public void init(@Nonnull Context context) {

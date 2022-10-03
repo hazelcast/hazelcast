@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.hazelcast.datastore.DataStoreSupplier;
+import com.hazelcast.datastore.DataStoreHolder;
 import com.hazelcast.datastore.ExternalDataStoreFactory;
 import com.hazelcast.datastore.ExternalDataStoreService;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
@@ -32,7 +32,7 @@ abstract class AbstractJdbcSqlConnectorProcessorSupplier implements ProcessorSup
 
     protected String externalDataStoreRef;
 
-    protected transient DataStoreSupplier<DataSource> dataSource;
+    protected transient DataStoreHolder<DataSource> dataSource;
 
     AbstractJdbcSqlConnectorProcessorSupplier() {
     }

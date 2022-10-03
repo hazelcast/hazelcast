@@ -36,8 +36,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JdbcDataStoreFactoryTest {
 
-    DataStoreSupplier<DataSource> dataStore1;
-    DataStoreSupplier<DataSource> dataStore2;
+    DataStoreHolder<DataSource> dataStore1;
+    DataStoreHolder<DataSource> dataStore2;
     JdbcDataStoreFactory jdbcDataStoreFactory = new JdbcDataStoreFactory();
 
     @After
@@ -47,7 +47,7 @@ public class JdbcDataStoreFactoryTest {
         jdbcDataStoreFactory.close();
     }
 
-    private static void close(DataStoreSupplier<DataSource> dataStore) throws Exception {
+    private static void close(DataStoreHolder<DataSource> dataStore) throws Exception {
         if (dataStore != null) {
             dataStore.close();
         }
@@ -77,10 +77,10 @@ public class JdbcDataStoreFactoryTest {
                 .setShared(true);
         jdbcDataStoreFactory.init(config);
 
-        DataStoreSupplier<DataSource> dataStoreSupplier = jdbcDataStoreFactory.createDataStore();
-        dataStoreSupplier.close();
+        DataStoreHolder<DataSource> dataStoreHolder = jdbcDataStoreFactory.createDataStore();
+        dataStoreHolder.close();
 
-        ResultSet resultSet = executeQuery(dataStoreSupplier, "select 'some-name' as name");
+        ResultSet resultSet = executeQuery(dataStoreHolder, "select 'some-name' as name");
         resultSet.next();
         String actualName = resultSet.getString(1);
 
@@ -96,15 +96,15 @@ public class JdbcDataStoreFactoryTest {
                 .setShared(false);
         jdbcDataStoreFactory.init(config);
 
-        DataStoreSupplier<DataSource> dataStoreSupplier = jdbcDataStoreFactory.createDataStore();
-        dataStoreSupplier.close();
+        DataStoreHolder<DataSource> dataStoreHolder = jdbcDataStoreFactory.createDataStore();
+        dataStoreHolder.close();
 
-        assertThatThrownBy(() -> executeQuery(dataStoreSupplier, "select 'some-name' as name"))
+        assertThatThrownBy(() -> executeQuery(dataStoreHolder, "select 'some-name' as name"))
                 .isInstanceOf(SQLException.class).hasMessage("HikariDataSource HikariDataSource (HikariPool-1) has been closed.");
     }
 
-    private ResultSet executeQuery(DataStoreSupplier<DataSource> dataStoreSupplier, String sql) throws SQLException {
-        return dataStoreSupplier.get().getConnection().prepareStatement(sql).executeQuery();
+    private ResultSet executeQuery(DataStoreHolder<DataSource> dataStoreHolder, String sql) throws SQLException {
+        return dataStoreHolder.get().getConnection().prepareStatement(sql).executeQuery();
     }
 
     @Test

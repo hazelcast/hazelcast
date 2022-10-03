@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.datastore.DataStoreSupplier;
+import com.hazelcast.datastore.DataStoreHolder;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Traverser;
@@ -73,7 +73,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
      * Use {@link SourceProcessors#readJdbcP}.
      */
     public static <T> ProcessorMetaSupplier supplier(
-            @Nonnull SupplierEx<? extends DataStoreSupplier<DataSource>> newDataSourceFn,
+            @Nonnull SupplierEx<? extends DataStoreHolder<DataSource>> newDataSourceFn,
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
@@ -84,7 +84,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
      * Use {@link SourceProcessors#readJdbcP}.
      */
     public static <T> ProcessorMetaSupplier supplier(
-            @Nonnull FunctionEx<ProcessorSupplier.Context, ? extends DataStoreSupplier<DataSource>> newDataSourceFn,
+            @Nonnull FunctionEx<ProcessorSupplier.Context, ? extends DataStoreHolder<DataSource>> newDataSourceFn,
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
@@ -105,7 +105,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
 
         return ProcessorMetaSupplier.forceTotalParallelismOne(
                 SecuredFunctions.readJdbcProcessorFn(connectionURL,
-                        (ctx) -> DataStoreSupplier.closing(new DataSourceFromJdbcUrl(connectionURL)),
+                        (ctx) -> DataStoreHolder.closing(new DataSourceFromJdbcUrl(connectionURL)),
                         (connection, parallelism, index) -> {
                             PreparedStatement statement = connection.prepareStatement(query);
                             try {
