@@ -399,7 +399,8 @@ public final class SinkProcessors {
         checkNotNull(dataSourceSupplier, "dataSourceSupplier");
         checkNotNull(bindFn, "bindFn");
         checkPositive(batchLimit, "batchLimit");
-        return WriteJdbcP.metaSupplier(jdbcUrl, updateQuery, ctx -> DataStoreHolder.closing(dataSourceSupplier.get()), bindFn, exactlyOnce, batchLimit);
+        return WriteJdbcP.metaSupplier(jdbcUrl, updateQuery, ctx -> DataStoreHolder.closing(dataSourceSupplier.get()),
+                bindFn, exactlyOnce, batchLimit);
     }
 
     /**
