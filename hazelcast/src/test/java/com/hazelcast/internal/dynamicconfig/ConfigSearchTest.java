@@ -55,6 +55,8 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     private static final String STATIC_NAME = "my.custom.data.*";
     private static final String DYNAMIC_NAME = "my.custom.data.cache";
+    public static final int DYNAMIC_MAX_SIZE = 3;
+    public static final int STATIC_MAX_SIZE = 2;
 
     private HazelcastInstance hazelcastInstance;
 
@@ -130,7 +132,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testCacheConfig_Static() {
-        TestCase<CacheSimpleConfig> testCase = new TestCase<CacheSimpleConfig>(new CacheSimpleConfig().setName(STATIC_NAME).setBackupCount(2),
+        TestCase<CacheSimpleConfig> testCase = new TestCase<CacheSimpleConfig>(new CacheSimpleConfig().setName(STATIC_NAME).setBackupCount(STATIC_MAX_SIZE),
                 new CacheSimpleConfig().setName(DYNAMIC_NAME).setBackupCount(3), false) {
             @Override
             void addStaticConfig(Config config) {
@@ -145,7 +147,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 CacheSimpleConfig dataConfig = hazelcastInstance.getConfig().findCacheConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getBackupCount(), equalTo(2));
+                assertThat(dataConfig.getBackupCount(), equalTo(STATIC_MAX_SIZE));
             }
         };
         testTemplate(testCase);
@@ -153,7 +155,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testCacheConfig_Dynamic() {
-        TestCase<CacheSimpleConfig> testCase = new TestCase<CacheSimpleConfig>(new CacheSimpleConfig().setName(STATIC_NAME).setBackupCount(2),
+        TestCase<CacheSimpleConfig> testCase = new TestCase<CacheSimpleConfig>(new CacheSimpleConfig().setName(STATIC_NAME).setBackupCount(STATIC_MAX_SIZE),
                 new CacheSimpleConfig().setName(DYNAMIC_NAME).setBackupCount(3), true) {
             @Override
             void addStaticConfig(Config config) {
@@ -168,7 +170,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 CacheSimpleConfig dataConfig = hazelcastInstance.getConfig().findCacheConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getBackupCount(), equalTo(3));
+                assertThat(dataConfig.getBackupCount(), equalTo(DYNAMIC_MAX_SIZE));
             }
         };
         testTemplate(testCase);
@@ -176,8 +178,8 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testQueueConfig_Static() {
-        TestCase<QueueConfig> testCase = new TestCase<QueueConfig>(new QueueConfig().setName(STATIC_NAME).setMaxSize(2),
-                new QueueConfig().setName(DYNAMIC_NAME).setMaxSize(3), false) {
+        TestCase<QueueConfig> testCase = new TestCase<QueueConfig>(new QueueConfig().setName(STATIC_NAME).setMaxSize(STATIC_MAX_SIZE),
+                new QueueConfig().setName(DYNAMIC_NAME).setMaxSize(DYNAMIC_MAX_SIZE), false) {
             @Override
             void addStaticConfig(Config config) {
                 config.addQueueConfig(this.staticConfig);
@@ -191,7 +193,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 QueueConfig dataConfig = hazelcastInstance.getConfig().findQueueConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getMaxSize(), equalTo(2));
+                assertThat(dataConfig.getMaxSize(), equalTo(STATIC_MAX_SIZE));
             }
         };
         testTemplate(testCase);
@@ -199,8 +201,8 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testQueueConfig_Dynamic() {
-        TestCase<QueueConfig> testCase = new TestCase<QueueConfig>(new QueueConfig().setName(STATIC_NAME).setMaxSize(2),
-                new QueueConfig().setName(DYNAMIC_NAME).setMaxSize(3), true) {
+        TestCase<QueueConfig> testCase = new TestCase<QueueConfig>(new QueueConfig().setName(STATIC_NAME).setMaxSize(STATIC_MAX_SIZE),
+                new QueueConfig().setName(DYNAMIC_NAME).setMaxSize(DYNAMIC_MAX_SIZE), true) {
             @Override
             void addStaticConfig(Config config) {
                 config.addQueueConfig(this.staticConfig);
@@ -214,7 +216,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 QueueConfig dataConfig = hazelcastInstance.getConfig().findQueueConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getMaxSize(), equalTo(3));
+                assertThat(dataConfig.getMaxSize(), equalTo(DYNAMIC_MAX_SIZE));
             }
         };
         testTemplate(testCase);
@@ -222,8 +224,8 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testListConfig_Static() {
-        TestCase<ListConfig> testCase = new TestCase<ListConfig>(new ListConfig().setName(STATIC_NAME).setMaxSize(2),
-                new ListConfig().setName(DYNAMIC_NAME).setMaxSize(3), false) {
+        TestCase<ListConfig> testCase = new TestCase<ListConfig>(new ListConfig().setName(STATIC_NAME).setMaxSize(STATIC_MAX_SIZE),
+                new ListConfig().setName(DYNAMIC_NAME).setMaxSize(DYNAMIC_MAX_SIZE), false) {
             @Override
             void addStaticConfig(Config config) {
                 config.addListConfig(this.staticConfig);
@@ -237,7 +239,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 ListConfig dataConfig = hazelcastInstance.getConfig().findListConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getMaxSize(), equalTo(2));
+                assertThat(dataConfig.getMaxSize(), equalTo(STATIC_MAX_SIZE));
             }
         };
         testTemplate(testCase);
@@ -245,8 +247,8 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     @Test
     public void testListConfig_Dynamic() {
-        TestCase<ListConfig> testCase = new TestCase<ListConfig>(new ListConfig().setName(STATIC_NAME).setMaxSize(2),
-                new ListConfig().setName(DYNAMIC_NAME).setMaxSize(3), true) {
+        TestCase<ListConfig> testCase = new TestCase<ListConfig>(new ListConfig().setName(STATIC_NAME).setMaxSize(STATIC_MAX_SIZE),
+                new ListConfig().setName(DYNAMIC_NAME).setMaxSize(DYNAMIC_MAX_SIZE), true) {
             @Override
             void addStaticConfig(Config config) {
                 config.addListConfig(this.staticConfig);
@@ -260,7 +262,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
             @Override
             void asserts() {
                 ListConfig dataConfig = hazelcastInstance.getConfig().findListConfig(DYNAMIC_NAME);
-                assertThat(dataConfig.getMaxSize(), equalTo(3));
+                assertThat(dataConfig.getMaxSize(), equalTo(DYNAMIC_MAX_SIZE));
             }
         };
         testTemplate(testCase);
