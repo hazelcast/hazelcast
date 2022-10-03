@@ -129,10 +129,9 @@ public final class ConfigUtils {
     @SuppressWarnings("unchecked")
     private static <T> T cloneClass(Class<?> clazz, T defConfig) throws NoSuchMethodException, InstantiationException,
             IllegalAccessException, InvocationTargetException {
-        T config;
         Constructor<?> copyConstructor = clazz.getDeclaredConstructor(clazz);
         copyConstructor.setAccessible(true);
-        return copyConstructor.newInstance(defConfig);
+        return (T) copyConstructor.newInstance(defConfig);
     }
 
     /**
