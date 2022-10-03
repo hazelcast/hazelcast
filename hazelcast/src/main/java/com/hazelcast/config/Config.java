@@ -778,7 +778,9 @@ public class Config {
      * @see #getConfigPatternMatcher()
      */
     public MapConfig getMapConfig(String name) {
-        return ConfigUtils.getConfig(configPatternMatcher, mapConfigs, name, MapConfig.class);
+        MapConfig config = ConfigUtils.getConfig(configPatternMatcher, mapConfigs, name, MapConfig.class);
+        DataPersistenceAndHotRestartMerger.merge(config.getHotRestartConfig(), config.getDataPersistenceConfig());
+        return config;
     }
 
     /**
