@@ -17,9 +17,9 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc.postgres;
 
 import com.hazelcast.jet.sql.impl.connector.jdbc.DeleteJdbcSqlConnectorTest;
-import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 

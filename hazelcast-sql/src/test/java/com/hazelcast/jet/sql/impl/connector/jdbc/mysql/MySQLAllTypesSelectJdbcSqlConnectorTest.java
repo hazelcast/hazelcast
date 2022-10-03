@@ -17,9 +17,9 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc.mysql;
 
 import com.hazelcast.jet.sql.impl.connector.jdbc.AllTypesSelectJdbcSqlConnectorTest;
-import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;

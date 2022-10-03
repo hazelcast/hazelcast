@@ -21,6 +21,7 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
@@ -159,6 +160,32 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
     }
 
     @Test
+    public void test_nonLateItemOutOfLimit_hasMatchInBuffer() {
+        // l.time=r.time
+        postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 0L));
+        postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
+        ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(1, 1));
+
+        TestSupport.verifyProcessor(processorSupplier)
+                .disableSnapshots()
+                .expectExactOutput(
+                        in(ordinal1, jetRow(0L)),
+                        in(ordinal1, wm(10L, ordinal1)),
+                        out(wm(0L, ordinal1)),
+                        // this item is:
+                        // 1. not late
+                        // 2. can't possibly match a future row from #0, therefore doesn't go to the buffer
+                        // 3. but matches a buffered row from #0
+                        in(ordinal0, jetRow(0L)),
+                        out(jetRow(0L, 0L)),
+                        processorAssertion((StreamToStreamJoinP processor) ->
+                                assertEquals(0, processor.buffer[ordinal0].size())),
+                        in(ordinal0, jetRow(1L)),
+                        out(isLeft ? jetRow(1L, null) : jetRow(null, 1L))
+                );
+    }
+
+    @Test
     public void when_offLimitAccordingToWm1_and_lateAccordingToWm2_then_handleAsLate() {
         // l.time1 BETWEEN r.time - 1 AND r.time + 1  (l.time2 is irrelevant)
         // left ordinal
@@ -196,7 +223,6 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
 
         TestSupport.verifyProcessor(supplier)
                 .disableSnapshots()
-                .disableProgressAssertion() // TODO remove
                 .cooperativeTimeout(0)
                 .expectExactOutput(
                         in(ordinal1, jetRow(42L)),

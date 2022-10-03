@@ -16,19 +16,19 @@
 
 package com.hazelcast.jet.sql.impl.expression.predicate;
 
+import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionType;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.SqlErrorCode;
-import com.hazelcast.jet.sql.impl.expression.ExpressionTestSupport;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.predicate.IsFalsePredicate;
 import com.hazelcast.sql.impl.expression.predicate.IsNotFalsePredicate;
 import com.hazelcast.sql.impl.expression.predicate.IsNotTruePredicate;
 import com.hazelcast.sql.impl.expression.predicate.IsTruePredicate;
 import com.hazelcast.sql.impl.type.QueryDataType;
-import com.hazelcast.jet.sql.impl.support.expressions.ExpressionType;
-import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;

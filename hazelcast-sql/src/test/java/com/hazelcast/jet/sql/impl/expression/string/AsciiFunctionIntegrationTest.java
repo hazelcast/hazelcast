@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.expression.string;
 
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue.CharacterVal;
+import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue.StringVal;
 import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
-import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue.CharacterVal;
-import com.hazelcast.jet.sql.impl.support.expressions.ExpressionValue.StringVal;
 import com.hazelcast.sql.impl.expression.string.AsciiFunction;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;

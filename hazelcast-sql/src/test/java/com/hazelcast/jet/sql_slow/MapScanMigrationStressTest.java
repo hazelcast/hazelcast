@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql_slow;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
@@ -62,11 +63,22 @@ public class MapScanMigrationStressTest extends JetTestSupport {
         factory = new TestHazelcastFactory();
         instances = new HazelcastInstance[4];
         for (int i = 0; i < instances.length - 1; i++) {
-            instances[i] = factory.newHazelcastInstance(smallInstanceConfig());
+            instances[i] = factory.newHazelcastInstance(createFastRetryConfig());
         }
         SqlTestSupport.createMapping(instances[0], MAP_NAME, Integer.class, Integer.class);
         map = instances[0].getMap(MAP_NAME);
         mutatorException = new AtomicReference<>(null);
+    }
+
+    private static Config createFastRetryConfig() {
+        // The stress test should end in 10 minutes, the mutator thread is replacing additional member every 2 seconds,
+        // the migration tasks may last up to 5 seconds. The retrying mechanism implemented in Invocation.handleRetry uses
+        // progressive retry delay (next delay is twice as long as previous one). The maximum delay time is configured with
+        // hazelcast.invocation.retry.pause.millis property with 500ms default. If during test the retry delay goes up to that
+        // 500ms, we retry operation just twice a second. This may cause the test fails with timeout. To give the
+        // MapFetchIndexOperation better chance to succeed we decrease the maximum delay time.
+        return smallInstanceConfig()
+                .setProperty("hazelcast.invocation.retry.pause.millis", "10");
     }
 
     @After
@@ -170,7 +182,7 @@ public class MapScanMigrationStressTest extends JetTestSupport {
                     } else {
                         firstLaunch = false;
                     }
-                    instances[3] = factory.newHazelcastInstance(smallInstanceConfig());
+                    instances[3] = factory.newHazelcastInstance(createFastRetryConfig());
 
                     Thread.sleep(delay);
                 } catch (Exception e) {

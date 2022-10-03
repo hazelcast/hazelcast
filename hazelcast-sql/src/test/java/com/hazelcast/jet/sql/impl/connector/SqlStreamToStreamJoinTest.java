@@ -97,7 +97,8 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 row(timestampTz(0L)),
                 row(timestampTz(3L)),
                 row(timestampTz(4L)),
-                row(timestampTz(5L))
+                row(timestampTz(5L)),
+                row(timestampTz(51L)) // flushing event
         );
 
         String stream2 = "stream2";
@@ -108,7 +109,8 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 singletonList(TIMESTAMP_WITH_TIME_ZONE),
                 row(timestampTz(2L)),
                 row(timestampTz(5L)),
-                row(timestampTz(7L))
+                row(timestampTz(7L)),
+                row(timestampTz(50L)) // flushing event
         );
 
         sqlService.execute("CREATE VIEW s1 AS " +
@@ -137,7 +139,8 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 singletonList(TIMESTAMP_WITH_TIME_ZONE),
                 row(timestampTz(2L)),
                 row(timestampTz(5L)),
-                row(timestampTz(7L))
+                row(timestampTz(7L)),
+                row(timestampTz(50L)) // flushing event
         );
 
         String stream2 = "stream2";
@@ -149,7 +152,8 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 row(timestampTz(0L)),
                 row(timestampTz(3L)),
                 row(timestampTz(4L)),
-                row(timestampTz(5L))
+                row(timestampTz(5L)),
+                row(timestampTz(51L)) // flushing event
         );
 
         sqlService.execute("CREATE VIEW s1 AS " +
