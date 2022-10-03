@@ -55,8 +55,8 @@ public class ConfigSearchTest extends HazelcastTestSupport {
 
     private static final String STATIC_NAME = "my.custom.data.*";
     private static final String DYNAMIC_NAME = "my.custom.data.cache";
-    public static final int DYNAMIC_MAX_SIZE = 3;
-    public static final int STATIC_MAX_SIZE = 2;
+    private static final int STATIC_MAX_SIZE = 2;
+    private static final int DYNAMIC_MAX_SIZE = 3;
 
     private HazelcastInstance hazelcastInstance;
 
@@ -133,7 +133,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
     @Test
     public void testCacheConfig_Static() {
         TestCase<CacheSimpleConfig> testCase = new TestCase<CacheSimpleConfig>(new CacheSimpleConfig().setName(STATIC_NAME).setBackupCount(STATIC_MAX_SIZE),
-                new CacheSimpleConfig().setName(DYNAMIC_NAME).setBackupCount(3), false) {
+                new CacheSimpleConfig().setName(DYNAMIC_NAME).setBackupCount(DYNAMIC_MAX_SIZE), false) {
             @Override
             void addStaticConfig(Config config) {
                 config.addCacheConfig(this.staticConfig);
@@ -156,7 +156,7 @@ public class ConfigSearchTest extends HazelcastTestSupport {
     @Test
     public void testCacheConfig_Dynamic() {
         TestCase<CacheSimpleConfig> testCase = new TestCase<CacheSimpleConfig>(new CacheSimpleConfig().setName(STATIC_NAME).setBackupCount(STATIC_MAX_SIZE),
-                new CacheSimpleConfig().setName(DYNAMIC_NAME).setBackupCount(3), true) {
+                new CacheSimpleConfig().setName(DYNAMIC_NAME).setBackupCount(DYNAMIC_MAX_SIZE), true) {
             @Override
             void addStaticConfig(Config config) {
                 config.addCacheConfig(this.staticConfig);
