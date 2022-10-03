@@ -16,8 +16,17 @@
 
 package com.hazelcast.datastore;
 
+import com.hazelcast.spi.annotation.Beta;
+
 import java.util.function.Supplier;
 
+/**
+ * Wrapper for supplying a data store and handling the close of the wrapped datastore
+ *
+ * @param <DS> - Data store type supplied by the object of this class
+ * @since 5.2
+ */
+@Beta
 public interface DataStoreSupplier<DS> extends Supplier<DS>, AutoCloseable {
 
     static <DS> DataStoreSupplier<DS> closing(DS datastore) {
