@@ -132,8 +132,7 @@ public final class ConfigUtils {
         T config;
         Constructor<?> copyConstructor = clazz.getDeclaredConstructor(clazz);
         copyConstructor.setAccessible(true);
-        config = (T) copyConstructor.newInstance(defConfig);
-        return config;
+        return copyConstructor.newInstance(defConfig);
     }
 
     /**
