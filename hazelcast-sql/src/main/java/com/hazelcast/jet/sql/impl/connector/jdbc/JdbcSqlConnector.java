@@ -142,7 +142,7 @@ public class JdbcSqlConnector implements SqlConnector {
         );
         try (DataStoreSupplier<DataSource> dataSource = (DataStoreSupplier<DataSource>) nodeEngine.getExternalDataStoreService()
                 .getExternalDataStoreFactory(externalDataStoreRef)
-                .getDataStore();
+                .createDataStore();
              Connection connection = dataSource.get().getConnection();
              Statement statement = connection.createStatement()) {
             Set<String> pkColumns = readPrimaryKeyColumns(externalTableName, connection);
@@ -234,7 +234,7 @@ public class JdbcSqlConnector implements SqlConnector {
 
         try (DataStoreSupplier<DataSource> dataSource = (DataStoreSupplier<DataSource>) nodeEngine.getExternalDataStoreService()
                 .getExternalDataStoreFactory(externalDataStoreRef)
-                .getDataStore(); Connection connection = dataSource.get().getConnection()) {
+                .createDataStore(); Connection connection = dataSource.get().getConnection()) {
 
             SqlDialect dialect = SqlDialectFactoryImpl.INSTANCE.create(connection.getMetaData());
             String databaseProductName = connection.getMetaData().getDatabaseProductName();

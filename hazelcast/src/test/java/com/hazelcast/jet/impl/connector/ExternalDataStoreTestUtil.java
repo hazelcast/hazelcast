@@ -62,7 +62,7 @@ final class ExternalDataStoreTestUtil {
     private static class DummyDataStoreFactory implements ExternalDataStoreFactory<Object> {
 
         @Override
-        public DataStoreSupplier<Object> getDataStore() {
+        public DataStoreSupplier<Object> createDataStore() {
             return DataStoreSupplier.closing(new Object());
         }
 

@@ -47,7 +47,7 @@ public class JdbcDataStoreFactory implements ExternalDataStoreFactory<DataSource
     }
 
     @Override
-    public DataStoreSupplier<DataSource> getDataStore() {
+    public DataStoreSupplier<DataSource> createDataStore() {
         return config.isShared() ? DataStoreSupplier.nonClosing(sharedDataSource) : DataStoreSupplier.closing(createDataSource());
     }
 

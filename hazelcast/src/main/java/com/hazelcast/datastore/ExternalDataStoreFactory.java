@@ -31,7 +31,7 @@ public interface ExternalDataStoreFactory<DS> extends AutoCloseable {
      * Returns configured data store. Depending on configuration and implementation it can create new data store
      * or reuse existing one.
      */
-    DataStoreSupplier<DS> getDataStore();
+    DataStoreSupplier<DS> createDataStore();
 
     /**
      * Initialize factory with the config

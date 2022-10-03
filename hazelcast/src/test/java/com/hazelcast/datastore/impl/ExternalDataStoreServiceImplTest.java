@@ -64,7 +64,7 @@ public class ExternalDataStoreServiceImplTest extends HazelcastTestSupport {
         ExternalDataStoreFactory<?> dataStoreFactory = externalDataStoreService.getExternalDataStoreFactory("test-data-store");
         assertInstanceOf(JdbcDataStoreFactory.class, dataStoreFactory);
 
-        DataSource dataSource = ((JdbcDataStoreFactory) dataStoreFactory).getDataStore().get();
+        DataSource dataSource = ((JdbcDataStoreFactory) dataStoreFactory).createDataStore().get();
 
         ResultSet resultSet = executeQuery(dataSource, "select 'some-name' as name");
         resultSet.next();
@@ -86,7 +86,7 @@ public class ExternalDataStoreServiceImplTest extends HazelcastTestSupport {
         ExternalDataStoreService externalDataStoreService = getExternalDataStoreService();
         ExternalDataStoreFactory<?> dataStoreFactory = externalDataStoreService.getExternalDataStoreFactory("test-data-store");
 
-        DataSource dataSource = ((JdbcDataStoreFactory) dataStoreFactory).getDataStore().get();
+        DataSource dataSource = ((JdbcDataStoreFactory) dataStoreFactory).createDataStore().get();
         externalDataStoreService.close();
 
         assertThatThrownBy(() -> executeQuery(dataSource, "select 'some-name' as name"))

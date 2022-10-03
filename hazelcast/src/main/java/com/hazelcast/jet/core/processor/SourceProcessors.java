@@ -459,7 +459,7 @@ public final class SourceProcessors {
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return ReadJdbcP.supplier(context -> getDataStoreFactory(context, externalDataStoreRef.getName()).getDataStore(),
+        return ReadJdbcP.supplier(context -> getDataStoreFactory(context, externalDataStoreRef.getName()).createDataStore(),
                 resultSetFn,
                 mapOutputFn);
     }
