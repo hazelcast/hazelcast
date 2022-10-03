@@ -3133,7 +3133,7 @@ public class Config {
      * <p>
      * Example:
      * <pre>{@code
-     *      Config config = smallInstanceConfig();
+     *      Config config = new Config();
      *      Properties properties = new Properties();
      *      properties.put("jdbcUrl", jdbcUrl);
      *      properties.put("username", username);
