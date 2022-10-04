@@ -77,8 +77,12 @@ final class AwsClientConfigurator {
             return awsConfig.getRegion();
         }
 
-        if (environment.isRunningOnEcs() && environment.getAwsRegionOnEcs() != null) {
-            return environment.getAwsRegionOnEcs();
+        if (environment.isRunningOnEcs()) {
+            String region = environment.getAwsRegionOnEcs();
+            // If member is not run on ECS Fargate, the container would not have env var about current region.
+            if (region != null){
+                return region;
+            }
         }
 
         return regionFrom(metadataApi.availabilityZoneEc2());

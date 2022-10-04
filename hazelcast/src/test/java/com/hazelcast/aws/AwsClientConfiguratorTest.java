@@ -47,7 +47,7 @@ public class AwsClientConfiguratorTest {
     }
 
     @Test
-    public void resolveRegionEcsConfig() {
+    public void resolveRegionEcsEnvironment() {
         // given
         String region = "us-east-1";
         AwsConfig awsConfig = AwsConfig.builder().build();
@@ -79,7 +79,7 @@ public class AwsClientConfiguratorTest {
     }
 
     @Test
-    public void resolveRegionEcsMetadata() {
+    public void resolveRegionEcsEc2Metadata() {
         // given
         AwsConfig awsConfig = AwsConfig.builder().build();
         AwsMetadataApi awsMetadataApi = mock(AwsMetadataApi.class);
