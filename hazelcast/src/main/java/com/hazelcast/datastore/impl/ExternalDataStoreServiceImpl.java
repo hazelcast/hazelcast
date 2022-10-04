@@ -57,8 +57,8 @@ public class ExternalDataStoreServiceImpl implements ExternalDataStoreService {
     }
 
     @Override
-    public ExternalDataStoreFactory<?> getExternalDataStoreFactory(String name) {
-        ExternalDataStoreFactory<?> externalDataStoreFactory = dataStoreFactories.get(name);
+    public <DS> ExternalDataStoreFactory<DS> getExternalDataStoreFactory(String name) {
+        ExternalDataStoreFactory<DS> externalDataStoreFactory = (ExternalDataStoreFactory<DS>) dataStoreFactories.get(name);
         if (externalDataStoreFactory == null) {
             throw new HazelcastException("External data store factory '" + name + "' not found");
         }

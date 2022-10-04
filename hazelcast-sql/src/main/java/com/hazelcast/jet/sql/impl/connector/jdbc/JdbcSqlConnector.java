@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.datastore.DataStoreHolder;
+import com.hazelcast.datastore.ExternalDataStoreFactory;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
@@ -169,9 +170,9 @@ public class JdbcSqlConnector implements SqlConnector {
     }
 
     private static DataStoreHolder<DataSource> createDataStore(NodeEngine nodeEngine, String externalDataStoreRef) {
-        return (DataStoreHolder<DataSource>) nodeEngine.getExternalDataStoreService()
-                .getExternalDataStoreFactory(externalDataStoreRef)
-                .createDataStore();
+        final ExternalDataStoreFactory<DataSource> externalDataStoreFactory = nodeEngine.getExternalDataStoreService()
+                .getExternalDataStoreFactory(externalDataStoreRef);
+        return externalDataStoreFactory.createDataStore();
     }
 
     private Set<String> readPrimaryKeyColumns(@Nonnull String externalName, Connection connection) {

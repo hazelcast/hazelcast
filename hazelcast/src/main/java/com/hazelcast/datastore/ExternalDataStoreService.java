@@ -30,8 +30,9 @@ public interface ExternalDataStoreService extends AutoCloseable {
      * Returns external data store factory with given name.
      *
      * @param name name of the data store factory
+     * @param <DS> type of the data store
      * @return instance of the factory
-     * @throws HazelcastException if the factory with given name is not found or misconfigured
+     * @throws HazelcastException if the factory with given name is not found or misconfigured*
      */
-    ExternalDataStoreFactory<?> getExternalDataStoreFactory(String name);
+    <DS> ExternalDataStoreFactory<DS> getExternalDataStoreFactory(String name);
 }

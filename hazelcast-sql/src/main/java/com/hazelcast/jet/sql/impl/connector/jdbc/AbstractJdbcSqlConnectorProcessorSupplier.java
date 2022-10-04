@@ -45,8 +45,7 @@ abstract class AbstractJdbcSqlConnectorProcessorSupplier implements ProcessorSup
         ExternalDataStoreService externalDataStoreService = ((HazelcastInstanceImpl) context.hazelcastInstance())
                 .node.getNodeEngine().getExternalDataStoreService();
 
-        ExternalDataStoreFactory<DataSource> factory = (ExternalDataStoreFactory<DataSource>)
-                externalDataStoreService.getExternalDataStoreFactory(externalDataStoreRef);
+        ExternalDataStoreFactory<DataSource> factory = externalDataStoreService.getExternalDataStoreFactory(externalDataStoreRef);
 
         dataSource = factory.createDataStore();
     }
