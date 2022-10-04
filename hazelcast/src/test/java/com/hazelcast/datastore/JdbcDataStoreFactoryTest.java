@@ -54,7 +54,7 @@ public class JdbcDataStoreFactoryTest {
     }
 
     @Test
-    public void should_return_same_DataStore_when_shared() {
+    public void should_return_same_datastore_when_shared() {
         JdbcDataStoreFactory jdbcDataStoreFactory = new JdbcDataStoreFactory();
         ExternalDataStoreConfig config = new ExternalDataStoreConfig()
                 .setProperty("jdbcUrl", "jdbc:h2:mem:" + JdbcDataStoreFactoryTest.class.getSimpleName() + "_shared")
@@ -108,7 +108,7 @@ public class JdbcDataStoreFactoryTest {
     }
 
     @Test
-    public void should_return_different_DataStore_when_NOT_shared() {
+    public void should_return_different_datastore_when_NOT_shared() {
         JdbcDataStoreFactory jdbcDataStoreFactory = new JdbcDataStoreFactory();
         ExternalDataStoreConfig config = new ExternalDataStoreConfig()
                 .setProperty("jdbcUrl", "jdbc:h2:mem:" + JdbcDataStoreFactoryTest.class.getSimpleName() + "_not_shared")
