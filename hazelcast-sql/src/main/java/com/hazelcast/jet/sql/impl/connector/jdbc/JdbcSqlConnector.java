@@ -140,11 +140,10 @@ public class JdbcSqlConnector implements SqlConnector {
                 options.get(OPTION_EXTERNAL_DATASTORE_REF),
                 OPTION_EXTERNAL_DATASTORE_REF + " must be set"
         );
-        try (DataStoreHolder<DataSource> dataSource = (DataStoreHolder<DataSource>) nodeEngine.getExternalDataStoreService()
-                .getExternalDataStoreFactory(externalDataStoreRef)
-                .createDataStore();
+        try (DataStoreHolder<DataSource> dataSource = createDataStore(nodeEngine, externalDataStoreRef);
              Connection connection = dataSource.get().getConnection();
-             Statement statement = connection.createStatement()) {
+             Statement statement = connection.createStatement()
+        ) {
             Set<String> pkColumns = readPrimaryKeyColumns(externalTableName, connection);
 
             boolean hasResultSet = statement.execute("SELECT * FROM " + externalTableName + " LIMIT 0");
@@ -167,6 +166,12 @@ public class JdbcSqlConnector implements SqlConnector {
         } catch (Exception e) {
             throw new HazelcastException("Could not read column metadata for table " + externalDataStoreRef, e);
         }
+    }
+
+    private static DataStoreHolder<DataSource> createDataStore(NodeEngine nodeEngine, String externalDataStoreRef) {
+        return (DataStoreHolder<DataSource>) nodeEngine.getExternalDataStoreService()
+                .getExternalDataStoreFactory(externalDataStoreRef)
+                .createDataStore();
     }
 
     private Set<String> readPrimaryKeyColumns(@Nonnull String externalName, Connection connection) {
@@ -232,9 +237,7 @@ public class JdbcSqlConnector implements SqlConnector {
 
     private SqlDialect resolveDialect(NodeEngine nodeEngine, String externalDataStoreRef) {
 
-        try (DataStoreHolder<DataSource> dataSource = (DataStoreHolder<DataSource>) nodeEngine.getExternalDataStoreService()
-                .getExternalDataStoreFactory(externalDataStoreRef)
-                .createDataStore(); Connection connection = dataSource.get().getConnection()) {
+        try (DataStoreHolder<DataSource> dataSource = createDataStore(nodeEngine, externalDataStoreRef); Connection connection = dataSource.get().getConnection()) {
 
             SqlDialect dialect = SqlDialectFactoryImpl.INSTANCE.create(connection.getMetaData());
             String databaseProductName = connection.getMetaData().getDatabaseProductName();
