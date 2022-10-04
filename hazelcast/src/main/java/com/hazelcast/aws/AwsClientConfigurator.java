@@ -79,8 +79,8 @@ final class AwsClientConfigurator {
 
         if (environment.isRunningOnEcs()) {
             String region = environment.getAwsRegionOnEcs();
-            // If member is not run on ECS Fargate, the container would not have env var about current region.
-            if (region != null){
+            // If the member is not run on ECS Fargate, then the container would not have current region env var.
+            if (region != null) {
                 return region;
             }
         }
