@@ -19,7 +19,6 @@ package com.hazelcast.jet.core.processor;
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.datastore.DataStoreHolder;
 import com.hazelcast.datastore.ExternalDataStoreFactory;
 import com.hazelcast.datastore.JdbcDataStoreFactory;
 import com.hazelcast.function.BiConsumerEx;
@@ -444,7 +443,7 @@ public final class SourceProcessors {
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return ReadJdbcP.supplier(context -> DataStoreHolder.closing(new DataSourceFromConnectionSupplier(newConnectionFn)),
+        return ReadJdbcP.supplierWithoutHolder(context -> new DataSourceFromConnectionSupplier(newConnectionFn),
                 resultSetFn, mapOutputFn);
     }
 

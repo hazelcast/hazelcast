@@ -73,11 +73,11 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
      * Use {@link SourceProcessors#readJdbcP}.
      */
     public static <T> ProcessorMetaSupplier supplier(
-            @Nonnull SupplierEx<? extends DataStoreHolder<DataSource>> newDataSourceFn,
+            @Nonnull SupplierEx<? extends DataSource> newDataSourceFn,
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return supplier(ctx -> newDataSourceFn.get(), resultSetFn, mapOutputFn);
+        return supplierWithoutHolder(ctx -> newDataSourceFn.get(), resultSetFn, mapOutputFn);
     }
 
     /**
@@ -96,6 +96,22 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
                 SecuredFunctions.readJdbcProcessorFn(null, newDataSourceFn, resultSetFn, mapOutputFn));
     }
 
+    /**
+     * Use {@link SourceProcessors#readJdbcP}.
+     */
+    public static <T> ProcessorMetaSupplier supplierWithoutHolder(
+            @Nonnull FunctionEx<ProcessorSupplier.Context, ? extends DataSource> newDataSourceFn,
+            @Nonnull ToResultSetFunction resultSetFn,
+            @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
+    ) {
+        checkSerializable(newDataSourceFn, "newDataSourceFn");
+        checkSerializable(resultSetFn, "resultSetFn");
+        checkSerializable(mapOutputFn, "mapOutputFn");
+
+        return ProcessorMetaSupplier.preferLocalParallelismOne(ConnectorPermission.jdbc(null, ACTION_READ),
+                SecuredFunctions.readJdbcProcessorFnWithoutHolder(null, newDataSourceFn, resultSetFn, mapOutputFn));
+    }
+
     public static <T> ProcessorMetaSupplier supplier(
             @Nonnull String connectionURL,
             @Nonnull String query,
@@ -104,8 +120,8 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
         checkSerializable(mapOutputFn, "mapOutputFn");
 
         return ProcessorMetaSupplier.forceTotalParallelismOne(
-                SecuredFunctions.readJdbcProcessorFn(connectionURL,
-                        (ctx) -> DataStoreHolder.closing(new DataSourceFromJdbcUrl(connectionURL)),
+                SecuredFunctions.readJdbcProcessorFnWithoutHolder(connectionURL,
+                        (ctx) -> new DataSourceFromJdbcUrl(connectionURL),
                         (connection, parallelism, index) -> {
                             PreparedStatement statement = connection.prepareStatement(query);
                             try {
