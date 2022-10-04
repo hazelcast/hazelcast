@@ -238,7 +238,10 @@ public class JdbcSqlConnector implements SqlConnector {
 
     private SqlDialect resolveDialect(NodeEngine nodeEngine, String externalDataStoreRef) {
 
-        try (DataStoreHolder<DataSource> dataSource = createDataStore(nodeEngine, externalDataStoreRef); Connection connection = dataSource.get().getConnection()) {
+        try (
+                DataStoreHolder<DataSource> dataSource = createDataStore(nodeEngine, externalDataStoreRef);
+                Connection connection = dataSource.get().getConnection()
+        ) {
 
             SqlDialect dialect = SqlDialectFactoryImpl.INSTANCE.create(connection.getMetaData());
             String databaseProductName = connection.getMetaData().getDatabaseProductName();
