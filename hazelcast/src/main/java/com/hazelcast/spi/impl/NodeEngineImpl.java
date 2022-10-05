@@ -576,6 +576,16 @@ public class NodeEngineImpl implements NodeEngine {
         if (diagnostics != null) {
             diagnostics.shutdown();
         }
+
+        closeExternalDataStoreService();
+    }
+
+    private void closeExternalDataStoreService() {
+        try {
+            externalDataStoreService.close();
+        } catch (Exception e) {
+            logger.warning("Closing data stores failed", e);
+        }
     }
 
     @Override

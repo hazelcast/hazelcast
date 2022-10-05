@@ -20,33 +20,36 @@ import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.spi.annotation.Beta;
 
 /**
- * Creates external datastore. Configuration is provided by {@link #init(ExternalDataStoreConfig)}.
+ * Basic implementation of the {@link ExternalDataStoreFactory}.
+ * Requires implementing only how to create a datastore and how to close the factory
  *
  * @param <DS> - type of the data store
  * @since 5.2
  */
 @Beta
-public interface ExternalDataStoreFactory<DS> extends AutoCloseable {
-    /**
-     * Returns configured data store. Depending on configuration and implementation it can create new data store
-     * or reuse existing one.
-     */
-    DataStoreHolder<DS> createDataStore();
+public abstract class AbstractDataStoreFactory<DS> implements ExternalDataStoreFactory<DS> {
+
+    protected DS sharedDataStore;
+    protected ExternalDataStoreConfig config;
 
     /**
-     * Initialize factory with the config
+     * Creates a new data store
      *
-     * @param config configuration of the given datastore
+     * @return a new data store instance
      */
-    void init(ExternalDataStoreConfig config);
+    protected abstract DS createDataSource();
 
-    /**
-     * Closes underlying resources
-     *
-     * @throws Exception
-     */
     @Override
-    default void close() throws Exception {
-        //no op
+    public void init(ExternalDataStoreConfig config) {
+        this.config = config;
+        if (config.isShared()) {
+            sharedDataStore = createDataSource();
+        }
     }
+
+    @Override
+    public DataStoreHolder<DS> createDataStore() {
+        return config.isShared() ? DataStoreHolder.nonClosing(sharedDataStore) : DataStoreHolder.closing(createDataSource());
+    }
+
 }

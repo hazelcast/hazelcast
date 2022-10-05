@@ -64,7 +64,7 @@ public class DeleteProcessorSupplier
         for (int i = 0; i < count; i++) {
             Processor processor = new WriteJdbcP<>(
                     query,
-                    dataSource,
+                    dataSource.get(),
                     (PreparedStatement ps, JetSqlRow row) -> {
                         for (int j = 0; j < row.getFieldCount(); j++) {
                             ps.setObject(j + 1, row.get(j));

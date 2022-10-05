@@ -34,6 +34,7 @@ import org.junit.runner.RunWith;
 
 import javax.sql.DataSource;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -59,14 +60,13 @@ public class ExternalDataStoreServiceImplTest extends HazelcastTestSupport {
 
     @Test
     public void should_return_working_datastore() throws Exception {
-        HazelcastInstance instance = createHazelcastInstance(config);
-        ExternalDataStoreService externalDataStoreService = Util.getNodeEngine(instance).getExternalDataStoreService();
+        ExternalDataStoreService externalDataStoreService = getExternalDataStoreService();
         ExternalDataStoreFactory<?> dataStoreFactory = externalDataStoreService.getExternalDataStoreFactory("test-data-store");
         assertInstanceOf(JdbcDataStoreFactory.class, dataStoreFactory);
 
-        DataSource dataSource = ((JdbcDataStoreFactory) dataStoreFactory).getDataStore();
+        DataSource dataSource = ((JdbcDataStoreFactory) dataStoreFactory).createDataStore().get();
 
-        ResultSet resultSet = dataSource.getConnection().prepareStatement("select 'some-name' as name").executeQuery();
+        ResultSet resultSet = executeQuery(dataSource, "select 'some-name' as name");
         resultSet.next();
         String actualName = resultSet.getString(1);
 
@@ -75,11 +75,31 @@ public class ExternalDataStoreServiceImplTest extends HazelcastTestSupport {
 
     @Test
     public void should_fail_when_non_existing_datastore() throws Exception {
-        HazelcastInstance instance = createHazelcastInstance(config);
-        ExternalDataStoreService externalDataStoreService = Util.getNodeEngine(instance).getExternalDataStoreService();
+        ExternalDataStoreService externalDataStoreService = getExternalDataStoreService();
         assertThatThrownBy(() -> externalDataStoreService.getExternalDataStoreFactory("non-existing-data-store"))
                 .isInstanceOf(HazelcastException.class)
                 .hasMessage("External data store factory 'non-existing-data-store' not found");
+    }
+
+    @Test
+    public void should_close_factories() throws Exception {
+        ExternalDataStoreService externalDataStoreService = getExternalDataStoreService();
+        ExternalDataStoreFactory<?> dataStoreFactory = externalDataStoreService.getExternalDataStoreFactory("test-data-store");
+
+        DataSource dataSource = ((JdbcDataStoreFactory) dataStoreFactory).createDataStore().get();
+        externalDataStoreService.close();
+
+        assertThatThrownBy(() -> executeQuery(dataSource, "select 'some-name' as name"))
+                .isInstanceOf(SQLException.class).hasMessage("HikariDataSource HikariDataSource (HikariPool-1) has been closed.");
+    }
+
+    private ExternalDataStoreService getExternalDataStoreService() {
+        HazelcastInstance instance = createHazelcastInstance(config);
+        return Util.getNodeEngine(instance).getExternalDataStoreService();
+    }
+
+    private ResultSet executeQuery(DataSource dataSource, String sql) throws SQLException {
+        return dataSource.getConnection().prepareStatement(sql).executeQuery();
     }
 
     @Test

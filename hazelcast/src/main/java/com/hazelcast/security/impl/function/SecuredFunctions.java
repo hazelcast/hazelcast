@@ -18,6 +18,7 @@ package com.hazelcast.security.impl.function;
 
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.datastore.DataStoreHolder;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
@@ -274,24 +275,29 @@ public final class SecuredFunctions {
 
     public static <T> ProcessorSupplier readJdbcProcessorFn(
             String connectionUrl,
-            FunctionEx<ProcessorSupplier.Context, ? extends DataSource> newDataSourceFn,
+            FunctionEx<ProcessorSupplier.Context, ? extends DataStoreHolder<DataSource>> newDataSourceFn,
             ToResultSetFunction resultSetFn,
             FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
         return new ProcessorSupplier() {
 
-            private DataSource dataSource;
+            private DataStoreHolder<DataSource> dataSource;
 
             @Override
             public void init(@Nonnull ProcessorSupplier.Context context) {
                 dataSource = newDataSourceFn.apply(context);
             }
 
+            @Override
+            public void close(Throwable error) throws Exception {
+                dataSource.close();
+            }
+
             @Nonnull
             @Override
             public Collection<? extends Processor> get(int count) {
                 return IntStream.range(0, count)
-                        .mapToObj(i -> new ReadJdbcP<T>(dataSource::getConnection, resultSetFn, mapOutputFn))
+                        .mapToObj(i -> new ReadJdbcP<T>(dataSource.get()::getConnection, resultSetFn, mapOutputFn))
                         .collect(Collectors.toList());
             }
 
@@ -300,6 +306,16 @@ public final class SecuredFunctions {
                 return singletonList(ConnectorPermission.jdbc(connectionUrl, ACTION_READ));
             }
         };
+    }
+
+    public static <T> ProcessorSupplier readJdbcProcessorFnWithoutHolder(
+            String connectionUrl,
+            FunctionEx<ProcessorSupplier.Context, ? extends DataSource> newDataSourceFn,
+            ToResultSetFunction resultSetFn,
+            FunctionEx<? super ResultSet, ? extends T> mapOutputFn
+    ) {
+        return readJdbcProcessorFn(connectionUrl, ctx -> DataStoreHolder.nonClosing(newDataSourceFn.apply(ctx)),
+                resultSetFn, mapOutputFn);
     }
 
     public static FunctionEx<? super Processor.Context, ? extends BufferedWriter> createBufferedWriterFn(
