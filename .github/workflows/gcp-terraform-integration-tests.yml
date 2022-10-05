@@ -34,7 +34,7 @@ jobs:
       - run: java -version
 
       # BUILD HAZELCAST GCP SNAPSHOT
-      - uses: actions/checkout@v3.0.2
+      - uses: actions/checkout@v3.1.0
         with:
           path: hazelcast
 
