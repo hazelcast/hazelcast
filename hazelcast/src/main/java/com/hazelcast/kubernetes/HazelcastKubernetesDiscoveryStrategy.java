@@ -32,9 +32,9 @@ final class HazelcastKubernetesDiscoveryStrategy
         extends AbstractDiscoveryStrategy {
     private final KubernetesClient client;
     private final EndpointResolver endpointResolver;
-    private KubernetesConfig config;
+    private final KubernetesConfig config;
 
-    private final Map<String, String> memberMetadata = new HashMap<String, String>();
+    private final Map<String, String> memberMetadata = new HashMap<>();
 
     HazelcastKubernetesDiscoveryStrategy(ILogger logger, Map<String, Comparable> properties) {
         super(logger, properties);
