@@ -116,13 +116,13 @@
         <parquet.version>1.12.3</parquet.version>
         <picocli.version>4.4.0</picocli.version>
         <postgresql.version>42.4.2</postgresql.version>
-        <prometheus.version>0.14.0</prometheus.version>
+        <prometheus.version>0.17.2</prometheus.version>
         <protobuf.version>3.19.4</protobuf.version>
         <scala.version>2.12</scala.version>
         <slf4j.version>1.7.36</slf4j.version>
         <spring.version>4.3.0.RELEASE</spring.version>
-        <snakeyaml.version>1.26</snakeyaml.version>
-        <snakeyaml.engine.version>2.1</snakeyaml.engine.version>
+        <snakeyaml.version>1.33</snakeyaml.version>
+        <snakeyaml.engine.version>2.3</snakeyaml.engine.version>
 
         <!-- test dependencies -->
         <activemq-artemis.version>2.11.0</activemq-artemis.version>
