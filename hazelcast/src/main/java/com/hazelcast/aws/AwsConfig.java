@@ -19,6 +19,7 @@ package com.hazelcast.aws;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.spi.utils.PortRange;
 
+import javax.management.relation.Role;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -129,11 +130,7 @@ final class AwsConfig {
     }
 
     private boolean anyOfEc2PropertiesConfigured() {
-        return !isNullOrEmptyAfterTrim(iamRole) || !isNullOrEmptyAfterTrim(securityGroupName) || hasTags(tags);
-    }
-
-    private boolean hasTags(List<Tag> tags) {
-        return tags != null && !tags.isEmpty();
+        return !isNullOrEmptyAfterTrim(iamRole) || !isNullOrEmptyAfterTrim(securityGroupName);
     }
 
     private boolean anyOfEcsPropertiesConfigured() {
