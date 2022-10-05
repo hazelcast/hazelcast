@@ -19,11 +19,36 @@ package com.hazelcast.jet.sql.impl;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
+import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.util.Pair;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.List;
 
 public interface HazelcastPhysicalScan extends PhysicalRel {
 
     Expression<Boolean> filter(QueryParameterMetadata parameterMetadata);
+
     List<Expression<?>> projection(QueryParameterMetadata parameterMetadata);
+
+    /**
+     * {@inheritDoc}
+     * @return null, scan is always a tree leaf
+     */
+    @Override
+    @Nullable
+    default Pair<RelTraitSet, List<RelTraitSet>> passThroughTraits(RelTraitSet required) {
+        return null;
+    }
+
+    /**
+     * {@inheritDoc}
+     * @return null, scan is always a tree leaf
+     */
+    @Override
+    @Nullable
+    default Pair<RelTraitSet, List<RelTraitSet>> deriveTraits(RelTraitSet childTraits, int childId) {
+        return null;
+    }
 }

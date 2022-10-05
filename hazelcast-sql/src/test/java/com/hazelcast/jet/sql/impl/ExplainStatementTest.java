@@ -78,7 +78,7 @@ public class ExplainStatementTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_explainStatementIndexScan() {
+    public void test_explainStatementIndexPointLookup() {
         IMap<Integer, Integer> map = instance().getMap("map");
         map.put(1, 10);
         map.put(2, 10);
@@ -92,7 +92,7 @@ public class ExplainStatementTest extends SqlTestSupport {
         createMapping("map", Integer.class, Integer.class);
         assertRowsOrdered(sql, singletonList(
                 new Row("IndexScanMapPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], " +
-                        "index=[map_hash_this], indexExp=[=($1, 10)], remainderExp=[null])")
+                        "index=[map_hash_this], indexExp=[=($1, 10)])")
         ));
     }
 
@@ -109,7 +109,7 @@ public class ExplainStatementTest extends SqlTestSupport {
         createMapping("map", Integer.class, Integer.class);
         assertRowsOrdered(sql, singletonList(
                 new Row("IndexScanMapPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], " +
-                        "index=[map_sorted_this], indexExp=[null], remainderExp=[null])")
+                        "index=[map_sorted_this], direction=[ASC])")
         ));
     }
 

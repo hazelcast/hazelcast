@@ -213,10 +213,12 @@ public class IndexScanMapPhysicalRel extends TableScan implements HazelcastPhysi
 
     @Override
     public RelWriter explainTerms(RelWriter pw) {
+        boolean collations = !getTraitSet().getTrait(RelCollationTraitDef.INSTANCE).getFieldCollations().isEmpty();
         return super.explainTerms(pw)
                 .item("index", index.getName())
-                .item("indexExp", indexExp)
-                .item("remainderExp", remainderExp);
+                .itemIf("direction", isDescending() ? "DESC" : "ASC", collations)
+                .itemIf("indexExp", indexExp, indexExp != null)
+                .itemIf("remainderExp", remainderExp, remainderExp != null);
     }
 
     @Override

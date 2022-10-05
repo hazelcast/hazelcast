@@ -16,7 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -27,6 +29,8 @@ import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelCollation;
+import org.apache.calcite.rel.RelCollationTraitDef;
+import org.apache.calcite.rel.RelCollations;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.Sort;
@@ -35,6 +39,7 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexVisitor;
+import org.apache.calcite.util.Pair;
 import org.apache.calcite.util.Util;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
@@ -57,8 +62,36 @@ public class SortPhysicalRel extends Sort implements PhysicalRel {
     ) {
         super(cluster, traits, input, collation, offset, fetch);
         this.rowType = rowType;
-
         this.requiresSort = requiresSort;
+    }
+
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Pair<RelTraitSet, List<RelTraitSet>> passThroughTraits(RelTraitSet required) {
+        if (isEnforcer() || required.getConvention() != Conventions.PHYSICAL) {
+            return null;
+        }
+
+        RelCollation collation = required.getTrait(RelCollationTraitDef.INSTANCE);
+        return Pair.of(required.replace(collation), ImmutableList.of(required.replace(RelCollations.EMPTY)));
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public @Nullable Pair<RelTraitSet, List<RelTraitSet>> deriveTraits(RelTraitSet childTraits, int childId) {
+        assert childId == 0 : "Sort has more than one inputs";
+
+        if (isEnforcer() || childTraits.getConvention() != Conventions.PHYSICAL) {
+            return null;
+        }
+
+        RelCollation collation = this.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
+        return Pair.of(childTraits.replace(collation), ImmutableList.of(childTraits));
     }
 
     public boolean requiresSort() {
@@ -87,7 +120,7 @@ public class SortPhysicalRel extends Sort implements PhysicalRel {
         double bytesPerRow = (3 + getRowType().getFieldCount()) * 4;
 
         double cpu;
-        if (collation.getFieldCollations().isEmpty() || !requiresSort) { // Here is the change
+        if (collation.getFieldCollations().isEmpty()) { // Here is the change
             // Case 2. If sort keys are empty, CPU cost is cheaper because we are just
             // stepping over the first "readCount" rows, rather than sorting all
             // "inCount" them. (Presumably we are applying FETCH and/or OFFSET,

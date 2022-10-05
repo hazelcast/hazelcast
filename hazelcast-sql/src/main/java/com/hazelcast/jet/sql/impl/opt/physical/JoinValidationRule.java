@@ -30,7 +30,7 @@ import static org.apache.calcite.rel.core.JoinRelType.INNER;
 import static org.apache.calcite.rel.core.JoinRelType.LEFT;
 
 @Value.Enclosing
-public final class JoinValidationRule extends RelRule<Config> implements TransformationRule {
+public final class JoinValidationRule extends RelRule<Config> {
 
     @Value.Immutable
     public interface Config extends RelRule.Config {

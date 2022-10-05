@@ -18,57 +18,72 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.SortLogicalRel;
-import org.apache.calcite.plan.RelOptRule;
-import org.apache.calcite.plan.RelOptRuleCall;
-import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.plan.*;
 import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
+import org.immutables.value.Value;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
-final class SortPhysicalRule extends RelOptRule {
+@Value.Enclosing
+final class SortPhysicalRule extends RelRule<RelRule.Config> {
 
-    static final RelOptRule INSTANCE = new SortPhysicalRule();
+    /**
+     * Rule configuration.
+     */
+    @Value.Immutable
+    public interface Config extends RelRule.Config {
+        SortPhysicalRule.Config DEFAULT = ImmutableSortPhysicalRule.Config.builder()
+                .description(SortPhysicalRule.class.getSimpleName())
+                .operandSupplier(b0 -> b0
+                        .operand(SortLogicalRel.class)
+                        .trait(LOGICAL)
+                        .oneInput(b1 -> b1.operand(RelNode.class)
+                                .anyInputs()))
+                .build();
 
-    private SortPhysicalRule() {
-        super(
-                operand(SortLogicalRel.class, LOGICAL, some(operand(RelNode.class, any()))),
-                SortPhysicalRule.class.getSimpleName()
-        );
+        @Override
+        default RelOptRule toRule() {
+            return new SortPhysicalRule(this);
+        }
     }
+
+    private SortPhysicalRule(SortPhysicalRule.Config config) {
+        super(config);
+    }
+
+    static final RelOptRule INSTANCE = new SortPhysicalRule(Config.DEFAULT);
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        SortLogicalRel logicalSort = call.rel(0);
+        SortLogicalRel sort = call.rel(0);
+        RelNode physicalInput = OptUtils.toPhysicalInput(sort.getInput());
+        RelNode transformTo = null;
 
-        List<RelNode> transforms = toTransforms(logicalSort);
-        for (RelNode transform : transforms) {
-            call.transformTo(transform);
+        boolean requiresSort = requiresSort(sort.getCollation(), physicalInput.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE));
+
+        if (requiresSort || sort.offset != null || sort.fetch != null) {
+            transformTo = new SortPhysicalRel(
+                    sort.getCluster(),
+                    OptUtils.traitPlus(physicalInput.getTraitSet(), sort.getCollation()),
+                    physicalInput,
+                    sort.getCollation(),
+                    sort.offset,
+                    sort.fetch,
+                    sort.getRowType(),
+                    requiresSort);
+        } else {
+            transformTo = physicalInput;
         }
+        call.transformTo(transformTo);
     }
 
-    private static List<RelNode> toTransforms(SortLogicalRel logicalSort) {
-        List<RelNode> sortTransforms = new ArrayList<>(1);
-        List<RelNode> nonSortTransforms = new ArrayList<>(1);
-        for (RelNode physicalInput : OptUtils.extractPhysicalRelsFromSubset(logicalSort.getInput())) {
-            boolean requiresSort = requiresSort(
-                    logicalSort.getCollation(),
-                    physicalInput.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE)
-            );
-            if (requiresSort || logicalSort.offset != null || logicalSort.fetch != null) {
-                sortTransforms.add(createSort(logicalSort, physicalInput, requiresSort));
-            } else {
-                nonSortTransforms.add(physicalInput);
-            }
-        }
-        return !nonSortTransforms.isEmpty() ? nonSortTransforms : sortTransforms;
-    }
-
+    // TODO: rewrite with top-down-style
     private static boolean requiresSort(RelCollation sortCollation, RelCollation inputCollation) {
         if (sortCollation.getFieldCollations().isEmpty()) {
             // No need for sorting
@@ -95,25 +110,5 @@ final class SortPhysicalRule extends RelOptRule {
             // Input has less collated fields than sort. Definitely not a prefix => local sorting is needed.
             return true;
         }
-    }
-
-    private static SortPhysicalRel createSort(
-            SortLogicalRel logicalSort,
-            RelNode physicalInput,
-            boolean requiresSort
-    ) {
-        // Input traits are propagated, but new collation is used.
-        RelTraitSet traitSet = OptUtils.traitPlus(physicalInput.getTraitSet(), logicalSort.getCollation());
-
-        return new SortPhysicalRel(
-                logicalSort.getCluster(),
-                traitSet,
-                physicalInput,
-                logicalSort.getCollation(),
-                logicalSort.offset,
-                logicalSort.fetch,
-                logicalSort.getRowType(),
-                requiresSort
-        );
     }
 }

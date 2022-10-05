@@ -76,25 +76,25 @@ public final class JoinPhysicalRule extends RelRule<RelRule.Config> {
             return;
         }
 
-        RelNode leftInputConverted = RelRule.convert(leftInput, leftInput.getTraitSet().replace(PHYSICAL));
-        RelNode rightInputConverted = RelRule.convert(rightInput, rightInput.getTraitSet().replace(PHYSICAL));
+        RelNode leftInputConverted = OptUtils.toPhysicalInput(leftInput);
+        RelNode rightInputConverted = OptUtils.toPhysicalInput(rightInput);
 
         // we don't use hash join for unbounded left input because it doesn't refresh the right side
         if (OptUtils.isBounded(leftInput)) {
-            RelNode rel = new JoinHashPhysicalRel(
+            RelNode hashJoin = new JoinHashPhysicalRel(
                     logicalJoin.getCluster(),
                     logicalJoin.getTraitSet().replace(PHYSICAL),
                     leftInputConverted,
                     rightInputConverted,
                     logicalJoin.getCondition(),
                     logicalJoin.getJoinType());
-            call.transformTo(rel);
+            call.transformTo(hashJoin);
         }
 
         if (rightInput instanceof TableScan) {
             HazelcastTable rightHzTable = rightInput.getTable().unwrap(HazelcastTable.class);
             if (SqlConnectorUtil.getJetSqlConnector(rightHzTable.getTarget()).isNestedLoopReaderSupported()) {
-                RelNode rel2 = new JoinNestedLoopPhysicalRel(
+                RelNode nestedLoopJoin = new JoinNestedLoopPhysicalRel(
                         logicalJoin.getCluster(),
                         OptUtils.toPhysicalConvention(logicalJoin.getTraitSet()),
                         leftInputConverted,
@@ -102,7 +102,7 @@ public final class JoinPhysicalRule extends RelRule<RelRule.Config> {
                         logicalJoin.getCondition(),
                         logicalJoin.getJoinType()
                 );
-                call.transformTo(rel2);
+                call.transformTo(nestedLoopJoin);
             }
         }
     }
