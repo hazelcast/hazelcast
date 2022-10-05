@@ -73,14 +73,10 @@ public class AwsEcsClientTest {
 
     @Test
     public void getAddressesWithAwsConfig() {
-        // TODO CN-62 test
         // given
-        List<String> taskArns = singletonList("task-arn");
         List<String> privateIps = singletonList("123.12.1.0");
-        List<Task> tasks = singletonList(new Task("123.12.1.0", null));
         Map<String, String> expectedResult = singletonMap("123.12.1.0", "1.4.6.2");
         given(awsEcsApi.listTaskPrivateAddresses(CLUSTER, CREDENTIALS)).willReturn(privateIps);
-//        given(awsEcsApi.describeTasks(CLUSTER, taskArns, CREDENTIALS)).willReturn(tasks);
         given(awsEc2Api.describeNetworkInterfaces(privateIps, CREDENTIALS)).willReturn(expectedResult);
 
         // when
@@ -92,15 +88,10 @@ public class AwsEcsClientTest {
 
     @Test
     public void getAddressesNoPublicAddresses() {
-        // TODO CN-62 test
         // given
-        List<String> taskArns = singletonList("task-arn");
         List<String> privateIps = singletonList("123.12.1.0");
         Map<String, String> privateToPublicIps = singletonMap("123.12.1.0", null);
-        List<Task> tasks = singletonList(new Task("123.12.1.0", null));
         given(awsEcsApi.listTaskPrivateAddresses(CLUSTER, CREDENTIALS)).willReturn(privateIps);
-//        given(awsEcsApi.describeTasks(CLUSTER, taskArns, CREDENTIALS)).willReturn(tasks);
-//        given(awsEc2Api.describeNetworkInterfaces(privateIps, CREDENTIALS)).willThrow(new RuntimeException());
         given(awsEc2Api.describeNetworkInterfaces(privateIps, CREDENTIALS)).willReturn(privateToPublicIps);
 
         // when

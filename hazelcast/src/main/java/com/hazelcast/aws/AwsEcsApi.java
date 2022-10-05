@@ -73,7 +73,7 @@ class AwsEcsApi {
         return emptyList();
     }
 
-    List<String> listTasks(String cluster, AwsCredentials credentials) {
+    private List<String> listTasks(String cluster, AwsCredentials credentials) {
         String body = createBodyListTasks(cluster);
         Map<String, String> headers = createHeadersListTasks(body, credentials);
         String response = callAwsService(body, headers);
