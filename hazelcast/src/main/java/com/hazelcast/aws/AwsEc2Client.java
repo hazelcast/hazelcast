@@ -49,7 +49,9 @@ class AwsEc2Client implements AwsClient {
         AwsCredentials credentials = awsCredentialsProvider.credentials();
         Map<String, String> instances = awsEc2Api.describeInstances(credentials);
         if (instances.isEmpty()) {
-            if (!isNullOrEmptyAfterTrim(awsConfig.getCluster())) {
+            System.out.println("~~~~~~~~~~~~~~~~~~");
+            System.out.println(awsConfig);
+            if (isNullOrEmptyAfterTrim(awsConfig.getCluster())) {
                 throw new InvalidConfigurationException("You must define 'cluster' property if not running inside ECS cluster");
             }
             List<String> taskAddresses = awsEcsApi.listTaskPrivateAddresses(awsConfig.getCluster(), credentials);
