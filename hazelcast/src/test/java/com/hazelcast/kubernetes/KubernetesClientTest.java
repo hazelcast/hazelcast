@@ -298,6 +298,78 @@ public class KubernetesClientTest {
     }
 
     @Test
+    public void endpointsByNamespaceAndMultipleServiceLabels() {
+        // given
+        //language=JSON
+        String endpointsListResponse = "{\n"
+                + "  \"kind\": \"EndpointsList\",\n"
+                + "  \"items\": [\n"
+                + "    {\n"
+                + "      \"subsets\": [\n"
+                + "        {\n"
+                + "          \"addresses\": [\n"
+                + "            {\n"
+                + "              \"ip\": \"192.168.0.25\",\n"
+                + "              \"targetRef\": {\n"
+                + "                \"name\": \"hazelcast-1\""
+                + "              }\n"
+                + "            }\n"
+                + "          ],\n"
+                + "          \"ports\": [\n"
+                + "            {\n"
+                + "              \"port\": 5701\n"
+                + "            },\n"
+                + "            {\n"
+                + "              \"name\": \"hazelcast-service-port\",\n"
+                + "              \"protocol\": \"TCP\",\n"
+                + "              \"port\": 5702\n"
+                + "            }\n"
+                + "          ]\n"
+                + "        }\n"
+                + "      ]\n"
+                + "    },\n"
+                + "    {\n"
+                + "      \"subsets\": [\n"
+                + "        {\n"
+                + "          \"addresses\": [\n"
+                + "            {\n"
+                + "              \"ip\": \"172.17.0.5\",\n"
+                + "              \"targetRef\": {\n"
+                + "                \"name\": \"hazelcast-1\""
+                + "              }\n"
+                + "            }\n"
+                + "          ],\n"
+                + "          \"notReadyAddresses\": [\n"
+                + "            {\n"
+                + "              \"ip\": \"172.17.0.6\",\n"
+                + "              \"targetRef\": {\n"
+                + "                \"name\": \"hazelcast-1\""
+                + "              }\n"
+                + "            }\n"
+                + "          ],\n"
+                + "          \"ports\": [\n"
+                + "            {\n"
+                + "              \"port\": 5701\n"
+                + "            }\n"
+                + "          ]\n"
+                + "        }\n"
+                + "      ]\n"
+                + "    }\n"
+                + "  ]\n"
+                + "}";
+        String serviceLabels = "service-label-1,service-label-2";
+        String serviceLabelValues = "service-label-value-1,service-label-value-2";
+        Map<String, String> queryParams = singletonMap("labelSelector", String.format("service-label-1=service-label-value-1,service-label-2=service-label-value-2"));
+        stub(String.format("/api/v1/namespaces/%s/endpoints", NAMESPACE), queryParams, endpointsListResponse);
+
+        // when
+        List<Endpoint> result = kubernetesClient.endpointsByServiceLabel(serviceLabels, serviceLabelValues);
+
+        // then
+        assertThat(format(result),
+                containsInAnyOrder(ready("192.168.0.25", 5702), ready("172.17.0.5", 5701), notReady("172.17.0.6", 5701)));
+    }
+    @Test
     public void endpointsByNamespaceAndServiceName() {
         // given
         //language=JSON
@@ -405,6 +477,79 @@ public class KubernetesClientTest {
         stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), queryParams, podsListResponse);
         stub(String.format("/api/v1/namespaces/%s/pods/hazelcast-0", NAMESPACE), podResponse("hazelcast-0", "node-name-1"));
         stub(String.format("/api/v1/namespaces/%s/pods/hazelcast-1", NAMESPACE), podResponse("hazelcast-1", "node-name-2"));
+
+        // when
+        List<Endpoint> result = kubernetesClient.endpointsByPodLabel(podLabel, podLabelValue);
+
+        // then
+        assertThat(format(result),
+                containsInAnyOrder(ready("192.168.0.25", 5701), ready("172.17.0.5", 5702)));
+    }
+
+
+    @Test
+    public void endpointsByNamespaceAndMultiplePodLabels() {
+        // given
+        //language=JSON
+        String podsListResponse = "{\n"
+                + "  \"kind\": \"PodList\",\n"
+                + "  \"items\": [\n"
+                + "    {\n"
+                + "      \"metadata\": {\n"
+                + "        \"name\": \"hazelcast-0\"\n"
+                + "      },\n"
+                + "      \"spec\": {\n"
+                + "        \"containers\": [\n"
+                + "          {\n"
+                + "            \"ports\": [\n"
+                + "              {\n"
+                + "                \"containerPort\": 5701\n"
+                + "              }\n"
+                + "            ]\n"
+                + "          }\n"
+                + "        ]\n"
+                + "      },\n"
+                + "      \"status\": {\n"
+                + "        \"podIP\": \"192.168.0.25\",\n"
+                + "        \"containerStatuses\": [\n"
+                + "          {\n"
+                + "            \"ready\": true\n"
+                + "          }\n"
+                + "        ]\n"
+                + "      }\n"
+                + "    },\n"
+                + "    {\n"
+                + "      \"metadata\": {\n"
+                + "        \"name\": \"hazelcast-1\"\n"
+                + "      },\n"
+                + "      \"spec\": {\n"
+                + "        \"containers\": [\n"
+                + "          {\n"
+                + "            \"ports\": [\n"
+                + "              {\n"
+                + "                \"containerPort\": 5702\n"
+                + "              }\n"
+                + "            ]\n"
+                + "          }\n"
+                + "        ]\n"
+                + "      },\n"
+                + "      \"status\": {\n"
+                + "        \"podIP\": \"172.17.0.5\",\n"
+                + "        \"containerStatuses\": [\n"
+                + "          {\n"
+                + "            \"ready\": true\n"
+                + "          }\n"
+                + "        ]\n"
+                + "      }\n"
+                + "    }\n"
+                + "  ]\n"
+                + "}";
+
+
+        String podLabel = "pod-label-1,pod-label-2";
+        String podLabelValue = "pod-label-value-1,pod-label-value-2";
+        Map<String, String> queryParams = singletonMap("labelSelector", String.format("pod-label-1=pod-label-value-1,pod-label-2=pod-label-value-2"));
+        stub(String.format("/api/v1/namespaces/%s/pods", NAMESPACE), queryParams, podsListResponse);
 
         // when
         List<Endpoint> result = kubernetesClient.endpointsByPodLabel(podLabel, podLabelValue);
