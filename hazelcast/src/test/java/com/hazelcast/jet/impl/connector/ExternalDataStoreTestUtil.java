@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.connector;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.datastore.DataStoreHolder;
 import com.hazelcast.datastore.ExternalDataStoreFactory;
 import com.hazelcast.datastore.JdbcDataStoreFactory;
 
@@ -61,8 +62,8 @@ final class ExternalDataStoreTestUtil {
     private static class DummyDataStoreFactory implements ExternalDataStoreFactory<Object> {
 
         @Override
-        public Object getDataStore() {
-            return new Object();
+        public DataStoreHolder<Object> createDataStore() {
+            return DataStoreHolder.closing(new Object());
         }
 
         @Override

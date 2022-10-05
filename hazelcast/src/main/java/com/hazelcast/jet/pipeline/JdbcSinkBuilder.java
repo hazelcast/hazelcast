@@ -137,7 +137,7 @@ public class JdbcSinkBuilder<T> {
      * the entire job execution.
      *
      * @param dataSourceSupplier the supplier of data source. The function must
-     *     be stateless.
+     *                           be stateless.
      * @return this instance for fluent API
      */
     @Nonnull

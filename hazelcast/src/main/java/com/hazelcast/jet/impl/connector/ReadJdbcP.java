@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.datastore.DataStoreHolder;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Traverser;
@@ -76,14 +77,14 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return supplier(ctx -> newDataSourceFn.get(), resultSetFn, mapOutputFn);
+        return supplierWithoutHolder(ctx -> newDataSourceFn.get(), resultSetFn, mapOutputFn);
     }
 
     /**
      * Use {@link SourceProcessors#readJdbcP}.
      */
     public static <T> ProcessorMetaSupplier supplier(
-            @Nonnull FunctionEx<ProcessorSupplier.Context, ? extends DataSource> newDataSourceFn,
+            @Nonnull FunctionEx<ProcessorSupplier.Context, ? extends DataStoreHolder<DataSource>> newDataSourceFn,
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
@@ -95,6 +96,22 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
                 SecuredFunctions.readJdbcProcessorFn(null, newDataSourceFn, resultSetFn, mapOutputFn));
     }
 
+    /**
+     * Use {@link SourceProcessors#readJdbcP}.
+     */
+    public static <T> ProcessorMetaSupplier supplierWithoutHolder(
+            @Nonnull FunctionEx<ProcessorSupplier.Context, ? extends DataSource> newDataSourceFn,
+            @Nonnull ToResultSetFunction resultSetFn,
+            @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
+    ) {
+        checkSerializable(newDataSourceFn, "newDataSourceFn");
+        checkSerializable(resultSetFn, "resultSetFn");
+        checkSerializable(mapOutputFn, "mapOutputFn");
+
+        return ProcessorMetaSupplier.preferLocalParallelismOne(ConnectorPermission.jdbc(null, ACTION_READ),
+                SecuredFunctions.readJdbcProcessorFnWithoutHolder(null, newDataSourceFn, resultSetFn, mapOutputFn));
+    }
+
     public static <T> ProcessorMetaSupplier supplier(
             @Nonnull String connectionURL,
             @Nonnull String query,
@@ -103,7 +120,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
         checkSerializable(mapOutputFn, "mapOutputFn");
 
         return ProcessorMetaSupplier.forceTotalParallelismOne(
-                SecuredFunctions.readJdbcProcessorFn(connectionURL,
+                SecuredFunctions.readJdbcProcessorFnWithoutHolder(connectionURL,
                         (ctx) -> new DataSourceFromJdbcUrl(connectionURL),
                         (connection, parallelism, index) -> {
                             PreparedStatement statement = connection.prepareStatement(query);
