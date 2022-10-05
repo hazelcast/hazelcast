@@ -72,7 +72,14 @@ class KubernetesClient {
 
     private final KubernetesTokenProvider tokenProvider;
 
+    @Nullable
     private final ClusterTopologyIntentTracker clusterTopologyIntentTracker;
+    /**
+     * When {@link #clusterTopologyIntentTracker} is not-null and {@code deliverCoalescedEvents} is {@code false},
+     * StatefulSet monitoring might deliver two updates for a single watch event received from Kubernetes API.
+     * Otherwise, events are delivered as received.
+     */
+    private final boolean deliverCoalescedEvents;
 
     private boolean isNoPublicIpAlreadyLogged;
     private boolean isKnownExceptionAlreadyLogged;
@@ -95,8 +102,11 @@ class KubernetesClient {
         this.stsName = extractStsName();
         this.stsMonitorThread = clusterTopologyIntentTracker != null
                 ? new Thread(new StsMonitor(), "hz-sts-monitor") : null;
+        this.deliverCoalescedEvents = clusterTopologyIntentTracker != null
+                && clusterTopologyIntentTracker.acceptsCoalescedEvents();
     }
 
+    // test usage only
     KubernetesClient(String namespace, String kubernetesMaster, KubernetesTokenProvider tokenProvider,
                      String caCertificate, int retries, ExposeExternallyMode exposeExternallyMode,
                      boolean useNodeNameAsExternalAddress, String servicePerPodLabelName,
@@ -114,6 +124,7 @@ class KubernetesClient {
         this.stsMonitorThread = null;
         this.stsName = extractStsName();
         this.clusterTopologyIntentTracker = null;
+        this.deliverCoalescedEvents = false;
     }
 
     public void start() {
@@ -763,15 +774,20 @@ class KubernetesClient {
             if (latestRuntimeContext != null && ctx != null) {
                 LOGGER.info("Updating cluster topology tracker with previous: "
                     + latestRuntimeContext + ", updated: " + ctx);
-                // check for stable + missing coalesced event
-                if (ctx.getDesiredNumberOfMembers() == latestRuntimeContext.getDesiredNumberOfMembers() // same spec size
-                    && ctx.getReadyReplicas() > latestRuntimeContext.getReadyReplicas() // now more ready replicas then previous
-                    && ctx.getReadyReplicas() == ctx.getDesiredNumberOfMembers() // and ready replicas == spec size
-                    && ctx.getCurrentReplicas() < latestRuntimeContext.getCurrentReplicas() // and fewer current pods than previous
-                    ) {
-                    // todo this event unbundling is for rolling-restart and should only apply when NO_MIGRATION missing-member
-                    //  state applies. When using FROZEN as missing-member-state, it probably does no harm, but it might slow
-                    //  down RR due to switching to ACTIVE state in between
+                // Check for stable cluster spec size and missing member rejoined while another member is preparing
+                // for restart coalesced event. This typically occurs during a rolling restart (kubectl rollout restart):
+                // member A (previously restarted) is rejoining the cluster, cluster is again complete but member B is
+                // signalled to terminate at the same time.
+                // The form of the watch event from Kubernetes API is like this:
+                // StatefulSet.spec (previous) == StatefulSet.spec (current) -- no change to requested cluster size
+                // StatefulSetStatus.readyReplicas (previous) < StatefulSetStatus.readyReplicas (current) -- member rejoined
+                // StatefulSet.spec (current) == StatefulSetStatus.readyReplicas (current) -- cluster reached requested size
+                // StatefulSetStatus.replicas (previous) > StatefulSetStatus.replicas (current) -- next pod is getting terminated
+                if (!deliverCoalescedEvents
+                    && ctx.getDesiredNumberOfMembers() == latestRuntimeContext.getDesiredNumberOfMembers()
+                    && ctx.getReadyReplicas() > latestRuntimeContext.getReadyReplicas()
+                    && ctx.getReadyReplicas() == ctx.getDesiredNumberOfMembers()
+                    && ctx.getCurrentReplicas() < latestRuntimeContext.getCurrentReplicas()) {
                     // unbundle this into two events
                     // 1. ready replicas == spec size with same "currentReplicas" as previous
                     clusterTopologyIntentTracker.update(latestRuntimeContext.getDesiredNumberOfMembers(),

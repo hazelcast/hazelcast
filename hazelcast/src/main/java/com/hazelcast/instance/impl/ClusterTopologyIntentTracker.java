@@ -93,4 +93,12 @@ public interface ClusterTopologyIntentTracker {
      * Notifies the {@link ClusterTopologyIntentTracker} that Hazelcast members list has changed.
      */
     void onMembershipChange();
+
+    /**
+     * @return  {@code true} when this tracker accepts events coalesced, exactly as received from Kubernetes API,
+     *          or {@code false} when coalesced events should be split into separate updates.
+     *
+     * @implNote see also {@code KubernetesClient$StsMonitor#onMessage} method for implementation details
+     */
+    boolean acceptsCoalescedEvents();
 }

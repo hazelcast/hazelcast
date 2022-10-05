@@ -319,6 +319,11 @@ public class ClusterTopologyIntentTrackerImpl implements ClusterTopologyIntentTr
         currentClusterSize = getClusterService().getSize();
     }
 
+    @Override
+    public boolean acceptsCoalescedEvents() {
+        return clusterStateForMissingMembers == ClusterState.FROZEN;
+    }
+
     private void executeOrScheduleClusterStateChange(ClusterState newClusterState) {
         if (!getNodeExtension().getInternalHotRestartService().setDeferredClusterState(newClusterState)) {
             // hot restart recovery is completed, just apply the new cluster state here

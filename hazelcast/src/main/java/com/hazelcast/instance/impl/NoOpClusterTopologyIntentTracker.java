@@ -48,4 +48,9 @@ public class NoOpClusterTopologyIntentTracker implements ClusterTopologyIntentTr
     @Override
     public void onMembershipChange() {
     }
+
+    @Override
+    public boolean acceptsCoalescedEvents() {
+        return true;
+    }
 }
