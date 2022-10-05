@@ -72,32 +72,15 @@ public class AwsEcsClientTest {
     }
 
     @Test
-    public void getAddresses() {
-        // given
-        List<String> taskArns = singletonList("task-arn");
-        List<String> privateIps = singletonList("123.12.1.0");
-        List<Task> tasks = singletonList(new Task("123.12.1.0", null));
-        Map<String, String> expectedResult = singletonMap("123.12.1.0", "1.4.6.2");
-        given(awsEcsApi.listTasks(CLUSTER, CREDENTIALS)).willReturn(taskArns);
-        given(awsEcsApi.describeTasks(CLUSTER, taskArns, CREDENTIALS)).willReturn(tasks);
-        given(awsEc2Api.describeNetworkInterfaces(privateIps, CREDENTIALS)).willReturn(expectedResult);
-
-        // when
-        Map<String, String> result = awsEcsClient.getAddresses();
-
-        // then
-        assertEquals(expectedResult, result);
-    }
-
-    @Test
     public void getAddressesWithAwsConfig() {
+        // TODO CN-62 test
         // given
         List<String> taskArns = singletonList("task-arn");
         List<String> privateIps = singletonList("123.12.1.0");
         List<Task> tasks = singletonList(new Task("123.12.1.0", null));
         Map<String, String> expectedResult = singletonMap("123.12.1.0", "1.4.6.2");
-        given(awsEcsApi.listTasks(CLUSTER, CREDENTIALS)).willReturn(taskArns);
-        given(awsEcsApi.describeTasks(CLUSTER, taskArns, CREDENTIALS)).willReturn(tasks);
+        given(awsEcsApi.listTaskPrivateAddresses(CLUSTER, CREDENTIALS)).willReturn(privateIps);
+//        given(awsEcsApi.describeTasks(CLUSTER, taskArns, CREDENTIALS)).willReturn(tasks);
         given(awsEc2Api.describeNetworkInterfaces(privateIps, CREDENTIALS)).willReturn(expectedResult);
 
         // when
@@ -109,13 +92,16 @@ public class AwsEcsClientTest {
 
     @Test
     public void getAddressesNoPublicAddresses() {
+        // TODO CN-62 test
         // given
         List<String> taskArns = singletonList("task-arn");
         List<String> privateIps = singletonList("123.12.1.0");
+        Map<String, String> privateToPublicIps = singletonMap("123.12.1.0", null);
         List<Task> tasks = singletonList(new Task("123.12.1.0", null));
-        given(awsEcsApi.listTasks(CLUSTER, CREDENTIALS)).willReturn(taskArns);
-        given(awsEcsApi.describeTasks(CLUSTER, taskArns, CREDENTIALS)).willReturn(tasks);
-        given(awsEc2Api.describeNetworkInterfaces(privateIps, CREDENTIALS)).willThrow(new RuntimeException());
+        given(awsEcsApi.listTaskPrivateAddresses(CLUSTER, CREDENTIALS)).willReturn(privateIps);
+//        given(awsEcsApi.describeTasks(CLUSTER, taskArns, CREDENTIALS)).willReturn(tasks);
+//        given(awsEc2Api.describeNetworkInterfaces(privateIps, CREDENTIALS)).willThrow(new RuntimeException());
+        given(awsEc2Api.describeNetworkInterfaces(privateIps, CREDENTIALS)).willReturn(privateToPublicIps);
 
         // when
         Map<String, String> result = awsEcsClient.getAddresses();
@@ -127,8 +113,7 @@ public class AwsEcsClientTest {
     @Test
     public void getAddressesNoTasks() {
         // given
-        List<String> tasks = emptyList();
-        given(awsEcsApi.listTasks(CLUSTER, CREDENTIALS)).willReturn(tasks);
+        given(awsEcsApi.listTaskPrivateAddresses(CLUSTER, CREDENTIALS)).willReturn(emptyList());
 
         // when
         Map<String, String> result = awsEcsClient.getAddresses();
@@ -173,5 +158,19 @@ public class AwsEcsClientTest {
         // Placement aware is not supported for ECS
         assertEquals(Optional.empty(), placementGroup);
         assertEquals(Optional.empty(), placementPartitionNumber);
+    }
+
+    @Test
+    public void getAddressesForEC2() {
+        // given
+        Map<String, String> expectedResult = singletonMap("123.12.1.0", "1.4.6.2");
+        given(awsEcsApi.listTaskPrivateAddresses(CLUSTER, CREDENTIALS)).willReturn(emptyList());
+        given(awsEc2Api.describeInstances(CREDENTIALS)).willReturn(expectedResult);
+
+        // when
+        Map<String, String> result = awsEcsClient.getAddresses();
+
+        // then
+        assertEquals(expectedResult, result);
     }
 }

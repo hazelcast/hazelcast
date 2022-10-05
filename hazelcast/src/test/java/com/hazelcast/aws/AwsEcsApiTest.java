@@ -18,6 +18,8 @@ package com.hazelcast.aws;
 
 import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.hazelcast.aws.AwsEcsApi.Task;
+import com.hazelcast.internal.json.JsonArray;
+import com.hazelcast.internal.json.JsonObject;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -52,10 +54,10 @@ public class AwsEcsApiTest {
     private static final String AUTHORIZATION_HEADER = "authorization-header";
     private static final String TOKEN = "IQoJb3JpZ2luX2VjEFIaDGV1LWNlbnRyYWwtMSJGM==";
     private static final AwsCredentials CREDENTIALS = AwsCredentials.builder()
-        .setAccessKey("AKIDEXAMPLE")
-        .setSecretKey("wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY")
-        .setToken(TOKEN)
-        .build();
+            .setAccessKey("AKIDEXAMPLE")
+            .setSecretKey("wJalrXUtnFEMI/K7MDENG+bPxRfiCYEXAMPLEKEY")
+            .setToken(TOKEN)
+            .build();
 
     @Mock
     private AwsRequestSigner requestSigner;
@@ -83,35 +85,35 @@ public class AwsEcsApiTest {
 
         //language=JSON
         String requestBody = "{\n"
-            + "  \"cluster\": \"arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster\"\n"
-            + "}";
+                + "  \"cluster\": \"arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster\"\n"
+                + "}";
 
         //language=JSON
         String response = "{\n"
-            + "  \"taskArns\": [\n"
-            + "    \"arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a\",\n"
-            + "    \"arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207\"\n"
-            + "  ]\n"
-            + "}";
+                + "  \"taskArns\": [\n"
+                + "    \"arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a\",\n"
+                + "    \"arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207\"\n"
+                + "  ]\n"
+                + "}";
 
         stubFor(post("/")
-            .withHeader("X-Amz-Date", equalTo("20200403T102518Z"))
-            .withHeader("Authorization", equalTo(AUTHORIZATION_HEADER))
-            .withHeader("X-Amz-Target", equalTo("AmazonEC2ContainerServiceV20141113.ListTasks"))
-            .withHeader("Content-Type", equalTo("application/x-amz-json-1.1"))
-            .withHeader("Accept-Encoding", equalTo("identity"))
-            .withHeader("X-Amz-Security-Token", equalTo(TOKEN))
-            .withRequestBody(equalToJson(requestBody))
-            .willReturn(aResponse().withStatus(200).withBody(response)));
+                .withHeader("X-Amz-Date", equalTo("20200403T102518Z"))
+                .withHeader("Authorization", equalTo(AUTHORIZATION_HEADER))
+                .withHeader("X-Amz-Target", equalTo("AmazonEC2ContainerServiceV20141113.ListTasks"))
+                .withHeader("Content-Type", equalTo("application/x-amz-json-1.1"))
+                .withHeader("Accept-Encoding", equalTo("identity"))
+                .withHeader("X-Amz-Security-Token", equalTo(TOKEN))
+                .withRequestBody(equalToJson(requestBody))
+                .willReturn(aResponse().withStatus(200).withBody(response)));
 
         // when
-        List<String> tasks = awsEcsApi.listTasks(cluster, CREDENTIALS);
+        List<String> tasks = awsEcsApi.listTaskPrivateAddresses(cluster, CREDENTIALS);
 
         // then
         assertThat(tasks, hasItems(
-            "arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a",
-            "arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207"
-            )
+                        "arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a",
+                        "arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207"
+                )
         );
     }
 
@@ -120,42 +122,42 @@ public class AwsEcsApiTest {
         // given
         String cluster = "arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster";
         AwsConfig awsConfig = AwsConfig.builder()
-            .setFamily("family-name")
-            .build();
+                .setFamily("family-name")
+                .build();
         AwsEcsApi awsEcsApi = new AwsEcsApi(endpoint, awsConfig, requestSigner, CLOCK);
 
         //language=JSON
         String requestBody = "{\n"
-            + "  \"cluster\": \"arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster\",\n"
-            + "  \"family\": \"family-name\"\n"
-            + "}";
+                + "  \"cluster\": \"arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster\",\n"
+                + "  \"family\": \"family-name\"\n"
+                + "}";
 
         //language=JSON
         String response = "{\n"
-            + "  \"taskArns\": [\n"
-            + "    \"arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a\",\n"
-            + "    \"arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207\"\n"
-            + "  ]\n"
-            + "}";
+                + "  \"taskArns\": [\n"
+                + "    \"arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a\",\n"
+                + "    \"arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207\"\n"
+                + "  ]\n"
+                + "}";
 
         stubFor(post("/")
-            .withHeader("X-Amz-Date", equalTo("20200403T102518Z"))
-            .withHeader("Authorization", equalTo(AUTHORIZATION_HEADER))
-            .withHeader("X-Amz-Target", equalTo("AmazonEC2ContainerServiceV20141113.ListTasks"))
-            .withHeader("Content-Type", equalTo("application/x-amz-json-1.1"))
-            .withHeader("Accept-Encoding", equalTo("identity"))
-            .withHeader("X-Amz-Security-Token", equalTo(TOKEN))
-            .withRequestBody(equalToJson(requestBody))
-            .willReturn(aResponse().withStatus(200).withBody(response)));
+                .withHeader("X-Amz-Date", equalTo("20200403T102518Z"))
+                .withHeader("Authorization", equalTo(AUTHORIZATION_HEADER))
+                .withHeader("X-Amz-Target", equalTo("AmazonEC2ContainerServiceV20141113.ListTasks"))
+                .withHeader("Content-Type", equalTo("application/x-amz-json-1.1"))
+                .withHeader("Accept-Encoding", equalTo("identity"))
+                .withHeader("X-Amz-Security-Token", equalTo(TOKEN))
+                .withRequestBody(equalToJson(requestBody))
+                .willReturn(aResponse().withStatus(200).withBody(response)));
 
         // when
         List<String> tasks = awsEcsApi.listTasks(cluster, CREDENTIALS);
 
         // then
         assertThat(tasks, hasItems(
-            "arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a",
-            "arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207"
-            )
+                        "arn:aws:ecs:us-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a",
+                        "arn:aws:ecs:us-east-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207"
+                )
         );
     }
 
@@ -164,62 +166,63 @@ public class AwsEcsApiTest {
         // given
         String cluster = "arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster";
         List<String> tasks = asList(
-            "arn:aws:ecs:eu-central-1-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a",
-            "arn:aws:ecs:eu-central-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207"
+                "arn:aws:ecs:eu-central-1-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a",
+                "arn:aws:ecs:eu-central-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207"
         );
 
         //language=JSON
         String requestBody = "{\n"
-            + "  \"cluster\" : \"arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster\",\n"
-            + "  \"tasks\": [\n"
-            + "    \"arn:aws:ecs:eu-central-1-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a\",\n"
-            + "    \"arn:aws:ecs:eu-central-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207\"\n"
-            + "  ]\n"
-            + "}";
+                + "  \"cluster\" : \"arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster\",\n"
+                + "  \"include\" : [ \"TAGS\" ],"
+                + "  \"tasks\": [\n"
+                + "    \"arn:aws:ecs:eu-central-1-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a\",\n"
+                + "    \"arn:aws:ecs:eu-central-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207\"\n"
+                + "  ]\n"
+                + "}";
 
         //language=JSON
         String response = "{\n"
-            + "  \"tasks\": [\n"
-            + "    {\n"
-            + "      \"taskArn\": \"arn:aws:ecs:eu-central-1-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a\",\n"
-            + "      \"availabilityZone\": \"eu-central-1a\",\n"
-            + "      \"containers\": [\n"
-            + "        {\n"
-            + "          \"taskArn\": \"arn:aws:ecs:eu-central-1-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a\",\n"
-            + "          \"networkInterfaces\": [\n"
-            + "            {\n"
-            + "              \"privateIpv4Address\": \"10.0.1.16\"\n"
-            + "            }\n"
-            + "          ]\n"
-            + "        }\n"
-            + "      ]\n"
-            + "    },\n"
-            + "    {\n"
-            + "      \"taskArn\": \"arn:aws:ecs:eu-central-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207\",\n"
-            + "      \"availabilityZone\": \"eu-central-1a\",\n"
-            + "      \"containers\": [\n"
-            + "        {\n"
-            + "          \"taskArn\": \"arn:aws:ecs:eu-central-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207\",\n"
-            + "          \"networkInterfaces\": [\n"
-            + "            {\n"
-            + "              \"privateIpv4Address\": \"10.0.1.219\"\n"
-            + "            }\n"
-            + "          ]\n"
-            + "        }\n"
-            + "      ]\n"
-            + "    }\n"
-            + "  ]\n"
-            + "}";
+                + "  \"tasks\": [\n"
+                + "    {\n"
+                + "      \"taskArn\": \"arn:aws:ecs:eu-central-1-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a\",\n"
+                + "      \"availabilityZone\": \"eu-central-1a\",\n"
+                + "      \"containers\": [\n"
+                + "        {\n"
+                + "          \"taskArn\": \"arn:aws:ecs:eu-central-1-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a\",\n"
+                + "          \"networkInterfaces\": [\n"
+                + "            {\n"
+                + "              \"privateIpv4Address\": \"10.0.1.16\"\n"
+                + "            }\n"
+                + "          ]\n"
+                + "        }\n"
+                + "      ]\n"
+                + "    },\n"
+                + "    {\n"
+                + "      \"taskArn\": \"arn:aws:ecs:eu-central-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207\",\n"
+                + "      \"availabilityZone\": \"eu-central-1a\",\n"
+                + "      \"containers\": [\n"
+                + "        {\n"
+                + "          \"taskArn\": \"arn:aws:ecs:eu-central-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207\",\n"
+                + "          \"networkInterfaces\": [\n"
+                + "            {\n"
+                + "              \"privateIpv4Address\": \"10.0.1.219\"\n"
+                + "            }\n"
+                + "          ]\n"
+                + "        }\n"
+                + "      ]\n"
+                + "    }\n"
+                + "  ]\n"
+                + "}";
 
         stubFor(post("/")
-            .withHeader("X-Amz-Date", equalTo("20200403T102518Z"))
-            .withHeader("Authorization", equalTo(AUTHORIZATION_HEADER))
-            .withHeader("X-Amz-Target", equalTo("AmazonEC2ContainerServiceV20141113.DescribeTasks"))
-            .withHeader("Content-Type", equalTo("application/x-amz-json-1.1"))
-            .withHeader("Accept-Encoding", equalTo("identity"))
-            .withHeader("X-Amz-Security-Token", equalTo(TOKEN))
-            .withRequestBody(equalToJson(requestBody))
-            .willReturn(aResponse().withStatus(200).withBody(response)));
+                .withHeader("X-Amz-Date", equalTo("20200403T102518Z"))
+                .withHeader("Authorization", equalTo(AUTHORIZATION_HEADER))
+                .withHeader("X-Amz-Target", equalTo("AmazonEC2ContainerServiceV20141113.DescribeTasks"))
+                .withHeader("Content-Type", equalTo("application/x-amz-json-1.1"))
+                .withHeader("Accept-Encoding", equalTo("identity"))
+                .withHeader("X-Amz-Security-Token", equalTo(TOKEN))
+                .withRequestBody(equalToJson(requestBody))
+                .willReturn(aResponse().withStatus(200).withBody(response)));
 
         // when
         List<Task> result = awsEcsApi.describeTasks(cluster, tasks, CREDENTIALS);
@@ -237,7 +240,7 @@ public class AwsEcsApiTest {
         int errorCode = 401;
         String errorMessage = "Error message retrieved from AWS";
         stubFor(post(urlMatching("/.*"))
-            .willReturn(aResponse().withStatus(errorCode).withBody(errorMessage)));
+                .willReturn(aResponse().withStatus(errorCode).withBody(errorMessage)));
 
         // when
         Exception exception = assertThrows(Exception.class, () -> awsEcsApi.listTasks("cluster-arn", CREDENTIALS));
@@ -245,5 +248,79 @@ public class AwsEcsApiTest {
         // then
         assertTrue(exception.getMessage().contains(Integer.toString(errorCode)));
         assertTrue(exception.getMessage().contains(errorMessage));
+    }
+
+    private void stubDescribeTasks(List<String> tasks, String cluster) {
+        // given
+//        String cluster = "arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster";
+//        List<String> tasks = asList(
+//                "arn:aws:ecs:eu-central-1-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a",
+//                "arn:aws:ecs:eu-central-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207"
+//        );
+
+        JsonArray tasksJson = new JsonArray();
+        tasks.forEach(tasksJson::add);
+        String requestBody = new JsonObject()
+                .add("cluster", cluster)
+                .add("include", new JsonArray().add("TAGS"))
+                .add("tasks", tasksJson)
+                .toString();
+        //language=JSON
+//        String requestBody = "{\n"
+//                + "  \"cluster\" : \"arn:aws:ecs:eu-central-1:665466731577:cluster/rafal-test-cluster\",\n"
+//                + "  \"include\" : [ \"TAGS\" ],"
+//                + "  \"tasks\": [\n"
+//                + "    \"arn:aws:ecs:eu-central-1-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a\",\n"
+//                + "    \"arn:aws:ecs:eu-central-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207\"\n"
+//                + "  ]\n"
+//                + "}";
+
+        JsonArray responseTasks = new JsonArray();
+        String response1 = new JsonObject()
+                .add("tasks", "")
+                .toString();
+        //language=JSON
+        String response = "{\n"
+                + "  \"tasks\": [\n"
+                + "    {\n"
+                + "      \"taskArn\": \"arn:aws:ecs:eu-central-1-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a\",\n"
+                + "      \"availabilityZone\": \"eu-central-1a\",\n"
+                + "      \"containers\": [\n"
+                + "        {\n"
+                + "          \"taskArn\": \"arn:aws:ecs:eu-central-1-east-1:012345678910:task/0b69d5c0-d655-4695-98cd-5d2d526d9d5a\",\n"
+                + "          \"networkInterfaces\": [\n"
+                + "            {\n"
+                + "              \"privateIpv4Address\": \"10.0.1.16\"\n"
+                + "            }\n"
+                + "          ]\n"
+                + "        }\n"
+                + "      ]\n"
+                + "    },\n"
+                + "    {\n"
+                + "      \"taskArn\": \"arn:aws:ecs:eu-central-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207\",\n"
+                + "      \"availabilityZone\": \"eu-central-1a\",\n"
+                + "      \"containers\": [\n"
+                + "        {\n"
+                + "          \"taskArn\": \"arn:aws:ecs:eu-central-1:012345678910:task/51a01bdf-d00e-487e-ab14-7645330b6207\",\n"
+                + "          \"networkInterfaces\": [\n"
+                + "            {\n"
+                + "              \"privateIpv4Address\": \"10.0.1.219\"\n"
+                + "            }\n"
+                + "          ]\n"
+                + "        }\n"
+                + "      ]\n"
+                + "    }\n"
+                + "  ]\n"
+                + "}";
+
+        stubFor(post("/")
+                .withHeader("X-Amz-Date", equalTo("20200403T102518Z"))
+                .withHeader("Authorization", equalTo(AUTHORIZATION_HEADER))
+                .withHeader("X-Amz-Target", equalTo("AmazonEC2ContainerServiceV20141113.DescribeTasks"))
+                .withHeader("Content-Type", equalTo("application/x-amz-json-1.1"))
+                .withHeader("Accept-Encoding", equalTo("identity"))
+                .withHeader("X-Amz-Security-Token", equalTo(TOKEN))
+                .withRequestBody(equalToJson(requestBody))
+                .willReturn(aResponse().withStatus(200).withBody(response)));
     }
 }
