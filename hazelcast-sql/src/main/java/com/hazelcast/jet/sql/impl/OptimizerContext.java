@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl;
 
 import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.sql.impl.opt.cost.CostFactory;
-import com.hazelcast.jet.sql.impl.opt.distribution.DistributionTraitDef;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdBoundedness;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdRowCount;
 import com.hazelcast.jet.sql.impl.opt.metadata.HazelcastRelMdWatermarkedFields;
@@ -122,12 +121,13 @@ public final class OptimizerContext {
             int memberCount,
             IMapResolver iMapResolver
     ) {
-        DistributionTraitDef distributionTraitDef = new DistributionTraitDef(memberCount);
-
         Prepare.CatalogReader catalogReader = createCatalogReader(rootSchema, schemaPaths);
         HazelcastSqlValidator validator = new HazelcastSqlValidator(catalogReader, arguments, iMapResolver);
-        VolcanoPlanner volcanoPlanner = createPlanner(distributionTraitDef);
-        HazelcastRelOptCluster cluster = createCluster(volcanoPlanner, distributionTraitDef);
+        VolcanoPlanner volcanoPlanner = createPlanner();
+        // Note: this enables CASCADES-style optimizer
+//        volcanoPlanner.setTopDownOpt(true);
+
+        HazelcastRelOptCluster cluster = createCluster(volcanoPlanner);
 
         QueryParser parser = new QueryParser(validator);
         QueryConverter converter = new QueryConverter(validator, catalogReader, cluster);
@@ -198,7 +198,7 @@ public final class OptimizerContext {
                 CONNECTION_CONFIG);
     }
 
-    private static VolcanoPlanner createPlanner(DistributionTraitDef distributionTraitDef) {
+    private static VolcanoPlanner createPlanner() {
         VolcanoPlanner planner = new VolcanoPlanner(
                 CostFactory.INSTANCE,
                 Contexts.of(CONNECTION_CONFIG)
@@ -207,20 +207,12 @@ public final class OptimizerContext {
         planner.clearRelTraitDefs();
         planner.addRelTraitDef(ConventionTraitDef.INSTANCE);
         planner.addRelTraitDef(RelCollationTraitDef.INSTANCE);
-        planner.addRelTraitDef(distributionTraitDef);
 
         return planner;
     }
 
-    private static HazelcastRelOptCluster createCluster(
-            VolcanoPlanner planner,
-            DistributionTraitDef distributionTraitDef
-    ) {
-        HazelcastRelOptCluster cluster = HazelcastRelOptCluster.create(
-                planner,
-                HazelcastRexBuilder.INSTANCE,
-                distributionTraitDef
-        );
+    private static HazelcastRelOptCluster createCluster(VolcanoPlanner planner) {
+        HazelcastRelOptCluster cluster = HazelcastRelOptCluster.create(planner, HazelcastRexBuilder.INSTANCE);
 
         // Wire up custom metadata providers.
         cluster.setMetadataProvider(JaninoRelMetadataProvider.of(METADATA_PROVIDER));
