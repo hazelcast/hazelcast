@@ -501,6 +501,7 @@ public class MasterJobContext {
                         responses);
 
         mc.setJobStatus(RUNNING);
+        mc.snapshotContext().tryBeginSnapshot();
         mc.invokeOnParticipants(operationCtor, completionCallback, executionFailureCallback, false);
 
         if (mc.jobConfig().getProcessingGuarantee() != NONE) {
