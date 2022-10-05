@@ -103,7 +103,6 @@ public class KubernetesConfigTest {
         assertEquals(serviceDns, config.getServiceDns());
         assertEquals(serviceDnsTimeout, config.getServiceDnsTimeout());
         assertEquals(servicePort, config.getServicePort());
-        assertNull(config.getKubernetesApiToken());
         assertNull(config.getKubernetesCaCertificate());
     }
 
@@ -120,7 +119,7 @@ public class KubernetesConfigTest {
         assertEquals("test", config.getNamespace());
         assertEquals(true, config.isResolveNotReadyAddresses());
         assertEquals(false, config.isUseNodeNameAsExternalAddress());
-        assertEquals(TEST_API_TOKEN, config.getKubernetesApiToken());
+        assertEquals(TEST_API_TOKEN, config.getTokenProvider().getToken());
         assertEquals(TEST_CA_CERTIFICATE, config.getKubernetesCaCertificate());
         assertEquals(ExposeExternallyMode.AUTO, config.getExposeExternallyMode());
     }
@@ -189,8 +188,6 @@ public class KubernetesConfigTest {
         // given
         KubernetesConfig.FileContentsReader dummyFileContentsReader = fileName -> {
             switch (fileName) {
-                case "/var/run/secrets/kubernetes.io/serviceaccount/token":
-                    return "token-xyz";
                 case "/var/run/secrets/kubernetes.io/serviceaccount/ca.crt":
                     return "certificate-xyz";
                 case "/var/run/secrets/kubernetes.io/serviceaccount/namespace":
@@ -204,7 +201,6 @@ public class KubernetesConfigTest {
 
         // then
         assertEquals("certificate-xyz", config.getKubernetesCaCertificate());
-        assertEquals("token-xyz", config.getKubernetesApiToken());
         assertEquals("namespace-xyz", config.getNamespace());
     }
 

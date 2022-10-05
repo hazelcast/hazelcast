@@ -51,13 +51,11 @@ class KubernetesClient {
 
     private static final List<String> NON_RETRYABLE_KEYWORDS = asList(
             "\"reason\":\"Forbidden\"",
-            "\"reason\":\"Unauthorized\"",
             "\"reason\":\"NotFound\"",
             "Failure in generating SSLSocketFactory");
 
     private final String namespace;
     private final String kubernetesMaster;
-    private final String apiToken;
     private final String caCertificate;
     private final int retries;
     private final KubernetesApiProvider apiProvider;
@@ -66,15 +64,18 @@ class KubernetesClient {
     private final String servicePerPodLabelName;
     private final String servicePerPodLabelValue;
 
+    private final KubernetesTokenProvider tokenProvider;
+
     private boolean isNoPublicIpAlreadyLogged;
     private boolean isKnownExceptionAlreadyLogged;
 
-    KubernetesClient(String namespace, String kubernetesMaster, String apiToken, String caCertificate, int retries,
-                     ExposeExternallyMode exposeExternallyMode, boolean useNodeNameAsExternalAddress,
-                     String servicePerPodLabelName, String servicePerPodLabelValue) {
+    KubernetesClient(String namespace, String kubernetesMaster, KubernetesTokenProvider tokenProvider,
+                     String caCertificate, int retries, ExposeExternallyMode exposeExternallyMode,
+                     boolean useNodeNameAsExternalAddress, String servicePerPodLabelName,
+                     String servicePerPodLabelValue) {
         this.namespace = namespace;
         this.kubernetesMaster = kubernetesMaster;
-        this.apiToken = apiToken;
+        this.tokenProvider = tokenProvider;
         this.caCertificate = caCertificate;
         this.retries = retries;
         this.exposeExternallyMode = exposeExternallyMode;
@@ -84,13 +85,13 @@ class KubernetesClient {
         this.apiProvider = buildKubernetesApiUrlProvider();
     }
 
-    KubernetesClient(String namespace, String kubernetesMaster, String apiToken, String caCertificate, int retries,
-                     ExposeExternallyMode exposeExternallyMode, boolean useNodeNameAsExternalAddress,
-                     String servicePerPodLabelName, String servicePerPodLabelValue,
-                     KubernetesApiProvider apiProvider) {
+    KubernetesClient(String namespace, String kubernetesMaster, KubernetesTokenProvider tokenProvider,
+                     String caCertificate, int retries, ExposeExternallyMode exposeExternallyMode,
+                     boolean useNodeNameAsExternalAddress, String servicePerPodLabelName,
+                     String servicePerPodLabelValue, KubernetesApiProvider apiProvider) {
         this.namespace = namespace;
         this.kubernetesMaster = kubernetesMaster;
-        this.apiToken = apiToken;
+        this.tokenProvider = tokenProvider;
         this.caCertificate = caCertificate;
         this.retries = retries;
         this.exposeExternallyMode = exposeExternallyMode;
@@ -219,6 +220,11 @@ class KubernetesClient {
     String nodeName(String podName) {
         String podUrlString = String.format("%s/api/v1/namespaces/%s/pods/%s", kubernetesMaster, namespace, podName);
         return extractNodeName(callGet(podUrlString));
+    }
+
+    // For test purpose
+    boolean isKnownExceptionAlreadyLogged() {
+        return isKnownExceptionAlreadyLogged;
     }
 
     private static List<Endpoint> parsePodsList(JsonObject podsListJson) {
@@ -461,7 +467,8 @@ class KubernetesClient {
      */
     private JsonObject callGet(final String urlString) {
         return RetryUtils.retry(() -> Json
-                .parse(RestClient.create(urlString).withHeader("Authorization", String.format("Bearer %s", apiToken))
+                .parse(RestClient.create(urlString)
+                        .withHeader("Authorization", String.format("Bearer %s", tokenProvider.getToken()))
                         .withCaCertificates(caCertificate)
                         .get()
                         .getBody())
