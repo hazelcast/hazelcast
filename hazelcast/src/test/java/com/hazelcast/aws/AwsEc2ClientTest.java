@@ -47,8 +47,6 @@ public class AwsEc2ClientTest {
     public void setUp() throws Exception {
         closeable = MockitoAnnotations.openMocks(this);
         AwsConfig awsConfig = AwsConfig.builder().setCluster("CLUSTER").build();
-        System.out.println("~~~~~~~~~~~~~~~~~~");
-        System.out.println(awsConfig);
         awsEc2Client = new AwsEc2Client(awsEc2Api, awsEcsApi, awsMetadataApi, awsCredentialsProvider, awsConfig);
     }
 
