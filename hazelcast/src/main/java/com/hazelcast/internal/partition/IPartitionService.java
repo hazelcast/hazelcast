@@ -163,7 +163,7 @@ public interface IPartitionService extends CoreService {
      */
     boolean isMemberStateSafe();
 
-    boolean isPartitionTableHealthy();
+    boolean isPartitionTableSafe();
 
     /**
      * Returns maximum allowed backup count according to current

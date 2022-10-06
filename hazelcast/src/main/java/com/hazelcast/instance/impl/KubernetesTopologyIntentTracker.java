@@ -150,7 +150,7 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
                 } else if (newTopologyIntent == ClusterTopologyIntent.CLUSTER_STABLE) {
                     if (getClusterService().getClusterState() != ClusterState.ACTIVE) {
                         executeOrScheduleClusterStateChange(ClusterState.ACTIVE);
-                    } else if (!getPartitionService().isPartitionTableHealthy()) {
+                    } else if (!getPartitionService().isPartitionTableSafe()) {
                         getPartitionService().getMigrationManager().triggerControlTask();
                     }
                 }
@@ -226,7 +226,7 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
             try {
                 // wait for partition table to be healthy before switching to NO_MIGRATION
                 // eg in "rollout restart" case, node is shutdown in NO_MIGRATION state
-                waitCallableWithShutdownTimeout(() -> getPartitionService().isPartitionTableHealthy());
+                waitCallableWithShutdownTimeout(() -> getPartitionService().isPartitionTableSafe());
                 changeClusterState(clusterStateForMissingMembers);
             } catch (Throwable t) {
                 // let shutdown proceed even though we failed to switch to desired state
@@ -257,13 +257,13 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
             // be denied), otherwise we retry by switching to ACTIVE cluster state.
             do {
                 logger.info("Waiting for partition table to be healthy");
-                if (!getPartitionService().isPartitionTableHealthy()) {
+                if (!getPartitionService().isPartitionTableSafe()) {
                     logger.warning("Switching to ACTIVE state in order to allow for partition table to be healthy");
                     changeClusterState(ClusterState.ACTIVE);
-                    waitCallableWithShutdownTimeout(() -> getPartitionService().isPartitionTableHealthy());
+                    waitCallableWithShutdownTimeout(() -> getPartitionService().isPartitionTableSafe());
                 }
                 changeClusterState(ClusterState.PASSIVE);
-            } while (!getPartitionService().isPartitionTableHealthy());
+            } while (!getPartitionService().isPartitionTableSafe());
         } catch (Throwable t) {
             // let shutdown proceed even though we failed to switch to PASSIVE state
             // and wait for replica sync

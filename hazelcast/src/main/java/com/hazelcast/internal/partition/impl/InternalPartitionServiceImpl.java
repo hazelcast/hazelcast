@@ -971,7 +971,7 @@ public class InternalPartitionServiceImpl implements InternalPartitionService,
     }
 
     @Override
-    public boolean isPartitionTableHealthy() {
+    public boolean isPartitionTableSafe() {
         return partitionReplicaStateChecker.getPartitionTableState() == PartitionServiceState.SAFE;
     }
 
