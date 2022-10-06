@@ -118,7 +118,7 @@ public class ClusterStateManager {
 
             final ClusterState currentState = getState();
             InternalHotRestartService hotRestartService = node.getNodeExtension().getInternalHotRestartService();
-            boolean startingFromPersistence = hotRestartService.isEnabled() && hotRestartService.isStartingFromPersistence();
+            boolean startingFromPersistence = hotRestartService.isEnabled() && hotRestartService.isClusterMetadataFoundOnDisk();
             if (startingFromPersistence) {
                 // When starting from persistence, ClusterMetadataManager initializes the cluster state
                 logger.fine("Skipping setting initial cluster state to "

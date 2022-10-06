@@ -106,7 +106,7 @@ public class NoopInternalHotRestartService implements InternalHotRestartService 
     }
 
     @Override
-    public boolean isStartingFromPersistence() {
+    public boolean isClusterMetadataFoundOnDisk() {
         return false;
     }
 

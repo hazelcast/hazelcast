@@ -160,9 +160,10 @@ public interface InternalHotRestartService {
     void deferPostJoinOps(OnJoinOp postJoinOp);
 
     /**
-     * @return {@code true} if data were found on disk, otherwise {@code false}.
+     * @return {@code true} if cluster metadata were found on disk
+     *         so recovery will proceed from disk, otherwise {@code false}.
      */
-    boolean isStartingFromPersistence();
+    boolean isClusterMetadataFoundOnDisk();
 
     /**
      * Invoked each time an enabled {@link com.hazelcast.instance.impl.ClusterTopologyIntentTracker}
