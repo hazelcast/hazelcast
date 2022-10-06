@@ -19,7 +19,6 @@ package com.hazelcast.aws;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.spi.utils.PortRange;
 
-import javax.management.relation.Role;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
