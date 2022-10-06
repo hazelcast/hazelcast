@@ -31,8 +31,7 @@ public final class SearchableExpressionTracker {
     }
 
     public static List<SearchableExpression<?>> getResults() {
-        List<SearchableExpression<?>> result = USED_EXPRESSIONS.get();
-        return result;
+        return USED_EXPRESSIONS.get();
     }
 
     public static void stopTracing() {
