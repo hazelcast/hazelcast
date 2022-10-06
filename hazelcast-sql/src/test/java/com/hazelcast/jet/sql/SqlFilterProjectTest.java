@@ -705,4 +705,18 @@ public class SqlFilterProjectTest extends SqlTestSupport {
         createMapping("test", Long.class, Person.class);
         assertRowsAnyOrder("select name from test where __key = 1", singletonList(new Row("foo")));
     }
+
+    @Test
+    // test for https://github.com/hazelcast/hazelcast/issues/21954
+    public void test_filterSpecificValueOrNull() {
+        String mapName = "test";
+        createMapping(mapName, Integer.class, Person.class);
+
+        IMap<Object, Object> map = instance().getMap(mapName);
+        map.put(42, new Person(42, null));
+        map.put(43, new Person(43, "foo"));
+
+        assertRowsAnyOrder("select name from " + mapName + " where name is null or name='foo'", rows(1, null, "foo"));
+        assertRowsAnyOrder("select __key from " + mapName + " where name is null or name='foo'", rows(1, 42, 43));
+    }
 }

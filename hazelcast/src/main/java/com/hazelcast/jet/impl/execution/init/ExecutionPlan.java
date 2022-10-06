@@ -57,9 +57,12 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.sql.impl.expression.SearchableExpression;
+import com.hazelcast.sql.impl.expression.SearchableExpressionTracker;
 
 import javax.annotation.Nonnull;
 import javax.security.auth.Subject;
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -302,6 +305,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        SearchableExpressionTracker.startTracking();
         writeList(out, vertices);
         out.writeLong(lastSnapshotId);
         out.writeObject(partitionAssignment);
@@ -310,10 +314,16 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         out.writeInt(memberIndex);
         out.writeInt(memberCount);
         ImdgUtil.writeSubject(out, subject);
+        List<SearchableExpression<?>> searchableExpressions = SearchableExpressionTracker.getResultAndStopTracing();
+        out.writeInt(searchableExpressions.size());
+        for (SearchableExpression<?> searchableExpression : searchableExpressions) {
+            out.writeObject(searchableExpression.getNullAs());
+        }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        SearchableExpressionTracker.startTracking();
         vertices = readList(in);
         lastSnapshotId = in.readLong();
         partitionAssignment = in.readObject();
@@ -322,6 +332,16 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
         memberIndex = in.readInt();
         memberCount = in.readInt();
         subject = ImdgUtil.readSubject(in);
+        List<SearchableExpression<?>> searchableExpressions = SearchableExpressionTracker.getResultAndStopTracing();
+        try {
+            int serializedSearchableExpressions = in.readInt();
+            assert serializedSearchableExpressions == searchableExpressions.size();
+            for (SearchableExpression<?> searchableExpression : searchableExpressions) {
+                searchableExpression.applyNullAs(in.readObject());
+            }
+        } catch (EOFException ignored) {
+            // ignored, this may happen if ExecutionPlan from previous PATCH version is read.
+        }
     }
 
     // End implementation of IdentifiedDataSerializable

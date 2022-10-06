@@ -26,7 +26,8 @@ import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 /**
- * Implements evaluation of SQL SEARCH predicate.
+ * Implements evaluation of SQL SEARCH predicate. The right argument is always a
+ * {@link Searchable}.
  */
 public final class SearchPredicate extends BiExpression<Boolean> implements IdentifiedDataSerializable {
 
@@ -56,9 +57,7 @@ public final class SearchPredicate extends BiExpression<Boolean> implements Iden
     @SuppressWarnings({"rawtypes", "unchecked"})
     public Boolean eval(Row row, ExpressionEvalContext context) {
         Object left = operand1.eval(row, context);
-        if (left == null) {
-            return null;
-        }
+        // if left operand is null, we still proceed with the right operand, because it can contain a match to a NULL
 
         Object right = operand2.eval(row, context);
         if (right == null) {

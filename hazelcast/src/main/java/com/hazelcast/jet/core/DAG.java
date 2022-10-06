@@ -24,9 +24,12 @@ import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.expression.SearchableExpression;
+import com.hazelcast.sql.impl.expression.SearchableExpressionTracker;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.EOFException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,9 +44,9 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.jet.config.EdgeConfig.DEFAULT_QUEUE_SIZE;
+import static com.hazelcast.jet.core.Edge.DISTRIBUTE_TO_ALL;
 import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
 import static com.hazelcast.jet.impl.TopologicalSorter.topologicalSort;
-import static com.hazelcast.jet.core.Edge.DISTRIBUTE_TO_ALL;
 import static com.hazelcast.jet.impl.pipeline.transform.AggregateTransform.FIRST_STAGE_VERTEX_NAME_SUFFIX;
 import static com.hazelcast.jet.impl.util.Util.escapeGraphviz;
 import static java.util.Collections.emptyList;
@@ -541,6 +544,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
+        SearchableExpressionTracker.startTracking();
         out.writeInt(nameToVertex.size());
 
         for (Map.Entry<String, Vertex> entry : nameToVertex.entrySet()) {
@@ -553,10 +557,16 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         for (Edge edge : edges) {
             out.writeObject(edge);
         }
+        List<SearchableExpression<?>> searchableExpressions = SearchableExpressionTracker.getResultAndStopTracing();
+        out.writeInt(searchableExpressions.size());
+        for (SearchableExpression<?> searchableExpression : searchableExpressions) {
+            out.writeObject(searchableExpression.getNullAs());
+        }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
+        SearchableExpressionTracker.startTracking();
         int vertexCount = in.readInt();
 
         for (int i = 0; i < vertexCount; i++) {
@@ -574,6 +584,16 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
         }
 
         verticesByIdentity.addAll(nameToVertex.values());
+        List<SearchableExpression<?>> searchableExpressions = SearchableExpressionTracker.getResultAndStopTracing();
+        try {
+            int serializedSearchableExpressions = in.readInt();
+            assert serializedSearchableExpressions == searchableExpressions.size();
+            for (SearchableExpression<?> searchableExpression : searchableExpressions) {
+                searchableExpression.applyNullAs(in.readObject());
+            }
+        } catch (EOFException ignored) {
+            // ignored, this may happen if ExecutionPlan from previous PATCH version is read.
+        }
     }
 
     @Override
