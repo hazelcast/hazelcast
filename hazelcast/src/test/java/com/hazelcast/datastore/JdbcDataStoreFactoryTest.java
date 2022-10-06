@@ -100,7 +100,8 @@ public class JdbcDataStoreFactoryTest {
         dataStoreHolder.close();
 
         assertThatThrownBy(() -> executeQuery(dataStoreHolder, "select 'some-name' as name"))
-                .isInstanceOf(SQLException.class).hasMessage("HikariDataSource HikariDataSource (HikariPool-1) has been closed.");
+                .isInstanceOf(SQLException.class)
+                .hasMessageMatching("HikariDataSource HikariDataSource \\(HikariPool-\\d+\\) has been closed.");
     }
 
     private ResultSet executeQuery(DataStoreHolder<DataSource> dataStoreHolder, String sql) throws SQLException {
@@ -136,7 +137,7 @@ public class JdbcDataStoreFactoryTest {
 
         assertThatThrownBy(() -> executeQuery(dataSource, "select 'some-name' as name"))
                 .isInstanceOf(SQLException.class)
-                .hasMessage("HikariDataSource HikariDataSource (HikariPool-1) has been closed.");
+                .hasMessageMatching("HikariDataSource HikariDataSource \\(HikariPool-\\d+\\) has been closed.");
     }
 
     private ResultSet executeQuery(DataSource dataSource, String sql) throws SQLException {

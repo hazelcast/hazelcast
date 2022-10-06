@@ -90,7 +90,8 @@ public class ExternalDataStoreServiceImplTest extends HazelcastTestSupport {
         externalDataStoreService.close();
 
         assertThatThrownBy(() -> executeQuery(dataSource, "select 'some-name' as name"))
-                .isInstanceOf(SQLException.class).hasMessage("HikariDataSource HikariDataSource (HikariPool-1) has been closed.");
+                .isInstanceOf(SQLException.class)
+                .hasMessageMatching("HikariDataSource HikariDataSource \\(HikariPool-\\d+\\) has been closed.");
     }
 
     private ExternalDataStoreService getExternalDataStoreService() {
