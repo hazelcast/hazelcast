@@ -305,42 +305,50 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        SearchableExpressionTracker.startTracking();
-        writeList(out, vertices);
-        out.writeLong(lastSnapshotId);
-        out.writeObject(partitionAssignment);
-        out.writeBoolean(isLightJob);
-        out.writeObject(jobConfig);
-        out.writeInt(memberIndex);
-        out.writeInt(memberCount);
-        ImdgUtil.writeSubject(out, subject);
-        List<SearchableExpression<?>> searchableExpressions = SearchableExpressionTracker.getResultAndStopTracing();
-        out.writeInt(searchableExpressions.size());
-        for (SearchableExpression<?> searchableExpression : searchableExpressions) {
-            out.writeObject(searchableExpression.getNullAs());
+        try {
+            SearchableExpressionTracker.startTracking();
+            writeList(out, vertices);
+            out.writeLong(lastSnapshotId);
+            out.writeObject(partitionAssignment);
+            out.writeBoolean(isLightJob);
+            out.writeObject(jobConfig);
+            out.writeInt(memberIndex);
+            out.writeInt(memberCount);
+            ImdgUtil.writeSubject(out, subject);
+            List<SearchableExpression<?>> searchableExpressions = SearchableExpressionTracker.getResultAndStopTracing();
+            out.writeInt(searchableExpressions.size());
+            for (SearchableExpression<?> searchableExpression : searchableExpressions) {
+                out.writeObject(searchableExpression.getNullAs());
+            }
+        } finally {
+            SearchableExpressionTracker.stopTracing();
         }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        SearchableExpressionTracker.startTracking();
-        vertices = readList(in);
-        lastSnapshotId = in.readLong();
-        partitionAssignment = in.readObject();
-        isLightJob = in.readBoolean();
-        jobConfig = in.readObject();
-        memberIndex = in.readInt();
-        memberCount = in.readInt();
-        subject = ImdgUtil.readSubject(in);
-        List<SearchableExpression<?>> searchableExpressions = SearchableExpressionTracker.getResultAndStopTracing();
         try {
-            int serializedSearchableExpressions = in.readInt();
-            assert serializedSearchableExpressions == searchableExpressions.size();
-            for (SearchableExpression<?> searchableExpression : searchableExpressions) {
-                searchableExpression.applyNullAs(in.readObject());
+            SearchableExpressionTracker.startTracking();
+            vertices = readList(in);
+            lastSnapshotId = in.readLong();
+            partitionAssignment = in.readObject();
+            isLightJob = in.readBoolean();
+            jobConfig = in.readObject();
+            memberIndex = in.readInt();
+            memberCount = in.readInt();
+            subject = ImdgUtil.readSubject(in);
+            List<SearchableExpression<?>> searchableExpressions = SearchableExpressionTracker.getResultAndStopTracing();
+            try {
+                int serializedSearchableExpressions = in.readInt();
+                assert serializedSearchableExpressions == searchableExpressions.size();
+                for (SearchableExpression<?> searchableExpression : searchableExpressions) {
+                    searchableExpression.applyNullAs(in.readObject());
+                }
+            } catch (EOFException ignored) {
+                // ignored, this may happen if ExecutionPlan from previous PATCH version is read.
             }
-        } catch (EOFException ignored) {
-            // ignored, this may happen if ExecutionPlan from previous PATCH version is read.
+        } finally {
+            SearchableExpressionTracker.stopTracing();
         }
     }
 

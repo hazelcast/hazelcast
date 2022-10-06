@@ -36,9 +36,14 @@ public final class SearchableExpressionTracker {
         return result;
     }
 
+    public static void stopTracing() {
+        USED_EXPRESSIONS.remove();
+    }
+
     public static void addNewSearchableExpression(SearchableExpression<?> searchableExpression) {
         List<SearchableExpression<?>> result = USED_EXPRESSIONS.get();
-        assert result != null;
-        result.add(searchableExpression);
+        if (result != null) {
+            result.add(searchableExpression);
+        }
     }
 }
