@@ -22,6 +22,7 @@ import com.hazelcast.jet.sql.impl.expression.Range;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeFactory;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.SearchableWithNullAs;
 import com.hazelcast.sql.impl.type.SqlDaySecondInterval;
 import com.hazelcast.sql.impl.type.SqlYearMonthInterval;
 import org.apache.calcite.rel.type.RelDataType;
@@ -177,7 +178,7 @@ public class RexToExpressionTest {
 
     private static <C extends Comparable<C>> Range<C> convert(RexLiteral literal) {
         Expression<?> expression = RexToExpression.convertLiteral(literal);
-        return (Range<C>) expression.eval(null, null);
+        return (Range<C>) ((SearchableWithNullAs<?>) expression.eval(null, null)).getSearchable();
     }
 
     private static <C extends Comparable<C>> RexLiteral literal(C left, C right, SqlTypeName typeName) {

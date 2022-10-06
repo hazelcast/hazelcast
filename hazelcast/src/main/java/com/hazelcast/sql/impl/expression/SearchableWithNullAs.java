@@ -34,4 +34,9 @@ public class SearchableWithNullAs<C extends Comparable<C>> implements Searchable
         }
         return searchable.contains(value);
     }
+
+    // used in tests
+    public Searchable<C> getSearchable() {
+        return searchable;
+    }
 }
