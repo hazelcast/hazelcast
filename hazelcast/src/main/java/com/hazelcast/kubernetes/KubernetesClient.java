@@ -743,6 +743,7 @@ class KubernetesClient {
             }
         }
 
+        @SuppressWarnings("checkstyle:cyclomaticcomplexity")
         private void onMessage(String message) {
             if (LOGGER.isFinestEnabled()) {
                 LOGGER.finest("Complete message from kubernetes API: " + message);
