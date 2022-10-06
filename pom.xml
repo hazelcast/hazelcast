@@ -116,6 +116,7 @@
         <!-- Java 9+ module system args to be appended during surefire/failsafe executions. -->
         <javaModuleArgs/>
     </properties>
+
     <licenses>
         <license>
             <name>The Apache Software License, Version 2.0</name>
