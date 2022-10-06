@@ -19,22 +19,25 @@ package com.hazelcast.sql.impl.expression;
 import java.util.ArrayList;
 import java.util.List;
 
-public class SearchableExpressionTracker {
-    private static final ThreadLocal<List<SearchableExpression<?>>> usedExpressions = new ThreadLocal<>();
+public final class SearchableExpressionTracker {
+    private static final ThreadLocal<List<SearchableExpression<?>>> USED_EXPRESSIONS = new ThreadLocal<>();
+
+    private SearchableExpressionTracker() {
+    }
 
     public static void startTracking() {
-        assert usedExpressions.get() == null;
-        usedExpressions.set(new ArrayList<>());
+        assert USED_EXPRESSIONS.get() == null;
+        USED_EXPRESSIONS.set(new ArrayList<>());
     }
 
     public static List<SearchableExpression<?>> getResultAndStopTracing() {
-        List<SearchableExpression<?>> result = usedExpressions.get();
-        usedExpressions.remove();
+        List<SearchableExpression<?>> result = USED_EXPRESSIONS.get();
+        USED_EXPRESSIONS.remove();
         return result;
     }
 
     public static void addNewSearchableExpression(SearchableExpression<?> searchableExpression) {
-        List<SearchableExpression<?>> result = usedExpressions.get();
+        List<SearchableExpression<?>> result = USED_EXPRESSIONS.get();
         assert result != null;
         result.add(searchableExpression);
     }
