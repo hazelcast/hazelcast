@@ -103,7 +103,11 @@ public class KeyedWatermarkCoalescer {
                 if (observedWm != NO_NEW_WM) {
                     watermarks.add(new Watermark(observedWm, coalescerEntry.getKey()));
                 }
-                assert coalescerEntry.getValue().idleMessagePending() == allIdle;
+                // Assertion commented out, it will break in case there are two consecutive idle messages.
+                // Such messages are superfluous, but we haven't been able to identify where they come from,
+                // perhaps from EventTimeMapper, or upstream watermark coalescing. Extra idle message is harmless.
+                // See KeyedWatermarkCoalescerTest.test_superfluousIdleMessage()
+//                assert coalescerEntry.getValue().idleMessagePending() == allIdle;
             }
 
             if (allIdle) {

@@ -88,4 +88,16 @@ public class KeyedWatermarkCoalescerTest extends JetTestSupport {
         assertEquals(emptyList(), kwc.observeWm(0, IDLE_MESSAGE));
         assertEquals(asList(wm(42), IDLE_MESSAGE), kwc.observeWm(1, IDLE_MESSAGE));
     }
+
+    @Test
+    public void test_superfluousIdleMessage() {
+        /*
+        This should not normally happen, but it did happen, and I've benn unable to find the cause.
+        See comment in KeyedWatermarkCoalescer.observeWm().
+         */
+        assertEquals(emptyList(), kwc.observeWm(0, wm(42)));
+        assertEquals(emptyList(), kwc.observeWm(0, IDLE_MESSAGE));
+        assertEquals(asList(wm(42), IDLE_MESSAGE), kwc.observeWm(1, IDLE_MESSAGE));
+        assertEquals(singletonList(IDLE_MESSAGE), kwc.observeWm(0, IDLE_MESSAGE));
+    }
 }

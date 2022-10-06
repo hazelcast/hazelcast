@@ -222,7 +222,7 @@ public class EventTimeMapperTest {
         assertTraverser(eventTimeMapper.flatMapEvent(ns(1), 12L, 2, NO_NATIVE_TIME), wm(10), 12L);
 
         // Then
-        // in this call partition0 will turn idle and partition1 is be removed -> wm(12) is forwarded
+        // in this call partition0 will turn idle and partition1 is to be removed -> wm(12) is forwarded
         assertTraverser(eventTimeMapper.removePartition(ns(5), 1), wm(12));
     }
 
