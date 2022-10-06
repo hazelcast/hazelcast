@@ -20,126 +20,52 @@ import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import javax.sql.DataSource;
-import java.sql.ResultSet;
-import java.sql.SQLException;
+import java.util.Properties;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JdbcDataStoreFactoryTest {
 
-    DataStoreHolder<DataSource> dataStore1;
-    DataStoreHolder<DataSource> dataStore2;
-    JdbcDataStoreFactory jdbcDataStoreFactory = new JdbcDataStoreFactory();
-
-    @After
-    public void tearDown() throws Exception {
-        close(dataStore1);
-        close(dataStore2);
-        jdbcDataStoreFactory.close();
-    }
-
-    private static void close(DataStoreHolder<DataSource> dataStore) throws Exception {
-        if (dataStore != null) {
-            dataStore.close();
-        }
-    }
-
     @Test
-    public void should_return_same_datastore_when_shared() {
+    public void should_return_same_DataStore_when_shared() {
         JdbcDataStoreFactory jdbcDataStoreFactory = new JdbcDataStoreFactory();
+        Properties properties = new Properties();
+        properties.put("jdbcUrl", "jdbc:h2:mem:" + JdbcDataStoreFactoryTest.class.getSimpleName() + "_shared");
         ExternalDataStoreConfig config = new ExternalDataStoreConfig()
-                .setProperty("jdbcUrl", "jdbc:h2:mem:" + JdbcDataStoreFactoryTest.class.getSimpleName() + "_shared")
+                .setProperties(properties)
                 .setShared(true);
         jdbcDataStoreFactory.init(config);
 
-        dataStore1 = jdbcDataStoreFactory.createDataStore();
-        dataStore2 = jdbcDataStoreFactory.createDataStore();
+        DataSource dataStore1 = jdbcDataStoreFactory.getDataStore();
+        DataSource dataStore2 = jdbcDataStoreFactory.getDataStore();
 
-        assertThat(dataStore1.get()).isNotNull();
-        assertThat(dataStore2.get()).isNotNull();
-        assertThat(dataStore1.get()).isSameAs(dataStore2.get());
+        assertThat(dataStore1).isNotNull();
+        assertThat(dataStore2).isNotNull();
+        assertThat(dataStore1).isSameAs(dataStore2);
     }
 
     @Test
-    public void should_NOT_return_closing_datastore_when_shared() throws Exception {
+    public void should_return_different_DataStore_when_NOT_shared() {
         JdbcDataStoreFactory jdbcDataStoreFactory = new JdbcDataStoreFactory();
+        Properties properties = new Properties();
+        properties.put("jdbcUrl", "jdbc:h2:mem:" + JdbcDataStoreFactoryTest.class.getSimpleName() + "_not_shared");
         ExternalDataStoreConfig config = new ExternalDataStoreConfig()
-                .setProperty("jdbcUrl", "jdbc:h2:mem:" + JdbcDataStoreFactoryTest.class.getSimpleName() + "_shared")
-                .setShared(true);
-        jdbcDataStoreFactory.init(config);
-
-        DataStoreHolder<DataSource> dataStoreHolder = jdbcDataStoreFactory.createDataStore();
-        dataStoreHolder.close();
-
-        ResultSet resultSet = executeQuery(dataStoreHolder, "select 'some-name' as name");
-        resultSet.next();
-        String actualName = resultSet.getString(1);
-
-        assertThat(actualName).isEqualTo("some-name");
-
-    }
-
-    @Test
-    public void should_return_closing_datastore_when_not_shared() throws Exception {
-        JdbcDataStoreFactory jdbcDataStoreFactory = new JdbcDataStoreFactory();
-        ExternalDataStoreConfig config = new ExternalDataStoreConfig()
-                .setProperty("jdbcUrl", "jdbc:h2:mem:" + JdbcDataStoreFactoryTest.class.getSimpleName() + "_shared")
+                .setProperties(properties)
                 .setShared(false);
         jdbcDataStoreFactory.init(config);
 
-        DataStoreHolder<DataSource> dataStoreHolder = jdbcDataStoreFactory.createDataStore();
-        dataStoreHolder.close();
+        DataSource dataStore1 = jdbcDataStoreFactory.getDataStore();
+        DataSource dataStore2 = jdbcDataStoreFactory.getDataStore();
 
-        assertThatThrownBy(() -> executeQuery(dataStoreHolder, "select 'some-name' as name"))
-                .isInstanceOf(SQLException.class).hasMessage("HikariDataSource HikariDataSource (HikariPool-1) has been closed.");
-    }
-
-    private ResultSet executeQuery(DataStoreHolder<DataSource> dataStoreHolder, String sql) throws SQLException {
-        return dataStoreHolder.get().getConnection().prepareStatement(sql).executeQuery();
-    }
-
-    @Test
-    public void should_return_different_datastore_when_NOT_shared() {
-        JdbcDataStoreFactory jdbcDataStoreFactory = new JdbcDataStoreFactory();
-        ExternalDataStoreConfig config = new ExternalDataStoreConfig()
-                .setProperty("jdbcUrl", "jdbc:h2:mem:" + JdbcDataStoreFactoryTest.class.getSimpleName() + "_not_shared")
-                .setShared(false);
-        jdbcDataStoreFactory.init(config);
-
-        dataStore1 = jdbcDataStoreFactory.createDataStore();
-        dataStore2 = jdbcDataStoreFactory.createDataStore();
-
-        assertThat(dataStore1.get()).isNotNull();
-        assertThat(dataStore2.get()).isNotNull();
-        assertThat(dataStore1.get()).isNotSameAs(dataStore2.get());
-    }
-
-    @Test
-    public void should_close_shared_datasource_on_close() throws Exception {
-        JdbcDataStoreFactory jdbcDataStoreFactory = new JdbcDataStoreFactory();
-        ExternalDataStoreConfig config = new ExternalDataStoreConfig()
-                .setProperty("jdbcUrl", "jdbc:h2:mem:" + JdbcDataStoreFactoryTest.class.getSimpleName() + "_shared")
-                .setShared(true);
-        jdbcDataStoreFactory.init(config);
-
-        DataSource dataSource = jdbcDataStoreFactory.createDataStore().get();
-        jdbcDataStoreFactory.close();
-
-        assertThatThrownBy(() -> executeQuery(dataSource, "select 'some-name' as name"))
-                .isInstanceOf(SQLException.class)
-                .hasMessage("HikariDataSource HikariDataSource (HikariPool-1) has been closed.");
-    }
-
-    private ResultSet executeQuery(DataSource dataSource, String sql) throws SQLException {
-        return dataSource.getConnection().prepareStatement(sql).executeQuery();
+        assertThat(dataStore1).isNotNull();
+        assertThat(dataStore2).isNotNull();
+        assertThat(dataStore1).isNotSameAs(dataStore2);
     }
 }

@@ -16,23 +16,21 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
-import com.hazelcast.datastore.DataStoreHolder;
 import com.hazelcast.datastore.ExternalDataStoreFactory;
 import com.hazelcast.datastore.ExternalDataStoreService;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
-import com.hazelcast.jet.core.ProcessorSupplier;
+import com.hazelcast.jet.core.ProcessorSupplier.Context;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import javax.sql.DataSource;
 
 import static java.util.Objects.requireNonNull;
 
-abstract class AbstractJdbcSqlConnectorProcessorSupplier implements ProcessorSupplier {
+class AbstractJdbcSqlConnectorProcessorSupplier {
 
     protected String externalDataStoreRef;
 
-    protected transient DataStoreHolder<DataSource> dataSource;
+    protected transient DataSource dataSource;
 
     AbstractJdbcSqlConnectorProcessorSupplier() {
     }
@@ -45,13 +43,10 @@ abstract class AbstractJdbcSqlConnectorProcessorSupplier implements ProcessorSup
         ExternalDataStoreService externalDataStoreService = ((HazelcastInstanceImpl) context.hazelcastInstance())
                 .node.getNodeEngine().getExternalDataStoreService();
 
-        ExternalDataStoreFactory<DataSource> factory = externalDataStoreService.getExternalDataStoreFactory(externalDataStoreRef);
+        ExternalDataStoreFactory<DataSource> factory = (ExternalDataStoreFactory<DataSource>)
+                externalDataStoreService.getExternalDataStoreFactory(externalDataStoreRef);
 
-        dataSource = factory.createDataStore();
+        dataSource = factory.getDataStore();
     }
 
-    @Override
-    public void close(@Nullable Throwable error) throws Exception {
-        dataSource.close();
-    }
 }
