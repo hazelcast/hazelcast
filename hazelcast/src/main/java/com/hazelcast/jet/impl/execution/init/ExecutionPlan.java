@@ -315,7 +315,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             out.writeInt(memberIndex);
             out.writeInt(memberCount);
             ImdgUtil.writeSubject(out, subject);
-            List<SearchableExpression<?>> searchableExpressions = SearchableExpressionTracker.getResultAndStopTracing();
+            List<SearchableExpression<?>> searchableExpressions = SearchableExpressionTracker.getResults();
             out.writeInt(searchableExpressions.size());
             for (SearchableExpression<?> searchableExpression : searchableExpressions) {
                 out.writeObject(searchableExpression.getNullAs());
@@ -337,7 +337,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             memberIndex = in.readInt();
             memberCount = in.readInt();
             subject = ImdgUtil.readSubject(in);
-            List<SearchableExpression<?>> searchableExpressions = SearchableExpressionTracker.getResultAndStopTracing();
+            List<SearchableExpression<?>> searchableExpressions = SearchableExpressionTracker.getResults();
             try {
                 int serializedSearchableExpressions = in.readInt();
                 assert serializedSearchableExpressions == searchableExpressions.size();

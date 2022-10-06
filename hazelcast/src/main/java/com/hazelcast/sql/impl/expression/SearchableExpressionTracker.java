@@ -30,9 +30,8 @@ public final class SearchableExpressionTracker {
         USED_EXPRESSIONS.set(new ArrayList<>());
     }
 
-    public static List<SearchableExpression<?>> getResultAndStopTracing() {
+    public static List<SearchableExpression<?>> getResults() {
         List<SearchableExpression<?>> result = USED_EXPRESSIONS.get();
-        USED_EXPRESSIONS.remove();
         return result;
     }
 

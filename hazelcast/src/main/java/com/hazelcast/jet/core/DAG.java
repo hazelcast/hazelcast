@@ -558,7 +558,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
             for (Edge edge : edges) {
                 out.writeObject(edge);
             }
-            List<SearchableExpression<?>> searchableExpressions = SearchableExpressionTracker.getResultAndStopTracing();
+            List<SearchableExpression<?>> searchableExpressions = SearchableExpressionTracker.getResults();
             out.writeInt(searchableExpressions.size());
             for (SearchableExpression<?> searchableExpression : searchableExpressions) {
                 out.writeObject(searchableExpression.getNullAs());
@@ -589,7 +589,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
             }
 
             verticesByIdentity.addAll(nameToVertex.values());
-            List<SearchableExpression<?>> searchableExpressions = SearchableExpressionTracker.getResultAndStopTracing();
+            List<SearchableExpression<?>> searchableExpressions = SearchableExpressionTracker.getResults();
             try {
                 int serializedSearchableExpressions = in.readInt();
                 assert serializedSearchableExpressions == searchableExpressions.size();
