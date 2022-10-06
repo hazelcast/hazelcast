@@ -597,7 +597,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
                     searchableExpression.applyNullAs(in.readObject());
                 }
             } catch (EOFException ignored) {
-                // ignored, this may happen if ExecutionPlan from previous PATCH version is read.
+                // ignored, this may happen if DAG from previous PATCH version is read.
             }
         } finally {
             SearchableExpressionTracker.stopTracing();
