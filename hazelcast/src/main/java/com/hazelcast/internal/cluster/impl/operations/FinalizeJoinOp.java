@@ -201,6 +201,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
         out.writeObject(preJoinOp);
         out.writeObject(postJoinOp);
         out.writeBoolean(deferPartitionProcessing);
+        // RU_COMPAT 5.1
         if (clusterVersion.isGreaterOrEqual(V5_2)) {
             out.writeByte(clusterTopologyIntent.getId());
         }
