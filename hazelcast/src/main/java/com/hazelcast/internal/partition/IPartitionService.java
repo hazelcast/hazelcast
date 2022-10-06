@@ -158,11 +158,20 @@ public interface IPartitionService extends CoreService {
      * Queries and returns if this member in a safe state or not.
      * <p>
      * This method just checks for a safe state, it doesn't force this member to be in a safe state.
+     * <p>
+     * This method performs the same checks as {@link #isPartitionTableSafe()}, and in addition also
+     * checks whether replica sync is required.
      *
      * @return {@code true} if this member in a safe state, otherwise {@code false}
      */
     boolean isMemberStateSafe();
 
+    /**
+     * Queries and returns if the partition table is safe, meaning partition replicas are assigned to owners,
+     * no migrations are ongoing and there is no need to fetch partition table from other members.
+     *
+     * @return {@code] true} is partition table is safe, otherwise {@code false}
+     */
     boolean isPartitionTableSafe();
 
     /**
