@@ -44,11 +44,11 @@ import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ClusterTopologyIntentTrackerImplTest {
+public class KubernetesTopologyIntentTrackerTest {
 
     private final Properties properties = new Properties();
     private final ClusterServiceImpl clusterService = mock(ClusterServiceImpl.class);
-    private ClusterTopologyIntentTrackerImpl clusterTopologyIntentTracker;
+    private KubernetesTopologyIntentTracker clusterTopologyIntentTracker;
 
     private Node setupMockNode() {
         Node node = mock(Node.class);
@@ -56,7 +56,7 @@ public class ClusterTopologyIntentTrackerImplTest {
         HazelcastProperties hazelcastProperties = new HazelcastProperties(properties);
         when(node.getProperties()).thenReturn(hazelcastProperties);
         when(node.getLogger(ArgumentMatchers.any(Class.class)))
-                .thenReturn(Logger.getLogger(ClusterTopologyIntentTrackerImpl.class));
+                .thenReturn(Logger.getLogger(KubernetesTopologyIntentTracker.class));
         when(node.getClusterService()).thenReturn(clusterService);
         return node;
     }
@@ -65,19 +65,19 @@ public class ClusterTopologyIntentTrackerImplTest {
     public void testConstructor_whenClusterAutoStateStrategyActive() {
         properties.put(ClusterProperty.PERSISTENCE_AUTO_CLUSTER_STATE_STRATEGY.getName(), "ACTIVE");
         assertThrows(InvalidConfigurationException.class,
-                () -> new ClusterTopologyIntentTrackerImpl(setupMockNode()));
+                () -> new KubernetesTopologyIntentTracker(setupMockNode()));
     }
 
     @Test
     public void testConstructor_whenInvalidClusterAutoStateStrategy() {
         properties.put(ClusterProperty.PERSISTENCE_AUTO_CLUSTER_STATE_STRATEGY.getName(), "NOT_A_CLUSTER_STATE");
         assertThrows(IllegalArgumentException.class,
-                () -> new ClusterTopologyIntentTrackerImpl(setupMockNode()));
+                () -> new KubernetesTopologyIntentTracker(setupMockNode()));
     }
 
     @Test
     public void test_waitCallableWithTimeout_whenImmediatelyTrue() {
-        clusterTopologyIntentTracker = new ClusterTopologyIntentTrackerImpl(setupMockNode());
+        clusterTopologyIntentTracker = new KubernetesTopologyIntentTracker(setupMockNode());
         // wait 100 seconds for condition to be true
         long timeRemaining = clusterTopologyIntentTracker.waitCallableWithTimeout(() -> true,
                 TimeUnit.SECONDS.toNanos(100));
@@ -88,7 +88,7 @@ public class ClusterTopologyIntentTrackerImplTest {
 
     @Test
     public void test_waitCallableWithTimeout_whenAlwaysFalse() {
-        clusterTopologyIntentTracker = new ClusterTopologyIntentTrackerImpl(setupMockNode());
+        clusterTopologyIntentTracker = new KubernetesTopologyIntentTracker(setupMockNode());
         long timeRemaining = clusterTopologyIntentTracker.waitCallableWithTimeout(() -> true,
                 TimeUnit.SECONDS.toNanos(100));
         assertTrue(timeRemaining > TimeUnit.SECONDS.toNanos(95));
@@ -97,7 +97,7 @@ public class ClusterTopologyIntentTrackerImplTest {
     @Test
     public void test_waitForMissingMembers() throws InterruptedException, ExecutionException, TimeoutException {
         when(clusterService.getSize()).thenReturn(3);
-        clusterTopologyIntentTracker = new ClusterTopologyIntentTrackerImpl(setupMockNode());
+        clusterTopologyIntentTracker = new KubernetesTopologyIntentTracker(setupMockNode());
         // cluster is running with 3 members
         clusterTopologyIntentTracker.update(0, 3, 3, 3);
         // cluster is missing a member

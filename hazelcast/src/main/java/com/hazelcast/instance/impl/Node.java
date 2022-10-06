@@ -268,7 +268,7 @@ public class Node {
             JoinConfig joinConfig = getActiveMemberNetworkConfig(this.config).getJoin();
             if (properties.getBoolean(ClusterProperty.PERSISTENCE_AUTO_CLUSTER_STATE)
                     && config.getPersistenceConfig().isEnabled()) {
-                clusterTopologyIntentTracker = new ClusterTopologyIntentTrackerImpl(this);
+                clusterTopologyIntentTracker = new KubernetesTopologyIntentTracker(this);
             } else {
                 clusterTopologyIntentTracker = new NoOpClusterTopologyIntentTracker();
             }

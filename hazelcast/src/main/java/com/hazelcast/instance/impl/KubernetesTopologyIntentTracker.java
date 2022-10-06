@@ -61,7 +61,7 @@ import static java.lang.Thread.sleep;
  * }
  * </pre>
  */
-public class ClusterTopologyIntentTrackerImpl implements ClusterTopologyIntentTracker {
+public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTracker {
 
     /**
      * Currently detected cluster topology intent.
@@ -89,7 +89,7 @@ public class ClusterTopologyIntentTrackerImpl implements ClusterTopologyIntentTr
      */
     private volatile int currentClusterSize;
 
-    public ClusterTopologyIntentTrackerImpl(Node node) {
+    public KubernetesTopologyIntentTracker(Node node) {
         this.clusterStateForMissingMembers = node.getProperties()
                 .getEnum(PERSISTENCE_AUTO_CLUSTER_STATE_STRATEGY, ClusterState.class);
         if (clusterStateForMissingMembers != ClusterState.FROZEN
