@@ -223,7 +223,7 @@ public class FinalizeJoinOp extends MembersUpdateOp implements TargetAware {
             return;
         }
         deferPartitionProcessing = in.readBoolean();
-	// RU_COMPAT 5.1
+        // RU_COMPAT 5.1
         if (clusterVersion.isGreaterOrEqual(V5_2)) {
             byte topologyIntentId = in.readByte();
             clusterTopologyIntent = ClusterTopologyIntent.of(topologyIntentId);
