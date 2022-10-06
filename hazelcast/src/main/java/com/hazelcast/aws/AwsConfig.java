@@ -106,7 +106,7 @@ final class AwsConfig {
     private void validateConfig() {
         if (anyOfEc2PropertiesConfigured() && anyOfEcsPropertiesConfigured()) {
             throw new InvalidConfigurationException(
-                "You have to configure either EC2 properties ('iam-role', 'security-group-name', 'tag-key', 'tag-value')"
+                "You have to configure either EC2 properties ('iam-role', 'security-group-name')"
                     + " or ECS properties ('cluster', 'family', 'service-name'). You cannot define both of them"
             );
         }
