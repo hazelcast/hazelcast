@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.impl.connector.WriteJdbcP;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -41,7 +42,7 @@ import static java.util.Collections.singletonList;
 
 public class InsertProcessorSupplier
         extends AbstractJdbcSqlConnectorProcessorSupplier
-        implements DataSerializable, SecuredFunction {
+        implements ProcessorSupplier, DataSerializable, SecuredFunction {
 
     private String query;
     private int batchLimit;
@@ -63,7 +64,7 @@ public class InsertProcessorSupplier
         for (int i = 0; i < count; i++) {
             Processor processor = new WriteJdbcP<>(
                     query,
-                    dataSource.get(),
+                    dataSource,
                     (PreparedStatement ps, JetSqlRow row) -> {
                         for (int j = 0; j < row.getFieldCount(); j++) {
                             // JDBC parameterIndex is 1-based, so j + 1

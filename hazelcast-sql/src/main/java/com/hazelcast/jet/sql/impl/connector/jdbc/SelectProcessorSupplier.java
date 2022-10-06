@@ -77,7 +77,7 @@ public class SelectProcessorSupplier
         List<Processor> processors = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             Processor processor = new ReadJdbcP<>(
-                    () -> dataSource.get().getConnection(),
+                    () -> dataSource.getConnection(),
                     (connection, parallelism, index) -> {
                         PreparedStatement statement = connection.prepareStatement(query);
                         List<Object> arguments = evalContext.getArguments();
