@@ -839,7 +839,7 @@ public class Node {
      */
     public boolean isClusterComplete() {
         return clusterTopologyIntentTracker.isEnabled()
-                && clusterTopologyIntentTracker.getCurrentClusterSpecSize() == clusterService.getSize();
+                && clusterTopologyIntentTracker.getCurrentSpecifiedReplicaCount() == clusterService.getSize();
     }
 
     public SplitBrainJoinMessage createSplitBrainJoinMessage() {

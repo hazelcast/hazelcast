@@ -717,7 +717,7 @@ class KubernetesClient {
             LOGGER.info("Initializing cluster topology tracker with initial context: "
                     + latestRuntimeContext);
             clusterTopologyIntentTracker.update(UNKNOWN,
-                    latestRuntimeContext.getDesiredNumberOfMembers(),
+                    latestRuntimeContext.getSpecifiedReplicaCount(),
                     latestRuntimeContext.getReadyReplicas(), latestRuntimeContext.getCurrentReplicas());
             while (true) {
                 if (Thread.interrupted()) {
@@ -785,21 +785,21 @@ class KubernetesClient {
                 // StatefulSet.spec (current) == StatefulSetStatus.readyReplicas (current) -- cluster reached requested size
                 // StatefulSetStatus.replicas (previous) > StatefulSetStatus.replicas (current) -- next pod is getting terminated
                 if (!deliverCoalescedEvents
-                    && ctx.getDesiredNumberOfMembers() == latestRuntimeContext.getDesiredNumberOfMembers()
+                    && ctx.getSpecifiedReplicaCount() == latestRuntimeContext.getSpecifiedReplicaCount()
                     && ctx.getReadyReplicas() > latestRuntimeContext.getReadyReplicas()
-                    && ctx.getReadyReplicas() == ctx.getDesiredNumberOfMembers()
+                    && ctx.getReadyReplicas() == ctx.getSpecifiedReplicaCount()
                     && ctx.getCurrentReplicas() < latestRuntimeContext.getCurrentReplicas()) {
                     // unbundle this into two events
                     // 1. ready replicas == spec size with same "currentReplicas" as previous
-                    clusterTopologyIntentTracker.update(latestRuntimeContext.getDesiredNumberOfMembers(),
-                            ctx.getDesiredNumberOfMembers(), ctx.getReadyReplicas(), latestRuntimeContext.getCurrentReplicas());
+                    clusterTopologyIntentTracker.update(latestRuntimeContext.getSpecifiedReplicaCount(),
+                            ctx.getSpecifiedReplicaCount(), ctx.getReadyReplicas(), latestRuntimeContext.getCurrentReplicas());
                     Thread.yield();
                     // 2. current replicas updated to lower number (-> missing member)
-                    clusterTopologyIntentTracker.update(latestRuntimeContext.getDesiredNumberOfMembers(),
-                            ctx.getDesiredNumberOfMembers(), ctx.getReadyReplicas(), ctx.getCurrentReplicas());
+                    clusterTopologyIntentTracker.update(latestRuntimeContext.getSpecifiedReplicaCount(),
+                            ctx.getSpecifiedReplicaCount(), ctx.getReadyReplicas(), ctx.getCurrentReplicas());
                 } else {
-                    clusterTopologyIntentTracker.update(latestRuntimeContext.getDesiredNumberOfMembers(),
-                            ctx.getDesiredNumberOfMembers(), ctx.getReadyReplicas(), ctx.getCurrentReplicas());
+                    clusterTopologyIntentTracker.update(latestRuntimeContext.getSpecifiedReplicaCount(),
+                            ctx.getSpecifiedReplicaCount(), ctx.getReadyReplicas(), ctx.getCurrentReplicas());
                 }
             }
             latestRuntimeContext = ctx;

@@ -108,12 +108,12 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
 
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     @Override
-    public void update(int previousClusterSpecSize, int currentClusterSpecSize, int readyNodesCount, int currentNodesCount) {
+    public void update(int previousSpecifiedReplicaCount, int currentSpecifiedReplicaCount, int readyReplicasCount, int currentReplicasCount) {
         final int previousClusterSpecSizeValue = this.currentClusterSpecSize;
-        this.currentClusterSpecSize = currentClusterSpecSize;
-        if (previousClusterSpecSize == UNKNOWN) {
-            if (currentClusterSpecSize > 0
-                    && (readyNodesCount == UNKNOWN || readyNodesCount == 0)) {
+        this.currentClusterSpecSize = currentSpecifiedReplicaCount;
+        if (previousSpecifiedReplicaCount == UNKNOWN) {
+            if (currentSpecifiedReplicaCount > 0
+                    && (readyReplicasCount == UNKNOWN || readyReplicasCount == 0)) {
                 // startup of first member of new cluster
                 logger.info("Cluster starting in managed context");
                 clusterTopologyIntent.set(ClusterTopologyIntent.CLUSTER_START);
@@ -125,16 +125,16 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
         }
         final ClusterTopologyIntent previous = clusterTopologyIntent.get();
         ClusterTopologyIntent newTopologyIntent;
-        if (currentClusterSpecSize == 0) {
+        if (currentSpecifiedReplicaCount == 0) {
             if (previousClusterSpecSizeValue > 0) {
                 this.lastKnownStableClusterSpecSize = previousClusterSpecSizeValue;
             }
             newTopologyIntent = nextIntentWhenShuttingDown(previous);
-        } else if (previousClusterSpecSize == currentClusterSpecSize) {
-            if (ignoreUpdateWhenClusterSpecEqual(previous, readyNodesCount)) {
+        } else if (previousSpecifiedReplicaCount == currentSpecifiedReplicaCount) {
+            if (ignoreUpdateWhenClusterSpecEqual(previous, readyReplicasCount)) {
                 return;
             }
-            newTopologyIntent = nextIntentWhenClusterSpecEqual(previous, readyNodesCount, currentNodesCount);
+            newTopologyIntent = nextIntentWhenClusterSpecEqual(previous, readyReplicasCount, currentReplicasCount);
         } else {
             newTopologyIntent = ClusterTopologyIntent.SCALING;
         }
@@ -322,7 +322,7 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
     }
 
     @Override
-    public int getCurrentClusterSpecSize() {
+    public int getCurrentSpecifiedReplicaCount() {
         return currentClusterSpecSize;
     }
 

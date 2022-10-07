@@ -25,8 +25,8 @@ public class RuntimeContext {
      */
     public static final long UNKNOWN = -1;
 
-    // desired number of replicas. Corresponds to StatefulSetSpec.replicas
-    private final int desiredNumberOfMembers;
+    // specified number of replicas. Corresponds to StatefulSetSpec.replicas
+    private final int specifiedReplicaCount;
 
     // number of ready replicas. Corresponds to StatefulSetStatus.readyReplicas
     private final int readyReplicas;
@@ -38,16 +38,16 @@ public class RuntimeContext {
     @Nullable
     private final String resourceVersion;
 
-    public RuntimeContext(int desiredNumberOfMembers, int readyReplicas, int currentReplicas,
+    public RuntimeContext(int specifiedReplicaCount, int readyReplicas, int currentReplicas,
                           @Nullable String resourceVersion) {
-        this.desiredNumberOfMembers = desiredNumberOfMembers;
+        this.specifiedReplicaCount = specifiedReplicaCount;
         this.readyReplicas = readyReplicas;
         this.currentReplicas = currentReplicas;
         this.resourceVersion = resourceVersion;
     }
 
-    public int getDesiredNumberOfMembers() {
-        return desiredNumberOfMembers;
+    public int getSpecifiedReplicaCount() {
+        return specifiedReplicaCount;
     }
 
     public int getReadyReplicas() {
@@ -65,7 +65,7 @@ public class RuntimeContext {
     @Override
     public String toString() {
         return "RuntimeContext{"
-                + "desiredNumberOfMembers=" + desiredNumberOfMembers
+                + "specifiedReplicaCount=" + specifiedReplicaCount
                 + ", readyReplicas=" + readyReplicas
                 + ", currentReplicas=" + currentReplicas
                 + ", resourceVersion='" + resourceVersion + '\''
