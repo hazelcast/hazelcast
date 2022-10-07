@@ -108,7 +108,8 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
 
     @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     @Override
-    public void update(int previousSpecifiedReplicaCount, int currentSpecifiedReplicaCount, int readyReplicasCount, int currentReplicasCount) {
+    public void update(int previousSpecifiedReplicaCount, int currentSpecifiedReplicaCount, int readyReplicasCount,
+                       int currentReplicasCount) {
         final int previousClusterSpecSizeValue = this.currentClusterSpecSize;
         this.currentClusterSpecSize = currentSpecifiedReplicaCount;
         if (previousSpecifiedReplicaCount == UNKNOWN) {
