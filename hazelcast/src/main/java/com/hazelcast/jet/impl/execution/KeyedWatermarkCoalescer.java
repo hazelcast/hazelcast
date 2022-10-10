@@ -108,6 +108,9 @@ public class KeyedWatermarkCoalescer {
                 // perhaps from EventTimeMapper, or upstream watermark coalescing. Extra idle message is harmless.
                 // See KeyedWatermarkCoalescerTest.test_superfluousIdleMessage()
 //                assert coalescerEntry.getValue().idleMessagePending() == allIdle;
+
+                // this call is for the side effect of clearing the flag
+                coalescerEntry.getValue().idleMessagePending();
             }
 
             if (allIdle) {
