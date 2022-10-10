@@ -75,7 +75,8 @@ public final class Extractors {
         return extract(target, attributeName, metadata, true);
     }
 
-    public Object extract(Object target, String attributeName, Object metadata, boolean failOnMissingReflectiveAttribute, int depth) {
+    public Object extract(Object target, String attributeName, Object metadata, boolean failOnMissingReflectiveAttribute,
+                          int depth) {
         Object targetObject = getTargetObject(target);
         if (targetObject != null) {
             Getter getter = getGetter(targetObject, attributeName, failOnMissingReflectiveAttribute);
