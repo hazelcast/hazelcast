@@ -75,17 +75,25 @@ public final class Extractors {
         return extract(target, attributeName, metadata, true);
     }
 
-    public Object extract(Object target, String attributeName, Object metadata, boolean failOnMissingReflectiveAttribute) {
+    public Object extract(Object target, String attributeName, Object metadata, boolean failOnMissingReflectiveAttribute, int depth) {
         Object targetObject = getTargetObject(target);
         if (targetObject != null) {
             Getter getter = getGetter(targetObject, attributeName, failOnMissingReflectiveAttribute);
             try {
+                if (getter instanceof CompactGetter) {
+                    // Use lazy deserialization for compact field access.
+                    return getter.getValue(targetObject, attributeName, depth);
+                }
                 return getter.getValue(targetObject, attributeName, metadata);
             } catch (Exception ex) {
                 throw new QueryException(ex);
             }
         }
         return null;
+    }
+
+    public Object extract(Object target, String attributeName, Object metadata, boolean failOnMissingReflectiveAttribute) {
+        return extract(target, attributeName, metadata, failOnMissingReflectiveAttribute, 0);
     }
 
     /**

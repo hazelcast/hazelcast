@@ -31,12 +31,14 @@ import java.io.IOException;
 /**
  * Column access expression.
  */
-public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataSerializable {
+public final class ColumnExpression<T> implements Expression<T>, DepthfulExpression, IdentifiedDataSerializable {
     /** Index in the row. */
     private int index;
 
     /** Type of the returned value. */
     private QueryDataType type;
+
+    private int depth;
 
     public ColumnExpression() {
         // No-op.
@@ -45,6 +47,7 @@ public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataS
     private ColumnExpression(int index, QueryDataType type) {
         this.index = index;
         this.type = type;
+        this.depth = 0;
     }
 
     public static ColumnExpression<?> create(int index, QueryDataType type) {
@@ -62,6 +65,10 @@ public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataS
         }
     }
 
+    public void setDepth(int depth) {
+        this.depth = depth;
+    }
+
     @Override
     public Object evalTop(Row row, ExpressionEvalContext context) {
         Object res = row.get(index);
@@ -76,7 +83,7 @@ public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataS
     @SuppressWarnings("unchecked")
     @Override
     public T eval(Row row, ExpressionEvalContext context) {
-        Object res = row.get(index);
+        Object res = row.get(index, this.depth);
 
         if (res instanceof LazyTarget) {
             assert type.equals(QueryDataType.OBJECT);

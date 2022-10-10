@@ -14,29 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.sql.impl.row;
+package com.hazelcast.sql.impl.expression;
 
 /**
- * Single row.
+ * An expression that has depth.
  */
-public interface Row extends RowBatch {
-    @Override
-    default Row getRow(int index) {
-        assert index == 0;
-
-        return this;
-    }
-
-    default <T> T get(int index, int depth) {
-        return get(index);
-    }
-
-    @Override
-    default int getRowCount() {
-        return 1;
-    }
-
-    <T> T get(int index);
-
-    int getColumnCount();
+public interface DepthfulExpression {
+    /**
+     * Nested field access depth. Used to use lazy deserialization for compact data.
+     * @param depth Depth of the nested field access.
+     */
+    void setDepth(int depth);
 }

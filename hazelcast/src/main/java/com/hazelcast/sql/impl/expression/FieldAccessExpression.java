@@ -37,10 +37,12 @@ import java.io.IOException;
  * <p>
  * {@code ref.field} - extracts `field` from `ref`.
  */
-public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSerializable {
+public class FieldAccessExpression<T> implements Expression<T>, DepthfulExpression, IdentifiedDataSerializable {
     private QueryDataType type;
     private String name;
     private Expression<?> ref;
+
+    private int depth;
 
     public FieldAccessExpression() { }
 
@@ -52,6 +54,7 @@ public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSe
         this.type = type;
         this.name = name;
         this.ref = ref;
+        this.depth = 0;
     }
 
     public static FieldAccessExpression<?> create(
@@ -65,6 +68,9 @@ public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSe
 
     @Override
     public T eval(final Row row, final ExpressionEvalContext context) {
+        if (ref instanceof DepthfulExpression) {
+            ((DepthfulExpression) ref).setDepth(this.depth + 1);
+        }
         Object res = ref.eval(row, context);
         if (res == null) {
             return null;
@@ -144,5 +150,10 @@ public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSe
     @Override
     public QueryDataType getType() {
         return type;
+    }
+
+    @Override
+    public void setDepth(int depth) {
+        this.depth = depth;
     }
 }

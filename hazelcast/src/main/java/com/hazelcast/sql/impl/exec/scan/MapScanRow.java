@@ -89,6 +89,12 @@ public final class MapScanRow implements Row {
         return (T) fieldExtractors[idx].get();
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> T get(int idx, int index) {
+        return (T) fieldExtractors[idx].get(index);
+    }
+
     @Override
     public int getColumnCount() {
         return fieldExtractors.length;

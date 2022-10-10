@@ -89,6 +89,12 @@ public class RowProjector implements Row {
 
     @SuppressWarnings("unchecked")
     @Override
+    public <T> T get(int index, int depth) {
+        return (T) extractors[index].get(depth);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
     public <T> T get(int index) {
         return (T) extractors[index].get();
     }

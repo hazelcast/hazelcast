@@ -58,8 +58,16 @@ public final class GenericRecordQueryReader implements ValueReader {
 
     private final InternalGenericRecord rootRecord;
 
+    private final boolean useLazyDeserialization;
+
     public GenericRecordQueryReader(InternalGenericRecord rootRecord) {
         this.rootRecord = rootRecord;
+        this.useLazyDeserialization = false;
+    }
+
+    public GenericRecordQueryReader(InternalGenericRecord rootRecord, boolean useLazyDeserialization) {
+        this.rootRecord = rootRecord;
+        this.useLazyDeserialization = useLazyDeserialization;
     }
 
     @SuppressWarnings("unchecked")
@@ -250,6 +258,10 @@ public final class GenericRecordQueryReader implements ValueReader {
             return null;
         }
         FieldKind kind = record.getFieldKind(path);
+        if (kind == FieldKind.COMPACT && useLazyDeserialization) {
+            // Use lazy deserialization for the queries that will read a nested compact's field
+            return record.getInternalGenericRecord(path);
+        }
         return fieldOperations(kind).readAsLeafObjectOnQuery(record, path);
     }
 
