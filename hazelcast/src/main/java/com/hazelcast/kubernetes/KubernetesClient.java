@@ -793,7 +793,6 @@ class KubernetesClient {
                     // 1. ready replicas == spec size with same "currentReplicas" as previous
                     clusterTopologyIntentTracker.update(latestRuntimeContext.getSpecifiedReplicaCount(),
                             ctx.getSpecifiedReplicaCount(), ctx.getReadyReplicas(), latestRuntimeContext.getCurrentReplicas());
-                    Thread.yield();
                     // 2. current replicas updated to lower number (-> missing member)
                     clusterTopologyIntentTracker.update(latestRuntimeContext.getSpecifiedReplicaCount(),
                             ctx.getSpecifiedReplicaCount(), ctx.getReadyReplicas(), ctx.getCurrentReplicas());

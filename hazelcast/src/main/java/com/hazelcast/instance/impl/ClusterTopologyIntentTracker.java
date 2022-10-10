@@ -132,7 +132,11 @@ public interface ClusterTopologyIntentTracker {
      * @return  {@code true} when this tracker accepts events coalesced, exactly as received from Kubernetes API,
      *          or {@code false} when coalesced events should be split into separate updates.
      *
-     * @implNote see also {@code KubernetesClient$StsMonitor#onMessage} method for implementation details
+     * @implNote see also {@code KubernetesClient$StsMonitor#onMessage} method for implementation details. When
+     *           a member is gone missing from the cluster and the cluster switches to {@code FROZEN} state, it is not
+     *           necessary to unbundle events received from kubernetes API during rolling restart. So by accepting
+     *           the original coalesced events from Kubernetes, we avoid switching to {@code ACTIVE} cluster state in between
+     *           member restarts during {@code kubectl rollout restart} with {@code FROZEN} state.
      */
     boolean acceptsCoalescedEvents();
 }
