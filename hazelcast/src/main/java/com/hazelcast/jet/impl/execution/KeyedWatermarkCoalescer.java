@@ -109,7 +109,7 @@ public class KeyedWatermarkCoalescer {
                 // See KeyedWatermarkCoalescerTest.test_superfluousIdleMessage()
 //                assert coalescerEntry.getValue().idleMessagePending() == allIdle;
 
-                // this call is for the side effect of clearing the flag
+                // This call is for the side effect of clearing the flag
                 coalescerEntry.getValue().idleMessagePending();
             }
 
