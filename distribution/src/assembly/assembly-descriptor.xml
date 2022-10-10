@@ -36,22 +36,22 @@
                 <include>info.picocli:picocli</include>
                 <include>org.jline:*</include>
                 <include>org.fusesource.jansi:jansi</include>
-                <include>com.hazelcast.jet:hazelcast-jet-avro</include>
-                <include>com.hazelcast.jet:hazelcast-jet-cdc-debezium</include>
-                <include>com.hazelcast.jet:hazelcast-jet-cdc-mysql</include>
-                <include>com.hazelcast.jet:hazelcast-jet-cdc-postgres</include>
-                <include>com.hazelcast.jet:hazelcast-jet-csv</include>
-                <include>com.hazelcast.jet:hazelcast-jet-elasticsearch-7</include>
-                <include>com.hazelcast.jet:hazelcast-jet-grpc</include>
-                <include>com.hazelcast.jet:hazelcast-jet-files-azure</include>
-                <include>com.hazelcast.jet:hazelcast-jet-files-gcs</include>
-                <include>com.hazelcast.jet:hazelcast-jet-files-s3</include>
-                <include>com.hazelcast.jet:hazelcast-jet-hadoop-all</include>
-                <include>com.hazelcast.jet:hazelcast-jet-kafka</include>
-                <include>com.hazelcast.jet:hazelcast-jet-kinesis</include>
-                <include>com.hazelcast.jet:hazelcast-jet-protobuf</include>
-                <include>com.hazelcast.jet:hazelcast-jet-python</include>
-                <include>com.hazelcast.jet:hazelcast-jet-s3</include>
+<!--                <include>com.hazelcast.jet:hazelcast-jet-avro</include>-->
+<!--                <include>com.hazelcast.jet:hazelcast-jet-cdc-debezium</include>-->
+<!--                <include>com.hazelcast.jet:hazelcast-jet-cdc-mysql</include>-->
+<!--                <include>com.hazelcast.jet:hazelcast-jet-cdc-postgres</include>-->
+<!--                <include>com.hazelcast.jet:hazelcast-jet-csv</include>-->
+<!--                <include>com.hazelcast.jet:hazelcast-jet-elasticsearch-7</include>-->
+<!--                <include>com.hazelcast.jet:hazelcast-jet-grpc</include>-->
+<!--                <include>com.hazelcast.jet:hazelcast-jet-files-azure</include>-->
+<!--                <include>com.hazelcast.jet:hazelcast-jet-files-gcs</include>-->
+<!--                <include>com.hazelcast.jet:hazelcast-jet-files-s3</include>-->
+<!--                <include>com.hazelcast.jet:hazelcast-jet-hadoop-all</include>-->
+<!--                <include>com.hazelcast.jet:hazelcast-jet-kafka</include>-->
+<!--                <include>com.hazelcast.jet:hazelcast-jet-kinesis</include>-->
+<!--                <include>com.hazelcast.jet:hazelcast-jet-protobuf</include>-->
+<!--                <include>com.hazelcast.jet:hazelcast-jet-python</include>-->
+<!--                <include>com.hazelcast.jet:hazelcast-jet-s3</include>-->
                 <include>com.hazelcast:hazelcast-3-connector-interface</include>
                 <include>com.hazelcast:hazelcast-3-connector-common</include>
                 <include>com.hazelcast:hazelcast-distribution</include>
@@ -62,11 +62,11 @@
         </dependencySet>
     </dependencySets>
     <files>
-        <file>
-            <source>${project.build.directory}/classes/META-INF/THIRD-PARTY.txt</source>
-            <destName>THIRD-PARTY.txt</destName>
-            <outputDirectory>licenses</outputDirectory>
-        </file>
+<!--        <file>-->
+<!--            <source>${project.build.directory}/classes/META-INF/THIRD-PARTY.txt</source>-->
+<!--            <destName>THIRD-PARTY.txt</destName>-->
+<!--            <outputDirectory>licenses</outputDirectory>-->
+<!--        </file>-->
         <file>
             <source>${basedir}/../target/aggregated-attribution.txt</source>
             <destName>attribution.txt</destName>

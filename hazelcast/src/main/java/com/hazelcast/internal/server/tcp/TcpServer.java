@@ -41,6 +41,8 @@ import java.util.Collection;
 import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -83,6 +85,7 @@ public final class TcpServer implements Server {
     private final AtomicReference<TcpServerAcceptor> acceptorRef = new AtomicReference<>();
 
     private volatile boolean live;
+    private volatile List<Integer> tpcPorts  = new LinkedList<>();
 
     public TcpServer(Config config,
                      ServerContext context,
@@ -127,6 +130,14 @@ public final class TcpServer implements Server {
             refreshStatsTask.registerMetrics(metricsRegistry);
         }
         metricsRegistry.registerDynamicMetricsProvider(new MetricsProvider());
+    }
+
+    public void setTpcPorts(List<Integer> tpcPorts){
+        this.tpcPorts = tpcPorts;
+    }
+
+    public List<Integer> getTpcPorts(){
+        return tpcPorts;
     }
 
     @Override

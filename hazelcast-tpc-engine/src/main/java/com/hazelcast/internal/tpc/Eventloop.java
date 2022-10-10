@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.tpc;
 
+import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpc.logging.TpcLogger;
 import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpc.util.BoundPriorityQueue;
@@ -25,6 +27,8 @@ import com.hazelcast.internal.tpc.util.NanoClock;
 import com.hazelcast.internal.tpc.util.StandardNanoClock;
 import org.jctools.queues.MpmcArrayQueue;
 
+import java.util.BitSet;
+import java.util.List;
 import java.util.PriorityQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -55,7 +59,7 @@ public abstract class Eventloop {
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
     protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     protected final NanoClock nanoClock;
-    protected final PromiseAllocator promiseAllocator;
+    public final PromiseAllocator promiseAllocator;
     protected final Scheduler scheduler;
 
     protected long earliestDeadlineNanos = -1;
@@ -76,6 +80,10 @@ public abstract class Eventloop {
         this.scheduler = builder.schedulerSupplier.get();
         scheduler.init(this);
     }
+
+    public abstract IOBufferAllocator fileIOBufferAllocator();
+
+    public abstract AsyncFile newAsyncFile(String path);
 
     /**
      * Runs the actual eventloop.
@@ -175,6 +183,10 @@ public abstract class Eventloop {
         }
 
         return !concurrentTaskQueue.isEmpty();
+    }
+
+    public void offerAll(List<IOBuffer> bufferedRequests) {
+        externalTaskQueue.addAll(bufferedRequests);
     }
 
     /**

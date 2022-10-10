@@ -341,6 +341,16 @@ public final class HashUtil {
         return abs(hash) % length;
     }
 
+    public static int hashToIndex(long hash, int length) {
+        checkPositive("length", length);
+
+        if (hash == Long.MIN_VALUE) {
+            return 0;
+        }
+
+        return (int)(abs(hash) % length);
+    }
+
     /**
      * Computes the key perturbation value applied before hashing. The returned value
      * should be non-zero and different for each capacity. This matters because

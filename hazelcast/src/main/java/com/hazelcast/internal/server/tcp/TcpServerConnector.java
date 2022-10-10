@@ -34,6 +34,7 @@ import java.net.UnknownHostException;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 
@@ -200,8 +201,9 @@ class TcpServerConnector {
                     serverContext.interceptSocket(connectionManager.getEndpointQualifier(), socketChannel.socket(), false);
 
                     connection = connectionManager.newConnection(channel, remoteAddress, false);
+                    List<Integer> tpcPorts = connectionManager.getServer().getTpcPorts();
                     new SendMemberHandshakeTask(logger, serverContext, connection,
-                            remoteAddress, true, planeIndex, planeCount).run();
+                            remoteAddress, true, planeIndex, planeCount, tpcPorts).run();
                 } catch (Exception e) {
                     closeConnection(connection, e);
                     closeSocket(socketChannel);

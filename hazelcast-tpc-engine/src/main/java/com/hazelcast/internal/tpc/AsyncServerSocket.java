@@ -106,7 +106,7 @@ public abstract class AsyncServerSocket extends AbstractAsyncSocket {
      * </ol>
      * This can be made on any thread, but it isn't threadsafe.
      * <p>
-     * This call needs to be made before {@link #start(Consumer)}.
+     * This call needs to be made before {@link #start()}.
      * <p/>
      * Bind should only be called once, otherwise an UncheckedIOException is thrown.
      *

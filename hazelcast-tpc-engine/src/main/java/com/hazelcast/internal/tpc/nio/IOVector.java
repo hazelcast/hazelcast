@@ -23,57 +23,76 @@ import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
 import java.util.Queue;
 
+import static com.hazelcast.internal.tpc.iouring.Linux.IOV_MAX;
+import static com.hazelcast.internal.tpc.util.Preconditions.checkPositive;
+
 /**
  * Contains logic to do vectorized I/O (so instead of passing a single buffer, an array of buffer is passed to socket.write).
  */
 public final class IOVector {
 
-    private static final int IOV_MAX = 1024;
-
-    private final ByteBuffer[] array = new ByteBuffer[IOV_MAX];
-    private final IOBuffer[] bufs = new IOBuffer[IOV_MAX];
-    private int size;
+    private final ByteBuffer[] byteBufs;
+    private final IOBuffer[] ioBufs;
+    private final int capacity;
+    private int count;
     private long pending;
 
+    public IOVector(){
+        this(IOV_MAX);
+    }
+
+    public IOVector(int capacity){
+        this.capacity = checkPositive(capacity, "capacity");
+        if (capacity > IOV_MAX) {
+            throw new IllegalArgumentException("capacity can't be larger than IOV_MAX=" + IOV_MAX);
+        }
+        this.byteBufs = new ByteBuffer[capacity];
+        this.ioBufs = new IOBuffer[capacity];
+    }
+
     public boolean isEmpty() {
-        return size == 0;
+        return count == 0;
+    }
+
+    public int count() {
+        return count;
     }
 
     public void populate(Queue<IOBuffer> queue) {
-        int count = IOV_MAX - size;
-        for (int k = 0; k < count; k++) {
+        int available = capacity - count;
+        for (int k = 0; k < available; k++) {
             IOBuffer buf = queue.poll();
             if (buf == null) {
                 break;
             }
 
-            ByteBuffer buffer = buf.byteBuffer();
-            array[size] = buffer;
-            bufs[size] = buf;
-            size++;
-            pending += buffer.remaining();
+            ByteBuffer byteBuf = buf.byteBuffer();
+            byteBufs[count] = byteBuf;
+            ioBufs[count] = buf;
+            count++;
+            pending += byteBuf.remaining();
         }
     }
 
     public boolean offer(IOBuffer buf) {
-        if (size == IOV_MAX) {
+        if (count == capacity) {
             return false;
         } else {
-            ByteBuffer buffer = buf.byteBuffer();
-            array[size] = buffer;
-            bufs[size] = buf;
-            size++;
-            pending += buffer.remaining();
+            ByteBuffer byteBuf = buf.byteBuffer();
+            byteBufs[count] = byteBuf;
+            ioBufs[count] = buf;
+            count++;
+            pending += byteBuf.remaining();
             return true;
         }
     }
 
     public long write(SocketChannel socketChannel) throws IOException {
         long written;
-        if (size == 1) {
-            written = socketChannel.write(array[0]);
+        if (count == 1) {
+            written = socketChannel.write(byteBufs[0]);
         } else {
-            written = socketChannel.write(array, 0, size);
+            written = socketChannel.write(byteBufs, 0, count);
         }
         compact(written);
         return written;
@@ -82,41 +101,42 @@ public final class IOVector {
     void compact(long written) {
         if (written == pending) {
             // everything was written
-            for (int k = 0; k < size; k++) {
-                array[k] = null;
-                bufs[k].release();
-                bufs[k] = null;
+            for (int k = 0; k < count; k++) {
+                byteBufs[k] = null;
+                ioBufs[k].release();
+                ioBufs[k] = null;
             }
-            size = 0;
+            count = 0;
             pending = 0;
         } else {
             // not everything was written
             int toIndex = 0;
-            int length = size;
-            for (int k = 0; k < length; k++) {
-                if (array[k].hasRemaining()) {
-                    if (k == 0) {
-                        // the first one is not empty, we are done
+            int oldCount = count;
+            for (int index = 0; index < oldCount; index++) {
+                if (!byteBufs[index].hasRemaining()) {
+                    // The buffer was completely written
+                    count--;
+
+                    // the buffer can now be removed.
+                    byteBufs[index] = null;
+                    ioBufs[index].release();
+                    ioBufs[index] = null;
+                } else {
+                    // the buffer was not completely written
+                    if (index == 0) {
+                        // the first one is not empty, we are done. No need for compaction
                         break;
                     } else {
-                        array[toIndex] = array[k];
-                        array[k] = null;
-                        bufs[toIndex] = bufs[k];
-                        bufs[k] = null;
+                        // compaction is needed.
+                        byteBufs[toIndex] = byteBufs[index];
+                        byteBufs[index] = null;
+                        ioBufs[toIndex] = ioBufs[index];
+                        ioBufs[index] = null;
                         toIndex++;
                     }
-                } else {
-                    size--;
-                    array[k] = null;
-                    bufs[k].release();
-                    bufs[k] = null;
                 }
             }
             pending -= written;
         }
-    }
-
-    public int size() {
-        return size;
     }
 }

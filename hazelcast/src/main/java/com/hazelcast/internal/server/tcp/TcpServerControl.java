@@ -34,6 +34,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.logging.Level;
 
+import static com.hazelcast.internal.cluster.impl.MemberHandshake.OPTION_TPC_PORTS;
 import static com.hazelcast.spi.properties.ClusterProperty.CHANNEL_COUNT;
 
 /**
@@ -152,10 +153,10 @@ public final class TcpServerControl {
      * with which it was registered in {@link TcpServerConnectionManager#planes},
      * ignoring the {@code primaryAddress} argument.
      *
-     * @param connection           the connection that send the handshake
-     * @param remoteEndpointAddress       the address of the remote endpoint
-     * @param remoteAddressAliases alias addresses as provided by the remote endpoint, under which the connection
-     *                             will be registered. These are the public addresses configured on the remote.
+     * @param connection            the connection that send the handshake
+     * @param remoteEndpointAddress the address of the remote endpoint
+     * @param remoteAddressAliases  alias addresses as provided by the remote endpoint, under which the connection
+     *                              will be registered. These are the public addresses configured on the remote.
      */
     @SuppressWarnings({"checkstyle:cyclomaticcomplexity", "checkstyle:npathcomplexity"})
     @SuppressFBWarnings("RV_RETURN_VALUE_OF_PUTIFABSENT_IGNORED")
@@ -188,13 +189,24 @@ public final class TcpServerControl {
 
         serverContext.onSuccessfulConnection(primaryAddress);
         if (handshake.isReply()) {
+            List<Integer> tpcPorts = connectionManager.server.getTpcPorts();
             new SendMemberHandshakeTask(logger, serverContext, connection, primaryAddress, false,
-                    handshake.getPlaneIndex(), handshake.getPlaneCount()).run();
+                    handshake.getPlaneIndex(), handshake.getPlaneCount(), tpcPorts).run();
         }
 
         if (logger.isLoggable(Level.FINEST)) {
             logger.finest("Registering connection " + connection + " to address " + primaryAddress
                     + " planeIndex:" + handshake.getPlaneIndex());
+        }
+
+        String handshakeTpcPorts = handshake.getOption(OPTION_TPC_PORTS, "");
+        if (!handshakeTpcPorts.equals("")) {
+            String[] portArray = handshakeTpcPorts.split(",");
+            List<Integer> remoteTpcPorts = new ArrayList<>();
+            for (String port : portArray) {
+                remoteTpcPorts.add(Integer.parseInt(port));
+            }
+            connection.setRemoteTpcPorts(remoteTpcPorts);
         }
 
         connectionManager.register(

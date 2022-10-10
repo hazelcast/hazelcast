@@ -31,6 +31,8 @@ import static com.hazelcast.internal.tpc.AsyncSocketOptions.SO_SNDBUF;
 import static com.hazelcast.internal.tpc.TpcTestSupport.terminateAll;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 
 public abstract class AsyncServerSocketOptionsTest {
@@ -100,8 +102,18 @@ public abstract class AsyncServerSocketOptionsTest {
     public void test_SO_RCVBUF() {
         AsyncServerSocket serverSocket = newServerSocket();
         AsyncSocketOptions options = serverSocket.options();
-        options.set(SO_RCVBUF, 64 * 1024);
-        assertEquals(Integer.valueOf(64 * 1024), options.get(SO_RCVBUF));
+        int rcvBuf = 64 * 1024;
+        options.set(SO_RCVBUF, rcvBuf);
+
+        // On Linux the receive buffer can be doubled.
+        int found = options.get(SO_RCVBUF);
+        if (found == rcvBuf) {
+            assertTrue(true);
+        } else if (found == 2 * rcvBuf) {
+            assertTrue(true);
+        } else {
+            fail("unexpected SO_RCVBUF:" + found);
+        }
     }
 
     @Test

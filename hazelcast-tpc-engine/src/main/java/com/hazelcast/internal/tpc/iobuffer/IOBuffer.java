@@ -171,6 +171,14 @@ public class IOBuffer {
         return buff.getInt(index);
     }
 
+    public int capacity(){
+        return buff.capacity();
+    }
+
+    public byte read(){
+        return buff.get();
+    }
+
     public int readInt() {
         return buff.getInt();
     }

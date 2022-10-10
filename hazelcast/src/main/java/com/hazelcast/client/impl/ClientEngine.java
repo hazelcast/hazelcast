@@ -38,7 +38,7 @@ import java.util.UUID;
 import java.util.function.Consumer;
 
 /**
- * The client Engine.
+ * The client TpcEngine.
  * <p>
  * todo: what is the purpose of the client engine.
  */

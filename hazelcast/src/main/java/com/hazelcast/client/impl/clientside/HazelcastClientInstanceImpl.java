@@ -129,6 +129,7 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.sql.impl.client.SqlClientService;
+import com.hazelcast.table.Table;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.topic.impl.TopicService;
 import com.hazelcast.topic.impl.reliable.ReliableTopicService;
@@ -274,6 +275,11 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
         proxySessionManager = new ClientProxySessionManager(this);
         cpSubsystem = new CPSubsystemImpl(this);
         sqlService = new SqlClientService(this);
+    }
+
+    @Override
+    public Table getTable(String name) {
+        throw new RuntimeException();
     }
 
     private ConcurrencyDetection initConcurrencyDetection() {

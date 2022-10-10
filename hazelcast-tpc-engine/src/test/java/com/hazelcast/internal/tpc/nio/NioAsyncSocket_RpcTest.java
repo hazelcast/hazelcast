@@ -17,12 +17,12 @@
 package com.hazelcast.internal.tpc.nio;
 
 import com.hazelcast.internal.tpc.AsyncSocket_RpcTest;
-import com.hazelcast.internal.tpc.Reactor;
+import com.hazelcast.internal.tpc.ReactorBuilder;
 
 public class NioAsyncSocket_RpcTest extends AsyncSocket_RpcTest {
-
     @Override
-    public Reactor newReactor() {
-        return new NioReactor().start();
+    public ReactorBuilder newReactorBuilder() {
+        return new NioReactorBuilder();
     }
+
 }

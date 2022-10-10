@@ -42,14 +42,14 @@ public class ClientAsyncReadHandler extends ReadHandler {
     }
 
     @Override
-    public void onRead(ByteBuffer buffer) {
+    public void onRead(ByteBuffer receiveBuffer) {
         // Currently we just consume the protocol bytes; we don't do anything with it.
         if (!protocolBytesReceived) {
-            consumeProtocolBytes(buffer);
+            consumeProtocolBytes(receiveBuffer);
         }
 
         for (; ; ) {
-            if (!clientMessageReader.readFrom(buffer, true)) {
+            if (!clientMessageReader.readFrom(receiveBuffer, true)) {
                 return;
             }
 

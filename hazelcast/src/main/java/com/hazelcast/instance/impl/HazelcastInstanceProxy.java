@@ -47,6 +47,7 @@ import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.table.Table;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
@@ -82,6 +83,11 @@ public final class HazelcastInstanceProxy implements HazelcastInstance, Serializ
     protected HazelcastInstanceProxy(HazelcastInstanceImpl original) {
         this.original = original;
         name = original.getName();
+    }
+
+    @Override
+    public Table getTable(String name) {
+        return getOriginal().getTable(name);
     }
 
     @Nonnull

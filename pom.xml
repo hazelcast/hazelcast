@@ -31,11 +31,12 @@
     <modules>
         <module>hazelcast-tpc-engine</module>
         <module>hazelcast</module>
-        <module>hazelcast-archunit-rules</module>
-        <module>hazelcast-spring</module>
-        <module>hazelcast-spring-tests</module>
-        <module>hazelcast-build-utils</module>
+<!--        <module>hazelcast-archunit-rules</module>-->
+<!--        <module>hazelcast-spring</module>-->
+<!--        <module>hazelcast-spring-tests</module>-->
+<!--        <module>hazelcast-build-utils</module>-->
         <module>hazelcast-sql</module>
+        <module>hazelcast-tpc-engine-benchmarks</module>
     </modules>
 
     <properties>
@@ -267,40 +268,40 @@
         </testResources>
 
         <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-checkstyle-plugin</artifactId>
-                <version>${maven.checkstyle.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <phase>validate</phase>
-                        <goals>
-                            <goal>checkstyle</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <configLocation>${checkstyle.configLocation}</configLocation>
-                    <suppressionsLocation>${checkstyle.supressionsLocation}</suppressionsLocation>
-                    <headerLocation>${checkstyle.headerLocation}</headerLocation>
-                    <enableRSS>false</enableRSS>
-                    <linkXRef>false</linkXRef>
-                    <consoleOutput>true</consoleOutput>
-                    <failsOnError>true</failsOnError>
-                    <failOnViolation>true</failOnViolation>
-                    <includeTestSourceDirectory>true</includeTestSourceDirectory>
-                    <enableRulesSummary>true</enableRulesSummary>
-                    <propertyExpansion>main.basedir=${main.basedir}</propertyExpansion>
-                    <excludes>**/module-info.java</excludes>
-                </configuration>
-                <dependencies>
-                    <dependency>
-                        <groupId>com.puppycrawl.tools</groupId>
-                        <artifactId>checkstyle</artifactId>
-                        <version>${checkstyle.version}</version>
-                    </dependency>
-                </dependencies>
-            </plugin>
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-checkstyle-plugin</artifactId>-->
+<!--                <version>${maven.checkstyle.plugin.version}</version>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <phase>validate</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>checkstyle</goal>-->
+<!--                        </goals>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--                <configuration>-->
+<!--                    <configLocation>${checkstyle.configLocation}</configLocation>-->
+<!--                    <suppressionsLocation>${checkstyle.supressionsLocation}</suppressionsLocation>-->
+<!--                    <headerLocation>${checkstyle.headerLocation}</headerLocation>-->
+<!--                    <enableRSS>false</enableRSS>-->
+<!--                    <linkXRef>false</linkXRef>-->
+<!--                    <consoleOutput>true</consoleOutput>-->
+<!--                    <failsOnError>true</failsOnError>-->
+<!--                    <failOnViolation>true</failOnViolation>-->
+<!--                    <includeTestSourceDirectory>true</includeTestSourceDirectory>-->
+<!--                    <enableRulesSummary>true</enableRulesSummary>-->
+<!--                    <propertyExpansion>main.basedir=${main.basedir}</propertyExpansion>-->
+<!--                    <excludes>**/module-info.java</excludes>-->
+<!--                </configuration>-->
+<!--                <dependencies>-->
+<!--                    <dependency>-->
+<!--                        <groupId>com.puppycrawl.tools</groupId>-->
+<!--                        <artifactId>checkstyle</artifactId>-->
+<!--                        <version>${checkstyle.version}</version>-->
+<!--                    </dependency>-->
+<!--                </dependencies>-->
+<!--            </plugin>-->
 
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
@@ -320,9 +321,6 @@
                     <excludes>
                         <exclude>**/package-info.java</exclude>
                     </excludes>
-                    <testExcludes>
-                        <exclude>**/package-info.java</exclude>
-                    </testExcludes>
                 </configuration>
             </plugin>
 
@@ -460,62 +458,62 @@
                     </execution>
                 </executions>
             </plugin>
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>license-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>add-third-party</id>
-                        <goals>
-                            <goal>add-third-party</goal>
-                        </goals>
-                        <phase>generate-resources</phase>
-                        <configuration>
-                            <outputDirectory>${project.build.outputDirectory}/META-INF</outputDirectory>
-                            <failOnBlacklist>true</failOnBlacklist>
-                            <failOnMissing>true</failOnMissing>
-                            <fileTemplate>${main.basedir}/hazelcast-build-utils/src/main/resources/hazelcast-thirdparty-template.ftl</fileTemplate>
-                            <includedLicenses>
-                                <includedLicense>CC0</includedLicense>
-                                <includedLicense>Apache License, Version 2.0</includedLicense>
-                                <includedLicense>MIT License</includedLicense>
-                                <includedLicense>Public Domain</includedLicense>
-                                <includedLicense>EPL 2.0</includedLicense>
-                                <includedLicense>BSD 3-Clause License</includedLicense>
-                                <includedLicense>BSD 2-Clause License</includedLicense>
-                                <includedLicense>The JSON License</includedLicense>
-                            </includedLicenses>
-                            <licenseMerges>
-                                <licenseMerge>
-                                    Apache License, Version 2.0|Apache License v2.0|
-                                    Apache Software License 2.0|The Apache Software License, Version 2.0|
-                                    Apache License, version 2.0|The Apache Software License, version 2.0|
-                                    Apache 2|Apache 2.0|Apache-2.0|Apache License 2.0|The Apache License, Version 2.0|
-                                    Apache Software License - Version 2.0|Apache License Version 2.0
-                                </licenseMerge>
-                                <licenseMerge>MIT License|MIT|The MIT License|MIT license|The MIT License (MIT)</licenseMerge>
-                                <licenseMerge>
-                                    BSD 3-Clause License|BSD License|BSD|BSD licence|The BSD License|3-Clause BSD License|
-                                    New BSD License|New BSD license|The New BSD License|Revised BSD|BSD New license|
-                                    BSD-3-Clause|BSD 3-clause
-                                </licenseMerge>
-                                <licenseMerge>BSD 2-Clause License|BSD-2-Clause|BSD 2-Clause license</licenseMerge>
-                                <licenseMerge>CC0|Public Domain, per Creative Commons CC0</licenseMerge>
-                                <licenseMerge>
-                                    CDDL|CDDL + GPLv2 with classpath exception|CDDL License|CDDL/GPLv2+CE
-                                </licenseMerge>
-                                <licenseMerge>
-                                    Eclipse Distribution License - v 1.0|EDL 1.0
-                                </licenseMerge>
-                            </licenseMerges>
-                        </configuration>
-                    </execution>
-                </executions>
-                <configuration>
-                    <excludedGroups>com.hazelcast</excludedGroups>
-                    <excludedScopes>test,provided</excludedScopes>
-                </configuration>
-            </plugin>
+<!--            <plugin>-->
+<!--                <groupId>org.codehaus.mojo</groupId>-->
+<!--                <artifactId>license-maven-plugin</artifactId>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>add-third-party</id>-->
+<!--                        <goals>-->
+<!--                            <goal>add-third-party</goal>-->
+<!--                        </goals>-->
+<!--                        <phase>generate-resources</phase>-->
+<!--                        <configuration>-->
+<!--                            <outputDirectory>${project.build.outputDirectory}/META-INF</outputDirectory>-->
+<!--                            <failOnBlacklist>true</failOnBlacklist>-->
+<!--                            <failOnMissing>true</failOnMissing>-->
+<!--                            <fileTemplate>${main.basedir}/hazelcast-build-utils/src/main/resources/hazelcast-thirdparty-template.ftl</fileTemplate>-->
+<!--                            <includedLicenses>-->
+<!--                                <includedLicense>CC0</includedLicense>-->
+<!--                                <includedLicense>Apache License, Version 2.0</includedLicense>-->
+<!--                                <includedLicense>MIT License</includedLicense>-->
+<!--                                <includedLicense>Public Domain</includedLicense>-->
+<!--                                <includedLicense>EPL 2.0</includedLicense>-->
+<!--                                <includedLicense>BSD 3-Clause License</includedLicense>-->
+<!--                                <includedLicense>BSD 2-Clause License</includedLicense>-->
+<!--                                <includedLicense>The JSON License</includedLicense>-->
+<!--                            </includedLicenses>-->
+<!--                            <licenseMerges>-->
+<!--                                <licenseMerge>-->
+<!--                                    Apache License, Version 2.0|Apache License v2.0|-->
+<!--                                    Apache Software License 2.0|The Apache Software License, Version 2.0|-->
+<!--                                    Apache License, version 2.0|The Apache Software License, version 2.0|-->
+<!--                                    Apache 2|Apache 2.0|Apache-2.0|Apache License 2.0|The Apache License, Version 2.0|-->
+<!--                                    Apache Software License - Version 2.0|Apache License Version 2.0-->
+<!--                                </licenseMerge>-->
+<!--                                <licenseMerge>MIT License|MIT|The MIT License|MIT license|The MIT License (MIT)</licenseMerge>-->
+<!--                                <licenseMerge>-->
+<!--                                    BSD 3-Clause License|BSD License|BSD|BSD licence|The BSD License|3-Clause BSD License|-->
+<!--                                    New BSD License|New BSD license|The New BSD License|Revised BSD|BSD New license|-->
+<!--                                    BSD-3-Clause-->
+<!--                                </licenseMerge>-->
+<!--                                <licenseMerge>BSD 2-Clause License|BSD-2-Clause|BSD 2-Clause license</licenseMerge>-->
+<!--                                <licenseMerge>CC0|Public Domain, per Creative Commons CC0</licenseMerge>-->
+<!--                                <licenseMerge>-->
+<!--                                    CDDL|CDDL + GPLv2 with classpath exception|CDDL License|CDDL/GPLv2+CE-->
+<!--                                </licenseMerge>-->
+<!--                                <licenseMerge>-->
+<!--                                    Eclipse Distribution License - v 1.0|EDL 1.0-->
+<!--                                </licenseMerge>-->
+<!--                            </licenseMerges>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--                <configuration>-->
+<!--                        <excludedGroups>com.hazelcast</excludedGroups>-->
+<!--                        <excludedScopes>test,provided</excludedScopes>-->
+<!--                </configuration>-->
+<!--            </plugin>-->
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
@@ -1319,18 +1317,18 @@
             </properties>
         </profile>
 
-        <profile>
-            <id>modulepath-tests</id>
-            <activation>
-                <property>
-                    <name>!quick</name>
-                </property>
-                <jdk>[9,)</jdk>
-            </activation>
-            <modules>
-                <module>modulepath-tests</module>
-            </modules>
-        </profile>
+<!--        <profile>-->
+<!--            <id>modulepath-tests</id>-->
+<!--            <activation>-->
+<!--                <property>-->
+<!--                    <name>!quick</name>-->
+<!--                </property>-->
+<!--                <jdk>[9,)</jdk>-->
+<!--            </activation>-->
+<!--            <modules>-->
+<!--                <module>modulepath-tests</module>-->
+<!--            </modules>-->
+<!--        </profile>-->
 
         <profile>
             <!-- same as default build (excludes Nightly & Slow tests), outputs serialized objects to a blob -->
@@ -1528,8 +1526,8 @@
             </dependency>
             <dependency>
                 <groupId>io.netty</groupId>
-                <artifactId>netty-bom</artifactId>
-                <version>${netty.version}</version>
+                <artifactId>netty5-bom</artifactId>
+                <version>5.0.0.Alpha2-SNAPSHOT</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>

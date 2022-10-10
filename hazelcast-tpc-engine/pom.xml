@@ -35,8 +35,9 @@
     <properties>
         <!-- Needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
-        <jctools.version>4.0.1</jctools.version>
-        <junit.version>4.13.2</junit.version>
+         <jctools.version>4.0.1</jctools.version>
+        <maven.ant-run-plugin>3.1.0</maven.ant-run-plugin>
+        <lib.name>libiouring_hz.so</lib.name>
     </properties>
 
     <build>
@@ -47,6 +48,66 @@
         </resources>
 
         <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>${maven.compiler.plugin.version}</version>
+                <configuration>
+                    <compilerArgs>
+                        <arg>-h</arg>
+                        <arg>${project.basedir}/src/main/c/include</arg>
+                    </compilerArgs>
+                    <source>${jdk.version}</source>
+                    <target>${jdk.version}</target>
+                    <encoding>${project.build.sourceEncoding}</encoding>
+                </configuration>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>${maven.ant-run-plugin}</version>
+                <executions>
+                    <execution>
+                        <id>compile-native</id>
+                        <phase>compile</phase>
+                        <configuration>
+                            <target name="compile-native">
+                                <property name="build.dir"      value="target"/>
+                                <property name="src.dir"        value="src"/>
+                                <property name="gcc.args"       value="-O3 -fno-omit-frame-pointer -momit-leaf-frame-pointer"/>
+
+                                <echo message="Compiling native library..."/>
+
+                                <mkdir dir="${build.dir}/native"/>
+
+                                <pathconvert property="src.native" pathsep=" ">
+                                    <fileset dir="${src.dir}" includes="**/*.c"/>
+                                 </pathconvert>
+
+                                <exec os="Linux" executable="gcc" failonerror="true">
+                                    <arg line="-D_GNU_SOURCE -fPIC -shared -Wl,-soname,libiouring_hz.so ${gcc.args}
+                                               -l:liburing.so
+                                               -o ${build.dir}/native/libiouring_hz.so
+                                               -I ${java.home}/include -I ${java.home}/include/linux
+                                               -I ${java.home}/../include -I ${java.home}/../include/linux
+                                               ${src.native} -ldl -lrt"/>
+                                </exec>
+
+                                <mkdir dir="${build.dir}/classes/lib/linux-x86_64"/>
+
+                                <move verbose="true"
+                                      failonerror="true"
+                                      file="${build.dir}/native/libiouring_hz.so"
+                                      todir="${build.dir}/classes/lib/linux-x86_64"/>
+                            </target>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-jar-plugin</artifactId>
@@ -85,9 +146,9 @@
                     </execution>
                 </executions>
             </plugin>
+
         </plugins>
     </build>
-
 
     <dependencies>
         <dependency>
@@ -97,6 +158,7 @@
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
+
         <dependency>
             <groupId>org.jctools</groupId>
             <artifactId>jctools-core</artifactId>

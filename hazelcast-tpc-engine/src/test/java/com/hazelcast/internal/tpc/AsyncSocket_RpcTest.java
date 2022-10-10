@@ -57,12 +57,14 @@ public abstract class AsyncSocket_RpcTest {
     private Reactor clientReactor;
     private Reactor serverReactor;
 
-    public abstract Reactor newReactor();
+    public abstract ReactorBuilder newReactorBuilder();
 
     @Before
     public void before() {
-        clientReactor = newReactor();
-        serverReactor = newReactor();
+        clientReactor = newReactorBuilder().build();
+        clientReactor.start();
+        serverReactor = newReactorBuilder().build();
+        serverReactor.start();
     }
 
     @After

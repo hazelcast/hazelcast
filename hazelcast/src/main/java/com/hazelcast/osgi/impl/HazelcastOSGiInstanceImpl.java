@@ -47,6 +47,7 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.table.Table;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
@@ -74,6 +75,11 @@ class HazelcastOSGiInstanceImpl
                               HazelcastOSGiService ownerService) {
         this.delegatedInstance = delegatedInstance;
         this.ownerService = ownerService;
+    }
+
+    @Override
+    public Table getTable(String name) {
+        return delegatedInstance.getTable(name);
     }
 
     @Nonnull

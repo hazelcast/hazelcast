@@ -31,7 +31,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 
-public class SocketTest {
+public class NativeSocketTest {
 
     @Test
     public void test_construction() {

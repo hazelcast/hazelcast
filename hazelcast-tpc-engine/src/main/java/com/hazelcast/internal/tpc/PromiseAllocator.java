@@ -35,7 +35,7 @@ public final class PromiseAllocator {
         return index + 1;
     }
 
-    Promise allocate() {
+    public Promise allocate() {
         if (index == -1) {
             Promise promise = new Promise(eventloop);
             promise.allocator = this;

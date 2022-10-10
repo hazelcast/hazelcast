@@ -27,3 +27,10 @@ reports/
 # Hadoop files
 *.crc
 **/node_modules/**
+/hazelcast-tpc-engine/src/main/c/include/com_hazelcast_internal_tpc_iouring_CompletionQueue.h
+/hazelcast-tpc-engine/src/main/c/include/com_hazelcast_internal_tpc_iouring_Socket.h
+/hazelcast-tpc-engine/src/main/c/include/com_hazelcast_internal_tpc_iouring_SubmissionQueue.h
+/hazelcast-tpc-engine/src/main/c/include/com_hazelcast_internal_tpc_iouring_Linux.h
+/hazelcast-tpc-engine/src/main/c/include/com_hazelcast_internal_util_ThreadAffinityHelper.h
+/hazelcast-tpc-engine/src/main/c/include/com_hazelcast_internal_tpc_iouring_IOUring.h
+/hazelcast-tpc-engine/src/main/c/include/com_hazelcast_internal_tpc_iouring_NativeSocket.h

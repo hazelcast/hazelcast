@@ -61,23 +61,4 @@ public class BufferUtilTest {
         assertEquals(srcPos + 8, src.position());
         assertEquals(srcLimit, src.limit());
     }
-
-    @Test
-    public void test_put_notEnoughSpace() {
-        ByteBuffer src = ByteBuffer.allocate(8);
-        src.putInt(1);
-        src.putInt(2);
-        src.flip();
-        int srcPos = src.position();
-        int srcLimit = src.limit();
-
-        ByteBuffer dst = ByteBuffer.allocate(4);
-        BufferUtil.put(dst, src);
-        dst.flip();
-        assertEquals(4, dst.remaining());
-        assertEquals(1, dst.getInt());
-
-        assertEquals(srcPos + 4, src.position());
-        assertEquals(srcLimit, src.limit());
-    }
 }

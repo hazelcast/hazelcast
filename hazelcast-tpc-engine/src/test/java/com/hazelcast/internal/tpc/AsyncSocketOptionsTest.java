@@ -36,6 +36,8 @@ import static com.hazelcast.internal.tpc.AsyncSocketOptions.TCP_NODELAY;
 import static com.hazelcast.internal.tpc.TpcTestSupport.terminateAll;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
 
 public abstract class AsyncSocketOptionsTest {
@@ -102,16 +104,34 @@ public abstract class AsyncSocketOptionsTest {
     public void test_SO_RCVBUF() {
         AsyncSocket socket = newSocket();
         AsyncSocketOptions options = socket.options();
-        options.set(SO_RCVBUF, 64 * 1024);
-        assertEquals(Integer.valueOf(64 * 1024), options.get(SO_RCVBUF));
+        int rcvBuf = 64 * 1024;
+        options.set(SO_RCVBUF, rcvBuf);
+        // On Linux the receive buffer can be doubled.
+        int found = options.get(SO_RCVBUF);
+        if (found == rcvBuf) {
+            assertTrue(true);
+        } else if (found == 2 * rcvBuf) {
+            assertTrue(true);
+        } else {
+            fail("unexpected SO_RCVBUF:" + found);
+        }
     }
 
     @Test
     public void test_SO_SNDBUF() {
         AsyncSocket socket = newSocket();
         AsyncSocketOptions options = socket.options();
-        options.set(SO_SNDBUF, 64 * 1024);
-        assertEquals(Integer.valueOf(64 * 1024), options.get(SO_SNDBUF));
+        int sndBuf = 64 * 1024;
+        options.set(SO_SNDBUF, sndBuf);
+        // On Linux the receive buffer can be doubled.
+        int found = options.get(SO_RCVBUF);
+        if (found == sndBuf) {
+            assertTrue(true);
+        } else if (found == 2 * sndBuf) {
+            assertTrue(true);
+        } else {
+            fail("unexpected SO_SNDBUF:" + found);
+        }
     }
 
     @Test
@@ -149,14 +169,14 @@ public abstract class AsyncSocketOptionsTest {
             assumeTrue(JVM.getMajorVersion() >= 11);
         }
     }
-
-    @Test
-    public void test_SO_TIMEOUT() {
-        AsyncSocket socket = newSocket();
-        AsyncSocketOptions options = socket.options();
-        options.set(SO_TIMEOUT, 3600);
-        assertEquals(Integer.valueOf(3600), options.get(SO_TIMEOUT));
-    }
+//
+//    @Test
+//    public void test_SO_TIMEOUT() {
+//        AsyncSocket socket = newSocket();
+//        AsyncSocketOptions options = socket.options();
+//        options.set(SO_TIMEOUT, 3600);
+//        assertEquals(Integer.valueOf(3600), options.get(SO_TIMEOUT));
+//    }
 
     @Test
     public void test_TCP_KEEPCOUNT() {

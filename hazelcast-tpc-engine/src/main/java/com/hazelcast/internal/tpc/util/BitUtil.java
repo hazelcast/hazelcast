@@ -28,6 +28,25 @@ public final class BitUtil {
     }
 
     /**
+     * Hash function based on Knuth's multiplicative method. This version is faster than using Murmur hash but provides
+     * acceptable behavior.
+     *
+     * @param k the long for which the hash will be calculated
+     * @return the hash
+     */
+    public static long fastLongMix(long k) {
+        // phi = 2^64 / goldenRatio
+        final long phi = 0x9E3779B97F4A7C15L;
+        long h = k * phi;
+        h ^= h >>> 32;
+        return h ^ (h >>> 16);
+    }
+
+    static int longHash(final long value, final int mask) {
+        return ((int) fastLongMix(value)) & mask;
+    }
+
+    /**
      * Fast method of finding the next power of 2 greater than or equal to the supplied value.
      * <p>
      * If the value is &lt;= 0 then 1 will be returned.

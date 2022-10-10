@@ -49,6 +49,7 @@ import com.hazelcast.scheduledexecutor.IScheduledExecutorService;
 import com.hazelcast.spi.impl.SerializationServiceSupport;
 import com.hazelcast.splitbrainprotection.SplitBrainProtectionService;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.table.Table;
 import com.hazelcast.topic.ITopic;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
@@ -71,6 +72,11 @@ public class HazelcastClientProxy implements HazelcastInstance, SerializationSer
 
     public HazelcastClientProxy(HazelcastClientInstanceImpl client) {
         this.client = client;
+    }
+
+    @Override
+    public Table getTable(String name) {
+        return getClient().getTable(name);
     }
 
     @Nonnull

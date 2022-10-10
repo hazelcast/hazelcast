@@ -102,13 +102,7 @@ public class NioAsyncSocketBuilder implements AsyncSocketBuilder {
         return this;
     }
 
-    /**
-     * Sets the read handler. Should be called before this AsyncSocket is started.
-     *
-     * @param readHandler the ReadHandler
-     * @return this
-     * @throws NullPointerException if readHandler is null.
-     */
+    @Override
     public final NioAsyncSocketBuilder setReadHandler(ReadHandler readHandler) {
         verifyNotBuild();
 
