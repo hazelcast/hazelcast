@@ -150,7 +150,7 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
                     changeClusterState(ClusterState.ACTIVE);
                 } else if (newTopologyIntent == ClusterTopologyIntent.CLUSTER_STABLE) {
                     if (getClusterService().getClusterState() != ClusterState.ACTIVE) {
-                        executeOrScheduleClusterStateChange(ClusterState.ACTIVE);
+                        tryExecuteOrSetDeferredClusterStateChange(ClusterState.ACTIVE);
                     } else if (!getPartitionService().isPartitionTableSafe()) {
                         getPartitionService().getMigrationManager().triggerControlTask();
                     }
@@ -337,8 +337,16 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
         return clusterStateForMissingMembers == ClusterState.FROZEN;
     }
 
-    private void executeOrScheduleClusterStateChange(ClusterState newClusterState) {
-        if (!getNodeExtension().getInternalHotRestartService().setDeferredClusterState(newClusterState)) {
+    /**
+     * If recovery from persistence is completed, then immediately changes cluster state to given {@code newClusterState}.
+     * Otherwise, the given {@code newClusterState} is passed on to hot-restart service and may be applied as final cluster
+     * state after recovery is done.
+     *
+     * @param newClusterState the new cluster state
+     * @see com.hazelcast.internal.hotrestart.InternalHotRestartService#trySetDeferredClusterState(ClusterState)
+     */
+    private void tryExecuteOrSetDeferredClusterStateChange(ClusterState newClusterState) {
+        if (!getNodeExtension().getInternalHotRestartService().trySetDeferredClusterState(newClusterState)) {
             // hot restart recovery is completed, just apply the new cluster state here
             changeClusterState(newClusterState);
         }

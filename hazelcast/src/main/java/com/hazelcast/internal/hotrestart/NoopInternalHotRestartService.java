@@ -115,7 +115,7 @@ public class NoopInternalHotRestartService implements InternalHotRestartService 
     }
 
     @Override
-    public boolean setDeferredClusterState(ClusterState newClusterState) {
+    public boolean trySetDeferredClusterState(ClusterState newClusterState) {
         return false;
     }
 }

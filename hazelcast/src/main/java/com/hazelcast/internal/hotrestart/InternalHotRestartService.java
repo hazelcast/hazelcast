@@ -51,14 +51,16 @@ public interface InternalHotRestartService {
     boolean isEnabled();
 
     /**
-     * If recovery is in progress, stores the given {@code newClusterState} and
-     * applies it after recovery is complete, returning {@code true}. Otherwise
-     * does nothing and returns {@code false}.
+     * If recovery is in progress and no other deferred cluster state was already set
+     * (with a previous call to {@code trySetDeferredClusterState}),
+     * stores the given {@code newClusterState} and applies it after recovery is complete,
+     * returning {@code true}. Otherwise does nothing and returns {@code false}.
+     *
      * @param newClusterState
      * @return {@code true} if recovery is in progress, indicating that the new cluster
      * state will be applied once recovery is complete, otherwise {@code false}.
      */
-    boolean setDeferredClusterState(ClusterState newClusterState);
+    boolean trySetDeferredClusterState(ClusterState newClusterState);
 
     /**
      * @return {@code true} when recovery process is completed and all members reached final state, otherwise {@code false}.
