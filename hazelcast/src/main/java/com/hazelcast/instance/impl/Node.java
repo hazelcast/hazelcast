@@ -842,6 +842,10 @@ public class Node {
                 && clusterTopologyIntentTracker.getCurrentSpecifiedReplicaCount() == clusterService.getSize();
     }
 
+    public int currentSpecifiedReplicaCount() {
+        return clusterTopologyIntentTracker.getCurrentSpecifiedReplicaCount();
+    }
+
     public SplitBrainJoinMessage createSplitBrainJoinMessage() {
         MemberImpl localMember = getLocalMember();
         boolean liteMember = localMember.isLiteMember();
