@@ -16,11 +16,11 @@
 
 package com.hazelcast.datastore.impl;
 
-import com.hazelcast.config.Config;
 import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.datastore.ExternalDataStoreFactory;
 import com.hazelcast.datastore.ExternalDataStoreService;
+import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
 
 import java.util.Map;
@@ -30,18 +30,23 @@ import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 
 public class ExternalDataStoreServiceImpl implements ExternalDataStoreService {
     private final Map<String, ExternalDataStoreFactory<?>> dataStoreFactories = new ConcurrentHashMap<>();
+    private final ClassLoader classLoader;
+    private final Node node;
 
-    public ExternalDataStoreServiceImpl(Config config, ClassLoader classLoader) {
-        for (Map.Entry<String, ExternalDataStoreConfig> entry : config.getExternalDataStoreConfigs().entrySet()) {
-            dataStoreFactories.put(entry.getKey(), createFactory(entry.getValue(), classLoader));
+    public ExternalDataStoreServiceImpl(Node node, ClassLoader classLoader) {
+        this.classLoader = classLoader;
+        this.node = node;
+        for (Map.Entry<String, ExternalDataStoreConfig> entry : node.getConfig().getExternalDataStoreConfigs().entrySet()) {
+            createFactory(entry.getValue());
         }
     }
 
-    private ExternalDataStoreFactory<?> createFactory(ExternalDataStoreConfig config, ClassLoader classLoader) {
+    private ExternalDataStoreFactory<?> createFactory(ExternalDataStoreConfig config) {
         String className = config.getClassName();
         try {
             ExternalDataStoreFactory<?> externalDataStoreFactory = ClassLoaderUtil.newInstance(classLoader, className);
             externalDataStoreFactory.init(config);
+            dataStoreFactories.put(config.getName(), externalDataStoreFactory);
             return externalDataStoreFactory;
         } catch (ClassCastException e) {
             throw new HazelcastException("External data store '" + config.getName() + "' misconfigured: "
@@ -59,6 +64,12 @@ public class ExternalDataStoreServiceImpl implements ExternalDataStoreService {
     @Override
     public ExternalDataStoreFactory<?> getExternalDataStoreFactory(String name) {
         ExternalDataStoreFactory<?> externalDataStoreFactory = dataStoreFactories.get(name);
+        if (externalDataStoreFactory == null) {
+            ExternalDataStoreConfig externalDataStoreConfig = node.getConfig().getExternalDataStoreConfig(name);
+            if (externalDataStoreConfig != null) {
+                return createFactory(externalDataStoreConfig);
+            }
+        }
         if (externalDataStoreFactory == null) {
             throw new HazelcastException("External data store factory '" + name + "' not found");
         }

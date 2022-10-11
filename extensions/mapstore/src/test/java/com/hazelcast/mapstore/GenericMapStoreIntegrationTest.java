@@ -128,4 +128,34 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
         assertThat(jdbcRowsTable(tableName)).isEmpty();
     }
+
+    @Test
+    public void testDynamicExternalDataStoreConfig() throws Exception {
+        String randomTableName = randomTableName();
+
+        createTable(randomTableName);
+        assertThat(jdbcRowsTable(randomTableName)).isEmpty();
+
+        HazelcastInstance client = client();
+
+        client.getConfig().addExternalDataStoreConfig(
+                new ExternalDataStoreConfig("dynamically-added-datastore")
+                        .setClassName(JdbcDataStoreFactory.class.getName())
+                        .setProperty("jdbcUrl", dbConnectionUrl)
+        );
+
+        MapStoreConfig mapStoreConfig = new MapStoreConfig()
+                .setClassName(GenericMapStore.class.getName())
+                .setProperty(EXTERNAL_REF_ID_PROPERTY, "dynamically-added-datastore")
+                .setProperty("table-name", randomTableName);
+        MapConfig mapConfig = new MapConfig(randomTableName).setMapStoreConfig(mapStoreConfig);
+        client.getConfig().addMapConfig(mapConfig);
+
+        IMap<Integer, String> someTestMap = client.getMap(randomTableName);
+        someTestMap.put(1, "val-1");
+
+        assertThat(jdbcRowsTable(randomTableName)).hasSize(1);
+
+    }
+
 }
