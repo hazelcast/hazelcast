@@ -22,6 +22,7 @@ import com.hazelcast.sql.impl.expression.BiExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.Searchable;
+import com.hazelcast.sql.impl.expression.SearchableWithNullAs;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
@@ -61,6 +62,10 @@ public final class SearchPredicate extends BiExpression<Boolean> implements Iden
 
         Object right = operand2.eval(row, context);
         if (right == null) {
+            return null;
+        }
+        if (!(right instanceof SearchableWithNullAs) && left == null) {
+            // We deserialized old version of Range class, that doesn't support nulls.
             return null;
         }
 
