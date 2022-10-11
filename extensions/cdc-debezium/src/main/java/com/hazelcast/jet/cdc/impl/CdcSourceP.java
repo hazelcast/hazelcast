@@ -413,11 +413,18 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
     }
 
     private static long extractTimestamp(SourceRecord record) {
-        if (record.valueSchema().field("ts_ms") == null) {
+        boolean noValueTsMs = record.valueSchema().field("ts_ms") == null;
+        boolean noSourceTsMs = record.valueSchema().field("source").schema().field("ts_ms") == null;
+        if (noValueTsMs && noSourceTsMs) {
             return NO_NATIVE_TIME;
         }
-        Long timestamp = ((Struct) record.value()).getInt64("ts_ms");
-        return timestamp == null ? NO_NATIVE_TIME : timestamp;
+        if (!noValueTsMs) {
+            Long timestamp = ((Struct) record.value()).getInt64("ts_ms");
+            return timestamp == null ? NO_NATIVE_TIME : timestamp;
+        } else {
+            Long timestamp = ((Struct) record.value()).getStruct("source").getInt64("ts_ms");
+            return timestamp == null ? NO_NATIVE_TIME : timestamp;
+        }
     }
 
     private static class JetConnectorContext implements ConnectorContext {
