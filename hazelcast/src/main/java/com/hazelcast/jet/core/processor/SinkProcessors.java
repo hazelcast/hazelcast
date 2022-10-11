@@ -18,7 +18,6 @@ package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.datastore.CloseableDataSource;
 import com.hazelcast.datastore.ExternalDataStoreFactory;
 import com.hazelcast.datastore.JdbcDataStoreFactory;
 import com.hazelcast.function.BiConsumerEx;
@@ -56,7 +55,6 @@ import java.nio.charset.Charset;
 import java.sql.PreparedStatement;
 import java.util.Map;
 
-import static com.hazelcast.datastore.CloseableDataSource.nonClosing;
 import static com.hazelcast.function.FunctionEx.identity;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
@@ -401,7 +399,7 @@ public final class SinkProcessors {
         checkNotNull(bindFn, "bindFn");
         checkPositive(batchLimit, "batchLimit");
         //FIXME not sure about casting to DataSource
-        return WriteJdbcP.metaSupplier(jdbcUrl, updateQuery, ctx -> nonClosing((DataSource) dataSourceSupplier.get()),
+        return WriteJdbcP.metaSupplier(jdbcUrl, updateQuery, ctx -> dataSourceSupplier.get(),
                 bindFn, exactlyOnce, batchLimit);
     }
 
@@ -427,8 +425,7 @@ public final class SinkProcessors {
                 bindFn, exactlyOnce, batchLimit);
     }
 
-    private static FunctionEx<ProcessorMetaSupplier.Context,
-            CloseableDataSource> dataSourceSupplier(String externalDataStoreName) {
+    private static FunctionEx<ProcessorMetaSupplier.Context, DataSource> dataSourceSupplier(String externalDataStoreName) {
         return context -> getDataStoreFactory(context, externalDataStoreName).createDataStore();
     }
 

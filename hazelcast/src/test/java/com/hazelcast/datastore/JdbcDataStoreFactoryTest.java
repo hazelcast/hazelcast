@@ -36,8 +36,8 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JdbcDataStoreFactoryTest {
 
-    CloseableDataSource dataStore1;
-    CloseableDataSource dataStore2;
+    DataSource dataStore1;
+    DataSource dataStore2;
     JdbcDataStoreFactory jdbcDataStoreFactory = new JdbcDataStoreFactory();
 
     @After
@@ -47,9 +47,9 @@ public class JdbcDataStoreFactoryTest {
         jdbcDataStoreFactory.close();
     }
 
-    private static void close(CloseableDataSource dataStore) throws Exception {
-        if (dataStore != null) {
-            dataStore.close();
+    private static void close(DataSource dataStore) throws Exception {
+        if (dataStore instanceof AutoCloseable) {
+            ((AutoCloseable) dataStore).close();
         }
     }
 
@@ -77,7 +77,7 @@ public class JdbcDataStoreFactoryTest {
                 .setShared(true);
         jdbcDataStoreFactory.init(config);
 
-        CloseableDataSource closeableDataSource = jdbcDataStoreFactory.createDataStore();
+        CloseableDataSource closeableDataSource = (CloseableDataSource) jdbcDataStoreFactory.createDataStore();
         closeableDataSource.close();
 
         ResultSet resultSet = executeQuery(closeableDataSource, "select 'some-name' as name");
@@ -96,7 +96,7 @@ public class JdbcDataStoreFactoryTest {
                 .setShared(false);
         jdbcDataStoreFactory.init(config);
 
-        CloseableDataSource closeableDataSource = jdbcDataStoreFactory.createDataStore();
+        CloseableDataSource closeableDataSource = (CloseableDataSource) jdbcDataStoreFactory.createDataStore();
         closeableDataSource.close();
 
         assertThatThrownBy(() -> executeQuery(closeableDataSource, "select 'some-name' as name"))

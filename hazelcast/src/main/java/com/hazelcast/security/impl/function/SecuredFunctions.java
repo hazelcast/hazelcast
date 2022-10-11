@@ -18,7 +18,6 @@ package com.hazelcast.security.impl.function;
 
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datastore.CloseableDataSource;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
@@ -275,13 +274,13 @@ public final class SecuredFunctions {
 
     public static <T> ProcessorSupplier readJdbcProcessorFn(
             String connectionUrl,
-            FunctionEx<ProcessorSupplier.Context, ? extends CloseableDataSource> newDataSourceFn,
+            FunctionEx<ProcessorSupplier.Context, ? extends DataSource> newDataSourceFn,
             ToResultSetFunction resultSetFn,
             FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
         return new ProcessorSupplier() {
 
-            private CloseableDataSource dataSource;
+            private DataSource dataSource;
 
             @Override
             public void init(@Nonnull ProcessorSupplier.Context context) {
@@ -290,7 +289,9 @@ public final class SecuredFunctions {
 
             @Override
             public void close(Throwable error) throws Exception {
-                dataSource.close();
+                if (dataSource instanceof AutoCloseable) {
+                    ((AutoCloseable) dataSource).close();
+                }
             }
 
             @Nonnull
@@ -314,7 +315,7 @@ public final class SecuredFunctions {
             ToResultSetFunction resultSetFn,
             FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return readJdbcProcessorFn(connectionUrl, ctx -> CloseableDataSource.nonClosing(newDataSourceFn.apply(ctx)),
+        return readJdbcProcessorFn(connectionUrl, newDataSourceFn::apply,
                 resultSetFn, mapOutputFn);
     }
 

@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.datastore.CloseableDataSource;
 import com.hazelcast.datastore.ExternalDataStoreFactory;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
@@ -43,6 +42,7 @@ import org.apache.calcite.sql.SqlDialectFactoryImpl;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -140,9 +140,10 @@ public class JdbcSqlConnector implements SqlConnector {
                 options.get(OPTION_EXTERNAL_DATASTORE_REF),
                 OPTION_EXTERNAL_DATASTORE_REF + " must be set"
         );
-        try (CloseableDataSource dataSource = createDataStore(nodeEngine, externalDataStoreRef);
-             Connection connection = dataSource.getConnection();
-             Statement statement = connection.createStatement()
+        DataSource dataSource = createDataStore(nodeEngine, externalDataStoreRef);
+        try (
+                Connection connection = dataSource.getConnection();
+                Statement statement = connection.createStatement()
         ) {
             Set<String> pkColumns = readPrimaryKeyColumns(externalTableName, connection);
 
@@ -165,11 +166,23 @@ public class JdbcSqlConnector implements SqlConnector {
             return fields;
         } catch (Exception e) {
             throw new HazelcastException("Could not read column metadata for table " + externalDataStoreRef, e);
+        } finally {
+            closeDataSource(dataSource);
         }
     }
 
-    private static CloseableDataSource createDataStore(NodeEngine nodeEngine, String externalDataStoreRef) {
-        final ExternalDataStoreFactory<CloseableDataSource> externalDataStoreFactory = nodeEngine.getExternalDataStoreService()
+    private void closeDataSource(DataSource dataSource) {
+        if (dataSource instanceof AutoCloseable) {
+            try {
+                ((AutoCloseable) dataSource).close();
+            } catch (Exception e) {
+                throw new HazelcastException("Could not close datasource " + dataSource, e);
+            }
+        }
+    }
+
+    private static DataSource createDataStore(NodeEngine nodeEngine, String externalDataStoreRef) {
+        final ExternalDataStoreFactory<DataSource> externalDataStoreFactory = nodeEngine.getExternalDataStoreService()
                 .getExternalDataStoreFactory(externalDataStoreRef);
         return externalDataStoreFactory.createDataStore();
     }
@@ -236,11 +249,9 @@ public class JdbcSqlConnector implements SqlConnector {
     }
 
     private SqlDialect resolveDialect(NodeEngine nodeEngine, String externalDataStoreRef) {
+        DataSource dataSource = createDataStore(nodeEngine, externalDataStoreRef);
 
-        try (
-                CloseableDataSource dataSource = createDataStore(nodeEngine, externalDataStoreRef);
-                Connection connection = dataSource.getConnection()
-        ) {
+        try (Connection connection = dataSource.getConnection()) {
 
             SqlDialect dialect = SqlDialectFactoryImpl.INSTANCE.create(connection.getMetaData());
             String databaseProductName = connection.getMetaData().getDatabaseProductName();
@@ -258,6 +269,8 @@ public class JdbcSqlConnector implements SqlConnector {
         } catch (Exception e) {
             throw new HazelcastException("Could not determine dialect for externalDataStoreRef: "
                     + externalDataStoreRef, e);
+        } finally {
+            closeDataSource(dataSource);
         }
     }
 

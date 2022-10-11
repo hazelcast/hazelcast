@@ -26,12 +26,12 @@ import java.sql.SQLFeatureNotSupportedException;
 import java.util.logging.Logger;
 
 /**
- * Wrapper of the datasource which handles the closing of the wrapped datasource
+ * Wrapper of the datasource which handles the closing of the non-shared datasources
  *
  * @since 5.2
  */
 @Beta
-public abstract class CloseableDataSource implements DataSource, AutoCloseable {
+abstract class CloseableDataSource implements DataSource, AutoCloseable {
     private final DataSource dataSource;
 
     private CloseableDataSource(DataSource dataSource) {
