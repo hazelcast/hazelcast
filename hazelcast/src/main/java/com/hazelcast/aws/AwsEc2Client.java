@@ -19,6 +19,7 @@ package com.hazelcast.aws;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 
 import java.util.List;
 import java.util.Map;
@@ -48,7 +49,7 @@ class AwsEc2Client implements AwsClient {
     public Map<String, String> getAddresses() {
         AwsCredentials credentials = awsCredentialsProvider.credentials();
         Map<String, String> instances = awsEc2Api.describeInstances(credentials);
-        if (instances.isEmpty()) {
+        if (instances.isEmpty() && DiscoveryMode.Client == awsConfig.getDiscoveryMode()) {
             if (isNullOrEmptyAfterTrim(awsConfig.getCluster())) {
                 throw new InvalidConfigurationException("You must define 'cluster' property if not running inside ECS cluster");
             }

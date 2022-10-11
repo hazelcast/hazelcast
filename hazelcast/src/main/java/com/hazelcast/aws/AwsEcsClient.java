@@ -19,11 +19,13 @@ package com.hazelcast.aws;
 import com.hazelcast.aws.AwsEcsApi.Task;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 
 class AwsEcsClient implements AwsClient {
@@ -34,14 +36,16 @@ class AwsEcsClient implements AwsClient {
     private final AwsMetadataApi awsMetadataApi;
     private final AwsCredentialsProvider awsCredentialsProvider;
     private final String cluster;
+    private final AwsConfig awsConfig;
 
-    AwsEcsClient(String cluster, AwsEcsApi awsEcsApi, AwsEc2Api awsEc2Api, AwsMetadataApi awsMetadataApi,
+    AwsEcsClient(String cluster, AwsConfig awsConfig, AwsEcsApi awsEcsApi, AwsEc2Api awsEc2Api, AwsMetadataApi awsMetadataApi,
                  AwsCredentialsProvider awsCredentialsProvider) {
         this.cluster = cluster;
         this.awsEcsApi = awsEcsApi;
         this.awsEc2Api = awsEc2Api;
         this.awsMetadataApi = awsMetadataApi;
         this.awsCredentialsProvider = awsCredentialsProvider;
+        this.awsConfig = awsConfig;
     }
 
     @Override
@@ -51,10 +55,11 @@ class AwsEcsClient implements AwsClient {
         LOGGER.fine(String.format("AWS ECS DescribeTasks found the following addresses: %s", taskAddresses));
         if (!taskAddresses.isEmpty()) {
             return awsEc2Api.describeNetworkInterfaces(taskAddresses, credentials);
-        } else {
+        } else if (DiscoveryMode.Member != awsConfig.getDiscoveryMode()) {
             LOGGER.fine(String.format("No tasks found in ECS cluster: '%s'. Trying AWS EC2 Discovery.", cluster));
             return awsEc2Api.describeInstances(credentials);
         }
+        return emptyMap();
     }
 
     @Override

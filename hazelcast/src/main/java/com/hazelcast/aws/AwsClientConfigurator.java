@@ -66,7 +66,7 @@ final class AwsClientConfigurator {
         // ECS Discovery
         String cluster = resolveCluster(awsConfig, metadataApi, environment);
         logEcsEnvironment(awsConfig, region, cluster);
-        return new AwsEcsClient(cluster, ecsApi, ec2Api, metadataApi, credentialsProvider);
+        return new AwsEcsClient(cluster, awsConfig, ecsApi, ec2Api, metadataApi, credentialsProvider);
     }
 
     static String resolveRegion(AwsConfig awsConfig, AwsMetadataApi metadataApi, Environment environment) {

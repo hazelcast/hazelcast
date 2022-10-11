@@ -63,12 +63,13 @@ public class AwsEcsClientTest {
     @Before
     public void setUp() {
         EcsMetadata ecsMetadata = mock(EcsMetadata.class);
+        AwsConfig awsConfig = AwsConfig.builder().build();
         given(ecsMetadata.getTaskArn()).willReturn(TASK_ARN);
         given(ecsMetadata.getClusterArn()).willReturn(CLUSTER);
         given(awsMetadataApi.metadataEcs()).willReturn(ecsMetadata);
         given(awsCredentialsProvider.credentials()).willReturn(CREDENTIALS);
 
-        awsEcsClient = new AwsEcsClient(CLUSTER, awsEcsApi, awsEc2Api, awsMetadataApi, awsCredentialsProvider);
+        awsEcsClient = new AwsEcsClient(CLUSTER, awsConfig, awsEcsApi, awsEc2Api, awsMetadataApi, awsCredentialsProvider);
     }
 
     @Test
