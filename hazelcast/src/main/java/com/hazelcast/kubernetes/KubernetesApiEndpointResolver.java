@@ -71,7 +71,7 @@ class KubernetesApiEndpointResolver
     }
 
     private List<DiscoveryNode> getSimpleDiscoveryNodes(List<Endpoint> endpoints) {
-        List<DiscoveryNode> discoveredNodes = new ArrayList<DiscoveryNode>();
+        List<DiscoveryNode> discoveredNodes = new ArrayList<>();
         for (Endpoint address : endpoints) {
             addAddress(discoveredNodes, address);
         }
