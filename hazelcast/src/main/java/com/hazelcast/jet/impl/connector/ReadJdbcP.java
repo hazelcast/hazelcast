@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
-import com.hazelcast.datastore.DataStoreHolder;
+import com.hazelcast.datastore.CloseableDataSource;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.Traverser;
@@ -84,7 +84,7 @@ public final class ReadJdbcP<T> extends AbstractProcessor {
      * Use {@link SourceProcessors#readJdbcP}.
      */
     public static <T> ProcessorMetaSupplier supplier(
-            @Nonnull FunctionEx<ProcessorSupplier.Context, ? extends DataStoreHolder<DataSource>> newDataSourceFn,
+            @Nonnull FunctionEx<ProcessorSupplier.Context, ? extends CloseableDataSource> newDataSourceFn,
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {

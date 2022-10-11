@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.datastore.DataStoreHolder;
+import com.hazelcast.datastore.CloseableDataSource;
 import com.hazelcast.datastore.ExternalDataStoreFactory;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
@@ -43,7 +43,6 @@ import org.apache.calcite.sql.SqlDialectFactoryImpl;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
@@ -141,8 +140,8 @@ public class JdbcSqlConnector implements SqlConnector {
                 options.get(OPTION_EXTERNAL_DATASTORE_REF),
                 OPTION_EXTERNAL_DATASTORE_REF + " must be set"
         );
-        try (DataStoreHolder<DataSource> dataSource = createDataStore(nodeEngine, externalDataStoreRef);
-             Connection connection = dataSource.get().getConnection();
+        try (CloseableDataSource dataSource = createDataStore(nodeEngine, externalDataStoreRef);
+             Connection connection = dataSource.getConnection();
              Statement statement = connection.createStatement()
         ) {
             Set<String> pkColumns = readPrimaryKeyColumns(externalTableName, connection);
@@ -169,8 +168,8 @@ public class JdbcSqlConnector implements SqlConnector {
         }
     }
 
-    private static DataStoreHolder<DataSource> createDataStore(NodeEngine nodeEngine, String externalDataStoreRef) {
-        final ExternalDataStoreFactory<DataSource> externalDataStoreFactory = nodeEngine.getExternalDataStoreService()
+    private static CloseableDataSource createDataStore(NodeEngine nodeEngine, String externalDataStoreRef) {
+        final ExternalDataStoreFactory<CloseableDataSource> externalDataStoreFactory = nodeEngine.getExternalDataStoreService()
                 .getExternalDataStoreFactory(externalDataStoreRef);
         return externalDataStoreFactory.createDataStore();
     }
@@ -239,8 +238,8 @@ public class JdbcSqlConnector implements SqlConnector {
     private SqlDialect resolveDialect(NodeEngine nodeEngine, String externalDataStoreRef) {
 
         try (
-                DataStoreHolder<DataSource> dataSource = createDataStore(nodeEngine, externalDataStoreRef);
-                Connection connection = dataSource.get().getConnection()
+                CloseableDataSource dataSource = createDataStore(nodeEngine, externalDataStoreRef);
+                Connection connection = dataSource.getConnection()
         ) {
 
             SqlDialect dialect = SqlDialectFactoryImpl.INSTANCE.create(connection.getMetaData());

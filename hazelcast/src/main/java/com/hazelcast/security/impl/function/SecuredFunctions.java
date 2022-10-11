@@ -18,7 +18,7 @@ package com.hazelcast.security.impl.function;
 
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.datastore.DataStoreHolder;
+import com.hazelcast.datastore.CloseableDataSource;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
@@ -275,13 +275,13 @@ public final class SecuredFunctions {
 
     public static <T> ProcessorSupplier readJdbcProcessorFn(
             String connectionUrl,
-            FunctionEx<ProcessorSupplier.Context, ? extends DataStoreHolder<DataSource>> newDataSourceFn,
+            FunctionEx<ProcessorSupplier.Context, ? extends CloseableDataSource> newDataSourceFn,
             ToResultSetFunction resultSetFn,
             FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
         return new ProcessorSupplier() {
 
-            private DataStoreHolder<DataSource> dataSource;
+            private CloseableDataSource dataSource;
 
             @Override
             public void init(@Nonnull ProcessorSupplier.Context context) {
@@ -297,7 +297,7 @@ public final class SecuredFunctions {
             @Override
             public Collection<? extends Processor> get(int count) {
                 return IntStream.range(0, count)
-                        .mapToObj(i -> new ReadJdbcP<T>(dataSource.get()::getConnection, resultSetFn, mapOutputFn))
+                        .mapToObj(i -> new ReadJdbcP<T>(dataSource::getConnection, resultSetFn, mapOutputFn))
                         .collect(Collectors.toList());
             }
 
@@ -314,7 +314,7 @@ public final class SecuredFunctions {
             ToResultSetFunction resultSetFn,
             FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return readJdbcProcessorFn(connectionUrl, ctx -> DataStoreHolder.nonClosing(newDataSourceFn.apply(ctx)),
+        return readJdbcProcessorFn(connectionUrl, ctx -> CloseableDataSource.nonClosing(newDataSourceFn.apply(ctx)),
                 resultSetFn, mapOutputFn);
     }
 

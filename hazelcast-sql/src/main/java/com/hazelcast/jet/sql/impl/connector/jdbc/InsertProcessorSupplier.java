@@ -63,7 +63,7 @@ public class InsertProcessorSupplier
         for (int i = 0; i < count; i++) {
             Processor processor = new WriteJdbcP<>(
                     query,
-                    dataSource.get(),
+                    dataSource,
                     (PreparedStatement ps, JetSqlRow row) -> {
                         for (int j = 0; j < row.getFieldCount(); j++) {
                             // JDBC parameterIndex is 1-based, so j + 1
