@@ -107,8 +107,9 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
     }
 
     @Override
-    public void update(int previousSpecifiedReplicaCount, int currentSpecifiedReplicaCount, int readyReplicasCount,
-                       int currentReplicasCount) {
+    public void update(int previousSpecifiedReplicaCount, int currentSpecifiedReplicaCount,
+                       int previousReadyReplicasCount, int readyReplicasCount,
+                       int previousCurrentReplicasCount, int currentReplicasCount) {
         final int previousClusterSpecSizeValue = this.currentClusterSpecSize;
         this.currentClusterSpecSize = currentSpecifiedReplicaCount;
         if (previousSpecifiedReplicaCount == UNKNOWN) {

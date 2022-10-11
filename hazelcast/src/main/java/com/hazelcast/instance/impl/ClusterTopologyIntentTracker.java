@@ -93,8 +93,10 @@ public interface ClusterTopologyIntentTracker {
      *
      * @see NodeExtension#isReady()
      */
-    void update(int previousSpecifiedReplicaCount, int currentSpecifiedReplicaCount, int readyReplicasCount,
-                int currentReplicasCount);
+    void update(int previousSpecifiedReplicaCount, int currentSpecifiedReplicaCount,
+                // todo change current* param names to updated (as opposed to previous)
+                int previousReadReplicasCount, int readyReplicasCount,
+                int previousCurrentReplicasCount, int currentReplicasCount);
 
     ClusterTopologyIntent getClusterTopologyIntent();
 

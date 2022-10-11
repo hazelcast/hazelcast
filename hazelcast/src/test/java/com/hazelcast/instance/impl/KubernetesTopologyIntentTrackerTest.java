@@ -35,6 +35,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.instance.impl.ClusterTopologyIntentTracker.UNKNOWN;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static com.hazelcast.test.HazelcastTestSupport.spawn;
 import static org.junit.Assert.assertThrows;
@@ -99,11 +100,16 @@ public class KubernetesTopologyIntentTrackerTest {
         when(clusterService.getSize()).thenReturn(3);
         clusterTopologyIntentTracker = new KubernetesTopologyIntentTracker(setupMockNode());
         // cluster is running with 3 members
-        clusterTopologyIntentTracker.update(0, 3, 3, 3);
+        clusterTopologyIntentTracker.update(UNKNOWN, 3,
+                UNKNOWN, 3, UNKNOWN, 3);
         // cluster is missing a member
-        clusterTopologyIntentTracker.update(3, 3, 2, 2);
+        clusterTopologyIntentTracker.update(3, 3,
+                3, 2,
+                3, 2);
         // cluster shutdown starts
-        clusterTopologyIntentTracker.update(3, 0, 3, 2);
+        clusterTopologyIntentTracker.update(3, 0,
+                2, 3,
+                2, 2);
         Future future = spawn(() -> {
             clusterTopologyIntentTracker.waitForMissingMember();
         });

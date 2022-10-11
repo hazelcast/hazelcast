@@ -718,7 +718,8 @@ class KubernetesClient {
                     + latestRuntimeContext);
             clusterTopologyIntentTracker.update(UNKNOWN,
                     latestRuntimeContext.getSpecifiedReplicaCount(),
-                    latestRuntimeContext.getReadyReplicas(), latestRuntimeContext.getCurrentReplicas());
+                    UNKNOWN, latestRuntimeContext.getReadyReplicas(),
+                    UNKNOWN, latestRuntimeContext.getCurrentReplicas());
             while (true) {
                 if (Thread.interrupted()) {
                     break;
@@ -775,31 +776,10 @@ class KubernetesClient {
             if (latestRuntimeContext != null && ctx != null) {
                 LOGGER.info("Updating cluster topology tracker with previous: "
                     + latestRuntimeContext + ", updated: " + ctx);
-                // Check for stable cluster spec size and missing member rejoined while another member is preparing
-                // for restart coalesced event. This typically occurs during a rolling restart (kubectl rollout restart):
-                // member A (previously restarted) is rejoining the cluster, cluster is again complete but member B is
-                // signalled to terminate at the same time.
-                // The form of the watch event from Kubernetes API is like this:
-                // StatefulSet.spec (previous) == StatefulSet.spec (current) -- no change to requested cluster size
-                // StatefulSetStatus.readyReplicas (previous) < StatefulSetStatus.readyReplicas (current) -- member rejoined
-                // StatefulSet.spec (current) == StatefulSetStatus.readyReplicas (current) -- cluster reached requested size
-                // StatefulSetStatus.replicas (previous) > StatefulSetStatus.replicas (current) -- next pod is getting terminated
-                if (!deliverCoalescedEvents
-                    && ctx.getSpecifiedReplicaCount() == latestRuntimeContext.getSpecifiedReplicaCount()
-                    && ctx.getReadyReplicas() > latestRuntimeContext.getReadyReplicas()
-                    && ctx.getReadyReplicas() == ctx.getSpecifiedReplicaCount()
-                    && ctx.getCurrentReplicas() < latestRuntimeContext.getCurrentReplicas()) {
-                    // unbundle this into two events
-                    // 1. ready replicas == spec size with same "currentReplicas" as previous
-                    clusterTopologyIntentTracker.update(latestRuntimeContext.getSpecifiedReplicaCount(),
-                            ctx.getSpecifiedReplicaCount(), ctx.getReadyReplicas(), latestRuntimeContext.getCurrentReplicas());
-                    // 2. current replicas updated to lower number (-> missing member)
-                    clusterTopologyIntentTracker.update(latestRuntimeContext.getSpecifiedReplicaCount(),
-                            ctx.getSpecifiedReplicaCount(), ctx.getReadyReplicas(), ctx.getCurrentReplicas());
-                } else {
-                    clusterTopologyIntentTracker.update(latestRuntimeContext.getSpecifiedReplicaCount(),
-                            ctx.getSpecifiedReplicaCount(), ctx.getReadyReplicas(), ctx.getCurrentReplicas());
-                }
+                clusterTopologyIntentTracker.update(latestRuntimeContext.getSpecifiedReplicaCount(),
+                        ctx.getSpecifiedReplicaCount(),
+                        latestRuntimeContext.getReadyReplicas(), ctx.getReadyReplicas(),
+                        latestRuntimeContext.getCurrentReplicas(), ctx.getCurrentReplicas());
             }
             latestRuntimeContext = ctx;
         }
