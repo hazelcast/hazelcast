@@ -421,6 +421,9 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
                     .window(sliding(SECONDS.toMillis(2), SECONDS.toMillis(1)))
                     .distinct()
                     .writeTo(Sinks.logger(WindowResult::toString));
+
+            HazelcastInstance hz = createHazelcastInstances(1)[0];
+            hz.getJet().newJob(pipeline);
         }
     }
 
