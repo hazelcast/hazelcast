@@ -261,6 +261,20 @@ final class KubernetesConfig {
                     String.format("Properties '%s' and '%s' cannot be defined at the same time",
                             SERVICE_LABEL_NAME.key(), POD_LABEL_NAME.key()));
         }
+        if (!StringUtil.isNullOrEmptyAfterTrim(serviceLabelName) && !StringUtil.isNullOrEmptyAfterTrim(serviceLabelValue)
+                && (serviceLabelName.chars().filter(ch -> ch == ',').count()
+                != serviceLabelValue.chars().filter(ch -> ch == ',').count())) {
+            throw new InvalidConfigurationException(
+                    String.format("Properties '%s' and '%s' must have the same number of comma separated elements",
+                            SERVICE_LABEL_NAME.key(), SERVICE_LABEL_VALUE.key()));
+        }
+        if (!StringUtil.isNullOrEmptyAfterTrim(podLabelName) && !StringUtil.isNullOrEmptyAfterTrim(podLabelValue)
+                && (podLabelName.chars().filter(ch -> ch == ',').count()
+                != podLabelValue.chars().filter(ch -> ch == ',').count())) {
+            throw new InvalidConfigurationException(
+                    String.format("Properties '%s' and '%s' must have the same number of comma separated elements",
+                            POD_LABEL_NAME.key(), POD_LABEL_VALUE.key()));
+        }
         if (serviceDnsTimeout < 0) {
             throw new InvalidConfigurationException(
                     String.format("Property '%s' cannot be a negative number", SERVICE_DNS_TIMEOUT.key()));

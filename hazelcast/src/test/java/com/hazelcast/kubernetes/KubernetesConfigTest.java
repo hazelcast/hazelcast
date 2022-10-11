@@ -39,6 +39,8 @@ import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_API_RETIR
 import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_API_TOKEN;
 import static com.hazelcast.kubernetes.KubernetesProperties.KUBERNETES_CA_CERTIFICATE;
 import static com.hazelcast.kubernetes.KubernetesProperties.NAMESPACE;
+import static com.hazelcast.kubernetes.KubernetesProperties.POD_LABEL_NAME;
+import static com.hazelcast.kubernetes.KubernetesProperties.POD_LABEL_VALUE;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_DNS_TIMEOUT;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_NAME;
@@ -236,6 +238,34 @@ public class KubernetesConfigTest {
         properties.put(SERVICE_NAME.key(), "service-name");
         properties.put(SERVICE_LABEL_NAME.key(), "service-label-name");
         properties.put(SERVICE_LABEL_VALUE.key(), "service-label-value");
+
+        // when
+        new KubernetesConfig(properties);
+
+        // then
+        // throws exception
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void invalidConfigurationMismatchingServiceLabelNameAndValues() {
+        // given
+        Map<String, Comparable> properties = createProperties();
+        properties.put(SERVICE_LABEL_NAME.key(), "service-label-1,service-label-2");
+        properties.put(SERVICE_LABEL_VALUE.key(), "service-val-1");
+
+        // when
+        new KubernetesConfig(properties);
+
+        // then
+        // throws exception
+    }
+
+    @Test(expected = InvalidConfigurationException.class)
+    public void invalidConfigurationMismatchingPodLabelNameAndValues() {
+        // given
+        Map<String, Comparable> properties = createProperties();
+        properties.put(POD_LABEL_NAME.key(), "pod-label-1,pod-label-2");
+        properties.put(POD_LABEL_VALUE.key(), "pod-val-1");
 
         // when
         new KubernetesConfig(properties);
