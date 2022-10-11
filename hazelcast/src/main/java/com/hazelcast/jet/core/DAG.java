@@ -595,7 +595,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
                 searchableExpressionsCount = in.readInt();
                 assert searchableExpressionsCount == searchableExpressions.size();
             } catch (EOFException ignored) {
-                // ignored, this may happen if DAG from pre-5.1.4 version is read
+                // ignored, this may happen if DAG from pre-5.1.5 version is read
             }
             for (int i = 0; i < searchableExpressionsCount; i++) {
                 searchableExpressions.get(i).applyNullAs(in.readObject());
