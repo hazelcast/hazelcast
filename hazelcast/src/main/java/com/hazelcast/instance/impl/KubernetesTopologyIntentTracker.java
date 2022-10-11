@@ -106,31 +106,19 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
         clusterTopologyExecutor.shutdown();
     }
 
-    @SuppressWarnings({"checkstyle:npathcomplexity", "checkstyle:cyclomaticcomplexity"})
     @Override
     public void update(int previousSpecifiedReplicaCount, int currentSpecifiedReplicaCount, int readyReplicasCount,
                        int currentReplicasCount) {
         final int previousClusterSpecSizeValue = this.currentClusterSpecSize;
         this.currentClusterSpecSize = currentSpecifiedReplicaCount;
         if (previousSpecifiedReplicaCount == UNKNOWN) {
-            if (currentSpecifiedReplicaCount > 0
-                    && (readyReplicasCount == UNKNOWN || readyReplicasCount == 0)) {
-                // startup of first member of new cluster
-                logger.info("Cluster starting in managed context");
-                clusterTopologyIntent.set(ClusterTopologyIntent.CLUSTER_START);
-            } else {
-                logger.info("Member starting in managed context");
-                clusterTopologyIntent.set(ClusterTopologyIntent.IN_MANAGED_CONTEXT_UNKNOWN);
-            }
+            handleInitialUpdate(currentSpecifiedReplicaCount, readyReplicasCount);
             return;
         }
         final ClusterTopologyIntent previous = clusterTopologyIntent.get();
         ClusterTopologyIntent newTopologyIntent;
         if (currentSpecifiedReplicaCount == 0) {
-            if (previousClusterSpecSizeValue > 0) {
-                this.lastKnownStableClusterSpecSize = previousClusterSpecSizeValue;
-            }
-            newTopologyIntent = nextIntentWhenShuttingDown(previous);
+            newTopologyIntent = handleShutdownUpdate(previousClusterSpecSizeValue, previous);
         } else if (previousSpecifiedReplicaCount == currentSpecifiedReplicaCount) {
             if (ignoreUpdateWhenClusterSpecEqual(previous, readyReplicasCount)) {
                 return;
@@ -140,23 +128,48 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
             newTopologyIntent = ClusterTopologyIntent.SCALING;
         }
         if (clusterTopologyIntent.compareAndSet(previous, newTopologyIntent)) {
-            logger.info("Cluster topology intent: " + previous + " -> " + newTopologyIntent);
-            clusterTopologyExecutor.submit(() -> {
-                node.getNodeExtension().getInternalHotRestartService().onClusterTopologyIntentChange();
-                if (!node.isMaster()) {
-                    return;
-                }
-                if (newTopologyIntent == ClusterTopologyIntent.SCALING) {
-                    changeClusterState(ClusterState.ACTIVE);
-                } else if (newTopologyIntent == ClusterTopologyIntent.CLUSTER_STABLE) {
-                    if (getClusterService().getClusterState() != ClusterState.ACTIVE) {
-                        tryExecuteOrSetDeferredClusterStateChange(ClusterState.ACTIVE);
-                    } else if (!getPartitionService().isPartitionTableSafe()) {
-                        getPartitionService().getMigrationManager().triggerControlTask();
-                    }
-                }
-            });
+            onClusterTopologyIntentUpdate(previous, newTopologyIntent);
         }
+    }
+
+    private void handleInitialUpdate(int currentSpecifiedReplicaCount, int readyReplicasCount) {
+        if (currentSpecifiedReplicaCount > 0
+                && (readyReplicasCount == UNKNOWN || readyReplicasCount == 0)) {
+            // startup of first member of new cluster
+            logger.info("Cluster starting in managed context");
+            clusterTopologyIntent.set(ClusterTopologyIntent.CLUSTER_START);
+        } else {
+            logger.info("Member starting in managed context");
+            clusterTopologyIntent.set(ClusterTopologyIntent.IN_MANAGED_CONTEXT_UNKNOWN);
+        }
+    }
+
+    private ClusterTopologyIntent handleShutdownUpdate(int previousClusterSpecSizeValue, ClusterTopologyIntent previous) {
+        ClusterTopologyIntent newTopologyIntent;
+        if (previousClusterSpecSizeValue > 0) {
+            this.lastKnownStableClusterSpecSize = previousClusterSpecSizeValue;
+        }
+        newTopologyIntent = nextIntentWhenShuttingDown(previous);
+        return newTopologyIntent;
+    }
+
+    private void onClusterTopologyIntentUpdate(ClusterTopologyIntent previous, ClusterTopologyIntent newTopologyIntent) {
+        logger.info("Cluster topology intent: " + previous + " -> " + newTopologyIntent);
+        clusterTopologyExecutor.submit(() -> {
+            node.getNodeExtension().getInternalHotRestartService().onClusterTopologyIntentChange();
+            if (!node.isMaster()) {
+                return;
+            }
+            if (newTopologyIntent == ClusterTopologyIntent.SCALING) {
+                changeClusterState(ClusterState.ACTIVE);
+            } else if (newTopologyIntent == ClusterTopologyIntent.CLUSTER_STABLE) {
+                if (getClusterService().getClusterState() != ClusterState.ACTIVE) {
+                    tryExecuteOrSetDeferredClusterStateChange(ClusterState.ACTIVE);
+                } else if (!getPartitionService().isPartitionTableSafe()) {
+                    getPartitionService().getMigrationManager().triggerControlTask();
+                }
+            }
+        });
     }
 
     private ClusterTopologyIntent nextIntentWhenShuttingDown(ClusterTopologyIntent previous) {
