@@ -32,7 +32,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -54,14 +53,9 @@ public class SearchableExpressionCompatibilityTest extends HazelcastTestSupport 
         InternalSerializationService serializationService = getSerializationService(instance);
 
         for (String file : Arrays.asList(DAG_BASE64, EXECUTION_PLAN_BASE64)) {
-            try (
-                    InputStream inputStream = getSystemResourceAsStream(file);
-                    ByteArrayOutputStream bytes = new ByteArrayOutputStream();
-            ) {
+            try (InputStream inputStream = getSystemResourceAsStream(file)) {
                 assert inputStream != null;
-
-                IOUtil.copyStream(inputStream, bytes);
-                Data data = new HeapData(Base64.getDecoder().decode(bytes.toString()));
+                Data data = new HeapData(Base64.getDecoder().decode(IOUtil.readFully(inputStream)));
                 Object object = serializationService.toObject(data);
 
                 assert object instanceof DAG || object instanceof ExecutionPlan;
