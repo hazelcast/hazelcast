@@ -22,6 +22,7 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.core.JobStatus;
+import com.hazelcast.jet.datamodel.WindowResult;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
@@ -45,6 +46,8 @@ import java.util.Map.Entry;
 import java.util.Objects;
 
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.pipeline.WindowDefinition.sliding;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
@@ -402,6 +405,23 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
         assertThatThrownBy(job::join)
                 .hasRootCauseInstanceOf(JetException.class)
                 .hasStackTraceContaining("connector class io.debezium.connector.xxx.BlaBlaBla not found");
+    }
+
+    @Test
+    public void notFailWhenOldValueNotPresent() {
+        try (MySQLContainer<?> container = mySqlContainer()) {
+            container.start();
+            Pipeline pipeline = Pipeline.create();
+
+            // distinct causes hashCode to be used
+            StreamSource<ChangeRecord> source = mySqlSource(container);
+            pipeline.readFrom(source)
+                    .withNativeTimestamps(1)
+                    .setLocalParallelism(1)
+                    .window(sliding(SECONDS.toMillis(2), SECONDS.toMillis(1)))
+                    .distinct()
+                    .writeTo(Sinks.logger(WindowResult::toString));
+        }
     }
 
     private static class Customer {

@@ -177,12 +177,7 @@ public class ChangeRecordImpl implements ChangeRecord {
 
     @Override
     public int hashCode() {
-        int hash = (int) sequenceSource;
-        hash = 31 * hash + (int) sequenceValue;
-        hash = 31 * hash + keyJson.hashCode();
-        hash = 31 * hash + oldValue.toJson().hashCode();
-        hash = 31 * hash + newValue.toJson().hashCode();
-        return hash;
+        return Objects.hash(sequenceSource, sequenceValue, keyJson, oldValue, newValue);
     }
 
     @Override
