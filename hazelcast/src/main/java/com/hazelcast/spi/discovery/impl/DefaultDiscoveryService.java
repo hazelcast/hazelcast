@@ -25,6 +25,7 @@ import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
 import com.hazelcast.spi.discovery.NodeFilter;
+import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
 import com.hazelcast.internal.util.ServiceLoader;
@@ -50,12 +51,14 @@ public class DefaultDiscoveryService
     private final DiscoveryNode discoveryNode;
     private final NodeFilter nodeFilter;
     private final Iterable<DiscoveryStrategy> discoveryStrategies;
+    private final DiscoveryMode discoveryMode;
 
     public DefaultDiscoveryService(DiscoveryServiceSettings settings) {
         this.logger = settings.getLogger();
         this.discoveryNode = settings.getDiscoveryNode();
         this.nodeFilter = getNodeFilter(settings);
         this.discoveryStrategies = loadDiscoveryStrategies(settings);
+        this.discoveryMode = settings.getDiscoveryMode();
     }
 
     @Override
@@ -67,7 +70,7 @@ public class DefaultDiscoveryService
 
     @Override
     public Iterable<DiscoveryNode> discoverNodes() {
-        Set<DiscoveryNode> discoveryNodes = new HashSet<DiscoveryNode>();
+        Set<DiscoveryNode> discoveryNodes = new HashSet<>();
         for (DiscoveryStrategy discoveryStrategy : discoveryStrategies) {
             Iterable<DiscoveryNode> candidates = discoveryStrategy.discoverNodes();
 
@@ -132,11 +135,11 @@ public class DefaultDiscoveryService
         ClassLoader configClassLoader = settings.getConfigClassLoader();
 
         try {
-            Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs = new ArrayList<DiscoveryStrategyConfig>(
+            Collection<DiscoveryStrategyConfig> discoveryStrategyConfigs = new ArrayList<>(
                     settings.getAllDiscoveryConfigs());
             List<DiscoveryStrategyFactory> factories = collectFactories(discoveryStrategyConfigs, configClassLoader);
 
-            List<DiscoveryStrategy> discoveryStrategies = new ArrayList<DiscoveryStrategy>();
+            List<DiscoveryStrategy> discoveryStrategies = new ArrayList<>();
             for (DiscoveryStrategyConfig config : discoveryStrategyConfigs) {
                 DiscoveryStrategy discoveryStrategy = buildDiscoveryStrategy(config, factories);
                 discoveryStrategies.add(discoveryStrategy);
