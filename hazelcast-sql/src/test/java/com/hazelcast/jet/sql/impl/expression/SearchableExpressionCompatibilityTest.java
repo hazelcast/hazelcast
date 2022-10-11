@@ -53,7 +53,6 @@ public class SearchableExpressionCompatibilityTest extends HazelcastTestSupport 
         HazelcastInstance instance = factory.newHazelcastInstance();
         InternalSerializationService serializationService = getSerializationService(instance);
 
-
         for (String file : Arrays.asList(DAG_BASE64, EXECUTION_PLAN_BASE64)) {
             try (
                     InputStream inputStream = getSystemResourceAsStream(file);

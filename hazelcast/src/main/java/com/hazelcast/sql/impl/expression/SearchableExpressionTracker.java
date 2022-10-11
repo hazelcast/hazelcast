@@ -34,7 +34,7 @@ public final class SearchableExpressionTracker {
         return USED_EXPRESSIONS.get();
     }
 
-    public static void stopTracing() {
+    public static void stopTracking() {
         USED_EXPRESSIONS.remove();
     }
 
