@@ -20,10 +20,12 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.partition.impl.InternalPartitionServiceImpl;
+import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.utils.RetryUtils;
 
+import javax.annotation.Nullable;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -118,18 +120,25 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
         }
         final ClusterTopologyIntent previous = clusterTopologyIntent.get();
         ClusterTopologyIntent newTopologyIntent;
+        Runnable postUpdateActionOnMaster = null;
         if (currentSpecifiedReplicaCount == 0) {
             newTopologyIntent = handleShutdownUpdate(previousClusterSpecSizeValue, previous);
         } else if (previousSpecifiedReplicaCount == currentSpecifiedReplicaCount) {
             if (ignoreUpdateWhenClusterSpecEqual(previous, readyReplicasCount)) {
                 return;
             }
-            newTopologyIntent = nextIntentWhenClusterSpecEqual(previous, readyReplicasCount, currentReplicasCount);
+            BiTuple<ClusterTopologyIntent, Runnable> t =
+                    nextIntentWhenClusterSpecEqual(previous,
+                            previousReadyReplicasCount, readyReplicasCount,
+                            previousCurrentReplicasCount, currentReplicasCount);
+            newTopologyIntent = t.element1;
+            postUpdateActionOnMaster = t.element2;
         } else {
             newTopologyIntent = ClusterTopologyIntent.SCALING;
+            postUpdateActionOnMaster = () -> changeClusterState(ClusterState.ACTIVE);
         }
         if (clusterTopologyIntent.compareAndSet(previous, newTopologyIntent)) {
-            onClusterTopologyIntentUpdate(previous, newTopologyIntent);
+            onClusterTopologyIntentUpdate(previous, newTopologyIntent, postUpdateActionOnMaster);
         }
     }
 
@@ -154,21 +163,16 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
         return newTopologyIntent;
     }
 
-    private void onClusterTopologyIntentUpdate(ClusterTopologyIntent previous, ClusterTopologyIntent newTopologyIntent) {
+    private void onClusterTopologyIntentUpdate(ClusterTopologyIntent previous, ClusterTopologyIntent newTopologyIntent,
+                                               @Nullable Runnable actionOnMaster) {
         logger.info("Cluster topology intent: " + previous + " -> " + newTopologyIntent);
         clusterTopologyExecutor.submit(() -> {
             node.getNodeExtension().getInternalHotRestartService().onClusterTopologyIntentChange();
             if (!node.isMaster()) {
                 return;
             }
-            if (newTopologyIntent == ClusterTopologyIntent.SCALING) {
-                changeClusterState(ClusterState.ACTIVE);
-            } else if (newTopologyIntent == ClusterTopologyIntent.CLUSTER_STABLE) {
-                if (getClusterService().getClusterState() != ClusterState.ACTIVE) {
-                    tryExecuteOrSetDeferredClusterStateChange(ClusterState.ACTIVE);
-                } else if (!getPartitionService().isPartitionTableSafe()) {
-                    getPartitionService().getMigrationManager().triggerControlTask();
-                }
+            if (actionOnMaster != null) {
+                actionOnMaster.run();
             }
         });
     }
@@ -194,7 +198,7 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
                 || previous == ClusterTopologyIntent.CLUSTER_START)) {
             logger.info("Ignoring update because readyNodesCount is "
                     + readyNodesCount + ", while spec requires " + currentClusterSpecSize
-                    + " and previous cluster topology intent is" + previous);
+                    + " and previous cluster topology intent is " + previous);
             return true;
         }
         return false;
@@ -205,16 +209,41 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
      * in cluster size specification in managed context. (ie StatefulSetSpec.size remains the same, so
      * user does not intend a change in cluster size).
      */
-    private ClusterTopologyIntent nextIntentWhenClusterSpecEqual(ClusterTopologyIntent previous,
-                                                                 int readyNodesCount,
-                                                                 int currentNodesCount) {
-        if (readyNodesCount == currentClusterSpecSize && previous != ClusterTopologyIntent.CLUSTER_STABLE) {
-            return ClusterTopologyIntent.CLUSTER_STABLE;
-        } else if (previous == ClusterTopologyIntent.CLUSTER_STABLE && currentNodesCount < currentClusterSpecSize) {
-            return ClusterTopologyIntent.CLUSTER_STABLE_WITH_MISSING_MEMBERS;
-        } else {
-            return previous;
+    private BiTuple<ClusterTopologyIntent, Runnable> nextIntentWhenClusterSpecEqual(ClusterTopologyIntent previous,
+                                                         int previousReadyReplicas, int updatedReadyReplicas,
+                                                         int previousCurrentReplicas, int updatedCurrentReplicas) {
+        ClusterTopologyIntent next = previous;
+        Runnable action = null;
+        if (updatedReadyReplicas == currentClusterSpecSize) {
+            if (updatedCurrentReplicas < previousCurrentReplicas) {
+                if (updatedReadyReplicas == previousReadyReplicas) {
+                    // If updatedReady == previousReady and updatedCurrent < previousCurrent, then this is the beginning of a
+                    // rollout restart and readiness probe hasn't yet noticed.
+                    next = ClusterTopologyIntent.CLUSTER_STABLE_WITH_MISSING_MEMBERS;
+                } else if (updatedReadyReplicas > previousReadyReplicas) {
+                    // If updatedReady > previousReady and updatedCurrent < previousCurrent, then this is a coalesced Kubernetes
+                    // event in the middle of rollout restart. It marks at the same time a previously restarted member is now ready
+                    // and the next pod is going down for restart.
+                    next = ClusterTopologyIntent.CLUSTER_STABLE_WITH_MISSING_MEMBERS;
+                    if (clusterStateForMissingMembers == ClusterState.NO_MIGRATION) {
+                        // need to fix partition table before allowing next pod to restart
+                        action = () -> changeClusterState(ClusterState.ACTIVE);
+                    }
+                }
+            } else if (previous != ClusterTopologyIntent.CLUSTER_STABLE) {
+                next = ClusterTopologyIntent.CLUSTER_STABLE;
+                action = () -> {
+                    if (getClusterService().getClusterState() != ClusterState.ACTIVE) {
+                        tryExecuteOrSetDeferredClusterStateChange(ClusterState.ACTIVE);
+                    } else if (!getPartitionService().isPartitionTableSafe()) {
+                        getPartitionService().getMigrationManager().triggerControlTask();
+                    }
+                };
+            }
+        } else if (previous == ClusterTopologyIntent.CLUSTER_STABLE && updatedCurrentReplicas < currentClusterSpecSize) {
+            next = ClusterTopologyIntent.CLUSTER_STABLE_WITH_MISSING_MEMBERS;
         }
+        return BiTuple.of(next, action);
     }
 
     @Override

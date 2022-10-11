@@ -842,6 +842,11 @@ public class Node {
                 && clusterTopologyIntentTracker.getCurrentSpecifiedReplicaCount() == clusterService.getSize();
     }
 
+    public boolean isManagedClusterStable() {
+        return isClusterComplete()
+                && clusterTopologyIntentTracker.getClusterTopologyIntent() == ClusterTopologyIntent.CLUSTER_STABLE;
+    }
+
     public int currentSpecifiedReplicaCount() {
         return clusterTopologyIntentTracker.getCurrentSpecifiedReplicaCount();
     }

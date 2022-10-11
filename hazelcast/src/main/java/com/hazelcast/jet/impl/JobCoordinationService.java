@@ -834,7 +834,7 @@ public class JobCoordinationService {
             return false;
         }
         if (nodeEngine.getNode().isClusterStateManagementAutomatic()
-            && !nodeEngine.getNode().isClusterComplete()) {
+            && !nodeEngine.getNode().isManagedClusterStable()) {
             LoggingUtil.logFine(logger, "Not starting jobs because cluster is running in managed context "
                             + " and not all members are present. Expected cluster size: %d, current: %d.",
                     nodeEngine.getNode().currentSpecifiedReplicaCount(), nodeEngine.getClusterService().getSize());
