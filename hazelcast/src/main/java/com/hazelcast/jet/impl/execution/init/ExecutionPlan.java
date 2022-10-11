@@ -321,7 +321,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 out.writeObject(searchableExpression.getNullAs());
             }
         } finally {
-            SearchableExpressionTracker.stopTracing();
+            SearchableExpressionTracker.stopTracking();
         }
     }
 
@@ -338,17 +338,19 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
             memberCount = in.readInt();
             subject = ImdgUtil.readSubject(in);
             List<SearchableExpression<?>> searchableExpressions = SearchableExpressionTracker.getResults();
+            int searchableExpressionsCount = 0;
             try {
-                int serializedSearchableExpressions = in.readInt();
-                assert serializedSearchableExpressions == searchableExpressions.size();
-                for (SearchableExpression<?> searchableExpression : searchableExpressions) {
-                    searchableExpression.applyNullAs(in.readObject());
-                }
+                searchableExpressionsCount = in.readInt();
+                assert searchableExpressionsCount == searchableExpressions.size();
             } catch (EOFException ignored) {
-                // ignored, this may happen if ExecutionPlan from previous PATCH version is read.
+                // ignored, this may happen if ExecutionPlan from less than 5.1.4 version is read
+            }
+            for (int i = 0; i < searchableExpressionsCount; i++) {
+                SearchableExpression<?> searchableExpression = searchableExpressions.get(i);
+                searchableExpression.applyNullAs(in.readObject());
             }
         } finally {
-            SearchableExpressionTracker.stopTracing();
+            SearchableExpressionTracker.stopTracking();
         }
     }
 

@@ -564,7 +564,7 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
                 out.writeObject(searchableExpression.getNullAs());
             }
         } finally {
-            SearchableExpressionTracker.stopTracing();
+            SearchableExpressionTracker.stopTracking();
         }
     }
 
@@ -590,17 +590,18 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
             verticesByIdentity.addAll(nameToVertex.values());
             List<SearchableExpression<?>> searchableExpressions = SearchableExpressionTracker.getResults();
+            int searchableExpressionsCount = 0;
             try {
-                int serializedSearchableExpressions = in.readInt();
-                assert serializedSearchableExpressions == searchableExpressions.size();
-                for (SearchableExpression<?> searchableExpression : searchableExpressions) {
-                    searchableExpression.applyNullAs(in.readObject());
-                }
+                searchableExpressionsCount = in.readInt();
+                assert searchableExpressionsCount == searchableExpressions.size();
             } catch (EOFException ignored) {
-                // ignored, this may happen if DAG from previous PATCH version is read.
+                // ignored, this may happen if DAG from pre-5.1.4 version is read
+            }
+            for (int i = 0; i < searchableExpressionsCount; i++) {
+                searchableExpressions.get(i).applyNullAs(in.readObject());
             }
         } finally {
-            SearchableExpressionTracker.stopTracing();
+            SearchableExpressionTracker.stopTracking();
         }
     }
 
