@@ -174,7 +174,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
             // (like array list of Compact serialized objects).
             obj = toObject(data);
         }
-        byte[] bytes = toBytes(obj, 0, true, globalPartitioningStrategy, getByteOrder(), true);
+        byte[] bytes = toBytes(obj, 0, true, globalPartitioningStrategy, BIG_ENDIAN, true);
         return (B) new HeapData(bytes);
     }
 
