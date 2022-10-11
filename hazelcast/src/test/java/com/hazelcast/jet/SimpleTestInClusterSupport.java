@@ -22,6 +22,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -129,7 +130,13 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         }
         for (HazelcastInstance instance : instances) {
             assertTrueEventually(() -> {
+                // Let's wait for all unprocessed operations (like destroying distributed object) to complete
                 assertEquals(0, getNodeEngineImpl(instance).getEventService().getEventQueueSize());
+                // Let's wait for all the jobs to stop running
+                assertEquals(0, instance().getJet().getJobs().stream()
+                        .filter(job -> job.getStatus() == JobStatus.RUNNING)
+                        .count()
+                );
             });
         }
     }
