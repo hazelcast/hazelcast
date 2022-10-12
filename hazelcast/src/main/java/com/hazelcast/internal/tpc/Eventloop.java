@@ -71,6 +71,9 @@ public abstract class Eventloop implements Executor {
     protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     protected final MpmcArrayQueue concurrentRunQueue;
 
+    /**
+     * Allows for objects to be bound to this Eventloop. Useful for the lookup of services and other dependencies.
+     */
     public final ConcurrentMap context = new ConcurrentHashMap();
 
     protected final Scheduler scheduler;
@@ -242,11 +245,11 @@ public abstract class Eventloop implements Executor {
     }
 
     /**
-     * Awaits for the termination of the Eventloop.
+     * Awaits for the termination of the Eventloop with the given timeout.
      *
      * @param timeout the timeout
      * @param unit    the TimeUnit
-     * @return true if the Eventloop is terminated.
+     * @return true if the Eventloop is terminated at the moment the timeout happened.
      * @throws InterruptedException
      */
     public final boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
@@ -255,7 +258,7 @@ public abstract class Eventloop implements Executor {
     }
 
     /**
-     * Wakes up the {@link Eventloop} when it is blocked an needs to be woken up.
+     * Wakes up the {@link Eventloop} when it is blocked and needs to be woken up.
      */
     protected abstract void wakeup();
 
@@ -570,7 +573,6 @@ public abstract class Eventloop implements Executor {
         SHUTDOWN,
         TERMINATED
     }
-
 
     public interface Scheduler {
 

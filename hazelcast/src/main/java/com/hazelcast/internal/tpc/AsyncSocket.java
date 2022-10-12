@@ -40,6 +40,9 @@ import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
  */
 public abstract class AsyncSocket implements Closeable {
 
+    /**
+     * Allows for objects to be bound to this AsyncSocket. Useful for the lookup of services and other dependencies.
+     */
     public final ConcurrentMap context = new ConcurrentHashMap();
 
     protected final ILogger logger = Logger.getLogger(getClass());
