@@ -16,6 +16,7 @@
 
 package com.hazelcast.aws;
 
+import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -30,6 +31,8 @@ import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.then;
+import static org.mockito.Mockito.never;
 
 public class AwsEc2ClientTest {
     @Mock
@@ -46,7 +49,10 @@ public class AwsEc2ClientTest {
     @Before
     public void setUp() throws Exception {
         closeable = MockitoAnnotations.openMocks(this);
-        AwsConfig awsConfig = AwsConfig.builder().setCluster("CLUSTER").build();
+        AwsConfig awsConfig = AwsConfig.builder()
+                .setCluster("CLUSTER")
+                .setDiscoveryMode(DiscoveryMode.Member)
+                .build();
         awsEc2Client = new AwsEc2Client(awsEc2Api, awsEcsApi, awsMetadataApi, awsCredentialsProvider, awsConfig);
     }
 
@@ -106,7 +112,7 @@ public class AwsEc2ClientTest {
     }
 
     @Test
-    public void getEcsAddresses() {
+    public void doNotGetEcsAddressesMember() {
         AwsCredentials credentials = AwsCredentials.builder()
                 .setAccessKey("access-key")
                 .setSecretKey("secret-key")
@@ -115,6 +121,33 @@ public class AwsEc2ClientTest {
         Map<String, String> expectedResult = singletonMap("123.12.1.0", "1.4.6.2");
         ArrayList<String> privateIps = new ArrayList<>(expectedResult.keySet());
 
+        given(awsCredentialsProvider.credentials()).willReturn(credentials);
+        given(awsEc2Api.describeInstances(credentials)).willReturn(emptyMap());
+
+        // when
+        Map<String, String> result = awsEc2Client.getAddresses();
+
+        // then
+        then(awsEcsApi).should(never()).listTaskPrivateAddresses("CLUSTER", credentials);
+        then(awsEc2Api).should(never()).describeNetworkInterfaces(privateIps, credentials);
+        assertEquals(emptyMap(), result);
+    }
+
+    @Test
+    public void getEcsAddressesClient() {
+        AwsCredentials credentials = AwsCredentials.builder()
+                .setAccessKey("access-key")
+                .setSecretKey("secret-key")
+                .setToken("token")
+                .build();
+        Map<String, String> expectedResult = singletonMap("123.12.1.0", "1.4.6.2");
+        ArrayList<String> privateIps = new ArrayList<>(expectedResult.keySet());
+
+        AwsConfig awsConfig = AwsConfig.builder()
+                .setCluster("CLUSTER")
+                .setDiscoveryMode(DiscoveryMode.Client)
+                .build();
+        awsEc2Client = new AwsEc2Client(awsEc2Api, awsEcsApi, awsMetadataApi, awsCredentialsProvider, awsConfig);
         given(awsCredentialsProvider.credentials()).willReturn(credentials);
         given(awsEc2Api.describeInstances(credentials)).willReturn(emptyMap());
         given(awsEcsApi.listTaskPrivateAddresses("CLUSTER", credentials)).willReturn(privateIps);
