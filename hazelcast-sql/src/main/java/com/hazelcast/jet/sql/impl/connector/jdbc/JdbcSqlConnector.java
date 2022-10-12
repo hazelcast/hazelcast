@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.datastore.CloseableDataSource;
 import com.hazelcast.datastore.ExternalDataStoreFactory;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
@@ -172,9 +173,9 @@ public class JdbcSqlConnector implements SqlConnector {
     }
 
     private void closeDataSource(DataSource dataSource) {
-        if (dataSource instanceof AutoCloseable) {
+        if (dataSource instanceof CloseableDataSource) {
             try {
-                ((AutoCloseable) dataSource).close();
+                ((CloseableDataSource) dataSource).close();
             } catch (Exception e) {
                 throw new HazelcastException("Could not close datasource " + dataSource, e);
             }

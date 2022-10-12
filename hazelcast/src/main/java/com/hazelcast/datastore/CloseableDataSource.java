@@ -31,7 +31,7 @@ import java.util.logging.Logger;
  * @since 5.2
  */
 @Beta
-abstract class CloseableDataSource implements DataSource, AutoCloseable {
+public abstract class CloseableDataSource implements DataSource, AutoCloseable {
     private final DataSource dataSource;
 
     private CloseableDataSource(DataSource dataSource) {
@@ -84,7 +84,7 @@ abstract class CloseableDataSource implements DataSource, AutoCloseable {
     }
 
 
-    public static CloseableDataSource closing(DataSource dataSource) {
+    static CloseableDataSource closing(DataSource dataSource) {
         return new CloseableDataSource(dataSource) {
 
             @Override
@@ -96,7 +96,7 @@ abstract class CloseableDataSource implements DataSource, AutoCloseable {
         };
     }
 
-    public static CloseableDataSource nonClosing(DataSource dataSource) {
+    static CloseableDataSource nonClosing(DataSource dataSource) {
         return new CloseableDataSource(dataSource) {
 
             @Override

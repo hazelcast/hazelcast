@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
+import com.hazelcast.datastore.CloseableDataSource;
 import com.hazelcast.datastore.ExternalDataStoreFactory;
 import com.hazelcast.datastore.ExternalDataStoreService;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
@@ -52,8 +53,8 @@ abstract class AbstractJdbcSqlConnectorProcessorSupplier implements ProcessorSup
 
     @Override
     public void close(@Nullable Throwable error) throws Exception {
-        if (dataSource instanceof AutoCloseable) {
-            ((AutoCloseable) dataSource).close();
+        if (dataSource instanceof CloseableDataSource) {
+            ((CloseableDataSource) dataSource).close();
         }
     }
 }
