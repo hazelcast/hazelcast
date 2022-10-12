@@ -13,11 +13,7 @@
   ~ WITHOUT WARRANTIES OF ANY KIND, either express or implied.
   ~ See the License for the specific language governing permissions and
   ~ limitations under the License.
-  -->
-
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+  --><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
     <name>hazelcast-sql</name>
@@ -38,7 +34,7 @@
 
         <checkstyle.headerLocation>${project.parent.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt</checkstyle.headerLocation>
 
-        <calcite.version>1.31.0</calcite.version>
+        <calcite.version>1.32.0</calcite.version>
         <confluent.version>6.2.2</confluent.version>
         <jaxb.version>2.3.1</jaxb.version>
         <immutables.version>2.9.1</immutables.version>
@@ -296,14 +292,10 @@
                                 </relocation>
                             </relocations>
                             <transformers>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer"/>
-                                <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
-                                <transformer
-                                        implementation="com.hazelcast.buildutils.HazelcastLicenseResourceTransformer"/>
-                                <transformer
-                                        implementation="com.hazelcast.buildutils.HazelcastManifestTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer"/>
+                                <transformer implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
+                                <transformer implementation="com.hazelcast.buildutils.HazelcastLicenseResourceTransformer"/>
+                                <transformer implementation="com.hazelcast.buildutils.HazelcastManifestTransformer"/>
                             </transformers>
                             <filters combine.children="append">
                                 <filter>
