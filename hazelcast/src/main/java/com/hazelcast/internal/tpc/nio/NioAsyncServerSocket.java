@@ -56,7 +56,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
             this.selector = eventloop.selector;
             if (!eventloop.registerResource(this)) {
                 close();
-                throw new IllegalStateException("EventLoop is not running");
+                throw new IllegalStateException(eventloop + " is not running");
             }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -89,6 +89,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
 
     @Override
     public boolean isReusePort() {
+        // Not available on Java 8; probably use reflection to get this fixed.
 //        try {
 //            return serverSocketChannel.getOption(SO_REUSEPORT);
 //        } catch (IOException e) {
@@ -99,6 +100,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
 
     @Override
     public void setReusePort(boolean reusePort) {
+        // Not available on Java 8; probably use reflection to get this fixed.
 //        try {
 //            serverSocketChannel.setOption(SO_REUSEPORT, reusePort);
 //        } catch (IOException e) {

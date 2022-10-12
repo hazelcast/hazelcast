@@ -46,8 +46,6 @@ public class TpcBootstrap {
     public final InternalSerializationService ss;
     public final ILogger logger;
     private final Address thisAddress;
-    private final int socketCount;
-    //private final SocketConfig socketConfig;
     private final boolean writeThrough;
     private final boolean regularSchedule;
     public volatile boolean shuttingdown = false;
@@ -55,6 +53,9 @@ public class TpcBootstrap {
     private final Map<Eventloop, Supplier<? extends ReadHandler>> readHandlerSuppliers = new HashMap<>();
     private List<AsyncServerSocket> serverSockets = new ArrayList<>();
     private final boolean enabled;
+    private boolean tcpNoDelay = true;
+    private int receiveBufferSize = 128 * 1024;
+    private int sendBufferSize = 128 * 1024;
 
     public TpcBootstrap(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -64,10 +65,8 @@ public class TpcBootstrap {
         logger.info("TPC: " + (enabled ? "enabled" : "disabled"));
         this.writeThrough = Boolean.parseBoolean(getProperty("reactor.write-through", "false"));
         this.regularSchedule = Boolean.parseBoolean(getProperty("reactor.regular-schedule", "true"));
-        this.socketCount = Integer.parseInt(getProperty("reactor.channels", "" + Runtime.getRuntime().availableProcessors()));
         this.thisAddress = nodeEngine.getThisAddress();
         this.tpcEngine = newTpcEngine();
-       // this.socketConfig = new SocketConfig();
     }
 
     public boolean isEnabled() {
@@ -87,13 +86,7 @@ public class TpcBootstrap {
         configuration.setThreadFactory(AltoEventloopThread::new);
         configuration.setEventloopType(Eventloop.Type.NIO);
 
-        TpcEngine engine = new TpcEngine(configuration);
-
-        if (socketCount % engine.eventloopCount() != 0) {
-            throw new IllegalStateException("socket count is not multiple of eventloop count");
-        }
-
-        return engine;
+        return new TpcEngine(configuration);
     }
 
     public void start() {
@@ -118,17 +111,14 @@ public class TpcBootstrap {
         for (int k = 0; k < tpcEngine.eventloopCount(); k++) {
             NioEventloop eventloop = (NioEventloop) tpcEngine.eventloop(k);
 
-            Supplier<NioAsyncReadHandler> readHandlerSupplier = () -> {
-                out.println("TPC Server: Making ClientNioAsyncReadHandler");
-                //todo: we need to figure out the connection
-                return new ClientNioAsyncReadHandler(nodeEngine.getNode().clientEngine);
-            };
+            Supplier<NioAsyncReadHandler> readHandlerSupplier =
+                    () -> new ClientNioAsyncReadHandler(nodeEngine.getNode().clientEngine);
             readHandlerSuppliers.put(eventloop, readHandlerSupplier);
 
             try {
                 NioAsyncServerSocket serverSocket = NioAsyncServerSocket.open(eventloop);
                 serverSockets.add(serverSocket);
-                //serverSocket.receiveBufferSize(socketConfig.receiveBufferSize);
+                serverSocket.receiveBufferSize(receiveBufferSize);
                 serverSocket.reuseAddress(true);
                 int port = toPort(nodeEngine.getThisAddress(), k);
                 serverSocket.bind(new InetSocketAddress(thisAddress.getInetAddress(), port));
@@ -136,9 +126,9 @@ public class TpcBootstrap {
                     socket.readHandler(readHandlerSuppliers.get(eventloop).get());
                     socket.setWriteThrough(writeThrough);
                     socket.setRegularSchedule(regularSchedule);
-                    //socket.sendBufferSize(socketConfig.sendBufferSize);
-                    //socket.receiveBufferSize(socketConfig.receiveBufferSize);
-                   // socket.tcpNoDelay(socketConfig.tcpNoDelay);
+                    socket.sendBufferSize(sendBufferSize);
+                    socket.receiveBufferSize(receiveBufferSize);
+                    socket.tcpNoDelay(tcpNoDelay);
                     socket.keepAlive(true);
                     socket.activate(eventloop);
                 });

@@ -9,7 +9,7 @@ public class ClientMain {
 
     public static void main(String[] args) {
         System.setProperty("reactor.enabled", "true");
-        System.setProperty("reactor.count", "1");
+        System.setProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors());
         HazelcastInstance server = Hazelcast.newHazelcastInstance();
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
         System.out.println("Client created");
@@ -19,15 +19,15 @@ public class ClientMain {
         long startTime = System.currentTimeMillis();
 
         for (int k = 0; k < count; k++) {
-            if(k % 100000 == 0){
-                System.out.println("At:"+k);
+            if (k % 100000 == 0) {
+                System.out.println("At:" + k);
             }
             map.put(0, k);
         }
 
-        long duration = System.currentTimeMillis()-startTime;
-        double throughput = count * 1000f/duration;
-        System.out.println("Throughput:"+throughput+" op/s");
+        long duration = System.currentTimeMillis() - startTime;
+        double throughput = count * 1000f / duration;
+        System.out.println("Throughput:" + throughput + " op/s");
         System.exit(0);
     }
 
