@@ -539,7 +539,7 @@ public class NodeEngineImpl implements NodeEngine {
         operationService.reset();
     }
 
-    @SuppressWarnings("checkstyle:npathcomplexity")
+    @SuppressWarnings({"checkstyle:npathcomplexity", "cyclomaticcomplexity"})
     public void shutdown(boolean terminate) {
         logger.finest("Shutting down services...");
         if (sqlService != null) {
@@ -576,15 +576,8 @@ public class NodeEngineImpl implements NodeEngine {
         if (diagnostics != null) {
             diagnostics.shutdown();
         }
-
-        closeExternalDataStoreService();
-    }
-
-    private void closeExternalDataStoreService() {
-        try {
+        if (externalDataStoreService != null) {
             externalDataStoreService.close();
-        } catch (Exception e) {
-            logger.warning("Closing data stores failed", e);
         }
     }
 

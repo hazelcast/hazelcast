@@ -22,6 +22,7 @@ import com.hazelcast.datastore.ExternalDataStoreFactory;
 import com.hazelcast.datastore.ExternalDataStoreService;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.ClassLoaderUtil;
+import com.hazelcast.logging.ILogger;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,10 +33,12 @@ public class ExternalDataStoreServiceImpl implements ExternalDataStoreService {
     private final Map<String, ExternalDataStoreFactory<?>> dataStoreFactories = new ConcurrentHashMap<>();
     private final ClassLoader classLoader;
     private final Node node;
+    private final ILogger logger;
 
     public ExternalDataStoreServiceImpl(Node node, ClassLoader classLoader) {
         this.classLoader = classLoader;
         this.node = node;
+        this.logger = node.getLogger(ExternalDataStoreServiceImpl.class);
         for (Map.Entry<String, ExternalDataStoreConfig> entry : node.getConfig().getExternalDataStoreConfigs().entrySet()) {
             createFactory(entry.getValue());
         }
@@ -77,9 +80,13 @@ public class ExternalDataStoreServiceImpl implements ExternalDataStoreService {
     }
 
     @Override
-    public void close() throws Exception {
+    public void close() {
         for (ExternalDataStoreFactory<?> dataStoreFactory : dataStoreFactories.values()) {
-            dataStoreFactory.close();
+            try {
+                dataStoreFactory.close();
+            } catch (Exception e) {
+                logger.warning("Closing data stores failed", e);
+            }
         }
     }
 }
