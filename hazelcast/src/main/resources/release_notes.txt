@@ -2,7 +2,7 @@ This document lists the new features, enhancements, fixed issues and, removed or
 
 ## New Features
 
-* SQL stream-to-stream joins: You can now enrich the data of one stream with the data of another by joining them together.
+* SQL stream-to-stream joins: You can now correlate multiple streams of data with each other using the relational join operation.
 * Generic MapStore (BETA): You no longer need to write Java code to get data from an external data store, such as a relational database, into Hazelcast by implementing the
 `MapStore` or `MapLoader` interfaces.
 * JDBC connector (BETA): You can now use SQL to connect to and query any database that supports the JDBC interface.
@@ -19,7 +19,7 @@ There are cases when some CP members should not act as a leader. For example, a 
 
 ### SQL Engine
 
-* SQL storage now is able to replicate data to the newly joined members in the cluster. [#21632]
+* Multiple performance enhancements in the SQL engine.
 
 ### Distribution
 
@@ -85,6 +85,7 @@ This improves the split-brain recovery under even certain corner cases and ensur
   ** When the cluster is up, the client retries to connect for the configured wait time between retries
   ** During these reconnection attempts, the internal periodic task was outputting logs of connection failure for each second until the client connects to the cluster.
   [#21705]
+* SQL storage now is able to replicate data to the newly joined members in the cluster. [#21632]  
 * Fixed an issue where `NullPointerException` was thrown around the `CREATE JOB` statement which is using Kafka Sink connector when Kafka has no records yet. Now, it produces an appropriate log message. [#21460]
 * Fixed an issue where a cluster could not be formed when security is enabled, various client permissions are set, and multiple members are started simultaneously. [#21440]
 * Fixed an issue where data persistence and tiered storage configurations could not be added dynamically. [#21432]
