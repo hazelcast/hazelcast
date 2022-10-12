@@ -41,7 +41,7 @@ import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.LocalMapStats;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
-
+import com.hazelcast.core.ReadOnly;
 import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.Iterator;
@@ -503,7 +503,9 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         try {
             response = super.executeOnKeyInternal(key, entryProcessor);
         } finally {
-            invalidateNearCache(key);
+            if (!(entryProcessor instanceof ReadOnly)) {
+                invalidateNearCache(key);
+            }
         }
         return response;
     }
@@ -516,7 +518,9 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         try {
             future = super.submitToKeyInternal(key, entryProcessor);
         } finally {
-            invalidateNearCache(key);
+            if (!(entryProcessor instanceof ReadOnly)) {
+                invalidateNearCache(key);
+            }
         }
         return future;
     }
