@@ -51,10 +51,6 @@ See Offloading MapStore and MapLoader Operations. [#21651]
 * Introduced a way to configure AWS Asynchronous Client's executor service used by Jet engine's Kinesis sources and sinks (thread pool size, threads names pattern).
 For this purpose, `AwsConfig` is extended with an additional `executorServiceSupplier` field that allows to specify what executor service to be used. [#21075]
 
-### WAN Replication
-
-* Improved the way how acknowledgements are handled for WAN synchronization, such that they are now sent asynchronously. This makes the WAN synchronization progress much more reliable and WAN synchronization more resilient by doing retries if something goes wrong in any phase. [#21415]
-
 ### Other Enhancements
 
 * You can now provide comma-separated lists to give multiple labels for the Kubernetes Discovery Plugin configurations `service-label-name`, `service-label-value`, `pod-label-name`, and `pod-label-value`. [#22277]
@@ -78,7 +74,6 @@ This improves the split-brain recovery under even certain corner cases and ensur
 ## Fixes
 
 * Fixed an issue where map persistence was not working when configured programmatically. See https://github.com/vbekiaris/hazelcast/commit/e7828b8d3551bbfcb92bdc3cc5924edcdc530856.
-* Fixed an issue where the WAN synchronization for all maps when using the REST API was done for all the WAN replications instead of the replication specified in the REST call. [#22252]
 * Fixed an issue where the `IS NULL` condition was being ignored when there is another condition for the same column. [#22238]
 * Fixed an issue where the `IMap.get()` call was blocked when `NoNodeAvailableException` is thrown from the MapStore. [#22168]
 * Fixed an issue where `ClearBackupOperation` in maps was being reported as a slow operation on the members which was causing the entire cluster to be frozen. [#22082]
@@ -95,7 +90,6 @@ This improves the split-brain recovery under even certain corner cases and ensur
 * Fixed an issue where data persistence and tiered storage configurations could not be added dynamically. [#21432]
 * Fixed a data loss issue which was occurring with graceful shutdown with when a member (with zero backup) restarts on the same address. [#21428]
 * Fixed an issue where a map remains empty after a put operation when the `max-idle-seconds` configuration has the value of `Integer.MAX_VALUE`. [#21409]
-* Fixed an issue where the connections were dropping in an active-active WAN replication setup using advanced network configurations. [#21219]
 * Fixed an issue where a cluster was unresponsive when you perform a health check to see the members are in the safe state; cluster members were hanging in the `REPLICA_NOT_SYNC` state during such health checks. [#21145]
 * Fixed an issue where the statistics like puts and removals were not increasing when these operations are executed through Transactional interface. [#21086]
 * Fixed an issue where a set time-to-live (TTL) duration for an entry was ignoring the split seconds. For example, when you set TTL as 1 seconds and put an entry at 01:01:5.99 AM , then the entry was already
