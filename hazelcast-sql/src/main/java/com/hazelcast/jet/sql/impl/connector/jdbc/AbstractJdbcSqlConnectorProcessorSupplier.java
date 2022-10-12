@@ -48,7 +48,7 @@ abstract class AbstractJdbcSqlConnectorProcessorSupplier implements ProcessorSup
         ExternalDataStoreFactory<DataSource> factory = externalDataStoreService
                 .getExternalDataStoreFactory(externalDataStoreRef);
 
-        dataSource = factory.createDataStore();
+        dataSource = factory.getDataStore();
     }
 
     @Override

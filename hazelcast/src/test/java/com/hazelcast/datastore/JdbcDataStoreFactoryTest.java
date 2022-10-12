@@ -61,8 +61,8 @@ public class JdbcDataStoreFactoryTest {
                 .setShared(true);
         jdbcDataStoreFactory.init(config);
 
-        dataStore1 = jdbcDataStoreFactory.createDataStore();
-        dataStore2 = jdbcDataStoreFactory.createDataStore();
+        dataStore1 = jdbcDataStoreFactory.getDataStore();
+        dataStore2 = jdbcDataStoreFactory.getDataStore();
 
         assertThat(dataStore1).isNotNull();
         assertThat(dataStore2).isNotNull();
@@ -77,7 +77,7 @@ public class JdbcDataStoreFactoryTest {
                 .setShared(true);
         jdbcDataStoreFactory.init(config);
 
-        CloseableDataSource closeableDataSource = (CloseableDataSource) jdbcDataStoreFactory.createDataStore();
+        CloseableDataSource closeableDataSource = (CloseableDataSource) jdbcDataStoreFactory.getDataStore();
         closeableDataSource.close();
 
         ResultSet resultSet = executeQuery(closeableDataSource, "select 'some-name' as name");
@@ -96,7 +96,7 @@ public class JdbcDataStoreFactoryTest {
                 .setShared(false);
         jdbcDataStoreFactory.init(config);
 
-        CloseableDataSource closeableDataSource = (CloseableDataSource) jdbcDataStoreFactory.createDataStore();
+        CloseableDataSource closeableDataSource = (CloseableDataSource) jdbcDataStoreFactory.getDataStore();
         closeableDataSource.close();
 
         assertThatThrownBy(() -> executeQuery(closeableDataSource, "select 'some-name' as name"))
@@ -116,8 +116,8 @@ public class JdbcDataStoreFactoryTest {
                 .setShared(false);
         jdbcDataStoreFactory.init(config);
 
-        dataStore1 = jdbcDataStoreFactory.createDataStore();
-        dataStore2 = jdbcDataStoreFactory.createDataStore();
+        dataStore1 = jdbcDataStoreFactory.getDataStore();
+        dataStore2 = jdbcDataStoreFactory.getDataStore();
 
         assertThat(dataStore1).isNotNull();
         assertThat(dataStore2).isNotNull();
@@ -132,7 +132,7 @@ public class JdbcDataStoreFactoryTest {
                 .setShared(true);
         jdbcDataStoreFactory.init(config);
 
-        DataSource dataSource = jdbcDataStoreFactory.createDataStore();
+        DataSource dataSource = jdbcDataStoreFactory.getDataStore();
         jdbcDataStoreFactory.close();
 
         assertThatThrownBy(() -> executeQuery(dataSource, "select 'some-name' as name"))

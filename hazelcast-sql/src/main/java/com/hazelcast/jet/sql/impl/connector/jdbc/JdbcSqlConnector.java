@@ -185,7 +185,7 @@ public class JdbcSqlConnector implements SqlConnector {
     private static DataSource createDataStore(NodeEngine nodeEngine, String externalDataStoreRef) {
         final ExternalDataStoreFactory<DataSource> externalDataStoreFactory = nodeEngine.getExternalDataStoreService()
                 .getExternalDataStoreFactory(externalDataStoreRef);
-        return externalDataStoreFactory.createDataStore();
+        return externalDataStoreFactory.getDataStore();
     }
 
     private Set<String> readPrimaryKeyColumns(@Nonnull String externalName, Connection connection) {
