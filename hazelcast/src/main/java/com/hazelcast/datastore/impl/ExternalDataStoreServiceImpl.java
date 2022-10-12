@@ -41,10 +41,10 @@ public class ExternalDataStoreServiceImpl implements ExternalDataStoreService {
         }
     }
 
-    private ExternalDataStoreFactory<?> createFactory(ExternalDataStoreConfig config) {
+    private <DS> ExternalDataStoreFactory<DS> createFactory(ExternalDataStoreConfig config) {
         String className = config.getClassName();
         try {
-            ExternalDataStoreFactory<?> externalDataStoreFactory = ClassLoaderUtil.newInstance(classLoader, className);
+            ExternalDataStoreFactory<DS> externalDataStoreFactory = ClassLoaderUtil.newInstance(classLoader, className);
             externalDataStoreFactory.init(config);
             dataStoreFactories.put(config.getName(), externalDataStoreFactory);
             return externalDataStoreFactory;
