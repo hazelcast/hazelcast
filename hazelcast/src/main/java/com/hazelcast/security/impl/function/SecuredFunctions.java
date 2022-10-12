@@ -309,16 +309,6 @@ public final class SecuredFunctions {
         };
     }
 
-    public static <T> ProcessorSupplier readJdbcProcessorFnWithoutHolder(
-            String connectionUrl,
-            FunctionEx<ProcessorSupplier.Context, ? extends DataSource> newDataSourceFn,
-            ToResultSetFunction resultSetFn,
-            FunctionEx<? super ResultSet, ? extends T> mapOutputFn
-    ) {
-        return readJdbcProcessorFn(connectionUrl, newDataSourceFn::apply,
-                resultSetFn, mapOutputFn);
-    }
-
     public static FunctionEx<? super Processor.Context, ? extends BufferedWriter> createBufferedWriterFn(
             String host, int port, String charsetName
     ) {
