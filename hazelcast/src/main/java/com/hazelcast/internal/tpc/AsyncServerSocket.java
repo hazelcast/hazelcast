@@ -27,11 +27,14 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * A server socket that is asynchronous. So accepting incomming connections does not block,
+ * A server socket that is asynchronous. So accepting incoming connections does not block,
  * but are executed on an {@link Eventloop}.
  */
 public abstract class AsyncServerSocket implements Closeable {
 
+    /**
+     * Allows for objects to be bound to this AsyncServerSocket. Useful for the lookup of services and other dependencies.
+     */
     public final ConcurrentMap context = new ConcurrentHashMap();
 
     protected final ILogger logger = Logger.getLogger(getClass());
