@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.internal.bootstrap;
 
 import com.hazelcast.client.impl.ClientEndpoint;
@@ -16,10 +32,10 @@ import java.util.UUID;
 
 public class ClientNioAsyncReadHandler extends NioAsyncReadHandler {
 
-    private Connection connection;
     private final ClientEngine clientEngine;
     private final ClientMessageReader clientMessageReader = new ClientMessageReader(0);
     private boolean protocolBytesReceived = false;
+    private Connection connection;
 
     public ClientNioAsyncReadHandler(ClientEngine clientEngine) {
         this.clientEngine = clientEngine;
@@ -47,7 +63,7 @@ public class ClientNioAsyncReadHandler extends NioAsyncReadHandler {
                 // now we need to install the socket on the connection
             } else {
                 message.setConnection(connection);
-                message.asyncSocket = socket;
+                message.setAsyncSocket(socket);
                 clientEngine.accept(message);
             }
         }
@@ -59,7 +75,6 @@ public class ClientNioAsyncReadHandler extends NioAsyncReadHandler {
         if (clientEndpoint == null) {
             throw new IllegalStateException("Could not find connection for client-uuid:" + clientUUID);
         }
-        System.out.println("-----------------Attaching client " + socket + " to client connection " + connection);
         connection = clientEndpoint.getConnection();
     }
 
@@ -68,7 +83,6 @@ public class ClientNioAsyncReadHandler extends NioAsyncReadHandler {
         for (int k = 0; k < 3; k++) {
             sb.append((char) buffer.get());
         }
-        System.out.println("protocol: [" + sb + "]");
         protocolBytesReceived = true;
     }
 

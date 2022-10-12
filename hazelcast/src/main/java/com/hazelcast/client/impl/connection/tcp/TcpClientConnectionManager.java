@@ -944,30 +944,30 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     private TcpClientConnection onAuthenticated(TcpClientConnection connection,
                                                 ClientAuthenticationCodec.ResponseParameters response,
                                                 boolean switchingToNextCluster) {
+        List<Integer> tpcPorts = new ArrayList<>();
+        if (!StringUtil.isNullOrEmpty(response.tpcPorts)) {
+            String[] ports = response.tpcPorts.split(",");
+            for (int k = 0; k < ports.length; k++) {
+                tpcPorts.add(Integer.parseInt(ports[k]));
+            }
+        }
+
         synchronized (clientStateMutex) {
             checkAuthenticationResponse(connection, response);
             connection.setRemoteAddress(response.address);
             connection.setRemoteUuid(response.memberUuid);
             connection.setClusterUuid(response.clusterId);
 
-            List<Integer> tpcPorts = new ArrayList<>();
-            if (!StringUtil.isNullOrEmpty(response.tpcPorts)) {
-                String[] ports = response.tpcPorts.split(",");
-                for (int k = 0; k < ports.length; k++) {
-                    tpcPorts.add(Integer.parseInt(ports[k]));
-                }
-            }
-
             if (tpcPorts.isEmpty()) {
-                System.out.println("TPC Client: disabled, no TPC ports detected");
+                logger.info("TPC Client: disabled, no TPC ports detected");
             } else {
                 try {
-                    System.out.println("TPC Client: connecting to ports " + tpcPorts);
+                    logger.info("TPC Client: connecting to ports (" + tpcPorts.size() + "): " + tpcPorts);
 
                     Channel[] tpcChannels = new Channel[tpcPorts.size()];
                     for (int k = 0; k < tpcChannels.length; k++) {
                         Address address = new Address(connection.getRemoteAddress().getHost(), tpcPorts.get(k));
-                        System.out.println("TPC Client: Connecting to:" + address);
+                        logger.info("TPC Client: Connecting to:" + address);
                         SocketChannel tpcSocketChannel = SocketChannel.open();
 
                         Channel tpcChannel = networking.register(connection.channelInitializer, tpcSocketChannel, true);
@@ -978,15 +978,11 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
                         tpcChannel.connect(tpcSocketChannelAddress, connectionTimeoutMillis);
 
-                        System.out.println("TPC Client: Successfully connected to " + tpcSocketChannelAddress);
-                        System.out.println("TPC Client: configure blocking");
+                        logger.info("TPC Client: Successfully connected to " + tpcSocketChannelAddress);
 
                         tpcSocketChannel.configureBlocking(false);
-                        System.out.println("TPC Client: channel.start");
 
                         tpcChannel.start();
-
-                        System.out.println("TPC Client: started");
 
                         // first thing we need to send is the clientUuid so this new socket can be connected
                         // to the connection on the member.
@@ -996,14 +992,13 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                         encodeUUID(initialFrame.content, 0, clientUuid);
                         clientUuidMessage.add(initialFrame);
                         tpcChannel.write(clientUuidMessage);
-                        System.out.println("TPC Client: uuid send, size:" + initialFrame.getSize());
-
                         tpcChannels[k] = tpcChannel;
                     }
 
-                    System.out.println("TPC Client: all connections made ");
+                    logger.info("TPC Client: all connections made ");
                     connection.setTpcChannels(tpcChannels);
                 } catch (IOException e) {
+                    // TODO: Improved handling.
                     e.printStackTrace();
                 }
             }

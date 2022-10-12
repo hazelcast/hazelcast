@@ -228,7 +228,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
 
         if(messageTask instanceof AbstractMessageTask){
             AbstractMessageTask abstractMessageTask = (AbstractMessageTask) messageTask;
-            abstractMessageTask.asyncSocket = clientMessage.asyncSocket;
+            abstractMessageTask.asyncSocket = clientMessage.getAsyncSocket();
             abstractMessageTask.responseBufAllocator = responseBufAllocator;
         }
         OperationServiceImpl operationService = nodeEngine.getOperationService();

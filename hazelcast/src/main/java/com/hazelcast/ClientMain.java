@@ -15,7 +15,7 @@ public class ClientMain {
         System.out.println("Client created");
         IMap map = client.getMap("foo");
 
-        long count = 2_000_000;
+        long count = 4_000_000;
         long startTime = System.currentTimeMillis();
 
         for (int k = 0; k < count; k++) {

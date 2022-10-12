@@ -48,7 +48,7 @@ public class TpcBootstrap {
     private final Address thisAddress;
     private final boolean writeThrough;
     private final boolean regularSchedule;
-    public volatile boolean shuttingdown = false;
+    public volatile boolean shutdown = false;
     private TpcEngine tpcEngine;
     private final Map<Eventloop, Supplier<? extends ReadHandler>> readHandlerSuppliers = new HashMap<>();
     private List<AsyncServerSocket> serverSockets = new ArrayList<>();
@@ -149,7 +149,7 @@ public class TpcBootstrap {
 
         logger.info("TcpBootstrap shutdown");
 
-        shuttingdown = true;
+        shutdown = true;
         tpcEngine.shutdown();
 
         try {
