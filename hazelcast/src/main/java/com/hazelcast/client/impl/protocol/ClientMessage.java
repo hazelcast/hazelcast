@@ -138,7 +138,7 @@ public final class ClientMessage implements OutboundFrame {
     private transient Connection connection;
     private transient boolean containsSerializedDataInRequest;
 
-    public AsyncSocket asyncSocket;
+    private AsyncSocket asyncSocket;
 
     private ClientMessage() {
 
@@ -257,6 +257,14 @@ public final class ClientMessage implements OutboundFrame {
 
     public void setConnection(Connection connection) {
         this.connection = connection;
+    }
+
+    public void setAsyncSocket(AsyncSocket asyncSocket) {
+        this.asyncSocket = asyncSocket;
+    }
+
+    public AsyncSocket getAsyncSocket() {
+        return asyncSocket;
     }
 
     public Connection getConnection() {
