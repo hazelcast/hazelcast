@@ -77,7 +77,7 @@ public class State {
     private volatile boolean disableWanReplicationEvent;
     private volatile boolean triggerMapLoader;
     private volatile boolean shouldLoad;
-    private volatile boolean changeExpiryOnUpdate;
+    private volatile boolean changeExpiryOnUpdate = true;
     private volatile Object oldValue;
     private volatile Object newValue;
     private volatile Object result;
