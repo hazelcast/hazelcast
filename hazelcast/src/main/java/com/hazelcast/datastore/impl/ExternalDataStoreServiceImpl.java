@@ -65,7 +65,7 @@ public class ExternalDataStoreServiceImpl implements ExternalDataStoreService {
     public ExternalDataStoreFactory<?> getExternalDataStoreFactory(String name) {
         ExternalDataStoreFactory<?> externalDataStoreFactory = dataStoreFactories.get(name);
         if (externalDataStoreFactory == null) {
-            ExternalDataStoreConfig externalDataStoreConfig = node.getConfig().getExternalDataStoreConfig(name);
+            ExternalDataStoreConfig externalDataStoreConfig = node.getConfig().getExternalDataStoreConfigs().get(name);
             if (externalDataStoreConfig != null) {
                 return createFactory(externalDataStoreConfig);
             }
