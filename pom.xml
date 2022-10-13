@@ -86,7 +86,7 @@
         <codehause.license.plugin.version>2.0.0</codehause.license.plugin.version>
 
         <!-- Version of the client used in Hazelcast 3 connector -->
-        <hazelcast-3.version>3.12.12</hazelcast-3.version>
+        <hazelcast-3.version>3.12.13</hazelcast-3.version>
 
         <!-- Third-party dependencies (sorted alphabetically) -->
         <!--<affinity.version>3.2.3</affinity.version>-->
