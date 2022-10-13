@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.datastore;
+package com.hazelcast.datastore.impl;
 
 import com.hazelcast.spi.annotation.Beta;
 
@@ -83,8 +83,7 @@ public abstract class CloseableDataSource implements DataSource, AutoCloseable {
         return dataSource.getParentLogger();
     }
 
-
-    static CloseableDataSource closing(DataSource dataSource) {
+    public static CloseableDataSource closing(DataSource dataSource) {
         return new CloseableDataSource(dataSource) {
 
             @Override
@@ -96,7 +95,7 @@ public abstract class CloseableDataSource implements DataSource, AutoCloseable {
         };
     }
 
-    static CloseableDataSource nonClosing(DataSource dataSource) {
+    public static CloseableDataSource nonClosing(DataSource dataSource) {
         return new CloseableDataSource(dataSource) {
 
             @Override
