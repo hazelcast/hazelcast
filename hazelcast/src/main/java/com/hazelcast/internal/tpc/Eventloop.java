@@ -421,7 +421,7 @@ public abstract class Eventloop implements Executor {
      * Contains the Configuration for the {@link Eventloop}.
      */
     public static class Configuration {
-        private boolean spin = Boolean.parseBoolean(getProperty("reactor.spin", "false"));
+        private boolean spin = Boolean.parseBoolean(getProperty("hazelcast.tpc.eventloop.spin", "false"));
         private Scheduler scheduler = new NopScheduler();
         private int localRunQueueCapacity = 1024;
         private int concurrentRunQueueCapacity = 4096;

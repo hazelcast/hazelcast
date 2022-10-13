@@ -61,10 +61,10 @@ public class TpcBootstrap {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(TpcBootstrap.class);
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
-        this.enabled = Boolean.parseBoolean(getProperty("reactor.enabled", "false"));
+        this.enabled = Boolean.parseBoolean(getProperty("hazelcast.tpc.enabled", "false"));
         logger.info("TPC: " + (enabled ? "enabled" : "disabled"));
-        this.writeThrough = Boolean.parseBoolean(getProperty("reactor.write-through", "false"));
-        this.regularSchedule = Boolean.parseBoolean(getProperty("reactor.regular-schedule", "true"));
+        this.writeThrough = Boolean.parseBoolean(getProperty("hazelcast.tpc.write-through", "false"));
+        this.regularSchedule = Boolean.parseBoolean(getProperty("hazelcast.tpc.regular-schedule", "true"));
         this.thisAddress = nodeEngine.getThisAddress();
         this.tpcEngine = newTpcEngine();
     }

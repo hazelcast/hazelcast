@@ -351,7 +351,7 @@ final class MobyNames {
             // Pierre de Fermat pioneered several aspects of modern mathematics. https://en.wikipedia.org/wiki/Pierre_de_Fermat
             "fermat",
 
-            // Enrico Fermi invented the first nuclear reactor. https://en.wikipedia.org/wiki/Enrico_Fermi.
+            // Enrico Fermi invented the first nuclear hazelcast.tpc. https://en.wikipedia.org/wiki/Enrico_Fermi.
             "fermi",
 
             // Richard Feynman was a key contributor to quantum mechanics and particle physics.
