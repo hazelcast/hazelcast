@@ -21,6 +21,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -48,16 +49,26 @@ class AwsEc2Client implements AwsClient {
     @Override
     public Map<String, String> getAddresses() {
         AwsCredentials credentials = awsCredentialsProvider.credentials();
-        Map<String, String> instances = awsEc2Api.describeInstances(credentials);
+        Map<String, String> instances = Collections.emptyMap();
+        if (!awsConfig.anyOfEcsPropertiesConfigured()) {
+            instances = awsEc2Api.describeInstances(credentials);
+        }
+        if (awsConfig.anyOfEc2PropertiesConfigured()) {
+            return instances;
+        }
         if (instances.isEmpty() && DiscoveryMode.Client == awsConfig.getDiscoveryMode()) {
-            if (isNullOrEmptyAfterTrim(awsConfig.getCluster())) {
-                throw new InvalidConfigurationException("You must define 'cluster' property if not running inside ECS cluster");
-            }
-            List<String> taskAddresses = awsEcsApi.listTaskPrivateAddresses(awsConfig.getCluster(), credentials);
-            LOGGER.fine(String.format("AWS ECS DescribeTasks found the following addresses: %s", taskAddresses));
-            return awsEc2Api.describeNetworkInterfaces(taskAddresses, credentials);
+            return getEcsAddresses(credentials);
         }
         return instances;
+    }
+
+    private Map<String, String> getEcsAddresses(AwsCredentials credentials) {
+        if (isNullOrEmptyAfterTrim(awsConfig.getCluster())) {
+            throw new InvalidConfigurationException("You must define 'cluster' property if not running inside ECS cluster");
+        }
+        List<String> taskAddresses = awsEcsApi.listTaskPrivateAddresses(awsConfig.getCluster(), credentials);
+        LOGGER.fine(String.format("AWS ECS DescribeTasks found the following addresses: %s", taskAddresses));
+        return awsEc2Api.describeNetworkInterfaces(taskAddresses, credentials);
     }
 
     @Override
