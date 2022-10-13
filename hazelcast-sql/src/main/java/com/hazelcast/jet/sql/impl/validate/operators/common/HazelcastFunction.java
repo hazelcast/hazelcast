@@ -16,8 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.validate.operators.common;
 
-import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
+import com.hazelcast.sql.impl.QueryException;
 import org.apache.calcite.sql.SqlCallBinding;
 import org.apache.calcite.sql.SqlFunction;
 import org.apache.calcite.sql.SqlFunctionCategory;

@@ -88,4 +88,17 @@ public class KeyedWatermarkCoalescerTest extends JetTestSupport {
         assertEquals(emptyList(), kwc.observeWm(0, IDLE_MESSAGE));
         assertEquals(asList(wm(42), IDLE_MESSAGE), kwc.observeWm(1, IDLE_MESSAGE));
     }
+
+    @Test
+    public void test_oneQueueDoneOtherIdle_then_allIdle() {
+        assertEquals(emptyList(), kwc.queueDone(0));
+        assertEquals(singletonList(IDLE_MESSAGE), kwc.observeWm(1, IDLE_MESSAGE));
+    }
+
+    @Test
+    public void test_q1IdleThenActiveThenQ2Idle_then_notAllIdle() {
+        assertEquals(emptyList(), kwc.observeWm(0, IDLE_MESSAGE));
+        kwc.observeEvent(0);
+        assertEquals(emptyList(), kwc.observeWm(1, IDLE_MESSAGE));
+    }
 }

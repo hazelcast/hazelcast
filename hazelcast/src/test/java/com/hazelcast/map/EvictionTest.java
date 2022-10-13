@@ -1311,7 +1311,9 @@ public class EvictionTest extends HazelcastTestSupport {
     }
 
     protected MapConfig newMapConfig(String mapName) {
-        return new MapConfig(mapName).setStatisticsEnabled(statisticsEnabled);
+        return new MapConfig(mapName)
+                .setStatisticsEnabled(statisticsEnabled)
+                .setPerEntryStatsEnabled(perEntryStatsEnabled);
     }
 
     private Config newConfig(String mapName, int maxSize, MaxSizePolicy maxSizePolicy) {

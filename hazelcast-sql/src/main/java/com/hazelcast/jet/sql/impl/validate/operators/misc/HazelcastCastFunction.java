@@ -16,11 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.validate.operators.misc;
 
-import com.hazelcast.sql.SqlColumnType;
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
 import com.hazelcast.jet.sql.impl.validate.HazelcastResources;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastFunction;
 import com.hazelcast.jet.sql.impl.validate.param.NoOpParameterConverter;
+import com.hazelcast.sql.SqlColumnType;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlCall;
 import org.apache.calcite.sql.SqlCallBinding;

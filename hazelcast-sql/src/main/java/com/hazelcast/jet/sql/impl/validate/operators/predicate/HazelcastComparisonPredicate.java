@@ -17,8 +17,8 @@
 package com.hazelcast.jet.sql.impl.validate.operators.predicate;
 
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
-import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ComparisonOperatorOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastBinaryOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.typeinference.ComparisonOperatorOperandTypeInference;
 import org.apache.calcite.sql.SqlBinaryOperator;
 import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.fun.SqlStdOperatorTable;

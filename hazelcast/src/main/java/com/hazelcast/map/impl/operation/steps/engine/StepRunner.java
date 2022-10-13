@@ -29,7 +29,6 @@ import com.hazelcast.spi.properties.HazelcastProperty;
 
 import javax.annotation.Nullable;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
@@ -60,8 +59,7 @@ public class StepRunner extends Offload
     public static final ThreadLocal<Boolean> CURRENTLY_EXECUTING_ON_PARTITION_THREAD
             = ThreadLocal.withInitial(() -> false);
 
-    private static final long DEFAULT_MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS
-            = TimeUnit.MILLISECONDS.toNanos(5);
+    private static final long DEFAULT_MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS = 0;
     private static final String PROP_MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS
             = "hazelcast.internal.map.mapstore.max.successive.offloaded.operation.run.nanos";
     private static final HazelcastProperty MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS
@@ -157,14 +155,15 @@ public class StepRunner extends Offload
                 return;
             }
 
-            // if there are many offloadedOperations belonging for
-            // a specific map, this step-runner tries to run all in
-            // one go. Let's assume all steps are partition-runnable,
-            // and can run on partition thread, in this case, to
-            // prevent unfair usage of partition thread, we put
-            // an upper time-limit with maxRunNanos, so a map
-            // cannot make a partition thread busy indefinitely
-            // and other operations can have a chance to run.
+            // Independent of the number of queued offloadedOperations,
+            // this step-runner tries to run all queued operation in
+            // one go. This may cause biased usage of partition thread
+            // for the favour of operating map. To prevent this, one
+            // can put max execution time-limit with `maxRunNanos`
+            // setting, so partition operations of other maps don't
+            // wait longer but if there is a few maps, this setting
+            // can cause increased latencies as a side effect.
+            // Default value of `maxRunNanos` is zero.
             if (maxRunNanos > 0 && runningOnPartitionThread
                     && System.nanoTime() - start >= maxRunNanos) {
                 step = stepSupplier.get();

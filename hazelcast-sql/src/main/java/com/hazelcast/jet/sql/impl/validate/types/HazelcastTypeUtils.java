@@ -38,8 +38,8 @@ import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_DAY_SECOND;
 import static org.apache.calcite.sql.type.SqlTypeName.INTERVAL_YEAR_MONTH;
 import static org.apache.calcite.sql.type.SqlTypeName.NULL;
 import static org.apache.calcite.sql.type.SqlTypeName.OTHER;
-import static org.apache.calcite.sql.type.SqlTypeName.UNKNOWN;
 import static org.apache.calcite.sql.type.SqlTypeName.ROW;
+import static org.apache.calcite.sql.type.SqlTypeName.UNKNOWN;
 
 /**
  * Provides utilities to map from Calcite's {@link SqlTypeName} to {@link
