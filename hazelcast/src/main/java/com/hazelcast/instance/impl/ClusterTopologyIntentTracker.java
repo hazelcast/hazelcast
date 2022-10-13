@@ -102,6 +102,17 @@ public interface ClusterTopologyIntentTracker {
     ClusterTopologyIntent getClusterTopologyIntent();
 
     /**
+     * Initialize this tracker, if the tracker supports it. This method must be called first, before the tracker
+     * can receive any updates.
+     */
+    void initialize();
+
+    /**
+     * Prepare this tracker for shutdown.
+     */
+    void shutdown();
+
+    /**
      * Initialize explicitly the cluster topology intent.
      * @param clusterTopologyIntent
      */

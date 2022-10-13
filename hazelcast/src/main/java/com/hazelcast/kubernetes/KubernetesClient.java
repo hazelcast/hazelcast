@@ -92,6 +92,9 @@ class KubernetesClient {
         this.servicePerPodLabelName = servicePerPodLabelName;
         this.servicePerPodLabelValue = servicePerPodLabelValue;
         this.clusterTopologyIntentTracker = clusterTopologyIntentTracker;
+        if (clusterTopologyIntentTracker != null) {
+            clusterTopologyIntentTracker.initialize();
+        }
         this.apiProvider =  buildKubernetesApiUrlProvider();
         this.stsName = extractStsName();
         this.stsMonitorThread = clusterTopologyIntentTracker != null
@@ -125,6 +128,9 @@ class KubernetesClient {
     }
 
     public void destroy() {
+        if (clusterTopologyIntentTracker != null) {
+            clusterTopologyIntentTracker.shutdown();
+        }
         if (stsMonitorThread != null) {
             LOGGER.info("Interrupting StatefulSet monitor thread");
             stsMonitorThread.interrupt();
@@ -693,7 +699,7 @@ class KubernetesClient {
          * Initializes and watches information about the StatefulSet in which Hazelcast is being executed.
          * See <a href="https://kubernetes.io/docs/reference/using-api/api-concepts/#efficient-detection-of-changes">
          * Efficient detection of changes on Kubernetes API reference</a>.
-         *
+         * <p>
          * Important: If this thread starves, then timely updates may be stalled and shutdown hook
          * may not act on the latest cluster information.
          */

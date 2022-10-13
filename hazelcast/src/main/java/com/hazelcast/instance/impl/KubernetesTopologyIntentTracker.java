@@ -91,6 +91,8 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
      */
     private volatile int currentClusterSize;
 
+    private volatile boolean enabled;
+
     public KubernetesTopologyIntentTracker(Node node) {
         this.clusterStateForMissingMembers = node.getProperties()
                 .getEnum(PERSISTENCE_AUTO_CLUSTER_STATE_STRATEGY, ClusterState.class);
@@ -104,6 +106,12 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
         this.node = node;
     }
 
+    @Override
+    public void initialize() {
+        enabled = true;
+    }
+
+    @Override
     public void shutdown() {
         clusterTopologyExecutor.shutdown();
     }
@@ -362,7 +370,7 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
 
     @Override
     public boolean isEnabled() {
-        return true;
+        return enabled;
     }
 
     @Override

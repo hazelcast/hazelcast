@@ -30,6 +30,14 @@ public class NoOpClusterTopologyIntentTracker implements ClusterTopologyIntentTr
     }
 
     @Override
+    public void initialize() {
+    }
+
+    @Override
+    public void shutdown() {
+    }
+
+    @Override
     public void initializeClusterTopologyIntent(ClusterTopologyIntent clusterTopologyIntent) {
     }
 
