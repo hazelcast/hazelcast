@@ -191,7 +191,7 @@ public class ChangeRecordImpl implements ChangeRecord {
         ChangeRecordImpl that = (ChangeRecordImpl) obj;
         return this.sequenceSource == that.sequenceSource
                 && this.sequenceValue == that.sequenceValue
-                && this.keyJson.equals(that.keyJson)
+                && Objects.equals(this.keyJson, that.keyJson)
                 && Objects.equals(this.oldValue, that.oldValue)
                 && Objects.equals(this.newValue, that.newValue);
     }
