@@ -141,9 +141,9 @@ final class AwsClientConfigurator {
             return awsConfig.getCluster();
         }
         if (environment.isRunningOnEcs()) {
-            String clusterArn = metadataApi.metadataEcs().getClusterArn();
-            LOGGER.info("No ECS cluster defined, using current cluster: " + clusterArn);
-            return clusterArn;
+            String cluster = metadataApi.clusterEcs();
+            LOGGER.info("No ECS cluster defined, using current cluster: " + cluster);
+            return cluster;
         }
         throw new InvalidConfigurationException("You must define 'cluster' property if not running inside ECS cluster");
     }

@@ -73,10 +73,7 @@ class AwsMetadataApi {
     }
 
     String availabilityZoneEcs() {
-        String uri = ecsTaskMetadataEndpoint.concat("/task");
-        String response = createRestClient(uri, awsConfig).get().getBody();
-        JsonObject metadata = Json.parse(response).asObject();
-        return metadata.get("AvailabilityZone").asString();
+        return getTaskMetadata().get("AvailabilityZone").asString();
     }
 
     Optional<String> placementGroupEc2() {
@@ -85,6 +82,10 @@ class AwsMetadataApi {
 
     Optional<String> placementPartitionNumberEc2() {
         return getOptionalMetadata(ec2MetadataEndpoint.concat("/placement/partition-number/"), "partition number");
+    }
+
+    String clusterEcs() {
+        return getTaskMetadata().get("Cluster").asString();
     }
 
     /**
@@ -119,6 +120,12 @@ class AwsMetadataApi {
         }
     }
 
+    private JsonObject getTaskMetadata() {
+        String uri = ecsTaskMetadataEndpoint.concat("/task");
+        String response = createRestClient(uri, awsConfig).get().getBody();
+        return Json.parse(response).asObject();
+    }
+
     String defaultIamRoleEc2() {
         String uri = ec2MetadataEndpoint.concat(SECURITY_CREDENTIALS_URI);
         return createRestClient(uri, awsConfig).get().getBody();
@@ -142,36 +149,5 @@ class AwsMetadataApi {
             .setSecretKey(role.getString("SecretAccessKey", null))
             .setToken(role.getString("Token", null))
             .build();
-    }
-
-    EcsMetadata metadataEcs() {
-        String response = createRestClient(ecsTaskMetadataEndpoint, awsConfig).get().getBody();
-        return parseEcsMetadata(response);
-    }
-
-    private EcsMetadata parseEcsMetadata(String response) {
-        JsonObject metadata = Json.parse(response).asObject();
-        JsonObject labels = metadata.get("Labels").asObject();
-        String taskArn = labels.get("com.amazonaws.ecs.task-arn").asString();
-        String clusterArn = labels.get("com.amazonaws.ecs.cluster").asString();
-        return new EcsMetadata(taskArn, clusterArn);
-    }
-
-    static class EcsMetadata {
-        private final String taskArn;
-        private final String clusterArn;
-
-        EcsMetadata(String taskArn, String clusterArn) {
-            this.taskArn = taskArn;
-            this.clusterArn = clusterArn;
-        }
-
-        String getTaskArn() {
-            return taskArn;
-        }
-
-        String getClusterArn() {
-            return clusterArn;
-        }
     }
 }
