@@ -5,6 +5,9 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 
+/**
+ * Demo application for TPC. Will be removed in in the final release.
+ */
 public class ClientMain {
 
     public static void main(String[] args) {
@@ -30,5 +33,4 @@ public class ClientMain {
         System.out.println("Throughput:" + throughput + " op/s");
         System.exit(0);
     }
-
 }

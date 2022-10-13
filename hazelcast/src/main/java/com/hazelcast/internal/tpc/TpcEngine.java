@@ -77,9 +77,15 @@ public final class TpcEngine {
                     nioCfg.setThreadAffinity(cfg.threadAffinity);
                     nioCfg.setThreadName("eventloop-" + idx);
                     nioCfg.setThreadFactory(cfg.threadFactory);
-                    nioCfg.setSpin(cfg.spin);
-                    nioCfg.setLocalRunQueueCapacity(cfg.localRunQueueCapacity);
-                    nioCfg.setConcurrentRunQueueCapacity(cfg.concurrentRunQueueCapacity);
+                    if (cfg.spin != null) {
+                        nioCfg.setSpin(cfg.spin);
+                    }
+                    if (cfg.localRunQueueCapacity != null) {
+                        nioCfg.setLocalRunQueueCapacity(cfg.localRunQueueCapacity);
+                    }
+                    if (cfg.concurrentRunQueueCapacity != null) {
+                        nioCfg.setConcurrentRunQueueCapacity(cfg.concurrentRunQueueCapacity);
+                    }
                     cfg.eventloopConfigUpdater.accept(nioCfg);
                     eventloops[idx] = new NioEventloop(nioCfg);
                     break;
@@ -232,9 +238,9 @@ public final class TpcEngine {
         private ThreadFactory threadFactory = HazelcastManagedThread::new;
         private Consumer<Eventloop.Configuration> eventloopConfigUpdater = configuration -> {
         };
-        private boolean spin = Boolean.parseBoolean(getProperty("hazelcast.tpc.eventloop.spin", "false"));
-        private int localRunQueueCapacity;
-        private int concurrentRunQueueCapacity;
+        private Boolean spin;
+        private Integer localRunQueueCapacity;
+        private Integer concurrentRunQueueCapacity;
 
         public void setThreadAffinity(ThreadAffinity threadAffinity) {
             this.threadAffinity = threadAffinity;
