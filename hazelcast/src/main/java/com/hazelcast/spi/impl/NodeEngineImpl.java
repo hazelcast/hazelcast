@@ -539,7 +539,7 @@ public class NodeEngineImpl implements NodeEngine {
         operationService.reset();
     }
 
-    @SuppressWarnings("checkstyle:npathcomplexity")
+    @SuppressWarnings({"checkstyle:npathcomplexity", "cyclomaticcomplexity"})
     public void shutdown(boolean terminate) {
         logger.finest("Shutting down services...");
         if (sqlService != null) {
@@ -575,6 +575,9 @@ public class NodeEngineImpl implements NodeEngine {
         }
         if (diagnostics != null) {
             diagnostics.shutdown();
+        }
+        if (externalDataStoreService != null) {
+            externalDataStoreService.close();
         }
     }
 
