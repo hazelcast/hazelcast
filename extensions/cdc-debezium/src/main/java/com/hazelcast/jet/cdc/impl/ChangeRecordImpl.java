@@ -177,7 +177,8 @@ public class ChangeRecordImpl implements ChangeRecord {
 
     @Override
     public int hashCode() {
-        return Objects.hash(sequenceSource, sequenceValue, keyJson, oldValue, newValue);
+        return Objects.hash(sequenceSource, sequenceValue, keyJson, timestamp,
+                operation, database, schema, table, oldValue, newValue);
     }
 
     @Override
@@ -192,6 +193,11 @@ public class ChangeRecordImpl implements ChangeRecord {
         return this.sequenceSource == that.sequenceSource
                 && this.sequenceValue == that.sequenceValue
                 && Objects.equals(this.keyJson, that.keyJson)
+                && Objects.equals(this.timestamp, that.timestamp)
+                && this.operation == that.operation
+                && Objects.equals(this.database, that.database)
+                && Objects.equals(this.schema, that.schema)
+                && Objects.equals(this.table, that.table)
                 && Objects.equals(this.oldValue, that.oldValue)
                 && Objects.equals(this.newValue, that.newValue);
     }
