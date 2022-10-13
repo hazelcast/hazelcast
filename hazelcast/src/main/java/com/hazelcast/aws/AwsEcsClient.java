@@ -98,12 +98,13 @@ class AwsEcsClient implements AwsClient {
 
     @Override
     public String getAvailabilityZone() {
-        String taskArn = awsMetadataApi.metadataEcs().getTaskArn();
-        AwsCredentials credentials = awsCredentialsProvider.credentials();
-        List<Task> tasks = awsEcsApi.describeTasks(cluster, singletonList(taskArn), credentials);
-        return tasks.stream()
-            .map(Task::getAvailabilityZone)
-            .findFirst()
-            .orElse("unknown");
+//        String taskArn = awsMetadataApi.metadataEcs().getTaskArn();
+//        AwsCredentials credentials = awsCredentialsProvider.credentials();
+//        List<Task> tasks = awsEcsApi.describeTasks(cluster, singletonList(taskArn), credentials);
+//        return tasks.stream()
+//            .map(Task::getAvailabilityZone)
+//            .findFirst()
+//            .orElse("unknown");
+        return  awsMetadataApi.availabilityZoneEcs();
     }
 }

@@ -72,6 +72,13 @@ class AwsMetadataApi {
         return createRestClient(uri, awsConfig).get().getBody();
     }
 
+    String availabilityZoneEcs() {
+        String uri = ecsTaskMetadataEndpoint.concat("/task");
+        String response = createRestClient(uri, awsConfig).get().getBody();
+        JsonObject metadata = Json.parse(response).asObject();
+        return metadata.get("AvailabilityZone").asString();
+    }
+
     Optional<String> placementGroupEc2() {
         return getOptionalMetadata(ec2MetadataEndpoint.concat("/placement/group-name/"), "placement group");
     }
