@@ -19,9 +19,9 @@ package com.hazelcast.instance.impl;
 public class NoOpClusterTopologyIntentTracker implements ClusterTopologyIntentTracker {
 
     @Override
-    public void update(int previousSpecifiedReplicaCount, int currentSpecifiedReplicaCount,
-                       int previousReadyReplicasCount, int readyReplicasCount,
-                       int previousCurrentReplicasCount, int currentReplicasCount) {
+    public void update(int previousSpecifiedReplicas, int updatedSpecifiedReplicas,
+                       int previousReadyReplicas, int updatedReadyReplicas,
+                       int previousCurrentReplicas, int updatedCurrentReplicas) {
     }
 
     @Override

@@ -109,28 +109,28 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
     }
 
     @Override
-    public void update(int previousSpecifiedReplicaCount, int currentSpecifiedReplicaCount,
-                       int previousReadyReplicasCount, int readyReplicasCount,
-                       int previousCurrentReplicasCount, int currentReplicasCount) {
+    public void update(int previousSpecifiedReplicas, int updatedSpecifiedReplicas,
+                       int previousReadyReplicas, int updatedReadyReplicas,
+                       int previousCurrentReplicas, int updatedCurrentReplicas) {
         final int previousClusterSpecSizeValue = this.currentClusterSpecSize;
-        this.currentClusterSpecSize = currentSpecifiedReplicaCount;
-        if (previousSpecifiedReplicaCount == UNKNOWN) {
-            handleInitialUpdate(currentSpecifiedReplicaCount, readyReplicasCount);
+        this.currentClusterSpecSize = updatedSpecifiedReplicas;
+        if (previousSpecifiedReplicas == UNKNOWN) {
+            handleInitialUpdate(updatedSpecifiedReplicas, updatedReadyReplicas);
             return;
         }
         final ClusterTopologyIntent previous = clusterTopologyIntent.get();
         ClusterTopologyIntent newTopologyIntent;
         Runnable postUpdateActionOnMaster = null;
-        if (currentSpecifiedReplicaCount == 0) {
+        if (updatedSpecifiedReplicas == 0) {
             newTopologyIntent = handleShutdownUpdate(previousClusterSpecSizeValue, previous);
-        } else if (previousSpecifiedReplicaCount == currentSpecifiedReplicaCount) {
-            if (ignoreUpdateWhenClusterSpecEqual(previous, readyReplicasCount)) {
+        } else if (previousSpecifiedReplicas == updatedSpecifiedReplicas) {
+            if (ignoreUpdateWhenClusterSpecEqual(previous, updatedReadyReplicas)) {
                 return;
             }
             BiTuple<ClusterTopologyIntent, Runnable> t =
                     nextIntentWhenClusterSpecEqual(previous,
-                            previousReadyReplicasCount, readyReplicasCount,
-                            previousCurrentReplicasCount, currentReplicasCount);
+                            previousReadyReplicas, updatedReadyReplicas,
+                            previousCurrentReplicas, updatedCurrentReplicas);
             newTopologyIntent = t.element1;
             postUpdateActionOnMaster = t.element2;
         } else {
