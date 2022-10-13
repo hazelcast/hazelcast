@@ -226,7 +226,6 @@ public final class TpcEngine {
         private int eventloopCount = Integer.parseInt(getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
         private Eventloop.Type eventloopType = Eventloop.Type.fromString(getProperty("reactor.type", "nio"));
         private ThreadAffinity threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor.cpu-affinity");
-        private boolean monitorSilent = Boolean.parseBoolean(getProperty("reactor.monitor.silent", "false"));
         private ThreadFactory threadFactory = HazelcastManagedThread::new;
         private Consumer<Eventloop.Configuration> eventloopConfigUpdater = configuration -> {
         };
@@ -248,11 +247,7 @@ public final class TpcEngine {
         }
 
         public void setEventloopCount(int eventloopCount) {
-            this.eventloopCount = checkPositive("reactorCount", eventloopCount);
-        }
-
-        public void setMonitorSilent(boolean monitorSilent) {
-            this.monitorSilent = monitorSilent;
+            this.eventloopCount = checkPositive("eventloopCount", eventloopCount);
         }
     }
 
