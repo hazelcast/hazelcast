@@ -66,8 +66,8 @@ import java.util.concurrent.CompletableFuture;
  * stage must be set with the Hazelcast 3 client:
  * <pre>{@code
  * List<String> jars = new ArrayList<>();
- * jars.add("hazelcast-3.12.12.jar");
- * jars.add("hazelcast-client-3.12.12.jar");
+ * jars.add("hazelcast-3.12.13.jar");
+ * jars.add("hazelcast-client-3.12.13.jar");
  * jars.add("hazelcast-3-connector-impl.jar");
  * config.addCustomClasspaths(mapStage.name(), jars);
  * } </pre>
