@@ -124,7 +124,7 @@ public class ExplainStatementTest extends SqlTestSupport {
 
         createMapping("map", Integer.class, Integer.class);
         assertRowsOrdered(sql, asList(
-                new Row("SortPhysicalRel(sort0=[$1], dir0=[DESC], requiresSort=[true])"),
+                new Row("SortPhysicalRel(sort0=[$1], dir0=[DESC])"),
                 new Row("  UnionPhysicalRel(all=[true])"),
                 new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], discriminator=[0])"),
                 new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], discriminator=[0])")

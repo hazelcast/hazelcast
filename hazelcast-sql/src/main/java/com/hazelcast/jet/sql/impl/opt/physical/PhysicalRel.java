@@ -20,8 +20,8 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
@@ -29,7 +29,6 @@ import org.apache.calcite.plan.DeriveMode;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.PhysicalNode;
 import org.apache.calcite.rel.RelCollation;
-import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexNode;
@@ -37,13 +36,9 @@ import org.apache.calcite.rex.RexVisitor;
 import org.apache.calcite.util.Pair;
 import org.checkerframework.checker.nullness.qual.Nullable;
 
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
-import static java.util.Arrays.*;
 import static java.util.Collections.nCopies;
-import static java.util.Collections.singletonList;
 
 /**
  * Marker interface for physical relations.
@@ -109,6 +104,8 @@ public interface PhysicalRel extends PhysicalNode {
     default Pair<RelTraitSet, List<RelTraitSet>> passThroughTraits(RelTraitSet required) {
         RelNode rel = this;
 
+        required = required.replace(Conventions.PHYSICAL);
+
         // We don't work with non-physical search space, and we stop working on leaf rels.
         if (required.getConvention() != Conventions.PHYSICAL || rel.getInputs().isEmpty()) {
             return null;
@@ -124,7 +121,7 @@ public interface PhysicalRel extends PhysicalNode {
      * Propagates collation trait during first (top-down) phase.
      */
     default RelTraitSet passThroughCollationTraits(RelNode rel, RelTraitSet required) {
-        RelCollation collationTrait = rel.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
+        RelCollation collationTrait = OptUtils.getCollation(rel);
         return required.replace(collationTrait);
     }
 
@@ -156,22 +153,4 @@ public interface PhysicalRel extends PhysicalNode {
         return DeriveMode.LEFT_FIRST;
     }
 }
-
-
-// - MERGE JOIN
-// -- SCAN (a) []
-// -- SCAN (b) []
-//
-// - MERGE JOIN
-// -- SORTED INDEX SCAN (a) [SORTED(c)]
-// -- SCAN (b) []
-
-
-// - MERGE JOIN
-// -- SORTED INDEX SCAN (a) [SORTED(c)]
-// --  SORT (b(c)) [SORTED (c) ]
-// ---  SCAN (b) []
-
-
-
 

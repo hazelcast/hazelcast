@@ -22,7 +22,6 @@ import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.FieldCollation;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
-import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
@@ -30,15 +29,12 @@ import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelCollation;
 import org.apache.calcite.rel.RelCollationTraitDef;
-import org.apache.calcite.rel.RelCollations;
 import org.apache.calcite.rel.RelNode;
-import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.core.Sort;
 import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
-import org.apache.calcite.rex.RexVisitor;
 import org.apache.calcite.util.Pair;
 import org.apache.calcite.util.Util;
 import org.checkerframework.checker.nullness.qual.Nullable;
@@ -48,8 +44,6 @@ import java.util.stream.Collectors;
 
 public class SortPhysicalRel extends Sort implements PhysicalRel {
 
-    private final boolean requiresSort;
-
     SortPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traits,
@@ -57,26 +51,10 @@ public class SortPhysicalRel extends Sort implements PhysicalRel {
             RelCollation collation,
             RexNode offset,
             RexNode fetch,
-            RelDataType rowType,
-            boolean requiresSort
+            RelDataType rowType
     ) {
         super(cluster, traits, input, collation, offset, fetch);
         this.rowType = rowType;
-        this.requiresSort = requiresSort;
-    }
-
-
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public Pair<RelTraitSet, List<RelTraitSet>> passThroughTraits(RelTraitSet required) {
-        if (isEnforcer() || required.getConvention() != Conventions.PHYSICAL) {
-            return null;
-        }
-
-        RelCollation collation = required.getTrait(RelCollationTraitDef.INSTANCE);
-        return Pair.of(required.replace(collation), ImmutableList.of(required.replace(RelCollations.EMPTY)));
     }
 
     /**
@@ -92,10 +70,6 @@ public class SortPhysicalRel extends Sort implements PhysicalRel {
 
         RelCollation collation = this.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
         return Pair.of(childTraits.replace(collation), ImmutableList.of(childTraits));
-    }
-
-    public boolean requiresSort() {
-        return requiresSort;
     }
 
     @Override
@@ -139,18 +113,6 @@ public class SortPhysicalRel extends Sort implements PhysicalRel {
                 .stream().map(FieldCollation::new).collect(Collectors.toList());
     }
 
-    public Expression<?> fetch(QueryParameterMetadata parameterMetadata) {
-        PlanNodeSchema schema = schema(parameterMetadata);
-        RexVisitor<Expression<?>> visitor = OptUtils.createRexToExpressionVisitor(schema, parameterMetadata);
-        return fetch.accept(visitor);
-    }
-
-    public Expression<?> offset(QueryParameterMetadata parameterMetadata) {
-        PlanNodeSchema schema = schema(parameterMetadata);
-        RexVisitor<Expression<?>> visitor = OptUtils.createRexToExpressionVisitor(schema, parameterMetadata);
-        return offset.accept(visitor);
-    }
-
     @Override
     public PlanNodeSchema schema(QueryParameterMetadata parameterMetadata) {
         return OptUtils.schema(rowType);
@@ -162,13 +124,8 @@ public class SortPhysicalRel extends Sort implements PhysicalRel {
     }
 
     @Override
-    public final RelWriter explainTerms(RelWriter pw) {
-        return super.explainTerms(pw).item("requiresSort", requiresSort);
-    }
-
-    @Override
     public Sort copy(RelTraitSet traitSet, RelNode input, RelCollation collation, RexNode offset, RexNode fetch) {
-        return new SortPhysicalRel(getCluster(), traitSet, input, collation, offset, fetch, rowType, requiresSort);
+        return new SortPhysicalRel(getCluster(), traitSet, input, collation, offset, fetch, rowType);
     }
 
     private static @Nullable Double doubleValue(@Nullable RexNode r) {

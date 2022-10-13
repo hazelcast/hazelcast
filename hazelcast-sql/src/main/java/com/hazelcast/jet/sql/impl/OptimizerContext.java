@@ -125,7 +125,7 @@ public final class OptimizerContext {
         HazelcastSqlValidator validator = new HazelcastSqlValidator(catalogReader, arguments, iMapResolver);
         VolcanoPlanner volcanoPlanner = createPlanner();
         // Note: this enables CASCADES-style optimizer
-//        volcanoPlanner.setTopDownOpt(true);
+        volcanoPlanner.setTopDownOpt(true);
 
         HazelcastRelOptCluster cluster = createCluster(volcanoPlanner);
 

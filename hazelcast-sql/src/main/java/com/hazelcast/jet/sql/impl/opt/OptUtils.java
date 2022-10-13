@@ -48,6 +48,8 @@ import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.plan.volcano.HazelcastRelSubsetUtil;
 import org.apache.calcite.plan.volcano.RelSubset;
 import org.apache.calcite.prepare.RelOptTableImpl;
+import org.apache.calcite.rel.RelCollation;
+import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.Calc;
 import org.apache.calcite.rel.core.TableScan;
@@ -222,19 +224,12 @@ public final class OptUtils {
         return rel.getTraitSet().getTrait(ConventionTraitDef.INSTANCE).equals(Conventions.PHYSICAL);
     }
 
-    /**
-     * Finds a set for the given RelNode, and return subsets that have the
-     * logical trait. Every returned input is guaranteed to have a unique trait
-     * set.
-     *
-     * @return Logical rels.
-     */
-    public static Collection<RelNode> extractLogicalRelsFromSubset(RelNode input) {
-        return extractRelsFromSubset(input, OptUtils::isLogical);
+    public static RelCollation collation(RelTraitSet traitSet) {
+        return traitSet.getTrait(RelCollationTraitDef.INSTANCE);
     }
 
-    private static boolean isLogical(RelNode rel) {
-        return rel.getTraitSet().getTrait(ConventionTraitDef.INSTANCE).equals(Conventions.LOGICAL);
+    public static RelCollation getCollation(RelNode rel) {
+        return rel.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE);
     }
 
     private static Collection<RelNode> extractRelsFromSubset(RelNode input, Predicate<RelNode> predicate) {
@@ -553,7 +548,7 @@ public final class OptUtils {
      *     <li>getTargetField(1) = -1
      *     <li>getTargetField(2) = 0
      * </ul>
-     *
+     * <p>
      * The method is named analogously to {@link
      * RexProgram#getSourceField(int)}, which finds the opposite mapping.
      *

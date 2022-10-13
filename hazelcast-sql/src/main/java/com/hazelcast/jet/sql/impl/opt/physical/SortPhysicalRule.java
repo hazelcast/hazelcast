@@ -16,19 +16,20 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.SortLogicalRel;
-import org.apache.calcite.plan.*;
+import org.apache.calcite.plan.RelOptRule;
+import org.apache.calcite.plan.RelOptRuleCall;
+import org.apache.calcite.plan.RelRule;
+import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelCollation;
-import org.apache.calcite.rel.RelCollationTraitDef;
 import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
 import org.immutables.value.Value;
 
-import java.util.ArrayList;
 import java.util.List;
 
-import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
 @Value.Enclosing
 final class SortPhysicalRule extends RelRule<RelRule.Config> {
@@ -42,7 +43,6 @@ final class SortPhysicalRule extends RelRule<RelRule.Config> {
                 .description(SortPhysicalRule.class.getSimpleName())
                 .operandSupplier(b0 -> b0
                         .operand(SortLogicalRel.class)
-                        .trait(LOGICAL)
                         .oneInput(b1 -> b1.operand(RelNode.class)
                                 .anyInputs()))
                 .build();
@@ -63,22 +63,31 @@ final class SortPhysicalRule extends RelRule<RelRule.Config> {
     public void onMatch(RelOptRuleCall call) {
         SortLogicalRel sort = call.rel(0);
         RelNode physicalInput = OptUtils.toPhysicalInput(sort.getInput());
-        RelNode transformTo = null;
+        RelTraitSet traits = sort.getCluster()
+                .traitSetOf(Conventions.PHYSICAL)
+                .replace(sort.getCollation());
+        RelNode transformTo;
 
-        boolean requiresSort = requiresSort(sort.getCollation(), physicalInput.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE));
+        boolean requiresSort = requiresSort(sort.getCollation(), OptUtils.getCollation(physicalInput));
 
-        if (requiresSort || sort.offset != null || sort.fetch != null) {
-            transformTo = new SortPhysicalRel(
-                    sort.getCluster(),
-                    OptUtils.traitPlus(physicalInput.getTraitSet(), sort.getCollation()),
-                    physicalInput,
-                    sort.getCollation(),
+        if (!requiresSort && (sort.offset != null || sort.fetch != null)) {
+            transformTo = new LimitPhysicalRel(
                     sort.offset,
                     sort.fetch,
-                    sort.getRowType(),
-                    requiresSort);
-        } else {
+                    sort.getCluster(),
+                    traits,
+                    physicalInput);
+        } else if (!requiresSort) {
             transformTo = physicalInput;
+        } else {
+            transformTo = new SortPhysicalRel(
+                    sort.getCluster(),
+                    traits,
+                    physicalInput,
+                    sort.getCollation(),
+                    null,
+                    null,
+                    sort.getRowType());
         }
         call.transformTo(transformTo);
     }

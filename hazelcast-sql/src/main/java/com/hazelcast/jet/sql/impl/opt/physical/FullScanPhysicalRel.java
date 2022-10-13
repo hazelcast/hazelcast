@@ -16,25 +16,33 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.config.IndexType;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
 import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.opt.FullScan;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
+import com.hazelcast.jet.sql.impl.opt.physical.index.IndexResolver;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.row.JetSqlRow;
+import com.hazelcast.sql.impl.schema.map.MapTableIndex;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelOptCost;
 import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelTraitSet;
+import org.apache.calcite.rel.RelCollation;
+import org.apache.calcite.rel.RelCollations;
+import org.apache.calcite.rel.RelFieldCollation;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelWriter;
 import org.apache.calcite.rel.metadata.RelMdUtil;
@@ -43,16 +51,19 @@ import org.apache.calcite.rex.RexNode;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static com.hazelcast.jet.sql.impl.opt.cost.CostUtils.TABLE_SCAN_CPU_MULTIPLIER;
 
 public class FullScanPhysicalRel extends FullScan implements HazelcastPhysicalScan {
 
-    /** See {@link CalciteSqlOptimizer#uniquifyScans}. */
+    /**
+     * See {@link CalciteSqlOptimizer#uniquifyScans}.
+     */
     private final int discriminator;
 
-    FullScanPhysicalRel(
+    public FullScanPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
@@ -91,6 +102,40 @@ public class FullScanPhysicalRel extends FullScan implements HazelcastPhysicalSc
     @Override
     public Vertex accept(CreateDagVisitor visitor) {
         return visitor.onFullScan(this);
+    }
+
+    @Override
+    public @Nullable RelNode passThrough(RelTraitSet required) {
+        RelCollation requiredCollation = OptUtils.collation(required);
+        if (requiredCollation.equals(RelCollations.EMPTY)) {
+            return this;
+        }
+
+        MapTableIndex indexToUse = null;
+
+        List<Integer> indexedFieldIndexes = requiredCollation.getFieldCollations()
+                .stream()
+                .map(RelFieldCollation::getFieldIndex)
+                .collect(Collectors.toList());
+
+        if (OptUtils.hasTableType(this, PartitionedMapTable.class)) {
+            PartitionedMapTable table = OptUtils.extractHazelcastTable(this).getTarget();
+            for (MapTableIndex index : table.getIndexes()) {
+                if (index.getType() == IndexType.SORTED) {
+                    if (index.getFieldOrdinals().equals(indexedFieldIndexes)) {
+                        indexToUse = index;
+                        break;
+                    }
+                }
+            }
+        }
+
+        IndexScanMapPhysicalRel indexScan = IndexResolver.createSortedIndexScan(this, requiredCollation, indexToUse);
+        if (indexScan != null) {
+            return indexScan;
+        } else {
+            return copy(this.getTraitSet(), discriminator);
+        }
     }
 
     @Override

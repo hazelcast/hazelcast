@@ -25,6 +25,7 @@ import com.hazelcast.internal.util.BiTuple;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpression;
 import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpressionVisitor;
@@ -86,6 +87,7 @@ import static com.hazelcast.query.impl.CompositeValue.POSITIVE_INFINITY;
 import static com.hazelcast.sql.impl.expression.ConstantExpression.NULL;
 import static java.lang.Boolean.FALSE;
 import static java.lang.Boolean.TRUE;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static org.apache.calcite.rel.RelFieldCollation.Direction;
 import static org.apache.calcite.rel.RelFieldCollation.Direction.ASCENDING;
@@ -98,6 +100,37 @@ import static org.apache.calcite.rel.RelFieldCollation.Direction.DESCENDING;
 public final class IndexResolver {
     private IndexResolver() {
         // No-op.
+    }
+
+    public static IndexScanMapPhysicalRel createSortedIndexScan(
+            FullScanPhysicalRel scan,
+            RelCollation requiredCollation,
+            MapTableIndex index) {
+
+        // fail-fast if no collations were present
+        if (requiredCollation.equals(RelCollations.EMPTY)) {
+            return null;
+        }
+
+        HazelcastTable originalHazelcastTable = OptUtils.extractHazelcastTable(scan);
+        RexNode scanFilter = originalHazelcastTable.getFilter();
+        RelTraitSet traitSet = OptUtils.traitPlus(OptUtils.toPhysicalConvention(scan.getTraitSet()), requiredCollation);
+
+        HazelcastRelOptTable originalRelTable = (HazelcastRelOptTable) scan.getTable();
+
+        RelOptTable newRelTable = createRelTable(
+                originalRelTable.getDelegate().getQualifiedName(),
+                originalHazelcastTable.withFilter(null),
+                scan.getCluster().getTypeFactory()
+        );
+        return new IndexScanMapPhysicalRel(
+                scan.getCluster(),
+                traitSet,
+                newRelTable,
+                index,
+                null,
+                null,
+                scanFilter);
     }
 
     /**
@@ -139,26 +172,10 @@ public final class IndexResolver {
 
         // There is no filter, still generate index scans for
         // possible ORDER BY clause on the upper level
-        for (MapTableIndex index : supportedIndexes) {
 
-            if (index.getType() == SORTED) {
-                // Only for SORTED index create full index scans that might be potentially
-                // utilized by sorting operator.
-                List<Boolean> ascs = buildFieldDirections(index, true);
-                RelNode relAscending = createFullIndexScan(scan, index, ascs, true);
-
-                if (relAscending != null) {
-                    fullScanRels.add(relAscending);
-                    RelNode relDescending = replaceCollationDirection(relAscending, DESCENDING);
-                    fullScanRels.add(relDescending);
-                }
-            }
-        }
-
-        Map<RelCollation, RelNode> fullScanRelsMap = excludeCoveredCollations(fullScanRels);
         if (filter == null) {
             // Exclude prefix-based covered index scans
-            return fullScanRelsMap.values();
+            return emptyList();
         }
 
         // Convert expression into CNF. Examples:
@@ -177,7 +194,7 @@ public final class IndexResolver {
         );
 
         if (candidates.isEmpty()) {
-            return fullScanRelsMap.values();
+            return emptyList();
         }
 
         List<RelNode> rels = new ArrayList<>(supportedIndexes.size());
@@ -189,23 +206,14 @@ public final class IndexResolver {
 
             if (relAscending != null) {
                 RelCollation relAscCollation = getCollation(relAscending);
-                // Exclude a full scan that has the same collation
-                fullScanRelsMap.remove(relAscCollation);
-
                 rels.add(relAscending);
 
                 if (relAscCollation.getFieldCollations().size() > 0) {
                     RelNode relDescending = replaceCollationDirection(relAscending, DESCENDING);
                     rels.add(relDescending);
-
-                    RelCollation relDescCollation = getCollation(relDescending);
-                    // Exclude a full scan that has the same collation
-                    fullScanRelsMap.remove(relDescCollation);
                 }
             }
         }
-
-        rels.addAll(fullScanRelsMap.values());
         return rels;
     }
 
@@ -1357,7 +1365,7 @@ public final class IndexResolver {
      * @return {@code true} if the index could be used, {@code false} otherwise
      */
     private static boolean isIndexSupported(MapTableIndex index) {
-        return index.getType() == SORTED || index.getType() == HASH;
+        return index.getType() == HASH;
     }
 
     /**

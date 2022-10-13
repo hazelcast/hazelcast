@@ -107,6 +107,9 @@ public class CreateDagVisitor {
     private final QueryParameterMetadata parameterMetadata;
     private final WatermarkKeysAssigner watermarkKeysAssigner;
 
+    private Vertex rootVertex;
+    private RelNode rootInput;
+
     public CreateDagVisitor(
             NodeEngine nodeEngine,
             QueryParameterMetadata parameterMetadata,
@@ -529,49 +532,59 @@ public class CreateDagVisitor {
         return merger;
     }
 
-    public Vertex onRoot(RootRel rootRel) {
-        RelNode input = rootRel.getInput();
+    public Vertex onLimit(LimitPhysicalRel rel) {
         Expression<?> fetch;
         Expression<?> offset;
 
-        if (input instanceof SortPhysicalRel || isCalcWithSort(input)) {
-            SortPhysicalRel sortRel = input instanceof SortPhysicalRel
-                    ? (SortPhysicalRel) input
-                    : (SortPhysicalRel) ((CalcPhysicalRel) input).getInput();
-
-            if (sortRel.fetch == null) {
-                fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
-            } else {
-                fetch = sortRel.fetch(parameterMetadata);
-            }
-
-            if (sortRel.offset == null) {
-                offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
-            } else {
-                offset = sortRel.offset(parameterMetadata);
-            }
-
-            if (!sortRel.requiresSort()) {
-                input = sortRel.getInput();
-            }
-        } else {
+        if (rel.fetch() == null) {
             fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
-            offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
+        } else {
+            fetch = rel.fetch(parameterMetadata);
         }
 
-        Vertex vertex = dag.newUniqueVertex(
+        if (rel.offset() == null) {
+            offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
+        } else {
+            offset = rel.offset(parameterMetadata);
+        }
+
+        rootVertex = dag.newUniqueVertex(
                 "ClientSink",
                 rootResultConsumerSink(localMemberAddress, fetch, offset)
         );
+        assert rootInput != null;
+        return rootVertex;
+    }
+
+    public Vertex onRoot(RootRel rootRel) {
+        rootInput = rootRel.getInput();
+
+        Expression<?> fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
+        Expression<?> offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
+
+        rootVertex = dag.newUniqueVertex(
+                "ClientSink",
+                rootResultConsumerSink(localMemberAddress, fetch, offset)
+        );
+        return rootVertex;
+    }
+
+    public void finishAndOptimizeDAG() {
+        if (rootVertex == null) {
+            Expression<?> fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
+            Expression<?> offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
+
+            rootVertex = dag.newUniqueVertex(
+                    "ClientSink",
+                    rootResultConsumerSink(localMemberAddress, fetch, offset)
+            );
+        }
 
         // We use distribute-to-one edge to send all the items to the initiator member.
         // Such edge has to be partitioned, but the sink is LP=1 anyway, so we can use
         // allToOne with any key, it goes to a single processor on a single member anyway.
-        connectInput(input, vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
-        return vertex;
-    }
+        connectInput(rootInput, rootVertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
 
-    public void optimizeFinishedDag() {
         decreaseParallelism(dag, nodeEngine.getConfig().getJetConfig().getCooperativeThreadCount());
     }
 
@@ -718,10 +731,5 @@ public class CreateDagVisitor {
         if (objectKey != null) {
             objectKeys.add(objectKey);
         }
-    }
-
-    private boolean isCalcWithSort(RelNode input) {
-        return input instanceof CalcPhysicalRel &&
-                ((CalcPhysicalRel) input).getInput() instanceof SortPhysicalRel;
     }
 }

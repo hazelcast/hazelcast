@@ -759,7 +759,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         CreateDagVisitor visitor = new CreateDagVisitor(nodeEngine, parameterMetadata, wmKeysAssigner, usedViews);
         physicalRel.accept(visitor);
-        visitor.optimizeFinishedDag();
+        visitor.finishAndOptimizeDAG();
         return tuple2(visitor.getDag(), visitor.getObjectKeys());
     }
 

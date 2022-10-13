@@ -48,6 +48,7 @@ public final class PhysicalRules {
 
                 // Sort rules
                 SortPhysicalRule.INSTANCE,
+                EliminateSortRule.INSTANCE,
                 StreamingSortMustNotExecuteRule.INSTANCE,
 
                 // Join rules

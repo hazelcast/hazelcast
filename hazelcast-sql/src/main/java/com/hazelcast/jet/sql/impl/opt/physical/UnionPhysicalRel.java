@@ -16,14 +16,14 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.google.common.collect.ImmutableList;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.opt.Conventions;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
-import org.apache.calcite.rel.*;
+import org.apache.calcite.rel.RelCollations;
+import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.SetOp;
 import org.apache.calcite.rel.core.Union;
 import org.apache.calcite.util.Pair;
@@ -52,14 +52,6 @@ public class UnionPhysicalRel extends Union implements PhysicalRel {
         super(cluster, traitSet, inputs, all);
     }
 
-    @Override
-    public @Nullable Pair<RelTraitSet, List<RelTraitSet>> passThroughTraits(RelTraitSet required) {
-        return PhysicalRel.super.passThroughTraits(required);
-    }
-
-    /**
-     * TODO: clarify if UNION preserves collation. My opinion - it doesn't.
-     */
     @Override
     public RelTraitSet passThroughCollationTraits(RelNode rel, RelTraitSet required) {
         return required.replace(RelCollations.EMPTY);
