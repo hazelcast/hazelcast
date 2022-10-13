@@ -74,12 +74,6 @@ class KubernetesClient {
 
     @Nullable
     private final ClusterTopologyIntentTracker clusterTopologyIntentTracker;
-    /**
-     * When {@link #clusterTopologyIntentTracker} is not-null and {@code deliverCoalescedEvents} is {@code false},
-     * StatefulSet monitoring might deliver two updates for a single watch event received from Kubernetes API.
-     * Otherwise, events are delivered as received.
-     */
-    private final boolean deliverCoalescedEvents;
 
     private boolean isNoPublicIpAlreadyLogged;
     private boolean isKnownExceptionAlreadyLogged;
@@ -102,8 +96,6 @@ class KubernetesClient {
         this.stsName = extractStsName();
         this.stsMonitorThread = clusterTopologyIntentTracker != null
                 ? new Thread(new StsMonitor(), "hz-k8s-sts-monitor") : null;
-        this.deliverCoalescedEvents = clusterTopologyIntentTracker != null
-                && clusterTopologyIntentTracker.acceptsCoalescedEvents();
     }
 
     // test usage only
@@ -124,7 +116,6 @@ class KubernetesClient {
         this.stsMonitorThread = null;
         this.stsName = extractStsName();
         this.clusterTopologyIntentTracker = null;
-        this.deliverCoalescedEvents = false;
     }
 
     public void start() {

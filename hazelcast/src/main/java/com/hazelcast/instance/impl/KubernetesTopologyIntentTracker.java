@@ -222,13 +222,13 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
                     next = ClusterTopologyIntent.CLUSTER_STABLE_WITH_MISSING_MEMBERS;
                 } else if (updatedReadyReplicas > previousReadyReplicas) {
                     // If updatedReady > previousReady and updatedCurrent < previousCurrent, then this is a coalesced Kubernetes
-                    // event in the middle of rollout restart. It marks at the same time a previously restarted member is now ready
-                    // and the next pod is going down for restart.
+                    // event in the middle of rollout restart. It marks at the same time a previously restarted member
+                    // is now ready and the next pod is going down for restart.
                     next = ClusterTopologyIntent.CLUSTER_STABLE_WITH_MISSING_MEMBERS;
-                    if (clusterStateForMissingMembers == ClusterState.NO_MIGRATION) {
-                        // need to fix partition table before allowing next pod to restart
-                        action = () -> changeClusterState(ClusterState.ACTIVE);
-                    }
+                    // need to fix partition table before allowing next pod to restart
+                    action = clusterStateForMissingMembers == ClusterState.NO_MIGRATION
+                            ? () -> changeClusterState(ClusterState.ACTIVE)
+                            : null;
                 }
             } else if (previous != ClusterTopologyIntent.CLUSTER_STABLE) {
                 next = ClusterTopologyIntent.CLUSTER_STABLE;
@@ -373,11 +373,6 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
     @Override
     public void onMembershipChange() {
         currentClusterSize = getClusterService().getSize();
-    }
-
-    @Override
-    public boolean acceptsCoalescedEvents() {
-        return clusterStateForMissingMembers == ClusterState.FROZEN;
     }
 
     /**
