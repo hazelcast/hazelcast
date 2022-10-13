@@ -104,6 +104,7 @@ public interface PhysicalRel extends PhysicalNode {
     default Pair<RelTraitSet, List<RelTraitSet>> passThroughTraits(RelTraitSet required) {
         RelNode rel = this;
 
+        // Note: it's a wild cheating, but ...
         required = required.replace(Conventions.PHYSICAL);
 
         // We don't work with non-physical search space, and we stop working on leaf rels.
