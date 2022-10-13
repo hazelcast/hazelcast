@@ -240,7 +240,6 @@ public final class TpcEngine {
             this.threadAffinity = threadAffinity;
         }
 
-
         public void setLocalRunQueueCapacity(int localRunQueueCapacity) {
             this.localRunQueueCapacity = checkPositive("localRunQueueCapacity", localRunQueueCapacity);
         }
