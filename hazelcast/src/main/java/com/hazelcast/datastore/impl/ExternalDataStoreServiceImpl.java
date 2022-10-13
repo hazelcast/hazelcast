@@ -63,16 +63,19 @@ public class ExternalDataStoreServiceImpl implements ExternalDataStoreService {
 
     @Override
     public ExternalDataStoreFactory<?> getExternalDataStoreFactory(String name) {
-        ExternalDataStoreFactory<?> externalDataStoreFactory = dataStoreFactories.get(name);
-        if (externalDataStoreFactory == null) {
-            ExternalDataStoreConfig externalDataStoreConfig = node.getConfig().getExternalDataStoreConfigs().get(name);
-            if (externalDataStoreConfig != null) {
-                return createFactory(externalDataStoreConfig);
-            }
-        }
+        ExternalDataStoreFactory<?> externalDataStoreFactory = dataStoreFactories
+                .computeIfAbsent(name, this::createFactoryIfConfigPresent);
         if (externalDataStoreFactory == null) {
             throw new HazelcastException("External data store factory '" + name + "' not found");
         }
         return externalDataStoreFactory;
+    }
+
+    private ExternalDataStoreFactory<?> createFactoryIfConfigPresent(String name) {
+        ExternalDataStoreConfig externalDataStoreConfig = node.getConfig().getExternalDataStoreConfigs().get(name);
+        if (externalDataStoreConfig != null) {
+            return createFactory(externalDataStoreConfig);
+        }
+        return null;
     }
 }
