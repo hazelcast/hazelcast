@@ -131,11 +131,11 @@ final class AwsConfig {
         }
     }
 
-    private boolean anyOfEc2PropertiesConfigured() {
+    boolean anyOfEc2PropertiesConfigured() {
         return !isNullOrEmptyAfterTrim(iamRole) || !isNullOrEmptyAfterTrim(securityGroupName);
     }
 
-    private boolean anyOfEcsPropertiesConfigured() {
+    boolean anyOfEcsPropertiesConfigured() {
         return !isNullOrEmptyAfterTrim(cluster) || !isNullOrEmptyAfterTrim(family) || !isNullOrEmptyAfterTrim(serviceName);
     }
 

@@ -189,4 +189,41 @@ public class AwsEcsClientTest {
         // then
         assertEquals(expectedResult, result);
     }
+
+    @Test
+    public void doNotGetEc2AddressesIfEcsConfigured() {
+        // given
+        AwsConfig awsConfig = AwsConfig.builder()
+                .setCluster(CLUSTER)
+                .setDiscoveryMode(DiscoveryMode.Client)
+                .build();
+        awsEcsClient = new AwsEcsClient(CLUSTER, awsConfig, awsEcsApi, awsEc2Api, awsMetadataApi, awsCredentialsProvider);
+        given(awsEcsApi.listTaskPrivateAddresses(CLUSTER, CREDENTIALS)).willReturn(emptyList());
+
+        // when
+        Map<String, String> result = awsEcsClient.getAddresses();
+
+        // then
+        then(awsEc2Api).should(never()).describeInstances(CREDENTIALS);
+        assertEquals(emptyMap(), result);
+    }
+
+    @Test
+    public void doNotGetEcsAddressesIfEc2Configured() {
+        // given
+        AwsConfig awsConfig = AwsConfig.builder()
+                .setSecurityGroupName("my-security-group")
+                .setDiscoveryMode(DiscoveryMode.Client)
+                .build();
+        awsEcsClient = new AwsEcsClient(CLUSTER, awsConfig, awsEcsApi, awsEc2Api, awsMetadataApi, awsCredentialsProvider);
+        Map<String, String> expectedResult = singletonMap("123.12.1.0", "1.4.6.2");
+        given(awsEc2Api.describeInstances(CREDENTIALS)).willReturn(expectedResult);
+
+        // when
+        Map<String, String> result = awsEcsClient.getAddresses();
+
+        // then
+        then(awsEcsApi).should(never()).listTaskPrivateAddresses(CLUSTER, CREDENTIALS);
+        assertEquals(expectedResult, result);
+    }
 }
