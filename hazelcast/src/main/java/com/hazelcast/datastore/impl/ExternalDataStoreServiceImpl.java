@@ -40,7 +40,7 @@ public class ExternalDataStoreServiceImpl implements ExternalDataStoreService {
         this.node = node;
         this.logger = node.getLogger(ExternalDataStoreServiceImpl.class);
         for (Map.Entry<String, ExternalDataStoreConfig> entry : node.getConfig().getExternalDataStoreConfigs().entrySet()) {
-            createFactory(entry.getValue());
+            dataStoreFactories.put(entry.getKey(), createFactory(entry.getValue()));
         }
     }
 
@@ -49,7 +49,6 @@ public class ExternalDataStoreServiceImpl implements ExternalDataStoreService {
         try {
             ExternalDataStoreFactory<DS> externalDataStoreFactory = ClassLoaderUtil.newInstance(classLoader, className);
             externalDataStoreFactory.init(config);
-            dataStoreFactories.put(config.getName(), externalDataStoreFactory);
             return externalDataStoreFactory;
         } catch (ClassCastException e) {
             throw new HazelcastException("External data store '" + config.getName() + "' misconfigured: "
@@ -66,17 +65,11 @@ public class ExternalDataStoreServiceImpl implements ExternalDataStoreService {
 
     @Override
     public <DS> ExternalDataStoreFactory<DS> getExternalDataStoreFactory(String name) {
-        ExternalDataStoreFactory<DS> externalDataStoreFactory = (ExternalDataStoreFactory<DS>) dataStoreFactories.get(name);
-        if (externalDataStoreFactory == null) {
-            ExternalDataStoreConfig externalDataStoreConfig = node.getConfig().getExternalDataStoreConfigs().get(name);
-            if (externalDataStoreConfig != null) {
-                return createFactory(externalDataStoreConfig);
-            }
-        }
-        if (externalDataStoreFactory == null) {
+        ExternalDataStoreConfig externalDataStoreConfig = node.getConfig().getExternalDataStoreConfigs().get(name);
+        if (externalDataStoreConfig == null) {
             throw new HazelcastException("External data store factory '" + name + "' not found");
         }
-        return externalDataStoreFactory;
+        return (ExternalDataStoreFactory<DS>) dataStoreFactories.computeIfAbsent(name, n -> createFactory(externalDataStoreConfig));
     }
 
     @Override
