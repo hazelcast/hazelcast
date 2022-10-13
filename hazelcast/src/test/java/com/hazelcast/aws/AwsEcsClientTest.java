@@ -17,7 +17,6 @@
 package com.hazelcast.aws;
 
 import com.hazelcast.aws.AwsEcsApi.Task;
-import com.hazelcast.aws.AwsMetadataApi.EcsMetadata;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,11 +33,9 @@ import static java.util.Collections.singletonMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AwsEcsClientTest {
-    private static final String TASK_ARN = "task-arn";
     private static final String CLUSTER = "cluster-arn";
     private static final AwsCredentials CREDENTIALS = AwsCredentials.builder()
         .setAccessKey("access-key")
@@ -62,10 +59,7 @@ public class AwsEcsClientTest {
 
     @Before
     public void setUp() {
-        EcsMetadata ecsMetadata = mock(EcsMetadata.class);
-        given(ecsMetadata.getTaskArn()).willReturn(TASK_ARN);
-        given(ecsMetadata.getClusterArn()).willReturn(CLUSTER);
-        given(awsMetadataApi.metadataEcs()).willReturn(ecsMetadata);
+        given(awsMetadataApi.clusterEcs()).willReturn(CLUSTER);
         given(awsCredentialsProvider.credentials()).willReturn(CREDENTIALS);
 
         awsEcsClient = new AwsEcsClient(CLUSTER, awsEcsApi, awsEc2Api, awsMetadataApi, awsCredentialsProvider);

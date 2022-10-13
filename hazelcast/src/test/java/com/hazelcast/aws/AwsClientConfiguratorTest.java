@@ -16,7 +16,6 @@
 
 package com.hazelcast.aws;
 
-import com.hazelcast.aws.AwsMetadataApi.EcsMetadata;
 import com.hazelcast.config.InvalidConfigurationException;
 import org.junit.Test;
 
@@ -134,7 +133,7 @@ public class AwsClientConfiguratorTest {
         String cluster = "service-name";
         AwsConfig config = AwsConfig.builder().build();
         AwsMetadataApi metadataApi = mock(AwsMetadataApi.class);
-        given(metadataApi.metadataEcs()).willReturn(new EcsMetadata(null, cluster));
+        given(metadataApi.clusterEcs()).willReturn(cluster);
         Environment environment = mock(Environment.class);
         given(environment.isRunningOnEcs()).willReturn(true);
 
