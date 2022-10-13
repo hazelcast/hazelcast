@@ -69,7 +69,8 @@ public class ExternalDataStoreServiceImpl implements ExternalDataStoreService {
         if (externalDataStoreConfig == null) {
             throw new HazelcastException("External data store factory '" + name + "' not found");
         }
-        return (ExternalDataStoreFactory<DS>) dataStoreFactories.computeIfAbsent(name, n -> createFactory(externalDataStoreConfig));
+        return (ExternalDataStoreFactory<DS>) dataStoreFactories
+                .computeIfAbsent(name, n -> createFactory(externalDataStoreConfig));
     }
 
     @Override
