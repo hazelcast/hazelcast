@@ -37,7 +37,7 @@ public class ExternalDataStoreServiceImpl implements ExternalDataStoreService {
         this.classLoader = classLoader;
         this.node = node;
         for (Map.Entry<String, ExternalDataStoreConfig> entry : node.getConfig().getExternalDataStoreConfigs().entrySet()) {
-            createFactory(entry.getValue());
+            dataStoreFactories.put(entry.getKey(), createFactory(entry.getValue()));
         }
     }
 
@@ -46,7 +46,6 @@ public class ExternalDataStoreServiceImpl implements ExternalDataStoreService {
         try {
             ExternalDataStoreFactory<?> externalDataStoreFactory = ClassLoaderUtil.newInstance(classLoader, className);
             externalDataStoreFactory.init(config);
-            dataStoreFactories.put(config.getName(), externalDataStoreFactory);
             return externalDataStoreFactory;
         } catch (ClassCastException e) {
             throw new HazelcastException("External data store '" + config.getName() + "' misconfigured: "
