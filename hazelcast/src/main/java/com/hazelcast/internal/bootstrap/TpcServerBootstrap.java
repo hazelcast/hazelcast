@@ -40,7 +40,7 @@ import java.util.function.Supplier;
 import static java.lang.System.*;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-public class TpcBootstrap {
+public class TpcServerBootstrap {
 
     public final NodeEngineImpl nodeEngine;
     public final InternalSerializationService ss;
@@ -57,9 +57,9 @@ public class TpcBootstrap {
     private int receiveBufferSize = 128 * 1024;
     private int sendBufferSize = 128 * 1024;
 
-    public TpcBootstrap(NodeEngineImpl nodeEngine) {
+    public TpcServerBootstrap(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
-        this.logger = nodeEngine.getLogger(TpcBootstrap.class);
+        this.logger = nodeEngine.getLogger(TpcServerBootstrap.class);
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
         this.enabled = Boolean.parseBoolean(getProperty("hazelcast.tpc.enabled", "false"));
         logger.info("TPC: " + (enabled ? "enabled" : "disabled"));
@@ -94,7 +94,7 @@ public class TpcBootstrap {
             return;
         }
 
-        logger.info("Starting TpcBootstrap");
+        logger.info("Starting TpcServerBootstrap");
         tpcEngine.start();
 
         Eventloop.Type eventloopType = tpcEngine.eventloopType();

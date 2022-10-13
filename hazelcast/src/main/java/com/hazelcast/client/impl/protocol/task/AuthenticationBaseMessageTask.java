@@ -212,7 +212,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
 
         return encodeAuth(status, thisAddress, uuid, serializationService.getVersion(),
                 clientEngine.getPartitionService().getPartitionCount(), clusterId, clientFailoverSupported, true,
-                        nodeEngine.getTpcBootstrap().getClientPorts());
+                        nodeEngine.getTpcServerBootstrap().getClientPorts());
     }
 
     private void setConnectionType() {

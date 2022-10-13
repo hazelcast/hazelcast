@@ -187,9 +187,9 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
         this.inboundResponseHandlerSupplier = new InboundResponseHandlerSupplier(
                 configClassLoader, invocationRegistry, hzName, nodeEngine);
 
-        if (nodeEngine.getTpcBootstrap().isEnabled()) {
+        if (nodeEngine.getTpcServerBootstrap().isEnabled()) {
             logger.info("Using TPCOperationExecutor");
-            TpcEngine engine = nodeEngine.getTpcBootstrap().getTpcEngine();
+            TpcEngine engine = nodeEngine.getTpcServerBootstrap().getTpcEngine();
             this.operationExecutor = new TPCOperationExecutor(
                     properties, node.loggingService, engine, thisAddress, new OperationRunnerFactoryImpl(this),
                     node.getNodeExtension(), hzName, configClassLoader);
@@ -198,7 +198,6 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
             this.operationExecutor = new OperationExecutorImpl(
                     properties, node.loggingService, thisAddress, new OperationRunnerFactoryImpl(this),
                     node.getNodeExtension(), hzName, configClassLoader);
-
         }
 
         this.slowOperationDetector = new SlowOperationDetector(node.loggingService,
