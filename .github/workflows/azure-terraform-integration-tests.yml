@@ -51,7 +51,7 @@ jobs:
 
       # INSTALL TERRAFORM
       - name : Set-up Terraform
-        uses: hashicorp/setup-terraform@v1.3.2
+        uses: hashicorp/setup-terraform@v2.0.2
         with:
           terraform_version: 1.1.8
 
