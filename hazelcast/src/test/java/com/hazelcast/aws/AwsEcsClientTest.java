@@ -140,27 +140,14 @@ public class AwsEcsClientTest {
     @Test
     public void getAvailabilityZone() {
         // given
-        String availabilityZone = "us-east-1";
-        given(awsEcsApi.describeTasks(CLUSTER, singletonList(TASK_ARN), CREDENTIALS))
-            .willReturn(singletonList(new Task(null, availabilityZone)));
+        String expectedResult = "us-east-1a";
+        given(awsMetadataApi.availabilityZoneEcs()).willReturn(expectedResult);
 
         // when
         String result = awsEcsClient.getAvailabilityZone();
 
         // then
-        assertEquals(availabilityZone, result);
-    }
-
-    @Test
-    public void getAvailabilityZoneUnknown() {
-        // given
-        given(awsEcsApi.describeTasks(CLUSTER, singletonList(TASK_ARN), CREDENTIALS)).willReturn(emptyList());
-
-        // when
-        String result = awsEcsClient.getAvailabilityZone();
-
-        // then
-        assertEquals("unknown", result);
+        assertEquals(expectedResult, result);
     }
 
     @Test
