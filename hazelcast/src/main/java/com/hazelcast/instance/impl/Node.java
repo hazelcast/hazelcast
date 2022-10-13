@@ -144,7 +144,9 @@ import static java.security.AccessController.doPrivileged;
         "checkstyle:classfanoutcomplexity"})
 public class Node {
 
-    public static final String DISCOVERY_PROPERTY_THIS_NODE = "hazelcast.internal.discovery.this.node";
+    // name of property used to inject ClusterTopologyIntentTracker in Discovery Service
+    public static final String DISCOVERY_PROPERTY_CLUSTER_TOPOLOGY_INTENT_TRACKER =
+            "hazelcast.internal.discovery.cluster.topology.intent.tracker";
 
     private static final int THREAD_SLEEP_DURATION_MS = 500;
     private static final String GRACEFUL_SHUTDOWN_EXECUTOR_NAME = "hz:graceful-shutdown";
@@ -344,7 +346,7 @@ public class Node {
 
         final Map attributes = new HashMap<>(localMember.getAttributes());
         if (clusterTopologyIntentTracker.isEnabled()) {
-            attributes.put(DISCOVERY_PROPERTY_THIS_NODE, clusterTopologyIntentTracker);
+            attributes.put(DISCOVERY_PROPERTY_CLUSTER_TOPOLOGY_INTENT_TRACKER, clusterTopologyIntentTracker);
         }
         DiscoveryNode thisDiscoveryNode = new SimpleDiscoveryNode(localMember.getAddress(), attributes);
 

@@ -33,7 +33,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Map;
 
-import static com.hazelcast.instance.impl.Node.DISCOVERY_PROPERTY_THIS_NODE;
+import static com.hazelcast.instance.impl.Node.DISCOVERY_PROPERTY_CLUSTER_TOPOLOGY_INTENT_TRACKER;
 
 /**
  * Just the factory to create the Kubernetes Discovery Strategy
@@ -83,8 +83,8 @@ public class HazelcastKubernetesDiscoveryStrategyFactory
 
     public DiscoveryStrategy newDiscoveryStrategy(DiscoveryNode discoveryNode, ILogger logger,
                                                   Map<String, Comparable> properties) {
-        ClusterTopologyIntentTracker tracker =
-                (ClusterTopologyIntentTracker) discoveryNode.getProperties().get(DISCOVERY_PROPERTY_THIS_NODE);
+        ClusterTopologyIntentTracker tracker = (ClusterTopologyIntentTracker) discoveryNode.getProperties()
+                .get(DISCOVERY_PROPERTY_CLUSTER_TOPOLOGY_INTENT_TRACKER);
         return new HazelcastKubernetesDiscoveryStrategy(logger, properties, tracker);
     }
 
