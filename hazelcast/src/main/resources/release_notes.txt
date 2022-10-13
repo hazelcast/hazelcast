@@ -2,11 +2,14 @@ This document lists the new features, enhancements, fixed issues and, removed or
 
 ## New Features
 
-* SQL stream-to-stream joins: You can now enrich the data of one stream with the data of another by joining them together.
-* Generic MapStore: You no longer need to write Java code to get data from an external data store, such as a relational database, into Hazelcast by implementing the
+* SQL stream-to-stream join: You can now correlate multiple streams of data with each other using the relational join operation.
+* Generic MapStore (BETA): You no longer need to write Java code to get data from an external data store, such as a relational database, into Hazelcast by implementing the
 `MapStore` or `MapLoader` interfaces.
-* JDBC connector: You can now use SQL to connect to and query any database that supports the JDBC interface.
-* Experimental User Defined Types: You can now query nested objects within Java, compact, and portable mappings using the User Defined Types (UDTs).
+* JDBC connector (BETA): You can now use SQL to connect to and query any database that supports the JDBC interface.
+* User Defined Types (Experimental): You can now query nested objects within Java, compact, and portable mappings using the User Defined Types (UDTs).
+* CP Subsystem Leadership Priority: To ensure the availability of the CP subsystem, you can now transfer CP member leadership to another member:
+There are cases when some CP members should not act as a leader. For example, a member with high load would not be a good leader, or, in a WAN deployment, members in a primary datacenter may be preferred in order to minimize the latency between the clients and leader. You can transfer the leadership using the `cp-member-priority` configuration element. See Configuring Leadership Priority.
+
 
 ## Breaking Changes
 
@@ -17,8 +20,7 @@ This document lists the new features, enhancements, fixed issues and, removed or
 
 ### SQL Engine
 
-* SQL storage now is able to replicate data to the newly joined members in the cluster. [#21632]
-* Added support of the `Calc` operator to merge `Project` and `Filter`. [#17058]
+* Multiple performance enhancements in the SQL engine.
 
 ### Distribution
 
@@ -39,7 +41,6 @@ This document lists the new features, enhancements, fixed issues and, removed or
 * Moved the `type-name` and `class` configuration elements into the `compact-serialization` block. Removed the `registered-classes` element. [#21861]
 * Renamed the `cloneWithBuilder()` method as `newBuilderWithClone()` in the `GenericRecord` class. [#21730]
 * Added support for `char` fields in the compact serialization format. With this, `char`, `char[]`, `Character`, and `Character[]` fields are now supported in the reflective compact serializers. [#21054]
-* Hazelcast now does not allow to create SQL mappings containing the compact format, when the compact serialization is not enabled, and provides a meaningful error; previously this situation was producing confusing errors. [#20998]
 
 ### Configuration
 
@@ -61,9 +62,6 @@ For this purpose, `AwsConfig` is extended with an additional `executorServiceSup
 * Added a new method which allows to update a map entry's value without changing its previously set expiration time.
 See https://docs.hazelcast.org/docs/5.2.0/javadoc/com/hazelcast/map/ExtendedMapEntry.html#setValueWithoutChangingExpiryTime-V-. [#22199]
 * Added support of configuring the maximum message size for Python runner, when using the Jet engine with Python. [#22106]
-* To ensure the availability of the CP subsystem, you can now transfer CP member leadership to another member:
-There are cases when some CP members should not act as a leader. For example, a member with high load would not be a good leader, or, in a WAN deployment, members in a primary datacenter may be preferred in order to minimize the latency between the clients and leader. You can transfer the leadership using the `cp-member-priority` configuration element.
-See Configuring Leadership Priority. [#21941]
 * Fixed an issue where a client was infinitely trying to reconnect to the cluster with CP persistence enabled. [#21769]
 * Improved the change data capture API:
   ** Introduced two new methods, `newValue() `and `oldValue()`, to compare values before and after an update of a record.
@@ -93,6 +91,7 @@ This improves the split-brain recovery under even certain corner cases and ensur
   ** When the cluster is up, the client retries to connect for the configured wait time between retries
   ** During these reconnection attempts, the internal periodic task was outputting logs of connection failure for each second until the client connects to the cluster.
   [#21705]
+* SQL storage now is able to replicate data to the newly joined members in the cluster. [#21632]
 * Fixed an issue where `NullPointerException` was thrown around the `CREATE JOB` statement which is using Kafka Sink connector when Kafka has no records yet. Now, it produces an appropriate log message. [#21460]
 * Fixed an issue where a cluster could not be formed when security is enabled, various client permissions are set, and multiple members are started simultaneously. [#21440]
 * Fixed an issue where data persistence and tiered storage configurations could not be added dynamically. [#21432]
