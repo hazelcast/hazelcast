@@ -77,6 +77,9 @@ public final class TpcEngine {
                     nioCfg.setThreadAffinity(cfg.threadAffinity);
                     nioCfg.setThreadName("eventloop-" + idx);
                     nioCfg.setThreadFactory(cfg.threadFactory);
+                    nioCfg.setSpin(cfg.spin);
+                    nioCfg.setLocalRunQueueCapacity(cfg.localRunQueueCapacity);
+                    nioCfg.setConcurrentRunQueueCapacity(cfg.concurrentRunQueueCapacity);
                     cfg.eventloopConfigUpdater.accept(nioCfg);
                     eventloops[idx] = new NioEventloop(nioCfg);
                     break;
@@ -223,15 +226,31 @@ public final class TpcEngine {
      * Contains the configuration of the {@link TpcEngine}.
      */
     public static class Configuration {
-        private int eventloopCount = Integer.parseInt(getProperty("reactor.count", "" + Runtime.getRuntime().availableProcessors()));
-        private Eventloop.Type eventloopType = Eventloop.Type.fromString(getProperty("reactor.type", "nio"));
-        private ThreadAffinity threadAffinity = ThreadAffinity.newSystemThreadAffinity("reactor.cpu-affinity");
+        private int eventloopCount = Integer.parseInt(getProperty("hazelcast.tpc.eventloop.count", "" + Runtime.getRuntime().availableProcessors()));
+        private Eventloop.Type eventloopType = Eventloop.Type.fromString(getProperty("hazelcast.tpc.eventloop.type", "nio"));
+        private ThreadAffinity threadAffinity = ThreadAffinity.newSystemThreadAffinity("hazelcast.tpc.eventloop.cpu-affinity");
         private ThreadFactory threadFactory = HazelcastManagedThread::new;
         private Consumer<Eventloop.Configuration> eventloopConfigUpdater = configuration -> {
         };
+        private boolean spin = Boolean.parseBoolean(getProperty("hazelcast.tpc.eventloop.spin", "false"));
+        private int localRunQueueCapacity;
+        private int concurrentRunQueueCapacity;
 
         public void setThreadAffinity(ThreadAffinity threadAffinity) {
             this.threadAffinity = threadAffinity;
+        }
+
+
+        public void setLocalRunQueueCapacity(int localRunQueueCapacity) {
+            this.localRunQueueCapacity = checkPositive("localRunQueueCapacity", localRunQueueCapacity);
+        }
+
+        public void setConcurrentRunQueueCapacity(int concurrentRunQueueCapacity) {
+            this.concurrentRunQueueCapacity = checkPositive("concurrentRunQueueCapacity", concurrentRunQueueCapacity);
+        }
+
+        public final void setSpin(boolean spin) {
+            this.spin = spin;
         }
 
         public void setThreadFactory(ThreadFactory threadFactory) {
