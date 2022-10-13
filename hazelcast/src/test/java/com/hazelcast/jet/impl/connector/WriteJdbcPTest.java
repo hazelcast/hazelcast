@@ -30,6 +30,7 @@ import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.zaxxer.hikari.HikariDataSource;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
@@ -105,6 +106,13 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
         try (Connection connection = ((DataSource) createDataSource(false)).getConnection()) {
             connection.createStatement()
                     .execute("CREATE TABLE " + tableName + "(id int, name varchar(255))");
+        }
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (hikariDataSource != null) {
+            hikariDataSource.close();
         }
     }
 
