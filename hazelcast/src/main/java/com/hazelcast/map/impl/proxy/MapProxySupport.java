@@ -260,11 +260,7 @@ abstract class MapProxySupport<K, V>
     @Override
     public void initialize() {
         initializeListeners();
-        if (getNodeEngine().isStartCompleted()) {
-            initializeIndexes();
-        } else {
-            initializeLocalIndexes();
-        }
+        initializeIndexes();
         initializeMapStoreLoad();
     }
 
@@ -322,12 +318,6 @@ abstract class MapProxySupport<K, V>
     private void initializeIndexes() {
         for (IndexConfig index : mapConfig.getIndexConfigs()) {
             addIndex(index);
-        }
-    }
-
-    private void initializeLocalIndexes() {
-        for (IndexConfig index : mapConfig.getIndexConfigs()) {
-            addIndexInternal(index, true);
         }
     }
 
@@ -1344,10 +1334,6 @@ abstract class MapProxySupport<K, V>
 
     @Override
     public void addIndex(IndexConfig indexConfig) {
-        addIndexInternal(indexConfig, false);
-    }
-
-    private void addIndexInternal(IndexConfig indexConfig, boolean localOnly) {
         checkNotNull(indexConfig, "Index config cannot be null.");
         checkFalse(isNativeMemoryAndBitmapIndexingEnabled(indexConfig.getType()),
                 "BITMAP indexes are not supported by NATIVE storage");
@@ -1356,15 +1342,9 @@ abstract class MapProxySupport<K, V>
 
         try {
             AddIndexOperation addIndexOperation = new AddIndexOperation(name, indexConfig0);
-            if (localOnly) {
-                List<Integer> ownedPartitions = getNodeEngine().getPartitionService()
-                        .getMemberPartitions(getNodeEngine().getThisAddress());
-                operationService.invokeOnPartitions(SERVICE_NAME,
-                        new BinaryOperationFactory(addIndexOperation, getNodeEngine()), ownedPartitions);
-            } else {
-                operationService.invokeOnAllPartitions(SERVICE_NAME,
-                        new BinaryOperationFactory(addIndexOperation, getNodeEngine()));
-            }
+
+            operationService.invokeOnAllPartitions(SERVICE_NAME,
+                    new BinaryOperationFactory(addIndexOperation, getNodeEngine()));
         } catch (Throwable t) {
             throw rethrow(t);
         }
