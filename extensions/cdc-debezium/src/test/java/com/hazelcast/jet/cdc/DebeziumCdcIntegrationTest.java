@@ -44,6 +44,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 
 import static com.hazelcast.jet.cdc.Operation.UNSPECIFIED;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
@@ -396,6 +397,35 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
         assertThatThrownBy(job::join)
                 .hasRootCauseInstanceOf(JetException.class)
                 .hasStackTraceContaining("connector class io.debezium.connector.xxx.BlaBlaBla not found");
+    }
+
+    @Test
+    public void notFailWhenOldValueNotPresent() {
+        try (MySQLContainer<?> container = mySqlContainer()) {
+            container.start();
+            Pipeline pipeline = Pipeline.create();
+
+            // stateful transform causes hashCode to be used
+            StreamSource<ChangeRecord> source = mySqlSource(container);
+            pipeline.readFrom(source)
+                    .withNativeTimestamps(1)
+                    .setLocalParallelism(1)
+                    .groupingKey(r -> r)
+                    .mapStateful(
+                            LongAccumulator::new,
+                            (acc, key, record) -> {
+                                acc.add(1);
+                                return acc.get();
+                            }
+                    )
+                    .peek()
+                    .writeTo(Sinks.list("notFailWhenOldValueNotPresent"));
+
+            HazelcastInstance hz = createHazelcastInstances(1)[0];
+            hz.getJet().newJob(pipeline);
+
+            assertTrueEventually(() -> assertThat(hz.getList("notFailWhenOldValueNotPresent")).isNotEmpty());
+        }
     }
 
     private static class Customer {

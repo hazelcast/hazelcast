@@ -26,7 +26,7 @@ import com.hazelcast.spi.annotation.Beta;
  * @since 5.2
  */
 @Beta
-public interface ExternalDataStoreFactory<DS> {
+public interface ExternalDataStoreFactory<DS> extends AutoCloseable {
     /**
      * Returns configured data store. Depending on configuration and implementation it can create new data store
      * or reuse existing one.
@@ -39,4 +39,14 @@ public interface ExternalDataStoreFactory<DS> {
      * @param config configuration of the given datastore
      */
     void init(ExternalDataStoreConfig config);
+
+    /**
+     * Closes underlying resources
+     *
+     * @throws Exception
+     */
+    @Override
+    default void close() throws Exception {
+        //no op
+    }
 }
