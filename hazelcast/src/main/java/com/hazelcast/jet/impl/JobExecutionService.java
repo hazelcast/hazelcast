@@ -240,14 +240,13 @@ public class JobExecutionService implements DynamicMetricsProvider {
      */
     @SuppressWarnings("rawtypes")
     public void cancelAllExecutions(String reason) {
-        Collection<ExecutionContext> contexts = executionContexts.values();
-        CompletableFuture[] futures = new CompletableFuture[contexts.size()];
-        int index = 0;
-        for (ExecutionContext exeCtx : contexts) {
-            LoggingUtil.logFine(logger, "Completing %s locally. Reason: %s",
-                    exeCtx.jobNameAndExecutionId(), reason);
-            futures[index++] = terminateExecution0(exeCtx, null, new CancellationException());
-        }
+        CompletableFuture[] futures = executionContexts.values().stream()
+                .map(exeCtx -> {
+                    LoggingUtil.logFine(logger, "Completing %s locally. Reason: %s",
+                            exeCtx.jobNameAndExecutionId(), reason);
+                    return terminateExecution0(exeCtx, null, new CancellationException());
+                })
+                .toArray(CompletableFuture[]::new);
 
         CompletableFuture.allOf(futures).join();
     }
