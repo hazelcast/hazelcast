@@ -691,7 +691,8 @@ public class ClusterJoinManager {
                         clusterService.getMembershipManager().getMembersView(), preJoinOp, postJoinOp,
                         clusterClock.getClusterTime(), clusterService.getClusterId(),
                         clusterClock.getClusterStartTime(), clusterStateManager.getState(),
-                        clusterService.getClusterVersion(), partitionRuntimeState, deferPartitionProcessing);
+                        clusterService.getClusterVersion(), partitionRuntimeState, deferPartitionProcessing,
+                        node.getClusterTopologyIntent());
                 op.setCallerUuid(clusterService.getThisUuid());
                 invokeClusterOp(op, targetAddress);
             }
@@ -805,7 +806,8 @@ public class ClusterJoinManager {
                     long startTime = clusterClock.getClusterStartTime();
                     Operation op = new FinalizeJoinOp(member.getUuid(), newMembersView, preJoinOp, postJoinOp, time,
                             clusterService.getClusterId(), startTime, clusterStateManager.getState(),
-                            clusterService.getClusterVersion(), partitionRuntimeState, !shouldTriggerRepartition);
+                            clusterService.getClusterVersion(), partitionRuntimeState, !shouldTriggerRepartition,
+                            node.getClusterTopologyIntent());
                     op.setCallerUuid(thisUuid);
                     invokeClusterOp(op, member.getAddress());
                 }

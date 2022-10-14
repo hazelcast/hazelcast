@@ -23,6 +23,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.exception.ServiceNotFoundException;
 
@@ -41,7 +42,7 @@ import static com.hazelcast.cache.impl.JCacheDetector.isJCacheAvailable;
  * resolve a race between the {@link CacheConfig} becoming available in the joining member and creation of a
  * {@link com.hazelcast.cache.ICache} proxy.
  */
-public class OnJoinCacheOperation extends Operation implements IdentifiedDataSerializable {
+public class OnJoinCacheOperation extends Operation implements IdentifiedDataSerializable, AllowedDuringPassiveState {
 
     private List<CacheConfig> configs = new ArrayList<CacheConfig>();
 
