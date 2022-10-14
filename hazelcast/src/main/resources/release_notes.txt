@@ -1,5 +1,11 @@
 This document lists the new features, enhancements, fixed issues and, removed or deprecated features for Hazelcast IMDG 3.12.x release. The numbers in the square brackets refer to the issues in Hazelcast's GitHub repositories.
 
+==== 3.12.2 - VISA8 ====
+
+1. Enhancements
+
+* WAN synchronization process now collects data only for the maps configured to be WAN replicated. Previously, this process was performed for all the maps in the cluster.
+
 ==== 3.12.2 - VISA7 ====
 
 1. Enhancements
