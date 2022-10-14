@@ -467,4 +467,8 @@ public class PartitionStateManager {
     PartitionTableView getSnapshot(UUID crashedMemberUuid) {
         return snapshotOnRemove.get(crashedMemberUuid);
     }
+
+    void removeSnapshot(UUID memberUuid) {
+        snapshotOnRemove.remove(memberUuid);
+    }
 }

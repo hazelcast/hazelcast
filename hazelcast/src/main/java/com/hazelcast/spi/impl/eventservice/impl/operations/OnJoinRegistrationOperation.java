@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.eventservice.impl.operations;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.SpiDataSerializerHook;
@@ -29,7 +30,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public class OnJoinRegistrationOperation extends Operation implements IdentifiedDataSerializable {
+public class OnJoinRegistrationOperation extends Operation implements IdentifiedDataSerializable, AllowedDuringPassiveState {
 
     private Collection<Registration> registrations;
 

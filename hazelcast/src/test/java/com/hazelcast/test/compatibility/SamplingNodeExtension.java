@@ -118,6 +118,11 @@ public class SamplingNodeExtension implements NodeExtension {
     }
 
     @Override
+    public boolean isReady() {
+        return nodeExtension.isReady();
+    }
+
+    @Override
     public void beforeShutdown(boolean terminate) {
         nodeExtension.beforeShutdown(terminate);
     }
