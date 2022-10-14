@@ -70,6 +70,25 @@ public class AwsMetadataApiTest {
     }
 
     @Test
+    public void availabilityZoneEcs() {
+        // given
+        //language=JSON
+        String response = "{\n"
+                + "  \"Cluster\" : \"hz-cluster\",\n"
+                + "  \"AvailabilityZone\": \"ca-central-1a\"\n"
+                + "}";
+
+        stubFor(get(urlEqualTo("/task"))
+                .willReturn(aResponse().withStatus(200).withBody(response)));
+
+        // when
+        String result = awsMetadataApi.availabilityZoneEcs();
+
+        // then
+        assertEquals("ca-central-1a", result);
+    }
+
+    @Test
     public void placementGroupEc2() {
         // given
         String placementGroup = "placement-group-1";
@@ -130,6 +149,26 @@ public class AwsMetadataApiTest {
         // then
         assertEquals(Optional.empty(), placementGroupResult);
         verify(moreThan(RETRY_COUNT), getRequestedFor(urlEqualTo(GROUP_NAME_URL)));
+    }
+
+
+    @Test
+    public void clusterEcs() {
+        // given
+        //language=JSON
+        String response = "{\n"
+                + "  \"Cluster\" : \"hz-cluster\",\n"
+                + "  \"AvailabilityZone\": \"ca-central-1a\"\n"
+                + "}";
+
+        stubFor(get(urlEqualTo("/task"))
+                .willReturn(aResponse().withStatus(200).withBody(response)));
+
+        // when
+        String result = awsMetadataApi.clusterEcs();
+
+        // then
+        assertEquals("hz-cluster", result);
     }
 
     @Test
