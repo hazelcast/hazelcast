@@ -61,7 +61,6 @@ import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.merge.SplitBrainMergePolicy;
 import com.hazelcast.spi.merge.SplitBrainMergePolicyProvider;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -98,7 +97,7 @@ import static java.util.Collections.singleton;
 
 @SuppressWarnings("checkstyle:classdataabstractioncoupling")
 public abstract class AbstractCacheService implements ICacheService,
-        PreJoinAwareService, PartitionAwareService,
+        PreJoinAwareService<OnJoinCacheOperation>, PartitionAwareService,
         SplitBrainProtectionAwareService, SplitBrainHandlerService,
         ClusterStateListener, TenantContextAwareService {
     /**
@@ -734,7 +733,7 @@ public abstract class AbstractCacheService implements ICacheService,
     }
 
     @Override
-    public Operation getPreJoinOperation() {
+    public OnJoinCacheOperation getPreJoinOperation() {
         OnJoinCacheOperation preJoinCacheOperation;
         preJoinCacheOperation = new OnJoinCacheOperation();
         for (Map.Entry<String, CompletableFuture<CacheConfig>> cacheConfigEntry : configs.entrySet()) {

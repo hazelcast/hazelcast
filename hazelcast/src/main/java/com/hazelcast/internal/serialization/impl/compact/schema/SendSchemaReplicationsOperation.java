@@ -20,6 +20,7 @@ import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
@@ -47,7 +48,7 @@ import java.util.Collection;
  * will make sure that the coordinator members will retry the acknowledgment
  * operation until the new member becomes one of the participants.
  */
-public class SendSchemaReplicationsOperation extends Operation implements IdentifiedDataSerializable {
+public class SendSchemaReplicationsOperation extends Operation implements IdentifiedDataSerializable, AllowedDuringPassiveState {
 
     private Collection<SchemaReplication> replications;
 

@@ -52,6 +52,11 @@ public enum NodeState {
      * When the cluster state moves to {@link ClusterState#PASSIVE} via
      * {@link Cluster#changeClusterState(ClusterState)}
      * </li>
+     * <li>
+     * During recovery from persistence while running under a managed context (e.g. Hazelcast member
+     * is running in Kubernetes) and not doing a cluster-wide start. For example, when a single pod
+     * is deleted, the rescheduled member will perform recovery in {@code PASSIVE} node state.
+     * </li>
      * </ul>
      */
     PASSIVE,
