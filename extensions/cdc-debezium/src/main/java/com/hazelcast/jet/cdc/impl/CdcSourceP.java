@@ -78,6 +78,7 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
 
     private static final BroadcastKey<String> SNAPSHOT_KEY = broadcastKey("snap");
     private static final ThreadLocal<List<byte[]>> THREAD_LOCAL_HISTORY = new ThreadLocal<>();
+    private static final String TIMESTAMP_MS_FIELD_NAME = "ts_ms";
 
     @Nonnull
     private final Properties properties;
@@ -413,18 +414,18 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
     }
 
     private static long extractTimestamp(SourceRecord record) {
-        boolean noValueTsMs = record.valueSchema().field("ts_ms") == null;
-        boolean noSourceTsMs = record.valueSchema().field("source").schema().field("ts_ms") == null;
+        boolean noValueTsMs = record.valueSchema().field(TIMESTAMP_MS_FIELD_NAME) == null;
+        boolean noSourceTsMs = record.valueSchema().field("source").schema().field(TIMESTAMP_MS_FIELD_NAME) == null;
         if (noValueTsMs && noSourceTsMs) {
             return NO_NATIVE_TIME;
         }
-        if (!noValueTsMs) {
-            Long timestamp = ((Struct) record.value()).getInt64("ts_ms");
-            return timestamp == null ? NO_NATIVE_TIME : timestamp;
+        Long timestamp;
+        if (noValueTsMs) {
+            timestamp = ((Struct) record.value()).getStruct("source").getInt64("ts_ms");
         } else {
-            Long timestamp = ((Struct) record.value()).getStruct("source").getInt64("ts_ms");
-            return timestamp == null ? NO_NATIVE_TIME : timestamp;
+            timestamp = ((Struct) record.value()).getInt64("ts_ms");
         }
+        return timestamp == null ? NO_NATIVE_TIME : timestamp;
     }
 
     private static class JetConnectorContext implements ConnectorContext {
