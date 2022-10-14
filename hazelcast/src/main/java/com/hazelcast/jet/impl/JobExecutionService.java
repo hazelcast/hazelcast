@@ -110,6 +110,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
     private static final long UNINITIALIZED_CONTEXT_MAX_AGE_NS = MINUTES.toNanos(5);
 
     private static final long FAILED_EXECUTION_EXPIRY_NS = SECONDS.toNanos(5);
+    private static final CompletableFuture<?>[] EMPTY_COMPLETABLE_FUTURE_ARRAY = new CompletableFuture[0];
 
     private final Object mutex = new Object();
 
@@ -240,15 +241,18 @@ public class JobExecutionService implements DynamicMetricsProvider {
      */
     @SuppressWarnings("rawtypes")
     public void cancelAllExecutions(String reason) {
-        CompletableFuture[] futures = executionContexts.values().stream()
-                .map(exeCtx -> {
-                    LoggingUtil.logFine(logger, "Completing %s locally. Reason: %s",
-                            exeCtx.jobNameAndExecutionId(), reason);
-                    return terminateExecution0(exeCtx, null, new CancellationException());
-                })
-                .toArray(CompletableFuture[]::new);
+        // The ConcurrentHashMap.values() is a projection of underlying data in the map. If other thread mutates the map the
+        // collection returned by values() mutates as well. That's the reason why we use ArrayList here instead of an array, the
+        // count of items may change.
+        Collection<ExecutionContext> contexts = executionContexts.values();
+        List<CompletableFuture> futures = new ArrayList<>(contexts.size());
 
-        CompletableFuture.allOf(futures).join();
+        for (ExecutionContext exeCtx : contexts) {
+            LoggingUtil.logFine(logger, "Completing %s locally. Reason: %s", exeCtx.jobNameAndExecutionId(), reason);
+            futures.add(terminateExecution0(exeCtx, null, new CancellationException()));
+        }
+
+        CompletableFuture.allOf(futures.toArray(EMPTY_COMPLETABLE_FUTURE_ARRAY)).join();
     }
 
     /**
@@ -639,7 +643,7 @@ public class JobExecutionService implements DynamicMetricsProvider {
             }
 
             if (!terminateFutures.isEmpty()) {
-                CompletableFuture.allOf(terminateFutures.toArray(new CompletableFuture[0])).join();
+                CompletableFuture.allOf(terminateFutures.toArray(EMPTY_COMPLETABLE_FUTURE_ARRAY)).join();
             }
 
             // submit the query to the coordinator
