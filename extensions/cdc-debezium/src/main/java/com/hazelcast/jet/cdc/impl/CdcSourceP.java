@@ -413,17 +413,17 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
         }
     }
 
-    private static long extractTimestamp(SourceRecord record) {
-        boolean noValueTsMs = record.valueSchema().field(TIMESTAMP_MS_FIELD_NAME) == null;
-        boolean noSourceTsMs = record.valueSchema().field("source").schema().field(TIMESTAMP_MS_FIELD_NAME) == null;
+    private static long extractTimestamp(SourceRecord sourceRecord) {
+        boolean noValueTsMs = sourceRecord.valueSchema().field(TIMESTAMP_MS_FIELD_NAME) == null;
+        boolean noSourceTsMs = sourceRecord.valueSchema().field("source").schema().field(TIMESTAMP_MS_FIELD_NAME) == null;
         if (noValueTsMs && noSourceTsMs) {
             return NO_NATIVE_TIME;
         }
         Long timestamp;
         if (noValueTsMs) {
-            timestamp = ((Struct) record.value()).getStruct("source").getInt64("ts_ms");
+            timestamp = ((Struct) sourceRecord.value()).getStruct("source").getInt64("ts_ms");
         } else {
-            timestamp = ((Struct) record.value()).getInt64("ts_ms");
+            timestamp = ((Struct) sourceRecord.value()).getInt64("ts_ms");
         }
         return timestamp == null ? NO_NATIVE_TIME : timestamp;
     }
