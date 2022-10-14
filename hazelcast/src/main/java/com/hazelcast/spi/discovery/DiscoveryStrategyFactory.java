@@ -19,7 +19,6 @@ package com.hazelcast.spi.discovery;
 import com.hazelcast.config.properties.PropertyDefinition;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 
 import java.util.Collection;
 import java.util.Map;

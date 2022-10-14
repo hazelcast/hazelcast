@@ -21,7 +21,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
