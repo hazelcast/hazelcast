@@ -45,6 +45,7 @@ public class ExternalDataStoreServiceImpl implements ExternalDataStoreService {
     }
 
     private <DS> ExternalDataStoreFactory<DS> createFactory(ExternalDataStoreConfig config) {
+        logger.finest("Creating '" + config.getName() + "' external datastore factory");
         String className = config.getClassName();
         try {
             ExternalDataStoreFactory<DS> externalDataStoreFactory = ClassLoaderUtil.newInstance(classLoader, className);
@@ -75,11 +76,13 @@ public class ExternalDataStoreServiceImpl implements ExternalDataStoreService {
 
     @Override
     public void close() {
-        for (ExternalDataStoreFactory<?> dataStoreFactory : dataStoreFactories.values()) {
+        for (Map.Entry<String, ExternalDataStoreFactory<?>> entry : dataStoreFactories.entrySet()) {
             try {
+                logger.finest("Closing '" + entry.getKey() + "' external datastore factory");
+                ExternalDataStoreFactory<?> dataStoreFactory = entry.getValue();
                 dataStoreFactory.close();
             } catch (Exception e) {
-                logger.warning("Closing data stores failed", e);
+                logger.warning("Closing '" + entry.getKey() + "' external datastore factory failed", e);
             }
         }
     }
