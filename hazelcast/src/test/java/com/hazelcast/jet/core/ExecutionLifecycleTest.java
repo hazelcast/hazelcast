@@ -25,6 +25,7 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
@@ -115,6 +116,10 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     private static final int MEMBER_COUNT = 2;
     private static final Throwable MOCK_ERROR = new AssertionError("mock error");
 
+    private static final JetException JET_EXCEPTION = new JetException("Execution on a member failed");
+
+    public static final TestProcessors.NonSerializableException NON_SERIALIZABLE_EXCEPTION = new TestProcessors.NonSerializableException(MOCK_ERROR.getMessage());
+
     @Parameter
     public boolean useLightJob;
 
@@ -184,6 +189,22 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertJobFailed(job, MOCK_ERROR);
     }
 
+    //ProcessorMetaSupplier throws NonSerializable exception from init()
+    @Test
+    public void when_pmsInitThrowsNonSerializable_then_jobFails() {
+        // Given
+        SupplierEx<ProcessorSupplier> supplier = ()->  new MockPS(MockP::new, MEMBER_COUNT);
+        DAG dag = new DAG().vertex(new Vertex("test",
+                new TestProcessors.NonSerializingMockPMS(supplier)));
+
+        // When
+        Job job = runJobExpectFailure(dag, false);
+
+        // Then
+        assertPmsClosedWithError();
+        assertThrows(CompletionException.class,()-> job.join());
+    }
+
     @Test
     public void when_oneOfTwoJobsFails_then_theOtherContinues() throws Exception {
         // Given
@@ -235,6 +256,24 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertJobSucceeded(job);
         assertsWhenOneJob();
     }
+
+    //ProcessorSupplier throws NonSerializable exception from init()
+    @Test
+    public void when_psInitThrowsNonSerializable_then_jobFails() {
+        // Given
+        SupplierEx<ProcessorSupplier> supplier = ()->  new TestProcessors.NonSerializingMockPS(MockP::new, MEMBER_COUNT);
+        DAG dag = new DAG().vertex(new Vertex("test",
+                new MockPMS(supplier)));
+
+        // When
+        Job job = runJobExpectFailure(dag, false);
+
+        // Then
+        assertPsClosedWithError();
+        assertPmsClosedWithError();
+        assertThrows(CompletionException.class,()-> job.join());
+    }
+
 
     @Test
     public void when_psInitThrows_then_jobFails() {
@@ -928,8 +967,12 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             fail("Job execution should have failed");
         } catch (Exception actual) {
             String causeString = peel(actual).toString();
-            if (causeString == null
-                    || !(causeString.contains(MOCK_ERROR.toString()) || causeString.contains(CancellationException.class.getName()))) {
+            if (causeString == null  ||
+                !(causeString.contains(MOCK_ERROR.toString()) ||
+                         causeString.contains(CancellationException.class.getName()) ||
+                         causeString.contains(JetException.class.getName()) ||
+                        causeString.contains(TestProcessors.NonSerializableException.class.getName()))
+            ) {
                 throw new AssertionError(format("'%s' didn't contain expected '%s'", causeString, MOCK_ERROR.getMessage()), actual);
             }
         }
@@ -946,6 +989,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertTrue("init not called", MockPMS.initCount.get() > 0);
         assertTrue("close not called", MockPMS.closeCount.get() > 0);
         assertOneOfExceptionsInCauses(MockPMS.receivedCloseError.get(),
+                NON_SERIALIZABLE_EXCEPTION,
+                JET_EXCEPTION,
                 MOCK_ERROR,
                 new CancellationException(),
                 new JobTerminateRequestedException(CANCEL_FORCEFUL));
