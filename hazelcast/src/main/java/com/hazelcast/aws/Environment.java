@@ -22,12 +22,7 @@ import com.hazelcast.internal.util.StringUtil;
  * This class is introduced to lookup system parameters.
  */
 class Environment {
-    private static final String AWS_REGION_ON_ECS = System.getenv("AWS_REGION");
     private static final boolean IS_RUNNING_ON_ECS = isRunningOnEcsEnvironment();
-
-    String getAwsRegionOnEcs() {
-        return AWS_REGION_ON_ECS;
-    }
 
     boolean isRunningOnEcs() {
         return IS_RUNNING_ON_ECS;

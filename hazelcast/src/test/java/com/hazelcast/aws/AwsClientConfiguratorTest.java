@@ -47,23 +47,6 @@ public class AwsClientConfiguratorTest {
     }
 
     @Test
-    public void resolveRegionEcsEnvironment() {
-        // given
-        String region = "us-east-1";
-        AwsConfig awsConfig = AwsConfig.builder().build();
-        AwsMetadataApi awsMetadataApi = mock(AwsMetadataApi.class);
-        Environment environment = mock(Environment.class);
-        given(environment.getAwsRegionOnEcs()).willReturn(region);
-        given(environment.isRunningOnEcs()).willReturn(true);
-
-        // when
-        String result = resolveRegion(awsConfig, awsMetadataApi, environment);
-
-        // then
-        assertEquals(region, result);
-    }
-
-    @Test
     public void resolveRegionEc2Metadata() {
         // given
         AwsConfig awsConfig = AwsConfig.builder().build();
@@ -79,14 +62,13 @@ public class AwsClientConfiguratorTest {
     }
 
     @Test
-    public void resolveRegionEcsEc2Metadata() {
+    public void resolveRegionEcsMetadata() {
         // given
         AwsConfig awsConfig = AwsConfig.builder().build();
         AwsMetadataApi awsMetadataApi = mock(AwsMetadataApi.class);
         Environment environment = mock(Environment.class);
-        given(awsMetadataApi.availabilityZoneEc2()).willReturn("us-east-1a");
-        given(environment.getAwsRegionOnEcs()).willReturn(null);
         given(environment.isRunningOnEcs()).willReturn(true);
+        given(awsMetadataApi.availabilityZoneEcs()).willReturn("us-east-1a");
 
         // when
         String result = resolveRegion(awsConfig, awsMetadataApi, environment);
