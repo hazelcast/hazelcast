@@ -345,9 +345,7 @@ public class Node {
         ILogger logger = getLogger(DiscoveryService.class);
 
         final Map attributes = new HashMap<>(localMember.getAttributes());
-        if (clusterTopologyIntentTracker.isEnabled()) {
-            attributes.put(DISCOVERY_PROPERTY_CLUSTER_TOPOLOGY_INTENT_TRACKER, clusterTopologyIntentTracker);
-        }
+        attributes.put(DISCOVERY_PROPERTY_CLUSTER_TOPOLOGY_INTENT_TRACKER, clusterTopologyIntentTracker);
         DiscoveryNode thisDiscoveryNode = new SimpleDiscoveryNode(localMember.getAddress(), attributes);
 
         DiscoveryServiceSettings settings = new DiscoveryServiceSettings()
