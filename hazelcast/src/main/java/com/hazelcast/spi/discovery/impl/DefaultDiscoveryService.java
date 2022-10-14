@@ -20,15 +20,14 @@ import com.hazelcast.config.DiscoveryConfig;
 import com.hazelcast.config.DiscoveryStrategyConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.properties.ValidationException;
+import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.discovery.DiscoveryNode;
 import com.hazelcast.spi.discovery.DiscoveryStrategy;
 import com.hazelcast.spi.discovery.DiscoveryStrategyFactory;
 import com.hazelcast.spi.discovery.NodeFilter;
-import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 import com.hazelcast.spi.discovery.integration.DiscoveryService;
 import com.hazelcast.spi.discovery.integration.DiscoveryServiceSettings;
-import com.hazelcast.internal.util.ServiceLoader;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -51,14 +50,12 @@ public class DefaultDiscoveryService
     private final DiscoveryNode discoveryNode;
     private final NodeFilter nodeFilter;
     private final Iterable<DiscoveryStrategy> discoveryStrategies;
-    private final DiscoveryMode discoveryMode;
 
     public DefaultDiscoveryService(DiscoveryServiceSettings settings) {
         this.logger = settings.getLogger();
         this.discoveryNode = settings.getDiscoveryNode();
         this.nodeFilter = getNodeFilter(settings);
         this.discoveryStrategies = loadDiscoveryStrategies(settings);
-        this.discoveryMode = settings.getDiscoveryMode();
     }
 
     @Override
