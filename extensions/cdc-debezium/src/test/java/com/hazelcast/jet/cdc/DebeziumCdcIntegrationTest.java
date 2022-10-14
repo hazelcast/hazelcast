@@ -20,6 +20,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.accumulator.LongAccumulator;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;

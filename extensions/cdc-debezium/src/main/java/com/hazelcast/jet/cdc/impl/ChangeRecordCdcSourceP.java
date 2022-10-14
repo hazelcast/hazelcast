@@ -69,32 +69,28 @@ public class ChangeRecordCdcSourceP extends CdcSourceP<ChangeRecord> {
                 ?   Operation.get(value.getString("op"))
                 : Operation.UNSPECIFIED;
 
+        long timestamp;
+        Supplier<String> oldValueJson;
+        Supplier<String> newValueJson;
         if (operation == Operation.UNSPECIFIED) {
-            String valueJson = Values.convertToString(valueSchema, value);
-            return new ChangeRecordImpl(
-                    ((Struct) value.get("source")).getInt64("ts_ms"),
-                    sequenceSource,
-                    sequenceValue,
-                    operation,
-                    keyJson,
-                    valueJson,
-                    valueJson,
-                    fieldOrNull(source, "table"),
-                    fieldOrNull(source, "schema"),
-                    fieldOrNull(source, "db")
-            );
+            timestamp = ((Struct) value.get("source")).getInt64("ts_ms");
+            oldValueJson = () -> Values.convertToString(valueSchema, value);
+            newValueJson = () -> Values.convertToString(valueSchema, value);
+        } else {
+            Object before = value.get("before");
+            Object after = value.get("after");
+
+            timestamp = value.getInt64("ts_ms");
+            oldValueJson = before == null
+                    ? null
+                    : () -> Values.convertToString(valueSchema.field("before").schema(), before);
+            newValueJson = after == null
+                    ? null
+                    : () -> Values.convertToString(valueSchema.field("after").schema(), after);
         }
 
-        Object before = value.get("before");
-        Object after = value.get("after");
-        Supplier<String> oldValueJson = before == null
-                ? null
-                : () -> Values.convertToString(valueSchema.field("before").schema(), before);
-        Supplier<String> newValueJson = after == null
-                ? null
-                : () -> Values.convertToString(valueSchema.field("after").schema(), after);
         return new ChangeRecordImpl(
-                value.getInt64("ts_ms"),
+                timestamp,
                 sequenceSource,
                 sequenceValue,
                 operation,
