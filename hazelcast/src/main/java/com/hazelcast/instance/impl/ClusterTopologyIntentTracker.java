@@ -110,7 +110,7 @@ public interface ClusterTopologyIntentTracker {
     /**
      * Prepare this tracker for shutdown.
      */
-    void shutdown();
+    void destroy();
 
     /**
      * Initialize explicitly the cluster topology intent.

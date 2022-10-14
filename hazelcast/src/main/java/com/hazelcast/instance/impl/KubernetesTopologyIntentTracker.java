@@ -112,7 +112,7 @@ public class KubernetesTopologyIntentTracker implements ClusterTopologyIntentTra
     }
 
     @Override
-    public void shutdown() {
+    public void destroy() {
         clusterTopologyExecutor.shutdown();
     }
 

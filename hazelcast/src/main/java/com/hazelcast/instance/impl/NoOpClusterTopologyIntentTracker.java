@@ -34,7 +34,7 @@ public class NoOpClusterTopologyIntentTracker implements ClusterTopologyIntentTr
     }
 
     @Override
-    public void shutdown() {
+    public void destroy() {
     }
 
     @Override

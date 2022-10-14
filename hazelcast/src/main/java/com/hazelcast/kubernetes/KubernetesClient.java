@@ -129,7 +129,7 @@ class KubernetesClient {
 
     public void destroy() {
         if (clusterTopologyIntentTracker != null) {
-            clusterTopologyIntentTracker.shutdown();
+            clusterTopologyIntentTracker.destroy();
         }
         if (stsMonitorThread != null) {
             LOGGER.info("Interrupting StatefulSet monitor thread");
