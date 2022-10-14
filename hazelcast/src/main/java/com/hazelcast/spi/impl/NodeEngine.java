@@ -22,6 +22,7 @@ import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.datastore.ExternalDataStoreService;
+import com.hazelcast.instance.impl.NodeExtension;
 import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.serialization.Data;
@@ -232,8 +233,8 @@ public interface NodeEngine {
     boolean isRunning();
 
     /**
-     * todo NodeExtension.isStartCompleted
-     * @return
+     * @return      {@code true} if this {@code Node} has completed startup, {@code false} otherwise.
+     * @see         NodeExtension#isStartCompleted()
      */
     boolean isStartCompleted();
 
