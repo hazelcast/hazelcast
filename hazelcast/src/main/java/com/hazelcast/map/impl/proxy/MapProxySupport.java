@@ -1357,8 +1357,7 @@ abstract class MapProxySupport<K, V>
         try {
             AddIndexOperation addIndexOperation = new AddIndexOperation(name, indexConfig0);
             if (localOnly) {
-                List<Integer> ownedPartitions = getNodeEngine().getPartitionService()
-                        .getMemberPartitions(getNodeEngine().getThisAddress());
+                PartitionIdSet ownedPartitions = mapServiceContext.getOrInitCachedMemberPartitions();
                 operationService.invokeOnPartitions(SERVICE_NAME,
                         new BinaryOperationFactory(addIndexOperation, getNodeEngine()), ownedPartitions);
             } else {
