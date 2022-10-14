@@ -78,7 +78,7 @@ final class AwsClientConfigurator {
         }
 
         if (environment.isRunningOnEcs()) {
-            return environment.getAwsRegionOnEcs();
+            return regionFrom(metadataApi.availabilityZoneEcs());
         }
 
         return regionFrom(metadataApi.availabilityZoneEc2());
