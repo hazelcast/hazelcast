@@ -177,12 +177,8 @@ public class ChangeRecordImpl implements ChangeRecord {
 
     @Override
     public int hashCode() {
-        int hash = (int) sequenceSource;
-        hash = 31 * hash + (int) sequenceValue;
-        hash = 31 * hash + keyJson.hashCode();
-        hash = 31 * hash + oldValue.toJson().hashCode();
-        hash = 31 * hash + newValue.toJson().hashCode();
-        return hash;
+        return Objects.hash(sequenceSource, sequenceValue, keyJson, timestamp,
+                operation, database, schema, table, oldValue, newValue);
     }
 
     @Override
@@ -194,10 +190,15 @@ public class ChangeRecordImpl implements ChangeRecord {
             return false;
         }
         ChangeRecordImpl that = (ChangeRecordImpl) obj;
-        return this.sequenceSource == that.sequenceSource &&
-                this.sequenceValue == that.sequenceValue &&
-                this.keyJson.equals(that.keyJson) &&
-                Objects.equals(this.oldValue, that.oldValue) &&
-                Objects.equals(this.newValue, that.newValue);
+        return this.sequenceSource == that.sequenceSource
+                && this.sequenceValue == that.sequenceValue
+                && Objects.equals(this.keyJson, that.keyJson)
+                && Objects.equals(this.timestamp, that.timestamp)
+                && this.operation == that.operation
+                && Objects.equals(this.database, that.database)
+                && Objects.equals(this.schema, that.schema)
+                && Objects.equals(this.table, that.table)
+                && Objects.equals(this.oldValue, that.oldValue)
+                && Objects.equals(this.newValue, that.newValue);
     }
 }

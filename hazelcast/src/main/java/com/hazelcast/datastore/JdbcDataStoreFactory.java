@@ -35,23 +35,33 @@ import javax.sql.DataSource;
  */
 @Beta
 public class JdbcDataStoreFactory implements ExternalDataStoreFactory<DataSource> {
-    private ExternalDataStoreConfig config;
-    private DataSource shareDataSource;
+    protected HikariDataSource sharedDataSource;
+    protected CloseableDataSource sharedCloseableDataSource;
+    protected ExternalDataStoreConfig config;
 
+    @Override
     public void init(ExternalDataStoreConfig config) {
         this.config = config;
         if (config.isShared()) {
-            shareDataSource = createDataSource();
+            sharedDataSource = doCreateDataSource();
+            sharedCloseableDataSource = CloseableDataSource.nonClosing(sharedDataSource);
         }
     }
 
     @Override
     public DataSource getDataStore() {
-        return config.isShared() ? shareDataSource : createDataSource();
+        return config.isShared() ? sharedCloseableDataSource : CloseableDataSource.closing(doCreateDataSource());
     }
 
-    private DataSource createDataSource() {
+    protected HikariDataSource doCreateDataSource() {
         HikariConfig dataSourceConfig = new HikariConfig(config.getProperties());
         return new HikariDataSource(dataSourceConfig);
+    }
+
+    @Override
+    public void close() throws Exception {
+        if (sharedDataSource != null) {
+            sharedDataSource.close();
+        }
     }
 }

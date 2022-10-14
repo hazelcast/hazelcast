@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.datastore.CloseableDataSource;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
@@ -137,12 +138,20 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
                         dataSource = dataSourceSupplier.apply(context);
                     }
 
-                    @Nonnull @Override
+                    @Override
+                    public void close(Throwable error) throws Exception {
+                        if (dataSource instanceof CloseableDataSource) {
+                            ((CloseableDataSource) dataSource).close();
+                        }
+                    }
+
+                    @Nonnull
+                    @Override
                     public Collection<? extends Processor> get(int count) {
                         return IntStream.range(0, count)
-                                        .mapToObj(i -> new WriteJdbcP<>(updateQuery, dataSource, bindFn,
-                                                               exactlyOnce, batchLimit))
-                                        .collect(Collectors.toList());
+                                .mapToObj(i -> new WriteJdbcP<>(updateQuery, dataSource, bindFn,
+                                        exactlyOnce, batchLimit))
+                                .collect(Collectors.toList());
                     }
 
                     @Override
