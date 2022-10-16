@@ -16,7 +16,6 @@
 
 package com.hazelcast.client.impl.protocol.task.transaction;
 
-import com.hazelcast.client.impl.CollectRemoteTransactionsOperationSupplier;
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.XATransactionCollectTransactionsCodec;
 import com.hazelcast.client.impl.protocol.task.AbstractMultiTargetMessageTask;
@@ -29,6 +28,7 @@ import com.hazelcast.security.permission.TransactionPermission;
 import com.hazelcast.spi.impl.SerializableList;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.transaction.impl.xa.XAService;
+import com.hazelcast.transaction.impl.xa.operations.CollectRemoteTransactionsOperation;
 
 import javax.transaction.xa.Xid;
 import java.security.Permission;
@@ -57,7 +57,7 @@ public class XACollectTransactionsMessageTask
 
     @Override
     protected Supplier<Operation> createOperationSupplier() {
-        return new CollectRemoteTransactionsOperationSupplier();
+        return CollectRemoteTransactionsOperation::new;
     }
 
     @Override
