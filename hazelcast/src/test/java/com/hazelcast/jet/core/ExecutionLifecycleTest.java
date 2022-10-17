@@ -218,7 +218,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         // Then
         assertPmsClosedWithError();
-        assertThrows(CompletionException.class, () -> job.join());
+        assertJobFailed(job, NON_SERIALIZABLE_EXCEPTION);
     }
 
     @Test
@@ -238,7 +238,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         MockPMS.unblock();
 
-        assertJobFailed(jobFuture.get(), NON_SERIALIZABLE_EXCEPTION);
+        //Wait for job to finish
         assertThrows(CompletionException.class, () -> {
             try {
                 jobFuture.get().getFuture().join();
@@ -246,6 +246,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 fail("Job failed");
             }
         });
+        assertJobFailed(jobFuture.get(), NON_SERIALIZABLE_EXCEPTION);
     }
 
     @Test
@@ -262,7 +263,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void when_pmsNonCooperativeCloseThrowsNonSerializable_then_jobSucceeds() throws InterruptedException {
+    public void when_pmsNonCooperativeCloseThrowsNonSerializable_then_jobSucceeds()
+            throws InterruptedException, ExecutionException {
         // Given
         SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT);
         DAG dag = new DAG().vertex(new Vertex("test",
@@ -277,12 +279,13 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         MockPMS.unblock();
 
+        //Wait for job to finish
         try {
             jobFuture.get().getFuture().join();
         } catch (InterruptedException | ExecutionException exception) {
             fail("Job failed");
         }
-
+        assertJobSucceeded(jobFuture.get());
     }
 
     @Test
