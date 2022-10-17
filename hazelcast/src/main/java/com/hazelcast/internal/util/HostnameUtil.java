@@ -64,7 +64,10 @@ public final class HostnameUtil {
         if (hostname == null) {
             return null;
         }
-        return hostname.substring(0, hostname.indexOf("."));
+        if (hostname.contains(".")) {
+            hostname = hostname.substring(0, hostname.indexOf("."));
+        }
+        return hostname;
     }
 
     private static String getOrNull(SupplierEx<String> supplierEx) {
