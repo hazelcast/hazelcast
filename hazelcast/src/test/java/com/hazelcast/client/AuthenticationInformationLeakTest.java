@@ -89,7 +89,7 @@ public class AuthenticationInformationLeakTest {
     @Test
     public void testAuthenticationExceptionDoesNotLeakInfo() throws IOException {
         SerializationService ss = new DefaultSerializationServiceBuilder().build();
-        InetSocketAddress endpoint = new InetSocketAddress("127.0.0.1", 5701);
+        InetSocketAddress endpoint = instance.getCluster().getLocalMember().getSocketAddress();
         try (Socket socket = new Socket()) {
             socket.setReuseAddress(true);
             socket.connect(endpoint);
@@ -130,7 +130,7 @@ public class AuthenticationInformationLeakTest {
     }
 
     private void authenticateAndAssert(AuthenticationStatus status, byte serVersion, boolean useWrongClusterName, String clusterName) throws IOException {
-        InetSocketAddress endpoint = new InetSocketAddress("127.0.0.1", 5701);
+        InetSocketAddress endpoint = instance.getCluster().getLocalMember().getSocketAddress();
         try (Socket socket = new Socket()) {
             socket.setReuseAddress(true);
             socket.connect(endpoint);
