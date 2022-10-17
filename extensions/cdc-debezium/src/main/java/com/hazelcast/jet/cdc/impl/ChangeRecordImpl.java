@@ -132,6 +132,7 @@ public class ChangeRecordImpl implements ChangeRecord {
     @Nonnull
     public RecordPart value() {
         switch (operation) {
+            case UNSPECIFIED:
             case SYNC:
             case INSERT:
             case UPDATE: return requireNonNull(newValue(), "newValue missing for operation " + operation);
