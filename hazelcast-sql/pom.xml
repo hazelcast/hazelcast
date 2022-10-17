@@ -225,6 +225,7 @@
                                     <include>com.google.guava:failureaccess</include>
                                     <include>com.esri.geometry:esri-geometry-api</include>
                                     <include>org.slf4j:slf4j-api</include>
+                                    <include>com.fasterxml.jackson.core:jackson-databind</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -349,7 +350,7 @@
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>com.fasterxml.jackson.core:jackson-core</artifact>
+                                    <artifact>com.fasterxml.jackson.core:*</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
@@ -591,7 +592,7 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
-            <scope>provided</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.avro</groupId>
