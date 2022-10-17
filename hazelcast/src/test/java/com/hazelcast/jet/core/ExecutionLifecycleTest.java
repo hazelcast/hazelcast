@@ -72,7 +72,6 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
@@ -116,23 +115,26 @@ import static org.junit.Assume.assumeTrue;
 public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
     private static final int MEMBER_COUNT = 2;
-    private static final Throwable MOCK_ERROR = new AssertionError("mock error");
+    public static final String MOCK_ERROR_MESSAGE = "mock error";
+    private static final Throwable MOCK_ERROR = new AssertionError(MOCK_ERROR_MESSAGE);
 
     private static final JetException JET_EXCEPTION = new JetException("Execution on a member failed");
     private static final JetException JET_EXCEPTION1 = new JetException("com.hazelcast.jet.JetException");
 
-    //An exception with a non-serializable field
+    /**
+      * An exception with a non-serializable field
+     */
     public static class NonSerializableException extends RuntimeException {
 
-        //Optional is non-serializable
-        private Optional<Boolean> thing = Optional.of(true);
+        private Object nonSerializableField = new Object();
 
         public NonSerializableException(String message) {
             super(message);
         }
     }
 
-    public static final NonSerializableException NON_SERIALIZABLE_EXCEPTION = new NonSerializableException(MOCK_ERROR.getMessage());
+    public static final NonSerializableException NON_SERIALIZABLE_EXCEPTION =
+            new NonSerializableException(MOCK_ERROR_MESSAGE);
 
     @Parameter
     public boolean useLightJob;
