@@ -29,6 +29,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.hazelcast.internal.util.HostnameUtil.getLocalHostname;
+
 final class HazelcastKubernetesDiscoveryStrategy
         extends AbstractDiscoveryStrategy {
     private final KubernetesClient client;
@@ -125,13 +127,10 @@ final class HazelcastKubernetesDiscoveryStrategy
         return "unknown";
     }
 
-    private String podName() throws UnknownHostException {
+    private String podName() {
         String podName = System.getenv("POD_NAME");
         if (podName == null) {
-            podName = System.getenv("HOSTNAME");
-        }
-        if (podName == null) {
-            podName = InetAddress.getLocalHost().getHostName();
+            podName = getLocalHostname();
         }
         return podName;
     }
