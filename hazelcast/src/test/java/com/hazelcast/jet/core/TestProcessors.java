@@ -206,6 +206,8 @@ public final class TestProcessors {
 
         private volatile boolean initThrowsNonSerializable;
 
+        private volatile boolean closeThrowsNonSerializable;
+
         private final SupplierEx<ProcessorSupplier> supplierFn;
 
         public MockPMS(SupplierEx<ProcessorSupplier> supplierFn) {
@@ -229,6 +231,11 @@ public final class TestProcessors {
 
         public MockPMS initThrowsNonSerializable() {
             this.initThrowsNonSerializable = true;
+            return this;
+        }
+
+        public MockPMS closeThrowsNonSerializable() {
+            this.closeThrowsNonSerializable = true;
             return this;
         }
 
@@ -297,6 +304,10 @@ public final class TestProcessors {
             if (closeError != null) {
                 throw sneakyThrow(closeError);
             }
+
+            if (closeThrowsNonSerializable) {
+                throw NON_SERIALIZABLE_EXCEPTION;
+            }
         }
 
         static void assertInitCloseCounts() {
@@ -335,6 +346,8 @@ public final class TestProcessors {
 
         private volatile boolean initThrowsNonSerializable;
 
+        private volatile boolean closeThrowsNonSerializable;
+
         public MockPS(SupplierEx<Processor> supplier, int nodeCount) {
             this.supplier = supplier;
             MockPS.nodeCount = nodeCount;
@@ -362,6 +375,10 @@ public final class TestProcessors {
 
         public MockPS initThrowsNonSerializable() {
             initThrowsNonSerializable = true;
+            return this;
+        }
+        public MockPS closeThrowsNonSerializable() {
+            closeThrowsNonSerializable = true;
             return this;
         }
 
@@ -430,6 +447,10 @@ public final class TestProcessors {
 
             if (closeError != null) {
                 throw sneakyThrow(closeError);
+            }
+
+            if (closeThrowsNonSerializable) {
+                throw NON_SERIALIZABLE_EXCEPTION;
             }
 
         }

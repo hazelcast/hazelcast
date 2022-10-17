@@ -245,6 +245,19 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     }
 
 
+    //ProcessorMetaSupplier throws NonSerializable exception from close()
+    @Test
+    public void when_pmsCloseThrowsNonSerializable_then_jobSucceeds() {
+        // Given
+        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT);
+        DAG dag = new DAG().vertex(new Vertex("test",
+                new MockPMS(supplier).closeThrowsNonSerializable()));
+
+        // When
+        runJobExpectNoFailure(dag, false);
+
+    }
+
     @Test
     public void when_oneOfTwoJobsFails_then_theOtherContinues() throws Exception {
         // Given
@@ -319,16 +332,18 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     @Test
     public void when_psNonCooperativeInitThrowsNonSerializable_then_jobFails() throws InterruptedException {
         // Given
-        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT).initBlocks();
+        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT)
+                .initBlocks()
+                .initThrowsNonSerializable();
         DAG dag = new DAG().vertex(new Vertex("test",
-                new MockPMS(supplier).initThrowsNonSerializable()));
+                new MockPMS(supplier)));
 
         Future<Job> jobFuture = spawn(() -> newJob(dag));
 
         //Sleep some seconds
         SECONDS.sleep(30);
 
-        MockPMS.unblock();
+        MockPS.unblock();
 
         assertThrows(CompletionException.class, () -> {
             try {
@@ -337,6 +352,21 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 fail("Job failed");
             }
         });
+    }
+
+
+    //ProcessorSupplier throws NonSerializable exception from close()
+    @Test
+    public void when_psCloseThrowsNonSerializable_then_jobSucceeds() {
+        // Given
+        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT)
+                .closeThrowsNonSerializable();
+        DAG dag = new DAG().vertex(new Vertex("test",
+                new MockPMS(supplier)));
+
+        // When
+        runJobExpectNoFailure(dag, false);
+
     }
 
 
@@ -1015,6 +1045,25 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         } else {
             return useLightJob ? instance.getJet().newLightJob(dag) : instance.getJet().newJob(dag);
         }
+    }
+
+    private Job runJobExpectNoFailure(@Nonnull DAG dag, boolean snapshotting) {
+        Job job = null;
+        assumeTrue(!snapshotting || !useLightJob); // snapshotting not supported for light jobs
+        try {
+            JobConfig config = null;
+            if (snapshotting) {
+                config = new JobConfig()
+                        .setProcessingGuarantee(EXACTLY_ONCE)
+                        .setSnapshotIntervalMillis(100);
+            }
+            job = newJob(instance(), dag, config);
+            job.join();
+
+        } catch (Exception actual) {
+            fail("Job execution has failed");
+        }
+        return job;
     }
 
     private Job runJobExpectFailure(@Nonnull DAG dag, boolean snapshotting) {
