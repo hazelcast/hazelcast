@@ -353,7 +353,7 @@ public class MigrationRequestOperation extends BaseMigrationOperation {
         PartitionReplicaVersionManager versionManager = partitionService.getPartitionReplicaVersionManager();
         Map<ServiceNamespace, long[]> versions = new HashMap<>(namespaces.size());
         for (ServiceNamespace namespace : namespaces) {
-            long[] v = versionManager.getPartitionReplicaVersions(getPartitionId(), namespace);
+            long[] v = versionManager.getPartitionReplicaVersionsForSync(getPartitionId(), namespace);
             versions.put(namespace, v);
         }
 

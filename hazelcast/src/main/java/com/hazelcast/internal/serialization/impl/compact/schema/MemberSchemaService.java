@@ -25,7 +25,6 @@ import com.hazelcast.internal.services.SplitBrainHandlerService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngine;
-import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nullable;
 import java.util.Collection;
@@ -42,7 +41,7 @@ import java.util.stream.Collectors;
  */
 public class MemberSchemaService implements
         ManagedService,
-        PreJoinAwareService,
+        PreJoinAwareService<SendSchemaReplicationsOperation>,
         SchemaService,
         SplitBrainHandlerService,
         CoreService {
@@ -138,7 +137,7 @@ public class MemberSchemaService implements
     }
 
     @Override
-    public Operation getPreJoinOperation() {
+    public SendSchemaReplicationsOperation getPreJoinOperation() {
         // Called in the master node to retrieve an operation that will be
         // executed on the joining member.
 
