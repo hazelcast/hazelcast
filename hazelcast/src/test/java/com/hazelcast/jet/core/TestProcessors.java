@@ -23,7 +23,6 @@ import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastTestSupport;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -32,7 +31,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -68,16 +66,7 @@ public final class TestProcessors {
     private static final Random RANDOM = new Random();
     private static final Set<String> errors = Collections.newSetFromMap(new ConcurrentHashMap<>());
 
-    //An exception with a non-serializable field
-    public static class NonSerializableException extends RuntimeException {
 
-        //Optional is non-serializable
-        private Optional<Boolean> thing = Optional.of(true);
-
-        public NonSerializableException(String message) {
-            super(message);
-        }
-    }
 
     private TestProcessors() { }
 
@@ -215,6 +204,8 @@ public final class TestProcessors {
         private volatile boolean initBlocks;
         private volatile boolean closeBlocks;
 
+        private volatile boolean initThrowsNonSerializable;
+
         private final SupplierEx<ProcessorSupplier> supplierFn;
 
         public MockPMS(SupplierEx<ProcessorSupplier> supplierFn) {
@@ -233,6 +224,11 @@ public final class TestProcessors {
 
         public MockPMS setCloseError(Throwable closeError) {
             this.closeError = closeError;
+            return this;
+        }
+
+        public MockPMS initThrowsNonSerializable() {
+            this.initThrowsNonSerializable = true;
             return this;
         }
 
@@ -265,6 +261,10 @@ public final class TestProcessors {
             if (initBlocks) {
                 blockingSemaphore.acquire();
                 Thread.sleep(RANDOM.nextInt(500));
+            }
+
+            if (initThrowsNonSerializable) {
+                throw NON_SERIALIZABLE_EXCEPTION;
             }
         }
 
@@ -314,22 +314,6 @@ public final class TestProcessors {
         }
     }
 
-    //We can not use initError field of the class, because then the object
-    //becomes non-serializable
-    //So, inherit and throw exception from init()
-    public static class NonSerializingMockPMS extends MockPMS {
-
-        public NonSerializingMockPMS(SupplierEx<ProcessorSupplier> supplierFn) {
-            super(supplierFn);
-        }
-
-        @Override
-        public void init(@NotNull ProcessorMetaSupplier.Context context) throws InterruptedException {
-            super.init(context);
-            throw NON_SERIALIZABLE_EXCEPTION;
-        }
-    }
-
     public static class MockPS implements ProcessorSupplier {
 
         static AtomicInteger initCount = new AtomicInteger();
@@ -348,6 +332,8 @@ public final class TestProcessors {
 
         private final SupplierEx<Processor> supplier;
         private boolean initCalled;
+
+        private volatile boolean initThrowsNonSerializable;
 
         public MockPS(SupplierEx<Processor> supplier, int nodeCount) {
             this.supplier = supplier;
@@ -371,6 +357,11 @@ public final class TestProcessors {
 
         public MockPS initBlocks() {
             this.initBlocks = true;
+            return this;
+        }
+
+        public MockPS initThrowsNonSerializable() {
+            initThrowsNonSerializable = true;
             return this;
         }
 
@@ -401,6 +392,10 @@ public final class TestProcessors {
             if (initBlocks) {
                 blockingSemaphore.acquire();
                 Thread.sleep(RANDOM.nextInt(500));
+            }
+
+            if (initThrowsNonSerializable) {
+                throw NON_SERIALIZABLE_EXCEPTION;
             }
         }
 
@@ -436,6 +431,7 @@ public final class TestProcessors {
             if (closeError != null) {
                 throw sneakyThrow(closeError);
             }
+
         }
 
         public static void assertInitCloseCounts() {
@@ -446,23 +442,6 @@ public final class TestProcessors {
                 assertFalse("Close called without init being called on all the nodes. Init count: "
                         + initCount.get() + " node count: " + nodeCount, initCount.get() < nodeCount);
             }
-        }
-    }
-
-    //We can not use initError field of the class, because then the object
-    //becomes non-serializable
-    //So, inherit and throw exception from init()
-    public static class NonSerializingMockPS extends MockPS {
-
-
-        public NonSerializingMockPS(SupplierEx<Processor> supplier, int nodeCount) {
-            super(supplier, nodeCount);
-        }
-
-        @Override
-        public void init(@NotNull ProcessorSupplier.Context context) throws InterruptedException {
-            super.init(context);
-            throw NON_SERIALIZABLE_EXCEPTION;
         }
     }
 

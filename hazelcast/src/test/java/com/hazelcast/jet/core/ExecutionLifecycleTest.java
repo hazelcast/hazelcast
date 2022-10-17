@@ -72,10 +72,12 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.function.Function;
 
@@ -117,8 +119,20 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     private static final Throwable MOCK_ERROR = new AssertionError("mock error");
 
     private static final JetException JET_EXCEPTION = new JetException("Execution on a member failed");
+    private static final JetException JET_EXCEPTION1 = new JetException("com.hazelcast.jet.JetException");
 
-    public static final TestProcessors.NonSerializableException NON_SERIALIZABLE_EXCEPTION = new TestProcessors.NonSerializableException(MOCK_ERROR.getMessage());
+    //An exception with a non-serializable field
+    public static class NonSerializableException extends RuntimeException {
+
+        //Optional is non-serializable
+        private Optional<Boolean> thing = Optional.of(true);
+
+        public NonSerializableException(String message) {
+            super(message);
+        }
+    }
+
+    public static final NonSerializableException NON_SERIALIZABLE_EXCEPTION = new NonSerializableException(MOCK_ERROR.getMessage());
 
     @Parameter
     public boolean useLightJob;
@@ -193,17 +207,43 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     @Test
     public void when_pmsInitThrowsNonSerializable_then_jobFails() {
         // Given
-        SupplierEx<ProcessorSupplier> supplier = ()->  new MockPS(MockP::new, MEMBER_COUNT);
+        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT);
         DAG dag = new DAG().vertex(new Vertex("test",
-                new TestProcessors.NonSerializingMockPMS(supplier)));
+                new MockPMS(supplier).initThrowsNonSerializable()));
 
         // When
         Job job = runJobExpectFailure(dag, false);
 
         // Then
         assertPmsClosedWithError();
-        assertThrows(CompletionException.class,()-> job.join());
+        assertThrows(CompletionException.class, () -> job.join());
     }
+
+    //ProcessorMetaSupplier throws NonSerializable exception from init() and
+    //ProcessorMetaSupplier is non-cooperative
+    @Test
+    public void when_pmsNonCooperativeInitThrowsNonSerializable_then_jobFails() throws InterruptedException {
+        // Given
+        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT);
+        DAG dag = new DAG().vertex(new Vertex("test",
+                new MockPMS(supplier).initBlocks().initThrowsNonSerializable()));
+
+        Future<Job> jobFuture = spawn(() -> newJob(dag));
+
+        //Sleep some seconds
+        SECONDS.sleep(30);
+
+        MockPMS.unblock();
+
+        assertThrows(CompletionException.class, () -> {
+            try {
+                jobFuture.get().getFuture().join();
+            } catch (InterruptedException | ExecutionException exception) {
+                fail("Job failed");
+            }
+        });
+    }
+
 
     @Test
     public void when_oneOfTwoJobsFails_then_theOtherContinues() throws Exception {
@@ -261,7 +301,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     @Test
     public void when_psInitThrowsNonSerializable_then_jobFails() {
         // Given
-        SupplierEx<ProcessorSupplier> supplier = ()->  new TestProcessors.NonSerializingMockPS(MockP::new, MEMBER_COUNT);
+        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT).initThrowsNonSerializable();
         DAG dag = new DAG().vertex(new Vertex("test",
                 new MockPMS(supplier)));
 
@@ -271,7 +311,32 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         // Then
         assertPsClosedWithError();
         assertPmsClosedWithError();
-        assertThrows(CompletionException.class,()-> job.join());
+        assertThrows(CompletionException.class, () -> job.join());
+    }
+
+    //ProcessorSupplier throws NonSerializable exception from init() and
+    //ProcessorSupplier is non-cooperative
+    @Test
+    public void when_psNonCooperativeInitThrowsNonSerializable_then_jobFails() throws InterruptedException {
+        // Given
+        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT).initBlocks();
+        DAG dag = new DAG().vertex(new Vertex("test",
+                new MockPMS(supplier).initThrowsNonSerializable()));
+
+        Future<Job> jobFuture = spawn(() -> newJob(dag));
+
+        //Sleep some seconds
+        SECONDS.sleep(30);
+
+        MockPMS.unblock();
+
+        assertThrows(CompletionException.class, () -> {
+            try {
+                jobFuture.get().getFuture().join();
+            } catch (InterruptedException | ExecutionException exception) {
+                fail("Job failed");
+            }
+        });
     }
 
 
@@ -971,7 +1036,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 !(causeString.contains(MOCK_ERROR.toString()) ||
                          causeString.contains(CancellationException.class.getName()) ||
                          causeString.contains(JetException.class.getName()) ||
-                        causeString.contains(TestProcessors.NonSerializableException.class.getName()))
+                        causeString.contains(NonSerializableException.class.getName()))
             ) {
                 throw new AssertionError(format("'%s' didn't contain expected '%s'", causeString, MOCK_ERROR.getMessage()), actual);
             }
@@ -991,6 +1056,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertOneOfExceptionsInCauses(MockPMS.receivedCloseError.get(),
                 NON_SERIALIZABLE_EXCEPTION,
                 JET_EXCEPTION,
+                JET_EXCEPTION1,
                 MOCK_ERROR,
                 new CancellationException(),
                 new JobTerminateRequestedException(CANCEL_FORCEFUL));
