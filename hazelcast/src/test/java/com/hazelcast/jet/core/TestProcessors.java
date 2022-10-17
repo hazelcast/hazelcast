@@ -248,6 +248,10 @@ public final class TestProcessors {
             return this;
         }
 
+        public static void waitBlockingSemaphore() {
+            while (blockingSemaphore.getQueueLength() > 0) {
+            }
+        }
         public static void unblock() {
             blockingSemaphore.release();
         }
@@ -385,6 +389,11 @@ public final class TestProcessors {
         public MockPS closeBlocks() {
             this.closeBlocks = true;
             return this;
+        }
+
+        public static void waitBlockingSemaphore() {
+            while (blockingSemaphore.getQueueLength() > 0) {
+            }
         }
 
         public static void unblock() {
