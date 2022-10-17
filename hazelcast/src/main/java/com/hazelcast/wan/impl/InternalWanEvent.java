@@ -18,6 +18,7 @@ package com.hazelcast.wan.impl;
 
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.util.Clock;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.wan.WanEvent;
 import com.hazelcast.wan.WanEventCounters;
 
@@ -30,7 +31,7 @@ import java.util.Set;
  *
  * @param <T> type of object on which the event occurred
  */
-public interface InternalWanEvent<T> extends WanEvent<T> {
+public interface InternalWanEvent<T> extends WanEvent<T>, IdentifiedDataSerializable {
     /**
      * Returns the key for the entry on which the event occurred.
      */
