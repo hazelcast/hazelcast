@@ -188,6 +188,10 @@ public final class OptimizerContext {
         cluster.setRequiresJob(requiresJob);
     }
 
+    public String dump() {
+        return planner.dump();
+    }
+
     private static Prepare.CatalogReader createCatalogReader(HazelcastSchema rootSchema, List<List<String>> searchPaths) {
         assert searchPaths != null;
 

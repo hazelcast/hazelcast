@@ -114,6 +114,25 @@ public class ExplainStatementTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_explainStatementLimitOffsetWithIndexScan() {
+        IMap<Integer, Integer> map = instance().getMap("map");
+        map.put(1, 1);
+        map.put(2, 2);
+        map.put(3, 3);
+        map.put(4, 4);
+        map.addIndex(IndexType.SORTED, "this");
+
+        String sql = "EXPLAIN PLAN FOR SELECT * FROM map ORDER BY this LIMIT 1 OFFSET 1";
+
+        createMapping("map", Integer.class, Integer.class);
+        assertRowsOrdered(sql, asList(
+                new Row("LimitPhysicalRel(offset=[1:TINYINT(1)], fetch=[1:TINYINT(1)])"),
+                new Row("  IndexScanMapPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], " +
+                        "index=[map_sorted_this], indexExp=[null], remainderExp=[null])")
+        ));
+    }
+
+    @Test
     public void test_explainStatementOrderedScanBelowUnion() {
         IMap<Integer, Integer> map = instance().getMap("map");
         map.put(1, 1);

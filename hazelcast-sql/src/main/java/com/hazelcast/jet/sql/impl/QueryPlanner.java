@@ -24,6 +24,9 @@ import org.apache.calcite.tools.Program;
 import org.apache.calcite.tools.Programs;
 import org.apache.calcite.tools.RuleSet;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
+
 /**
  * Performs query planning.
  */
@@ -33,6 +36,14 @@ public class QueryPlanner {
 
     public QueryPlanner(VolcanoPlanner planner) {
         this.planner = planner;
+    }
+
+    public String dump() {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        this.planner.dump(pw);
+
+        return sw.toString();
     }
 
     public RelNode optimize(RelNode node, RuleSet rules, RelTraitSet traitSet) {

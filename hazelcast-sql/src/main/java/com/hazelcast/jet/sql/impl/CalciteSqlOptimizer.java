@@ -645,6 +645,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         }
 
         PhysicalRel physicalRel = optimizePhysical(context, logicalRel2);
+
         physicalRel = uniquifyScans(physicalRel);
 
         if (fineLogOn) {

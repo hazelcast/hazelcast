@@ -529,35 +529,49 @@ public class CreateDagVisitor {
         return merger;
     }
 
+    public Vertex onLimit(LimitPhysicalRel rel) {
+        RelNode input = rel.getInput();
+
+        Expression<?> fetch;
+        Expression<?> offset;
+        if (rel.fetch() == null) {
+            fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
+        } else {
+            fetch = rel.fetch(parameterMetadata);
+        }
+
+        if (rel.offset() == null) {
+            offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
+        } else {
+            offset = rel.offset(parameterMetadata);
+        }
+
+        Vertex vertex = dag.newUniqueVertex(
+                "LimitedClientSink",
+                rootResultConsumerSink(localMemberAddress, fetch, offset)
+        );
+
+        // We use distribute-to-one edge to send all the items to the initiator member.
+        // Such edge has to be partitioned, but the sink is LP=1 anyway, so we can use
+        // allToOne with any key, it goes to a single processor on a single member anyway.
+        connectInput(input, vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
+        return vertex;
+    }
+
+
     public Vertex onRoot(RootRel rootRel) {
         RelNode input = rootRel.getInput();
+
+        // We support only top-level LIMIT ... OFFSET.
+        if (input instanceof LimitPhysicalRel) {
+            return onLimit((LimitPhysicalRel) input);
+        }
+
         Expression<?> fetch;
         Expression<?> offset;
 
-        if (input instanceof SortPhysicalRel || isCalcWithSort(input)) {
-            SortPhysicalRel sortRel = input instanceof SortPhysicalRel
-                    ? (SortPhysicalRel) input
-                    : (SortPhysicalRel) ((CalcPhysicalRel) input).getInput();
-
-            if (sortRel.fetch == null) {
-                fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
-            } else {
-                fetch = sortRel.fetch(parameterMetadata);
-            }
-
-            if (sortRel.offset == null) {
-                offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
-            } else {
-                offset = sortRel.offset(parameterMetadata);
-            }
-
-            if (!sortRel.requiresSort()) {
-                input = sortRel.getInput();
-            }
-        } else {
-            fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
-            offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
-        }
+        fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
+        offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
 
         Vertex vertex = dag.newUniqueVertex(
                 "ClientSink",
