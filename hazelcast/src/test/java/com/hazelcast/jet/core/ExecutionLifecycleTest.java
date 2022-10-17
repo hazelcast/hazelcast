@@ -203,13 +203,13 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertJobFailed(job, MOCK_ERROR);
     }
 
-    //ProcessorMetaSupplier throws NonSerializable exception from init()
     @Test
     public void when_pmsInitThrowsNonSerializable_then_jobFails() {
         // Given
         SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT);
         DAG dag = new DAG().vertex(new Vertex("test",
-                new MockPMS(supplier).initThrowsNonSerializable()));
+                new MockPMS(supplier)
+                        .initThrowsNonSerializable()));
 
         // When
         Job job = runJobExpectFailure(dag, false);
@@ -219,14 +219,15 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertThrows(CompletionException.class, () -> job.join());
     }
 
-    //ProcessorMetaSupplier throws NonSerializable exception from init() and
-    //ProcessorMetaSupplier is non-cooperative
     @Test
-    public void when_pmsNonCooperativeInitThrowsNonSerializable_then_jobFails() throws InterruptedException {
+    public void when_pmsNonCooperativeInitThrowsNonSerializable_then_jobFails()
+            throws InterruptedException, ExecutionException {
         // Given
         SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT);
         DAG dag = new DAG().vertex(new Vertex("test",
-                new MockPMS(supplier).initBlocks().initThrowsNonSerializable()));
+                new MockPMS(supplier)
+                        .initBlocks()
+                        .initThrowsNonSerializable()));
 
         Future<Job> jobFuture = spawn(() -> newJob(dag));
 
@@ -235,6 +236,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         MockPMS.unblock();
 
+        assertJobFailed(jobFuture.get(), NON_SERIALIZABLE_EXCEPTION);
         assertThrows(CompletionException.class, () -> {
             try {
                 jobFuture.get().getFuture().join();
@@ -244,17 +246,40 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         });
     }
 
-
-    //ProcessorMetaSupplier throws NonSerializable exception from close()
     @Test
     public void when_pmsCloseThrowsNonSerializable_then_jobSucceeds() {
         // Given
         SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT);
         DAG dag = new DAG().vertex(new Vertex("test",
-                new MockPMS(supplier).closeThrowsNonSerializable()));
+                new MockPMS(supplier)
+                        .closeThrowsNonSerializable()));
 
         // When
         runJobExpectNoFailure(dag, false);
+
+    }
+
+    @Test
+    public void when_pmsNonCooperativeCloseThrowsNonSerializable_then_jobSucceeds() throws InterruptedException {
+        // Given
+        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT);
+        DAG dag = new DAG().vertex(new Vertex("test",
+                new MockPMS(supplier)
+                        .closeBlocks()
+                        .closeThrowsNonSerializable()));
+
+        Future<Job> jobFuture = spawn(() -> newJob(dag));
+
+        //Sleep some seconds
+        SECONDS.sleep(30);
+
+        MockPMS.unblock();
+
+        try {
+            jobFuture.get().getFuture().join();
+        } catch (InterruptedException | ExecutionException exception) {
+            fail("Job failed");
+        }
 
     }
 
@@ -310,7 +335,6 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertsWhenOneJob();
     }
 
-    //ProcessorSupplier throws NonSerializable exception from init()
     @Test
     public void when_psInitThrowsNonSerializable_then_jobFails() {
         // Given
@@ -327,8 +351,6 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertThrows(CompletionException.class, () -> job.join());
     }
 
-    //ProcessorSupplier throws NonSerializable exception from init() and
-    //ProcessorSupplier is non-cooperative
     @Test
     public void when_psNonCooperativeInitThrowsNonSerializable_then_jobFails() throws InterruptedException {
         // Given
