@@ -18,6 +18,11 @@ There are cases when some CP members should not act as a leader. For example, a 
 
 ## Enhancements
 
+### Performance
+
+* MapStore Offloading: Added the `offload` element to map store configuration. It is used to offload map store and loader operations for each map in the cluster. This way, a map store operation does not block the next operations by blocking a partition thread indefinitely. Partition threads are one of the most important shared resources in a cluster; this offloading enables faster completion of the operations in these threads. See Offloading MapStore and MapLoader Operations. [#21651]
+
+
 ### SQL Engine
 
 * Multiple performance enhancements in the SQL engine.
@@ -47,8 +52,6 @@ There are cases when some CP members should not act as a leader. For example, a 
 * REST API is now enabled by default when you use Hazelcast Platform with Docker or by downloading the distribution packages (ZIP or TAR). [#22249]
 * Member discoveries in cloud environments (AWS, GCP, Azure, Kubernetes, Eureka) in Spring XML can be configured now using property placeholders. [#21995]
 * Added configuration elements for external data stores used by map stores, and JDBC sinks and sources. See Configuring Connections to External Data Stores. [#21716]
-* Added `offload` element to map store configuration. It is used to offload map store and loader operations for each map in the cluster. This way, a map store operation does not block the next operations by blocking a partition thread indefinitely. Partition threads are one of the most important shared resources in a cluster; this offloading enables faster completion of the operations in these threads.
-See Offloading MapStore and MapLoader Operations. [#21651]
 * Introduced a way to configure AWS Asynchronous Client's executor service used by Jet engine's Kinesis sources and sinks (thread pool size, threads names pattern).
 For this purpose, `AwsConfig` is extended with an additional `executorServiceSupplier` field that allows to specify what executor service to be used. [#21075]
 
