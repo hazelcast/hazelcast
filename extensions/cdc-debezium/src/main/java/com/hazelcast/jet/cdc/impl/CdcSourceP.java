@@ -34,6 +34,7 @@ import io.debezium.relational.history.AbstractDatabaseHistory;
 import io.debezium.relational.history.DatabaseHistoryException;
 import io.debezium.relational.history.HistoryRecord;
 import org.apache.kafka.connect.connector.ConnectorContext;
+import org.apache.kafka.connect.data.Schema;
 import org.apache.kafka.connect.data.Struct;
 import org.apache.kafka.connect.source.SourceConnector;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -414,16 +415,18 @@ public abstract class CdcSourceP<T> extends AbstractProcessor {
     }
 
     private static long extractTimestamp(SourceRecord sourceRecord) {
-        boolean noValueTsMs = sourceRecord.valueSchema().field(TIMESTAMP_MS_FIELD_NAME) == null;
-        boolean noSourceTsMs = sourceRecord.valueSchema().field("source").schema().field(TIMESTAMP_MS_FIELD_NAME) == null;
+        Schema valueSchema = sourceRecord.valueSchema();
+        boolean noValueTsMs = valueSchema.field(TIMESTAMP_MS_FIELD_NAME) == null;
+        boolean noSourceTsMs = valueSchema.field("source").schema().field(TIMESTAMP_MS_FIELD_NAME) == null;
         if (noValueTsMs && noSourceTsMs) {
             return NO_NATIVE_TIME;
         }
         Long timestamp;
+        Struct valueStruct = (Struct) sourceRecord.value();
         if (noValueTsMs) {
-            timestamp = ((Struct) sourceRecord.value()).getStruct("source").getInt64("ts_ms");
+            timestamp = valueStruct.getStruct("source").getInt64("ts_ms");
         } else {
-            timestamp = ((Struct) sourceRecord.value()).getInt64("ts_ms");
+            timestamp = valueStruct.getInt64("ts_ms");
         }
         return timestamp == null ? NO_NATIVE_TIME : timestamp;
     }
