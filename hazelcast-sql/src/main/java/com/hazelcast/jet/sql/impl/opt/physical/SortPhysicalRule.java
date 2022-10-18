@@ -77,7 +77,14 @@ final class SortPhysicalRule extends RelRule<RelRule.Config> {
             if (!requiresSort && (sort.offset != null || sort.fetch != null)) {
                 nonSortTransforms.add(createLimit(sort, physicalInput));
             } else if (requiresSort) {
-                sortTransforms.add(createSort(sort, physicalInput, requiresSort));
+                SortPhysicalRel newSort = createSort(sort, physicalInput, requiresSort);
+                // if LIMIT and/or OFFSET exists -> create Limit + Sort rels
+                if (sort.offset != null || sort.fetch != null) {
+                    LimitPhysicalRel newLimit = createLimit(sort, newSort);
+                    sortTransforms.add(newLimit);
+                } else {
+                    sortTransforms.add(newSort);
+                }
             } else {
                 nonSortTransforms.add(physicalInput);
             }
@@ -126,8 +133,8 @@ final class SortPhysicalRule extends RelRule<RelRule.Config> {
                 traitSet,
                 physicalInput,
                 logicalSort.getCollation(),
-                logicalSort.offset,
-                logicalSort.fetch,
+                null,
+                null,
                 logicalSort.getRowType(),
                 requiresSort
         );

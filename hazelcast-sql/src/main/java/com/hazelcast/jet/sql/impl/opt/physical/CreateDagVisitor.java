@@ -534,6 +534,7 @@ public class CreateDagVisitor {
 
         Expression<?> fetch;
         Expression<?> offset;
+
         if (rel.fetch() == null) {
             fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
         } else {

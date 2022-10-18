@@ -49,6 +49,7 @@ import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.logical.SelectByKeyMapLogicalRule;
 import com.hazelcast.jet.sql.impl.opt.physical.AssignDiscriminatorToScansRule;
+import com.hazelcast.jet.sql.impl.opt.physical.CalcLimitTransposeRule;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
@@ -710,6 +711,12 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         // the rule has a state that is used during the "optimization".
         AssignDiscriminatorToScansRule rule = new AssignDiscriminatorToScansRule();
         hepProgramBuilder.addRuleInstance(rule);
+
+        // Also approach Calc-Limit transposition rule,
+        // since we support only top-level LIMIT...OFFSET,
+        // there might be the only occurence to use that rule.
+        // Also, this rule has perfect use-case exactly for heuristic planner.
+        hepProgramBuilder.addRuleInstance(CalcLimitTransposeRule.INSTANCE);
 
         HepPlanner planner = new HepPlanner(
                 hepProgramBuilder.build(),
