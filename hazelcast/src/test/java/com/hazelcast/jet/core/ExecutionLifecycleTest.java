@@ -46,6 +46,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -54,7 +55,6 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -120,7 +120,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     private static final Throwable MOCK_ERROR = new AssertionError(MOCK_ERROR_MESSAGE);
 
     private static final JetException JET_EXCEPTION = new JetException("Execution on a member failed");
-    private static final JetException JET_EXCEPTION1 = new JetException("com.hazelcast.jet.JetException: com.hazelcast.nio.serialization.HazelcastSerializationException");
+    private static final HazelcastSerializationException SERIALIZATION_EXCEPTION = new HazelcastSerializationException("Failed to serialize ");
 
     /**
       * An exception with a non-serializable field
@@ -236,7 +236,9 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         MockPMS.waitBlockingSemaphore();
 
-        MockPMS.unblock();
+        for (int i = 0; i < MEMBER_COUNT; i++) {
+            MockPMS.unblock();
+        }
 
         //Wait for job to finish
         assertThrows(CompletionException.class, () -> {
@@ -276,7 +278,9 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         MockPMS.waitBlockingSemaphore();
 
-        MockPMS.unblock();
+        for (int i = 0; i < MEMBER_COUNT; i++) {
+            MockPMS.unblock();
+        }
 
         //Wait for job to finish
         try {
@@ -357,8 +361,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
     //Failing
     @Test
-    @Ignore
-    public void when_psNonCooperativeInitThrowsNonSerializable_then_jobFails() throws InterruptedException {
+    public void when_psNonCooperativeInitThrowsNonSerializable_then_jobFails() {
         // Given
         SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT)
                 .initBlocks()
@@ -370,7 +373,9 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         MockPS.waitBlockingSemaphore();
 
-        MockPS.unblock();
+        for (int i = 0; i < MEMBER_COUNT; i++) {
+            MockPS.unblock();
+        }
 
         assertThrows(CompletionException.class, () -> {
             try {
@@ -384,7 +389,6 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     }
 
 
-    //ProcessorSupplier throws NonSerializable exception from close()
     @Test
     public void when_psCloseThrowsNonSerializable_then_jobSucceeds() {
         // Given
@@ -1134,7 +1138,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertOneOfExceptionsInCauses(MockPMS.receivedCloseError.get(),
                 NON_SERIALIZABLE_EXCEPTION,
                 JET_EXCEPTION,
-                JET_EXCEPTION1,
+                SERIALIZATION_EXCEPTION,
                 MOCK_ERROR,
                 new CancellationException(),
                 new JobTerminateRequestedException(CANCEL_FORCEFUL));
