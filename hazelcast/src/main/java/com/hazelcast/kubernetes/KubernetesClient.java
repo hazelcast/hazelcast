@@ -21,6 +21,7 @@ import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.internal.util.HostnameUtil;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.kubernetes.KubernetesConfig.ExposeExternallyMode;
 import com.hazelcast.logging.ILogger;
@@ -264,7 +265,7 @@ class KubernetesClient {
     }
 
     private String extractStsName() {
-        String stsName = System.getenv("HOSTNAME");
+        String stsName = HostnameUtil.getLocalHostname();
         int dashIndex = stsName.lastIndexOf('-');
         if (dashIndex > 0) {
             stsName = stsName.substring(0, dashIndex);
