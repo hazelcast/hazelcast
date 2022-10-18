@@ -49,11 +49,11 @@ final class SortPhysicalRule extends RelRule<RelRule.Config> {
         }
     }
 
+    static final RelOptRule INSTANCE = new SortPhysicalRule(Config.DEFAULT);
+
     private SortPhysicalRule(SortPhysicalRule.Config config) {
         super(config);
     }
-
-    static final RelOptRule INSTANCE = new SortPhysicalRule(Config.DEFAULT);
 
     @Override
     public void onMatch(RelOptRuleCall call) {
