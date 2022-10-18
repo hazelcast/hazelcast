@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -25,6 +26,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlCatalogInitTest extends SqlTestSupport {
@@ -41,6 +43,16 @@ public class SqlCatalogInitTest extends SqlTestSupport {
         HazelcastInstance instance3 = createHazelcastInstance(CONFIG);
         assertClusterSizeEventually(3, instance3);
         waitAllForSafeState(instance3);
+
+        // There is no guarantee that even if partitions are in safe state the replicated map is migrated. If initial replication
+        // fails (for example due to stressed CPU) then it will be replicated with anti entropy mechanism which takes 30
+        // seconds. In 5.2 we switched to IMap. I see no way o guarantee that __sql.catalog is available one the new member
+        // soon after the start. To make that test not failing let's just wait for the replication.
+        ReplicatedMap<String, Object> sqlCatalog = instance3.getReplicatedMap("__sql.catalog");
+        assertTrueEventually(() -> {
+            assertTrue(sqlCatalog.size() > 0);
+        });
+
         SqlResult result = instance3.getSql().execute("select * from " + MAP_NAME);
         assertFalse(result.iterator().hasNext());
     }
