@@ -89,7 +89,7 @@ public class EntryProcessorOffloadedExecutorStatsTest extends HazelcastTestSuppo
 
         @Override
         public Object process(Map.Entry entry) {
-            sleepSeconds(1);
+            sleepAtLeastSeconds(1);
             return null;
         }
     }
