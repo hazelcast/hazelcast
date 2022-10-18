@@ -53,6 +53,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 
@@ -378,7 +379,7 @@ public class JdbcSqlConnector implements SqlConnector {
      */
     @SuppressWarnings("ReturnCount")
     private QueryDataType resolveType(String columnTypeName) {
-        switch (columnTypeName.toUpperCase()) {
+        switch (columnTypeName.toUpperCase(Locale.ROOT)) {
             case "BOOLEAN":
             case "BOOL":
             case "BIT":

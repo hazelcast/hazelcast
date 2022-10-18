@@ -39,12 +39,12 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import static com.hazelcast.mapstore.GenericMapStore.COLUMNS_PROPERTY;
-import static com.hazelcast.mapstore.GenericMapStore.EXTERNAL_REF_ID_PROPERTY;
-import static com.hazelcast.mapstore.GenericMapStore.ID_COLUMN_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.MAPPING_PREFIX;
-import static com.hazelcast.mapstore.GenericMapStore.TABLE_NAME_PROPERTY;
-import static com.hazelcast.mapstore.GenericMapStore.TYPE_NAME_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapStoreProperties.COLUMNS_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapStoreProperties.EXTERNAL_REF_ID_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapStoreProperties.ID_COLUMN_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapStoreProperties.TABLE_NAME_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapStoreProperties.TYPE_NAME_PROPERTY;
 import static com.hazelcast.nio.serialization.FieldKind.NOT_AVAILABLE;
 import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -63,12 +63,12 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
     private HazelcastInstance hz;
 
     @BeforeClass
-    public static void beforeClass() throws Exception {
+    public static void beforeClass() {
         initialize(new H2DatabaseProvider());
     }
 
     @Before
-    public void setUp() throws Exception {
+    public void setUp() {
         hz = instances()[0];
         mapName = "people_" + randomName();
     }

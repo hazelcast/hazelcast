@@ -44,7 +44,7 @@ import java.util.Collection;
 import java.util.Properties;
 import java.util.function.BiConsumer;
 
-import static com.hazelcast.mapstore.GenericMapStore.EXTERNAL_REF_ID_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapStoreProperties.EXTERNAL_REF_ID_PROPERTY;
 import static java.time.OffsetDateTime.of;
 import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;

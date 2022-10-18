@@ -32,8 +32,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import static com.hazelcast.mapstore.GenericMapStore.EXTERNAL_REF_ID_PROPERTY;
-import static com.hazelcast.mapstore.GenericMapStore.TYPE_NAME_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapStoreProperties.EXTERNAL_REF_ID_PROPERTY;
+import static com.hazelcast.mapstore.GenericMapStoreProperties.TYPE_NAME_PROPERTY;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.util.Lists.newArrayList;
 
@@ -42,7 +42,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
     private String tableName;
 
     @BeforeClass
-    public static void beforeClass() throws Exception {
+    public static void beforeClass() {
         databaseProvider = new H2DatabaseProvider();
         dbConnectionUrl = databaseProvider.createDatabase(JdbcSqlTestSupport.class.getName());
 
@@ -84,7 +84,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
         IMap<Integer, Person> map = client.getMap(tableName);
 
         Person p = map.get(0);
-        assertThat(p.getId()).isEqualTo(0);
+        assertThat(p.getId()).isZero();
         assertThat(p.getName()).isEqualTo("name-0");
     }
 
@@ -118,7 +118,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void testRemove() throws Exception {
+    public void testRemove() {
         HazelcastInstance client = client();
         IMap<Integer, Person> map = client.getMap(tableName);
 

@@ -27,7 +27,7 @@ import org.junit.experimental.categories.Category;
 public class PostgresGenericMapStoreTest extends GenericMapStoreTest {
 
     @BeforeClass
-    public static void beforeClass() throws Exception {
+    public static void beforeClass() {
         initialize(new PostgresDatabaseProvider());
     }
 
