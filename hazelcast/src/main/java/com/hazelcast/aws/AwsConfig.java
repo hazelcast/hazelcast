@@ -220,6 +220,7 @@ final class AwsConfig {
                 + ", connectionTimeoutSeconds=" + connectionTimeoutSeconds
                 + ", connectionRetries=" + connectionRetries
                 + ", readTimeoutSeconds=" + readTimeoutSeconds
+                + ", discoveryMode=" + discoveryMode
                 + '}';
     }
 
