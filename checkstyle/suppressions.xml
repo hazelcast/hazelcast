@@ -194,9 +194,6 @@
     <suppress checks="NPathComplexity" files="com[\\/]hazelcast[\\/]query[\\/]impl[\\/]predicates[\\/]BetweenVisitor"/>
     <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]query[\\/]impl[\\/]bitmap[\\/]SparseIntArray"/>
 
-    <!-- SQL -->
-    <suppress checks="IllegalImport" files="com[\\/]hazelcast[\\/]sql[\\/]impl[\\/]expression[\\/]datetime[\\/]Formatter"/>
-
     <!-- Instance -->
     <suppress checks="Javadoc(Method|Type|Variable)" files="com[\\/]hazelcast[\\/]instance[\\/]"/>
 

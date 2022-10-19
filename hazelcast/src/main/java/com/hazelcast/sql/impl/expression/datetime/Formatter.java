@@ -17,7 +17,6 @@
 package com.hazelcast.sql.impl.expression.datetime;
 
 import com.hazelcast.sql.impl.QueryException;
-import sun.misc.FormattedFloatingDecimal;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -38,23 +37,28 @@ import java.util.regex.Pattern;
  * Implementation of <a href="https://www.postgresql.org/docs/14/functions-formatting.html">
  * PostgreSQL <code>to_char()</code></a> with the following limitations
  * <ol><li> {@code FX} prefix is not implemented.
- *     <li> {@code SG} pattern can only be specified as a prefix or a suffix. </ol>
+ *     <li> {@code SG} pattern can only be specified as a prefix or a suffix.
+ *     <li> Regular text cannot appear within a number format. </ol>
  * and the following relaxations
- * <ol><li> {@code V} pattern can be combined with a decimal point. </ol>
+ * <ol><li> {@code V} pattern can be combined with a decimal point.
+ *     <li> Zero-padding and space-padding are completely orthogonal, which makes it possible to
+ *          have zero-padded fractions, which are aligned at the the decimal separator. However,
+ *          this necessitates to have a {@code '0'} at the end of the pattern if the PostgreSQL
+ *          convention is desired. </ol>
  */
 @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:DeclarationOrder",
         "checkstyle:ExecutableStatementCount", "checkstyle:InnerAssignment", "checkstyle:MagicNumber",
-        "checkstyle:MethodLength", "checkstyle:NeedBraces", "checkstyle:NestedIfDepth", "checkstyle:NPathComplexity"})
+        "checkstyle:MethodLength", "checkstyle:NestedIfDepth", "checkstyle:NPathComplexity"})
 public class Formatter {
     private static final DecimalFormatSymbols SYMBOLS = DecimalFormatSymbols.getInstance(Locale.getDefault());
-    private static final String NUMERIC_PREFIX_SUFFIX = "PR|MI|PL|SG|S|L";
+    private static final String NUMERIC_SIGN = "PR|MI|PL|SG|S";
     private static final Pattern DATETIME_TEMPLATE = Pattern.compile(
             "(FM|TM)?(HH(?:12|24)?|MI|[SMU]S|FF[1-6]|SSSSS?|[AP](?:M|\\.M\\.)|[ap](?:m|\\.m\\.)|"
             + "Y,YYY|[YI]Y{0,3}|BC|B\\.C\\.|bc|b\\.c\\.|AD|A\\.D\\.|ad|a\\.d\\.|"
             + "MON(?:TH)?|[Mm]on(?:th)?|MM|DA?Y|[Dd]a?y|I?D{1,3}|DD|W|[WI]W|CC|J|Q|"
             + "RM|rm|TZ|tz|TZ[HM]?|OF)(TH|th)?");
     private static final Pattern NUMERIC_TEMPLATE = Pattern.compile(String.format(
-            "(FM)?((%s)?(([90][90,G]*)([.D][90]+)?(V9+)?)(%<s|TH|th|EEEE)?|RN)", NUMERIC_PREFIX_SUFFIX));
+            "(FM)?((L)?(%s)?(([90][90,G]*)([.D][90]+)?(V9+)?)(%<s)?(L|TH|th|EEEE)?|RN)", NUMERIC_SIGN));
     private final List<FormatString> parts = new ArrayList<>();
     private final boolean isDate;
 
@@ -68,27 +72,35 @@ public class Formatter {
             Matcher m = NUMERIC_TEMPLATE.matcher(format);
             parse(m, format, 1, NumberFormat::new);
 //        }
-        if (parts.isEmpty())
+        if (parts.isEmpty()) {
             parts.add(new FixedString(format));
+        }
     }
 
     private void parse(Matcher m, String format, int count, Function<Matcher, FormatString> constructor) {
         for (int i = 0, j = 0; i < count && m.find(); i++, j = m.end()) {
-            if (m.start() > j)
+            if (m.start() > j) {
                 parts.add(new FixedString(format.substring(j, m.start())));
+            }
             parts.add(constructor.apply(m));
         }
-        if (!parts.isEmpty() && m.end() < m.regionEnd())
+        if (!parts.isEmpty() && m.end() < m.regionEnd()) {
             parts.add(new FixedString(format.substring(m.end())));
+        }
     }
 
     public String format(Object input) {
-        if (isDate && !(input instanceof Temporal))
+        if (isDate && !(input instanceof Temporal)) {
             throw QueryException.dataException("Input parameter is expected to be date/time");
-        if (!isDate && !(input instanceof Number))
+        }
+        if (!isDate && !(input instanceof Number)) {
             throw QueryException.dataException("Input parameter is expected to be numeric");
-        return parts.stream().collect(StringBuilder::new, (s, part) -> part.format(s, input),
-                StringBuilder::append).toString();
+        }
+        StringBuilder s = new StringBuilder();
+        for (FormatString part : parts) {
+            part.format(s, input);
+        }
+        return s.toString();
     }
 
     private interface FormatString<T> {
@@ -100,7 +112,7 @@ public class Formatter {
     }
 
     private static class FixedString implements FormatString {
-        String contents;
+        private final String contents;
 
         FixedString(String contents) {
             this.contents = contents;
@@ -112,7 +124,7 @@ public class Formatter {
         }
     }
 
-//    private class DateFormat implements FormatString<Temporal> { }
+//    private static class DateFormat implements FormatString<Temporal> { }
 
     private static final int[] ARABIC = {1000,  900, 500,  400, 100,   90,  50,   40,  10,    9,   5,    4,   1};
     private static final String[] ROMAN = {"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"};
@@ -131,11 +143,11 @@ public class Formatter {
      *     <li> {@link java.util.Formatter} does not cache or expose the intermediate
      *          representation of the format string.
      *     <li> {@link java.util.Formatter} can correctly handle rounding by leveraging
-     *          {@link FormattedFloatingDecimal} for {@link Float} and {@link Double}, and by using
-     *          {@link BigDecimal#BigDecimal(BigInteger, int, MathContext) BigDecimal(BigInteger,
-     *          scale, precision)}. Both {@link FormattedFloatingDecimal} and {@link BigDecimal}
-     *          are using the decimal representation of floating point numbers, but for the former,
-     *          the rounding mode is not configurable. </ol>
+     *          {@link sun.misc.FormattedFloatingDecimal} for {@link Float} and {@link Double}, and
+     *          by using {@link BigDecimal#BigDecimal(BigInteger, int, MathContext)
+     *          BigDecimal(BigInteger, scale, precision)}. Both {@link sun.misc.FormattedFloatingDecimal}
+     *          and {@link BigDecimal} are using the decimal representation of floating point
+     *          numbers, but for the former, the rounding mode is not configurable. </ol>
      */
     @SuppressWarnings("checkstyle:MultipleVariableDeclarations")
     private static class NumberFormat implements FormatString<Number> {
@@ -148,34 +160,33 @@ public class Formatter {
          */
         private final char[] integerMask, fractionMask;
         /**
-         * Anchored sign. {@code '\0'} prints nothing. {@code '-'} prints a minus sign if the
-         * number is negative. {@code '+'} prints a minus sign if the number is negative;
-         * otherwise, prints a plus sign.
+         * Sign. {@code '\0'} prints nothing. {@code '<'}, {@code '>'}, {@code '-'} are printed if
+         * the number is negative; {@code '+'} is printed if the number is positive. Otherwise, a
+         * {@code ' '} is printed. {@code '='} prints {@code '-'} or {@code '+'} depending on the
+         * sign of the number. {@code 'S'} and {@code 'M'} behave like {@code '+'} and {@code '-'}
+         * respectively, except that the letter variants are anchored to the number.
          */
         private final char preSign, postSign;
 
         NumberFormat(Matcher m) {
             fillMode = !"FM".equals(m.group(1));
-            if (m.group(4) != null) {
+            if (m.group(5) != null) {
                 prefix = m.group(3);
-                pattern = m.group(4);
-                suffix = m.group(8);
+                pattern = m.group(5);
+                suffix = m.group(10);
 
-                if ("S".equals(prefix))
-                    preSign = '+';
-                else if (!(hasSign(prefix) || hasSign(suffix)))
-                    preSign = '-';
-                else preSign = 0;
-
-                postSign = "S".equals(suffix) ? '+' : 0;
+                postSign = getSign(m.group(4), m.group(9), false);
+                char sign = getSign(m.group(4), m.group(9), true);
+                preSign = sign == 0 && postSign == 0 ? 'M' : sign;
 
                 int digits = 0, zero = -1;
-                integerMask = new char[m.group(5).length()];
+                integerMask = new char[m.group(6).length()];
                 for (int i = 0; i < integerMask.length; i++) {
-                    char c = m.group(5).charAt(i);
+                    char c = m.group(6).charAt(i);
                     if (c == '9' || c == '0') {
-                        if (c == '0' && zero == -1)
+                        if (c == '0' && zero == -1) {
                             zero = digits;
+                        }
                         digits++;
                         integerMask[i] = zero == -1 ? ' ' : '0';
                     } else {
@@ -185,16 +196,17 @@ public class Formatter {
                 integerDigits = digits;
                 minIntegerDigits = zero == -1 ? 0 : digits - zero;
 
-                if (m.group(6) != null && !"TH".equalsIgnoreCase(suffix)) {
-                    fractionMask = new char[m.group(6).length()];
-                    fractionMask[0] = m.group(6).startsWith(".") ? '.'
+                if (m.group(7) != null && !"TH".equalsIgnoreCase(suffix)) {
+                    fractionMask = new char[m.group(7).length()];
+                    fractionMask[0] = m.group(7).startsWith(".") ? '.'
                             : ("L".equals(prefix) || "L".equals(suffix)
                                     ? SYMBOLS.getMonetaryDecimalSeparator() : SYMBOLS.getDecimalSeparator());
                     zero = -1;
                     for (int i = fractionMask.length - 1; i > 0; i--) {
-                        char c = m.group(6).charAt(i);
-                        if (c == '0' && zero == -1)
+                        char c = m.group(7).charAt(i);
+                        if (c == '0' && zero == -1) {
                             zero = i;
+                        }
                         fractionMask[i] = zero == -1 ? ' ' : '0';
                     }
                     fractionDigits = fractionMask.length - 1;
@@ -204,7 +216,7 @@ public class Formatter {
                     fractionDigits = minFractionDigits = 0;
                 }
 
-                exponent = m.group(7) == null ? 0 : m.group(7).length() - 1;
+                exponent = m.group(8) == null ? 0 : m.group(8).length() - 1;
             } else {
                 prefix = suffix = null;
                 pattern = m.group(2);
@@ -219,16 +231,21 @@ public class Formatter {
             if (pattern.equals("RN")) {
                 // Roman Numerals
                 long n = input.longValue();
-                if (n < 1 || n > 3999)
+                if (n < 1 || n > 3999) {
                     throw QueryException.dataException(
                             "Only values between 1 and 3999 can be converted to roman numerals: " + n);
+                }
                 StringBuilder r = new StringBuilder(15);
-                for (int i = 0; i < ARABIC.length; i++)
-                    for (; n >= ARABIC[i]; n -= ARABIC[i])
+                for (int i = 0; i < ARABIC.length; i++) {
+                    for (; n >= ARABIC[i]; n -= ARABIC[i]) {
                         r.append(ROMAN[i]);
-                if (fillMode)
-                    for (int i = r.length(); i < 15; i++)
+                    }
+                }
+                if (fillMode) {
+                    for (int i = r.length(); i < 15; i++) {
                         s.append(' ');
+                    }
+                }
                 s.append(r);
             } else {
                 /* Number#toString() is the easiest way of obtaining the decimal representation of
@@ -273,14 +290,16 @@ public class Formatter {
                  */
                 String value = input.toString();
                 boolean negative = value.startsWith("-");
-                if (preSign == 0)
-                    affix(s, true, negative);
+                if ("L".equals(prefix)) {
+                    s.append(SYMBOLS.getCurrencySymbol());
+                }
+                putSign(s, preSign, negative);
 
-                if (value.equals("NaN"))
+                if (value.equals("NaN")) {
                     s.append(SYMBOLS.getNaN());
-                else if (value.endsWith("Infinity"))
+                } else if (value.endsWith("Infinity")) {
                     s.append(SYMBOLS.getInfinity());
-                else {
+                } else {
                     int t = negative ? 1 : 0, begin = value.charAt(t) == '0' ? t + 1 : t;
                     int dot = value.indexOf('.'), exp = dot == -1 ? -1 : value.indexOf('E', dot + 2);
                     String integer = value.substring(begin, dot != -1 ? dot : value.length());
@@ -303,17 +322,19 @@ public class Formatter {
                                 : (fractionLength > fractionDigits && integerLength + fractionDigits >= 0))
                             && digits.charAt(integerLength + fractionDigits) >= '5') {
                         StringBuilder r = new StringBuilder(digits);
-                        for (int i = integerLength + fractionDigits - 1; i >= 0; i--)
-                            if (r.charAt(i) == '9')
+                        for (int i = integerLength + fractionDigits - 1; i >= 0; i--) {
+                            if (r.charAt(i) == '9') {
                                 r.setCharAt(i, '0');
-                            else {
+                            } else {
                                 r.setCharAt(i, (char) (r.charAt(i) + 1));
                                 break;
                             }
+                        }
                         if (r.charAt(0) == '0') {
                             r.insert(0, '1');
-                            if (!exponential)
+                            if (!exponential) {
                                 integerLength++;
+                            }
                         }
                         digits = r.toString();
                     }
@@ -321,29 +342,34 @@ public class Formatter {
                     // Step 5 - Padding
                     if (integerLength > integerDigits) {
                         // Integer part overflows; pattern is filled with #'s.
-                        for (char c : integerMask)
+                        for (char c : integerMask) {
                             s.append(c == ' ' || c == '0' ? '#' : c);
+                        }
                         if (fractionDigits > 0) {
                             s.append(fractionMask[0]);
-                            for (int i = 0; i < fractionDigits; i++)
+                            for (int i = 0; i < fractionDigits; i++) {
                                 s.append('#');
+                            }
                         }
                     } else {
                         if (integerLength > digits.length()) {
                             // Floating-point underflows; integer part is padded wth 0's.
                             StringBuilder r = new StringBuilder(integerLength);
                             r.append(digits);
-                            for (int i = digits.length(); i < integerLength; i++)
+                            for (int i = digits.length(); i < integerLength; i++) {
                                 r.append('0');
+                            }
                             integer = r.toString();
                             fraction = "";
                         } else if (integerLength < 0) {
                             // Floating-point overflows; fraction part is padded with 0's.
                             StringBuilder r = new StringBuilder();
-                            for (int i = 0; i < Math.min(-integerLength, fractionDigits); i++)
+                            for (int i = 0; i < Math.min(-integerLength, fractionDigits); i++) {
                                 r.append('0');
-                            if (-integerLength < fractionDigits)
+                            }
+                            if (-integerLength < fractionDigits) {
                                 r.append(digits, 0, integerLength + fractionDigits);
+                            }
                             fraction = r.toString();
                             integer = "";
                             integerLength = 0;
@@ -357,71 +383,84 @@ public class Formatter {
                         // Step 6.1 - Fill and print the integer digit mask
 
                         // Copy the integer mask by leaving room for the anchored sign.
-                        int i = preSign == 0 ? 0 : 1;
+                        int i = preSign == 'S' || preSign == 'M' ? 1 : 0;
                         char[] r = new char[i + integerMask.length];
                         System.arraycopy(integerMask, 0, r, i, integerMask.length);
                         // Skip over unoccupied digits by taking grouping separators into account.
                         // Clear grouping separators that does not come after a digit.
                         // Save the index of the first digit to `j`.
                         int j, k = integerDigits - integerLength;
-                        for (j = -1; k > 0; i++)
+                        for (j = -1; k > 0; i++) {
                             if (r[i] == ' ' || r[i] == '0') {
-                                if (r[i] == '0' && j == -1)
+                                if (r[i] == '0' && j == -1) {
                                     j = i;
+                                }
                                 k--;
-                            } else if (j != -1)
+                            } else if (j != -1) {
                                 r[i] = ' ';
-                        if (j == -1)
+                            }
+                        }
+                        if (j == -1) {
                             j = i;
+                        }
                         // Put the anchored sign if there is any.
                         // Update `j` to reflect the starting index of the potentially signed integer.
-                        if (preSign != 0) {
-                            r[j - 1] = negative ? '-' : preSign == '+' ? '+' : ' ';
-                            if (r[j - 1] != ' ')
+                        if (preSign == 'S' || preSign == 'M') {
+                            r[j - 1] = negative ? '-' : preSign == 'S' ? '+' : ' ';
+                            if (r[j - 1] != ' ') {
                                 j--;
+                            }
                         }
                         // Copy digits into the mask by taking grouping separators into account.
-                        for (k = 0; i < r.length; i++)
-                            if (r[i] == ' ' || r[i] == '0')
+                        for (k = 0; i < r.length; i++) {
+                            if (r[i] == ' ' || r[i] == '0') {
                                 r[i] = integer.charAt(k++);
+                            }
+                        }
                         // Print the mask by starting from `fillMode ? 0 : j`.
-                        if (fillMode)
+                        if (fillMode) {
                             j = 0;
+                        }
                         s.append(r, j, r.length - j);
 
                         // Step 6.2 - Fill and print the fraction digit mask
 
                         if (fractionDigits > 0) {
                             // Copy the fraction mask by leaving room for the anchored sign.
-                            k = postSign == 0 ? 0 : 1;
+                            k = postSign == 'S' ? 1 : 0;
                             r = Arrays.copyOf(fractionMask, fractionMask.length + k);
                             // Copy digits into the mask by taking decimal separator into account.
                             // Save the length of the longest prefix without trailing zeros to `j`.
                             for (i = 0, j = 0; i < fraction.length(); i++) {
                                 r[i + 1] = fraction.charAt(i);
-                                if (r[i + 1] != '0')
+                                if (r[i + 1] != '0') {
                                     j = i + 1;
+                                }
                             }
                             // Update `j` to reflect the length of the fraction including the decimal separator.
                             j = Math.max(minFractionDigits, j);
-                            if (j > 0)
+                            if (j > 0) {
                                 j++;
+                            }
                             // Clear unnecessary trailing zeros and decimal separator.
-                            for (i = j; i < r.length; i++)
+                            for (i = j; i < r.length; i++) {
                                 r[i] = ' ';
+                            }
                             // Put the anchored sign if there is any.
-                            if (postSign != 0)
+                            if (postSign == 'S') {
                                 r[j] = negative ? '-' : '+';
+                            }
                             // Print the mask up to `fillMode ? r.length : j + k`.
                             j = fillMode ? r.length : j + k;
-                            if (j > 0)
+                            if (j > 0) {
                                 s.append(r, 0, j);
+                            }
                         } else if ("TH".equalsIgnoreCase(suffix) && integerLength > 0) {
                             // For ordinals, the fraction part is suppressed.
                             String th = integer.endsWith("11") || integer.endsWith("12") || integer.endsWith("13")
                                     ? "th" : ORDINAL[integer.charAt(integerLength - 1) - 48];
                             s.append("TH".equals(suffix) ? th.toUpperCase() : th);
-                        } else if (postSign != 0) {
+                        } else if (postSign == 'S') {
                             // Anchored sign suffix is handled here if there is no fraction.
                             s.append(negative ? '-' : '+');
                         }
@@ -431,47 +470,66 @@ public class Formatter {
                             s.append(SYMBOLS.getExponentSeparator());
                             s.append(exponent < 0 ? '-' : '+');
                             exponent = Math.abs(exponent);
-                            if (exponent <= 9)
+                            if (exponent <= 9) {
                                 s.append('0');
+                            }
                             s.append(exponent);
                         }
                     }
                 }
 
-                if (postSign == 0)
-                    affix(s, false, negative);
+                putSign(s, postSign, negative);
+                if ("L".equals(suffix)) {
+                    s.append(SYMBOLS.getCurrencySymbol());
+                }
             }
         }
 
-        private boolean hasSign(String affix) {
-            return "PR".equals(affix) || "MI".equals(affix) || "PL".equals(affix)
-                    || "SG".equals(affix) || "S".equals(affix);
+        private char getSign(String preSign, String postSign, boolean pre) {
+            if ("PR".equals(preSign) || "PR".equals(postSign)) {
+                return pre ? '<' : '>';
+            }
+            String sign = pre ? preSign : postSign;
+            if (sign != null) {
+                switch (sign) {
+                    case "MI": return '-';
+                    case "PL": return '+';
+                    case "SG": return '=';
+                    case "S" : return 'S';
+                }
+            }
+            return 0;
         }
 
-        private void affix(StringBuilder s, boolean pre, boolean negative) {
-            String affix = pre ? prefix : suffix;
+        private void putSign(StringBuilder s, char sign, boolean negative) {
             char c = 0;
-            if ("PR".equals(prefix) || "PR".equals(suffix))
-                c = negative ? (pre ? '<' : '>') : ' ';
-            else if ("MI".equals(affix))
+            if (sign == '<' || sign == '>') {
+                c = negative ? sign : ' ';
+            } else if (sign == '-') {
                 c = negative ? '-' : ' ';
-            else if ("PL".equals(affix))
+            } else if (sign == '+') {
                 c = negative ? ' ' : '+';
-            else if ("SG".equals(affix))
+            } else if (sign == '=') {
                 c = negative ? '-' : '+';
-            if (c != 0) {
-                if (c != ' ' || fillMode)
-                    s.append(c);
-            } else if ("L".equals(affix))
-                s.append(SYMBOLS.getCurrencySymbol());
+            }
+            if (c != 0 && (c != ' ' || fillMode)) {
+                s.append(c);
+            }
         }
 
         @Override
         public String toString() {
             StringBuilder s = new StringBuilder();
-            if (preSign != 0) s.append(preSign);
-            s.append(integerMask).append(fractionMask);
-            if (postSign != 0) s.append(postSign);
+            if (preSign != 0) {
+                s.append(preSign);
+            }
+            s.append(integerMask);
+            if (fractionMask != null) {
+                s.append(fractionMask);
+            }
+            if (postSign != 0) {
+                s.append(postSign);
+            }
             return s.toString();
         }
     }
