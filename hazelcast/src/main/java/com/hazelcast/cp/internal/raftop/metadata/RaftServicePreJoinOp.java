@@ -24,6 +24,7 @@ import com.hazelcast.cp.internal.RaftServiceDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.io.IOException;
@@ -35,7 +36,7 @@ import java.io.IOException;
  * Please note that this operation is not a {@link RaftOp},
  * so it is not handled via the Raft layer.
  */
-public class RaftServicePreJoinOp extends Operation implements IdentifiedDataSerializable {
+public class RaftServicePreJoinOp extends Operation implements IdentifiedDataSerializable, AllowedDuringPassiveState {
 
     private boolean discoveryCompleted;
 

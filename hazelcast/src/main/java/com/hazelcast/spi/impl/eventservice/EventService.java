@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl.eventservice;
 import com.hazelcast.internal.nio.Packet;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.PreJoinAwareService;
+import com.hazelcast.spi.impl.eventservice.impl.operations.OnJoinRegistrationOperation;
 import com.hazelcast.spi.properties.ClusterProperty;
 
 import javax.annotation.Nonnull;
@@ -29,7 +30,7 @@ import java.util.function.Consumer;
 /**
  * Component responsible for handling events like topic events or map.listener events. The events are divided into topics.
  */
-public interface EventService extends Consumer<Packet>, PreJoinAwareService, PostJoinAwareService {
+public interface EventService extends Consumer<Packet>, PreJoinAwareService<OnJoinRegistrationOperation>, PostJoinAwareService {
 
     /**
      * Returns the event thread count.
