@@ -53,7 +53,7 @@ import static org.assertj.core.util.Lists.newArrayList;
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class GenericMapLaoderTest extends JdbcSqlTestSupport {
+public class GenericMapLoaderTest extends JdbcSqlTestSupport {
 
     public String mapName;
 
@@ -76,9 +76,8 @@ public class GenericMapLaoderTest extends JdbcSqlTestSupport {
 
         createMapStore();
 
-        assertTrueEventually(() -> {
-            assertRowsAnyOrder(hz, "SHOW MAPPINGS", newArrayList(new Row(MAPPING_PREFIX + mapName)));
-        }, 5);
+        assertTrueEventually(() -> assertRowsAnyOrder(hz, "SHOW MAPPINGS",
+                newArrayList(new Row(MAPPING_PREFIX + mapName))), 5);
     }
 
     @Test
@@ -110,9 +109,7 @@ public class GenericMapLaoderTest extends JdbcSqlTestSupport {
         awaitMappingCreated();
 
         mapStore.destroy();
-        assertTrueEventually(() -> {
-            assertRowsAnyOrder(hz, "SHOW MAPPINGS", newArrayList());
-        }, 5);
+        assertTrueEventually(() -> assertRowsAnyOrder(hz, "SHOW MAPPINGS", newArrayList()), 5);
     }
 
     @Test
@@ -124,9 +121,7 @@ public class GenericMapLaoderTest extends JdbcSqlTestSupport {
 
         GenericMapStore<Object> mapStoreNotMaster = createMapStore(instances()[1]);
         mapStoreNotMaster.destroy();
-        assertTrueEventually(() -> {
-            assertRowsAnyOrder(hz, "SHOW MAPPINGS", newArrayList());
-        }, 5);
+        assertTrueEventually(() -> assertRowsAnyOrder(hz, "SHOW MAPPINGS", newArrayList()), 5);
     }
 
     @Test
@@ -438,7 +433,8 @@ public class GenericMapLaoderTest extends JdbcSqlTestSupport {
     }
 
     private void awaitMappingCreated() {
-        assertTrueEventually(() -> assertRowsAnyOrder(hz, "SHOW MAPPINGS", newArrayList(new Row(MAPPING_PREFIX + mapName))), 5);
+        assertTrueEventually(() -> assertRowsAnyOrder(hz, "SHOW MAPPINGS",
+                newArrayList(new Row(MAPPING_PREFIX + mapName))), 5);
     }
 
 }

@@ -28,7 +28,6 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.MapLoaderLifecycleSupport;
-import com.hazelcast.map.MapStore;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -133,7 +132,7 @@ class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoaderLifec
         this.instance = Util.getHazelcastInstanceImpl(instance);
 
         this.properties = new GenericMapStoreProperties(properties, mapName);
-        sql = ((HazelcastInstance) this.instance).getSql();
+        sql = this.instance.getSql();
 
         this.mapName = mapName;
         this.mapping = MAPPING_PREFIX + mapName;
@@ -146,11 +145,9 @@ class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoaderLifec
                 .getExecutor(ExecutionService.MAP_STORE_OFFLOADABLE_EXECUTOR);
 
         // Init can run on partition thread, creating a mapping uses other maps, so it needs to run elsewhere
-        asyncExecutor.submit(() -> {
-            // We create the mapping only on the master node
-            // On other members we wait until the mapping has been created
-            createMappingForMapStore(mapName);
-        });
+        // We create the mapping only on the master node
+        // On other members we wait until the mapping has been created
+        asyncExecutor.submit(() -> createMappingForMapStore(mapName));
     }
 
     private void verifyMapStoreOffload(HazelcastInstance instance, String mapName) {
@@ -244,16 +241,15 @@ class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoaderLifec
 
     private SqlRowMetadata loadMetadataFromMapping(String mapping) {
         try (SqlResult result = sql.execute("SELECT * FROM \"" + mapping + "\" LIMIT 0")) {
-            SqlRowMetadata rowMetadata = result.getRowMetadata();
-            return rowMetadata;
+            return result.getRowMetadata();
         }
     }
 
     private void readExistingMapping() {
         logger.fine("Reading existing mapping for map" + mapName);
-        try (SqlResult mappings = sql.execute("SHOW MAPPINGS")) {
-            for (SqlRow mapping : mappings) {
-                String name = mapping.getObject(MAPPING_NAME_COLUMN);
+        try (SqlResult sqlResult = sql.execute("SHOW MAPPINGS")) {
+            for (SqlRow sqlRow : sqlResult) {
+                String name = sqlRow.getObject(MAPPING_NAME_COLUMN);
                 if (name.equals(this.mapping)) {
                     SqlRowMetadata rowMetadata = loadMetadataFromMapping(name);
                     validateColumns(rowMetadata);
@@ -270,7 +266,7 @@ class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoaderLifec
     private void validateColumns(SqlRowMetadata rowMetadata) {
         Stream.concat(of(properties.idColumn), properties.columns.stream())
                 .distinct() // avoid duplicate id column if present in columns property
-                .forEach((columnName) -> validateColumn(rowMetadata.findColumn(columnName), columnName));
+                .forEach(columnName -> validateColumn(rowMetadata.findColumn(columnName), columnName));
     }
 
     private int validateColumn(int column, String columnName) {
