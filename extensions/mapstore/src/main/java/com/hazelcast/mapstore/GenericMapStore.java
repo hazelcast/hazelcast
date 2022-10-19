@@ -64,7 +64,7 @@ public class GenericMapStore<K> extends GenericMapLoader<K>
 
 
     @Override
-    public void store(K key, GenericRecord genericRecord) {
+    public void store(K key, GenericRecord record) {
         awaitInitFinished();
 
         int idPos = -1;
@@ -76,55 +76,55 @@ public class GenericMapStore<K> extends GenericMapLoader<K>
             }
             switch (columnMetadata.getType()) {
                 case VARCHAR:
-                    params[i] = genericRecord.getString(columnMetadata.getName());
+                    params[i] = record.getString(columnMetadata.getName());
                     break;
 
                 case BOOLEAN:
-                    params[i] = genericRecord.getBoolean(columnMetadata.getName());
+                    params[i] = record.getBoolean(columnMetadata.getName());
                     break;
 
                 case TINYINT:
-                    params[i] = genericRecord.getInt8(columnMetadata.getName());
+                    params[i] = record.getInt8(columnMetadata.getName());
                     break;
 
                 case SMALLINT:
-                    params[i] = genericRecord.getInt16(columnMetadata.getName());
+                    params[i] = record.getInt16(columnMetadata.getName());
                     break;
 
                 case INTEGER:
-                    params[i] = genericRecord.getInt32(columnMetadata.getName());
+                    params[i] = record.getInt32(columnMetadata.getName());
                     break;
 
                 case BIGINT:
-                    params[i] = genericRecord.getInt64(columnMetadata.getName());
+                    params[i] = record.getInt64(columnMetadata.getName());
                     break;
 
                 case REAL:
-                    params[i] = genericRecord.getFloat32(columnMetadata.getName());
+                    params[i] = record.getFloat32(columnMetadata.getName());
                     break;
 
                 case DOUBLE:
-                    params[i] = genericRecord.getFloat64(columnMetadata.getName());
+                    params[i] = record.getFloat64(columnMetadata.getName());
                     break;
 
                 case DATE:
-                    params[i] = genericRecord.getDate(columnMetadata.getName());
+                    params[i] = record.getDate(columnMetadata.getName());
                     break;
 
                 case TIME:
-                    params[i] = genericRecord.getTime(columnMetadata.getName());
+                    params[i] = record.getTime(columnMetadata.getName());
                     break;
 
                 case TIMESTAMP:
-                    params[i] = genericRecord.getTimestamp(columnMetadata.getName());
+                    params[i] = record.getTimestamp(columnMetadata.getName());
                     break;
 
                 case TIMESTAMP_WITH_TIME_ZONE:
-                    params[i] = genericRecord.getTimestampWithTimezone(columnMetadata.getName());
+                    params[i] = record.getTimestampWithTimezone(columnMetadata.getName());
                     break;
 
                 case DECIMAL:
-                    params[i] = genericRecord.getDecimal(columnMetadata.getName());
+                    params[i] = record.getDecimal(columnMetadata.getName());
                     break;
 
                 default:
