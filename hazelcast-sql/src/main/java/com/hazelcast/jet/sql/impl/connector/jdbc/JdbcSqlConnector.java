@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.datastore.ExternalDataStoreFactory;
 import com.hazelcast.datastore.impl.CloseableDataSource;
 import com.hazelcast.function.FunctionEx;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
@@ -379,7 +380,7 @@ public class JdbcSqlConnector implements SqlConnector {
      */
     @SuppressWarnings("ReturnCount")
     private QueryDataType resolveType(String columnTypeName) {
-        switch (columnTypeName.toUpperCase(Locale.ROOT)) {
+        switch (StringUtil.upperCaseInternal(columnTypeName)) {
             case "BOOLEAN":
             case "BOOL":
             case "BIT":

@@ -23,7 +23,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
-import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -34,7 +33,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -46,17 +44,16 @@ import static com.hazelcast.mapstore.GenericMapStoreProperties.ID_COLUMN_PROPERT
 import static com.hazelcast.mapstore.GenericMapStoreProperties.TABLE_NAME_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStoreProperties.TYPE_NAME_PROPERTY;
 import static com.hazelcast.nio.serialization.FieldKind.NOT_AVAILABLE;
-import static java.util.Collections.emptyMap;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
 
 /**
- * This test runs the MapStore methods directly, but it runs within real Hazelcast instance
+ * This test runs the MapLoader methods directly, but it runs within real Hazelcast instance
  */
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class GenericMapStoreTest extends JdbcSqlTestSupport {
+public class GenericMapLaoderTest extends JdbcSqlTestSupport {
 
     public String mapName;
 
@@ -377,188 +374,6 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         assertThat(ids).isEmpty();
     }
 
-    @Test
-    public void whenStore_thenTableContainsRow() throws Exception {
-        createTable(mapName, "\"person-id\" INT PRIMARY KEY", "name VARCHAR(100)");
-
-        Properties properties = new Properties();
-        properties.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
-
-        properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
-        GenericMapStore<Integer> mapStore = createMapStore(properties, hz);
-
-        GenericRecord person = GenericRecordBuilder.compact("Person")
-                                                   .setInt32("person-id", 0)
-                                                   .setString("name", "name-0")
-                                                   .build();
-        mapStore.store(0, person);
-
-        assertJdbcRowsAnyOrder(mapName,
-                new Row(0, "name-0")
-        );
-    }
-
-    @Test
-    public void givenIdColumn_whenStore_thenTableContainsRow() throws Exception {
-        createTable(mapName);
-        GenericMapStore<Integer> mapStore = createMapStore();
-
-        GenericRecord person = GenericRecordBuilder.compact("Person")
-                                                   .setInt32("id", 0)
-                                                   .setString("name", "name-0")
-                                                   .build();
-        mapStore.store(0, person);
-
-        assertJdbcRowsAnyOrder(mapName,
-                new Row(0, "name-0")
-        );
-    }
-
-    @Test
-    public void givenRow_whenStore_thenRowIsUpdated() throws Exception {
-        createTable(mapName);
-        insertItems(mapName, 1);
-
-        GenericMapStore<Integer> mapStore = createMapStore();
-        GenericRecord person = GenericRecordBuilder.compact("Person")
-                                                   .setInt32("id", 0)
-                                                   .setString("name", "updated")
-                                                   .build();
-        mapStore.store(0, person);
-
-        assertJdbcRowsAnyOrder(mapName,
-                new Row(0, "updated")
-        );
-    }
-
-    @Test
-    public void givenRowAndIdColumn_whenStore_thenRowIsUpdated() throws Exception {
-        createTable(mapName, "\"person-id\" INT PRIMARY KEY", "name VARCHAR(100)");
-        insertItems(mapName, 1);
-
-        Properties properties = new Properties();
-        properties.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
-
-        properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
-        GenericMapStore<Integer> mapStore = createMapStore(properties, hz);
-
-        GenericRecord person = GenericRecordBuilder.compact("Person")
-                                                   .setInt32("person-id", 0)
-                                                   .setString("name", "updated")
-                                                   .build();
-        mapStore.store(0, person);
-
-        assertJdbcRowsAnyOrder(mapName,
-                new Row(0, "updated")
-        );
-    }
-
-    @Test
-    public void whenStoreAll_thenTableContainsRow() throws Exception {
-        createTable(mapName);
-        GenericMapStore<Integer> mapStore = createMapStore();
-
-        Map<Integer, GenericRecord> people = new HashMap<>();
-        for (int i = 0; i < 5; i++) {
-            GenericRecord person = GenericRecordBuilder.compact("Person")
-                                                       .setInt32("id", i)
-                                                       .setString("name", "name-" + i)
-                                                       .build();
-            people.put(i, person);
-        }
-        mapStore.storeAll(people);
-
-        assertJdbcRowsAnyOrder(mapName,
-                new Row(0, "name-0"),
-                new Row(1, "name-1"),
-                new Row(2, "name-2"),
-                new Row(3, "name-3"),
-                new Row(4, "name-4")
-        );
-    }
-
-    @Test
-    public void whenStoreAllWithNoRecords_thenDoNothing() throws Exception {
-        createTable(mapName);
-        GenericMapStore<Integer> mapStore = createMapStore();
-
-        mapStore.storeAll(emptyMap());
-
-        assertThat(jdbcRowsTable(mapName)).isEmpty();
-    }
-
-    @Test
-    public void whenDelete_thenRowRemovedFromTable() throws Exception {
-        createTable(mapName);
-        insertItems(mapName, 2);
-
-        GenericMapStore<Integer> mapStore = createMapStore();
-        mapStore.delete(0);
-
-        assertJdbcRowsAnyOrder(mapName,
-                new Row(1, "name-1")
-        );
-    }
-
-    @Test
-    public void givenIdColumn_whenDelete_thenRowRemovedFromTable() throws Exception {
-        createTable(mapName, "\"person-id\" INT PRIMARY KEY", "name VARCHAR(100)");
-        insertItems(mapName, 2);
-
-        Properties properties = new Properties();
-        properties.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
-
-        properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
-        GenericMapStore<Integer> mapStore = createMapStore(properties, hz);
-        mapStore.delete(0);
-
-        assertJdbcRowsAnyOrder(mapName,
-                new Row(1, "name-1")
-        );
-    }
-
-    @Test
-    public void whenDeleteAll_thenRowsRemovedFromTable() throws Exception {
-        createTable(mapName);
-        insertItems(mapName, 3);
-
-        GenericMapStore<Integer> mapStore = createMapStore();
-        mapStore.deleteAll(newArrayList(0, 1));
-
-        assertJdbcRowsAnyOrder(mapName,
-                new Row(2, "name-2")
-        );
-    }
-
-    @Test
-    public void givenIdColumn_whenDeleteAll_thenRowRemovedFromTable() throws Exception {
-        createTable(mapName, "\"person-id\" INT PRIMARY KEY", "name VARCHAR(100)");
-        insertItems(mapName, 2);
-
-        Properties properties = new Properties();
-        properties.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
-
-        properties.setProperty(ID_COLUMN_PROPERTY, "person-id");
-        GenericMapStore<Integer> mapStore = createMapStore(properties, hz);
-        mapStore.deleteAll(newArrayList(0));
-
-        assertJdbcRowsAnyOrder(mapName,
-                new Row(1, "name-1")
-        );
-    }
-
-    @Test
-    public void whenDeleteAllWithNoIds_thenDoNothing() throws Exception {
-        createTable(mapName);
-        insertItems(mapName, 1);
-
-        GenericMapStore<Integer> mapStore = createMapStore();
-        mapStore.deleteAll(newArrayList());
-
-        assertJdbcRowsAnyOrder(mapName,
-                new Row(0, "name-0")
-        );
-    }
 
     @Test
     public void givenMapStoreConfigWithOffloadDisabled_thenFail() {
@@ -623,9 +438,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
     }
 
     private void awaitMappingCreated() {
-        assertTrueEventually(() -> {
-            assertRowsAnyOrder(hz, "SHOW MAPPINGS", newArrayList(new Row(MAPPING_PREFIX + mapName)));
-        }, 5);
+        assertTrueEventually(() -> assertRowsAnyOrder(hz, "SHOW MAPPINGS", newArrayList(new Row(MAPPING_PREFIX + mapName))), 5);
     }
 
 }
