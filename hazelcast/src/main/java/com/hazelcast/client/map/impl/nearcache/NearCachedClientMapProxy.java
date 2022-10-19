@@ -503,7 +503,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         try {
             response = super.executeOnKeyInternal(key, entryProcessor);
         } finally {
-            if (!(entryProcessor instanceof ReadOnly)){
+            if (!(entryProcessor instanceof ReadOnly)) {
                 invalidateNearCache(key);
             }
         }
@@ -518,7 +518,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
         try {
             future = super.submitToKeyInternal(key, entryProcessor);
         } finally {
-            if (!(entryProcessor instanceof ReadOnly)){
+            if (!(entryProcessor instanceof ReadOnly)) {
                 invalidateNearCache(key);
             }
         }

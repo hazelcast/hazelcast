@@ -257,8 +257,8 @@ public class NearCacheTest extends NearCacheTestSupport {
         populateNearCache(map, mapSize);
 
         long hitsBefore = stats.getHits();
-        for (int i = 0; i< mapSize; i++){
-            map.executeOnKey(i,new TestReadOnlyProcessor());
+        for (int i = 0; i < mapSize; i++) {
+            map.executeOnKey(i, new TestReadOnlyProcessor());
         }
         long hitsAfter = stats.getHits();
         assertEquals("No Invalidation after getting keys from read only entry processor", hitsBefore, hitsAfter);

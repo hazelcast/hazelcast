@@ -521,7 +521,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         try {
             return super.executeOnKeyInternal(nearCacheKey, entryProcessor);
         } finally {
-            if (!(entryProcessor instanceof ReadOnly)){
+            if (!(entryProcessor instanceof ReadOnly)) {
                 invalidateNearCache(nearCacheKey);
             }
         }
@@ -539,7 +539,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         } finally {
             Set<?> ncKeys = serializeKeys ? dataKeys : keys;
             for (Object key : ncKeys) {
-                if (!(entryProcessor instanceof ReadOnly)){
+                if (!(entryProcessor instanceof ReadOnly)) {
                     invalidateNearCache(key);
                 }
             }
@@ -553,7 +553,7 @@ public class NearCachedMapProxyImpl<K, V> extends MapProxyImpl<K, V> {
         } finally {
             for (int i = 0; i < resultingKeyValuePairs.size(); i += 2) {
                 Data key = resultingKeyValuePairs.get(i);
-                if (!(entryProcessor instanceof ReadOnly)){
+                if (!(entryProcessor instanceof ReadOnly)) {
                     invalidateNearCache(serializeKeys ? key : toObject(key));
                 }
             }
