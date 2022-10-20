@@ -47,7 +47,7 @@ public class SimpleClientInterceptor implements MapInterceptor, Portable {
 
     @Override
     public Object interceptPut(Object oldValue, Object newValue) {
-        return newValue.toString().toUpperCase(StringUtil.LOCALE_INTERNAL);
+        return StringUtil.upperCaseInternal(newValue.toString());
     }
 
     @Override
