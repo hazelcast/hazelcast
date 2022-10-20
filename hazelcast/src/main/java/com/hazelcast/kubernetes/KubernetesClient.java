@@ -98,7 +98,7 @@ class KubernetesClient {
         }
         this.apiProvider =  buildKubernetesApiUrlProvider();
         this.stsName = extractStsName();
-        this.stsMonitorThread = clusterTopologyIntentTracker != null
+        this.stsMonitorThread = (clusterTopologyIntentTracker != null && clusterTopologyIntentTracker.isEnabled())
                 ? new Thread(new StsMonitor(), "hz-k8s-sts-monitor") : null;
     }
 
