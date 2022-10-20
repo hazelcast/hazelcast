@@ -2,7 +2,10 @@ This document lists the new features, enhancements, fixed issues and, removed or
 
 ==== Hazelcast Platform 5.2.1 ====
 
-TBA
+## Fixes
+
+* Fixed an issue where the map entries recovered from persistence were not expiring after their time-to-live durations. [#22557]
+* Fixed an issue where external data store configurations could not be added dynamically. [#22464]
 
 ==== Hazelcast Platform 5.2.0 ====
 
