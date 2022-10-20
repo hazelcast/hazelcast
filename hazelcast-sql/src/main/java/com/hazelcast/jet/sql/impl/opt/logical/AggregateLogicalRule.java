@@ -43,7 +43,7 @@ final class AggregateLogicalRule extends ConverterRule {
         return new AggregateLogicalRel(
                 aggregate.getCluster(),
                 OptUtils.toLogicalConvention(aggregate.getTraitSet()),
-                OptUtils.toLogicalInput(aggregate.getInput(0)),
+                aggregate.getInput(0),
                 aggregate.getGroupSet(),
                 aggregate.getGroupSets(),
                 aggregate.getAggCallList()

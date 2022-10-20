@@ -28,7 +28,6 @@ import org.immutables.value.Value;
 
 import java.util.List;
 
-import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.OptUtils.getTargetField;
 
 /**
@@ -54,7 +53,6 @@ public class CalcDropLateItemsTransposeRule extends RelRule<RelRule.Config> impl
                 .description(CalcDropLateItemsTransposeRule.class.getSimpleName())
                 .operandSupplier(b0 -> b0
                         .operand(Calc.class)
-                        .trait(LOGICAL)
                         .inputs(b1 -> b1
                                 .operand(DropLateItemsLogicalRel.class)
                                 .anyInputs()))

@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.opt.logical;
 
-import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.aggregate.function.HazelcastWindowTableFunction;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastDynamicTableFunction;
@@ -99,7 +98,7 @@ final class FunctionLogicalRules {
             return new SlidingWindowLogicalRel(
                     scan.getCluster(),
                     OptUtils.toLogicalConvention(scan.getTraitSet()),
-                    Util.toList(scan.getInputs(), OptUtils::toLogicalInput),
+                    scan.getInputs(),
                     scan.getCall(),
                     scan.getElementType(),
                     scan.getRowType(),

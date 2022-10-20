@@ -59,6 +59,14 @@ public final class LogicalRules {
                 // Calc rules
                 CalcLogicalRule.INSTANCE,
                 CoreRules.CALC_REMOVE,
+                CalcMergeRule.INSTANCE,
+                CalcIntoScanRule.INSTANCE,
+
+                // Transposition rules
+                SlidingWindowCalcSplitLogicalRule.STREAMING_FILTER_TRANSPOSE,
+                CalcDropLateItemsTransposeRule.INSTANCE,
+                UnionDropLateItemsTransposeRule.INSTANCE,
+                SlidingWindowDropLateItemsMergeRule.INSTANCE,
 
                 // Aggregate rules
                 AggregateLogicalRule.INSTANCE,
@@ -69,16 +77,6 @@ public final class LogicalRules {
 
                 // Sort rules
                 SortLogicalRule.INSTANCE,
-
-                // Transposition rules
-                SlidingWindowCalcSplitLogicalRule.STREAMING_FILTER_TRANSPOSE,
-                CalcDropLateItemsTransposeRule.INSTANCE,
-                UnionDropLateItemsTransposeRule.INSTANCE,
-                SlidingWindowDropLateItemsMergeRule.INSTANCE,
-
-                // merge & push-down
-                CalcMergeRule.INSTANCE,
-                CalcIntoScanRule.INSTANCE,
 
                 // DML rules
                 InsertLogicalRule.INSTANCE,

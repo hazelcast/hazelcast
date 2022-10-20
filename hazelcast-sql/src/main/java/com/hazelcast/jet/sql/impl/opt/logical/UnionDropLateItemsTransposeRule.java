@@ -29,8 +29,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
-
 /**
  * Logical rule that transposes {@link DropLateItemsLogicalRel} from all inputs
  * of {@link Union} and puts it after the Union. Note: <b>every</b> Union's
@@ -70,7 +68,6 @@ public class UnionDropLateItemsTransposeRule extends RelRule<RelRule.Config> imp
                 .description(UnionDropLateItemsTransposeRule.class.getSimpleName())
                 .operandSupplier(b0 -> b0
                         .operand(Union.class)
-                        .trait(LOGICAL)
                         .predicate(union -> union.all)
                         .unorderedInputs(b1 -> b1
                                 .operand(DropLateItemsLogicalRel.class)
