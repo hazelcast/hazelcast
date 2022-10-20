@@ -39,7 +39,12 @@ import com.hazelcast.sql.impl.schema.TableField;
 import com.hazelcast.sql.impl.schema.map.MapTableIndex;
 import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import org.apache.calcite.plan.Contexts;
+import org.apache.calcite.plan.RelOptCostImpl;
+import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptUtil;
+import org.apache.calcite.plan.hep.HepPlanner;
+import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.sql.SqlExplainLevel;
 import org.apache.calcite.sql.parser.SqlParserPos;
@@ -95,8 +100,20 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
     private static LogicalRel optimizeLogicalInternal(String sql, OptimizerContext context) {
         RelNode rel = preOptimizeInternal(sql, context);
 
-        LogicalRel optimizedLogicalRel = (LogicalRel) context
-                .optimize(rel, LogicalRules.getRuleSet(), OptUtils.toLogicalConvention(rel.getTraitSet()));
+        HepProgramBuilder hpb = new HepProgramBuilder();
+        for (RelOptRule rule : LogicalRules.getRuleSet()) {
+            hpb.addRuleInstance(rule);
+        }
+        HepPlanner planner = new HepPlanner(
+                hpb.build(),
+                Contexts.empty(),
+                true,
+                null,
+                RelOptCostImpl.FACTORY
+        );
+        planner.setRoot(rel);
+
+        LogicalRel optimizedLogicalRel = (LogicalRel) planner.findBestExp();
 
         // IMap keyed access optimization
         return (LogicalRel) context

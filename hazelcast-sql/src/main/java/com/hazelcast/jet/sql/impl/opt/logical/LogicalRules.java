@@ -30,7 +30,7 @@ public final class LogicalRules {
     public static RuleSet getRuleSet() {
         return RuleSets.ofList(
                 // We need it to transpose RIGHT JOIN to the LEFT JOIN
-                CoreRules.PROJECT_TO_CALC,
+//                CoreRules.PROJECT_TO_CALC,
                 CalcReduceExprRule.INSTANCE,
 
                 // Scan rules
@@ -38,15 +38,47 @@ public final class LogicalRules {
                 FunctionLogicalRules.SPECIFIC_FUNCTION_INSTANCE,
                 FunctionLogicalRules.DYNAMIC_FUNCTION_INSTANCE,
 
-                // Windowing rules
-                FunctionLogicalRules.WINDOW_FUNCTION_INSTANCE,
-
                 // Watermark rules
                 WatermarkRules.IMPOSE_ORDER_INSTANCE,
                 WatermarkRules.WATERMARK_INTO_SCAN_INSTANCE,
 
+                // Windowing rules
+                FunctionLogicalRules.WINDOW_FUNCTION_INSTANCE,
+
                 // Value rules
                 ValuesLogicalRules.CONVERT_INSTANCE,
+                ValuesLogicalRules.CALC_INSTANCE,
+                ValuesLogicalRules.UNION_INSTANCE,
+
+                // Union rules
+                PruneEmptyRules.UNION_INSTANCE,
+                CoreRules.UNION_REMOVE,
+                CoreRules.UNION_PULL_UP_CONSTANTS,
+                UnionLogicalRule.INSTANCE,
+
+                // Calc rules
+                CalcLogicalRule.INSTANCE,
+                CoreRules.CALC_REMOVE,
+
+                // Aggregate rules
+                AggregateLogicalRule.INSTANCE,
+
+                // Join rules
+                JoinLogicalRule.INSTANCE,
+//                STREAMING_JOIN_TRANSPOSE,
+
+                // Sort rules
+                SortLogicalRule.INSTANCE,
+
+                // Transposition rules
+                SlidingWindowCalcSplitLogicalRule.STREAMING_FILTER_TRANSPOSE,
+                CalcDropLateItemsTransposeRule.INSTANCE,
+                UnionDropLateItemsTransposeRule.INSTANCE,
+                SlidingWindowDropLateItemsMergeRule.INSTANCE,
+
+                // merge & push-down
+                CalcMergeRule.INSTANCE,
+                CalcIntoScanRule.INSTANCE,
 
                 // DML rules
                 InsertLogicalRule.INSTANCE,
@@ -60,41 +92,7 @@ public final class LogicalRules {
                 InsertMapLogicalRule.INSTANCE,
                 SinkMapLogicalRule.INSTANCE,
                 UpdateByKeyMapLogicalRule.INSTANCE,
-                DeleteByKeyMapLogicalRule.INSTANCE,
-
-                // Union rules
-                PruneEmptyRules.UNION_INSTANCE,
-                CoreRules.UNION_REMOVE,
-                CoreRules.UNION_PULL_UP_CONSTANTS,
-                UnionLogicalRule.INSTANCE,
-                ValuesLogicalRules.UNION_INSTANCE,
-
-                // Calc rules
-                CalcLogicalRule.INSTANCE,
-
-                // Join rules
-                JoinLogicalRule.INSTANCE,
-//                STREAMING_JOIN_TRANSPOSE,
-
-                // Aggregate rules
-                AggregateLogicalRule.INSTANCE,
-
-                // Sort rules
-                SortLogicalRule.INSTANCE,
-
-                // Calc-related transformation rules
-                CoreRules.CALC_REMOVE,
-                ValuesLogicalRules.CALC_INSTANCE,
-
-                // Transposition rules
-                CalcDropLateItemsTransposeRule.INSTANCE,
-                SlidingWindowCalcSplitLogicalRule.STREAMING_FILTER_TRANSPOSE,
-                SlidingWindowDropLateItemsMergeRule.INSTANCE,
-                UnionDropLateItemsTransposeRule.INSTANCE,
-
-                // merge & push-down
-                CalcMergeRule.INSTANCE,
-                CalcIntoScanRule.INSTANCE
+                DeleteByKeyMapLogicalRule.INSTANCE
         );
     }
 }

@@ -27,6 +27,7 @@ import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelOptRuleOperand;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.convert.ConverterRule;
+import org.apache.calcite.rel.core.Calc;
 import org.apache.calcite.rel.core.Union;
 import org.apache.calcite.rel.logical.LogicalValues;
 import org.apache.calcite.rex.RexNode;
@@ -65,12 +66,12 @@ final class ValuesLogicalRules {
 
     static final RelOptRule CALC_INSTANCE =
             new RelOptRule(
-                    operand(CalcLogicalRel.class, some(operand(ValuesLogicalRel.class, none()))),
+                    operand(Calc.class, some(operand(ValuesLogicalRel.class, none()))),
                     ValuesLogicalRules.class.getSimpleName() + "(Project)"
             ) {
                 @Override
                 public void onMatch(RelOptRuleCall call) {
-                    CalcLogicalRel calc = call.rel(0);
+                    Calc calc = call.rel(0);
                     ValuesLogicalRel values = call.rel(1);
 
                     RexProgram rexProgram = calc.getProgram();
@@ -99,7 +100,7 @@ final class ValuesLogicalRules {
 
     static final RelOptRule UNION_INSTANCE =
             new RelOptRule(
-                    operand(UnionLogicalRel.class, RelOptRule.unordered(VALUES_CHILD_OPERAND)),
+                    operand(Union.class, RelOptRule.unordered(VALUES_CHILD_OPERAND)),
                     ValuesLogicalRules.class.getSimpleName() + "(Union)"
             ) {
                 @Override
