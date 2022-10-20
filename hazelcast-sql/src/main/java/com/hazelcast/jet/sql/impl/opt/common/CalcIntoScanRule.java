@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.opt.common;
 
 import com.hazelcast.jet.sql.impl.opt.FullScan;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.logical.CalcLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastRelOptTable;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
@@ -26,9 +27,7 @@ import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.plan.RelRule.Config;
-import org.apache.calcite.rel.core.Calc;
 import org.apache.calcite.rel.core.Project;
-import org.apache.calcite.rel.core.TableScan;
 import org.apache.calcite.rel.rules.TransformationRule;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexProgram;
@@ -43,17 +42,18 @@ import static java.util.Arrays.asList;
 import static org.apache.calcite.rex.RexUtil.EXECUTOR;
 
 /**
- * Logical rule that pushes a {@link Calc} down into a {@link TableScan} to allow for constrained scans.
+ * Logical rule that pushes a {@link CalcLogicalRel} down
+ * into a {@link FullScanLogicalRel} to allow constrained scans.
  * See {@link HazelcastTable} for more information about constrained scans.
  * <p>
  * Before:
  * <pre>
- * Calc[filter=exp1]
- *     TableScan[table[filter=exp2]]
+ * CalcLogicalRel[filter=exp1]
+ *     FullScanLogicalRel[table[filter=exp2]]
  * </pre>
  * After:
  * <pre>
- * TableScan[table[filter=exp1 AND exp2]]
+ * FullScanLogicalRel[table[filter=exp1 AND exp2]]
  * </pre>
  */
 @Value.Enclosing
@@ -64,10 +64,10 @@ public final class CalcIntoScanRule extends RelRule<Config> implements Transform
         CalcIntoScanRule.Config DEFAULT = ImmutableCalcIntoScanRule.Config.builder()
                 .description(CalcIntoScanRule.class.getSimpleName())
                 .operandSupplier(b0 -> b0
-                        .operand(Calc.class)
+                        .operand(CalcLogicalRel.class)
                         .trait(LOGICAL)
                         .inputs(b1 -> b1
-                                .operand(FullScan.class).anyInputs()))
+                                .operand(FullScanLogicalRel.class).anyInputs()))
                 .build();
 
         @Override
@@ -93,8 +93,8 @@ public final class CalcIntoScanRule extends RelRule<Config> implements Transform
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        Calc calc = call.rel(0);
-        FullScan scan = call.rel(1);
+        CalcLogicalRel calc = call.rel(0);
+        FullScanLogicalRel scan = call.rel(1);
 
         HazelcastTable table = OptUtils.extractHazelcastTable(scan);
         RexProgram program = calc.getProgram();

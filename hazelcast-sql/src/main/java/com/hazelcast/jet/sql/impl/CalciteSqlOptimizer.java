@@ -103,6 +103,7 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.Contexts;
 import org.apache.calcite.plan.Convention;
 import org.apache.calcite.plan.RelOptCostImpl;
+import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptTable;
 import org.apache.calcite.plan.RelOptUtil;
 import org.apache.calcite.plan.RelTraitSet;
@@ -118,7 +119,6 @@ import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlNode;
 import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
 import org.apache.calcite.sql.util.SqlString;
-import org.apache.calcite.tools.RuleSets;
 
 import javax.annotation.Nullable;
 import java.security.Permission;
@@ -634,7 +634,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         if (fineLogOn) {
             logger.fine("Before logical opt:\n" + RelOptUtil.toString(rel));
         }
-        LogicalRel logicalRel = optimizeLogical(context, rel);
+        LogicalRel logicalRel = optimizeLogical(rel);
         if (fineLogOn) {
             logger.fine("After logical opt:\n" + RelOptUtil.toString(logicalRel));
         }
@@ -659,23 +659,42 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
      * @param rel Original logical tree.
      * @return Optimized logical tree.
      */
-    private LogicalRel optimizeLogical(OptimizerContext context, RelNode rel) {
-        return (LogicalRel) context.optimize(
-                rel,
-                LogicalRules.getRuleSet(),
-                OptUtils.toLogicalConvention(rel.getTraitSet())
+    private LogicalRel optimizeLogical(RelNode rel) {
+        HepProgramBuilder hpb = new HepProgramBuilder();
+
+        for (RelOptRule rule : LogicalRules.getRuleSet()) {
+            hpb.addRuleInstance(rule);
+        }
+
+        HepPlanner planner = new HepPlanner(
+                hpb.build(),
+                Contexts.empty(),
+                true,
+                null,
+                RelOptCostImpl.FACTORY
         );
+
+        planner.setRoot(rel);
+        return (LogicalRel) planner.findBestExp();
     }
 
     private LogicalRel optimizeIMapKeyedAccess(OptimizerContext context, LogicalRel rel) {
         if (!(rel instanceof FullScanLogicalRel)) {
             return rel;
         }
-        return (LogicalRel) context.optimize(
-                rel,
-                RuleSets.ofList(SelectByKeyMapLogicalRule.INSTANCE),
-                OptUtils.toLogicalConvention(rel.getTraitSet())
+        HepProgramBuilder hpb = new HepProgramBuilder();
+        hpb.addRuleInstance(SelectByKeyMapLogicalRule.INSTANCE);
+
+        HepPlanner planner = new HepPlanner(
+                hpb.build(),
+                Contexts.empty(),
+                true,
+                null,
+                RelOptCostImpl.FACTORY
         );
+
+        planner.setRoot(rel);
+        return (LogicalRel) planner.findBestExp();
     }
 
     /**

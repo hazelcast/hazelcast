@@ -29,29 +29,52 @@ public final class LogicalRules {
 
     public static RuleSet getRuleSet() {
         return RuleSets.ofList(
+                // We need it to transpose RIGHT JOIN to the LEFT JOIN
+                CoreRules.PROJECT_TO_CALC,
+                CalcReduceExprRule.INSTANCE,
+
                 // Scan rules
                 FullScanLogicalRule.INSTANCE,
                 FunctionLogicalRules.SPECIFIC_FUNCTION_INSTANCE,
                 FunctionLogicalRules.DYNAMIC_FUNCTION_INSTANCE,
 
-                // Calc rules
-                CalcLogicalRule.INSTANCE,
-                CalcIntoScanRule.INSTANCE,
-                CalcMergeRule.INSTANCE,
-                CoreRules.CALC_REMOVE,
-                CalcReduceExprRule.INSTANCE,
-                // We need it to transpose RIGHT JOIN to the LEFT JOIN
-                CoreRules.PROJECT_TO_CALC,
-                SlidingWindowCalcSplitLogicalRule.STREAMING_FILTER_TRANSPOSE,
-                CalcDropLateItemsTransposeRule.INSTANCE,
+                // Windowing rules
+                FunctionLogicalRules.WINDOW_FUNCTION_INSTANCE,
 
                 // Watermark rules
                 WatermarkRules.IMPOSE_ORDER_INSTANCE,
                 WatermarkRules.WATERMARK_INTO_SCAN_INSTANCE,
 
-                // Windowing rules
-                FunctionLogicalRules.WINDOW_FUNCTION_INSTANCE,
-                SlidingWindowDropLateItemsMergeRule.INSTANCE,
+                // Value rules
+                ValuesLogicalRules.CONVERT_INSTANCE,
+
+                // DML rules
+                InsertLogicalRule.INSTANCE,
+                SinkLogicalRule.INSTANCE,
+                UpdateLogicalRules.SCAN_INSTANCE,
+                UpdateLogicalRules.VALUES_INSTANCE,
+                DeleteLogicalRule.INSTANCE,
+                TableModifyLogicalRule.INSTANCE,
+
+                // imap-by-key access optimization rules
+                InsertMapLogicalRule.INSTANCE,
+                SinkMapLogicalRule.INSTANCE,
+                UpdateByKeyMapLogicalRule.INSTANCE,
+                DeleteByKeyMapLogicalRule.INSTANCE,
+
+                // Union rules
+                PruneEmptyRules.UNION_INSTANCE,
+                CoreRules.UNION_REMOVE,
+                CoreRules.UNION_PULL_UP_CONSTANTS,
+                UnionLogicalRule.INSTANCE,
+                ValuesLogicalRules.UNION_INSTANCE,
+
+                // Calc rules
+                CalcLogicalRule.INSTANCE,
+
+                // Join rules
+                JoinLogicalRule.INSTANCE,
+//                STREAMING_JOIN_TRANSPOSE,
 
                 // Aggregate rules
                 AggregateLogicalRule.INSTANCE,
@@ -59,36 +82,19 @@ public final class LogicalRules {
                 // Sort rules
                 SortLogicalRule.INSTANCE,
 
-                // Join rules
-                JoinLogicalRule.INSTANCE,
-                CoreRules.JOIN_REDUCE_EXPRESSIONS,
-//                STREAMING_JOIN_TRANSPOSE,
-
-                // Union rules
-                PruneEmptyRules.UNION_INSTANCE,
-                CoreRules.UNION_REMOVE,
-                CoreRules.UNION_PULL_UP_CONSTANTS,
-                UnionDropLateItemsTransposeRule.INSTANCE,
-                UnionLogicalRule.INSTANCE,
-
-                // Value rules
-                ValuesLogicalRules.CONVERT_INSTANCE,
+                // Calc-related transformation rules
+                CoreRules.CALC_REMOVE,
                 ValuesLogicalRules.CALC_INSTANCE,
-                ValuesLogicalRules.UNION_INSTANCE,
 
-                // DML rules
-                TableModifyLogicalRule.INSTANCE,
-                InsertLogicalRule.INSTANCE,
-                SinkLogicalRule.INSTANCE,
-                UpdateLogicalRules.SCAN_INSTANCE,
-                UpdateLogicalRules.VALUES_INSTANCE,
-                DeleteLogicalRule.INSTANCE,
+                // Transposition rules
+                CalcDropLateItemsTransposeRule.INSTANCE,
+                SlidingWindowCalcSplitLogicalRule.STREAMING_FILTER_TRANSPOSE,
+                SlidingWindowDropLateItemsMergeRule.INSTANCE,
+                UnionDropLateItemsTransposeRule.INSTANCE,
 
-                // imap-by-key access optimization rules
-                InsertMapLogicalRule.INSTANCE,
-                SinkMapLogicalRule.INSTANCE,
-                UpdateByKeyMapLogicalRule.INSTANCE,
-                DeleteByKeyMapLogicalRule.INSTANCE
+                // merge & push-down
+                CalcMergeRule.INSTANCE,
+                CalcIntoScanRule.INSTANCE
         );
     }
 }

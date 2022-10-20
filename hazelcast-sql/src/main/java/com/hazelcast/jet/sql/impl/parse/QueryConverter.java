@@ -159,6 +159,7 @@ public class QueryConverter {
         hepProgramBuilder.addRuleInstance(CoreRules.FILTER_SUB_QUERY_TO_CORRELATE);
         hepProgramBuilder.addRuleInstance(CoreRules.PROJECT_SUB_QUERY_TO_CORRELATE);
         hepProgramBuilder.addRuleInstance(CoreRules.JOIN_SUB_QUERY_TO_CORRELATE);
+        hepProgramBuilder.addRuleInstance(CoreRules.JOIN_REDUCE_EXPRESSIONS);
 
         // Union optimization rules
         hepProgramBuilder.addRuleInstance(CoreRules.UNION_MERGE);

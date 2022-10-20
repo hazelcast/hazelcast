@@ -45,7 +45,7 @@ public final class CalcLogicalRule extends ConverterRule {
                 calc.getCluster(),
                 OptUtils.toLogicalConvention(calc.getTraitSet()),
                 calc.getHints(),
-                OptUtils.toLogicalInput(calc.getInput()),
+                calc.getInput(),
                 calc.getProgram()
         );
     }

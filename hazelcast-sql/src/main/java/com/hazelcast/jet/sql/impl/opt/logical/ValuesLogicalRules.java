@@ -89,7 +89,7 @@ final class ValuesLogicalRules {
                     );
                     RelNode rel = new ValuesLogicalRel(
                             calc.getCluster(),
-                            calc.getTraitSet(),
+                            OptUtils.toLogicalConvention(calc.getTraitSet()),
                             rexProgram.getOutputRowType(),
                             singletonList(expressionValues)
                     );
@@ -115,7 +115,7 @@ final class ValuesLogicalRules {
                     }
                     RelNode rel = new ValuesLogicalRel(
                             union.getCluster(),
-                            union.getTraitSet(),
+                            OptUtils.toLogicalConvention(union.getTraitSet()),
                             union.getRowType(),
                             expressionValues
                     );
