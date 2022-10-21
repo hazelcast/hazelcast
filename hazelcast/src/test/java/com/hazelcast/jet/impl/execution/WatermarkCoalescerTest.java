@@ -186,6 +186,7 @@ public class WatermarkCoalescerTest {
     public void when_allDone_then_noMaxValueEmitted() {
         assertEquals(Long.MIN_VALUE, wc.queueDone(0));
         assertEquals(Long.MIN_VALUE, wc.queueDone(1));
+        assertFalse(wc.idleMessagePending());
     }
 
     @Test

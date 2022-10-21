@@ -33,6 +33,7 @@ import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.PreJoinAwareService;
 import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationService;
@@ -864,7 +865,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         }
     }
 
-    private static class PreJoinAwareServiceImpl implements PreJoinAwareService {
+    private static class PreJoinAwareServiceImpl implements PreJoinAwareService<TimeConsumingPreJoinOperation> {
         static final String SERVICE_NAME = "pre-join-service";
 
         final CountDownLatch latch;
@@ -876,12 +877,12 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         }
 
         @Override
-        public Operation getPreJoinOperation() {
+        public TimeConsumingPreJoinOperation getPreJoinOperation() {
             return new TimeConsumingPreJoinOperation();
         }
     }
 
-    private static class TimeConsumingPreJoinOperation extends Operation {
+    private static class TimeConsumingPreJoinOperation extends Operation implements AllowedDuringPassiveState {
         @Override
         public void run() throws Exception {
             PreJoinAwareServiceImpl service = getService();
@@ -917,11 +918,11 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         }
     }
 
-    private static class FailingPreJoinOpService implements PreJoinAwareService {
+    private static class FailingPreJoinOpService implements PreJoinAwareService<FailsDeserializationOperation> {
         static final String SERVICE_NAME = "failing-pre-join-service";
 
         @Override
-        public Operation getPreJoinOperation() {
+        public FailsDeserializationOperation getPreJoinOperation() {
             return new FailsDeserializationOperation();
         }
     }
@@ -935,7 +936,7 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         }
     }
 
-    public static class FailsDeserializationOperation extends Operation {
+    public static class FailsDeserializationOperation extends Operation implements AllowedDuringPassiveState {
 
         @Override
         public void run() throws Exception {

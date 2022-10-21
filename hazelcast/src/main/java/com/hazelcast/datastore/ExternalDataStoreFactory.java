@@ -29,9 +29,10 @@ import com.hazelcast.spi.annotation.Beta;
 public interface ExternalDataStoreFactory<DS> extends AutoCloseable {
     /**
      * Returns configured data store. Depending on configuration and implementation it can create new data store
-     * or reuse existing one.
+     * or reuse existing one. The implementation <i>must</i> be thread-safe, since this method may be called
+     * by multiple threads concurrently.
      */
-    DataStoreHolder<DS> createDataStore();
+    DS getDataStore();
 
     /**
      * Initialize factory with the config

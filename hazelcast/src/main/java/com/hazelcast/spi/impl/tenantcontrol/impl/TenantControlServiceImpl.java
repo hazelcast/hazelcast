@@ -26,7 +26,6 @@ import com.hazelcast.internal.util.ServiceLoader;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.tenantcontrol.TenantControl;
 import com.hazelcast.spi.tenantcontrol.TenantControlFactory;
 import com.hazelcast.version.Version;
@@ -46,7 +45,7 @@ import static com.hazelcast.spi.tenantcontrol.TenantControlFactory.NOOP_TENANT_C
  * Each tenant control instance is bound to a single distributed object.
  */
 public class TenantControlServiceImpl
-        implements ClusterVersionListener, DistributedObjectListener, PreJoinAwareService {
+        implements ClusterVersionListener, DistributedObjectListener, PreJoinAwareService<TenantControlReplicationOperation> {
     public static final String SERVICE_NAME = "hz:impl:tenantControlService";
     /**
      * The number of retries for invocations replicating {@link TenantControl}
@@ -208,7 +207,7 @@ public class TenantControlServiceImpl
     }
 
     @Override
-    public Operation getPreJoinOperation() {
+    public TenantControlReplicationOperation getPreJoinOperation() {
         return isTenantControlEnabled()
                 ? new TenantControlReplicationOperation(tenantControlMap)
                 : null;

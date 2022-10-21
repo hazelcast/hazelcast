@@ -64,7 +64,7 @@ public class ExternalDataStoreServiceImplTest extends HazelcastTestSupport {
         ExternalDataStoreFactory<?> dataStoreFactory = externalDataStoreService.getExternalDataStoreFactory("test-data-store");
         assertInstanceOf(JdbcDataStoreFactory.class, dataStoreFactory);
 
-        DataSource dataSource = ((JdbcDataStoreFactory) dataStoreFactory).createDataStore().get();
+        DataSource dataSource = ((JdbcDataStoreFactory) dataStoreFactory).getDataStore();
 
         ResultSet resultSet = executeQuery(dataSource, "select 'some-name' as name");
         resultSet.next();
@@ -86,11 +86,12 @@ public class ExternalDataStoreServiceImplTest extends HazelcastTestSupport {
         ExternalDataStoreService externalDataStoreService = getExternalDataStoreService();
         ExternalDataStoreFactory<?> dataStoreFactory = externalDataStoreService.getExternalDataStoreFactory("test-data-store");
 
-        DataSource dataSource = ((JdbcDataStoreFactory) dataStoreFactory).createDataStore().get();
+        DataSource dataSource = ((JdbcDataStoreFactory) dataStoreFactory).getDataStore();
         externalDataStoreService.close();
 
         assertThatThrownBy(() -> executeQuery(dataSource, "select 'some-name' as name"))
-                .isInstanceOf(SQLException.class).hasMessage("HikariDataSource HikariDataSource (HikariPool-1) has been closed.");
+                .isInstanceOf(SQLException.class)
+                .hasMessageMatching("HikariDataSource HikariDataSource \\(HikariPool-\\d+\\) has been closed.");
     }
 
     private ExternalDataStoreService getExternalDataStoreService() {
