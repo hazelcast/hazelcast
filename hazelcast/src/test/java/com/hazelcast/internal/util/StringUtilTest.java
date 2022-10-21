@@ -249,11 +249,17 @@ public class StringUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_uppercaseWithTurkishLocale_then_RootLocaleIsUsed(){
+    public void when_uppercaseWithTurkishLocale_then_rootLocaleIsUsed(){
+        Locale defaultLocale = Locale.getDefault();
+
         Locale.setDefault(new Locale("tr", "TR"));
         String upperCase = StringUtil.upperCaseInternal("i");
         assertEquals("I", upperCase);
+
+        Locale.setDefault(defaultLocale);
+
     }
+
     private void assertResolvePlaceholder(String expected,
                                           String pattern,
                                           String placeholderNamespace,

@@ -29,7 +29,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.MapLoader;
 import com.hazelcast.map.MapLoaderLifecycleSupport;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
-import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -41,7 +40,6 @@ import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.SqlService;
 
-import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -122,6 +120,7 @@ class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoaderLifec
 
     private final CountDownLatch initFinished = new CountDownLatch(1);
 
+    private final SqlRowConverter sqlRowConverter = new SqlRowConverter();
 
     @Override
     public void init(HazelcastInstance instance, Properties properties, String mapName) {
@@ -294,7 +293,7 @@ class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoaderLifec
                 if (it.hasNext()) {
                     throw new IllegalStateException("multiple matching rows for a key " + key);
                 }
-                return convertRowToGenericRecord(row);
+                return sqlRowConverter.convertRowToGenericRecord(row, properties);
             } else {
                 return null;
             }
@@ -318,7 +317,7 @@ class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoaderLifec
             while (it.hasNext()) {
                 SqlRow row = it.next();
                 K id = row.getObject(properties.idColumn);
-                GenericRecord genericRecord = convertRowToGenericRecord(row);
+                GenericRecord genericRecord = sqlRowConverter.convertRowToGenericRecord(row, properties);
                 result.put(id, genericRecord);
             }
             return result;
@@ -340,73 +339,6 @@ class GenericMapLoader<K> implements MapLoader<K, GenericRecord>, MapLoaderLifec
                 (SqlRow row) -> row.getObject(properties.idColumn),
                 keysResult::close
         );
-    }
-
-    @Nonnull
-    private GenericRecord convertRowToGenericRecord(SqlRow row) {
-        GenericRecordBuilder builder = GenericRecordBuilder.compact(properties.compactTypeName);
-
-        SqlRowMetadata metadata = row.getMetadata();
-        for (int i = 0; i < metadata.getColumnCount(); i++) {
-            SqlColumnMetadata column = metadata.getColumn(i);
-
-            if (column.getName().equals(properties.idColumn) && !properties.idColumnInColumns) {
-                continue;
-            }
-
-            switch (column.getType()) {
-                case VARCHAR:
-                    builder.setString(column.getName(), row.getObject(i));
-                    break;
-
-                case BOOLEAN:
-                    builder.setBoolean(column.getName(), row.getObject(i));
-                    break;
-
-                case TINYINT:
-                case SMALLINT:
-                case INTEGER:
-                    builder.setInt32(column.getName(), row.getObject(i));
-                    break;
-
-                case BIGINT:
-                    builder.setInt64(column.getName(), row.getObject(i));
-                    break;
-
-                case DECIMAL:
-                    builder.setDecimal(column.getName(), row.getObject(i));
-                    break;
-
-                case REAL:
-                    builder.setFloat32(column.getName(), row.getObject(i));
-                    break;
-
-                case DOUBLE:
-                    builder.setFloat64(column.getName(), row.getObject(i));
-                    break;
-
-                case DATE:
-                    builder.setDate(column.getName(), row.getObject(i));
-                    break;
-
-                case TIME:
-                    builder.setTime(column.getName(), row.getObject(i));
-                    break;
-
-                case TIMESTAMP:
-                    builder.setTimestamp(column.getName(), row.getObject(i));
-                    break;
-
-                case TIMESTAMP_WITH_TIME_ZONE:
-                    builder.setTimestampWithTimezone(column.getName(), row.getObject(i));
-                    break;
-
-                default:
-                    throw new HazelcastException("Column type " + column.getType() + " not supported");
-            }
-        }
-
-        return builder.build();
     }
 
     private void dropMapping(String mappingName) {
