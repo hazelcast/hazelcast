@@ -35,7 +35,7 @@ import java.util.concurrent.ConcurrentMap;
 import static org.springframework.util.Assert.isTrue;
 
 /**
- * Sprint related {@link HazelcastCacheManager} implementation for Hazelcast.
+ * Spring related {@link HazelcastCacheManager} implementation for Hazelcast.
  */
 @SuppressWarnings("WeakerAccess")
 public class HazelcastCacheManager implements CacheManager {
