@@ -17,6 +17,7 @@
 package com.hazelcast.datastore;
 
 import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.datastore.impl.CloseableDataSource;
 import com.hazelcast.spi.annotation.Beta;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
@@ -34,17 +35,34 @@ import javax.sql.DataSource;
  * @since 5.2
  */
 @Beta
-public class JdbcDataStoreFactory extends AbstractDataStoreFactory<DataSource> {
+public class JdbcDataStoreFactory implements ExternalDataStoreFactory<DataSource> {
+    protected HikariDataSource sharedDataSource;
+    protected CloseableDataSource sharedCloseableDataSource;
+    protected ExternalDataStoreConfig config;
 
-    protected HikariDataSource createDataSource() {
+    @Override
+    public void init(ExternalDataStoreConfig config) {
+        this.config = config;
+        if (config.isShared()) {
+            sharedDataSource = doCreateDataSource();
+            sharedCloseableDataSource = CloseableDataSource.nonClosing(sharedDataSource);
+        }
+    }
+
+    @Override
+    public DataSource getDataStore() {
+        return config.isShared() ? sharedCloseableDataSource : CloseableDataSource.closing(doCreateDataSource());
+    }
+
+    protected HikariDataSource doCreateDataSource() {
         HikariConfig dataSourceConfig = new HikariConfig(config.getProperties());
         return new HikariDataSource(dataSourceConfig);
     }
 
     @Override
     public void close() throws Exception {
-        if (sharedDataStore != null) {
-            ((HikariDataSource) sharedDataStore).close();
+        if (sharedDataSource != null) {
+            sharedDataSource.close();
         }
     }
 }

@@ -18,7 +18,6 @@ package com.hazelcast.jet.core.processor;
 
 import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.core.HazelcastException;
-import com.hazelcast.datastore.DataStoreHolder;
 import com.hazelcast.datastore.ExternalDataStoreFactory;
 import com.hazelcast.datastore.JdbcDataStoreFactory;
 import com.hazelcast.function.BiConsumerEx;
@@ -399,7 +398,7 @@ public final class SinkProcessors {
         checkNotNull(dataSourceSupplier, "dataSourceSupplier");
         checkNotNull(bindFn, "bindFn");
         checkPositive(batchLimit, "batchLimit");
-        return WriteJdbcP.metaSupplier(jdbcUrl, updateQuery, ctx -> DataStoreHolder.nonClosing(dataSourceSupplier.get()),
+        return WriteJdbcP.metaSupplier(jdbcUrl, updateQuery, ctx -> dataSourceSupplier.get(),
                 bindFn, exactlyOnce, batchLimit);
     }
 
@@ -425,9 +424,8 @@ public final class SinkProcessors {
                 bindFn, exactlyOnce, batchLimit);
     }
 
-    private static FunctionEx<ProcessorMetaSupplier.Context,
-            DataStoreHolder<DataSource>> dataSourceSupplier(String externalDataStoreName) {
-        return context -> getDataStoreFactory(context, externalDataStoreName).createDataStore();
+    private static FunctionEx<ProcessorMetaSupplier.Context, DataSource> dataSourceSupplier(String externalDataStoreName) {
+        return context -> getDataStoreFactory(context, externalDataStoreName).getDataStore();
     }
 
     private static JdbcDataStoreFactory getDataStoreFactory(ProcessorMetaSupplier.Context context, String name) {

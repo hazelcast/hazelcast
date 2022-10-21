@@ -79,7 +79,7 @@ public class UpdateProcessorSupplier
         for (int i = 0; i < count; i++) {
             Processor processor = new WriteJdbcP<>(
                     query,
-                    dataSource.get(),
+                    dataSource,
                     (PreparedStatement ps, JetSqlRow row) -> {
                         List<Object> arguments = evalContext.getArguments();
 

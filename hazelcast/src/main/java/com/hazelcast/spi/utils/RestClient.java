@@ -23,10 +23,12 @@ import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLSocketFactory;
 import javax.net.ssl.TrustManagerFactory;
+import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
@@ -55,6 +57,8 @@ public final class RestClient {
      * HTTP status code 404 NOT FOUND
      */
     public static final int HTTP_NOT_FOUND = 404;
+
+    private static final String WATCH_FORMAT = "?watch=1&resourceVersion=%s";
 
     private final String url;
     private final List<Parameter> headers = new ArrayList<>();
@@ -168,6 +172,47 @@ public final class RestClient {
         }
     }
 
+    /**
+     * Issues a watch request to a Kubernetes resource, starting with the given {@code resourceVersion}.
+     * Since a watch implies a stream of updates from the server will be consumed, unlike other methods
+     * in this class, it is the responsibility of the consumer to disconnect the connection
+     * (by invoking {@link WatchResponse#disconnect()}) once the watch is no longer required.
+     */
+    public WatchResponse watch(String resourceVersion) {
+        HttpURLConnection connection = null;
+        try {
+            String completeUrl = url + String.format(WATCH_FORMAT, resourceVersion);
+            URL urlToConnect = new URL(completeUrl);
+            connection = (HttpURLConnection) urlToConnect.openConnection();
+            if (connection instanceof HttpsURLConnection && caCertificate != null) {
+                ((HttpsURLConnection) connection).setSSLSocketFactory(buildSslSocketFactory());
+            }
+            connection.setReadTimeout((int) TimeUnit.SECONDS.toMillis(readTimeoutSeconds));
+            connection.setConnectTimeout((int) TimeUnit.SECONDS.toMillis(connectTimeoutSeconds));
+            connection.setRequestMethod("GET");
+            for (Parameter header : headers) {
+                connection.setRequestProperty(header.getKey(), header.getValue());
+            }
+            if (body != null) {
+                byte[] bodyData = body.getBytes(StandardCharsets.UTF_8);
+
+                connection.setDoOutput(true);
+                connection.setRequestProperty("charset", "utf-8");
+                connection.setRequestProperty("Content-Length", Integer.toString(bodyData.length));
+
+                try (DataOutputStream outputStream = new DataOutputStream(connection.getOutputStream())) {
+                    outputStream.write(bodyData);
+                    outputStream.flush();
+                }
+            }
+
+            checkResponseCode("GET", connection);
+            return new WatchResponse(connection);
+        } catch (IOException e) {
+            throw new RestClientException("Failure in executing REST call", e);
+        }
+    }
+
     private void checkResponseCode(String method, HttpURLConnection connection)
             throws IOException {
         int responseCode = connection.getResponseCode();
@@ -263,6 +308,32 @@ public final class RestClient {
 
         public String getBody() {
             return body;
+        }
+    }
+
+    public static class WatchResponse {
+
+        private final int code;
+        private final HttpURLConnection connection;
+        private final BufferedReader reader;
+
+        public WatchResponse(HttpURLConnection connection) throws IOException {
+            this.code = connection.getResponseCode();
+            this.connection = connection;
+            this.reader = new BufferedReader(new InputStreamReader(connection.getInputStream(),
+                    StandardCharsets.UTF_8));
+        }
+
+        public int getCode() {
+            return code;
+        }
+
+        public String nextLine() throws IOException {
+            return reader.readLine();
+        }
+
+        public void disconnect() {
+            connection.disconnect();
         }
     }
 
