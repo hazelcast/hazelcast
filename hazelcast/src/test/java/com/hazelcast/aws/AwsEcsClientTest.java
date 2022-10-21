@@ -16,8 +16,6 @@
 
 package com.hazelcast.aws;
 
-import com.hazelcast.aws.AwsEcsApi.Task;
-import com.hazelcast.aws.AwsMetadataApi.EcsMetadata;
 import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,11 +30,11 @@ import java.util.Optional;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
+import static java.util.Collections.emptyMap;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -65,15 +63,10 @@ public class AwsEcsClientTest {
     @Before
     public void setUp() {
         given(awsMetadataApi.clusterEcs()).willReturn(CLUSTER);
-        EcsMetadata ecsMetadata = mock(EcsMetadata.class);
         AwsConfig awsConfig = AwsConfig.builder()
                 .setDiscoveryMode(DiscoveryMode.Member)
                 .build();
-        given(ecsMetadata.getTaskArn()).willReturn(TASK_ARN);
-        given(ecsMetadata.getClusterArn()).willReturn(CLUSTER);
-        given(awsMetadataApi.metadataEcs()).willReturn(ecsMetadata);
         given(awsCredentialsProvider.credentials()).willReturn(CREDENTIALS);
-
         awsEcsClient = new AwsEcsClient(CLUSTER, awsConfig, awsEcsApi, awsEc2Api, awsMetadataApi, awsCredentialsProvider);
     }
 

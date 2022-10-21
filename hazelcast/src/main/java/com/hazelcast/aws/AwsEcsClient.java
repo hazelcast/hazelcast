@@ -16,7 +16,6 @@
 
 package com.hazelcast.aws;
 
-import com.hazelcast.aws.AwsEcsApi.Task;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.discovery.integration.DiscoveryMode;
@@ -26,7 +25,6 @@ import java.util.Map;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
-import static java.util.Collections.singletonList;
 
 class AwsEcsClient implements AwsClient {
     private static final ILogger LOGGER = Logger.getLogger(AwsClient.class);
