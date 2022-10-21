@@ -31,9 +31,6 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -46,12 +43,8 @@ public class SqlResubmissionTimeoutTest extends SqlResubmissionTestSupport {
     public Integer timeout;
 
     @Parameterized.Parameters(name = "timeout:{0}")
-    public static Collection<Object[]> parameters() {
-        List<Object[]> res = new ArrayList<>();
-        res.add(new Object[]{1});
-        res.add(new Object[]{10});
-        res.add(new Object[]{30});
-        return res;
+    public static Object[] parameters() {
+        return new Object[]{1, 10, 30};
     }
 
     @BeforeClass
