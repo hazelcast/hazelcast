@@ -19,6 +19,7 @@ package com.hazelcast.jet.mongodb;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.mongodb.client.MongoClient;
+import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
@@ -27,6 +28,8 @@ import org.bson.Document;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Rule;
+import org.testcontainers.containers.MongoDBContainer;
+import org.testcontainers.utility.DockerImageName;
 
 public abstract class AbstractMongoDBTest extends JetTestSupport {
 
@@ -35,8 +38,9 @@ public abstract class AbstractMongoDBTest extends JetTestSupport {
     static final String DB_NAME = "db";
     static final String COL_NAME = "col";
 
+    private final DockerImageName DOCKER_IMAGE_NAME = DockerImageName.parse("mongo:4.0.10");
     @Rule
-    public MongoDBContainer mongoContainer = new MongoDBContainer().withReplicaSetName("rs0");
+    public MongoDBContainer mongoContainer = new MongoDBContainer(DOCKER_IMAGE_NAME);
 
     MongoClient mongo;
     HazelcastInstance hz;
@@ -45,8 +49,8 @@ public abstract class AbstractMongoDBTest extends JetTestSupport {
 
     @Before
     public void setUp() {
-        mongoContainer.initializeReplicaSet();
-        mongo = mongoContainer.newMongoClient();
+        mongoContainer.start();
+        mongo = MongoClients.create(mongoContainer.getConnectionString());
 
         // workaround to obtain a timestamp before starting the test
         // If you pass a timestamp which is not in the oplog, mongodb throws exception

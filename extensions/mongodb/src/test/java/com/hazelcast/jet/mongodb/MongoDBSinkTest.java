@@ -42,7 +42,7 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
             list.add(i);
         }
 
-        String connectionString = mongoContainer.connectionString();
+        String connectionString = mongoContainer.getConnectionString();
 
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.list(list))
@@ -57,7 +57,7 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
 
     @Test
     public void test_whenServerNotAvailable() {
-        String connectionString = mongoContainer.connectionString();
+        String connectionString = mongoContainer.getConnectionString();
 
         IList<Integer> list = hz.getList("list");
         for (int i = 0; i < 100; i++) {
@@ -65,7 +65,7 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
         }
 
         Sink<Document> sink = MongoDBSinks
-                .<Document>builder(SINK_NAME, () -> mongoClient(connectionString, 3))
+                .<Document>builder(SINK_NAME, () -> mongoClient(connectionString, 0))
                 .databaseFn(client -> client.getDatabase(DB_NAME))
                 .collectionFn(db -> db.getCollection(COL_NAME))
                 .destroyFn(MongoClient::close)

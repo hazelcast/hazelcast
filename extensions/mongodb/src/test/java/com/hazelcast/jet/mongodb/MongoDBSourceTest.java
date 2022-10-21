@@ -105,7 +105,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         collection().insertMany(documents);
 
 
-        String connectionString = mongoContainer.connectionString();
+        String connectionString = mongoContainer.getConnectionString();
 
         Pipeline p = Pipeline.create();
         p.readFrom(MongoDBSources.batch(SOURCE_NAME, connectionString, DB_NAME, COL_NAME,
@@ -169,7 +169,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
     public void testStream_whenWatchDatabase() {
         IList<Document> list = hz.getList("list");
 
-        String connectionString = mongoContainer.connectionString();
+        String connectionString = mongoContainer.getConnectionString();
         long value = startAtOperationTime.getValue();
 
         StreamSource<? extends Document> source = MongoDBSourceBuilder
@@ -236,7 +236,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
     public void testStream_whenWatchAll() {
         IList<Document> list = hz.getList("list");
 
-        String connectionString = mongoContainer.connectionString();
+        String connectionString = mongoContainer.getConnectionString();
         long value = startAtOperationTime.getValue();
 
         StreamSource<? extends Document> source = MongoDBSourceBuilder
@@ -310,7 +310,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
             Document projection,
             int connectionTimeoutSeconds
     ) {
-        String connectionString = mongoContainer.connectionString();
+        String connectionString = mongoContainer.getConnectionString();
         long value = startAtOperationTime.getValue();
         return MongoDBSourceBuilder
                 .stream(SOURCE_NAME, () -> mongoClient(connectionString, connectionTimeoutSeconds))
