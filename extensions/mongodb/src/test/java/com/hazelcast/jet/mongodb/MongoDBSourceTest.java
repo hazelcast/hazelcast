@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.contrib.mongodb;
+package com.hazelcast.jet.mongodb;
 
 import com.hazelcast.collection.IList;
 import com.hazelcast.collection.ISet;

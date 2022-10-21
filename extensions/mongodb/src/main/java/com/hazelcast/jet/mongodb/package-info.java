@@ -17,4 +17,4 @@
 /**
  * Contains sources and sinks for MongoDB.
  */
-package com.hazelcast.jet.contrib.mongodb;
+package com.hazelcast.jet.mongodb;

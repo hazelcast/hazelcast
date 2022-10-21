@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.contrib.mongodb;
+package com.hazelcast.jet.mongodb;
 
 import com.hazelcast.collection.IList;
 import com.hazelcast.jet.JetException;
@@ -28,7 +28,7 @@ import org.junit.Test;
 
 import java.util.concurrent.CompletionException;
 
-import static com.hazelcast.jet.contrib.mongodb.MongoDBSourceTest.mongoClient;
+import static com.hazelcast.jet.mongodb.MongoDBSourceTest.mongoClient;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;

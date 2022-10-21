@@ -67,8 +67,8 @@ BatchStage<Document> srcStage = p.readFrom(batchSource);
 ```
 
 For more detail check out 
-[MongoDBSources](src/main/java/com/hazelcast/jet/contrib/mongodb/MongoDBSources.java),
-[MongoDBSourceBuilder](src/main/java/com/hazelcast/jet/contrib/mongodb/MongoDBSourceBuilder.java)
+[MongoDBSources](src/main/java/com/hazelcast/jet/mongodb/MongoDBSources.java),
+[MongoDBSourceBuilder](src/main/java/com/hazelcast/jet/mongodb/MongoDBSourceBuilder.java)
 and 
 [MongoDBSourceTest](src/test/java/com/hazelcast/jet/contrib/mongodb/MongoDBSourceTest.java).
 
@@ -115,8 +115,8 @@ StreamSourceStage<? extends Document> srcStage = p.readFrom(streamSource);
 ```
 
 For more detail check out 
-[MongoDBSources](src/main/java/com/hazelcast/jet/contrib/mongodb/MongoDBSources.java),
-[MongoDBSourceBuilder](src/main/java/com/hazelcast/jet/contrib/mongodb/MongoDBSourceBuilder.java)
+[MongoDBSources](src/main/java/com/hazelcast/jet/mongodb/MongoDBSources.java),
+[MongoDBSourceBuilder](src/main/java/com/hazelcast/jet/mongodb/MongoDBSourceBuilder.java)
 and 
 [MongoDBSourceTest](src/test/java/com/hazelcast/jet/contrib/mongodb/MongoDBSourceTest.java).
 
@@ -144,8 +144,8 @@ p.readFrom(Sources.list(list))
 ```
 
 For more detail check out 
-[MongoDBSinks](src/main/java/com/hazelcast/jet/contrib/mongodb/MongoDBSinks.java),
-[MongoDBSinkBuilder](src/main/java/com/hazelcast/jet/contrib/mongodb/MongoDBSinkBuilder.java)
+[MongoDBSinks](src/main/java/com/hazelcast/jet/mongodb/MongoDBSinks.java),
+[MongoDBSinkBuilder](src/main/java/com/hazelcast/jet/mongodb/MongoDBSinkBuilder.java)
 and 
 [MongoDBSinkTest](src/test/java/com/hazelcast/jet/contrib/mongodb/MongoDBSinkTest.java).
 

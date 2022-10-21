@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.contrib.mongodb;
+package com.hazelcast.jet.mongodb;
 
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
