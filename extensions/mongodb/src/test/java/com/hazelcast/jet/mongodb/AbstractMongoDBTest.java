@@ -38,14 +38,13 @@ public abstract class AbstractMongoDBTest extends JetTestSupport {
     static final String DB_NAME = "db";
     static final String COL_NAME = "col";
 
-    private final DockerImageName DOCKER_IMAGE_NAME = DockerImageName.parse("mongo:4.0.10");
-    @Rule
-    public MongoDBContainer mongoContainer = new MongoDBContainer(DOCKER_IMAGE_NAME);
-
+    private static final DockerImageName DOCKER_IMAGE_NAME = DockerImageName.parse("mongo:4.0.10");
     MongoClient mongo;
     HazelcastInstance hz;
     BsonTimestamp startAtOperationTime;
 
+    @Rule
+    public MongoDBContainer mongoContainer = new MongoDBContainer(DOCKER_IMAGE_NAME);
 
     @Before
     public void setUp() {
