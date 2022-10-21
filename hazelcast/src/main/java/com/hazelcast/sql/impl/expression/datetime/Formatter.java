@@ -29,9 +29,12 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 /**
  * Implementation of <a href="https://www.postgresql.org/docs/14/functions-formatting.html">
@@ -41,6 +44,12 @@ import java.util.regex.Pattern;
  *     <li> Regular text cannot appear within a number format. </ol>
  * and the following relaxations
  * <ol><li> {@code V} pattern can be combined with a decimal point.
+ *     <li> {@code M} and {@code P} patterns are introduced as the anchored versions of {@code MI}
+ *          and {@code PL} patterns respectively.
+ *     <li> {@code PR} pattern is replaced with {@code B} and {@code BR} patterns. The former is
+ *          the anchored version of the latter.
+ *     <li> {@code L} pattern is replaced with {@code C} and {@code CR} patterns. The former is the
+ *          anchored version of the latter.
  *     <li> Zero-padding and space-padding are completely orthogonal, which makes it possible to
  *          have zero-padded fractions, which are aligned at the the decimal separator. However,
  *          this necessitates to have a {@code '0'} at the end of the pattern if the PostgreSQL
@@ -51,14 +60,15 @@ import java.util.regex.Pattern;
         "checkstyle:MethodLength", "checkstyle:NestedIfDepth", "checkstyle:NPathComplexity"})
 public class Formatter {
     private static final DecimalFormatSymbols SYMBOLS = DecimalFormatSymbols.getInstance(Locale.getDefault());
-    private static final String NUMERIC_SIGN = "PR|MI|PL|SG|S";
+    private static final String NUMERIC_SIGN = "BR?|SG?|MI?|PL?";
+    private static final String NUMERIC_SIGN_CURRENCY = String.format("(CR?)?(%s)?|(%<s)?(CR?)?", NUMERIC_SIGN);
     private static final Pattern DATETIME_TEMPLATE = Pattern.compile(
             "(FM|TM)?(HH(?:12|24)?|MI|[SMU]S|FF[1-6]|SSSSS?|[AP](?:M|\\.M\\.)|[ap](?:m|\\.m\\.)|"
             + "Y,YYY|[YI]Y{0,3}|BC|B\\.C\\.|bc|b\\.c\\.|AD|A\\.D\\.|ad|a\\.d\\.|"
             + "MON(?:TH)?|[Mm]on(?:th)?|MM|DA?Y|[Dd]a?y|I?D{1,3}|DD|W|[WI]W|CC|J|Q|"
             + "RM|rm|TZ|tz|TZ[HM]?|OF)(TH|th)?");
     private static final Pattern NUMERIC_TEMPLATE = Pattern.compile(String.format(
-            "(FM)?((L)?(%s)?(([90][90,G]*)([.D][90]+)?(V9+)?)(%<s)?(L|TH|th|EEEE)?|RN)", NUMERIC_SIGN));
+            "(FM)?((?:%s)([90][90,G]*)([.D][90]+)?(V9+)?(TH|th|EEEE)?(?:%<s)|RN)", NUMERIC_SIGN_CURRENCY));
     private final List<FormatString> parts = new ArrayList<>();
     private final boolean isDate;
 
@@ -152,7 +162,7 @@ public class Formatter {
     @SuppressWarnings("checkstyle:MultipleVariableDeclarations")
     private static class NumberFormat implements FormatString<Number> {
         private final boolean fillMode;
-        private final String prefix, pattern, suffix;
+        private final String pattern, form;
         private final int integerDigits, minIntegerDigits, fractionDigits, minFractionDigits, exponent;
         /**
          * Digit mask with grouping/decimal separator(s). {@code '0'} always prints the digit even
@@ -163,26 +173,57 @@ public class Formatter {
          * Sign. {@code '\0'} prints nothing. {@code '<'}, {@code '>'}, {@code '-'} are printed if
          * the number is negative; {@code '+'} is printed if the number is positive. Otherwise, a
          * {@code ' '} is printed. {@code '='} prints {@code '-'} or {@code '+'} depending on the
-         * sign of the number. {@code 'S'} and {@code 'M'} behave like {@code '+'} and {@code '-'}
-         * respectively, except that the letter variants are anchored to the number.
+         * sign of the number. {@code 'S'}, {@code 'M'} and {@code 'P'} behave like {@code '='},
+         * {@code '-'} and {@code '+'} respectively, except that the letter variants are anchored
+         * to the number.
          */
-        private final char preSign, postSign;
+        private final List<Character> preMask, postMask;
 
         NumberFormat(Matcher m) {
             fillMode = !"FM".equals(m.group(1));
-            if (m.group(5) != null) {
-                prefix = m.group(3);
-                pattern = m.group(5);
-                suffix = m.group(10);
+            if (m.group(7) != null) {
+                pattern = m.group(2);
+                form = m.group(10);
 
-                postSign = getSign(m.group(4), m.group(9), false);
-                char sign = getSign(m.group(4), m.group(9), true);
-                preSign = sign == 0 && postSign == 0 ? 'M' : sign;
+                preMask = IntStream.of(3, 4, 5, 6).mapToObj(m::group).filter(Objects::nonNull)
+                        .map(this::simplify).collect(Collectors.toList());
+                postMask = IntStream.of(11, 12, 13, 14).mapToObj(m::group).filter(Objects::nonNull)
+                        .map(this::simplify).collect(Collectors.toList());
+                char preBracket = preMask.stream().filter(p -> p == '<' || p == 'B').findFirst().orElse('\0');
+                char postBracket = postMask.stream().filter(p -> p == '<' || p == 'B').findFirst().orElse('\0');
+                int preSign = IntStream.range(0, preMask.size()).filter(i -> isSign(preMask.get(i))).findFirst().orElse(-1);
+                int postSign = IntStream.range(0, postMask.size()).filter(i -> isSign(postMask.get(i))).findFirst().orElse(-1);
+                // Pair < and >; <$4.5>$ is possible
+                if (preBracket != 0 || postBracket != 0) {
+                    if (preBracket == 0) {
+                        if (preSign != -1) {
+                            preMask.set(preSign, postBracket);
+                        } else {
+                            preMask.add(0, postBracket);
+                        }
+                    } else if (postBracket == 0) {
+                        if (postSign != -1) {
+                            postMask.set(postSign, preBracket);
+                        } else {
+                            postMask.add(preBracket);
+                        }
+                    }
+                } else if (preSign == -1 && postSign == -1) {
+                    preMask.add(0, 'M');
+                }
+                // Fix anchored symbols if they come after a fixed symbol
+                if (preMask.size() == 2 && isAnchored(preMask.get(0)) && !isAnchored(preMask.get(1))) {
+                    preMask.set(0, toFixed(preMask.get(0)));
+                }
+                if (postMask.size() == 2 && !isAnchored(postMask.get(0)) && isAnchored(postMask.get(1))) {
+                    postMask.set(1, toFixed(postMask.get(1)));
+                }
+                postMask.replaceAll(p -> p == '<' ? '>' : p);
 
                 int digits = 0, zero = -1;
-                integerMask = new char[m.group(6).length()];
+                integerMask = new char[m.group(7).length()];
                 for (int i = 0; i < integerMask.length; i++) {
-                    char c = m.group(6).charAt(i);
+                    char c = m.group(7).charAt(i);
                     if (c == '9' || c == '0') {
                         if (c == '0' && zero == -1) {
                             zero = digits;
@@ -196,14 +237,14 @@ public class Formatter {
                 integerDigits = digits;
                 minIntegerDigits = zero == -1 ? 0 : digits - zero;
 
-                if (m.group(7) != null && !"TH".equalsIgnoreCase(suffix)) {
-                    fractionMask = new char[m.group(7).length()];
-                    fractionMask[0] = m.group(7).startsWith(".") ? '.'
-                            : ("L".equals(prefix) || "L".equals(suffix)
+                if (m.group(8) != null && !"TH".equalsIgnoreCase(form)) {
+                    fractionMask = new char[m.group(8).length()];
+                    fractionMask[0] = m.group(8).startsWith(".") ? '.'
+                            : (preMask.stream().anyMatch(p -> !isSign(p)) || postMask.stream().anyMatch(p -> !isSign(p))
                                     ? SYMBOLS.getMonetaryDecimalSeparator() : SYMBOLS.getDecimalSeparator());
                     zero = -1;
                     for (int i = fractionMask.length - 1; i > 0; i--) {
-                        char c = m.group(7).charAt(i);
+                        char c = m.group(8).charAt(i);
                         if (c == '0' && zero == -1) {
                             zero = i;
                         }
@@ -212,17 +253,17 @@ public class Formatter {
                     fractionDigits = fractionMask.length - 1;
                     minFractionDigits = zero == -1 ? 0 : zero;
                 } else {
-                    fractionMask = null;
+                    fractionMask = new char[0];
                     fractionDigits = minFractionDigits = 0;
                 }
 
-                exponent = m.group(8) == null ? 0 : m.group(8).length() - 1;
+                exponent = m.group(9) == null ? 0 : m.group(9).length() - 1;
             } else {
-                prefix = suffix = null;
                 pattern = m.group(2);
+                form = null;
                 integerDigits = minIntegerDigits = fractionDigits = minFractionDigits = exponent = 0;
                 integerMask = fractionMask = null;
-                preSign = postSign = 0;
+                preMask = postMask = null;
             }
         }
 
@@ -290,10 +331,15 @@ public class Formatter {
                  */
                 String value = input.toString();
                 boolean negative = value.startsWith("-");
-                if ("L".equals(prefix)) {
-                    s.append(SYMBOLS.getCurrencySymbol());
+                int p = 0;
+                for (; p < preMask.size() && !isAnchored(preMask.get(p)); p++) {
+                    if (isSign(preMask.get(p))) {
+                        putSign(s, preMask.get(p), true, negative);
+                    } else {
+                        s.append(SYMBOLS.getCurrencySymbol());
+                    }
                 }
-                putSign(s, preSign, negative);
+                int a = p;
 
                 if (value.equals("NaN")) {
                     s.append(SYMBOLS.getNaN());
@@ -311,7 +357,7 @@ public class Formatter {
                     // Step 2 - Find the actual number
                     exponent += this.exponent;
                     // Step 3 - Determine the lengths of the integer and fraction
-                    boolean exponential = "EEEE".equals(suffix);
+                    boolean exponential = "EEEE".equals(form);
                     int integerLength = exponential ? integerDigits : digits.length() + exponent;
                     int fractionLength = exponential ? fractionDigits : -exponent;
                     exponent += digits.length() - integerLength;
@@ -382,9 +428,11 @@ public class Formatter {
 
                         // Step 6.1 - Fill and print the integer digit mask
 
-                        // Copy the integer mask by leaving room for the anchored sign.
-                        int i = preSign == 'S' || preSign == 'M' ? 1 : 0;
+                        // Copy the integer mask by leaving room for the anchored symbols.
+                        int i = preMask.subList(p, preMask.size()).stream()
+                                .mapToInt(c -> isSign(c) ? 1 : SYMBOLS.getCurrencySymbol().toCharArray().length).sum();
                         char[] r = new char[i + integerMask.length];
+                        Arrays.fill(r, ' ');
                         System.arraycopy(integerMask, 0, r, i, integerMask.length);
                         // Skip over unoccupied digits by taking grouping separators into account.
                         // Clear grouping separators that does not come after a digit.
@@ -403,12 +451,18 @@ public class Formatter {
                         if (j == -1) {
                             j = i;
                         }
-                        // Put the anchored sign if there is any.
-                        // Update `j` to reflect the starting index of the potentially signed integer.
-                        if (preSign == 'S' || preSign == 'M') {
-                            r[j - 1] = negative ? '-' : preSign == 'S' ? '+' : ' ';
-                            if (r[j - 1] != ' ') {
-                                j--;
+                        // Put the anchored symbols if there are any.
+                        // Update `j` to reflect the starting index of the integer with anchored symbols.
+                        for (p = preMask.size() - 1; p >= a; p--) {
+                            if (isSign(preMask.get(p))) {
+                                r[j - 1] = getSign(preMask.get(p), true, negative);
+                                if (r[j - 1] != ' ') {
+                                    j--;
+                                }
+                            } else {
+                                char[] currency = SYMBOLS.getCurrencySymbol().toCharArray();
+                                System.arraycopy(currency, 0, r, j - currency.length, currency.length);
+                                j -= currency.length;
                             }
                         }
                         // Copy digits into the mask by taking grouping separators into account.
@@ -418,16 +472,16 @@ public class Formatter {
                             }
                         }
                         // Print the mask by starting from `fillMode ? 0 : j`.
-                        if (fillMode) {
-                            j = 0;
-                        }
+                        j = fillMode ? 0 : j;
                         s.append(r, j, r.length - j);
 
                         // Step 6.2 - Fill and print the fraction digit mask
 
+                        a = (int) postMask.stream().filter(this::isAnchored).count();
                         if (fractionDigits > 0) {
-                            // Copy the fraction mask by leaving room for the anchored sign.
-                            k = postSign == 'S' ? 1 : 0;
+                            // Copy the fraction mask by leaving room for the anchored symbols.
+                            k = postMask.subList(0, a).stream()
+                                    .mapToInt(c -> isSign(c) ? 1 : SYMBOLS.getCurrencySymbol().toCharArray().length).sum();
                             r = Arrays.copyOf(fractionMask, fractionMask.length + k);
                             // Copy digits into the mask by taking decimal separator into account.
                             // Save the length of the longest prefix without trailing zeros to `j`.
@@ -446,23 +500,39 @@ public class Formatter {
                             for (i = j; i < r.length; i++) {
                                 r[i] = ' ';
                             }
-                            // Put the anchored sign if there is any.
-                            if (postSign == 'S') {
-                                r[j] = negative ? '-' : '+';
+                            // Put the anchored symbols if there are any.
+                            // Update `j` to reflect the length of the fraction with anchored signs.
+                            for (p = 0; p < a; p++) {
+                                if (isSign(postMask.get(p))) {
+                                    r[j] = getSign(postMask.get(p), false, negative);
+                                    if (r[j] != ' ') {
+                                        j++;
+                                    }
+                                } else {
+                                    char[] currency = SYMBOLS.getCurrencySymbol().toCharArray();
+                                    System.arraycopy(currency, 0, r, j, currency.length);
+                                    j += currency.length;
+                                }
                             }
-                            // Print the mask up to `fillMode ? r.length : j + k`.
-                            j = fillMode ? r.length : j + k;
+                            // Print the mask up to `fillMode ? r.length : j`.
+                            j = fillMode ? r.length : j;
                             if (j > 0) {
                                 s.append(r, 0, j);
                             }
-                        } else if ("TH".equalsIgnoreCase(suffix) && integerLength > 0) {
+                        } else if ("TH".equalsIgnoreCase(form) && integerLength > 0) {
                             // For ordinals, the fraction part is suppressed.
                             String th = integer.endsWith("11") || integer.endsWith("12") || integer.endsWith("13")
                                     ? "th" : ORDINAL[integer.charAt(integerLength - 1) - 48];
-                            s.append("TH".equals(suffix) ? th.toUpperCase() : th);
-                        } else if (postSign == 'S') {
-                            // Anchored sign suffix is handled here if there is no fraction.
-                            s.append(negative ? '-' : '+');
+                            s.append("TH".equals(form) ? th.toUpperCase() : th);
+                        } else {
+                            // Anchored symbols are handled here if there is no fraction.
+                            for (p = 0; p < a; p++) {
+                                if (isSign(postMask.get(p))) {
+                                    putSign(s, postMask.get(p), false, negative);
+                                } else {
+                                    s.append(SYMBOLS.getCurrencySymbol());
+                                }
+                            }
                         }
 
                         // Step 6.3 - Print the exponent
@@ -478,40 +548,54 @@ public class Formatter {
                     }
                 }
 
-                putSign(s, postSign, negative);
-                if ("L".equals(suffix)) {
-                    s.append(SYMBOLS.getCurrencySymbol());
+                for (p = a; p < postMask.size(); p++) {
+                    if (isSign(postMask.get(p))) {
+                        putSign(s, postMask.get(p), false, negative);
+                    } else {
+                        s.append(SYMBOLS.getCurrencySymbol());
+                    }
                 }
             }
         }
 
-        private char getSign(String preSign, String postSign, boolean pre) {
-            if ("PR".equals(preSign) || "PR".equals(postSign)) {
-                return pre ? '<' : '>';
+        private char simplify(String pattern) {
+            return pattern.length() == 1 ? pattern.charAt(0) : toFixed(pattern.charAt(0));
+        }
+
+        private char toFixed(char pattern) {
+            switch (pattern) {
+                case 'B': return '<';
+                case 'S': return '=';
+                case 'M': return '-';
+                case 'P': return '+';
+                case 'C': return '$';
+                default:  return 0;
             }
-            String sign = pre ? preSign : postSign;
-            if (sign != null) {
-                switch (sign) {
-                    case "MI": return '-';
-                    case "PL": return '+';
-                    case "SG": return '=';
-                    case "S" : return 'S';
-                }
+        }
+
+        private boolean isSign(char pattern) {
+            return pattern != '$' && pattern != 'C';
+        }
+
+        private boolean isAnchored(char pattern) {
+            return pattern == 'B' || pattern == 'S' || pattern == 'M' || pattern == 'P' || pattern == 'C';
+        }
+
+        private char getSign(char sign, boolean pre, boolean negative) {
+            if (sign == '<' || sign == '>' || sign == 'B') {
+                return negative ? (pre ? '<' : '>') : ' ';
+            } else if (sign == '=' || sign == 'S') {
+                return negative ? '-' : '+';
+            } else if (sign == '-' || sign == 'M') {
+                return negative ? '-' : ' ';
+            } else if (sign == '+' || sign == 'P') {
+                return negative ? ' ' : '+';
             }
             return 0;
         }
 
-        private void putSign(StringBuilder s, char sign, boolean negative) {
-            char c = 0;
-            if (sign == '<' || sign == '>') {
-                c = negative ? sign : ' ';
-            } else if (sign == '-') {
-                c = negative ? '-' : ' ';
-            } else if (sign == '+') {
-                c = negative ? ' ' : '+';
-            } else if (sign == '=') {
-                c = negative ? '-' : '+';
-            }
+        private void putSign(StringBuilder s, char sign, boolean pre, boolean negative) {
+            char c = getSign(sign, pre, negative);
             if (c != 0 && (c != ' ' || fillMode)) {
                 s.append(c);
             }
@@ -519,18 +603,11 @@ public class Formatter {
 
         @Override
         public String toString() {
-            StringBuilder s = new StringBuilder();
-            if (preSign != 0) {
-                s.append(preSign);
-            }
-            s.append(integerMask);
-            if (fractionMask != null) {
-                s.append(fractionMask);
-            }
-            if (postSign != 0) {
-                s.append(postSign);
-            }
-            return s.toString();
+            return preMask == null ? "RN" : new StringBuilder()
+                .append(preMask.stream().reduce("", (a, c) -> a + c, String::concat))
+                .append(integerMask)
+                .append(fractionMask)
+                .append(preMask.stream().reduce("", (a, c) -> a + c, String::concat)).toString();
         }
     }
 }

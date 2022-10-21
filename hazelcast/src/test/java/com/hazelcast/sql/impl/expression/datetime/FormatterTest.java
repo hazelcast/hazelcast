@@ -50,26 +50,26 @@ public class FormatterTest {
     }
 
     @Test
-    public void testSigns() {
+    public void testSign() {
         Formatter f = new Formatter("0.9S");
-        check(-0.1, f, "0.1-");
-        check( 0,   f, "0+  ");
+        check( 1, f, "1+  ");
+        check( 0, f, "0+  ");
+        check(-1, f, "1-  ");
 
-        f = new Formatter("9.99MI");
-        check(-4.85, f, "4.85-");
-        check( 4.85, f, "4.85 ");
+        check(4.5,  "  4.5 ",  "< 4.5>",  "99.9BR", "BR99.9", "BR99.9BR", "BR99.9B");
+        check(4.5,  "  4.5 ",  " <4.5>",  "99.9B",   "B99.9",  "B99.9B");
 
-        f = new Formatter("9.99PL");
-        check(-4.85, f, "4.85 ");
-        check( 4.85, f, "4.85+");
+        check(4.5,  "+ 4.5",  "- 4.5",  "SG99.9");
+        check(4.5,  " 4.5+",  " 4.5-",  "99.9SG", "99.9S");
+        check(4.5,  " +4.5",  " -4.5",  "S99.9");
 
-        f = new Formatter("9.99SG");
-        check(-4.85, f, "4.85-");
-        check( 4.85, f, "4.85+");
+        check(4.5,  "  4.5",  "- 4.5",  "MI99.9");
+        check(4.5,  " 4.5 ",  " 4.5-",  "99.9MI", "99.9M");
+        check(4.5,  "  4.5",  " -4.5",  "M99.9");
 
-        f = new Formatter("9.99PR");
-        check(-4.85, f, "<4.85>");
-        check( 4.85, f, " 4.85 ");
+        check(4.5,  "+ 4.5",  "  4.5",  "PL99.9");
+        check(4.5,  " 4.5+",  " 4.5 ",  "99.9PL", "99.9P");
+        check(4.5,  " +4.5",  "  4.5",  "P99.9");
     }
 
     @Test
@@ -85,14 +85,20 @@ public class FormatterTest {
     }
 
     @Test
-    public void testCurrency() {
-        Formatter f = new Formatter("9.99L");
-        check(-4.85, f, "-4.85$");
-        check( 4.85, f, " 4.85$");
+    public void testSignAndCurrencyAnchoring() {
+        check(4.5,  "$  4.5",  "$- 4.5",  "CRMI99.9");
+        check(4.5,  "$  4.5",  "$ -4.5",   "CRM99.9");
+        check(4.5,  "  $4.5",  " $-4.5",    "CM99.9");
+        check(4.5,  " $ 4.5",  "-$ 4.5",  "MICR99.9", "CR99.9");
+        check(4.5,  "  $4.5",  "- $4.5",   "MIC99.9");
+        check(4.5,  "  $4.5",  " -$4.5",    "MC99.9",  "C99.9");
 
-        f = new Formatter("L9.99");
-        check(-4.85, f, "$-4.85");
-        check( 4.85, f, "$ 4.85");
+        check(4.5,  "$  4.5 ",  "$< 4.5>",  "CRBR99.9");
+        check(4.5,  "$  4.5 ",  "$ <4.5>",   "CRB99.9");
+        check(4.5,  "  $4.5 ",  " $<4.5>",    "CB99.9");
+        check(4.5,  " $ 4.5 ",  "<$ 4.5>",  "BRCR99.9", "CR99.9BR");
+        check(4.5,  "  $4.5 ",  "< $4.5>",   "BRC99.9",  "C99.9BR");
+        check(4.5,  "  $4.5 ",  " <$4.5>",    "BC99.9",  "C99.9B");
     }
 
     @Test
@@ -117,9 +123,14 @@ public class FormatterTest {
         check(3888, f, "MMMDCCCLXXXVIII");
     }
 
-//    private void check(Object input, String format, String expected) {
-//        check(input, new Formatter(format), expected);
-//    }
+    private void check(double input, String expectedPositive, String expectedNegative, String... formats) {
+        for (String format : formats) {
+            Formatter f = new Formatter(format);
+            check( input, f, expectedPositive);
+            check(-input, f, expectedNegative);
+        }
+    }
+    
     private void check(Object input, Formatter f, String expected) {
         assertEquals(expected, f.format(input));
     }
