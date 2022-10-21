@@ -59,6 +59,7 @@ public class HazelcastAPIDelegatingClassloader extends URLClassLoader {
         alwaysDelegateWhiteList.add("com.hazelcast.test.starter.ProxyInvocationHandler");
         alwaysDelegateWhiteList.add("com.hazelcast.test.starter.HazelcastAPIDelegatingClassloader");
         alwaysDelegateWhiteList.add("com.hazelcast.internal.serialization.impl.SampleIdentifiedDataSerializable");
+        alwaysDelegateWhiteList.add("com.hazelcast.jet.sql.impl.connector.map.model.Person");
         DELEGATION_WHITE_LIST = Collections.unmodifiableSet(alwaysDelegateWhiteList);
     }
 
