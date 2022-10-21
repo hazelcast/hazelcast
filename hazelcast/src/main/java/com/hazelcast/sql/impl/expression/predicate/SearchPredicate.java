@@ -65,7 +65,7 @@ public final class SearchPredicate extends BiExpression<Boolean> implements Iden
             return null;
         }
         if (!(right instanceof SearchableWithNullAs) && left == null) {
-            // We deserialized old version of Range class, that doesn't support nulls.
+            // We deserialized pre-5.1.5 version of Range class that doesn't support nulls.
             return null;
         }
 

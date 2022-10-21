@@ -343,7 +343,7 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
                 searchableExpressionsCount = in.readInt();
                 assert searchableExpressionsCount == searchableExpressions.size();
             } catch (EOFException ignored) {
-                // ignored, this may happen if ExecutionPlan from less than 5.1.4 version is read
+                // ignored, this may happen if ExecutionPlan from pre-5.1.5 version is read
             }
             for (int i = 0; i < searchableExpressionsCount; i++) {
                 SearchableExpression<?> searchableExpression = searchableExpressions.get(i);
