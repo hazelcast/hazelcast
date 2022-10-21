@@ -14,31 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.operation;
+package com.hazelcast.kubernetes;
 
-import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.spi.impl.operationservice.BackupOperation;
+class FileReaderTokenProvider implements KubernetesTokenProvider {
+    private final String tokenPath;
+    private final KubernetesConfig.FileContentsReader fileContentsReader;
 
-public class ClearBackupOperation extends MapOperation implements BackupOperation {
-
-    public ClearBackupOperation() {
-        this(null);
-    }
-
-    public ClearBackupOperation(String name) {
-        super(name);
-        createRecordStoreOnDemand = false;
+    FileReaderTokenProvider(String tokenPath) {
+        this.tokenPath = tokenPath;
+        this.fileContentsReader = new KubernetesConfig.DefaultFileContentsReader();
     }
 
     @Override
-    protected void runInternal() {
-        if (recordStore != null) {
-            recordStore.clear(true);
-        }
-    }
-
-    @Override
-    public int getClassId() {
-        return MapDataSerializerHook.CLEAR_BACKUP;
+    public String getToken() {
+        return fileContentsReader.readFileContents(tokenPath);
     }
 }

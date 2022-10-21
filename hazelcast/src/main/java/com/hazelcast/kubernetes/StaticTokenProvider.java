@@ -14,31 +14,17 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.operation;
+package com.hazelcast.kubernetes;
 
-import com.hazelcast.map.impl.MapDataSerializerHook;
-import com.hazelcast.spi.impl.operationservice.BackupOperation;
+class StaticTokenProvider implements KubernetesTokenProvider {
+    private final String token;
 
-public class ClearBackupOperation extends MapOperation implements BackupOperation {
-
-    public ClearBackupOperation() {
-        this(null);
-    }
-
-    public ClearBackupOperation(String name) {
-        super(name);
-        createRecordStoreOnDemand = false;
+    StaticTokenProvider(String token) {
+        this.token = token;
     }
 
     @Override
-    protected void runInternal() {
-        if (recordStore != null) {
-            recordStore.clear(true);
-        }
-    }
-
-    @Override
-    public int getClassId() {
-        return MapDataSerializerHook.CLEAR_BACKUP;
+    public String getToken() {
+        return token;
     }
 }
