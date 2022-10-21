@@ -207,12 +207,12 @@ public class MapScanMigrationStressTest extends JetTestSupport {
     }
 
     private void assertRowsAnyOrder(String sql, List<Row> expectedRows, Thread mutator,
-                                    Function<Row, Integer> sortedColumnFunction) {
+                                    Function<Row, Integer> extractSortKeyFn) {
         List<Row> actualRows = executeAndGetResult(sql, mutator);
 
-        // We know that expectedRows is sorted by sortedColumnFunction, so we sort the actualRows the same way.
+        // We know that expectedRows is sorted by extractSortKeyFn, so we sort the actualRows the same way.
         // This way we compare two lists in O(n log n), the containsExactlyInAnyOrderElementsOf complexity is O(n^2).
-        actualRows.sort(Comparator.comparing(sortedColumnFunction));
+        actualRows.sort(Comparator.comparing(extractSortKeyFn));
         assertEquals(expectedRows, actualRows);
     }
 
