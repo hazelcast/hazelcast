@@ -249,7 +249,7 @@ public class StringUtilTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void when_uppercaseWithTurkishLocale_then_rootLocaleIsUsed(){
+    public void when_uppercaseWithTurkishLocale_then_rootLocaleIsUsed() {
         Locale defaultLocale = Locale.getDefault();
 
         Locale.setDefault(new Locale("tr", "TR"));
