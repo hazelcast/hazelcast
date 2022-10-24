@@ -129,9 +129,8 @@ public class TcpClientConnection implements ClientConnection {
                 return true;
             }
         } else {
-            // todo: ugly behavior in case of negative partitionId.
-            int tpcThreadIndex = HashUtil.hashToIndex(partitionId, tpcChannels.length);
-            if (tpcChannels[tpcThreadIndex].write(frame)) {
+            int tpcChannelIndex = HashUtil.hashToIndex(partitionId, tpcChannels.length);
+            if (tpcChannels[tpcChannelIndex].write(frame)) {
                 return true;
             }
         }
@@ -241,6 +240,7 @@ public class TcpClientConnection implements ClientConnection {
     }
 
     protected void innerClose() throws IOException {
+        // todo: closing needs to be improved because we can end up with some channels not closed.
         channel.close();
 
         if (tpcChannels != null) {
