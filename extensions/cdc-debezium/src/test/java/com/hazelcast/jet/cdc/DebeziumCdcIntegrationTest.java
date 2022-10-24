@@ -45,7 +45,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
 
-import static com.hazelcast.jet.Util.entry;
 import static org.assertj.core.api.Assertions.assertThat;
 import static com.hazelcast.jet.cdc.Operation.UNSPECIFIED;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
