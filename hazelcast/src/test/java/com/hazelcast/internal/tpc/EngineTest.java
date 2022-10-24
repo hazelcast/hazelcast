@@ -1,4 +1,4 @@
-package com.hazelcast.alto.engine;
+package com.hazelcast.internal.tpc;
 
 import com.hazelcast.internal.tpc.TpcEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
