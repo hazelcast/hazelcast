@@ -1,10 +1,9 @@
-package com.hazelcast.alto.engine.nio;
+package com.hazelcast.internal.tpc.nio;
 
-import com.hazelcast.internal.tpc.nio.NioEventloop;
+import com.hazelcast.internal.tpc.EventloopTest;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.internal.tpc.Eventloop;
-import com.hazelcast.alto.engine.EventloopTest;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
