@@ -133,13 +133,12 @@ public enum PartitionWideOpSteps implements Step<State> {
             // state from main State object
             List<State> toStore = state.getToStore();
             List<State> toRemove = state.getToRemove();
-            MapEntries responses = state.getMapEntries();
 
             EntryEventType eventType = singleKeyState.getOperator().getEventType();
             if (eventType == null) {
                 Data result = singleKeyState.getOperator().getResult();
                 if (result != null) {
-                    responses.add(singleKeyState.getKey(), result);
+                    ((MapEntries) state.getResult()).add(singleKeyState.getKey(), result);
                 }
             } else {
                 switch (eventType) {

@@ -406,6 +406,11 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
+    public boolean isStartCompleted() {
+        return node.getNodeExtension().isStartCompleted();
+    }
+
+    @Override
     public HazelcastInstance getHazelcastInstance() {
         return node.hazelcastInstance;
     }

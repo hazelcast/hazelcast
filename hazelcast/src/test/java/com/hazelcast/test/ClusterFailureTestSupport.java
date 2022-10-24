@@ -219,13 +219,4 @@ public final class ClusterFailureTestSupport {
             }
         }
     }
-
-    public static class NodeShutdownClusterMultipleFailure extends MultipleFailingInstanceClusterFailure {
-        @Override
-        public void fail() {
-            failingInstances[lastLivingFailingInstanceIndex--].shutdown();
-            currentSize--;
-            HazelcastTestSupport.assertClusterSizeEventually(currentSize, hazelcastInstances[0]);
-        }
-    }
 }

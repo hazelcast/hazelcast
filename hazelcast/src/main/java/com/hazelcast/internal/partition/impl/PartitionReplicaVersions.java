@@ -73,6 +73,10 @@ final class PartitionReplicaVersions {
         return getFragmentVersions(namespace).isDirty();
     }
 
+    void markAsSyncRequired(ServiceNamespace namespace, int replicaIndex) {
+        getFragmentVersions(namespace).markAsSyncRequired(replicaIndex);
+    }
+
     void clear(ServiceNamespace namespace) {
         getFragmentVersions(namespace).clear();
     }

@@ -813,7 +813,7 @@ public class ClusterServiceImpl implements ClusterService, ConnectionListener, M
         changeClusterState(newState, false);
     }
 
-    private void changeClusterState(ClusterState newState, boolean isTransient) {
+    public void changeClusterState(ClusterState newState, boolean isTransient) {
         long partitionStateStamp = getPartitionStateStamp();
         clusterStateManager.changeClusterState(ClusterStateChange.from(newState), membershipManager.getMemberMap(),
                 partitionStateStamp, isTransient);
