@@ -86,7 +86,7 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
         Throwable e = new AssertionError("mock error");
         Vertex source = dag.newVertex("source", ListSource.supplier(singletonList(1)));
         Vertex process = dag.newVertex("faulty",
-                new MockPMS(() -> new MockPS(() -> new MockP().setProcessError(e), MEMBER_COUNT)));
+                new MockPMS(() -> new MockPS(() -> new MockP().setProcessError(() -> e), MEMBER_COUNT)));
         dag.edge(between(source, process));
 
         //when

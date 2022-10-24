@@ -117,7 +117,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
     private static final int MEMBER_COUNT = 2;
     public static final String MOCK_ERROR_MESSAGE = "mock error";
-    private static final Throwable MOCK_ERROR = new AssertionError(MOCK_ERROR_MESSAGE);
+    private static final SupplierEx<Throwable> MOCK_ERROR = () -> new AssertionError(MOCK_ERROR_MESSAGE);
 
     private static final JetException JET_EXCEPTION = new JetException("Execution on a member failed");
     private static final HazelcastSerializationException SERIALIZATION_EXCEPTION = new HazelcastSerializationException("Failed to serialize ");
@@ -134,8 +134,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         }
     }
 
-    public static final NonSerializableException NON_SERIALIZABLE_EXCEPTION =
-            new NonSerializableException(MOCK_ERROR_MESSAGE);
+    public static final SupplierEx<Throwable> NON_SERIALIZABLE_EXCEPTION =
+            () -> new NonSerializableException(MOCK_ERROR_MESSAGE);
 
     @Parameter
     public boolean useLightJob;
@@ -203,7 +203,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         // Then
         assertPmsClosedWithError();
-        assertJobFailed(job, MOCK_ERROR);
+        assertJobFailed(job, MOCK_ERROR.get());
     }
 
     @Test
@@ -211,15 +211,14 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         // Given
         SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT);
         DAG dag = new DAG().vertex(new Vertex("test",
-                new MockPMS(supplier)
-                        .initThrowsNonSerializable()));
+                new MockPMS(supplier).setInitError(NON_SERIALIZABLE_EXCEPTION)));
 
         // When
         Job job = runJobExpectFailure(dag, false);
 
         // Then
         assertPmsClosedWithError();
-        assertJobFailed(job, NON_SERIALIZABLE_EXCEPTION);
+        assertJobFailed(job, NON_SERIALIZABLE_EXCEPTION.get());
     }
 
     @Test
@@ -230,7 +229,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         DAG dag = new DAG().vertex(new Vertex("test",
                 new MockPMS(supplier)
                         .initBlocks()
-                        .initThrowsNonSerializable()));
+                        .setInitError(NON_SERIALIZABLE_EXCEPTION)));
 
         Future<Job> jobFuture = spawn(() -> newJob(dag));
 
@@ -248,7 +247,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 fail("Job failed");
             }
         });
-        assertJobFailed(jobFuture.get(), NON_SERIALIZABLE_EXCEPTION);
+        assertJobFailed(jobFuture.get(), NON_SERIALIZABLE_EXCEPTION.get());
     }
 
     @Test
@@ -257,7 +256,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT);
         DAG dag = new DAG().vertex(new Vertex("test",
                 new MockPMS(supplier)
-                        .closeThrowsNonSerializable()));
+                        .setCloseError(NON_SERIALIZABLE_EXCEPTION)));
 
         // When
         runJobExpectNoFailure(dag, false);
@@ -272,7 +271,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         DAG dag = new DAG().vertex(new Vertex("test",
                 new MockPMS(supplier)
                         .closeBlocks()
-                        .closeThrowsNonSerializable()));
+                        .setCloseError(NON_SERIALIZABLE_EXCEPTION)));
 
         Future<Job> jobFuture = spawn(() -> newJob(dag));
 
@@ -282,13 +281,14 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             MockPMS.unblock();
         }
 
+
         //Wait for job to finish
-        try {
-            jobFuture.get().getFuture().join();
-        } catch (InterruptedException | ExecutionException exception) {
-            fail("Job failed");
-        }
-        assertJobSucceeded(jobFuture.get());
+        Job job = jobFuture.get();
+        job.join();
+        assertPClosedWithoutError();
+        assertPsClosedWithoutError();
+        assertPmsClosedWithoutError();
+        assertJobSucceeded(job);
     }
 
     @Test
@@ -321,7 +321,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         // Then
         assertPmsClosedWithError();
-        assertJobFailed(job, MOCK_ERROR);
+        assertJobFailed(job, MOCK_ERROR.get());
         assertsWhenOneJob();
     }
 
@@ -346,7 +346,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     @Test
     public void when_psInitThrowsNonSerializable_then_jobFails() {
         // Given
-        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT).initThrowsNonSerializable();
+        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT)
+                .setInitError(NON_SERIALIZABLE_EXCEPTION);
         DAG dag = new DAG().vertex(new Vertex("test",
                 new MockPMS(supplier)));
 
@@ -359,13 +360,13 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertThrows(CompletionException.class, () -> job.join());
     }
 
-    //Failing
     @Test
-    public void when_psNonCooperativeInitThrowsNonSerializable_then_jobFails() {
+    public void when_psNonCooperativeInitThrowsNonSerializable_then_jobFails() throws ExecutionException,
+            InterruptedException {
         // Given
         SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT)
                 .initBlocks()
-                .initThrowsNonSerializable();
+                .setInitError(NON_SERIALIZABLE_EXCEPTION);
         DAG dag = new DAG().vertex(new Vertex("test",
                 new MockPMS(supplier)));
 
@@ -377,31 +378,44 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             MockPS.unblock();
         }
 
-        assertThrows(CompletionException.class, () -> {
-            try {
-                Job job = jobFuture.get();
-                CompletableFuture<Void> future = job.getFuture();
-                future.join();
-            } catch (InterruptedException | ExecutionException exception) {
-                fail("Job failed");
-            }
-        });
+        Job job = jobFuture.get();
+        assertJobFailed(job, NON_SERIALIZABLE_EXCEPTION.get());
     }
 
-
     @Test
-    public void when_psCloseThrowsNonSerializable_then_jobSucceeds() {
+    public void when_psCloseThrowsNonSerializable_then_jobSucceeds() throws ExecutionException, InterruptedException {
         // Given
         SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT)
-                .closeThrowsNonSerializable();
+                .setCloseError(NON_SERIALIZABLE_EXCEPTION);
+        DAG dag = new DAG().vertex(new Vertex("test",
+                new MockPMS(supplier)));
+
+        Future<Job> jobFuture = spawn(() -> newJob(dag));
+
+        MockPS.waitBlockingSemaphore();
+
+        for (int i = 0; i < MEMBER_COUNT; i++) {
+            MockPS.unblock();
+        }
+
+        Job job = jobFuture.get();
+        job.join();
+        // When
+        runJobExpectNoFailure(dag, false);
+    }
+
+    @Test
+    public void when_psNonCooperativeCloseThrowsNonSerializable_then_jobSucceeds() {
+        // Given
+        SupplierEx<ProcessorSupplier> supplier = () ->  new MockPS(MockP::new, MEMBER_COUNT)
+                .closeBlocks()
+                .setCloseError(NON_SERIALIZABLE_EXCEPTION);
         DAG dag = new DAG().vertex(new Vertex("test",
                 new MockPMS(supplier)));
 
         // When
         runJobExpectNoFailure(dag, false);
-
     }
-
 
     @Test
     public void when_psInitThrows_then_jobFails() {
@@ -415,7 +429,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         // Then
         assertPsClosedWithError();
         assertPmsClosedWithError();
-        assertJobFailed(job, MOCK_ERROR);
+        assertJobFailed(job, MOCK_ERROR.get());
     }
 
     @Test
@@ -430,7 +444,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         // Then
         assertPsClosedWithError();
         assertPmsClosedWithError();
-        assertJobFailed(job, MOCK_ERROR);
+        assertJobFailed(job, MOCK_ERROR.get());
         assertsWhenOneJob();
     }
 
@@ -443,7 +457,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
                 ProcessorMetaSupplier.of(
                         (Address address) -> ProcessorSupplier.of(
                                 address.getPort() == localPort ? noopP() : () -> {
-                                    throw sneakyThrow(MOCK_ERROR);
+                                    throw sneakyThrow(MOCK_ERROR.get());
                                 })
                 )));
 
@@ -452,7 +466,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             executeAndPeel(newJob(dag));
         } catch (Throwable caught) {
             // Then
-            assertExceptionInCauses(MOCK_ERROR, caught);
+            assertExceptionInCauses(MOCK_ERROR.get(), caught);
         }
     }
 
@@ -488,7 +502,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertPClosedWithError();
         assertPsClosedWithError();
         assertPmsClosedWithError();
-        assertJobFailed(job, MOCK_ERROR);
+        assertJobFailed(job, MOCK_ERROR.get());
         assertsWhenOneJob();
     }
 
@@ -508,7 +522,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertPClosedWithError();
         assertPsClosedWithError();
         assertPmsClosedWithError();
-        assertJobFailed(job, MOCK_ERROR);
+        assertJobFailed(job, MOCK_ERROR.get());
     }
 
     @Test
@@ -525,7 +539,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertPClosedWithError();
         assertPsClosedWithError();
         assertPmsClosedWithError();
-        assertJobFailed(job, MOCK_ERROR);
+        assertJobFailed(job, MOCK_ERROR.get());
         assertsWhenOneJob();
     }
 
@@ -543,7 +557,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertPClosedWithError();
         assertPsClosedWithError();
         assertPmsClosedWithError();
-        assertJobFailed(job, MOCK_ERROR);
+        assertJobFailed(job, MOCK_ERROR.get());
     }
 
     @Test
@@ -561,7 +575,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertPClosedWithError();
         assertPsClosedWithError();
         assertPmsClosedWithError();
-        assertJobFailed(job, MOCK_ERROR);
+        assertJobFailed(job, MOCK_ERROR.get());
         assertsWhenOneJob();
     }
 
@@ -580,7 +594,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertPClosedWithError();
         assertPsClosedWithError();
         assertPmsClosedWithError();
-        assertJobFailed(job, MOCK_ERROR);
+        assertJobFailed(job, MOCK_ERROR.get());
     }
 
     @Test
@@ -1115,12 +1129,11 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         } catch (Exception actual) {
             String causeString = peel(actual).toString();
             if (causeString == null  ||
-                !(causeString.contains(MOCK_ERROR.toString()) ||
+                !(causeString.contains(MOCK_ERROR.get().toString()) ||
                          causeString.contains(CancellationException.class.getName()) ||
-                         causeString.contains(JetException.class.getName()) ||
                         causeString.contains(NonSerializableException.class.getName()))
             ) {
-                throw new AssertionError(format("'%s' didn't contain expected '%s'", causeString, MOCK_ERROR.getMessage()), actual);
+                throw new AssertionError(format("'%s' didn't contain expected '%s'", causeString, MOCK_ERROR_MESSAGE), actual);
             }
         }
         return job;
@@ -1136,10 +1149,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertTrue("init not called", MockPMS.initCount.get() > 0);
         assertTrue("close not called", MockPMS.closeCount.get() > 0);
         assertOneOfExceptionsInCauses(MockPMS.receivedCloseError.get(),
-                NON_SERIALIZABLE_EXCEPTION,
-                JET_EXCEPTION,
-                SERIALIZATION_EXCEPTION,
-                MOCK_ERROR,
+                NON_SERIALIZABLE_EXCEPTION.get(),
+                MOCK_ERROR.get(),
                 new CancellationException(),
                 new JobTerminateRequestedException(CANCEL_FORCEFUL));
     }
@@ -1160,7 +1171,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
 
         for (int i = 0; i < MockPS.receivedCloseErrors.size(); i++) {
             assertOneOfExceptionsInCauses(MockPS.receivedCloseErrors.get(i),
-                    MOCK_ERROR,
+                    MOCK_ERROR.get(),
                     new CancellationException(),
                     new JobTerminateRequestedException(CANCEL_FORCEFUL));
         }
