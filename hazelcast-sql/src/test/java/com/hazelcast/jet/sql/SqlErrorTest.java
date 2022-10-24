@@ -67,8 +67,8 @@ public class SqlErrorTest extends SqlErrorAbstractTest {
         Thread shutdownThread = new Thread(() -> {
             // Waiting for a deployment of the job on both members.
             assertTrueEventually(() -> {
-                assertEquals(1, instance1.getJet().getJobs().size());
-                assertEquals(1, instance2.getJet().getJobs().size());
+                assertEquals(1, getExecutionContextCount(instance1));
+                assertEquals(1, getExecutionContextCount(instance2));
             });
             instance2.shutdown();
         });
