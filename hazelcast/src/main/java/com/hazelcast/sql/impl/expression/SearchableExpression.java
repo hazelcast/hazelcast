@@ -30,20 +30,23 @@ import java.util.Objects;
  * {@link Searchable} expression.
  */
 public class SearchableExpression<C extends Comparable<C>> implements Expression<Searchable<C>>, IdentifiedDataSerializable {
-
     private QueryDataType type;
     private Searchable<C> searchable;
+    private transient Boolean nullAs;
+    private transient Searchable<C> searchableWithNullAs;
 
     public SearchableExpression() {
     }
 
-    private SearchableExpression(QueryDataType type, Searchable<C> searchable) {
+    private SearchableExpression(QueryDataType type, Searchable<C> searchable, Boolean nullAs) {
         this.type = type;
         this.searchable = searchable;
+        this.nullAs = nullAs;
+        this.searchableWithNullAs = new SearchableWithNullAs<>(searchable, nullAs);
     }
 
-    public static SearchableExpression<?> create(QueryDataType type, Searchable<?> searchable) {
-        return new SearchableExpression<>(type, searchable);
+    public static SearchableExpression<?> create(QueryDataType type, Searchable<?> searchable, Boolean nullAs) {
+        return new SearchableExpression<>(type, searchable, nullAs);
     }
 
     @Override
@@ -58,7 +61,7 @@ public class SearchableExpression<C extends Comparable<C>> implements Expression
 
     @Override
     public Searchable<C> eval(Row row, ExpressionEvalContext context) {
-        return searchable;
+        return searchableWithNullAs == null ? searchable : searchableWithNullAs;
     }
 
     @Override
@@ -70,12 +73,14 @@ public class SearchableExpression<C extends Comparable<C>> implements Expression
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeObject(type);
         out.writeObject(searchable);
+        SearchableExpressionTracker.addNewSearchableExpression(this);
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
         type = in.readObject();
         searchable = in.readObject();
+        SearchableExpressionTracker.addNewSearchableExpression(this);
     }
 
     @Override
@@ -103,5 +108,14 @@ public class SearchableExpression<C extends Comparable<C>> implements Expression
     @Override
     public String toString() {
         return "SearchableExpression{type=" + type + ", searchable=" + searchable + '}';
+    }
+
+    public Boolean getNullAs() {
+        return nullAs;
+    }
+
+    public void applyNullAs(Boolean nullAs) {
+        this.nullAs = nullAs;
+        this.searchableWithNullAs = new SearchableWithNullAs<>(searchable, nullAs);
     }
 }

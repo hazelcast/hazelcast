@@ -30,12 +30,13 @@ import org.junit.rules.TemporaryFolder;
 import org.junit.runner.RunWith;
 
 import java.io.File;
+import java.util.Map;
 
 import static com.google.common.io.Files.toByteArray;
-import static com.hazelcast.test.starter.HazelcastVersionLocator.HAZELCAST_EE_JAR_INDEX;
-import static com.hazelcast.test.starter.HazelcastVersionLocator.HAZELCAST_EE_TESTS_JAR_INDEX;
-import static com.hazelcast.test.starter.HazelcastVersionLocator.HAZELCAST_JAR_INDEX;
-import static com.hazelcast.test.starter.HazelcastVersionLocator.HAZELCAST_TESTS_JAR_INDEX;
+import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.EE_JAR;
+import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.EE_TEST_JAR;
+import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.OS_JAR;
+import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.OS_TEST_JAR;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -49,15 +50,15 @@ public class HazelcastVersionLocatorTest {
 
     @Test
     public void testDownloadVersion() throws Exception {
-        File[] files = HazelcastVersionLocator.locateVersion("4.0", folder.getRoot(), true);
+        Map<HazelcastVersionLocator.Artifact, File> files = HazelcastVersionLocator.locateVersion("4.0", folder.getRoot(), true);
 
-        assertHash(files[HAZELCAST_JAR_INDEX], "bc409b12b96ece6d05c3bd1e99b202bb", "OS");
+        assertHash(files.get(OS_JAR), "bc409b12b96ece6d05c3bd1e99b202bb", "OS");
 
-        assertHash(files[HAZELCAST_TESTS_JAR_INDEX], "220509ece9fc152525c91ba7c75ce600", "OS tests");
+        assertHash(files.get(OS_TEST_JAR), "220509ece9fc152525c91ba7c75ce600", "OS tests");
 
-        assertHash(files[HAZELCAST_EE_JAR_INDEX], "765816e628ca4ca57d5bd7387e761eaa", "EE");
+        assertHash(files.get(EE_JAR), "765816e628ca4ca57d5bd7387e761eaa", "EE");
 
-        assertHash(files[HAZELCAST_EE_TESTS_JAR_INDEX], "162bcb2412570845e6fd91ee61b54f94", "EE tests");
+        assertHash(files.get(EE_TEST_JAR), "162bcb2412570845e6fd91ee61b54f94", "EE tests");
     }
 
     private void assertHash(File file, String expectedHash, String label) throws Exception {

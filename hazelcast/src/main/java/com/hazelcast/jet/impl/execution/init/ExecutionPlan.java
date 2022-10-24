@@ -57,9 +57,12 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.sql.impl.expression.SearchableExpression;
+import com.hazelcast.sql.impl.expression.SearchableExpressionTracker;
 
 import javax.annotation.Nonnull;
 import javax.security.auth.Subject;
+import java.io.EOFException;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -302,26 +305,53 @@ public class ExecutionPlan implements IdentifiedDataSerializable {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        writeList(out, vertices);
-        out.writeLong(lastSnapshotId);
-        out.writeObject(partitionAssignment);
-        out.writeBoolean(isLightJob);
-        out.writeObject(jobConfig);
-        out.writeInt(memberIndex);
-        out.writeInt(memberCount);
-        ImdgUtil.writeSubject(out, subject);
+        try {
+            SearchableExpressionTracker.startTracking();
+            writeList(out, vertices);
+            out.writeLong(lastSnapshotId);
+            out.writeObject(partitionAssignment);
+            out.writeBoolean(isLightJob);
+            out.writeObject(jobConfig);
+            out.writeInt(memberIndex);
+            out.writeInt(memberCount);
+            ImdgUtil.writeSubject(out, subject);
+            List<SearchableExpression<?>> searchableExpressions = SearchableExpressionTracker.getResults();
+            out.writeInt(searchableExpressions.size());
+            for (SearchableExpression<?> searchableExpression : searchableExpressions) {
+                out.writeObject(searchableExpression.getNullAs());
+            }
+        } finally {
+            SearchableExpressionTracker.stopTracking();
+        }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        vertices = readList(in);
-        lastSnapshotId = in.readLong();
-        partitionAssignment = in.readObject();
-        isLightJob = in.readBoolean();
-        jobConfig = in.readObject();
-        memberIndex = in.readInt();
-        memberCount = in.readInt();
-        subject = ImdgUtil.readSubject(in);
+        try {
+            SearchableExpressionTracker.startTracking();
+            vertices = readList(in);
+            lastSnapshotId = in.readLong();
+            partitionAssignment = in.readObject();
+            isLightJob = in.readBoolean();
+            jobConfig = in.readObject();
+            memberIndex = in.readInt();
+            memberCount = in.readInt();
+            subject = ImdgUtil.readSubject(in);
+            List<SearchableExpression<?>> searchableExpressions = SearchableExpressionTracker.getResults();
+            int searchableExpressionsCount = 0;
+            try {
+                searchableExpressionsCount = in.readInt();
+                assert searchableExpressionsCount == searchableExpressions.size();
+            } catch (EOFException ignored) {
+                // ignored, this may happen if ExecutionPlan from pre-5.1.5 version is read
+            }
+            for (int i = 0; i < searchableExpressionsCount; i++) {
+                SearchableExpression<?> searchableExpression = searchableExpressions.get(i);
+                searchableExpression.applyNullAs(in.readObject());
+            }
+        } finally {
+            SearchableExpressionTracker.stopTracking();
+        }
     }
 
     // End implementation of IdentifiedDataSerializable

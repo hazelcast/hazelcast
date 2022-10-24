@@ -24,9 +24,12 @@ import com.hazelcast.jet.core.Edge.RoutingPolicy;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.sql.impl.expression.SearchableExpression;
+import com.hazelcast.sql.impl.expression.SearchableExpressionTracker;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.io.EOFException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -41,9 +44,9 @@ import java.util.stream.IntStream;
 
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
 import static com.hazelcast.jet.config.EdgeConfig.DEFAULT_QUEUE_SIZE;
+import static com.hazelcast.jet.core.Edge.DISTRIBUTE_TO_ALL;
 import static com.hazelcast.jet.core.Vertex.LOCAL_PARALLELISM_USE_DEFAULT;
 import static com.hazelcast.jet.impl.TopologicalSorter.topologicalSort;
-import static com.hazelcast.jet.core.Edge.DISTRIBUTE_TO_ALL;
 import static com.hazelcast.jet.impl.pipeline.transform.AggregateTransform.FIRST_STAGE_VERTEX_NAME_SUFFIX;
 import static com.hazelcast.jet.impl.util.Util.escapeGraphviz;
 import static java.util.Collections.emptyList;
@@ -541,39 +544,65 @@ public class DAG implements IdentifiedDataSerializable, Iterable<Vertex> {
 
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
-        out.writeInt(nameToVertex.size());
+        SearchableExpressionTracker.startTracking();
+        try {
+            out.writeInt(nameToVertex.size());
 
-        for (Map.Entry<String, Vertex> entry : nameToVertex.entrySet()) {
-            out.writeObject(entry.getKey());
-            out.writeObject(entry.getValue());
-        }
+            for (Map.Entry<String, Vertex> entry : nameToVertex.entrySet()) {
+                out.writeObject(entry.getKey());
+                out.writeObject(entry.getValue());
+            }
 
-        out.writeInt(edges.size());
+            out.writeInt(edges.size());
 
-        for (Edge edge : edges) {
-            out.writeObject(edge);
+            for (Edge edge : edges) {
+                out.writeObject(edge);
+            }
+            List<SearchableExpression<?>> searchableExpressions = SearchableExpressionTracker.getResults();
+            out.writeInt(searchableExpressions.size());
+            for (SearchableExpression<?> searchableExpression : searchableExpressions) {
+                out.writeObject(searchableExpression.getNullAs());
+            }
+        } finally {
+            SearchableExpressionTracker.stopTracking();
         }
     }
 
     @Override
     public void readData(ObjectDataInput in) throws IOException {
-        int vertexCount = in.readInt();
+        try {
+            SearchableExpressionTracker.startTracking();
+            int vertexCount = in.readInt();
 
-        for (int i = 0; i < vertexCount; i++) {
-            String key = in.readObject();
-            Vertex value = in.readObject();
-            nameToVertex.put(key, value);
+            for (int i = 0; i < vertexCount; i++) {
+                String key = in.readObject();
+                Vertex value = in.readObject();
+                nameToVertex.put(key, value);
+            }
+
+            int edgeCount = in.readInt();
+
+            for (int i = 0; i < edgeCount; i++) {
+                Edge edge = in.readObject();
+                edge.restoreSourceAndDest(nameToVertex);
+                edges.add(edge);
+            }
+
+            verticesByIdentity.addAll(nameToVertex.values());
+            List<SearchableExpression<?>> searchableExpressions = SearchableExpressionTracker.getResults();
+            int searchableExpressionsCount = 0;
+            try {
+                searchableExpressionsCount = in.readInt();
+                assert searchableExpressionsCount == searchableExpressions.size();
+            } catch (EOFException ignored) {
+                // ignored, this may happen if DAG from pre-5.1.5 version is read
+            }
+            for (int i = 0; i < searchableExpressionsCount; i++) {
+                searchableExpressions.get(i).applyNullAs(in.readObject());
+            }
+        } finally {
+            SearchableExpressionTracker.stopTracking();
         }
-
-        int edgeCount = in.readInt();
-
-        for (int i = 0; i < edgeCount; i++) {
-            Edge edge = in.readObject();
-            edge.restoreSourceAndDest(nameToVertex);
-            edges.add(edge);
-        }
-
-        verticesByIdentity.addAll(nameToVertex.values());
     }
 
     @Override
