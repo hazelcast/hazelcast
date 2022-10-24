@@ -1,11 +1,10 @@
-package com.hazelcast.alto.engine;
+package com.hazelcast.internal.tpc;
 
 import com.hazelcast.internal.tpc.Eventloop;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertEqualsEventually;
