@@ -15,7 +15,7 @@
         <jaxb.version>2.3.1</jaxb.version>
         <jaxb-core.version>2.3.0.1</jaxb-core.version>
         <activation.version>1.1.1</activation.version>
-        <hsqldb.version>2.7.0</hsqldb.version>
+        <hsqldb.version>2.7.1</hsqldb.version>
         <hibernate-core.version>5.3.7.Final</hibernate-core.version>
         <hazelcast-hibernate53.version>2.2.1</hazelcast-hibernate53.version>
     </properties>
