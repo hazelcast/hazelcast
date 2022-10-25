@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation.steps.engine;
 
+import com.hazelcast.core.Offloadable;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.steps.UtilSteps;
@@ -89,7 +90,12 @@ public class StepSupplier implements Supplier<Runnable> {
         // 1. If step needs to be offloaded,
         // return step wrapped as a runnable.
         if (step.isOffloadStep()) {
-            return new Runnable() {
+            return new ExecutorNameAwareRunnable() {
+                @Override
+                public String getExecutorName() {
+                    return step.getExecutorName(state);
+                }
+
                 @Override
                 public void run() {
                     if (checkCurrentThread) {
@@ -196,5 +202,9 @@ public class StepSupplier implements Supplier<Runnable> {
         if (logger.isFinestEnabled()) {
             logger.finest(currentStep.toString() + " ==> " + operation.hashCode());
         }
+    }
+
+    private interface ExecutorNameAwareRunnable extends Runnable, Offloadable {
+
     }
 }
