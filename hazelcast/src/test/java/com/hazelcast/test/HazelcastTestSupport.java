@@ -1619,8 +1619,15 @@ public abstract class HazelcastTestSupport {
         assumeFalse("Zing JDK6 used", JAVA_VERSION.startsWith("1.6.") && JVM_NAME.startsWith("Zing"));
     }
 
-    public static void assumeThatNotIBMJDK17() {
-        assumeFalse("Skipping on IBM JDK 17", JAVA_VERSION.startsWith("17.") && JAVA_VENDOR.contains("IBM"));
+    public static void assumeHadoopSupportsIbmPlatform() {
+        boolean missingIbmLoginModule = true;
+        try {
+            Class.forName("com.ibm.security.auth.module.JAASLoginModule");
+            missingIbmLoginModule = false;
+        } catch (ClassNotFoundException ignored) {
+        }
+        assumeFalse("Skipping due Hadoop authentication issues. See https://github.com/apache/hadoop/pull/4537",
+                JAVA_VENDOR.contains("IBM") && missingIbmLoginModule);
     }
 
     public static void assumeThatNoWindowsOS() {
