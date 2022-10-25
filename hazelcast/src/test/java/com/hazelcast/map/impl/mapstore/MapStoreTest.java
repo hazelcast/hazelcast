@@ -147,6 +147,34 @@ public class MapStoreTest extends AbstractMapStoreTest {
     }
 
     @Test
+    public void map_set_does_not_load_old_value_when_offload_enabled() {
+        final AtomicBoolean loadCalled = new AtomicBoolean(false);
+
+        Config config = getConfig();
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig
+                .setEnabled(true)
+                .setOffload(true)
+                .setImplementation(new MapStoreAdapter<String, String>() {
+                    @Override
+                    public String load(String key) {
+                        loadCalled.set(true);
+                        return null;
+                    }
+                });
+
+        String mapName = "default";
+        config.getMapConfig(mapName)
+                .setMapStoreConfig(mapStoreConfig);
+
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IMap<String, String> map = instance.getMap(mapName);
+
+        map.set("key", "value");
+        assertFalse(loadCalled.get());
+    }
+
+    @Test
     public void testNullValuesFromMapLoaderAreNotInsertedIntoMap() {
         Config config = newConfig(new NullLoader());
         HazelcastInstance node = createHazelcastInstance(config);
