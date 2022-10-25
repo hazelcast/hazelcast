@@ -3,7 +3,7 @@
 |||
 |---|---|
 |Related Jira|[HZ-986](https://hazelcast.atlassian.net/browse/HZ-986)|
-|Document Status / Completeness|DRAFT|
+|Document Status / Completeness|DONE|
 |Requirement owner|Sandeep Akhouri|
 |Developer(s)|Sasha Syrotenko|
 |Quality Engineer|Bartlomiej Poplawski|
