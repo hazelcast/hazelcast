@@ -576,6 +576,36 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         assertNull(putIfAbsent);
     }
 
+    @Test
+    public void get_after_clear_loads_data_from_map_loader() {
+        EventBasedMapStore testMapStore = new EventBasedMapStore();
+        Config config = newConfig(testMapStore, 100);
+
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IMap<Integer, Integer> map = instance.getMap("default");
+
+        final int keyCount = 1_000;
+
+        for (int i = 0; i < keyCount; i++) {
+            map.set(i, i);
+        }
+
+        map.clear();
+
+        for (int i = 0; i < keyCount; i++) {
+            map.get(i);
+        }
+
+        int actualLoadEventCount = 0;
+        BlockingQueue events = testMapStore.getEvents();
+        for (Object event : events) {
+            if (event == EventBasedMapStore.STORE_EVENTS.LOAD) {
+                actualLoadEventCount++;
+            }
+        }
+        assertEquals(keyCount, actualLoadEventCount);
+    }
+
     public static class RecordingMapStore implements MapStore<String, String> {
 
         private static final boolean DEBUG = false;
