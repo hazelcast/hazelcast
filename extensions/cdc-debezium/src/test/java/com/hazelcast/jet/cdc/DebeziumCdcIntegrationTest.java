@@ -435,8 +435,7 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
         try (MySQLContainer<?> container = mySqlContainer()) {
             container.start();
 
-            HazelcastInstance[] hazelcastInstances = createHazelcastInstances(1);
-            HazelcastInstance hz = hazelcastInstances[0];
+            HazelcastInstance hz = createHazelcastInstance();
             IList<ChangeRecord> changeRecordList = hz.getList("nullIsNotValidOperationId");
 
             StreamSource<ChangeRecord> source = mySqlSource(container);
