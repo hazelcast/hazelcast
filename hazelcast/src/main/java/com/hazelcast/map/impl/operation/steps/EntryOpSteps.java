@@ -17,6 +17,8 @@
 package com.hazelcast.map.impl.operation.steps;
 
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.core.Offloadable;
+import com.hazelcast.map.impl.ExecutorStats;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.operation.EntryOperation;
@@ -24,6 +26,7 @@ import com.hazelcast.map.impl.operation.EntryOperator;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.spi.impl.executionservice.impl.StatsAwareRunnable;
 
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 
@@ -93,7 +96,28 @@ public enum EntryOpSteps implements Step<State> {
         }
 
         @Override
+        public String getExecutorName(State state) {
+            return ((Offloadable) state.getEntryProcessor()).getExecutorName();
+        }
+
+        @Override
         public void runStep(State state) {
+            RecordStore recordStore = state.getRecordStore();
+            MapContainer mapContainer = recordStore.getMapContainer();
+            boolean statisticsEnabled = mapContainer.getMapConfig().isStatisticsEnabled();
+            ExecutorStats executorStats = mapContainer.getMapServiceContext()
+                    .getOffloadedEntryProcessorExecutorStats();
+
+            if (statisticsEnabled) {
+                new StatsAwareRunnable(() -> {
+                    runStepInternal(state);
+                }, getExecutorName(state), executorStats).run();
+            } else {
+                runStepInternal(state);
+            }
+        }
+
+        private void runStepInternal(State state) {
             EntryOperation operation = (EntryOperation) state.getOperation();
             Object oldValueByInMemoryFormat = operation.getOldValueByInMemoryFormat(state.getOldValue());
 
