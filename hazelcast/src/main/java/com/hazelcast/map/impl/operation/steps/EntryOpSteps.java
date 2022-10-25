@@ -169,6 +169,9 @@ public enum EntryOpSteps implements Step<State> {
         @Override
         public void runStep(State state) {
             EntryOperator entryOperator = state.getOperator();
+            if (!entryOperator.isDidMatchPredicate()) {
+                return;
+            }
             MapContainer mapContainer = state.getRecordStore().getMapContainer();
             MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
 
