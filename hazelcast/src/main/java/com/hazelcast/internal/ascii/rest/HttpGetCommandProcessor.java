@@ -379,9 +379,9 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
     private void handleQueue(HttpGetCommand command, String uri) throws UnsupportedEncodingException {
         command.getExecutionDetails().setObjectType(QUEUE);
         int indexEnd = uri.indexOf('/', URI_QUEUES.length());
-        String queueName = urlDecode(uri.substring(URI_QUEUES.length(), indexEnd));
+        String queueName = uri.substring(URI_QUEUES.length(), indexEnd);
         command.getExecutionDetails().setObjectName(queueName);
-        String secondStr = (uri.length() > (indexEnd + 1)) ? urlDecode(uri.substring(indexEnd + 1)) : null;
+        String secondStr = (uri.length() > (indexEnd + 1)) ? uri.substring(indexEnd + 1) : null;
 
         if (equalsIgnoreCase(QUEUE_SIZE_COMMAND, secondStr)) {
             int size = textCommandService.size(queueName);
@@ -397,9 +397,9 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         command.getExecutionDetails().setObjectType(MAP);
         uri = StringUtil.stripTrailingSlash(uri);
         int indexEnd = uri.indexOf('/', URI_MAPS.length());
-        String mapName = urlDecode(uri.substring(URI_MAPS.length(), indexEnd));
+        String mapName = uri.substring(URI_MAPS.length(), indexEnd);
         command.getExecutionDetails().setObjectName(mapName);
-        String key = urlDecode(uri.substring(indexEnd + 1));
+        String key = uri.substring(indexEnd + 1);
         Object value = textCommandService.get(mapName, key);
         prepareResponse(command, value);
     }

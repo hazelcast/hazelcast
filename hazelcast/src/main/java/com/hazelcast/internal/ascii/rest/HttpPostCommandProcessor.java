@@ -273,8 +273,8 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         if (indexSlash == -1) {
             queueName = suffix;
         } else {
-            queueName = urlDecode(suffix.substring(0, indexSlash));
-            simpleValue = urlDecode(suffix.substring(indexSlash + 1));
+            queueName = suffix.substring(0, indexSlash);
+            simpleValue = suffix.substring(indexSlash + 1);
         }
         command.getExecutionDetails().setObjectName(queueName);
         byte[] data;
@@ -301,9 +301,9 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         if (indexEnd == -1) {
             throw new HttpBadRequestException("Missing map name");
         }
-        String mapName = urlDecode(uri.substring(URI_MAPS.length(), indexEnd));
+        String mapName = uri.substring(URI_MAPS.length(), indexEnd);
         command.getExecutionDetails().setObjectName(mapName);
-        String key = urlDecode(uri.substring(indexEnd + 1));
+        String key = uri.substring(indexEnd + 1);
         byte[] data = command.getData();
         textCommandService.put(mapName, key, new RestValue(data, command.getContentType()), -1);
         command.send200();

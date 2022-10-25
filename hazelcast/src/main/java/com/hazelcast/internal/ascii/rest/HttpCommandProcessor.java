@@ -159,10 +159,6 @@ public abstract class HttpCommandProcessor<T extends HttpCommand> extends Abstra
         }
     }
 
-    protected static String urlDecode(String value) throws UnsupportedEncodingException {
-        return URLDecoder.decode(value, "UTF-8");
-    }
-
     /**
      * Decodes HTTP post params contained in {@link HttpPostCommand#getData()}. The data
      * should be encoded in UTF-8 and joined together with an ampersand (&).
@@ -193,7 +189,7 @@ public abstract class HttpCommandProcessor<T extends HttpCommand> extends Abstra
         }
 
         for (int i = 0; i < expectedParamCount; i++) {
-            decoded[i] = urlDecode(encoded[i]);
+            decoded[i] = URLDecoder.decode(encoded[i], "UTF-8");
         }
         return decoded;
     }
@@ -224,7 +220,7 @@ public abstract class HttpCommandProcessor<T extends HttpCommand> extends Abstra
                                  @Nullable String userName,
                                  @Nullable String pass)
             throws UnsupportedEncodingException {
-        String decodedName = userName != null ? urlDecode(userName) : null;
+        String decodedName = userName != null ? URLDecoder.decode(userName, "UTF-8") : null;
         SecurityContext securityContext = getNode().getNodeExtension().getSecurityContext();
         String clusterName = getNode().getConfig().getClusterName();
         if (securityContext == null) {
@@ -233,7 +229,7 @@ public abstract class HttpCommandProcessor<T extends HttpCommand> extends Abstra
             }
             return clusterName.equals(decodedName);
         }
-        String decodedPass = pass != null ? urlDecode(pass) : null;
+        String decodedPass = pass != null ? URLDecoder.decode(pass, "UTF-8") : null;
         UsernamePasswordCredentials credentials = new UsernamePasswordCredentials(decodedName, decodedPass);
         Boolean passed = Boolean.FALSE;
         try {

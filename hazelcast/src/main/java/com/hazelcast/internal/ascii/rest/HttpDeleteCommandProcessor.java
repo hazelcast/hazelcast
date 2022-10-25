@@ -54,14 +54,14 @@ public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteC
         command.getExecutionDetails().setObjectType(MAP);
         int indexEnd = uri.indexOf('/', URI_MAPS.length());
         if (indexEnd == -1) {
-            String mapName = urlDecode(uri.substring(URI_MAPS.length()));
+            String mapName = uri.substring(URI_MAPS.length());
             textCommandService.deleteAll(mapName);
             command.getExecutionDetails().setObjectName(mapName);
             command.send200();
         } else {
-            String mapName = urlDecode(uri.substring(URI_MAPS.length(), indexEnd));
+            String mapName = uri.substring(URI_MAPS.length(), indexEnd);
             command.getExecutionDetails().setObjectName(mapName);
-            String key = urlDecode(uri.substring(indexEnd + 1));
+            String key = uri.substring(indexEnd + 1);
             key = StringUtil.stripTrailingSlash(key);
             textCommandService.delete(mapName, key);
             command.send200();
@@ -78,9 +78,9 @@ public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteC
             // /queues/queueName usage
             indexEnd = uri.length();
         }
-        String queueName = urlDecode(uri.substring(URI_QUEUES.length(), indexEnd));
+        String queueName = uri.substring(URI_QUEUES.length(), indexEnd);
         command.getExecutionDetails().setObjectName(queueName);
-        String secondStr = (uri.length() > (indexEnd + 1)) ? urlDecode(uri.substring(indexEnd + 1)) : null;
+        String secondStr = (uri.length() > (indexEnd + 1)) ? uri.substring(indexEnd + 1) : null;
         int seconds = (secondStr == null) ? 0 : Integer.parseInt(secondStr);
         Object value = textCommandService.poll(queueName, seconds);
         if (value == null) {
