@@ -29,6 +29,7 @@ public enum ContainsKeyOpSteps implements Step<State> {
         public void runStep(State state) {
             RecordStore recordStore = state.getRecordStore();
             Record record = recordStore.getRecordOrNull(state.getKey());
+
             if (record != null) {
                 state.setOldValue(record.getValue());
                 recordStore.accessRecord(state.getKey(), record, state.getNow());

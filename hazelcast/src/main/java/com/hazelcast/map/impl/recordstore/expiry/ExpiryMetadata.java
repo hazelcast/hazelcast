@@ -109,6 +109,16 @@ public interface ExpiryMetadata {
         public ExpiryMetadata setRawLastUpdateTime(int lastUpdateTime) {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public String toString() {
+            return "NULL{"
+                    + "ttl=" + getTtl()
+                    + ", maxIdle=" + getMaxIdle()
+                    + ", expirationTime=" + getExpirationTime()
+                    + ", lastUpdateTime=" + getLastUpdateTime()
+                    + '}';
+        }
     };
 
     default boolean hasExpiry() {

@@ -175,18 +175,19 @@ public enum MergeOpSteps implements Step<State> {
                 if (oldValue == null && newValue != null
                         || oldValue != null && newValue != null) {
 
+                    SplitBrainMergeTypes.MapMergeTypes mergingEntry
+                            = (SplitBrainMergeTypes.MapMergeTypes) outcomes.get(i + 3);
                     // if same values, merge expiry and continue with next entry
-                    // TODO add expiry merge
                     if (recordStore.getValueComparator().isEqual(newValue, oldValue, serializationService)) {
                         Record record = recordStore.getRecord((Data) key);
-                        Object mergingEntry = outcomes.get(i + 3);
-                        recordStore.mergeRecordExpiration((Data) key, record,
-                                (SplitBrainMergeTypes.MapMergeTypes) mergingEntry, state.getNow());
+                        recordStore.mergeRecordExpiration((Data) key, record, mergingEntry, state.getNow());
                         continue;
                     }
 
                     // put or update
                     PutOpSteps.ON_STORE.runStep(perKeyState);
+                    Record record = recordStore.getRecord((Data) key);
+                    recordStore.mergeRecordExpiration((Data) key, record, mergingEntry, state.getNow());
                 } else if (oldValue != null && newValue == null) {
                     // remove
                     DeleteOpSteps.ON_DELETE.runStep(perKeyState);
