@@ -43,7 +43,6 @@ public class HazelcastVersionLocator {
         OS_TEST_JAR("/com/hazelcast/hazelcast/%1$s/hazelcast-%1$s-tests.jar", false, true, "hazelcast"),
         SQL_JAR("/com/hazelcast/hazelcast-sql/%1$s/hazelcast-sql-%1$s.jar", false, false, "hazelcast-sql"),
         EE_JAR("/com/hazelcast/hazelcast-enterprise/%1$s/hazelcast-enterprise-%1$s.jar", true, false, "hazelcast-enterprise"),
-        EE_TEST_JAR("/com/hazelcast/hazelcast-enterprise/%1$s/hazelcast-enterprise-%1$s-tests.jar", true, true, "hazelcast-enterprise"),
         ;
         private final String path;
         private final boolean enterprise;
@@ -79,7 +78,6 @@ public class HazelcastVersionLocator {
         }
         if (enterprise) {
             files.put(Artifact.EE_JAR, locateArtifact(Artifact.EE_JAR, version, target));
-            files.put(Artifact.EE_TEST_JAR, locateArtifact(Artifact.EE_TEST_JAR, version, target));
         }
         return files;
     }
