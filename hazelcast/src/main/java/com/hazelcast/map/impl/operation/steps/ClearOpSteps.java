@@ -78,6 +78,7 @@ public enum ClearOpSteps implements Step<State> {
             DefaultRecordStore recordStore = ((DefaultRecordStore) state.getRecordStore());
             Collection<Data> keys = state.getKeys();
             recordStore.getMapDataStore().removeAll(keys);
+            recordStore.getMapDataStore().reset();
         }
 
         @Override
