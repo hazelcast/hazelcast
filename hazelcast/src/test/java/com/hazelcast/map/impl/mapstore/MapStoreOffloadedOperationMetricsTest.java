@@ -79,6 +79,13 @@ public class MapStoreOffloadedOperationMetricsTest extends HazelcastTestSupport 
                 sleepMillis(100);
                 return randomString();
             }
+
+            @Override
+            public void store(String key, String value) {
+                // mimic a slow store operation
+                sleepMillis(100);
+                super.store(key, value);
+            }
         });
         config.getMapConfig(MAP_WITH_MAP_STORE_NAME)
                 .setMapStoreConfig(mapStoreConfig);
