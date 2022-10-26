@@ -67,6 +67,7 @@ import static com.hazelcast.test.Accessors.getNode;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -604,6 +605,30 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
             }
         }
         assertEquals(keyCount, actualLoadEventCount);
+    }
+
+    @Test
+    public void clear_deletes_all_entries_in_map_store() {
+        final int keyCount = 1_000;
+        EventBasedMapStore testMapStore = new EventBasedMapStore();
+        testMapStore.deleteLatch = new CountDownLatch(keyCount);
+
+        Config config = newConfig(testMapStore, 3);
+
+        HazelcastInstance instance = createHazelcastInstance(config);
+        IMap<Integer, Integer> map = instance.getMap("default");
+
+        for (int i = 0; i < keyCount; i++) {
+            map.set(i, i);
+        }
+
+        map.clear();
+
+        for (int i = 0; i < keyCount; i++) {
+            assertFalse(map.containsKey(i));
+        }
+
+        assertOpenEventually(testMapStore.deleteLatch);
     }
 
     public static class RecordingMapStore implements MapStore<String, String> {
