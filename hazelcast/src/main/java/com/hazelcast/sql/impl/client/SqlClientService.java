@@ -27,6 +27,7 @@ import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlMappingDdlCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.OperationTimeoutException;
@@ -48,8 +49,11 @@ import javax.annotation.Nonnull;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -68,6 +72,12 @@ import static com.hazelcast.sql.impl.SqlErrorCode.TOPOLOGY_CHANGE;
  */
 public class SqlClientService implements SqlService {
     private static final int MAX_FAST_INVOCATION_COUNT = 5;
+
+    // TODO: LRU
+    @SuppressWarnings("checkstyle:VisibilityModifier")
+    public final Map<PartitionCacheKey, Integer> queryPartitionCache = new ConcurrentHashMap<>();
+    @SuppressWarnings("checkstyle:VisibilityModifier")
+    public final Map<Address, Integer> counts = new ConcurrentHashMap<>();
 
     private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
@@ -93,11 +103,14 @@ public class SqlClientService implements SqlService {
     @Nonnull
     @Override
     public SqlResult execute(@Nonnull SqlStatement statement) {
-        ClientConnection connection = getQueryConnection();
-        QueryId id = QueryId.create(connection.getRemoteUuid());
+        final Integer partitionId = queryPartitionCache.get(new PartitionCacheKey(statement.getSql(), statement.getParameters()));
+        final ClientConnection connection = partitionId != null && partitionId != -1
+                ? getQueryConnection(partitionId)
+                : getQueryConnection();
 
-        List<Object> params = statement.getParameters();
-        List<Data> params0 = new ArrayList<>(params.size());
+        final QueryId id = QueryId.create(connection.getRemoteUuid());
+        final List<Object> params = statement.getParameters();
+        final List<Data> params0 = new ArrayList<>(params.size());
 
         for (Object param : params) {
             params0.add(serializeParameter(param));
@@ -126,7 +139,7 @@ public class SqlClientService implements SqlService {
 
         try {
             ClientMessage message = invoke(requestMessage, connection);
-            handleExecuteResponse(res, message);
+            handleExecuteResponse(statement, res, message);
             return res;
         } catch (Exception e) {
             RuntimeException error = rethrow(e, connection);
@@ -270,7 +283,7 @@ public class SqlClientService implements SqlService {
         }
     }
 
-    private void handleExecuteResponse(SqlClientResult res, ClientMessage message) {
+    private void handleExecuteResponse(final SqlStatement statement, SqlClientResult res, ClientMessage message) {
         SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(message);
         SqlError sqlError = response.error;
         if (sqlError != null) {
@@ -282,6 +295,13 @@ public class SqlClientService implements SqlService {
                     sqlError.getSuggestion()
             );
         } else {
+            if (response.partitionId != -1) {
+                queryPartitionCache.put(
+                        new PartitionCacheKey(statement.getSql(), statement.getParameters()),
+                        response.partitionId
+                );
+            }
+
             res.onExecuteResponse(
                     response.rowMetadata != null ? new SqlRowMetadata(response.rowMetadata) : null,
                     response.rowPage,
@@ -346,6 +366,25 @@ public class SqlClientService implements SqlService {
             if (connection == null) {
                 throw rethrow(QueryException.error(CONNECTION_PROBLEM, "Client is not connected"));
             }
+
+            counts.compute(connection.getRemoteAddress(), (k, v) -> v != null ? v + 1 : 1);
+
+            return connection;
+        } catch (Exception e) {
+            throw rethrow(e);
+        }
+    }
+
+    public ClientConnection getQueryConnection(int partitionId) {
+        try {
+            final UUID nodeId = client.getClientPartitionService().getPartitionOwner(partitionId);
+            ClientConnection connection = client.getConnectionManager().getConnection(nodeId);
+
+            if (connection == null) {
+                throw rethrow(QueryException.error(CONNECTION_PROBLEM, "Client is not connected"));
+            }
+
+            counts.compute(connection.getRemoteAddress(), (k, v) -> v != null ? v + 1 : 1);
 
             return connection;
         } catch (Exception e) {
@@ -442,5 +481,40 @@ public class SqlClientService implements SqlService {
 
         return new ClientDelegatingFuture<>(invocation.invoke(), client.getSerializationService(),
                 SqlMappingDdlCodec::decodeResponse);
+    }
+
+    public static final class PartitionCacheKey {
+        private final String sql;
+        private final List<Object> arguments;
+
+        public PartitionCacheKey(final String sql, final List<Object> arguments) {
+            this.sql = sql;
+            this.arguments = arguments;
+        }
+
+        public String getSql() {
+            return sql;
+        }
+
+        public List<Object> getArguments() {
+            return arguments;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            final PartitionCacheKey that = (PartitionCacheKey) o;
+            return sql.equals(that.sql) && Objects.equals(arguments, that.arguments);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(sql, arguments);
+        }
     }
 }

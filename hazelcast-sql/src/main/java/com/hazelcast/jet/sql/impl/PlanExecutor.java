@@ -61,6 +61,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.ClassDefinition;
+import com.hazelcast.partition.Partition;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -417,7 +418,16 @@ public class PlanExecutor {
         StaticQueryResultProducerImpl resultProducer = row != null
                 ? new StaticQueryResultProducerImpl(row)
                 : new StaticQueryResultProducerImpl(emptyIterator());
-        return new SqlResultImpl(queryId, resultProducer, plan.rowMetadata(), false);
+
+        final Partition partition = hazelcastInstance.getPartitionService().getPartition(key);
+
+        return new SqlResultImpl(
+                queryId,
+                resultProducer,
+                plan.rowMetadata(),
+                false,
+                partition != null ? partition.getPartitionId() : -1
+        );
     }
 
     SqlResult execute(IMapInsertPlan plan, List<Object> arguments, long timeout) {

@@ -47,6 +47,11 @@ public final class UpdateSqlResultImpl extends AbstractSqlResult {
         return false;
     }
 
+    @Override
+    public int getPartitionId() {
+        return -1;
+    }
+
     @Nonnull
     @Override
     public SqlRowMetadata getRowMetadata() {

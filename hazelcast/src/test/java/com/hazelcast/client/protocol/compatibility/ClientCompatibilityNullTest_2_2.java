@@ -6614,6 +6614,7 @@ public class ClientCompatibilityNullTest_2_2 {
         assertTrue(isEqual(aLong, parameters.updateCount));
         assertTrue(isEqual(null, parameters.error));
         assertFalse(parameters.isIsInfiniteRowsExists);
+        assertFalse(parameters.isPartitionIdExists);
     }
 
     @Test

@@ -74,7 +74,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
         AbstractSqlResult result = (AbstractSqlResult) response;
 
         if (result.updateCount() >= 0) {
-            return SqlExecuteCodec.encodeResponse(null, null, result.updateCount(), null, false);
+            return SqlExecuteCodec.encodeResponse(null, null, result.updateCount(), null, false, -1);
         } else {
             SqlServiceImpl sqlService = nodeEngine.getSqlService();
 
@@ -90,7 +90,8 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
                     page,
                     -1,
                     null,
-                    result.isInfiniteRows()
+                    result.isInfiniteRows(),
+                    result.getPartitionId()
             );
         }
     }
@@ -117,7 +118,8 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
                 null,
                 -1,
                 error,
-                false
+                false,
+                -1
         );
     }
 

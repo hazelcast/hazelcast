@@ -16,7 +16,11 @@
 
 package com.hazelcast.jet.sql;
 
+import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
+import com.hazelcast.client.impl.spi.ClientPartitionService;
+import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
@@ -26,13 +30,16 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.impl.client.SqlClientService;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
@@ -47,6 +54,37 @@ public class SqlClientTest extends SqlTestSupport {
     @BeforeClass
     public static void setUpClass() {
         initialize(2, null);
+    }
+
+    @Test
+    public void test_partitionBasedRouting() {
+        final int itemCount = 100;
+        final HazelcastInstance client = factory().newHazelcastClient();
+        final SqlService sqlService = client.getSql();
+        final SqlClientService sqlClientService = (SqlClientService) sqlService;
+
+        for (int i = 0; i < itemCount; i++) {
+            client.getMap("test").put(i, "#" + i);
+        }
+        createMapping("test", Integer.class, String.class);
+
+        final ClientPartitionService partitionService = ((HazelcastClientProxy) client).client.getClientPartitionService();
+
+        for (int i = 0; i < itemCount; i++) {
+            final UUID expectedOwner = partitionService.getPartitionOwner(client.getPartitionService().getPartition(i).getPartitionId());
+            final Address expectedAddress = Arrays.stream(instances())
+                    .map(inst -> ((HazelcastInstanceProxy) inst))
+                    .filter(inst -> inst.getOriginal().node.getThisUuid().equals(expectedOwner))
+                    .findFirst()
+                    .map(inst -> inst.getOriginal().node.address)
+                    .orElse(null);
+
+            sqlService.execute("SELECT * FROM test WHERE __key = " + i);
+            final int oldVal = sqlClientService.counts.getOrDefault(expectedAddress, 0);
+            sqlService.execute("SELECT * FROM test WHERE __key = " + i);
+            final int newVal = sqlClientService.counts.getOrDefault(expectedAddress, 0);
+            assertEquals(oldVal + 1, newVal);
+        }
     }
 
     @Test
