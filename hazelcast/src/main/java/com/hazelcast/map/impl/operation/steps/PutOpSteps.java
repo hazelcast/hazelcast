@@ -38,6 +38,10 @@ public enum PutOpSteps implements Step<State> {
 
         @Override
         public Step nextStep(State state) {
+            if (!state.getStaticParams().isLoad()) {
+                return PutOpSteps.PROCESS;
+            }
+
             return state.getOldValue() == null
                     ? PutOpSteps.LOAD : PutOpSteps.PROCESS;
         }
