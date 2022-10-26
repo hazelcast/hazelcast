@@ -556,4 +556,22 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 "SELECT * FROM s s1 JOIN s s2 ON s1.a=s2.a",
                 singletonList(new Row(timestampTz(42L), timestampTz(42L))));
     }
+
+    @Test
+    public void test_joinWithoutViews() {
+        TestStreamSqlConnector.create(
+                sqlService,
+                "stream1",
+                singletonList("a"),
+                singletonList(TIMESTAMP_WITH_TIME_ZONE),
+                row(timestampTz(42L)));
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM " +
+                        "(SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '1' SECONDS))) s1 " +
+                        "INNER JOIN " +
+                        "(SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '1' SECONDS))) s2 " +
+                        "ON s1.a=s2.a",
+                singletonList(new Row(timestampTz(42L), timestampTz(42L))));
+    }
 }
