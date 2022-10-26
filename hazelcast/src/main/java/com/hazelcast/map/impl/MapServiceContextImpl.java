@@ -148,7 +148,7 @@ class MapServiceContextImpl implements MapServiceContext {
      * @see {@link MapKeyLoader#DEFAULT_LOADED_KEY_LIMIT_PER_NODE}
      */
     private final Semaphore nodeWideLoadedKeyLimiter;
-    private final boolean forceOffloadEnabled;
+    private final Boolean forceOffloadEnabled;
 
     private MapService mapService;
 
@@ -180,17 +180,27 @@ class MapServiceContextImpl implements MapServiceContext {
         this.nodeWideLoadedKeyLimiter = new Semaphore(checkPositive(PROP_LOADED_KEY_LIMITER_PER_NODE,
                 nodeEngine.getProperties().getInteger(LOADED_KEY_LIMITER_PER_NODE)));
         this.logger = nodeEngine.getLogger(getClass());
-        this.forceOffloadEnabled = nodeEngine.getProperties()
-                .getBoolean(FORCE_OFFLOAD_ALL_OPERATIONS);
-        if (this.forceOffloadEnabled) {
-            logger.info("Force offload is enabled for all maps. This "
-                    + "means all map operations will run as if they have map-store configured. "
-                    + "The intended usage for this flag is testing purposes.");
+        String forceOffloadValue = nodeEngine.getProperties()
+                .get(FORCE_OFFLOAD_ALL_OPERATIONS.getName());
+        this.forceOffloadEnabled = forceOffloadValue == null
+                ? null : Boolean.valueOf(forceOffloadValue);
+        if (this.forceOffloadEnabled != null) {
+            String msg = forceOffloadEnabled
+                    ? "Offloading is forcibly enabled for "
+                    + "all maps. They will be running as "
+                    + "if they have a map-store configured."
+                    : "Offloading is forcibly DISABLED for "
+                    + "all maps. This setting only affects "
+                    + "map-store-offload-enabled maps and "
+                    + "they will be running as if no-offloading "
+                    + "is there, other tests will work as is.";
+
+            logger.info(msg + " The intended usage of this flag is for testing purposes.");
         }
     }
 
     @Override
-    public boolean isForceOffloadEnabled() {
+    public Boolean getForceOffloadValue() {
         return forceOffloadEnabled;
     }
 

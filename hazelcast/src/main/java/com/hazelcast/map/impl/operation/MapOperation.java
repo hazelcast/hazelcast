@@ -120,10 +120,13 @@ public abstract class MapOperation extends AbstractNamedOperation
         MapConfig mapConfig = mapContainer.getMapConfig();
         MapStoreConfig mapStoreConfig = mapConfig.getMapStoreConfig();
 
-        boolean hasUserConfiguredOffload = mapServiceContext.isForceOffloadEnabled()
-                || (mapStoreConfig.isOffload()
+        boolean hasUserConfiguredOffload = (mapStoreConfig.isOffload()
                 && recordStore != null
                 && recordStore.getMapDataStore() != MapDataStores.EMPTY_MAP_DATA_STORE);
+
+        Boolean forceOffloadValue = mapServiceContext.getForceOffloadValue();
+        hasUserConfiguredOffload = forceOffloadValue != null
+                ? forceOffloadValue : hasUserConfiguredOffload;
 
         // check mapStoreOffloadEnabled is true for current operation
         mapStoreOffloadEnabled = recordStore != null && hasUserConfiguredOffload

@@ -19,7 +19,6 @@ package com.hazelcast.map.impl;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.MapConfig;
-import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.PartitioningStrategyConfig;
 import com.hazelcast.internal.eviction.ExpirationManager;
 import com.hazelcast.internal.serialization.Data;
@@ -45,6 +44,7 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.properties.HazelcastProperty;
 
+import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -75,14 +75,12 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
      * Following fields for FORCE_OFFLOAD_ALL_OPERATIONS
      * are introduced only for testing purposes.
      *
-     * @see {@link MapServiceContext#isForceOffloadEnabled}
+     * @see {@link MapServiceContext#getForceOffloadValue}
      */
-    boolean DEFAULT_FORCE_OFFLOAD_ALL_OPERATIONS = false;
     String PROP_FORCE_OFFLOAD_ALL_OPERATIONS
             = "hazelcast.internal.map.force.offload.all.map.operations";
     HazelcastProperty FORCE_OFFLOAD_ALL_OPERATIONS
-            = new HazelcastProperty(PROP_FORCE_OFFLOAD_ALL_OPERATIONS,
-            DEFAULT_FORCE_OFFLOAD_ALL_OPERATIONS);
+            = new HazelcastProperty(PROP_FORCE_OFFLOAD_ALL_OPERATIONS);
 
 
     Object toObject(Object data);
@@ -220,16 +218,17 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
     /**
      * Only used for testing purposes.
      * <p>
-     * Default value is {@code false}
+     * Default value is {@code null}
      * <p>
-     * Forces offload of all operations of all maps regardless of a
-     * map-store is being configured. This has identical behavior
-     * with enabling {@link MapStoreConfig#isOffload()} for all maps.
+     * Used for enabling or disabling map-store offloading behavior.
      *
-     * @return {@code true} if force offload for all
-     * operations are enabled, otherwise {@code false}.
+     * @return 3 different values can return:
+     * <p> {@code true} when offloading is forcibly enabled,
+     * <p>{@code false} when offloading is forcibly disabled,
+     * <p>{@code null} to have offloading as is.
      */
-    boolean isForceOffloadEnabled();
+    @Nullable
+    Boolean getForceOffloadValue();
 
     Semaphore getNodeWideLoadedKeyLimiter();
 
