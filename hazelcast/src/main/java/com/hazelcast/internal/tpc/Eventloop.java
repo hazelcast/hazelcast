@@ -23,7 +23,7 @@ import com.hazelcast.internal.util.ThreadAffinityHelper;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.internal.alto.util.CircularQueue;
+import com.hazelcast.internal.tpc.util.CircularQueue;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.Closeable;
@@ -46,7 +46,7 @@ import static com.hazelcast.internal.nio.IOUtil.closeResources;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.tpc.Eventloop.State.*;
-import static com.hazelcast.internal.alto.util.Util.epochNanos;
+import static com.hazelcast.internal.tpc.util.Util.epochNanos;
 import static java.lang.System.getProperty;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 

@@ -1,6 +1,5 @@
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.TpcEngine;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -18,7 +17,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class})
-public class EngineTest {
+public class TpcEngineTest {
 
     private TpcEngine engine;
 
@@ -27,6 +26,19 @@ public class EngineTest {
         if (engine != null) {
             engine.shutdown();
         }
+    }
+    
+    @Test
+    public void test() {
+        TpcEngine.Configuration configuration = new TpcEngine.Configuration();
+        int eventloopCount = 5;
+        configuration.setEventloopCount(eventloopCount);
+        configuration.setEventloopType(Eventloop.Type.NIO);
+
+        engine = new TpcEngine(configuration);
+
+        assertEquals(eventloopCount, engine.eventloopCount());
+        assertEquals(Eventloop.Type.NIO, engine.eventloopType());
     }
 
     // ===================== start =======================

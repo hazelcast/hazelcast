@@ -24,7 +24,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
 
-import static com.hazelcast.internal.alto.util.Util.epochNanos;
+import static com.hazelcast.internal.tpc.util.Util.epochNanos;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**

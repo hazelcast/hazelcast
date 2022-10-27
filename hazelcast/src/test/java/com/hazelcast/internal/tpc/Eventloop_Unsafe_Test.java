@@ -1,6 +1,5 @@
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.Eventloop;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -8,9 +7,7 @@ import org.junit.Test;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.test.HazelcastTestSupport.assertEqualsEventually;
-import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static org.junit.Assert.assertEquals;
 
 public abstract class Eventloop_Unsafe_Test {
 

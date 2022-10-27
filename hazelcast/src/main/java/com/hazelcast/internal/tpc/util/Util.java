@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.alto.util;
+package com.hazelcast.internal.tpc.util;
 
+import java.nio.ByteBuffer;
 import java.time.Instant;
 
 public class Util {
@@ -33,5 +34,19 @@ public class Util {
         long nanosFromSecond = now.getNano();
 
         return (seconds * 1_000_000_000) + nanosFromSecond;
+    }
+
+    public static void put(ByteBuffer dst, ByteBuffer src) {
+        if (src.remaining() <= dst.remaining()) {
+            // there is enough space in the dst buffer to copy the src
+            dst.put(src);
+        } else {
+            // there is not enough space in the dst buffer, so we need to
+            // copy as much as we can.
+            int srcOldLimit = src.limit();
+            src.limit(src.position() + dst.remaining());
+            dst.put(src);
+            src.limit(srcOldLimit);
+        }
     }
 }

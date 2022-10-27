@@ -12,6 +12,11 @@ import org.junit.runner.RunWith;
 public class NioEventloopTest extends EventloopTest {
 
     @Override
+    public Eventloop.Type getType() {
+        return Eventloop.Type.NIO;
+    }
+
+    @Override
     public Eventloop createEventloop() {
         return new NioEventloop();
     }
