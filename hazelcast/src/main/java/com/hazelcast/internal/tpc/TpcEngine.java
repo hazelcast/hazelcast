@@ -57,7 +57,7 @@ public final class TpcEngine {
     /**
      * Creates an TpcEngine with the given Configuration.
      *
-     * @param engineCfg the Configuration.
+     * @param engineCfg the Configuration for the TpcEngine.
      * @throws NullPointerException when configuration is null.
      */
     public TpcEngine(Configuration engineCfg) {
@@ -68,14 +68,7 @@ public final class TpcEngine {
         this.terminationLatch = new CountDownLatch(eventloopCount);
 
         for (int idx = 0; idx < eventloopCount; idx++) {
-            switch (engineCfg.eventloopConfiguration.type) {
-                case NIO:
-                    eventloops[idx] = new NioEventloop((NioConfiguration) eventloopCfg);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unknown eventLoopCfg:" + eventloopCfg);
-
-            }
+            eventloops[idx] = eventloopCfg.create();
             eventloops[idx].engine = this;
         }
     }
