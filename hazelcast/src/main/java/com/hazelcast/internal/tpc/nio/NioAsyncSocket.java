@@ -347,6 +347,8 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     @Override
     public CompletableFuture<AsyncSocket> connect(SocketAddress address) {
+        checkNotNull(address, "address can't be null");
+
         if (logger.isInfoEnabled()) {
             logger.info("Connect to address:" + address);
         }
