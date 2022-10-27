@@ -115,5 +115,10 @@ public final class NioEventloop extends Eventloop {
         public NioConfiguration() {
             super(Type.NIO);
         }
+
+        @Override
+        public Eventloop create() {
+            return new NioEventloop(this);
+        }
     }
 }

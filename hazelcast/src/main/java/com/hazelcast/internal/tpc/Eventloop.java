@@ -435,6 +435,8 @@ public abstract class Eventloop implements Executor {
             this.type = type;
         }
 
+        public abstract Eventloop create();
+
         /**
          * Sets the ThreadFactory used to create the Thread that runs the {@link Eventloop}.
          *
@@ -482,6 +484,8 @@ public abstract class Eventloop implements Executor {
         public final void setSchedulerSupplier(Supplier<Scheduler> schedulerSupplier) {
             this.schedulerSupplier = checkNotNull(schedulerSupplier);
         }
+
+
     }
 
     protected static final class ScheduledTask implements Runnable, Comparable<ScheduledTask> {
