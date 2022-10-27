@@ -18,6 +18,8 @@ package com.hazelcast.map.impl.operation.steps.engine;
 
 import javax.annotation.Nullable;
 
+import static com.hazelcast.spi.impl.executionservice.ExecutionService.MAP_STORE_OFFLOADABLE_EXECUTOR;
+
 /**
  * Represents an isolated step of an operation. e.g.
  * {@link  com.hazelcast.map.impl.operation.PutOperation}
@@ -52,5 +54,13 @@ public interface Step<S> {
      */
     default boolean isOffloadStep() {
         return false;
+    }
+
+    /**
+     * @param state the state object
+     * @return name of executor to run
+     */
+    default String getExecutorName(S state) {
+        return MAP_STORE_OFFLOADABLE_EXECUTOR;
     }
 }

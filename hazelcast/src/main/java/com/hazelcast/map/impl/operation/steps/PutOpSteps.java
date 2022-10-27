@@ -28,6 +28,8 @@ import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 import com.hazelcast.map.impl.recordstore.StaticParams;
 
+import static com.hazelcast.map.impl.record.Record.UNSET;
+
 public enum PutOpSteps implements Step<State> {
 
     READ() {
@@ -38,6 +40,10 @@ public enum PutOpSteps implements Step<State> {
 
         @Override
         public Step nextStep(State state) {
+            if (!state.getStaticParams().isLoad()) {
+                return PutOpSteps.PROCESS;
+            }
+
             return state.getOldValue() == null
                     ? PutOpSteps.LOAD : PutOpSteps.PROCESS;
         }
@@ -167,7 +173,7 @@ public enum PutOpSteps implements Step<State> {
             if (record == null) {
                 record = recordStore.createRecord(state.getKey(), state.getNewValue(), state.getNow());
                 recordStore.putMemory(record, state.getKey(), state.getOldValue(),
-                        state.getTtl(), state.getMaxIdle(), state.getExpiryTime(),
+                        state.getTtl(), state.getMaxIdle(), UNSET,
                         state.getNow(), EntryEventType.ADDED, state.getStaticParams().isBackup());
             } else {
                 // To heap copy and state object update are
@@ -176,7 +182,7 @@ public enum PutOpSteps implements Step<State> {
                         ? record.getValue() : mapServiceContext.toData(record.getValue()));
                 recordStore.updateRecord0(record, state.getNow(), state.getStaticParams().isCountAsAccess());
                 recordStore.updateMemory(record, state.getKey(), state.getOldValue(), state.getNewValue(),
-                        state.isChangeExpiryOnUpdate(), state.getTtl(), state.getMaxIdle(), state.getExpiryTime(),
+                        state.isChangeExpiryOnUpdate(), state.getTtl(), state.getMaxIdle(), UNSET,
                         state.getNow(), state.getStaticParams().isBackup());
             }
 

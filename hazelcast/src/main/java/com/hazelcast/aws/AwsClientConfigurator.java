@@ -55,18 +55,18 @@ final class AwsClientConfigurator {
 
         AwsCredentialsProvider credentialsProvider = new AwsCredentialsProvider(awsConfig, metadataApi, environment);
         AwsEc2Api ec2Api = createEc2Api(awsConfig, region);
+        AwsEcsApi ecsApi = createEcsApi(awsConfig, region);
 
         // EC2 Discovery
         if (explicitlyEc2Configured(awsConfig) || (!explicitlyEcsConfigured(awsConfig) && !environment.isRunningOnEcs())) {
             logEc2Environment(awsConfig, region);
-            return new AwsEc2Client(ec2Api, metadataApi, credentialsProvider);
+            return new AwsEc2Client(ec2Api, ecsApi, metadataApi, credentialsProvider, awsConfig);
         }
 
         // ECS Discovery
         String cluster = resolveCluster(awsConfig, metadataApi, environment);
-        AwsEcsApi ecsApi = createEcsApi(awsConfig, region);
         logEcsEnvironment(awsConfig, region, cluster);
-        return new AwsEcsClient(cluster, ecsApi, ec2Api, metadataApi, credentialsProvider);
+        return new AwsEcsClient(cluster, awsConfig, ecsApi, ec2Api, metadataApi, credentialsProvider);
     }
 
     static String resolveRegion(AwsConfig awsConfig, AwsMetadataApi metadataApi, Environment environment) {

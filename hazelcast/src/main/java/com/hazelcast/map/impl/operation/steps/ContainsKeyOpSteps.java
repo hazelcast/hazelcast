@@ -29,6 +29,7 @@ public enum ContainsKeyOpSteps implements Step<State> {
         public void runStep(State state) {
             RecordStore recordStore = state.getRecordStore();
             Record record = recordStore.getRecordOrNull(state.getKey());
+
             if (record != null) {
                 state.setOldValue(record.getValue());
                 recordStore.accessRecord(state.getKey(), record, state.getNow());
@@ -68,6 +69,10 @@ public enum ContainsKeyOpSteps implements Step<State> {
                     state.getOldValue(), false, state.getCallerAddress());
             record = recordStore.evictIfExpired(state.getKey(), state.getNow(), false) ? null : record;
             state.setOldValue(record == null ? null : record.getValue());
+
+            if (record != null) {
+                recordStore.accessRecord(state.getKey(), record, state.getNow());
+            }
         }
 
         @Override

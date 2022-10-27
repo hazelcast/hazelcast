@@ -497,6 +497,13 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     }
 
     /**
+     * Returns the count of {@link ExecutionContext} that are running on given {@code instance}.
+     */
+    public static int getExecutionContextCount(HazelcastInstance instance) {
+        return getJetServiceBackend(instance).getJobExecutionService().getExecutionContexts().size();
+    }
+
+    /**
      * Asserts that the {@code job} is already visible by {@linkplain JetService#getJob} methods.
      * @param client Hazelcast Instance used to query the cluster
      * @param jobToCheck job to be checked for visibility
