@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.connector;
 
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.test.TestStreamSqlConnector;
-import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -85,12 +84,6 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                         new Row(timestampTz(2L), timestampTz(2L))
                 )
         );
-
-        for (SqlRow r : sqlService.execute("SELECT * FROM s1 JOIN s2 ON s2.b BETWEEN s1.a AND s1.a + INTERVAL '0.002' SECOND")) {
-            System.out.println(r);
-        }
-
-        sqlService.execute("insert into m SELECT * FROM s1 JOIN s2 ON s2.b BETWEEN s1.a AND s1.a + INTERVAL '0.002' SECOND");
     }
 
     @Test
