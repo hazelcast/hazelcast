@@ -30,7 +30,6 @@ public abstract class AsyncSocketTest {
         assertTrue(socket.isClosed());
     }
 
-
     @Test
     public void close_whenNotActivated_andAlreadyClosed(){
         AsyncSocket socket = createAsyncSocket();
