@@ -16,18 +16,14 @@
 
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.util.ThreadAffinity;
-import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.internal.tpc.nio.NioEventloop;
 import com.hazelcast.internal.tpc.nio.NioEventloop.NioConfiguration;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
 import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.function.Consumer;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
@@ -45,11 +41,11 @@ import static java.lang.System.getProperty;
 public final class TpcEngine {
 
     private final ILogger logger = Logger.getLogger(getClass());
-    private final Eventloop.Type eventloopType;
     private final int eventloopCount;
     private final Eventloop[] eventloops;
     private final AtomicReference<State> state = new AtomicReference<>(NEW);
     final CountDownLatch terminationLatch;
+    private final Configuration engineCfg;
 
     /**
      * Creates an TpcEngine with the default {@link Configuration}.
@@ -61,36 +57,24 @@ public final class TpcEngine {
     /**
      * Creates an TpcEngine with the given Configuration.
      *
-     * @param cfg the Configuration.
+     * @param engineCfg the Configuration.
      * @throws NullPointerException when configuration is null.
      */
-    public TpcEngine(Configuration cfg) {
-        this.eventloopCount = cfg.eventloopCount;
-        this.eventloopType = cfg.eventloopType;
+    public TpcEngine(Configuration engineCfg) {
+        this.engineCfg = engineCfg;
+        this.eventloopCount = engineCfg.eventloopCount;
+        Eventloop.Configuration eventloopCfg = engineCfg.eventloopConfiguration;
         this.eventloops = new Eventloop[eventloopCount];
         this.terminationLatch = new CountDownLatch(eventloopCount);
 
         for (int idx = 0; idx < eventloopCount; idx++) {
-            switch (eventloopType) {
+            switch (engineCfg.eventloopConfiguration.type) {
                 case NIO:
-                    NioConfiguration nioCfg = new NioConfiguration();
-                    nioCfg.setThreadAffinity(cfg.threadAffinity);
-                    nioCfg.setThreadName("eventloop-" + idx);
-                    nioCfg.setThreadFactory(cfg.threadFactory);
-                    if (cfg.spin != null) {
-                        nioCfg.setSpin(cfg.spin);
-                    }
-                    if (cfg.localRunQueueCapacity != null) {
-                        nioCfg.setLocalRunQueueCapacity(cfg.localRunQueueCapacity);
-                    }
-                    if (cfg.concurrentRunQueueCapacity != null) {
-                        nioCfg.setConcurrentRunQueueCapacity(cfg.concurrentRunQueueCapacity);
-                    }
-                    cfg.eventloopConfigUpdater.accept(nioCfg);
-                    eventloops[idx] = new NioEventloop(nioCfg);
+                    eventloops[idx] = new NioEventloop((NioConfiguration) eventloopCfg);
                     break;
                 default:
-                    throw new IllegalStateException("Unknown eventloopType:" + eventloopType);
+                    throw new IllegalArgumentException("Unknown eventLoopCfg:" + eventloopCfg);
+
             }
             eventloops[idx].engine = this;
         }
@@ -113,7 +97,7 @@ public final class TpcEngine {
      * @return the type of Eventloop.
      */
     public Eventloop.Type eventloopType() {
-        return eventloopType;
+        return engineCfg.eventloopConfiguration.type;
     }
 
     /**
@@ -152,7 +136,7 @@ public final class TpcEngine {
      * @throws IllegalStateException if
      */
     public void start() {
-        logger.info("Starting " + eventloopCount + " eventloops of type [" + eventloopType + "]");
+        logger.info("Starting " + eventloopCount + " eventloops of type [" + eventloopType() + "]");
 
         for (; ; ) {
             State oldState = state.get();
@@ -231,41 +215,10 @@ public final class TpcEngine {
      */
     public static class Configuration {
         private int eventloopCount = Integer.parseInt(getProperty("hazelcast.tpc.eventloop.count", "" + Runtime.getRuntime().availableProcessors()));
-        private Eventloop.Type eventloopType = Eventloop.Type.fromString(getProperty("hazelcast.tpc.eventloop.type", "nio"));
-        private ThreadAffinity threadAffinity = ThreadAffinity.newSystemThreadAffinity("hazelcast.tpc.eventloop.cpu-affinity");
-        private ThreadFactory threadFactory = HazelcastManagedThread::new;
-        private Consumer<Eventloop.Configuration> eventloopConfigUpdater = configuration -> {
-        };
-        private Boolean spin;
-        private Integer localRunQueueCapacity;
-        private Integer concurrentRunQueueCapacity;
+        private Eventloop.Configuration eventloopConfiguration = new NioConfiguration();
 
-        public void setThreadAffinity(ThreadAffinity threadAffinity) {
-            this.threadAffinity = threadAffinity;
-        }
-
-        public void setLocalRunQueueCapacity(int localRunQueueCapacity) {
-            this.localRunQueueCapacity = checkPositive("localRunQueueCapacity", localRunQueueCapacity);
-        }
-
-        public void setConcurrentRunQueueCapacity(int concurrentRunQueueCapacity) {
-            this.concurrentRunQueueCapacity = checkPositive("concurrentRunQueueCapacity", concurrentRunQueueCapacity);
-        }
-
-        public final void setSpin(boolean spin) {
-            this.spin = spin;
-        }
-
-        public void setThreadFactory(ThreadFactory threadFactory) {
-            this.threadFactory = checkNotNull(threadFactory, "threadFactory can't be null");
-        }
-
-        public void setEventloopType(Eventloop.Type eventloopType) {
-            this.eventloopType = checkNotNull(eventloopType, "eventloopType can't be null");
-        }
-
-        public void setEventloopConfigUpdater(Consumer<Eventloop.Configuration> eventloopConfigUpdater) {
-            this.eventloopConfigUpdater = eventloopConfigUpdater;
+        public void setEventloopConfiguration(Eventloop.Configuration eventloopConfiguration) {
+            this.eventloopConfiguration = checkNotNull(eventloopConfiguration, "eventloopConfiguration can't be null");
         }
 
         public void setEventloopCount(int eventloopCount) {

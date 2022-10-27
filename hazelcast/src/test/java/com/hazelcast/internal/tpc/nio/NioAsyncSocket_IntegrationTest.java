@@ -37,12 +37,12 @@ public class NioAsyncSocket_IntegrationTest {
     @Before
     public void before() {
         NioEventloop.NioConfiguration clientConfig = new NioEventloop.NioConfiguration();
-        clientConfig.setThreadName("client-eventloop");
+        clientConfig.setThreadNameSupplier(() -> "client-eventloop");
         clientEventloop = new NioEventloop(clientConfig);
         clientEventloop.start();
 
         NioEventloop.NioConfiguration serverConfig = new NioEventloop.NioConfiguration();
-        serverConfig.setThreadName("server-eventloop");
+        serverConfig.setThreadNameSupplier(() -> "server-eventloop");
         serverEventloop = new NioEventloop(serverConfig);
         serverEventloop.start();
     }

@@ -83,9 +83,9 @@ public class TpcServerBootstrap {
         }
 
         TpcEngine.Configuration configuration = new TpcEngine.Configuration();
-        configuration.setThreadFactory(AltoEventloopThread::new);
-        configuration.setEventloopType(Eventloop.Type.NIO);
-
+        NioEventloop.NioConfiguration eventloopConfiguration = new NioEventloop.NioConfiguration();
+        eventloopConfiguration.setThreadFactory(AltoEventloopThread::new);
+        configuration.setEventloopConfiguration(eventloopConfiguration);
         return new TpcEngine(configuration);
     }
 
