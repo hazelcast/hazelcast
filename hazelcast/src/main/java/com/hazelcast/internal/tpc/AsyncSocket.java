@@ -50,6 +50,7 @@ public abstract class AsyncSocket implements Closeable {
 
     protected volatile SocketAddress remoteAddress;
     protected volatile SocketAddress localAddress;
+    protected boolean clientSide;
     private CloseListener closeListener;
     private Executor closeExecutor;
 
@@ -123,6 +124,7 @@ public abstract class AsyncSocket implements Closeable {
         return localAddress;
     }
 
+    // TODO: This option only makes sense for blocking sockets according to StandardSocketOptions.SO_LINGER
     public abstract void soLinger(int soLinger);
 
     public abstract int soLinger();
@@ -293,6 +295,10 @@ public abstract class AsyncSocket implements Closeable {
 
     @Override
     public final String toString() {
-        return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
+        if (clientSide) {
+            return getClass().getSimpleName() + "[" + localAddress + "->" + remoteAddress + "]";
+        } else {
+            return getClass().getSimpleName() + "[" + remoteAddress + "->" + localAddress + "]";
+        }
     }
 }

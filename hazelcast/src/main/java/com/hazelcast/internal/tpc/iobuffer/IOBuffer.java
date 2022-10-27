@@ -206,6 +206,10 @@ public class IOBuffer {
         buff.putLong(value);
     }
 
+    public void write(ByteBuffer src) {
+        write(src, src.remaining());
+    }
+
     public void write(ByteBuffer src, int count) {
         ensureRemaining(count);
 

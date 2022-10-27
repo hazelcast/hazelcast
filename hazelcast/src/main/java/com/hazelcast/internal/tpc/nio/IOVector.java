@@ -24,7 +24,7 @@ import java.nio.channels.SocketChannel;
 import java.util.Queue;
 
 /**
- * Contains logic to do vectorized I/O (so instead of passing a single buffer, an array of buffer is passed).
+ * Contains logic to do vectorized I/O (so instead of passing a single buffer, an array of buffer is passed to socket.write).
  */
 public final class IOVector {
 
@@ -81,6 +81,7 @@ public final class IOVector {
 
     void compact(long written) {
         if (written == pending) {
+            // everything was written
             for (int k = 0; k < size; k++) {
                 array[k] = null;
                 bufs[k].release();
@@ -89,6 +90,7 @@ public final class IOVector {
             size = 0;
             pending = 0;
         } else {
+            // not everything was written
             int toIndex = 0;
             int length = size;
             for (int k = 0; k < length; k++) {

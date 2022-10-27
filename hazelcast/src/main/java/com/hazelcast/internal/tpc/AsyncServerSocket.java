@@ -21,6 +21,7 @@ import com.hazelcast.logging.Logger;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.SocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -54,12 +55,40 @@ public abstract class AsyncServerSocket implements Closeable {
 
     protected abstract SocketAddress getLocalAddress0() throws Exception;
 
+    /**
+     * Checks if the SO_REUSEPORT option has been set.
+     *
+     * When SO_REUSEPORT isn't supported, false is returned.
+     *
+     * @return true if SO_REUSEPORT is enabled.
+     * @throws UncheckedIOException if something goes wrong.
+     */
     public abstract boolean isReusePort();
 
-    public abstract void setReusePort(boolean reusePort);
+    /**
+     * Sets the SO_REUSEPORT option.
+     * <p/>
+     * It could be that this call is ignored (e.g. Nio + Java 8).
+     *
+     * @param reusePort if the SO_REUSEPORT option should be enabled.
+     * @throws UncheckedIOException if something goes wrong.
+     */
+    public abstract void reusePort(boolean reusePort);
 
+    /**
+     * Checks if the SO_REUSEADDR option has been set.
+     *
+     * @return true if SO_REUSEADDR is enabled.
+     * @throws UncheckedIOException if something goes wrong.
+     */
     public abstract boolean isReuseAddress();
 
+    /**
+     * Sets the SO_REUSEADDR option.
+     *
+     * @param reuseAddress if the SO_REUSEADDR option should be enabled.
+     * @throws UncheckedIOException if something goes wrong.
+     */
     public abstract void reuseAddress(boolean reuseAddress);
 
     public abstract void receiveBufferSize(int size);

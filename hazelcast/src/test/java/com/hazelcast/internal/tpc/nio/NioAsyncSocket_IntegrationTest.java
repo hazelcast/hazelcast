@@ -1,9 +1,6 @@
 package com.hazelcast.internal.tpc.nio;
 
-import com.hazelcast.internal.tpc.nio.NioAsyncReadHandler;
-import com.hazelcast.internal.tpc.nio.NioAsyncServerSocket;
-import com.hazelcast.internal.tpc.nio.NioAsyncSocket;
-import com.hazelcast.internal.tpc.nio.NioEventloop;
+
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
@@ -34,18 +31,32 @@ public class NioAsyncSocket_IntegrationTest {
 
     private NioEventloop clientEventloop;
     private NioEventloop serverEventloop;
+    private NioAsyncSocket clientSocket;
+    private NioAsyncServerSocket serverSocket;
 
     @Before
     public void before() {
-        clientEventloop = new NioEventloop();
+        NioEventloop.NioConfiguration clientConfig = new NioEventloop.NioConfiguration();
+        clientConfig.setThreadName("client-eventloop");
+        clientEventloop = new NioEventloop(clientConfig);
         clientEventloop.start();
 
-        serverEventloop = new NioEventloop();
+        NioEventloop.NioConfiguration serverConfig = new NioEventloop.NioConfiguration();
+        serverConfig.setThreadName("server-eventloop");
+        serverEventloop = new NioEventloop(serverConfig);
         serverEventloop.start();
     }
 
     @After
     public void after() throws InterruptedException {
+        if (clientSocket != null) {
+            clientSocket.close();
+        }
+
+        if (serverSocket != null) {
+            serverSocket.close();
+        }
+
         if (clientEventloop != null) {
             clientEventloop.shutdown();
             clientEventloop.awaitTermination(10, SECONDS);
@@ -61,7 +72,7 @@ public class NioAsyncSocket_IntegrationTest {
     public void test() throws InterruptedException {
         SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
 
-        NioAsyncServerSocket serverSocket = newServer(serverAddress);
+        serverSocket = newServer(serverAddress);
 
         CountDownLatch latch = new CountDownLatch(concurrency);
 
@@ -84,7 +95,7 @@ public class NioAsyncSocket_IntegrationTest {
 
     @NotNull
     private NioAsyncSocket newClient(SocketAddress serverAddress, CountDownLatch latch) {
-        NioAsyncSocket clientSocket = NioAsyncSocket.open();
+        clientSocket = NioAsyncSocket.open();
         clientSocket.tcpNoDelay(true);
         clientSocket.readHandler(new NioAsyncReadHandler() {
             private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
@@ -122,6 +133,7 @@ public class NioAsyncSocket_IntegrationTest {
         serverSocket.listen(10);
         serverSocket.accept(socket -> {
             socket.tcpNoDelay(true);
+            socket.soLinger(-1);
             socket.readHandler(new NioAsyncReadHandler() {
                 private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
 
