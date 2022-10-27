@@ -17,6 +17,7 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.nio.Bits.BYTES_INT;
 import static com.hazelcast.internal.nio.Bits.BYTES_LONG;
@@ -41,12 +42,12 @@ public class NioAsyncSocket_LargePayloadTest {
     @Before
     public void before() {
         NioEventloop.NioConfiguration clientConfig = new NioEventloop.NioConfiguration();
-        clientConfig.setThreadName("client-eventloop");
+        clientConfig.setThreadNameSupplier(() -> "client-eventloop");
         clientEventloop = new NioEventloop(clientConfig);
         clientEventloop.start();
 
         NioEventloop.NioConfiguration serverConfig = new NioEventloop.NioConfiguration();
-        serverConfig.setThreadName("server-eventloop");
+        serverConfig.setThreadNameSupplier(() -> "server-eventloop");
         serverEventloop = new NioEventloop(serverConfig);
         serverEventloop.start();
     }
