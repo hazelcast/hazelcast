@@ -786,7 +786,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         private final RelNode rootRel;
         private String message;
 
-        public ExecutionStopperFinder(RelNode rootRel) {
+        ExecutionStopperFinder(RelNode rootRel) {
             this.rootRel = rootRel;
         }
 
