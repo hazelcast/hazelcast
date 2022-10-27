@@ -152,7 +152,7 @@ public final class TpcEngine {
      * @throws IllegalStateException if
      */
     public void start() {
-        logger.info("Starting " + eventloopCount + " eventloops");
+        logger.info("Starting " + eventloopCount + " eventloops of type [" + eventloopType + "]");
 
         for (; ; ) {
             State oldState = state.get();
@@ -160,15 +160,13 @@ public final class TpcEngine {
                 throw new IllegalStateException("Can't start TpcEngine, it isn't in NEW state.");
             }
 
-            if (!state.compareAndSet(oldState, RUNNING)) {
-                continue;
+            if (state.compareAndSet(oldState, RUNNING)) {
+                break;
             }
+        }
 
-            for (Eventloop eventloop : eventloops) {
-                eventloop.start();
-            }
-
-            return;
+        for (Eventloop eventloop : eventloops) {
+            eventloop.start();
         }
     }
 

@@ -1,7 +1,5 @@
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.AsyncSocket;
-import com.hazelcast.internal.tpc.Eventloop;
 import org.junit.After;
 import org.junit.Test;
 

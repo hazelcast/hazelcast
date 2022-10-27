@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.alto.util;
+package com.hazelcast.internal.tpc.util;
 
 import java.util.Queue;
 

@@ -20,23 +20,40 @@ import com.hazelcast.internal.tpc.AsyncServerSocket;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.lang.reflect.Field;
 import java.net.SocketAddress;
+import java.net.SocketOption;
+import java.net.StandardSocketOptions;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static java.net.StandardSocketOptions.SO_RCVBUF;
 import static java.net.StandardSocketOptions.SO_REUSEADDR;
-import static java.net.StandardSocketOptions.SO_REUSEPORT;
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
 
 /**
  * Nio version of the {@link AsyncServerSocket}.
  */
 public final class NioAsyncServerSocket extends AsyncServerSocket {
+
+    // This option is available since Java 9, so we need to use reflection.
+    private final static SocketOption SO_REUSEPORT;
+
+    static {
+        SocketOption value = null;
+        try {
+            Field field = StandardSocketOptions.class.getField("SO_REUSEPORT");
+            value = (SocketOption) field.get(null);
+        } catch (Exception ignore) {
+        }
+        SO_REUSEPORT = value;
+    }
 
     private final ServerSocketChannel serverSocketChannel;
     private final Selector selector;
@@ -89,23 +106,28 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
 
     @Override
     public boolean isReusePort() {
-        // Not available on Java 8; probably use reflection to get this fixed.
-//        try {
-//            return serverSocketChannel.getOption(SO_REUSEPORT);
-//        } catch (IOException e) {
-//            throw new UncheckedIOException(e);
-//        }
-        return false;
+        if (SO_REUSEPORT == null) {
+            return false;
+        }
+
+        try {
+            return (Boolean) serverSocketChannel.getOption(SO_REUSEPORT);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
-    public void setReusePort(boolean reusePort) {
-        // Not available on Java 8; probably use reflection to get this fixed.
-//        try {
-//            serverSocketChannel.setOption(SO_REUSEPORT, reusePort);
-//        } catch (IOException e) {
-//            throw new UncheckedIOException(e);
-//        }
+    public void reusePort(boolean reusePort) {
+        if (SO_REUSEPORT == null) {
+            return;
+        }
+
+        try {
+            serverSocketChannel.setOption(SO_REUSEPORT, reusePort);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
     }
 
     @Override
@@ -146,7 +168,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
 
     @Override
     protected void doClose() {
-        closeResource(serverSocketChannel);
+        closeResource(serverSocketChannel.socket());
         eventloop.deregisterResource(this);
     }
 
@@ -169,9 +191,11 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     public void accept(Consumer<NioAsyncSocket> consumer) {
-        eventloop.offer(() -> {
+        CountDownLatch latch = new CountDownLatch(1);
+
+        Runnable acceptTask = () -> {
             try {
-                serverSocketChannel.register(selector, OP_ACCEPT, new EventloopHandler(consumer));
+                serverSocketChannel.register(selector, OP_ACCEPT, new AcceptHandler(consumer));
 
                 if (logger.isInfoEnabled()) {
                     logger.info(eventloopThread.getName() + " ServerSocket listening at "
@@ -179,15 +203,27 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
                 }
             } catch (IOException e) {
                 throw new UncheckedIOException("Failed to accept", e);
+            } finally {
+                latch.countDown();
             }
-        });
+        };
+
+        if (!eventloop.offer(acceptTask)) {
+            throw new RuntimeException("Failed to offer accept task");
+        }
+
+        try {
+            latch.await(10, TimeUnit.SECONDS);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    private class EventloopHandler implements NioSelectedKeyListener {
+    private class AcceptHandler implements NioSelectedKeyListener {
 
         private final Consumer<NioAsyncSocket> consumer;
 
-        private EventloopHandler(Consumer<NioAsyncSocket> consumer) {
+        private AcceptHandler(Consumer<NioAsyncSocket> consumer) {
             this.consumer = consumer;
         }
 
@@ -200,6 +236,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         public void handle(SelectionKey key) throws IOException {
             SocketChannel socketChannel = serverSocketChannel.accept();
             NioAsyncSocket socket = new NioAsyncSocket(socketChannel);
+
             consumer.accept(socket);
 
             if (logger.isInfoEnabled()) {
