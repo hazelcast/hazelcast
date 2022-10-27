@@ -41,6 +41,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
+import java.util.function.Supplier;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResources;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -107,13 +108,13 @@ public abstract class Eventloop implements Executor {
     public Eventloop(Configuration config, Type type) {
         this.type = checkNotNull(type);
         this.spin = config.spin;
-        this.scheduler = config.scheduler;
+        this.scheduler = config.schedulerSupplier.get();
         this.localRunQueue = new CircularQueue<>(config.localRunQueueCapacity);
         this.concurrentRunQueue = new MpmcArrayQueue(config.concurrentRunQueueCapacity);
         scheduler.init(this);
         this.eventloopThread = config.threadFactory.newThread(new EventloopTask());
-        if (config.threadName != null) {
-            eventloopThread.setName(config.threadName);
+        if (config.threadNameSupplier != null) {
+            eventloopThread.setName(config.threadNameSupplier.get());
         }
 
         this.allowedCpus = config.threadAffinity == null ? null : config.threadAffinity.nextAllowedCpus();
@@ -418,23 +419,42 @@ public abstract class Eventloop implements Executor {
     }
 
     /**
-     * Contains the Configuration for the {@link Eventloop}.
+     * Contains the Configuration for {@link Eventloop} instances.
      */
-    public static class Configuration {
+    public static abstract class Configuration {
+        protected final Type type;
         private boolean spin = Boolean.parseBoolean(getProperty("hazelcast.tpc.eventloop.spin", "false"));
-        private Scheduler scheduler = new NopScheduler();
+        private Supplier<Scheduler> schedulerSupplier = NopScheduler::new;
         private int localRunQueueCapacity = 1024;
         private int concurrentRunQueueCapacity = 4096;
-        private String threadName;
+        private Supplier<String> threadNameSupplier;
         private ThreadAffinity threadAffinity;
         private ThreadFactory threadFactory = HazelcastManagedThread::new;
 
+        protected Configuration(Type type) {
+            this.type = type;
+        }
+
+        /**
+         * Sets the ThreadFactory used to create the Thread that runs the {@link Eventloop}.
+         *
+         * @param threadFactory the ThreadFactory
+         * @throws NullPointerException
+         */
         public void setThreadFactory(ThreadFactory threadFactory) {
             this.threadFactory = checkNotNull(threadFactory, "threadFactory");
         }
 
-        public void setThreadName(String threadName) {
-            this.threadName = threadName;
+        /**
+         * Sets the supplier for the thread name. If configured, the thread name is set
+         * after the thread is created.
+         *
+         * If null, there is no thread name supplier and the default is used.
+         *
+         * @param threadNameSupplier the supplier for the thread name.
+         */
+        public void setThreadNameSupplier(Supplier<String> threadNameSupplier) {
+            this.threadNameSupplier = threadNameSupplier;
         }
 
         /**
@@ -459,8 +479,8 @@ public abstract class Eventloop implements Executor {
             this.spin = spin;
         }
 
-        public final void setScheduler(Scheduler scheduler) {
-            this.scheduler = checkNotNull(scheduler);
+        public final void setSchedulerSupplier(Supplier<Scheduler> schedulerSupplier) {
+            this.schedulerSupplier = checkNotNull(schedulerSupplier);
         }
     }
 
