@@ -56,6 +56,7 @@ public class TpcServerBootstrap {
     private boolean tcpNoDelay = true;
     private int receiveBufferSize = 128 * 1024;
     private int sendBufferSize = 128 * 1024;
+    private String tpcPorts;
 
     public TpcServerBootstrap(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -75,6 +76,10 @@ public class TpcServerBootstrap {
 
     public TpcEngine getTpcEngine() {
         return tpcEngine;
+    }
+
+    public String getClientPorts() {
+        return tpcPorts;
     }
 
     private TpcEngine newTpcEngine() {
@@ -105,6 +110,17 @@ public class TpcServerBootstrap {
             default:
                 throw new IllegalStateException("Unknown eventloopType:" + eventloopType);
         }
+
+        StringBuffer sb = new StringBuffer();
+        boolean first = true;
+        for (AsyncServerSocket serverSocket : serverSockets) {
+            if (!first) {
+                sb.append(',');
+            }
+            first = false;
+            sb.append(serverSocket.localPort());
+        }
+        tpcPorts = sb.toString();
     }
 
     private void startNio() {
@@ -160,22 +176,5 @@ public class TpcServerBootstrap {
         }
 
         logger.info("TcpBootstrap terminated");
-    }
-
-    public String getClientPorts() {
-        if (!enabled) {
-            return null;
-        }
-
-        StringBuffer sb = new StringBuffer();
-        boolean first = true;
-        for (AsyncServerSocket serverSocket : serverSockets) {
-            if (!first) {
-                sb.append(',');
-            }
-            first = false;
-            sb.append(serverSocket.localPort());
-        }
-        return sb.toString();
     }
 }
