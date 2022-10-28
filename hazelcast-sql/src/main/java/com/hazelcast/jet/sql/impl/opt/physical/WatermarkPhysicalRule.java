@@ -48,6 +48,6 @@ final class WatermarkPhysicalRule extends RelOptRule implements TransformationRu
                         rel.getCluster(),
                         toPhysicalConvention(rel.getTraitSet()),
                         rel.getRowType(),
-                        "Multiple ordering functions are not supported"));
+                        "IMPOSE_ORDER call is not supported in this configuration"));
     }
 }
