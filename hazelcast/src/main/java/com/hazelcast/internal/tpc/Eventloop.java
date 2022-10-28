@@ -435,13 +435,18 @@ public abstract class Eventloop implements Executor {
             this.type = type;
         }
 
+        /**
+         * Creates the Eventloop based on this Configuration.
+         *
+         * @return the created Eventloop.
+         */
         public abstract Eventloop create();
 
         /**
          * Sets the ThreadFactory used to create the Thread that runs the {@link Eventloop}.
          *
          * @param threadFactory the ThreadFactory
-         * @throws NullPointerException
+         * @throws NullPointerException if threadFactory is null.
          */
         public void setThreadFactory(ThreadFactory threadFactory) {
             this.threadFactory = checkNotNull(threadFactory, "threadFactory");
@@ -450,7 +455,7 @@ public abstract class Eventloop implements Executor {
         /**
          * Sets the supplier for the thread name. If configured, the thread name is set
          * after the thread is created.
-         *
+         * <p/>
          * If null, there is no thread name supplier and the default is used.
          *
          * @param threadNameSupplier the supplier for the thread name.
@@ -484,8 +489,6 @@ public abstract class Eventloop implements Executor {
         public final void setSchedulerSupplier(Supplier<Scheduler> schedulerSupplier) {
             this.schedulerSupplier = checkNotNull(schedulerSupplier);
         }
-
-
     }
 
     protected static final class ScheduledTask implements Runnable, Comparable<ScheduledTask> {
@@ -572,7 +575,7 @@ public abstract class Eventloop implements Executor {
          * Offers a task to be scheduled on the eventloop.
          *
          * @param task the task to schedule.
-         * @return true if the task was accepted, false otherwise.
+         * @return true if the task was successfully offered, false otherwise.
          */
         public boolean offer(Runnable task) {
             return localRunQueue.offer(task);
