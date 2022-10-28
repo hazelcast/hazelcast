@@ -547,7 +547,9 @@ public abstract class Eventloop implements Executor {
                     logger.warning(Thread.currentThread().getName() + " affinity was not applied successfully. "
                             + "Expected CPUs:" + allowedCpus + ". Actual CPUs:" + actualCpus);
                 } else {
-                    logger.info(Thread.currentThread().getName() + " has affinity for CPUs:" + allowedCpus);
+                    if (logger.isFineEnabled()) {
+                        logger.fine(Thread.currentThread().getName() + " has affinity for CPUs:" + allowedCpus);
+                    }
                 }
             }
         }
