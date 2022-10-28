@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.nio.NioEventloop;
 import com.hazelcast.internal.tpc.nio.NioEventloop.NioConfiguration;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
