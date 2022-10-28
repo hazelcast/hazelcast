@@ -16,14 +16,17 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.StaticMemberNodeContext;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.ClusterProperty;
+import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -53,6 +56,10 @@ public class Invocation_OnMemberLeftTest extends HazelcastTestSupport {
     private OperationServiceImpl localOperationService;
     private InvocationMonitor localInvocationMonitor;
     private HazelcastInstance remote;
+
+    private HazelcastInstance master;
+    private HazelcastInstance notMaster;
+
     private MemberImpl remoteMember;
     private TestHazelcastInstanceFactory instanceFactory;
 
@@ -68,6 +75,11 @@ public class Invocation_OnMemberLeftTest extends HazelcastTestSupport {
         localInvocationMonitor = localOperationService.getInvocationMonitor();
 
         remote = cluster[1];
+        ClusterService localClusterService = Accessors.getClusterService(cluster[0]);
+        Address masterAddress = localClusterService.getMasterAddress();
+        master = Accessors.getAddress(cluster[0]).equals(masterAddress) ? cluster[0] : cluster[1];
+        notMaster = master == cluster[0] ? cluster[1] : cluster[0];
+
         remoteMember = (MemberImpl) remote.getCluster().getLocalMember();
     }
 
@@ -94,13 +106,13 @@ public class Invocation_OnMemberLeftTest extends HazelcastTestSupport {
     @Test
     public void when_MemberLeavesWithMasterInvocation_then_MemberLeftExceptionIsHandledAndThrown() throws Exception {
         MASTER_EXCEPTION_HANDLED.set(false);
-        Future<Object> future = localOperationService.invokeOnMaster(null,
+        Future<Object> future = getOperationService(notMaster).invokeOnMaster(null,
                 new UnresponsiveMasterOperation());
 
         // Unresponsive operation should be executed before shutting down the node
         assertUnresponsiveMasterOperationStarted();
 
-        remote.getLifecycleService().terminate();
+        master.getLifecycleService().terminate();
 
         try {
             future.get();
@@ -172,7 +184,7 @@ public class Invocation_OnMemberLeftTest extends HazelcastTestSupport {
     }
 
     private void assertUnresponsiveMasterOperationStarted() {
-        assertTrueEventually(() -> assertNotNull(remote.getUserContext().get(UnresponsiveMasterOperation.COMPLETION_FLAG)));
+        assertTrueEventually(() -> assertNotNull(master.getUserContext().get(UnresponsiveMasterOperation.COMPLETION_FLAG)));
     }
 
     private static class UnresponsiveMasterOperation extends Operation {
