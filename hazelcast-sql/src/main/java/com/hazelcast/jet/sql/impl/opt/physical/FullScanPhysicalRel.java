@@ -153,7 +153,7 @@ public class FullScanPhysicalRel extends FullScan implements HazelcastPhysicalSc
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
         return new FullScanPhysicalRel(getCluster(), traitSet, getTable(), lagExpression(),
-                watermarkedColumnIndex(), getDiscriminator());
+                watermarkedColumnIndex(), discriminator());
     }
 
     public RelNode copy(RelTraitSet traitSet, int discriminator) {
@@ -161,7 +161,7 @@ public class FullScanPhysicalRel extends FullScan implements HazelcastPhysicalSc
                 watermarkedColumnIndex(), discriminator);
     }
 
-    public int getDiscriminator() {
+    public int discriminator() {
         return discriminator;
     }
 
@@ -171,15 +171,14 @@ public class FullScanPhysicalRel extends FullScan implements HazelcastPhysicalSc
     }
 
     public BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider(
-            long throttlingFrameSize) {
-        Expression<?> lagExpression = lagExpression();
+            int wmColumnIndex, @Nullable Expression<?> lagExpression, long throttlingFrameSize) {
         if (lagExpression == null) {
             return null;
         }
         return (context, watermarkKey) -> {
             long lagMs = WindowUtils.extractMillis(lagExpression, context);
             return EventTimePolicy.eventTimePolicy(
-                    row -> WindowUtils.extractMillis(row.get(watermarkedColumnIndex)),
+                    row -> WindowUtils.extractMillis(row.get(wmColumnIndex)),
                     (row, timestamp) -> row,
                     WatermarkPolicy.limitingLag(lagMs),
                     throttlingFrameSize,
