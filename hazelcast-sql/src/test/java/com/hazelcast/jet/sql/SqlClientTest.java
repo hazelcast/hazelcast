@@ -79,9 +79,9 @@ public class SqlClientTest extends SqlTestSupport {
                     .map(inst -> inst.getOriginal().node.address)
                     .orElse(null);
 
-            sqlService.execute("SELECT * FROM test WHERE __key = " + i);
+            sqlService.execute("SELECT * FROM test WHERE __key = ?", i);
             final int oldVal = sqlClientService.counts.getOrDefault(expectedAddress, 0);
-            sqlService.execute("SELECT * FROM test WHERE __key = " + i);
+            sqlService.execute("SELECT * FROM test WHERE __key = ?", i);
             final int newVal = sqlClientService.counts.getOrDefault(expectedAddress, 0);
             assertEquals(oldVal + 1, newVal);
         }

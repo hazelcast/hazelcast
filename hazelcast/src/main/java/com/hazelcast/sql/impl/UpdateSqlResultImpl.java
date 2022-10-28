@@ -48,7 +48,7 @@ public final class UpdateSqlResultImpl extends AbstractSqlResult {
     }
 
     @Override
-    public int getPartitionId() {
+    public int getPartitionArgumentIndex() {
         return -1;
     }
 

@@ -106,4 +106,7 @@ public final class ParameterExpression<T> implements Expression<T>, IdentifiedDa
         return getClass().getSimpleName() + "{index=" + index + '}';
     }
 
+    public int getIndex() {
+        return index;
+    }
 }

@@ -36,6 +36,7 @@ import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.partition.Partition;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
@@ -75,7 +76,7 @@ public class SqlClientService implements SqlService {
 
     // TODO: LRU
     @SuppressWarnings("checkstyle:VisibilityModifier")
-    public final Map<PartitionCacheKey, Integer> queryPartitionCache = new ConcurrentHashMap<>();
+    public final Map<String, Integer> queryPartitionCache = new ConcurrentHashMap<>();
     @SuppressWarnings("checkstyle:VisibilityModifier")
     public final Map<Address, Integer> counts = new ConcurrentHashMap<>();
 
@@ -103,9 +104,17 @@ public class SqlClientService implements SqlService {
     @Nonnull
     @Override
     public SqlResult execute(@Nonnull SqlStatement statement) {
-        final Integer partitionId = queryPartitionCache.get(new PartitionCacheKey(statement.getSql(), statement.getParameters()));
-        final ClientConnection connection = partitionId != null && partitionId != -1
-                ? getQueryConnection(partitionId)
+        final Integer partitionArgumentIndex = queryPartitionCache.getOrDefault(statement.getSql(), -1);
+        int partitionIndex = -1;
+        if (partitionArgumentIndex != -1) {
+            final Object partitionKey = statement.getParameters().get(partitionArgumentIndex);
+            final Partition partition = client.getPartitionService().getPartition(partitionKey);
+            if (partition != null) {
+                partitionIndex = partition.getPartitionId();
+            }
+        }
+        final ClientConnection connection = partitionIndex != -1
+                ? getQueryConnection(partitionIndex)
                 : getQueryConnection();
 
         final QueryId id = QueryId.create(connection.getRemoteUuid());
@@ -295,10 +304,10 @@ public class SqlClientService implements SqlService {
                     sqlError.getSuggestion()
             );
         } else {
-            if (response.partitionId != -1) {
+            if (response.partitionArgumentIndex != -1) {
                 queryPartitionCache.put(
-                        new PartitionCacheKey(statement.getSql(), statement.getParameters()),
-                        response.partitionId
+                        statement.getSql(),
+                        response.partitionArgumentIndex
                 );
             }
 
@@ -481,40 +490,5 @@ public class SqlClientService implements SqlService {
 
         return new ClientDelegatingFuture<>(invocation.invoke(), client.getSerializationService(),
                 SqlMappingDdlCodec::decodeResponse);
-    }
-
-    public static final class PartitionCacheKey {
-        private final String sql;
-        private final List<Object> arguments;
-
-        public PartitionCacheKey(final String sql, final List<Object> arguments) {
-            this.sql = sql;
-            this.arguments = arguments;
-        }
-
-        public String getSql() {
-            return sql;
-        }
-
-        public List<Object> getArguments() {
-            return arguments;
-        }
-
-        @Override
-        public boolean equals(final Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            final PartitionCacheKey that = (PartitionCacheKey) o;
-            return sql.equals(that.sql) && Objects.equals(arguments, that.arguments);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(sql, arguments);
-        }
     }
 }

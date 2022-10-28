@@ -38,7 +38,7 @@ class SqlResultImpl extends AbstractSqlResult {
     private final QueryResultProducer rootResultConsumer;
     private final SqlRowMetadata rowMetadata;
     private final boolean isInfiniteRows;
-    private final int partitionId;
+    private final int partitionArgumentIndex;
 
     private ResultIterator<SqlRow> iterator;
 
@@ -52,7 +52,7 @@ class SqlResultImpl extends AbstractSqlResult {
         this.rootResultConsumer = rootResultConsumer;
         this.rowMetadata = rowMetadata;
         this.isInfiniteRows = isInfiniteRows;
-        this.partitionId = -1;
+        this.partitionArgumentIndex = -1;
     }
 
     SqlResultImpl(
@@ -60,13 +60,13 @@ class SqlResultImpl extends AbstractSqlResult {
             QueryResultProducer rootResultConsumer,
             SqlRowMetadata rowMetadata,
             boolean isInfiniteRows,
-            int partitionId
+            int partitionArgumentIndex
     ) {
         this.queryId = queryId;
         this.rootResultConsumer = rootResultConsumer;
         this.rowMetadata = rowMetadata;
         this.isInfiniteRows = isInfiniteRows;
-        this.partitionId = partitionId;
+        this.partitionArgumentIndex = partitionArgumentIndex;
     }
 
     @Override
@@ -80,8 +80,8 @@ class SqlResultImpl extends AbstractSqlResult {
     }
 
     @Override
-    public int getPartitionId() {
-        return partitionId;
+    public int getPartitionArgumentIndex() {
+        return partitionArgumentIndex;
     }
 
     @Nonnull @Override

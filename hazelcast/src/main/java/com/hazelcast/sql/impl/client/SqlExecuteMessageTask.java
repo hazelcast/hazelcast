@@ -91,7 +91,7 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
                     -1,
                     null,
                     result.isInfiniteRows(),
-                    result.getPartitionId()
+                    result.getPartitionArgumentIndex()
             );
         }
     }

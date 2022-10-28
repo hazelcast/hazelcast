@@ -75,6 +75,7 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.UpdateSqlResultImpl;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.type.Type;
@@ -419,14 +420,12 @@ public class PlanExecutor {
                 ? new StaticQueryResultProducerImpl(row)
                 : new StaticQueryResultProducerImpl(emptyIterator());
 
-        final Partition partition = hazelcastInstance.getPartitionService().getPartition(key);
-
         return new SqlResultImpl(
                 queryId,
                 resultProducer,
                 plan.rowMetadata(),
                 false,
-                partition != null ? partition.getPartitionId() : -1
+                plan.keyConditionParamIndex()
         );
     }
 
