@@ -26,26 +26,32 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 class InvocationBuilderImpl extends InvocationBuilder {
 
     private final Invocation.Context context;
+    private final boolean executeOnMaster;
 
     InvocationBuilderImpl(Invocation.Context context, String serviceName, Operation op, int partitionId) {
-        this(context, serviceName, op, partitionId, null);
+        this(context, serviceName, op, partitionId, null, false);
     }
 
-    InvocationBuilderImpl(Invocation.Context context, String serviceName, Operation op, Address target) {
-        this(context, serviceName, op, Operation.GENERIC_PARTITION_ID, target);
+    InvocationBuilderImpl(Invocation.Context context, String serviceName, Operation op, Address target, boolean executeOnMaster) {
+        this(context, serviceName, op, Operation.GENERIC_PARTITION_ID, target, executeOnMaster);
     }
 
     private InvocationBuilderImpl(Invocation.Context context, String serviceName, Operation op,
-                                  int partitionId, Address target) {
+                                  int partitionId, Address target, boolean executeOnMaster) {
         super(serviceName, op, partitionId, target);
         this.context = context;
+        this.executeOnMaster = executeOnMaster;
     }
 
     @Override
     public InvocationFuture invoke() {
         op.setServiceName(serviceName);
         Invocation invocation;
-        if (target == null) {
+        if (executeOnMaster) {
+            invocation = new MasterInvocation(
+                    context, op, target, doneCallback, tryCount, tryPauseMillis,
+                    callTimeout, resultDeserialized, connectionManager);
+        } else if (target == null) {
             op.setPartitionId(partitionId).setReplicaIndex(replicaIndex);
             invocation = new PartitionInvocation(
                     context, op, doneCallback, tryCount, tryPauseMillis, callTimeout, resultDeserialized,

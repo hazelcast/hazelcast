@@ -21,9 +21,9 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.StaticMemberNodeContext;
+import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -38,6 +38,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.instance.impl.HazelcastInstanceFactory.newHazelcastInstance;
 import static com.hazelcast.test.Accessors.getOperationService;
@@ -71,12 +72,12 @@ public class Invocation_OnMemberLeftTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void whenMemberLeaves() throws Exception {
+    public void when_MemberLeaves_withTargetInvocation_then_MemberLeftExceptionIsThrown() throws Exception {
         Future<Object> future =
                 localOperationService.invokeOnTarget(null, new UnresponsiveTargetOperation(), remoteMember.getAddress());
 
         // Unresponsive operation should be executed before shutting down the node
-        assertUnresponsiveOperationStarted();
+        assertUnresponsiveTargetOperationStarted();
 
         remote.getLifecycleService().terminate();
 
@@ -86,6 +87,29 @@ public class Invocation_OnMemberLeftTest extends HazelcastTestSupport {
         } catch (MemberLeftException e) {
             ignore(e);
         }
+    }
+
+    private static final AtomicBoolean MASTER_EXCEPTION_HANDLED = new AtomicBoolean();
+
+    @Test
+    public void when_MemberLeavesWithMasterInvocation_then_MemberLeftExceptionIsHandledAndThrown() throws Exception {
+        MASTER_EXCEPTION_HANDLED.set(false);
+        Future<Object> future = localOperationService.invokeOnMaster(null,
+                new UnresponsiveMasterOperation(), remoteMember.getAddress());
+
+        // Unresponsive operation should be executed before shutting down the node
+        assertUnresponsiveMasterOperationStarted();
+
+        remote.getLifecycleService().terminate();
+
+        try {
+            future.get();
+            fail("Invocation should have failed with MemberLeftException!");
+        } catch (MemberLeftException e) {
+            ignore(e);
+        }
+
+        assert MASTER_EXCEPTION_HANDLED.get() : "MemberLeftException wasn't properly handled";
     }
 
     @Test
@@ -116,7 +140,7 @@ public class Invocation_OnMemberLeftTest extends HazelcastTestSupport {
         assertOpenEventually(blockMonitorLatch);
 
         // Unresponsive operation should be executed before shutting down the node
-        assertUnresponsiveOperationStarted();
+        assertUnresponsiveTargetOperationStarted();
 
         remote.getLifecycleService().terminate();
         restartAction.run();
@@ -143,13 +167,32 @@ public class Invocation_OnMemberLeftTest extends HazelcastTestSupport {
         }
     }
 
-    private void assertUnresponsiveOperationStarted() {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                assertNotNull(remote.getUserContext().get(UnresponsiveTargetOperation.COMPLETION_FLAG));
-            }
-        });
+    private void assertUnresponsiveTargetOperationStarted() {
+        assertTrueEventually(() -> assertNotNull(remote.getUserContext().get(UnresponsiveTargetOperation.COMPLETION_FLAG)));
+    }
+
+    private void assertUnresponsiveMasterOperationStarted() {
+        assertTrueEventually(() -> assertNotNull(remote.getUserContext().get(UnresponsiveMasterOperation.COMPLETION_FLAG)));
+    }
+
+    private static class UnresponsiveMasterOperation extends Operation {
+        static final String COMPLETION_FLAG = UnresponsiveMasterOperation.class.getName();
+
+        @Override
+        public void run() throws Exception {
+            getNodeEngine().getHazelcastInstance().getUserContext().put(COMPLETION_FLAG, new Object());
+        }
+
+        @Override
+        public boolean returnsResponse() {
+            return false;
+        }
+
+        @Override
+        public ExceptionAction onMasterInvocationException(Throwable throwable) {
+            MASTER_EXCEPTION_HANDLED.set(true);
+            return ExceptionAction.THROW_EXCEPTION;
+        }
     }
 
     private static class UnresponsiveTargetOperation extends Operation {

@@ -76,14 +76,20 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
                 ? nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR)
                 : singleton(nodeEngine.getClusterService().getMembers().iterator().next());
         for (Member member : targetMembers) {
+            GetJobIdsOperation operation = new GetJobIdsOperation(onlyName, onlyJobId);
+            InvocationFuture<GetJobIdsResult> future;
             if (masterAddress == null) {
                 masterAddress = member.getAddress();
+                future = nodeEngine
+                        .getOperationService()
+                        .createMasterInvocationBuilder(JetServiceBackend.SERVICE_NAME, operation, masterAddress)
+                        .invoke();
+            } else {
+                future = nodeEngine
+                        .getOperationService()
+                        .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, operation, member.getAddress())
+                        .invoke();
             }
-            GetJobIdsOperation operation = new GetJobIdsOperation(onlyName, onlyJobId);
-            InvocationFuture<GetJobIdsResult> future = nodeEngine
-                    .getOperationService()
-                    .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, operation, member.getAddress())
-                    .invoke();
             futures.put(member.getAddress(), future);
         }
 
