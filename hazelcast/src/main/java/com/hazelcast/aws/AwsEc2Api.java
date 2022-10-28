@@ -22,6 +22,7 @@ import com.hazelcast.logging.Logger;
 import org.w3c.dom.Node;
 
 import java.time.Clock;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -167,6 +168,9 @@ class AwsEc2Api {
      * to make external smart clients able to work properly when possible.
      */
     Map<String, String> describeNetworkInterfaces(List<String> privateAddresses, AwsCredentials credentials) {
+        if (privateAddresses.isEmpty()) {
+            return Collections.emptyMap();
+        }
         try {
             Map<String, String> attributes = createAttributesDescribeNetworkInterfaces(privateAddresses);
             Map<String, String> headers = createHeaders(attributes, credentials);
