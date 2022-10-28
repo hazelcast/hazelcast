@@ -95,7 +95,7 @@ public class Invocation_OnMemberLeftTest extends HazelcastTestSupport {
     public void when_MemberLeavesWithMasterInvocation_then_MemberLeftExceptionIsHandledAndThrown() throws Exception {
         MASTER_EXCEPTION_HANDLED.set(false);
         Future<Object> future = localOperationService.invokeOnMaster(null,
-                new UnresponsiveMasterOperation(), remoteMember.getAddress());
+                new UnresponsiveMasterOperation());
 
         // Unresponsive operation should be executed before shutting down the node
         assertUnresponsiveMasterOperationStarted();

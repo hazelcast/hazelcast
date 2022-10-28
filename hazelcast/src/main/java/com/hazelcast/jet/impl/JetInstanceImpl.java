@@ -18,7 +18,6 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.Job;
@@ -28,9 +27,8 @@ import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.spi.exception.TargetNotMemberException;
+import com.hazelcast.spi.exception.MissingMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -41,6 +39,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_SELECTOR;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static java.util.Collections.singleton;
 
@@ -57,7 +56,8 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
         this.config = config;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public JetConfig getConfig() {
         return config;
     }
@@ -70,27 +70,27 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
     @Override
     public Map<Address, GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId) {
         Map<Address, CompletableFuture<GetJobIdsResult>> futures = new HashMap<>();
-        Address masterAddress = null;
+        Address masterAddress = nodeEngine.getMasterAddress();
         // if onlyName != null, only send the operation to master. Light jobs cannot have a name
         Collection<Member> targetMembers = onlyName == null
                 ? nodeEngine.getClusterService().getMembers(DATA_MEMBER_SELECTOR)
                 : singleton(nodeEngine.getClusterService().getMembers().iterator().next());
+
+        GetJobIdsOperation masterOperation = new GetJobIdsOperation(onlyName, onlyJobId);
+        futures.put(masterAddress, nodeEngine
+                .getOperationService()
+                .createMasterInvocationBuilder(JetServiceBackend.SERVICE_NAME, masterOperation)
+                .invoke());
+
         for (Member member : targetMembers) {
-            GetJobIdsOperation operation = new GetJobIdsOperation(onlyName, onlyJobId);
-            InvocationFuture<GetJobIdsResult> future;
-            if (masterAddress == null) {
-                masterAddress = member.getAddress();
-                future = nodeEngine
-                        .getOperationService()
-                        .createMasterInvocationBuilder(JetServiceBackend.SERVICE_NAME, operation, masterAddress)
-                        .invoke();
-            } else {
-                future = nodeEngine
-                        .getOperationService()
-                        .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, operation, member.getAddress())
-                        .invoke();
+            if (member.getAddress().equals(masterAddress)) {
+                continue;
             }
-            futures.put(member.getAddress(), future);
+            GetJobIdsOperation operation = new GetJobIdsOperation(onlyName, onlyJobId);
+            futures.put(member.getAddress(), nodeEngine
+                    .getOperationService()
+                    .createInvocationBuilder(JetServiceBackend.SERVICE_NAME, operation, member.getAddress())
+                    .invoke());
         }
 
         Map<Address, GetJobIdsResult> res = new HashMap<>(futures.size());
@@ -105,8 +105,7 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
                 // Don't ignore exceptions from master. If we don't get a response from a non-master member, it
                 // can contain only light jobs - we ignore that member's failure, because these jobs are not as
                 // important. If we don't get response from the master, we report it to the user.
-                if (!en.getKey().equals(masterAddress)
-                        && (e.getCause() instanceof TargetNotMemberException || e.getCause() instanceof MemberLeftException)) {
+                if (!en.getKey().equals(masterAddress) && isOrHasCause(e, MissingMemberException.class)) {
                     result = GetJobIdsResult.EMPTY;
                 } else {
                     throw new RuntimeException("Error when getting job IDs: " + e, e);

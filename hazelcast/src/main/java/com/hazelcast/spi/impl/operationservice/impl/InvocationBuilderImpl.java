@@ -49,7 +49,7 @@ class InvocationBuilderImpl extends InvocationBuilder {
         Invocation invocation;
         if (executeOnMaster) {
             invocation = new MasterInvocation(
-                    context, op, target, doneCallback, tryCount, tryPauseMillis,
+                    context, op, doneCallback, tryCount, tryPauseMillis,
                     callTimeout, resultDeserialized, connectionManager);
         } else if (target == null) {
             op.setPartitionId(partitionId).setReplicaIndex(replicaIndex);

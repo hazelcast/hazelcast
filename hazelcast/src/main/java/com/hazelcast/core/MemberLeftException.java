@@ -16,10 +16,11 @@
 
 package com.hazelcast.core;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.internal.util.UUIDSerializationUtil;
-import com.hazelcast.cluster.Address;
+import com.hazelcast.spi.exception.MissingMemberException;
 import com.hazelcast.spi.exception.RetryableException;
 import com.hazelcast.version.MemberVersion;
 
@@ -32,8 +33,8 @@ import java.util.concurrent.ExecutionException;
 /**
  * A {@link ExecutionException} thrown when a member left during an invocation or execution.
  */
-public class MemberLeftException extends ExecutionException implements RetryableException, IndeterminateOperationState {
-
+public class MemberLeftException extends ExecutionException implements RetryableException, IndeterminateOperationState,
+        MissingMemberException {
     private transient Member member;
 
     public MemberLeftException() {

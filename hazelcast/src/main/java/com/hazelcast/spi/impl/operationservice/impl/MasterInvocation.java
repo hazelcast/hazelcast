@@ -23,17 +23,13 @@ import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 /**
- * A {@link Invocation} evaluates a Operation Invocation for a particular target running on top of the
+ * A {@link Invocation} evaluates an Operation Invocation for a master member running on top of the
  * {@link OperationServiceImpl}.
  */
 final class MasterInvocation extends Invocation<Address> {
-
-    private volatile Address target;
-
     MasterInvocation(
             Context context,
             Operation op,
-            Address target,
             Runnable doneCallback,
             int tryCount,
             long tryPauseMillis,
@@ -42,24 +38,22 @@ final class MasterInvocation extends Invocation<Address> {
             ServerConnectionManager connectionManager
     ) {
         super(context, op, doneCallback, tryCount, tryPauseMillis, callTimeoutMillis, deserialize, connectionManager);
-        this.target = target != null ? target : context.clusterService.getMasterAddress();
     }
 
     MasterInvocation(
             Context context,
             Operation op,
-            Address target,
             int tryCount,
             long tryPauseMillis,
             long callTimeoutMillis,
             boolean deserialize
     ) {
-        this(context, op, target, null, tryCount, tryPauseMillis, callTimeoutMillis, deserialize, null);
+        this(context, op, null, tryCount, tryPauseMillis, callTimeoutMillis, deserialize, null);
     }
 
     @Override
     Address getInvocationTarget() {
-        return target;
+        return context.clusterService.getMasterAddress();
     }
 
     @Override
@@ -69,13 +63,11 @@ final class MasterInvocation extends Invocation<Address> {
 
     @Override
     Member toTargetMember(Address target) {
-        assert target == this.target;
         return context.clusterService.getMember(target);
     }
 
     @Override
     ExceptionAction onException(Throwable t) {
-        target = context.clusterService.getMasterAddress();
         return op.onMasterInvocationException(t);
     }
 }

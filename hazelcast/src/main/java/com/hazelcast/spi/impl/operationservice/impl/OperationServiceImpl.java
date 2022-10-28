@@ -304,8 +304,8 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
     }
 
     @Override
-    public InvocationBuilder createMasterInvocationBuilder(String serviceName, Operation op, Address knownMasterAddress) {
-        return new InvocationBuilderImpl(invocationContext, serviceName, op, knownMasterAddress, true)
+    public InvocationBuilder createMasterInvocationBuilder(String serviceName, Operation op) {
+        return new InvocationBuilderImpl(invocationContext, serviceName, op, null, true)
                 .setTryCount(invocationMaxRetryCount)
                 .setTryPauseMillis(invocationRetryPauseMillis);
     }
@@ -373,10 +373,10 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
     }
 
     @Override
-    public <E> InvocationFuture<E> invokeOnMaster(String serviceName, Operation op, Address knownMasterAddress) {
+    public <E> InvocationFuture<E> invokeOnMaster(String serviceName, Operation op) {
         op.setServiceName(serviceName);
 
-        return new MasterInvocation(invocationContext, op, knownMasterAddress, invocationMaxRetryCount,
+        return new MasterInvocation(invocationContext, op, invocationMaxRetryCount,
                 invocationRetryPauseMillis, DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT).invoke();
     }
 
