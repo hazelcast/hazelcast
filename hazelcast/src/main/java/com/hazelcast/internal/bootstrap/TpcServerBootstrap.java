@@ -174,7 +174,7 @@ public class TpcServerBootstrap {
                 sb.append(',');
             }
             first = false;
-            sb.append(serverSocket.getLocalPort());
+            sb.append(serverSocket.localPort());
         }
         return sb.toString();
     }

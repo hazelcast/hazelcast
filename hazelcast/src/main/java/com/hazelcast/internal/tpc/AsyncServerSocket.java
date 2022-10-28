@@ -43,7 +43,7 @@ public abstract class AsyncServerSocket implements Closeable {
 
     public final SocketAddress localAddress() {
         try {
-            return getLocalAddress0();
+            return localAddress0();
         } catch (Error e) {
             throw e;
         } catch (Exception e) {
@@ -51,17 +51,27 @@ public abstract class AsyncServerSocket implements Closeable {
         }
     }
 
+    protected abstract SocketAddress localAddress0() throws Exception;
+
+    /**
+     * Gets the {@link Eventloop} this ServerSocket belongs to.
+     * <p/>
+     * The returned value will never be <code>null</code>
+     *
+     * @return the Eventloop.
+     */
     public abstract Eventloop eventloop();
 
-    protected abstract SocketAddress getLocalAddress0() throws Exception;
+
+    public abstract int localPort();
 
     /**
      * Checks if the SO_REUSEPORT option has been set.
-     *
+     * <p/>
      * When SO_REUSEPORT isn't supported, false is returned.
      *
      * @return true if SO_REUSEPORT is enabled.
-     * @throws UncheckedIOException if something goes wrong.
+     * @throws UncheckedIOException if something failed with configuring the socket
      */
     public abstract boolean isReusePort();
 
@@ -71,7 +81,7 @@ public abstract class AsyncServerSocket implements Closeable {
      * It could be that this call is ignored (e.g. Nio + Java 8).
      *
      * @param reusePort if the SO_REUSEPORT option should be enabled.
-     * @throws UncheckedIOException if something goes wrong.
+     * @throws UncheckedIOException if something failed with configuring the socket
      */
     public abstract void reusePort(boolean reusePort);
 
@@ -79,7 +89,7 @@ public abstract class AsyncServerSocket implements Closeable {
      * Checks if the SO_REUSEADDR option has been set.
      *
      * @return true if SO_REUSEADDR is enabled.
-     * @throws UncheckedIOException if something goes wrong.
+     * @throws UncheckedIOException if something failed with configuring the socket
      */
     public abstract boolean isReuseAddress();
 
@@ -87,18 +97,46 @@ public abstract class AsyncServerSocket implements Closeable {
      * Sets the SO_REUSEADDR option.
      *
      * @param reuseAddress if the SO_REUSEADDR option should be enabled.
-     * @throws UncheckedIOException if something goes wrong.
+     * @throws UncheckedIOException if something failed with configuring the socket
      */
     public abstract void reuseAddress(boolean reuseAddress);
 
+    /**
+     * Sets the receivebuffer size in bytes.
+     *
+     * @param size the receivebuffer size in bytes.
+     * @throws IllegalArgumentException when the size isn't positive.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
     public abstract void receiveBufferSize(int size);
 
+    /**
+     * Gets the receivebuffer size in bytes.
+     *
+     * @return the size of the receive buffer.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
     public abstract int receiveBufferSize();
 
-    public abstract void bind(SocketAddress socketAddress);
+    /**
+     * Binds this AsyncServerSocket to the local.
+     *
+     * @param local the local SocketAddress.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
+    public abstract void bind(SocketAddress local);
 
     public abstract void listen(int backlog);
 
+    /**
+     * Closes the AsyncServerSocket.
+     * <p/>
+     * If the AsyncServerSocket is already closed, it is ignored.
+     * <p/>
+     * This method is thread-safe.
+     * <p/>
+     * This method doesn't throw an exception.
+     */
     @Override
     public final void close() {
         if (!closed.compareAndSet(false, true)) {
@@ -110,14 +148,19 @@ public abstract class AsyncServerSocket implements Closeable {
         }
 
         try {
-            doClose();
+            close0();
         } catch (Exception e) {
             logger.warning(e);
         }
     }
 
-    protected abstract void doClose() throws IOException;
+    protected abstract void close0() throws IOException;
 
+    /**
+     * Checks if the AsyncServerSocket is closed.
+     *
+     * @return true if closed, false otherwise.
+     */
     public final boolean isClosed() {
         return closed.get();
     }
@@ -126,6 +169,4 @@ public abstract class AsyncServerSocket implements Closeable {
     public String toString() {
         return getClass().getSimpleName() + "[" + localAddress() + "]";
     }
-
-    public abstract int getLocalPort();
 }

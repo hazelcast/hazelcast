@@ -95,12 +95,12 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    protected SocketAddress getLocalAddress0() throws IOException {
+    protected SocketAddress localAddress0() throws IOException {
         return serverSocketChannel.getLocalAddress();
     }
 
     @Override
-    public int getLocalPort() {
+    public int localPort() {
         return serverSocketChannel.socket().getLocalPort();
     }
 
@@ -167,7 +167,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    protected void doClose() {
+    protected void close0() {
         closeResource(serverSocketChannel.socket());
         eventloop.deregisterResource(this);
     }
@@ -179,14 +179,14 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public void bind(SocketAddress socketAddress) {
+    public void bind(SocketAddress local) {
         try {
             if (logger.isInfoEnabled()) {
-                logger.info(eventloopThread.getName() + " Binding to " + socketAddress);
+                logger.info(eventloopThread.getName() + " Binding to " + local);
             }
-            serverSocketChannel.bind(socketAddress);
+            serverSocketChannel.bind(local);
         } catch (IOException e) {
-            throw new UncheckedIOException("Failed to bind to " + socketAddress, e);
+            throw new UncheckedIOException("Failed to bind to " + local, e);
         }
     }
 
