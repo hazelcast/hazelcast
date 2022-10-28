@@ -129,6 +129,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         }
         for (HazelcastInstance instance : instances) {
             assertTrueEventually(() -> {
+                // Let's wait for all unprocessed operations (like destroying distributed object) to complete
                 assertEquals(0, getNodeEngineImpl(instance).getEventService().getEventQueueSize());
             });
         }
