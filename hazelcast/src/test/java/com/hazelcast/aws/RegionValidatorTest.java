@@ -57,4 +57,16 @@ public class RegionValidatorTest {
         assertEquals(expectedMessage, thrownEx.getMessage());
     }
 
+    @Test
+    public void validateNullRegion() {
+        // given
+        String expectedMessage = "The provided region is null.";
+
+        // when
+        Runnable validateRegion = () -> RegionValidator.validateRegion(null);
+
+        //then
+        InvalidConfigurationException thrownEx = assertThrows(InvalidConfigurationException.class, validateRegion);
+        assertEquals(expectedMessage, thrownEx.getMessage());
+    }
 }

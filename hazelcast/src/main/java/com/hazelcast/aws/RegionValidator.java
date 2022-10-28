@@ -31,6 +31,9 @@ final class RegionValidator {
     }
 
     static void validateRegion(String region) {
+        if (region == null) {
+            throw new InvalidConfigurationException("The provided region is null.");
+        }
         if (!AWS_REGION_PATTERN.matcher(region).matches()) {
             String message = String.format("The provided region %s is not a valid AWS region.", region);
             throw new InvalidConfigurationException(message);
