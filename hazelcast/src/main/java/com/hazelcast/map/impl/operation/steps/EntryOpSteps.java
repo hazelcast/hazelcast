@@ -30,7 +30,7 @@ import com.hazelcast.spi.impl.executionservice.impl.StatsAwareRunnable;
 
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 
-public enum EntryOpSteps implements Step<State> {
+public enum EntryOpSteps implements IMapOpStep {
 
     EP_START() {
         @Override
@@ -67,7 +67,7 @@ public enum EntryOpSteps implements Step<State> {
 
     LOAD() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isLoadStep() {
             return true;
         }
 
@@ -91,7 +91,7 @@ public enum EntryOpSteps implements Step<State> {
 
     RUN_OFFLOADED_ENTRY_PROCESSOR() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isStoreStep() {
             return true;
         }
 
@@ -247,7 +247,7 @@ public enum EntryOpSteps implements Step<State> {
 
     STORE() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isStoreStep() {
             return true;
         }
 
@@ -276,7 +276,7 @@ public enum EntryOpSteps implements Step<State> {
 
     DELETE() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isStoreStep() {
             return true;
         }
 
