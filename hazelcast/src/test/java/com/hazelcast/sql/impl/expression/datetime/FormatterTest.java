@@ -25,7 +25,6 @@ import org.junit.runner.RunWith;
 
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
-import java.util.Locale;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -33,9 +32,6 @@ import static org.junit.Assert.assertNotEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class FormatterTest {
-    static {
-        Locale.setDefault(Locale.US);
-    }
 
     @Test
     public void testRounding() {
@@ -58,6 +54,7 @@ public class FormatterTest {
 
         check(4.5,  "  4.5 ",  "< 4.5>",  "99.9BR", "BR99.9", "BR99.9BR", "BR99.9B");
         check(4.5,  "  4.5 ",  " <4.5>",  "99.9B",   "B99.9",  "B99.9B");
+        check(4.5,  " +4.5 ",  " <4.5>",  "P9.9B",   "BP9.9",  "PB9.9");
 
         check(4.5,  "+ 4.5",  "- 4.5",  "SG99.9");
         check(4.5,  " 4.5+",  " 4.5-",  "99.9SG", "99.9S");
@@ -74,8 +71,8 @@ public class FormatterTest {
 
     @Test
     public void testMultiplier() {
-        Formatter f = new Formatter("999V99");
-        check(4.85, f, " 485");
+        check(4.85,  " 485",  "-485",  "999V99", "999V9V9", "V9FMV9FM999");
+        check(0.0485,  " 4.9 E-01",  "-4.9 E-01",  "9.9V9 EEEE", "9V9.9 EEEE", "9.9 V9EEEE", "9.9 EEEEV9");
     }
 
     @Test
@@ -87,16 +84,16 @@ public class FormatterTest {
     @Test
     public void testSignAndCurrencyAnchoring() {
         check(4.5,  "$  4.5",  "$- 4.5",  "CRMI99.9");
-        check(4.5,  "$  4.5",  "$ -4.5",   "CRM99.9");
+        check(4.5,  "$  4.5",  "$ -4.5",   "CRM99.9", "CR99.9");
         check(4.5,  "  $4.5",  " $-4.5",    "CM99.9");
-        check(4.5,  " $ 4.5",  "-$ 4.5",  "MICR99.9", "CR99.9");
+        check(4.5,  " $ 4.5",  "-$ 4.5",  "MICR99.9");
         check(4.5,  "  $4.5",  "- $4.5",   "MIC99.9");
         check(4.5,  "  $4.5",  " -$4.5",    "MC99.9",  "C99.9");
 
-        check(4.5,  "$  4.5 ",  "$< 4.5>",  "CRBR99.9");
-        check(4.5,  "$  4.5 ",  "$ <4.5>",   "CRB99.9");
+        check(4.5,  "$  4.5 ",  "$< 4.5>",  "CRBR99.9", "CR99.9BR");
+        check(4.5,  "$  4.5 ",  "$ <4.5>",   "CRB99.9", "CR99.9B");
         check(4.5,  "  $4.5 ",  " $<4.5>",    "CB99.9");
-        check(4.5,  " $ 4.5 ",  "<$ 4.5>",  "BRCR99.9", "CR99.9BR");
+        check(4.5,  " $ 4.5 ",  "<$ 4.5>",  "BRCR99.9");
         check(4.5,  "  $4.5 ",  "< $4.5>",   "BRC99.9",  "C99.9BR");
         check(4.5,  "  $4.5 ",  " <$4.5>",    "BC99.9",  "C99.9B");
     }
@@ -121,6 +118,33 @@ public class FormatterTest {
         f = new Formatter("RN");
         check(485,  f, "        CDLXXXV");
         check(3888, f, "MMMDCCCLXXXVIII");
+        check(0,    f, "###############");
+        check(4000, f, "###############");
+    }
+
+    @Test
+    public void testLiterals() {
+        Formatter f = new Formatter("FM\"Integer: \"999 \"Fraction: \".999");
+        check(48.59, f, "Integer: 48 Fraction: .59");
+
+        check(4.5,  "  $4.5",  " -$4.5",   "M$99.9",  "$99.9");
+        check(4.5,  "$  4.5",  "$ -4.5",  "F$M99.9", "F$99.9");
+
+        check(4.5,  " 4.5 USD ",  "-4.5 USD ",  "9.99 \"USD\"");
+        check(4.5,  " 4.5  USD",  "-4.5  USD",  "9.99 F\"USD\"");
+    }
+
+    @Test
+    public void testFeatureOrtogonality() {
+        Formatter f = new Formatter("FM999V99 -> RN");
+        check(3.14,  f, "314 -> CCCXIV");
+    }
+
+    @Test
+    public void testLocales() {
+        Formatter f = new Formatter("FM9G999D99");
+        assertEquals("1,234.56", f.format(1234.56, "en-US"));
+        assertEquals("1.234,56", f.format(1234.56, "tr-TR"));
     }
 
     private void check(double input, String expectedPositive, String expectedNegative, String... formats) {
@@ -132,7 +156,7 @@ public class FormatterTest {
     }
     
     private void check(Object input, Formatter f, String expected) {
-        assertEquals(expected, f.format(input));
+        assertEquals(expected, f.format(input, "en-US"));
     }
 
     /**

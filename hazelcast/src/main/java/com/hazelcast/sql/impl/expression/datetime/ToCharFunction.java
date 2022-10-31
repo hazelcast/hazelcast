@@ -18,28 +18,28 @@ package com.hazelcast.sql.impl.expression.datetime;
 
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
-import com.hazelcast.sql.impl.expression.BiExpressionWithType;
 import com.hazelcast.sql.impl.expression.ConcurrentInitialSetCache;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.TriExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-public class ToCharFunction extends BiExpressionWithType<String> implements IdentifiedDataSerializable {
+public class ToCharFunction extends TriExpression<String> implements IdentifiedDataSerializable {
     private static final int CACHE_SIZE = 100;
     private transient ConcurrentInitialSetCache<String, Formatter> formatterCache;
     private Formatter constantFormatterCache;
 
     public ToCharFunction() { }
 
-    private ToCharFunction(Expression<?> operand1, Expression<?> operand2) {
-        super(operand1, operand2, QueryDataType.VARCHAR);
+    private ToCharFunction(Expression<?> input, Expression<?> format, Expression<?> locale) {
+        super(input, format, locale);
         prepareCache();
     }
 
-    public static ToCharFunction create(Expression<?> operand1, Expression<?> operand2) {
-        return new ToCharFunction(operand1, operand2);
+    public static ToCharFunction create(Expression<?> input, Expression<?> format, Expression<?> locale) {
+        return new ToCharFunction(input, format, locale);
     }
 
     @Override
@@ -63,7 +63,8 @@ public class ToCharFunction extends BiExpressionWithType<String> implements Iden
         }
 
         Object input = operand1.eval(row, context);
-        return formatter.format(input);
+        String locale = (String) operand3.eval(row, context);
+        return formatter.format(input, locale);
     }
 
     private void prepareCache() {
