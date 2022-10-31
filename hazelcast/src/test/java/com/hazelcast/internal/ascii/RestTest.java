@@ -475,36 +475,6 @@ public class RestTest {
         assertEquals(2, map.size());
     }
 
-    @Test
-    public void testPollQueueWithEscapedName() throws IOException {
-        String queueName = randomString();
-        IQueue<String> queue = instance.getQueue(queueName + " a");
-        assertTrue(queue.offer("value 1"));
-        assertTrue(queue.offer("value 2"));
-        assertTrue(queue.offer("value 3"));
-        ConnectionResponse response = communicator.queuePollViaDelete(queueName + "%20a");
-        assertEquals(HTTP_OK, response.responseCode);
-        assertEquals("value 1", response.response);
-        assertEquals(2, queue.size());
-    }
-
-    @Test
-    public void testPollQueueViaDelete() throws IOException {
-        String queueName = randomString();
-        IQueue<String> queue = instance.getQueue(queueName);
-        assertTrue(queue.offer("value1"));
-        assertTrue(queue.offer("value2"));
-        ConnectionResponse response = communicator.queuePollViaDelete(queueName);
-        assertEquals(HTTP_OK, response.responseCode);
-        assertEquals("value1", response.response);
-        assertEquals(1, queue.size());
-
-        ConnectionResponse response3 = communicator.queuePollViaDelete(queueName, 10);
-        assertEquals(HTTP_OK, response3.responseCode);
-        assertEquals("value2", response3.response);
-        assertEquals(0, queue.size());
-    }
-
     private JsonObject assertJsonContains(String json, String... attributesAndValues) {
         JsonObject object = Json.parse(json).asObject();
         for (int i = 0; i < attributesAndValues.length; ) {

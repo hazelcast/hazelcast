@@ -198,16 +198,6 @@ public class HTTPCommunicator {
         return doGet(url);
     }
 
-    public ConnectionResponse queuePollViaDelete(String queueName) throws IOException {
-        String url = getUrl(URI_QUEUES + queueName + "/");
-        return doDelete(url);
-    }
-
-    public ConnectionResponse queuePollViaDelete(String queueName, long timeout) throws IOException {
-        String url = getUrl(URI_QUEUES + queueName + "/" + timeout);
-        return doDelete(url);
-    }
-
     public int queueSize(String queueName) throws IOException {
         String url = getUrl(URI_QUEUES + queueName + "/size");
         return Integer.parseInt(doGet(url).response);
