@@ -132,6 +132,8 @@ public interface OperationService {
 
     <E> InvocationFuture<E> invokeOnTarget(String serviceName, Operation op, Address target);
 
+    <E> InvocationFuture<E> invokeOnTargetAsync(String serviceName, Operation op, Address target);
+
     InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId);
 
     InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target);

@@ -335,11 +335,7 @@ public class ParallelOperationInvokerTest extends HazelcastTestSupport {
 
         @Override
         public void run() throws Exception {
-
-            // We exclude local because local execution may be run instead of executed.
-            // This means that it will block the method from returning the future.
-            while (!executedLocally()
-                    && getNodeEngine().getClusterService().getMembers().size() != expectedMemberCount) {
+            while (getNodeEngine().getClusterService().getMembers().size() != expectedMemberCount) {
                 Thread.sleep(100);
             }
             super.run();

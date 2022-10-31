@@ -366,6 +366,15 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
     }
 
     @Override
+    @SuppressWarnings("unchecked")
+    public <E> InvocationFuture<E> invokeOnTargetAsync(String serviceName, Operation op, Address target) {
+        op.setServiceName(serviceName);
+
+        return new TargetInvocation(invocationContext, op, target, invocationMaxRetryCount, invocationRetryPauseMillis,
+                DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT).invokeAsync();
+    }
+
+    @Override
     public void onStartAsyncOperation(Operation op) {
         asyncOperations.add(op);
     }
