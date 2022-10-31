@@ -44,7 +44,7 @@ abstract class HttpCommandParser<HC extends HttpCommand> implements CommandParse
             String urlDecodedUri = URLDecoder.decode(uri, "UTF-8");
             return createHttpCommand(decoder, urlDecodedUri);
         } catch (UnsupportedEncodingException e) {
-            return new ErrorCommand(ERROR_SERVER, "UTF-8 encoding is not supported url decoder supported by jvm");
+            return new ErrorCommand(ERROR_SERVER, "UTF-8 encoding is not supported by JVM!");
         }
     }
 
