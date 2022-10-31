@@ -19,8 +19,6 @@ package com.hazelcast.internal.ascii.rest;
 import com.hazelcast.internal.ascii.TextCommandService;
 import com.hazelcast.internal.util.StringUtil;
 
-import java.io.UnsupportedEncodingException;
-
 import static com.hazelcast.internal.ascii.rest.RestCallExecution.ObjectType.MAP;
 import static com.hazelcast.internal.ascii.rest.RestCallExecution.ObjectType.QUEUE;
 
@@ -50,7 +48,7 @@ public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteC
         textCommandService.sendResponse(command);
     }
 
-    private void handleMap(HttpDeleteCommand command, String uri) throws UnsupportedEncodingException {
+    private void handleMap(HttpDeleteCommand command, String uri) {
         command.getExecutionDetails().setObjectType(MAP);
         int indexEnd = uri.indexOf('/', URI_MAPS.length());
         if (indexEnd == -1) {
@@ -68,16 +66,11 @@ public class HttpDeleteCommandProcessor extends HttpCommandProcessor<HttpDeleteC
         }
     }
 
-    private void handleQueue(HttpDeleteCommand command, String uri) throws UnsupportedEncodingException {
+    private void handleQueue(HttpDeleteCommand command, String uri) {
         // Poll an item from the default queue in 3 seconds
         // http://127.0.0.1:5701/hazelcast/rest/queues/default/3
-        uri = StringUtil.stripTrailingSlash(uri);
         int indexEnd = uri.indexOf('/', URI_QUEUES.length());
         command.getExecutionDetails().setObjectType(QUEUE);
-        if (indexEnd == -1) {
-            // /queues/queueName usage
-            indexEnd = uri.length();
-        }
         String queueName = uri.substring(URI_QUEUES.length(), indexEnd);
         command.getExecutionDetails().setObjectName(queueName);
         String secondStr = (uri.length() > (indexEnd + 1)) ? uri.substring(indexEnd + 1) : null;

@@ -41,7 +41,6 @@ import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.logging.impl.LoggingServiceImpl;
 
-import java.io.UnsupportedEncodingException;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletionStage;
@@ -376,7 +375,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         prepareResponse(command, new JsonObject().add("name", textCommandService.getInstanceName()));
     }
 
-    private void handleQueue(HttpGetCommand command, String uri) throws UnsupportedEncodingException {
+    private void handleQueue(HttpGetCommand command, String uri) {
         command.getExecutionDetails().setObjectType(QUEUE);
         int indexEnd = uri.indexOf('/', URI_QUEUES.length());
         String queueName = uri.substring(URI_QUEUES.length(), indexEnd);
@@ -393,7 +392,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         }
     }
 
-    private void handleMap(HttpGetCommand command, String uri) throws UnsupportedEncodingException {
+    private void handleMap(HttpGetCommand command, String uri) {
         command.getExecutionDetails().setObjectType(MAP);
         uri = StringUtil.stripTrailingSlash(uri);
         int indexEnd = uri.indexOf('/', URI_MAPS.length());

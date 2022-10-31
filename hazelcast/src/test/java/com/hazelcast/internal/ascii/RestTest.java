@@ -436,7 +436,7 @@ public class RestTest {
     public void testQueueOfferWithEscapedNameAndSimpleValue() throws IOException {
         String queueName = randomString();
         IQueue<Object> queue = instance.getQueue(queueName + " a");
-        assertEquals(HTTP_OK, communicator.queueOffer(queueName + "%20a" + "/value%201"));
+        assertEquals(HTTP_OK, communicator.queueOffer(queueName + "%20a" + "/value%201", "data"));
         assertEquals(queue.size(), 1);
 
         ConnectionResponse response = communicator.queuePoll(queueName + "%20a", 10);
@@ -494,26 +494,14 @@ public class RestTest {
         IQueue<String> queue = instance.getQueue(queueName);
         assertTrue(queue.offer("value1"));
         assertTrue(queue.offer("value2"));
-        assertTrue(queue.offer("value3"));
-        assertTrue(queue.offer("value4"));
-        ConnectionResponse response = communicator.queuePollViaDelete(queueName, false);
+        ConnectionResponse response = communicator.queuePollViaDelete(queueName);
         assertEquals(HTTP_OK, response.responseCode);
         assertEquals("value1", response.response);
-        assertEquals(3, queue.size());
-
-        ConnectionResponse response2 = communicator.queuePollViaDelete(queueName, true);
-        assertEquals(HTTP_OK, response2.responseCode);
-        assertEquals("value2", response2.response);
-        assertEquals(2, queue.size());
-
-        ConnectionResponse response3 = communicator.queuePollViaDelete(queueName, 10, false);
-        assertEquals(HTTP_OK, response3.responseCode);
-        assertEquals("value3", response3.response);
         assertEquals(1, queue.size());
 
-        ConnectionResponse response4 = communicator.queuePollViaDelete(queueName, 20, true);
-        assertEquals(HTTP_OK, response4.responseCode);
-        assertEquals("value4", response4.response);
+        ConnectionResponse response3 = communicator.queuePollViaDelete(queueName, 10);
+        assertEquals(HTTP_OK, response3.responseCode);
+        assertEquals("value2", response3.response);
         assertEquals(0, queue.size());
     }
 

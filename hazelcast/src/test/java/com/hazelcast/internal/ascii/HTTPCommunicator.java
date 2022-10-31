@@ -198,23 +198,13 @@ public class HTTPCommunicator {
         return doGet(url);
     }
 
-    public ConnectionResponse queuePollViaDelete(String queueName, boolean endWithSlash) throws IOException {
-        String url = getUrl(URI_QUEUES + queueName);
-        if (endWithSlash) {
-            url += "/";
-        }
+    public ConnectionResponse queuePollViaDelete(String queueName) throws IOException {
+        String url = getUrl(URI_QUEUES + queueName + "/");
         return doDelete(url);
     }
 
-    public ConnectionResponse queuePollViaDelete(String queueName) throws IOException {
-        return queuePollViaDelete(queueName, false);
-    }
-
-    public ConnectionResponse queuePollViaDelete(String queueName, long timeout, boolean endWithSlash) throws IOException {
+    public ConnectionResponse queuePollViaDelete(String queueName, long timeout) throws IOException {
         String url = getUrl(URI_QUEUES + queueName + "/" + timeout);
-        if (endWithSlash) {
-            url += "/";
-        }
         return doDelete(url);
     }
 
@@ -226,11 +216,6 @@ public class HTTPCommunicator {
     public int queueOffer(String queueName, String data) throws IOException {
         final String url = getUrl(URI_QUEUES + queueName);
         return doPost(url, data).responseCode;
-    }
-
-    public int queueOffer(String queueName) throws IOException {
-        final String url = getUrl(URI_QUEUES + queueName);
-        return doPost(url).responseCode;
     }
 
     public String mapGetAndResponse(String mapName, String key) throws IOException {
@@ -666,7 +651,7 @@ public class HTTPCommunicator {
     }
 
     public ConnectionResponse deleteBadRequestURI() throws IOException {
-        String url = getUrl(URI_QUEUES);
+        String url = getUrl(URI_QUEUES + "name");
         return doDelete(url);
     }
 

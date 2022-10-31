@@ -253,7 +253,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         getNode().hazelcastInstance.shutdown();
     }
 
-    private void handleQueue(HttpPostCommand command, String uri) throws UnsupportedEncodingException {
+    private void handleQueue(HttpPostCommand command, String uri) {
         String simpleValue = null;
         String suffix;
         int baseUriLength = URI_QUEUES.length();
@@ -294,7 +294,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         }
     }
 
-    private void handleMap(HttpPostCommand command, String uri) throws UnsupportedEncodingException {
+    private void handleMap(HttpPostCommand command, String uri) {
         command.getExecutionDetails().setObjectType(MAP);
         uri = StringUtil.stripTrailingSlash(uri);
         int indexEnd = uri.indexOf('/', URI_MAPS.length());
