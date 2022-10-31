@@ -98,7 +98,7 @@ class ParallelOperationInvoker {
         Operation operation = operationSupplier.get();
         String serviceName = operation.getServiceName();
         Address target = member.getAddress();
-        return nodeEngine.getOperationService().invokeOnTarget(serviceName, operation, target);
+        return nodeEngine.getOperationService().invokeOnTargetAsync(serviceName, operation, target);
     }
 
     private void completeFutureOrRetry(boolean noExceptionReceived, InternalCompletableFuture[] futures) {
