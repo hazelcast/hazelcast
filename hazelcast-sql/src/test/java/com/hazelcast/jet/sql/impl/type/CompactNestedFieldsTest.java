@@ -76,7 +76,7 @@ public class CompactNestedFieldsTest extends SqlTestSupport {
     }
 
     @Test
-    public void testNestedCompactQueryReturnsDeserialized() {
+    public void testSelectingNestedCompactReturnsDeserializedRecord() {
         client().getSql().execute("CREATE TYPE Office ("
                 + "id BIGINT, "
                 + "name VARCHAR "
