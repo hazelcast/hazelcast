@@ -71,10 +71,10 @@ public class MemberReconnectionStressTest extends JetTestSupport {
         HazelcastInstance inst2 = createHazelcastInstance(config);
         logger.info("Instances started");
 
-        new Thread(() -> {
+        Thread connectionThread = new Thread(() -> {
             while (!terminated.get()) {
                 Connection connection = null;
-                while (connection == null) {
+                while (connection == null || !terminated.get()) {
                     connection = ImdgUtil.getMemberConnection(getNodeEngineImpl(inst1),
                             getNodeEngineImpl(inst2).getThisAddress());
                 }
@@ -82,15 +82,17 @@ public class MemberReconnectionStressTest extends JetTestSupport {
                 logger.info("connection closed");
                 sleepMillis(300);
             }
-        }).start();
+        });
+        connectionThread.setName("connectionThread");
+        connectionThread.start();
 
         DAG dag = new DAG();
-        Vertex v1 = dag.newVertex("v1", () -> new MockP()).localParallelism(2);
-        Vertex v2 = dag.newVertex("v2", () -> new MockP()).localParallelism(2);
+        Vertex v1 = dag.newVertex("v1", MockP::new).localParallelism(2);
+        Vertex v2 = dag.newVertex("v2", MockP::new).localParallelism(2);
         dag.edge(between(v1, v2).distributed());
 
         AtomicInteger jobCount = new AtomicInteger();
-        new Thread(() -> {
+        Thread newJobThread = new Thread(() -> {
             while (!terminated.get()) {
                 try {
                     inst1.getJet().newJob(dag).getFuture().join();
@@ -100,7 +102,9 @@ public class MemberReconnectionStressTest extends JetTestSupport {
                     logger.info("Job failed, ignoring it", e);
                 }
             }
-        }).start();
+        });
+        newJobThread.setName("newJobThread");
+        newJobThread.start();
 
         // in a loop check that the `jobCount` is incremented at least every N seconds
         long lastIncrement = System.nanoTime();
@@ -115,6 +119,15 @@ public class MemberReconnectionStressTest extends JetTestSupport {
                 fail("jobCount didn't increment for 30 seconds");
             }
             sleepMillis(100);
+        }
+        //Test finished, close the threads
+        try {
+            terminated.set(true);
+
+            connectionThread.join();
+            newJobThread.join();
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 }

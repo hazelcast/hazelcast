@@ -131,7 +131,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
                 JetService jet = instance.getJet();
                 List<Job> jobs = jet.getJobs();
                 for (Job job : jobs) {
-                    ditchJob(job, instances.toArray(new HazelcastInstance[instances.size()]));
+                    ditchJob(job, instances.toArray(new HazelcastInstance[0]));
                 }
 
                 JobClassLoaderService jobClassLoaderService = ((HazelcastInstanceImpl) instance).node
@@ -404,7 +404,11 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
      * retry.
      */
     public static void ditchJob(@Nonnull Job job, @Nonnull HazelcastInstance... instances) {
-        ditchJob0(job, instances);
+        boolean result = ditchJob0(job, instances);
+        //If job could not be ditched, no need to continue
+        if (!result) {
+            return;
+        }
         // Let's wait for the job to be not RUNNING on all the members.
         assertTrueEventually(() -> {
             assertNotEquals(RUNNING, job.getStatus());
@@ -417,18 +421,18 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
         });
     }
 
-    private static void ditchJob0(@Nonnull Job job, @Nonnull HazelcastInstance... instancesToShutDown) {
+    private static boolean ditchJob0(@Nonnull Job job, @Nonnull HazelcastInstance... instancesToShutDown) {
         int numAttempts;
         for (numAttempts = 0; numAttempts < 10; numAttempts++) {
             JobStatus status = null;
             try {
                 status = job.getStatus();
                 if (status == JobStatus.FAILED || status == JobStatus.COMPLETED) {
-                    return;
+                    return true;
                 }
             } catch (JobNotFoundException e) {
                 SUPPORT_LOGGER.fine("Job " + job.getIdString() + " is gone.");
-                return;
+                return false;
             } catch (Exception e) {
                 SUPPORT_LOGGER.warning("Failure to read job status: " + e, e);
             }
@@ -440,28 +444,28 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
                     job.join();
                 } catch (JobNotFoundException e) {
                     SUPPORT_LOGGER.fine("Job " + job.getIdString() + " is gone.");
-                    return;
+                    return false;
                 } catch (CompletionException e) {
                     if (e.getCause() instanceof JobNotFoundException) {
                         SUPPORT_LOGGER.fine("Job " + job.getIdString() + " is gone.");
-                        return;
+                        return false;
                     }
                     throw rethrow(e.getCause());
                 } catch (Exception ignored) {
                     // This can be CancellationException or any other job failure. We don't care,
                     // we're supposed to rid the cluster of the job and that's what we have.
                 }
-                return;
+                return true;
             } catch (JobNotFoundException e) {
                 SUPPORT_LOGGER.fine("Job " + job.getIdString() + " is gone.");
-                return;
+                return false;
             } catch (Exception e) {
                 cancellationFailure = e;
             }
 
             sleepMillis(500);
             SUPPORT_LOGGER.warning("Failed to cancel the job and it is " + status + ", retrying. Failure: "
-                    + cancellationFailure, cancellationFailure);
+                                   + cancellationFailure, cancellationFailure);
         }
         // if we got here, 10 attempts to cancel the job have failed. Cluster is in bad shape probably, shut it down
         try {
