@@ -258,8 +258,8 @@ public final class GenericRecordQueryReader implements ValueReader {
             return null;
         }
         FieldKind kind = record.getFieldKind(path);
-        if (kind == FieldKind.COMPACT && useLazyDeserialization) {
-            // Use lazy deserialization for the queries that will read a nested compact's field
+        if ((kind == FieldKind.COMPACT || kind == FieldKind.PORTABLE) && useLazyDeserialization) {
+            // Use lazy deserialization for the queries that will read a nested compact or portable field
             return record.getInternalGenericRecord(path);
         }
         return fieldOperations(kind).readAsLeafObjectOnQuery(record, path);

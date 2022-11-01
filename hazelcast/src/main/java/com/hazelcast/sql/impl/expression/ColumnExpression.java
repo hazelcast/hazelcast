@@ -76,6 +76,7 @@ public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataS
     @SuppressWarnings("unchecked")
     @Override
     public T eval(Row row, ExpressionEvalContext context) {
+        // Don't use lazy deserialization for compact and portable, we need to return a deserialized generic record.
         Object res = row.get(index, false);
 
         if (res instanceof LazyTarget) {

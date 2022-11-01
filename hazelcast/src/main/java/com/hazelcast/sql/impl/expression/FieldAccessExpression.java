@@ -98,7 +98,8 @@ public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSe
     private Object extractPortableField(PortableGenericRecord portable, String name, InternalSerializationService ss) {
         final PortableGetter getter = new PortableGetter(ss);
         try {
-            return getter.getValue(portable, name);
+            // Use lazy deserialization
+            return getter.getValue(portable, name, true);
         } catch (Exception e) {
             return null;
         }
@@ -107,6 +108,7 @@ public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSe
     private Object extractCompactField(CompactGenericRecord compact, String name, InternalSerializationService ss) {
         final CompactGetter getter = new CompactGetter(ss);
         try {
+            // Use lazy deserialization
             return getter.getValue(compact, name, true);
         } catch (Exception e) {
             return null;

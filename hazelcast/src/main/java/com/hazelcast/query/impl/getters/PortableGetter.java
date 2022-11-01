@@ -30,8 +30,7 @@ public final class PortableGetter extends Getter {
         this.serializationService = serializationService;
     }
 
-    @Override
-    public Object getValue(Object target, String fieldPath) throws Exception {
+    public Object getValueInternal(Object target, String fieldPath, boolean useLazyDeserialization) throws Exception {
         InternalGenericRecord record;
         if (target instanceof PortableGenericRecord) {
             record = (InternalGenericRecord) target;
@@ -40,6 +39,20 @@ public final class PortableGetter extends Getter {
         }
         GenericRecordQueryReader reader = new GenericRecordQueryReader(record);
         return reader.read(fieldPath);
+    }
+
+    @Override
+    public Object getValue(Object target, String fieldPath) throws Exception {
+        return getValueInternal(target, fieldPath, false);
+    }
+
+    @Override
+    public Object getValue(Object obj, String attributePath, Object metadata) throws Exception {
+        if (metadata == null) {
+            return getValue(obj, attributePath);
+        }
+        boolean useLazyDeserialization = (boolean) metadata;
+        return getValueInternal(obj, attributePath, useLazyDeserialization);
     }
 
     @Override

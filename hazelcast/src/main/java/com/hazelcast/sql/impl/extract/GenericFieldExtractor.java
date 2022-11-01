@@ -49,11 +49,11 @@ public class GenericFieldExtractor extends AbstractGenericExtractor {
             return type.normalize(value);
         } catch (QueryDataTypeMismatchException e) {
             throw QueryException.dataException("Failed to extract map entry " + (key ? "key" : "value") + " field \""
-                    + path + "\" because of type mismatch [expectedClass=" + e.getExpectedClass().getName()
-                    + ", actualClass=" + e.getActualClass().getName() + ']');
+                + path + "\" because of type mismatch [expectedClass=" + e.getExpectedClass().getName()
+                + ", actualClass=" + e.getActualClass().getName() + ']');
         } catch (Exception e) {
             throw QueryException.dataException("Failed to extract map entry " + (key ? "key" : "value") + " field \""
-                    + path + "\": " + e.getMessage(), e);
+                + path + "\": " + e.getMessage(), e);
         }
     }
 
