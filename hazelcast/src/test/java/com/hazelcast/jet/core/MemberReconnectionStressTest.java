@@ -24,7 +24,6 @@ import com.hazelcast.jet.impl.util.ImdgUtil;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.NightlyTest;
-import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -41,15 +40,8 @@ import static org.junit.Assert.fail;
 @Category({NightlyTest.class})
 public class MemberReconnectionStressTest extends JetTestSupport {
 
-    private final AtomicBoolean terminated = new AtomicBoolean();
-
-    @After
-    public void after() {
-        terminated.set(true);
-    }
-
     @Test
-    public void test() {
+    public void test() throws InterruptedException {
         /*
         The test will start 2 thread:
         - one will submit short batch jobs, serially, after joining the previous job
@@ -70,6 +62,8 @@ public class MemberReconnectionStressTest extends JetTestSupport {
         HazelcastInstance inst1 = createHazelcastInstance(config);
         HazelcastInstance inst2 = createHazelcastInstance(config);
         logger.info("Instances started");
+
+        final AtomicBoolean terminated = new AtomicBoolean();
 
         Thread connectionThread = new Thread(() -> {
             while (!terminated.get()) {
@@ -121,13 +115,10 @@ public class MemberReconnectionStressTest extends JetTestSupport {
             sleepMillis(100);
         }
         //Test finished, close the threads
-        try {
-            terminated.set(true);
+        terminated.set(true);
 
-            connectionThread.join();
-            newJobThread.join();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        connectionThread.join();
+        newJobThread.join();
+
     }
 }
