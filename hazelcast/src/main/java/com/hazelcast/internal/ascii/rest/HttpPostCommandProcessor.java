@@ -351,7 +351,7 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         prepareResponse(
                 SC_500,
                 command,
-                response(FAIL, "message", "Wan Sync requires Hazelcast Enterprise Edition")
+                response(FAIL, "message", "Wan Sync requires Hazelcast Enterprise Edition.")
         );
     }
 
