@@ -16,11 +16,7 @@
 
 package com.hazelcast.jet.sql;
 
-import com.hazelcast.client.impl.clientside.HazelcastClientProxy;
-import com.hazelcast.client.impl.spi.ClientPartitionService;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.HazelcastInstanceProxy;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
@@ -34,12 +30,10 @@ import com.hazelcast.sql.impl.client.SqlClientService;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentMap;
 import java.util.stream.Collectors;
 
@@ -48,6 +42,8 @@ import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 public class SqlClientTest extends SqlTestSupport {
 
@@ -58,33 +54,31 @@ public class SqlClientTest extends SqlTestSupport {
 
     @Test
     public void test_partitionBasedRouting() {
-        final int itemCount = 100;
+        final String selectQuery = "SELECT * FROM test WHERE __key = ?";
+        final String insertQuery = "INSERT INTO test (this, __key) VALUES (?, ?)";
+        final String updateQuery = "UPDATE test SET this = ? WHERE __key = ?";
+
         final HazelcastInstance client = factory().newHazelcastClient();
         final SqlService sqlService = client.getSql();
         final SqlClientService sqlClientService = (SqlClientService) sqlService;
 
-        for (int i = 0; i < itemCount; i++) {
-            client.getMap("test").put(i, "#" + i);
-        }
         createMapping("test", Integer.class, String.class);
 
-        final ClientPartitionService partitionService = ((HazelcastClientProxy) client).client.getClientPartitionService();
+        // TODO: fix
+//        assertNull(sqlClientService.queryPartitionCache.get(insertQuery));
+//        sqlService.execute(insertQuery,"testVal", 1);
+//        assertNotNull(sqlClientService.queryPartitionCache.get(insertQuery));
+//        assertEquals(0, (int) sqlClientService.queryPartitionCache.get(insertQuery));
 
-        for (int i = 0; i < itemCount; i++) {
-            final UUID expectedOwner = partitionService.getPartitionOwner(client.getPartitionService().getPartition(i).getPartitionId());
-            final Address expectedAddress = Arrays.stream(instances())
-                    .map(inst -> ((HazelcastInstanceProxy) inst))
-                    .filter(inst -> inst.getOriginal().node.getThisUuid().equals(expectedOwner))
-                    .findFirst()
-                    .map(inst -> inst.getOriginal().node.address)
-                    .orElse(null);
+        assertNull(sqlClientService.queryPartitionCache.get(updateQuery));
+        sqlService.execute(updateQuery, "testVal", 1);
+        assertNotNull(sqlClientService.queryPartitionCache.get(updateQuery));
+        assertEquals(1, (int) sqlClientService.queryPartitionCache.get(updateQuery));
 
-            sqlService.execute("SELECT * FROM test WHERE __key = ?", i);
-            final int oldVal = sqlClientService.counts.getOrDefault(expectedAddress, 0);
-            sqlService.execute("SELECT * FROM test WHERE __key = ?", i);
-            final int newVal = sqlClientService.counts.getOrDefault(expectedAddress, 0);
-            assertEquals(oldVal + 1, newVal);
-        }
+        assertNull(sqlClientService.queryPartitionCache.get(selectQuery));
+        sqlService.execute(selectQuery, 1);
+        assertNotNull(sqlClientService.queryPartitionCache.get(selectQuery));
+        assertEquals(0, (int) sqlClientService.queryPartitionCache.get(selectQuery));
     }
 
     @Test

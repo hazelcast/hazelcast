@@ -61,7 +61,6 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.serialization.ClassDefinition;
-import com.hazelcast.partition.Partition;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -75,7 +74,6 @@ import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.UpdateSqlResultImpl;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.type.Type;
@@ -466,7 +464,7 @@ public class PlanExecutor {
                 .submitToKey(key, plan.updaterSupplier().get(arguments))
                 .toCompletableFuture();
         await(future, timeout);
-        return UpdateSqlResultImpl.createUpdateCountResult(0);
+        return UpdateSqlResultImpl.createUpdateCountResult(0, plan.keyConditionParamIndex());
     }
 
     SqlResult execute(IMapDeletePlan plan, List<Object> arguments, long timeout) {

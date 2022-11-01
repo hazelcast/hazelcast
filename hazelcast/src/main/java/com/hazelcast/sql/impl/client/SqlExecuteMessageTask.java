@@ -74,7 +74,14 @@ public class SqlExecuteMessageTask extends SqlAbstractMessageTask<SqlExecuteCode
         AbstractSqlResult result = (AbstractSqlResult) response;
 
         if (result.updateCount() >= 0) {
-            return SqlExecuteCodec.encodeResponse(null, null, result.updateCount(), null, false, -1);
+            return SqlExecuteCodec.encodeResponse(
+                    null,
+                    null,
+                    result.updateCount(),
+                    null,
+                    false,
+                    result.getPartitionArgumentIndex()
+            );
         } else {
             SqlServiceImpl sqlService = nodeEngine.getSqlService();
 

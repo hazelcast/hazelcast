@@ -27,7 +27,6 @@ import com.hazelcast.client.impl.protocol.codec.SqlFetchCodec;
 import com.hazelcast.client.impl.protocol.codec.SqlMappingDdlCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.client.impl.spi.impl.ClientInvocationFuture;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.OperationTimeoutException;
@@ -50,11 +49,8 @@ import javax.annotation.Nonnull;
 import java.security.AccessControlException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
@@ -73,12 +69,11 @@ import static com.hazelcast.sql.impl.SqlErrorCode.TOPOLOGY_CHANGE;
  */
 public class SqlClientService implements SqlService {
     private static final int MAX_FAST_INVOCATION_COUNT = 5;
+    private static final int QUERY_CACHE_CAPACITY = 1000;
 
-    // TODO: LRU
     @SuppressWarnings("checkstyle:VisibilityModifier")
-    public final Map<String, Integer> queryPartitionCache = new ConcurrentHashMap<>();
-    @SuppressWarnings("checkstyle:VisibilityModifier")
-    public final Map<Address, Integer> counts = new ConcurrentHashMap<>();
+    public final ConcurrentHashMapLRUCache<String, Integer> queryPartitionCache =
+            new ConcurrentHashMapLRUCache<>(QUERY_CACHE_CAPACITY);
 
     private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
@@ -376,8 +371,6 @@ public class SqlClientService implements SqlService {
                 throw rethrow(QueryException.error(CONNECTION_PROBLEM, "Client is not connected"));
             }
 
-            counts.compute(connection.getRemoteAddress(), (k, v) -> v != null ? v + 1 : 1);
-
             return connection;
         } catch (Exception e) {
             throw rethrow(e);
@@ -392,8 +385,6 @@ public class SqlClientService implements SqlService {
             if (connection == null) {
                 throw rethrow(QueryException.error(CONNECTION_PROBLEM, "Client is not connected"));
             }
-
-            counts.compute(connection.getRemoteAddress(), (k, v) -> v != null ? v + 1 : 1);
 
             return connection;
         } catch (Exception e) {

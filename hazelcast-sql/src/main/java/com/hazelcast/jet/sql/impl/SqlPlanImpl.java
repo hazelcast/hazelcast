@@ -1040,7 +1040,7 @@ abstract class SqlPlanImpl extends SqlPlan {
             return rowMetadata;
         }
 
-        public int keyConditionParamIndex() {
+        int keyConditionParamIndex() {
             return keyConditionParamIndex;
         }
 
@@ -1090,6 +1090,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         ) {
             super(planKey);
 
+            // TODO: extract key index here
             this.objectKeys = Collections.singleton(objectKey);
             this.parameterMetadata = parameterMetadata;
             this.mapName = mapName;
@@ -1211,6 +1212,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final UpdatingEntryProcessor.Supplier updaterSupplier;
         private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
+        private final int keyConditionParamIndex;
 
         IMapUpdatePlan(
                 PlanKey planKey,
@@ -1231,6 +1233,9 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.updaterSupplier = updaterSupplier;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
+            this.keyConditionParamIndex = keyCondition instanceof ParameterExpression
+                    ? ((ParameterExpression<?>) keyCondition).getIndex()
+                    : -1;
         }
 
         QueryParameterMetadata parameterMetadata() {
@@ -1247,6 +1252,10 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         UpdatingEntryProcessor.Supplier updaterSupplier() {
             return updaterSupplier;
+        }
+
+        int keyConditionParamIndex() {
+            return keyConditionParamIndex;
         }
 
         @Override
