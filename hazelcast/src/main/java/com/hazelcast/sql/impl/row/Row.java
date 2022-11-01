@@ -27,7 +27,7 @@ public interface Row extends RowBatch {
         return this;
     }
 
-    default <T> T get(int index, int depth) {
+    default <T> T get(int index, boolean useLazyDeserialization) {
         return get(index);
     }
 

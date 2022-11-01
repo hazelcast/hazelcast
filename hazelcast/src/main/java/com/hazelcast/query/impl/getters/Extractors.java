@@ -76,14 +76,14 @@ public final class Extractors {
     }
 
     public Object extract(Object target, String attributeName, Object metadata, boolean failOnMissingReflectiveAttribute,
-                          int depth) {
+                          boolean useLazyDeserialization) {
         Object targetObject = getTargetObject(target);
         if (targetObject != null) {
             Getter getter = getGetter(targetObject, attributeName, failOnMissingReflectiveAttribute);
             try {
                 if (getter instanceof CompactGetter) {
                     // Use lazy deserialization for compact field access.
-                    return getter.getValue(targetObject, attributeName, depth);
+                    return getter.getValue(targetObject, attributeName, useLazyDeserialization);
                 }
                 return getter.getValue(targetObject, attributeName, metadata);
             } catch (Exception ex) {
@@ -94,7 +94,7 @@ public final class Extractors {
     }
 
     public Object extract(Object target, String attributeName, Object metadata, boolean failOnMissingReflectiveAttribute) {
-        return extract(target, attributeName, metadata, failOnMissingReflectiveAttribute, 0);
+        return extract(target, attributeName, metadata, failOnMissingReflectiveAttribute, false);
     }
 
     /**

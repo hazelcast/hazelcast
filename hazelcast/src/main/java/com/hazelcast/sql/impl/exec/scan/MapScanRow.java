@@ -91,8 +91,8 @@ public final class MapScanRow implements Row {
 
     @SuppressWarnings("unchecked")
     @Override
-    public <T> T get(int idx, int index) {
-        return (T) fieldExtractors[idx].get(index);
+    public <T> T get(int idx, boolean useLazyDeserialization) {
+        return (T) fieldExtractors[idx].get(useLazyDeserialization);
     }
 
     @Override

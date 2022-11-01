@@ -42,10 +42,10 @@ public class GenericFieldExtractor extends AbstractGenericExtractor {
         this.path = path;
     }
 
-    public Object getInternal(int depth) {
+    public Object getInternal(boolean useLazyDeserialization) {
         try {
             Object target = targetAccessor.getTargetForFieldAccess();
-            Object value = extractors.extract(target, path, null, false, depth);
+            Object value = extractors.extract(target, path, null, false, useLazyDeserialization);
             return type.normalize(value);
         } catch (QueryDataTypeMismatchException e) {
             throw QueryException.dataException("Failed to extract map entry " + (key ? "key" : "value") + " field \""
@@ -59,11 +59,11 @@ public class GenericFieldExtractor extends AbstractGenericExtractor {
 
     @Override
     public Object get() {
-        return getInternal(0);
+        return getInternal(false);
     }
 
     @Override
-    public Object get(int depth) {
-        return getInternal(depth);
+    public Object get(boolean useLazyDeserialization) {
+        return getInternal(useLazyDeserialization);
     }
 }

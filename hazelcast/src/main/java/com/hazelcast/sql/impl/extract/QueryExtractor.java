@@ -19,7 +19,7 @@ package com.hazelcast.sql.impl.extract;
 public interface QueryExtractor {
     Object get();
 
-    default Object get(int depth) {
+    default Object get(boolean useLazyDeserialization) {
         return get();
     }
 }

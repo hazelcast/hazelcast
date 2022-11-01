@@ -127,8 +127,8 @@ public class KvRowProjector implements Row {
 
     @Override
     @SuppressWarnings("unchecked")
-    public <T> T get(int index, int depth) {
-        return (T) extractors[index].get(depth);
+    public <T> T get(int index, boolean useLazyDeserialization) {
+        return (T) extractors[index].get(useLazyDeserialization);
     }
 
     @Override

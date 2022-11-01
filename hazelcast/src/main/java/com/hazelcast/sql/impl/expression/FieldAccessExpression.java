@@ -37,12 +37,10 @@ import java.io.IOException;
  * <p>
  * {@code ref.field} - extracts `field` from `ref`.
  */
-public class FieldAccessExpression<T> implements Expression<T>, DepthfulExpression, IdentifiedDataSerializable {
+public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSerializable {
     private QueryDataType type;
     private String name;
     private Expression<?> ref;
-
-    private int depth;
 
     public FieldAccessExpression() { }
 
@@ -54,7 +52,6 @@ public class FieldAccessExpression<T> implements Expression<T>, DepthfulExpressi
         this.type = type;
         this.name = name;
         this.ref = ref;
-        this.depth = 0;
     }
 
     public static FieldAccessExpression<?> create(
@@ -68,9 +65,6 @@ public class FieldAccessExpression<T> implements Expression<T>, DepthfulExpressi
 
     @Override
     public T eval(final Row row, final ExpressionEvalContext context) {
-        if (ref instanceof DepthfulExpression) {
-            ((DepthfulExpression) ref).setDepth(this.depth + 1);
-        }
         Object res = ref.eval(row, context);
         if (res == null) {
             return null;
@@ -91,8 +85,7 @@ public class FieldAccessExpression<T> implements Expression<T>, DepthfulExpressi
                 return (T) type.convert(extractCompactField(
                         (CompactGenericRecord) res,
                         name,
-                        context.getSerializationService(),
-                        this.depth
+                        context.getSerializationService()
                 ));
             } else {
                 return (T) type.convert(ReflectionUtils.getFieldValue(name, res));
@@ -111,10 +104,10 @@ public class FieldAccessExpression<T> implements Expression<T>, DepthfulExpressi
         }
     }
 
-    private Object extractCompactField(CompactGenericRecord compact, String name, InternalSerializationService ss, int depth) {
+    private Object extractCompactField(CompactGenericRecord compact, String name, InternalSerializationService ss) {
         final CompactGetter getter = new CompactGetter(ss);
         try {
-            return getter.getValue(compact, name, this.depth);
+            return getter.getValue(compact, name, true);
         } catch (Exception e) {
             return null;
         }
@@ -151,10 +144,5 @@ public class FieldAccessExpression<T> implements Expression<T>, DepthfulExpressi
     @Override
     public QueryDataType getType() {
         return type;
-    }
-
-    @Override
-    public void setDepth(int depth) {
-        this.depth = depth;
     }
 }

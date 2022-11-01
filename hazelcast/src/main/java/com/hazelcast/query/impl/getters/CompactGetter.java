@@ -51,9 +51,7 @@ public class CompactGetter extends Getter {
         if (metadata == null) {
             return getValue(obj, attributePath);
         }
-        int depth = (int) metadata;
-        // Use lazy deserialization if we use a field of the nested field or a deeper access.
-        boolean useLazyDeserialization = depth > 1;
+        boolean useLazyDeserialization = (boolean) metadata;
         return getValueInternal(obj, attributePath, useLazyDeserialization);
     }
 
