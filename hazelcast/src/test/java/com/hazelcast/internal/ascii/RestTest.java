@@ -413,27 +413,23 @@ public class RestTest {
         String mapName = randomMapName();
         IMap<String, String> map = instance.getMap(mapName + " a");
         map.put("key 1", "value1");
-        map.put("key2", "value2");
-        map.put("key3", "value3");
         ConnectionResponse response = communicator.mapGet(mapName + "%20a", "key%201");
         assertEquals(HTTP_OK, response.responseCode);
         assertEquals(response.response, "value1");
     }
 
     @Test
-    public void testQueueGetWithEscapedName() throws IOException {
+    public void testQueuePollWithEscapedName() throws IOException {
         String queueName = randomString();
         IQueue<String> queue = instance.getQueue(queueName + " a");
         assertTrue(queue.offer("value 1"));
-        assertTrue(queue.offer("value2"));
-        assertTrue(queue.offer("value3"));
         ConnectionResponse response = communicator.queuePoll(queueName + "%20a", 10);
         assertEquals(HTTP_OK, response.responseCode);
         assertEquals(response.response, "value 1");
     }
 
     @Test
-    public void testQueueOfferWithEscapedNameAndSimpleValue() throws IOException {
+    public void testQueueOfferWithEscapedNameAndValue() throws IOException {
         String queueName = randomString();
         IQueue<Object> queue = instance.getQueue(queueName + " a");
         assertEquals(HTTP_OK, communicator.queueOffer(queueName + "%20a" + "/value%201", "data"));
