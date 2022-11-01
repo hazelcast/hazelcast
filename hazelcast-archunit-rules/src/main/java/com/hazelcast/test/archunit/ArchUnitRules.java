@@ -45,7 +45,8 @@ public final class ArchUnitRules {
             .and().implement(Serializable.class)
             .and().doNotImplement("com.hazelcast.nio.serialization.DataSerializable")
             .and().areNotAnonymousClasses()
-            .should(haveValidSerialVersionUid());
+            .should(haveValidSerialVersionUid())
+            .allowEmptyShould(true);
 
     private ArchUnitRules() {
     }
