@@ -47,7 +47,7 @@ public class CompactGetter extends Getter {
     }
 
     @Override
-    Object getValue(Object obj, String attributePath, Object metadata) throws Exception {
+    public Object getValue(Object obj, String attributePath, Object metadata) throws Exception {
         if (metadata == null) {
             return getValue(obj, attributePath);
         }

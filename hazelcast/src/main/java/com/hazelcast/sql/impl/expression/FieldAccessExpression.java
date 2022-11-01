@@ -91,7 +91,8 @@ public class FieldAccessExpression<T> implements Expression<T>, DepthfulExpressi
                 return (T) type.convert(extractCompactField(
                         (CompactGenericRecord) res,
                         name,
-                        context.getSerializationService()
+                        context.getSerializationService(),
+                        this.depth
                 ));
             } else {
                 return (T) type.convert(ReflectionUtils.getFieldValue(name, res));
@@ -110,10 +111,10 @@ public class FieldAccessExpression<T> implements Expression<T>, DepthfulExpressi
         }
     }
 
-    private Object extractCompactField(CompactGenericRecord compact, String name, InternalSerializationService ss) {
+    private Object extractCompactField(CompactGenericRecord compact, String name, InternalSerializationService ss, int depth) {
         final CompactGetter getter = new CompactGetter(ss);
         try {
-            return getter.getValue(compact, name);
+            return getter.getValue(compact, name, this.depth);
         } catch (Exception e) {
             return null;
         }
