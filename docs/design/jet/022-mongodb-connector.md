@@ -224,3 +224,117 @@ The implementation will be split into 3 parts:
 **PR#2**: The SQL connector
 
 **PR#3**: Support for GenericMapStore
+
+### Implementation questions
+
+
+#### Questions about the change:
+
+  - What components in Hazelcast need to change? How do they change?
+    * N/A
+
+  - How does this work in an on-prem deployment?
+    * N/A
+  
+  - Are there new abstractions introduced by the change? New concepts? If yes, provide definitions and examples.
+    * It is configured and used on code side, so deployment changes needed.
+    
+  - How about on AWS and Kubernetes, platform operator?
+    * Same as above, as long as necessary jars are on the classpath it doesn't have deployment requirements.
+    
+  - How does the change behave in mixed-version deployments? During a version upgrade? Which migrations are needed?
+    * Processors won't be strictly backward-compatible. They will follow Jet backward compatibility.
+    
+  - How does this work in Cloud Viridan clusters?
+    * Same as above, it's code-configured.
+    
+  - How does the change behave in mixed-version deployments? During a version upgrade? Which migrations are needed?
+    * Support for hot updates is not planned. All nodes should have the same version of processors.
+    
+  - What are the possible interactions with other features or sub-systems inside Hazelcast? How does the behavior of other code change implicitly as a result of the changes outlined in the design document?
+    * This feature will use GenericMapStore and External Data Factories, as mentioned in the examples above.
+    
+  - What are the edge cases? What are example uses or inputs that we think are uncommon but are still possible and thus need to be handled? How are these edge cases handled?
+    * User may have documents of very different schemas in one collection. In such cases the connector should not fail ()
+    
+  - What are the effect of possible mistakes by other Hazelcast team members trying to use the feature in their own code? How does the change impact how they will troubleshoot things?
+    * It won't be reusable in other context. Troubleshooting will be the same as any other source/sink/connector for Jet. 
+    
+  - Mention alternatives, risks and assumptions. Why is this design the best in the space of possible designs? What other designs have been considered and what is the rationale for not choosing them?
+    
+    * Other alternatives:
+      - leave implementation to users (bad: requires code duplication, no official support is also not good)
+      - keep connector in `jet-contrib` repository - but it's not as well tested as main repo
+    There is also a debatable change, that source and sink will now be a processor implementation, not using
+      `SourceBuilder`. However, as mentioned in [Technical design](#Source-and-sink), it's a preferred way to 
+      create a SQL connector.
+      
+  - Add links to any similar functionalities by other vendors, similarities and differentiators
+    * [Mongo Flink](https://github.com/mongo-flink/mongo-flink)
+
+#### Questions about performance:
+
+  - Does the change impact performance? How?
+    * Won't affect performance of other subsystems
+  - How is resource usage affected for “large” loads? For example, what do we expect to happen when there are 100000 items/entries? 100000 data structures? 1000000 concurrent operations?
+    * Reading will be done in parallel to distribute the load ([see source and sink](#source-and-sink)).
+  - Also investigate the consequences of the proposed change on performance. Pay especially attention to the risk that introducing a possible performance improvement in one area can slow down another area in an unexpected way. Examine all the current "consumers" of the code path you are proposing to change and consider whether the performance of any of them may be negatively impacted by the proposed change. List all these consequences as possible drawbacks.
+    * N/A
+
+#### Stability questions:
+
+  - Can this new functionality affect the stability of a node or the entire cluster? How does the behavior of a node or a cluster degrade if there is an error in the implementation?
+    * It can affect stability if too much data is ingested and there's not enough memory.
+  - Can the new functionality be disabled? Can a user opt out? How? Can the user disable it from the Management Center?
+    * Yes, user can just avoid using it.
+  - Can the new functionality affect clusters which are not explicitly using it?
+    * No
+  - What testing and safe guards are being put in place to protect against unexpected problems?
+    * There will be a soak test to verify stability on high load.
+    * source/sink will be non-cooperative, so should not starve other threads.
+
+#### Security questions:
+ 
+  - Does the change concern authentication or authorization logic? If so, mention this explicitly tag the relevant security-minded reviewer as reviewer to the design document.
+    * N/A  
+  - Does the change create a new way to communicate data over the network?  What rules are in place to ensure that this cannot be used by a malicious user to extract confidential data?
+    * It will connect to MongoDB server. Encryption for data in transit will be implemented.
+  - Is there telemetry or crash reporting? What mechanisms are used to ensure no sensitive data is accidentally exposed?
+    * Same as any Jet processors.
+
+#### Observability and usage questions:
+
+- Is the change affecting asynchronous / background subsystems?
+  * Should not
+- Which other inspection APIs exist?
+  * Standard Jet job status APIs.
+
+- Are there new APIs, or API changes (either internal or external)?
+  * Yes, new Source and Sink, along with new SQL connector type.
+- How would you document the new APIs? Include example usage.
+  * Documentation in Javadocs
+  * How-to guide in documentation.
+- What are the other components or teams that need to know about the new APIs and changes?
+  * SQL Team should be aware of new connector type.
+- Which principles did you apply to ensure the APIs are consistent with other related features / APIs? (Cross-reference other APIs that are similar or related, for comparison.)
+  * Processors will be done in similar manner to other extensions' processors.
+
+- Is the change visible to users of Hazelcast or operators who run Hazelcast clusters?
+  * No if not used.
+- Are there any user experience (UX) changes needed as a result of this change?
+  * No
+- Are the UX changes necessary or clearly beneficial? (Cross-reference the motivation section.)
+  * No
+- Which principles did you apply to ensure the user experience (UX) is consistent with other related features? (Cross-reference other features that have related UX, for comparison.)
+  * Use same structure as other connectors.
+- Which other engineers or teams have you polled for input on the proposed UX changes? Which engineers or team may have relevant experience to provide feedback on UX?
+- Is usage of the new feature observable in telemetry? If so, mention where in the code telemetry counters or metrics would be added.
+  * TBD
+- What might be the valuable metrics that could be shown for this feature in Management Center and/or Viridan Control Plane?
+  * No special metrics; does standard for Jet jobs would be enough.
+- Should this feature be configured, enabled/disabled or managed from the Management Center? How do you think your change affects Management Center?
+  * No, it's  code-only feature.
+- Does the feature require or allow runtime changes to the member configuration (XML/YAML/programmatic)?
+  * No
+- Are usage statistics for this feature reported in Phone Home? If not, why?
+  * Nothing planned as for now.
