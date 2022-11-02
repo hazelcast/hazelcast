@@ -22,20 +22,24 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
-import org.mockito.runners.MockitoJUnitRunner;
+import org.mockito.junit.MockitoJUnitRunner;
 
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.aResponse;
 import static com.github.tomakehurst.wiremock.client.WireMock.equalTo;
+import static com.github.tomakehurst.wiremock.client.WireMock.exactly;
 import static com.github.tomakehurst.wiremock.client.WireMock.get;
+import static com.github.tomakehurst.wiremock.client.WireMock.getRequestedFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.stubFor;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo;
 import static com.github.tomakehurst.wiremock.client.WireMock.urlMatching;
+import static com.github.tomakehurst.wiremock.client.WireMock.verify;
 import static com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
@@ -43,7 +47,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Matchers.any;
+import static org.mockito.ArgumentMatchers.any;
 
 @RunWith(MockitoJUnitRunner.class)
 public class AwsEc2ApiTest {
@@ -281,8 +285,24 @@ public class AwsEc2ApiTest {
 
         // then
         assertEquals(2, result.size());
+        assertTrue(result.containsKey("10.0.1.207"));
         assertNull(result.get("10.0.1.207"));
+        assertTrue(result.containsKey("10.0.1.82"));
         assertNull(result.get("10.0.1.82"));
+    }
+
+    @Test
+    public void describeNetworkInterfacesEmptyPrivateAddressList() {
+        // given
+        List<String> privateAddresses = Collections.emptyList();
+
+        // when
+        Map<String, String> result = awsEc2Api.describeNetworkInterfaces(privateAddresses, CREDENTIALS);
+
+        // then
+        assertEquals(0, result.size());
+
+        verify(exactly(0), getRequestedFor(urlEqualTo("/?Action=DescribeNetworkInterfaces&Version=2016-11-15")));
     }
 
     @Test
@@ -291,7 +311,7 @@ public class AwsEc2ApiTest {
         int errorCode = 401;
         String errorMessage = "Error message retrieved from AWS";
         stubFor(get(urlMatching("/.*"))
-            .willReturn(aResponse().withStatus(errorCode).withBody(errorMessage)));
+                .willReturn(aResponse().withStatus(errorCode).withBody(errorMessage)));
 
         // when
         Exception exception = assertThrows(Exception.class, () -> awsEc2Api.describeInstances(CREDENTIALS));

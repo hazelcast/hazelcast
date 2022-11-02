@@ -22,6 +22,7 @@ import com.hazelcast.logging.Logger;
 import org.w3c.dom.Node;
 
 import java.time.Clock;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -156,6 +157,9 @@ class AwsEc2Api {
      * EC2 Describe Network Interfaces</a>
      */
     Map<String, String> describeNetworkInterfaces(List<String> privateAddresses, AwsCredentials credentials) {
+        if (privateAddresses.isEmpty()) {
+            return Collections.emptyMap();
+        }
         Map<String, String> attributes = createAttributesDescribeNetworkInterfaces(privateAddresses);
         Map<String, String> headers = createHeaders(attributes, credentials);
         String response = callAwsService(attributes, headers);
