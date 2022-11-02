@@ -30,6 +30,8 @@ import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import static classloading.ThreadLeakTestUtils.getThreads;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -46,6 +48,7 @@ public class JdbcDataStoreFactoryTest {
         close(dataStore1);
         close(dataStore2);
         jdbcDataStoreFactory.close();
+        assertTrueEventually("No Hikari threads", () -> assertThat(getThreads()).noneMatch(t -> t.getName().contains("HikariPool-")));
     }
 
     private static void close(DataSource dataStore) throws Exception {
@@ -56,7 +59,6 @@ public class JdbcDataStoreFactoryTest {
 
     @Test
     public void should_return_same_datastore_when_shared() {
-        JdbcDataStoreFactory jdbcDataStoreFactory = new JdbcDataStoreFactory();
         ExternalDataStoreConfig config = new ExternalDataStoreConfig()
                 .setProperty("jdbcUrl", "jdbc:h2:mem:" + JdbcDataStoreFactoryTest.class.getSimpleName() + "_shared")
                 .setShared(true);
@@ -72,7 +74,6 @@ public class JdbcDataStoreFactoryTest {
 
     @Test
     public void should_NOT_return_closing_datastore_when_shared() throws Exception {
-        JdbcDataStoreFactory jdbcDataStoreFactory = new JdbcDataStoreFactory();
         ExternalDataStoreConfig config = new ExternalDataStoreConfig()
                 .setProperty("jdbcUrl", "jdbc:h2:mem:" + JdbcDataStoreFactoryTest.class.getSimpleName() + "_shared")
                 .setShared(true);
@@ -91,7 +92,6 @@ public class JdbcDataStoreFactoryTest {
 
     @Test
     public void should_return_closing_datastore_when_not_shared() throws Exception {
-        JdbcDataStoreFactory jdbcDataStoreFactory = new JdbcDataStoreFactory();
         ExternalDataStoreConfig config = new ExternalDataStoreConfig()
                 .setProperty("jdbcUrl", "jdbc:h2:mem:" + JdbcDataStoreFactoryTest.class.getSimpleName() + "_shared")
                 .setShared(false);
@@ -111,7 +111,6 @@ public class JdbcDataStoreFactoryTest {
 
     @Test
     public void should_return_different_datastore_when_NOT_shared() {
-        JdbcDataStoreFactory jdbcDataStoreFactory = new JdbcDataStoreFactory();
         ExternalDataStoreConfig config = new ExternalDataStoreConfig()
                 .setProperty("jdbcUrl", "jdbc:h2:mem:" + JdbcDataStoreFactoryTest.class.getSimpleName() + "_not_shared")
                 .setShared(false);
@@ -127,7 +126,6 @@ public class JdbcDataStoreFactoryTest {
 
     @Test
     public void should_close_shared_datasource_on_close() throws Exception {
-        JdbcDataStoreFactory jdbcDataStoreFactory = new JdbcDataStoreFactory();
         ExternalDataStoreConfig config = new ExternalDataStoreConfig()
                 .setProperty("jdbcUrl", "jdbc:h2:mem:" + JdbcDataStoreFactoryTest.class.getSimpleName() + "_shared")
                 .setShared(true);
