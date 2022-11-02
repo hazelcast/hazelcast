@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
+import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.instance.impl.HazelcastInstanceImpl;
 import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.Job;
@@ -27,7 +28,7 @@ import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.spi.exception.MissingMemberException;
+import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
@@ -105,7 +106,8 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
                 // Don't ignore exceptions from master. If we don't get a response from a non-master member, it
                 // can contain only light jobs - we ignore that member's failure, because these jobs are not as
                 // important. If we don't get response from the master, we report it to the user.
-                if (!en.getKey().equals(masterAddress) && isOrHasCause(e, MissingMemberException.class)) {
+                if (!en.getKey().equals(masterAddress) &&
+                        (isOrHasCause(e, MemberLeftException.class) || isOrHasCause(e, TargetNotMemberException.class))) {
                     result = GetJobIdsResult.EMPTY;
                 } else {
                     throw new RuntimeException("Error when getting job IDs: " + e, e);
