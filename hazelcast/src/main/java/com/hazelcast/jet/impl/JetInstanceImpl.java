@@ -57,8 +57,7 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
         this.config = config;
     }
 
-    @Nonnull
-    @Override
+    @Nonnull @Override
     public JetConfig getConfig() {
         return config;
     }
