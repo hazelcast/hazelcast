@@ -405,7 +405,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
      */
     public static void ditchJob(@Nonnull Job job, @Nonnull HazelcastInstance... instances) {
         boolean result = ditchJob0(job, instances);
-        //If job could not be ditched, no need to continue
+        // If job could not be ditched, no need to continue
         if (!result) {
             return;
         }
