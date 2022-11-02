@@ -172,7 +172,11 @@ instance().getConfig().addMapConfig(mapConfig);
 The `hazelcast-jet-contrib` repository contained MongoDB connector. It was
 based on the `SourceBuilder`, which is nice in general, but for more 
 flexibility we need to rework this connector to low-level Processor/
-ProcessorSupplier/ProcessorMetaSupplier. 
+ProcessorSupplier/ProcessorMetaSupplier:
+- `SqlConnector` class' methods are working on DAG level, so it will be easier
+  to reuse processors
+- custom MetaSupplier will make it easier to distribute workload based on
+  MongoDB's replica sets.
 
 We can check if we could use MongoDB's Replica sets. If yes, then
 our MetaSupplier can spawn as many ProcessorSuppliers as MongoDB has 
@@ -180,7 +184,8 @@ replicas and configure Mongo client to use this specific replica.
 
 Each MongoDB source processor can read just a part of collection. Two main
 approaches for reading a part of collections are:
- - slice `__id` range to as many elements as there will be processors
+ - slice `__id` ([see Document's docs](https://www.mongodb.com/docs/manual/core/document/)) 
+   range to as many elements as there will be processors
    and make each processor read this slice
  - use `__id mod processorGlobalIndex` to determine which element in 
    collection will be read by which processor. 
