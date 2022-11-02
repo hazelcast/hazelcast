@@ -76,6 +76,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -402,7 +403,21 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
      * will ignore if it's not running. If the cancellation fails, it will
      * retry.
      */
-    public static void ditchJob(@Nonnull Job job, @Nonnull HazelcastInstance... instancesToShutDown) {
+    public static void ditchJob(@Nonnull Job job, @Nonnull HazelcastInstance... instances) {
+        ditchJob0(job, instances);
+        // Let's wait for the job to be not RUNNING on all the members.
+        assertTrueEventually(() -> {
+            assertNotEquals(RUNNING, job.getStatus());
+            for (HazelcastInstance instance : instances) {
+                Job instanceJob = instance.getJet().getJob(job.getId());
+                if (instanceJob != null) {
+                    assertNotEquals(RUNNING, instanceJob.getStatus());
+                }
+            }
+        });
+    }
+
+    private static void ditchJob0(@Nonnull Job job, @Nonnull HazelcastInstance... instancesToShutDown) {
         int numAttempts;
         for (numAttempts = 0; numAttempts < 10; numAttempts++) {
             JobStatus status = null;
