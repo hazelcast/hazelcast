@@ -24,6 +24,18 @@ import java.math.MathContext;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
+
+import java.time.DayOfWeek;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
+import java.time.format.TextStyle;
+import java.time.temporal.ChronoField;
+import java.time.temporal.IsoFields;
+import java.time.temporal.JulianFields;
+import java.time.temporal.Temporal;
+import java.time.temporal.TemporalField;
+import static java.time.temporal.WeekFields.ISO;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -36,7 +48,9 @@ import java.util.regex.Pattern;
 /**
  * Implementation of <a href="https://www.postgresql.org/docs/14/functions-formatting.html">
  * PostgreSQL <code>to_char()</code></a> with the following differences.
- * <ol><li> {@code V} pattern can be combined with a decimal point.
+ * <ol><li> {@code FM} and {@code TM} prefixes enable the fill and translation modes for date
+ *          patterns respectively, which are disabled by default.
+ *     <li> {@code V} pattern can be combined with a decimal point.
  *     <li> {@code M} and {@code P} patterns are introduced as the anchored versions of {@code MI}
  *          and {@code PL} patterns respectively.
  *     <li> {@code PR} pattern is replaced with {@code B} and {@code BR} patterns. The former is
@@ -52,44 +66,256 @@ import java.util.regex.Pattern;
  */
 @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:DeclarationOrder",
         "checkstyle:ExecutableStatementCount", "checkstyle:InnerAssignment", "checkstyle:MagicNumber",
-        "checkstyle:MethodLength", "checkstyle:NestedIfDepth", "checkstyle:NPathComplexity"})
+        "checkstyle:MethodLength", "checkstyle:MultipleVariableDeclarations", "checkstyle:NestedIfDepth",
+        "checkstyle:NPathComplexity"})
 public class Formatter {
-//    private static final Pattern DATETIME_TEMPLATE = Pattern.compile(
-//            "(FM|TM)?(HH(?:12|24)?|MI|[SMU]S|FF[1-6]|SSSSS?|[AP](?:M|\\.M\\.)|[ap](?:m|\\.m\\.)|"
-//            + "Y,YYY|[YI]Y{0,3}|BC|B\\.C\\.|bc|b\\.c\\.|AD|A\\.D\\.|ad|a\\.d\\.|"
-//            + "MON(?:TH)?|[Mm]on(?:th)?|MM|DA?Y|[Dd]a?y|I?D{1,3}|DD|W|[WI]W|CC|J|Q|"
-//            + "RM|rm|TZ|tz|TZ[HM]?|OF)(TH|th)?");
+    private static final Pattern DATETIME_TEMPLATE = Pattern.compile(
+            "((?:FM|TM)*)(SSSSS?|HH(?:12|24)?|MI|[SMU]S|FF[1-6]|[AP](?:M|\\.M\\.)|[ap](?:m|\\.m\\.)|"
+            + "DA?Y|[Dd]a?y|I?DDD|DD|I?D|W|[WI]W|CC|J|Q|MON(?:TH)?|[Mm]on(?:th)?|MM|RM|rm|"
+            + "Y,YYY|[YI]Y{0,3}|BC|B\\.C\\.|bc|b\\.c\\.|AD|A\\.D\\.|ad|a\\.d\\.|"
+            + "TZ[HM]?|TZ|tz|OF)(TH|th)?|\"[^\"]*\"");
     private static final Pattern NUMERIC_TEMPLATE = Pattern.compile(
             "FM|[90]+|[,G.D]|BR?|SG?|MI?|PL?|CR?|F?\"[^\"]*\"|V9+|TH|th|EEEE|RN");
-    private final BiFunction<Object, DecimalFormatSymbols, String> format;
+    private static final Pattern SIGN = Pattern.compile("[+-]");
+    private final String format;
+    private BiFunction<Object, Locale, String> formatter;
 
     public Formatter(String format) {
-//        Matcher m = DATETIME_TEMPLATE.matcher(format);
-//        FormatString f = new DateFormat(format, m);
-//        if (f == null) {
-//            m.reset().usePattern(NUMERIC_TEMPLATE);
-//            f = new NumberFormat(format, m);
-            Matcher m = NUMERIC_TEMPLATE.matcher(format);
-            this.format = new NumberFormat(format, m);
-//        }
-//        this.format = f;
+        this.format = format;
     }
 
     public String format(Object input, String locale) {
-//        if (format instanceof DateFormat && !(input instanceof Temporal)) {
-//            throw QueryException.dataException("Input parameter is expected to be date/time");
-//        }
-        if (format instanceof NumberFormat && !(input instanceof Number)) {
+        if (formatter == null) {
+            formatter = input instanceof Temporal ? new DateFormat(format) : new NumberFormat(format);
+        }
+        if (formatter instanceof DateFormat && !(input instanceof Temporal)) {
+            throw QueryException.dataException("Input parameter is expected to be date/time");
+        }
+        if (formatter instanceof NumberFormat && !(input instanceof Number)) {
             throw QueryException.dataException("Input parameter is expected to be numeric");
         }
-        return format.apply(input, DecimalFormatSymbols.getInstance(Locale.forLanguageTag(locale)));
+        return formatter.apply(input, Locale.forLanguageTag(locale));
     }
-
-//    private static class DateFormat implements BiFunction<Object, DecimalFormatSymbols, String> { }
 
     private static final int[] ARABIC = {1000,  900, 500,  400, 100,   90,  50,   40,  10,    9,   5,    4,   1};
     private static final String[] ROMAN = {"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"};
     private static final String[] ORDINAL = {"th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th"};
+
+    private static StringBuilder toRoman(int number) {
+        StringBuilder r = new StringBuilder();
+        for (int j = 0; j < ARABIC.length; j++) {
+            for (; number >= ARABIC[j]; number -= ARABIC[j]) {
+                r.append(ROMAN[j]);
+            }
+        }
+        return r;
+    }
+
+    private static String getOrdinal(String number) {
+        return number.endsWith("11") || number.endsWith("12") || number.endsWith("13")
+                ? "th" : ORDINAL[number.charAt(number.length() - 1) - 48];
+    }
+
+    private static class DateFormat implements BiFunction<Object, Locale, String> {
+        private final List<Part> parts = new ArrayList<>();
+
+        interface Part {
+            void format(StringBuilder s, Temporal input, Locale locale);
+        }
+
+        static class Literal implements Part {
+            final String contents;
+
+            Literal(String contents) {
+                this.contents = contents;
+            }
+
+            @Override
+            public void format(StringBuilder s, Temporal input, Locale locale) {
+                s.append(contents);
+            }
+
+            @Override
+            public String toString() {
+                return '"' + contents + '"';
+            }
+        }
+
+        static class PatternInstance implements Part {
+            final boolean fill, translate;
+            final Pattern pattern;
+            final Ordinal ordinal;
+
+            PatternInstance(boolean fill, boolean translate, Pattern pattern, Ordinal ordinal) {
+                this.fill = fill;
+                this.translate = translate;
+                this.pattern = pattern;
+                this.ordinal = ordinal;
+            }
+
+            @Override
+            public void format(StringBuilder s, Temporal input, Locale locale) {
+                Object result = pattern.query.apply(input, translate ? locale : Locale.US);
+                String r = result.toString();
+                if (pattern == Pattern.TZH) {
+                    s.append((int) result < 0 ? '-' : '+');
+                    r = (int) result < 0 ? r.substring(1) : r;
+                }
+                if (fill) {
+                    char pad = result instanceof Number ? '0' : ' ';
+                    for (int i = r.length(); i < pattern.maxLength; i++) {
+                        s.append(pad);
+                    }
+                }
+                s.append(r);
+                if (pattern == Pattern.Y_YYY && (fill || r.length() == 4)) {
+                    s.insert(s.length() - 3, ',');
+                }
+                if (ordinal != null) {
+                    String th = getOrdinal(r);
+                    s.append(ordinal == Ordinal.TH ? th.toUpperCase() : th);
+                }
+            }
+
+            @Override
+            public String toString() {
+                return (fill ? "FM" : "") + (translate ? "TM" : "") + pattern + (ordinal == null ? "" : ordinal);
+            }
+        }
+
+        static final DateTimeFormatter
+                MERIDIEM_FORMATTER = DateTimeFormatter.ofPattern("a"),
+                TIMEZONE_FORMATTER = DateTimeFormatter.ofPattern("O"),
+                ERA_FORMATTER = DateTimeFormatter.ofPattern("G");
+
+        static final BiFunction<Object, Locale, Object>
+                UPPERCASE = (o, l) -> ((String) o).toUpperCase(l),
+                LOWERCASE = (o, l) -> ((String) o).toLowerCase(l),
+                WITH_PERIODS = (o, l) -> {
+                    String r = (String) o;
+                    return r.length() != 2 ? r : r.charAt(0) + "." + r.charAt(1) + ".";
+                };
+
+        @SuppressWarnings("checkstyle:MethodParamPad")
+        enum Pattern {
+            HH12  (ChronoField.CLOCK_HOUR_OF_AMPM, 2), HH(HH12),
+            HH24  (ChronoField.HOUR_OF_DAY, 2),
+            MI    (ChronoField.MINUTE_OF_HOUR, 2),
+            SS    (ChronoField.SECOND_OF_MINUTE, 2),
+            MS    (ChronoField.MILLI_OF_SECOND, 3),
+            US    (ChronoField.MICRO_OF_SECOND, 6),
+            FF1   (MS, (r, l) -> (int) r / 100, 1),
+            FF2   (MS, (r, l) -> (int) r / 10, 2),
+            FF3   (MS),
+            FF4   (US, (r, l) -> (int) r / 100, 4),
+            FF5   (US, (r, l) -> (int) r / 10, 5),
+            FF6   (US),
+            SSSS  (ChronoField.SECOND_OF_DAY, 5), SSSSS (SSSS),
+            AM    ((t, l) -> MERIDIEM_FORMATTER.withLocale(l).format(t), 2), PM(AM),
+            am    (AM, LOWERCASE), pm(am),
+            A_M_  (AM, WITH_PERIODS, 4), P_M_(A_M_),
+            a_m_  (am, WITH_PERIODS), p_m_(a_m_),
+            YYYY  (ChronoField.YEAR_OF_ERA, 4), Y_YYY(YYYY),
+            YYY   (YYYY, (r, l) -> (int) r % 1000, 3),
+            YY    (YYYY, (r, l) -> (int) r % 100, 2),
+            Y     (YYYY, (r, l) -> (int) r % 10, 1),
+            IYYY  (ISO.weekBasedYear(), 4),
+            IYY   (IYYY, (r, l) -> (int) r % 1000, 3),
+            IY    (IYYY, (r, l) -> (int) r % 100, 2),
+            I     (IYYY, (r, l) -> (int) r % 10, 1),
+            BC    ((t, l) -> ERA_FORMATTER.withLocale(l).format(t), 2), AD(BC),
+            bc    (BC, LOWERCASE), ad(bc),
+            B_C_  (BC, WITH_PERIODS, 4), A_D_(B_C_),
+            b_c_  (bc, WITH_PERIODS), a_d_(b_c_),
+            Month ((t, l) -> java.time.Month.from(t).getDisplayName(TextStyle.FULL, l), 9),
+            MONTH (Month, UPPERCASE),
+            month (Month, LOWERCASE),
+            Mon   ((t, l) -> java.time.Month.from(t).getDisplayName(TextStyle.SHORT, l), 3),
+            MON   (Mon, UPPERCASE),
+            mon   (Mon, LOWERCASE),
+            MM    (ChronoField.MONTH_OF_YEAR, 2),
+            Day   ((t, l) -> DayOfWeek.from(t).getDisplayName(TextStyle.FULL, l), 9),
+            DAY   (Day, UPPERCASE),
+            day   (Day, LOWERCASE),
+            Dy    ((t, l) -> DayOfWeek.from(t).getDisplayName(TextStyle.SHORT, l), 3),
+            DY    (Dy, UPPERCASE),
+            dy    (Dy, LOWERCASE),
+            DDD   (ChronoField.DAY_OF_YEAR, 3),
+            IDDD  ((t, l) -> (t.get(ISO.weekOfWeekBasedYear()) - 1) * 7 + t.get(ISO.dayOfWeek()), 3),
+            DD    (ChronoField.DAY_OF_MONTH, 2),
+            D     (ChronoField.DAY_OF_WEEK, 1),
+            ID    (ISO.dayOfWeek(), 1),
+            W     (ChronoField.ALIGNED_WEEK_OF_MONTH, 1),
+            WW    (ChronoField.ALIGNED_WEEK_OF_YEAR, 2),
+            IW    (ISO.weekOfWeekBasedYear(), 2),
+            CC    ((t, l) -> (int) Math.ceil(t.get(ChronoField.YEAR_OF_ERA) / 100f), 2),
+            J     ((t, l) -> t.getLong(JulianFields.JULIAN_DAY), 7),
+            Q     (IsoFields.QUARTER_OF_YEAR, 1),
+            RM    ((t, l) -> toRoman(t.get(ChronoField.MONTH_OF_YEAR)), 4),
+            rm    (RM, LOWERCASE),
+            TZ    ((t, l) -> SIGN.split(TIMEZONE_FORMATTER.withLocale(l).format(t))[0], 3),
+            tz    (TZ, LOWERCASE),
+            TZH   ((t, l) -> ZoneOffset.from(t).getTotalSeconds() / 3600, 2),
+            TZM   ((t, l) -> (ZoneOffset.from(t).getTotalSeconds() % 3600) / 60, 2),
+            OF    ((t, l) -> ZoneOffset.from(t).getId(), 9);
+
+            final BiFunction<Temporal, Locale, Object> query;
+            final int maxLength;
+
+            Pattern(Pattern pattern) {
+                this(pattern.query, pattern.maxLength);
+            }
+            Pattern(TemporalField field, int maxLength) {
+                this((t, l) -> t.get(field), maxLength);
+            }
+            Pattern(Pattern pattern, BiFunction<Object, Locale, Object> transform) {
+                this(pattern, transform, pattern.maxLength);
+            }
+            Pattern(Pattern pattern, BiFunction<Object, Locale, Object> transform, int maxLength) {
+                this((t, l) -> transform.apply(pattern.query.apply(t, l), l), maxLength);
+            }
+            Pattern(BiFunction<Temporal, Locale, Object> query, int maxLength) {
+                this.query = query;
+                this.maxLength = maxLength;
+            }
+        }
+
+        enum Ordinal { TH, th }
+
+        DateFormat(String format) {
+            Matcher m = DATETIME_TEMPLATE.matcher(format);
+            int i = 0;
+            for (; m.find(); i = m.end()) {
+                if (m.start() > i) {
+                    parts.add(new Literal(format.substring(i, m.start())));
+                }
+                String group = m.group();
+                if (group.startsWith("\"")) {
+                    parts.add(new Literal(group.substring(1, group.length() - 1)));
+                } else {
+                    String prefix = m.group(1), suffix = m.group(3);
+                    String pattern = m.group(2).replace('.', '_').replace(',', '_');
+                    parts.add(new PatternInstance(prefix.contains("FM"), prefix.contains("TM"),
+                            Pattern.valueOf(pattern), suffix == null ? null : Ordinal.valueOf(suffix)));
+                }
+            }
+            if (i < m.regionEnd()) {
+                parts.add(new Literal(format.substring(i)));
+            }
+        }
+
+        @Override
+        public String apply(Object input, Locale locale) {
+            StringBuilder s = new StringBuilder();
+            parts.forEach(p -> p.format(s, (Temporal) input, locale));
+            return s.toString();
+        }
+
+        @Override
+        public String toString() {
+            return parts.toString();
+        }
+    }
 
     /**
      * This implementation does not leverage {@link DecimalFormat} or {@link java.util.Formatter}
@@ -110,8 +336,7 @@ public class Formatter {
      *          and {@link BigDecimal} are using the decimal representation of floating point
      *          numbers, but for the former, the rounding mode is not configurable. </ol>
      */
-    @SuppressWarnings("checkstyle:MultipleVariableDeclarations")
-    private static class NumberFormat implements BiFunction<Object, DecimalFormatSymbols, String> {
+    private static class NumberFormat implements BiFunction<Object, Locale, String> {
         private final Form form;
         private final Mask integerMask = new Mask(true), fractionMask = new Mask(false);
         private final boolean currency;
@@ -185,8 +410,8 @@ public class Formatter {
             final List<Boolean> fillModes = new ArrayList<>();
             boolean fillMode = true;
             int offerSign = -1, digits, minDigits;
-            boolean sign = false;
-            Pattern bracket = null;
+            boolean sign;
+            Pattern bracket;
 
             Mask(boolean pre) {
                 this.pre = pre;
@@ -277,8 +502,7 @@ public class Formatter {
                             parts.add(symbols.getCurrencySymbol());
                         } else if (p == Pattern.TH || p == Pattern.th) {
                             if (integer != null) {
-                                String th = integer.endsWith("11") || integer.endsWith("12") || integer.endsWith("13")
-                                        ? "th" : ORDINAL[integer.charAt(integer.length() - 1) - 48];
+                                String th = getOrdinal(integer);
                                 parts.add(p == Pattern.TH ? th.toUpperCase() : th);
                             } else if (fillMode) {
                                 f += 2;
@@ -301,17 +525,14 @@ public class Formatter {
                         } else if (p == Pattern.RN) {
                             if (integer != null) {
                                 long n = integer.isEmpty() ? 0 : Long.parseLong(integer);
-                                StringBuilder r = new StringBuilder(15);
+                                StringBuilder r;
                                 if (((n == 0 || negative) && form == Form.Roman) || n > 3999) {
+                                    r = new StringBuilder(15);
                                     for (int j = 0; j < 15; j++) {
                                         r.append('#');
                                     }
                                 } else {
-                                    for (int j = 0; j < ARABIC.length; j++) {
-                                        for (; n >= ARABIC[j]; n -= ARABIC[j]) {
-                                            r.append(ROMAN[j]);
-                                        }
-                                    }
+                                    r = toRoman((int) n);
                                 }
                                 parts.add(r);
                                 if (fillMode) {
@@ -373,7 +594,8 @@ public class Formatter {
             }
         }
 
-        NumberFormat(String format, Matcher m) {
+        NumberFormat(String format) {
+            Matcher m = NUMERIC_TEMPLATE.matcher(format);
             Mask mask = integerMask;
             boolean currency = false, exponential = false, roman = false;
             int i = 0, exponent = 0;
@@ -464,7 +686,8 @@ public class Formatter {
          *      updated accordingly. </ol>
          */
         @Override
-        public String apply(Object input, DecimalFormatSymbols symbols) {
+        public String apply(Object input, Locale locale) {
+            DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance(locale);
             StringBuilder s = new StringBuilder();
             String value = input.toString();
             boolean negative = value.startsWith("-");

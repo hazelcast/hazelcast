@@ -19,19 +19,101 @@ package com.hazelcast.sql.impl.expression.datetime;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Year;
+import java.time.YearMonth;
+import java.time.ZoneOffset;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
+@SuppressWarnings("checkstyle:ParenPad")
 public class FormatterTest {
+    private static int jdk;
+
+    @BeforeClass
+    public static void setup() {
+        String[] version = System.getProperty("java.version").split("\\.");
+        jdk = Integer.parseInt(version[version[0].equals("1") ? 1 : 0]);
+    }
+
+    @Test
+    public void testDates() {
+        Formatter f = new Formatter("Day, Mon DDth, YYYY");
+        check(LocalDate.of(2022, 9, 26), f, "Monday, Sep 26th, 2022");
+
+        f = new Formatter("DD TMMonth YYYY");
+        check(LocalDate.of(2022, 9, 26), f, "26 Eylül 2022", "tr-TR");
+
+        f = new Formatter("YYYY-FMMM-FMDD HH:FMMI AM OF");
+        check(LocalDateTime.of(2022, 9, 26, 14, 53).atOffset(ZoneOffset.ofHours(3)), f,
+                "2022-09-26 2:53 PM +03:00");
+
+        f = new Formatter("FMHH12:FMMI A.M. TZFMTZH:FMTZM");
+        check(LocalTime.of(14, 53).atOffset(ZoneOffset.ofHours(3)), f, "02:53 P.M. GMT+03:00");
+
+        if (jdk >= 11) {
+            f = new Formatter("FMHH12:FMMI TMA.M.");
+            check(LocalTime.of(14, 53), f, "02:53 Ö.S.", "tr-TR");
+        }
+
+        f = new Formatter("At HH24:MI:SS, SSSS(=SSSSS) seconds are passed from the midnight.");
+        check(LocalTime.of(12, 34, 56), f,
+                "At 12:34:56, 45296(=45296) seconds are passed from the midnight.");
+
+        f = new Formatter("YYYY-MM-DD is the DDDth \"day\" of YYYY.");
+        check(LocalDate.of(2022, 9, 26), f, "2022-9-26 is the 269th day of 2022.");
+
+        f = new Formatter("FMY,YYY(Y,YYY) FMYYYY(YYYY) FMYYY(YYY) FMYY(YY) FMY(Y)");
+        check(Year.of(1), f, "0,001(1) 0001(1) 001(1) 01(1) 1(1)");
+
+        f = new Formatter("FF1 FF2 FF3(=MS) FF4 FF5 FF6(=US)");
+        check(LocalTime.ofNanoOfDay(123456789), f, "1 12 123(=123) 1234 12345 123456(=123456)");
+
+        f = new Formatter("\"Quarter\" YYYY-\"Q\"Q is in the CCth century.");
+        check(YearMonth.of(2022, 9), f, "Quarter 2022-Q3 is in the 21st century.");
+
+        f = new Formatter("Roman numeral for Month is RM.");
+        check(YearMonth.of(2022, 9), f, "Roman numeral for September is IX.");
+
+        f = new Formatter("Plato founded the \"Academy\" in c. YYYY AD.");
+        check(Year.of(-386), f, "Plato founded the Academy in c. 387 BC.");
+
+        f = new Formatter("Plato \"Akademi\"'yi TMA.D. YYYY civarında kurdu.");
+        check(Year.of(-386), f, "Plato Akademi'yi M.Ö. 387 civarında kurdu.", "tr-TR");
+
+        f = new Formatter("AD(=BC) A.D.(=B.C.) ad(=bc) a.d.(=b.c.)");
+        check(Year.of(0), f, "BC(=BC) B.C.(=B.C.) bc(=bc) b.c.(=b.c.)");
+
+        f = new Formatter("The Halley's closest approach to the Earth was on DD Month YYYY AD (the Jth \"Julian day\").");
+        check(LocalDate.of(837, 2, 28), f,
+                "The Halley's closest approach to the Earth was on 28 February 837 AD (the 2026827th Julian day).");
+    }
+
+    @Test
+    public void testWeekDates() {
+        Formatter f = new Formatter("IYYY-\"W\"FMIW-ID");
+        check(LocalDate.of(2022, 10, 25), f, "2022-W43-2");
+        check(LocalDate.of(2019, 12, 30), f, "2020-W01-1");
+
+        f = new Formatter("YYYY-FMMM-FMDD is the IDDDth \"day\" of week-year IYYY.");
+        check(LocalDate.of(2008, 12, 29), f, "2008-12-29 is the 1st day of week-year 2009.");
+        check(LocalDate.of(2010, 1, 3), f, "2010-01-03 is the 371st day of week-year 2009.");
+
+        f = new Formatter("FMIYYY(IYYY) FMIYY(IYY) FMIY(IY) FMI(I)");
+        check(LocalDate.of(1, 1, 1), f, "0001(1) 001(1) 01(1) 1(1)");
+    }
 
     @Test
     public void testRounding() {
@@ -143,8 +225,8 @@ public class FormatterTest {
     @Test
     public void testLocales() {
         Formatter f = new Formatter("FM9G999D99");
-        assertEquals("1,234.56", f.format(1234.56, "en-US"));
-        assertEquals("1.234,56", f.format(1234.56, "tr-TR"));
+        check(1234.56, f, "1,234.56", "en-US");
+        check(1234.56, f, "1.234,56", "tr-TR");
     }
 
     private void check(double input, String expectedPositive, String expectedNegative, String... formats) {
@@ -154,9 +236,13 @@ public class FormatterTest {
             check(-input, f, expectedNegative);
         }
     }
-    
+
     private void check(Object input, Formatter f, String expected) {
-        assertEquals(expected, f.format(input, "en-US"));
+        check(input, f, expected, "en-US");
+    }
+
+    private void check(Object input, Formatter f, String expected, String locale) {
+        assertEquals(expected, f.format(input, locale));
     }
 
     /**
