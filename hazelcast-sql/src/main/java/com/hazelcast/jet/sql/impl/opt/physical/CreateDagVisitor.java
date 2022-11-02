@@ -119,6 +119,7 @@ public class CreateDagVisitor {
         this.localMemberAddress = nodeEngine.getThisAddress();
         this.parameterMetadata = parameterMetadata;
         this.watermarkKeysAssigner = watermarkKeysAssigner;
+        this.windowSizeGCDCalculator = new WindowSizeGCDCalculator(MOCK_EEC);
         this.objectKeys.addAll(usedViews);
     }
 
@@ -537,7 +538,6 @@ public class CreateDagVisitor {
     }
 
     public Vertex onRoot(RootRel rootRel) {
-        windowSizeGCDCalculator = new WindowSizeGCDCalculator(MOCK_EEC);
         windowSizeGCDCalculator.calculate((PhysicalRel) rootRel.getInput());
 
         RelNode input = rootRel.getInput();
