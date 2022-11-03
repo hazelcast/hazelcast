@@ -39,6 +39,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.readMa
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeMap;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
+// RU_COMPAT 5.2 No need to implement Versioned after 5.3 release
 public class MemberInfo implements IdentifiedDataSerializable, Versioned {
 
     private Address address;
