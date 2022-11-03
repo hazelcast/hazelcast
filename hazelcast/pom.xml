@@ -739,6 +739,7 @@
             <scope>test</scope>
         </dependency>
         <!-- Force higher version, compatible with M1 -->
+        <!-- Otherwise Docker for Java (used by TestContainers) is not able to load all JNA files for aarch64 -->
         <dependency>
             <groupId>net.java.dev.jna</groupId>
             <artifactId>jna</artifactId>
