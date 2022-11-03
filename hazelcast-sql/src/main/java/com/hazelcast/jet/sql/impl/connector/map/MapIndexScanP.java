@@ -61,6 +61,7 @@ import java.util.Map;
 import java.util.PrimitiveIterator;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.function.Function;
 import java.util.stream.IntStream;
 
 import static com.hazelcast.jet.impl.util.Util.getNodeEngine;
@@ -149,9 +150,22 @@ final class MapIndexScanP extends AbstractProcessor {
         return isIndexSorted ? runSortedIndex() : runHashIndex();
     }
 
+    /**
+     * Processor uses operation runner, which may hold locks
+     * for {@link java.util.concurrent.ConcurrentHashMap#computeIfAbsent(Object, Function)}.
+     * <p>
+     * See more : {@link com.hazelcast.spi.impl.operationservice.impl.OperationRunnerImpl#run(Operation, long)}
+     *
+     * @return false
+     */
+    @Override
+    public boolean isCooperative() {
+        return false;
+    }
+
     @Override
     public boolean closeIsCooperative() {
-        return true;
+        return false;
     }
 
     private boolean runSortedIndex() {
