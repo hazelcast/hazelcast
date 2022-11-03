@@ -144,7 +144,8 @@
         <mockito.version>3.6.0</mockito.version>
         <powermock.version>2.0.9</powermock.version>
         <reflections.version>0.9.10</reflections.version>
-        <testcontainers.version>1.17.3</testcontainers.version>
+        <testcontainers.version>1.17.5</testcontainers.version>
+        <jna.version>5.12.1</jna.version>
         <archunit.version>0.22.0</archunit.version>
         <errorprone.version>2.15.0</errorprone.version>
         <awaitility.version>4.1.1</awaitility.version>
