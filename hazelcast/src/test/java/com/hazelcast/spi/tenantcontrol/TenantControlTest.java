@@ -142,9 +142,9 @@ public class TenantControlTest extends TenantControlTestSupport {
         // these operations don't require tenant control:
         // AddCacheConfigOperation
         // TenantControlReplicationOperation
-        assertEquals(4, setTenantCount.get());
-        assertEquals(4, closeTenantCount.get());
-        assertEquals(1, registerTenantCount.get());
+        assertEqualsEventually(4, setTenantCount);
+        assertEqualsEventually(4, closeTenantCount);
+        assertEqualsEventually(1, registerTenantCount);
         assertEqualsEventually(1, unregisterTenantCount);
         // thread context should be cleared at least twice.
         // in most cases it would be three times, but there is a case when the structure
