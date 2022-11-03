@@ -113,7 +113,7 @@ public class ExternalDataStoreServiceImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void should_fail_when_datastore_class_DOES_NOT_implements_ExternalDataStoreFactory() throws Exception {
+    public void should_fail_when_datastore_class_DOES_NOT_implements_ExternalDataStoreFactory() {
         Config wrongConfig = smallInstanceConfig();
 
         ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
@@ -128,7 +128,7 @@ public class ExternalDataStoreServiceImplTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void should_fail_when_datastore_class_NON_existing() throws Exception {
+    public void should_fail_when_datastore_class_NON_existing() {
         Config wrongConfig = smallInstanceConfig();
 
         ExternalDataStoreConfig externalDataStoreConfig = new ExternalDataStoreConfig()
