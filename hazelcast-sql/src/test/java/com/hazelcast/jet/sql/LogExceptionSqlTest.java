@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
@@ -70,7 +71,7 @@ public class LogExceptionSqlTest extends SimpleTestInClusterSupport {
         assertNoJobsLeftEventually(instance());
 
         // then
-        List<Throwable> exceptions = recorder.exceptionsOfTypes(ResultLimitReachedException.class);
+        List<Throwable> exceptions = recorder.exceptionsOfTypes(ResultLimitReachedException.class, JetException.class);
         assertThat(exceptions).isEmpty();
     }
 }

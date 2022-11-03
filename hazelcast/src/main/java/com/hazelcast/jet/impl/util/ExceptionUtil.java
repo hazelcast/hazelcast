@@ -235,6 +235,9 @@ public final class ExceptionUtil {
         Throwable peeledFailure = peel(t);
         return peeledFailure instanceof JobTerminateRequestedException
                 || peeledFailure instanceof ResultLimitReachedException
-                || peeledFailure instanceof TerminatedWithSnapshotException;
+                || peeledFailure instanceof TerminatedWithSnapshotException
+                ||
+                (peeledFailure != peeledFailure.getCause()
+                        && isTechnicalCancellationException(peeledFailure.getCause()));
     }
 }
