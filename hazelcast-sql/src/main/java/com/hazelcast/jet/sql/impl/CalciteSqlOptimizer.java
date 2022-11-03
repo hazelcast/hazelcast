@@ -52,10 +52,12 @@ import com.hazelcast.jet.sql.impl.opt.physical.AssignDiscriminatorToScansRule;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.MustNotExecutePhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.RootRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SelectByKeyMapPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.ShouldNotExecuteRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SinkMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.UpdateByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.parse.QueryConvertResult;
@@ -111,6 +113,7 @@ import org.apache.calcite.plan.hep.HepProgramBuilder;
 import org.apache.calcite.plan.volcano.VolcanoPlanner;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelShuttleImpl;
+import org.apache.calcite.rel.RelVisitor;
 import org.apache.calcite.rel.core.TableModify;
 import org.apache.calcite.rel.core.TableModify.Operation;
 import org.apache.calcite.rel.core.TableScan;
@@ -748,14 +751,14 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
             QueryParameterMetadata parameterMetadata,
             Set<PlanObjectKey> usedViews
     ) {
-        WatermarkKeysAssigner wmKeysAssigner = new WatermarkKeysAssigner(physicalRel);
-        // we should assign watermark keys also for bounded jobs, but due to the
-        // issue in key assigner we only do it for unbounded
-        // See https://github.com/hazelcast/hazelcast/issues/21984
-        if (OptUtils.isUnbounded(physicalRel)) {
-            wmKeysAssigner.assignWatermarkKeys();
-            logger.finest("Watermark keys assigned");
+        String exceptionMessage = new ExecutionStopperFinder(physicalRel).find();
+        if (exceptionMessage != null) {
+            throw QueryException.error(exceptionMessage);
         }
+
+        WatermarkKeysAssigner wmKeysAssigner = new WatermarkKeysAssigner(physicalRel);
+        wmKeysAssigner.assignWatermarkKeys();
+        logger.finest("Watermark keys assigned");
 
         CreateDagVisitor visitor = new CreateDagVisitor(nodeEngine, parameterMetadata, wmKeysAssigner, usedViews);
         physicalRel.accept(visitor);
@@ -767,6 +770,33 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         HazelcastTable table = Objects.requireNonNull(rel.getTable()).unwrap(HazelcastTable.class);
         if (table.getTarget() instanceof ViewTable) {
             throw QueryException.error("DML operations not supported for views");
+        }
+    }
+
+    /**
+     * Tries to find {@link ShouldNotExecuteRel} or {@link MustNotExecutePhysicalRel}
+     * in optimizer relational tree to throw exception before DAG construction phase.
+     */
+    static class ExecutionStopperFinder extends RelVisitor {
+        private final RelNode rootRel;
+        private String message;
+
+        ExecutionStopperFinder(RelNode rootRel) {
+            this.rootRel = rootRel;
+        }
+
+        @Override
+        public void visit(RelNode node, int ordinal, @Nullable RelNode parent) {
+            if (node instanceof ShouldNotExecuteRel) {
+                message = ((ShouldNotExecuteRel) node).message();
+                return;
+            }
+            super.visit(node, ordinal, parent);
+        }
+
+        private String find() {
+            go(rootRel);
+            return message;
         }
     }
 }

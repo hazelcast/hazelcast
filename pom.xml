@@ -92,7 +92,7 @@
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.1</avro.version>
-        <aws.sdk.version>1.12.276</aws.sdk.version>
+        <aws.sdk.version>1.12.333</aws.sdk.version>
         <classgraph.version>4.8.149</classgraph.version>
         <debezium.version>1.9.5.Final</debezium.version>
         <grpc.version>1.48.0</grpc.version>
@@ -146,7 +146,8 @@
         <reflections.version>0.9.10</reflections.version>
         <testcontainers.version>1.17.5</testcontainers.version>
         <jna.version>5.12.1</jna.version>
-        <archunit.version>0.22.0</archunit.version>
+        <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitRulesTest.java -->
+        <archunit.version>1.0.0</archunit.version>
         <errorprone.version>2.15.0</errorprone.version>
         <awaitility.version>4.1.1</awaitility.version>
         <hikari.version>4.0.3</hikari.version>
@@ -1693,7 +1694,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
-                <version>1.21</version>
+                <version>1.22</version>
             </dependency>
             <dependency>
                 <groupId>joda-time</groupId>
@@ -1789,7 +1790,7 @@
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
-                <version>3.24.0</version>
+                <version>3.27.0</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
