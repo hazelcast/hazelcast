@@ -58,7 +58,7 @@ public interface Step<S> {
 
     /**
      * @param state the state object
-     * @return name of executor to run
+     * @return name of the executor to run this step
      */
     default String getExecutorName(S state) {
         return MAP_STORE_OFFLOADABLE_EXECUTOR;

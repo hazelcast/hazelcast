@@ -73,7 +73,8 @@ public class StepRunner extends Offload
     private final ExecutionService executionService;
 
     private volatile StepSupplier stepSupplier;
-    private String executorName;
+
+    private String currentExecutorName;
 
     public StepRunner(MapOperation mapOperation) {
         super(mapOperation);
@@ -90,7 +91,7 @@ public class StepRunner extends Offload
         Operation op = offloadedOperation();
         addOpToOffloadedOps(((MapOperation) op));
 
-        if (isCurrentOffloadedOpCountOne()) {
+        if (isHeadOp()) {
             run();
         }
     }
@@ -109,7 +110,7 @@ public class StepRunner extends Offload
         op.getRecordStore().incMapStoreOffloadedOperationsCount();
     }
 
-    private boolean isCurrentOffloadedOpCountOne() {
+    private boolean isHeadOp() {
         return offloadedOperations.size() == 1;
     }
 
@@ -130,48 +131,52 @@ public class StepRunner extends Offload
         long start = System.nanoTime();
         Runnable step;
         do {
-            // set stepSupplier if it is not set yet
-            // or get next step from step supplier
-            if (stepSupplier == null || (step = stepSupplier.get()) == null) {
-                // set stepSupplier only on partition threads
-                if (runningOnPartitionThread) {
-                    stepSupplier = getNextStepSupplierOrNull();
-                    if (stepSupplier == null) {
+            try {
+                // set stepSupplier if it is not set yet
+                // or get next step from step supplier
+                if (stepSupplier == null || (step = stepSupplier.get()) == null) {
+                    // set stepSupplier only on partition threads
+                    if (runningOnPartitionThread) {
+                        stepSupplier = getNextStepSupplierOrNull();
+                        if (stepSupplier == null) {
+                            return;
+                        }
+                        continue;
+                    } else {
+                        // if we are not on partition threads, submit
+                        // this runnable to operation executor.
+                        operationExecutor.execute(this);
                         return;
                     }
-                    continue;
-                } else {
-                    // if we are not on partition threads, submit
-                    // this runnable to operation executor.
-                    operationExecutor.execute(this);
-                    return;
                 }
-            }
 
-            // Try to run this step in this thread, otherwise
-            // offload the step to relevant executor(it
-            // is operation or general-purpose executor)
-            if (!runDirect(step)) {
-                offloadRun(step, this);
-                return;
-            }
-
-            // Independent of the number of queued offloadedOperations,
-            // this step-runner tries to run all queued operation in
-            // one go. This may cause biased usage of partition thread
-            // for the favour of operating map. To prevent this, one
-            // can put max execution time-limit with `maxRunNanos`
-            // setting, so partition operations of other maps don't
-            // wait longer but if there is a few maps, this setting
-            // can cause increased latencies as a side effect.
-            // Default value of `maxRunNanos` is zero.
-            if (maxRunNanos > 0 && runningOnPartitionThread
-                    && System.nanoTime() - start >= maxRunNanos) {
-                step = stepSupplier.get();
-                if (step != null) {
+                // Try to run this step in this thread, otherwise
+                // offload the step to relevant executor(it
+                // is operation or general-purpose executor)
+                if (!runDirect(step)) {
                     offloadRun(step, this);
                     return;
                 }
+
+                // Independent of the number of queued offloadedOperations,
+                // this step-runner tries to run all queued operation in
+                // one go. This may cause biased usage of partition thread
+                // for the favour of operating map. To prevent this, one
+                // can put max execution time-limit with `maxRunNanos`
+                // setting, so partition operations of other maps don't
+                // wait longer but if there is a few maps, this setting
+                // can cause increased latencies as a side effect.
+                // Default value of `maxRunNanos` is zero.
+                if (maxRunNanos > 0 && runningOnPartitionThread
+                        && System.nanoTime() - start >= maxRunNanos) {
+                    step = stepSupplier.get();
+                    if (step != null) {
+                        offloadRun(step, this);
+                        return;
+                    }
+                }
+            } catch (Throwable throwable) {
+                stepSupplier.handleOperationError(throwable);
             }
         } while (true);
     }
@@ -201,8 +206,10 @@ public class StepRunner extends Offload
                 return true;
             }
         } else {
+            // currentExecutorName can be null, if first step is offload step.
             if (!isRunningOnPartitionThread()
-                    && ((Offloadable) step).getExecutorName().equals(executorName)) {
+                    && (currentExecutorName == null
+                    || ((Offloadable) step).getExecutorName().equals(currentExecutorName))) {
                 step.run();
                 return true;
             }
@@ -217,8 +224,9 @@ public class StepRunner extends Offload
             operationExecutor.execute(offload);
         } else {
             Offloadable offloadableStep = (Offloadable) step;
-            executorName = offloadableStep.getExecutorName();
-            executionService.getExecutor(executorName).execute(offload);
+            currentExecutorName = offloadableStep.getExecutorName();
+            executionService.getExecutor(currentExecutorName)
+                    .execute(offload);
         }
     }
 
