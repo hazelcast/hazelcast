@@ -39,7 +39,7 @@ import static com.hazelcast.internal.serialization.impl.SerializationUtil.readMa
 import static com.hazelcast.internal.serialization.impl.SerializationUtil.writeMap;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
-public class MemberInfo implements IdentifiedDataSerializable, Versioned {
+public class MemberInfo implements IdentifiedDataSerializable {
 
     private Address address;
     private UUID uuid;
@@ -156,10 +156,7 @@ public class MemberInfo implements IdentifiedDataSerializable, Versioned {
         version = in.readObject();
         memberListJoinVersion = in.readInt();
         addressMap = readMap(in);
-        // RU_COMPAT 5.1
-        if (in.getVersion().isGreaterOrEqual(Versions.CURRENT_CLUSTER_VERSION)) {
-            cpMemberUUID = UUIDSerializationUtil.readUUID(in);
-        }
+        cpMemberUUID = UUIDSerializationUtil.readUUID(in);
     }
 
     @Override
@@ -177,10 +174,7 @@ public class MemberInfo implements IdentifiedDataSerializable, Versioned {
         out.writeObject(version);
         out.writeInt(memberListJoinVersion);
         writeMap(addressMap, out);
-        // RU_COMPAT 5.1
-        if (out.getVersion().isGreaterOrEqual(Versions.CURRENT_CLUSTER_VERSION)) {
-            UUIDSerializationUtil.writeUUID(out, cpMemberUUID);
-        }
+        UUIDSerializationUtil.writeUUID(out, cpMemberUUID);
     }
 
     @Override
