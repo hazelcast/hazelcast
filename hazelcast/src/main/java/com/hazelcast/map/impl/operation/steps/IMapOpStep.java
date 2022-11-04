@@ -63,9 +63,8 @@ public interface IMapOpStep extends Step<State> {
     }
 
     default void assertWBStoreRunsOnPartitionThread(State state) {
-        if (isStoreStep() && isWriteBehind(state)) {
-            assert ThreadUtil.isRunningOnPartitionThread();
-        }
+        assert isStoreStep() && isWriteBehind(state)
+                ? ThreadUtil.isRunningOnPartitionThread() : true;
     }
 
     /**
