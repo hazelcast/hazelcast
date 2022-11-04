@@ -41,6 +41,7 @@ import org.junit.runner.RunWith;
 
 import java.util.List;
 import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletionException;
 
 import static com.hazelcast.jet.core.TestProcessors.streamingDag;
 import static org.junit.Assert.assertEquals;
@@ -198,12 +199,17 @@ public class NonSmartClientTest extends SimpleTestInClusterSupport {
         assertEquals(job1.getSubmissionTime(), job2.getSubmissionTime());
         assertFalse(job1.getFuture().isDone());
         assertFalse(job2.getFuture().isDone());
-        // cancel requested through client connected to the master, but job is coordinated by the other member
+        // Cancel requested through client connected to the master, but job is coordinated by the other member.
+        // The jobX.getFuture() invokes JoinSubmittedJobOperation on a member asynchronously. The jobX.cancel()
+        // invokes TerminateJobOperation. We have no control over which of this operation's doRun() method invokes
+        // first. If first is JoinSubmittedJobOperation then the join() throws CancellationException. If first is
+        // TerminateJobOperation (that results later in removing of light master context) then the join() throws
+        // CompletionException.
         job1.cancel();
         try {
             job1.join();
             fail("join didn't fail");
-        } catch (CancellationException ignored) { }
+        } catch (CancellationException | CompletionException ignored) { }
     }
 
     private Job startJobAndVerifyItIsRunning() {
