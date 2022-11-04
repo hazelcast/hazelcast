@@ -103,14 +103,14 @@ public class ConcurrentArrayRingbuffer<E> {
 
     private void checkSequence(long sequence) {
         if (sequence >= tail) {
-            throw new IllegalArgumentException("sequence:" + sequence
+            throw new SequenceOutOfBoundsException("sequence:" + sequence
                     + " is too large. The current tail is:" + tail);
         }
 
         if (sequence < head) {
-            throw new IllegalArgumentException("sequence:" + sequence
-                    + " is too small. The current headSequence is:" + head
-                    + " tailSequence is:" + tail);
+            throw new SequenceOutOfBoundsException("sequence:" + sequence
+                    + " is too small. The current head is:" + head
+                    + " tail is:" + tail);
         }
     }
 
@@ -148,6 +148,13 @@ public class ConcurrentArrayRingbuffer<E> {
          */
         public long nextSequence() {
             return nextSequence;
+        }
+    }
+
+    public static class SequenceOutOfBoundsException extends RuntimeException {
+
+        public SequenceOutOfBoundsException(String message) {
+            super(message);
         }
     }
 }
