@@ -41,6 +41,7 @@ import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.CachedQueryEntry;
 import com.hazelcast.query.impl.Index;
 import com.hazelcast.query.impl.QueryEntry;
+import com.hazelcast.query.impl.predicates.PredicateUtils;
 import com.hazelcast.spi.impl.eventservice.EventFilter;
 
 import java.util.ArrayList;
@@ -334,6 +335,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     @Override
     public Set<K> keySet(Predicate predicate) {
         checkNotNull(predicate, "Predicate cannot be null!");
+        PredicateUtils.checkDoesNotContainPagingPredicate(predicate, "keySet");
 
         return scanAndGetResult(predicate, ResultType.KEY);
     }
@@ -341,6 +343,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     @Override
     public Collection<V> values(Predicate predicate) {
         checkNotNull(predicate, "Predicate cannot be null!");
+        PredicateUtils.checkDoesNotContainPagingPredicate(predicate, "values");
 
         if (!includeValue) {
             return Collections.emptySet();
@@ -352,6 +355,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     @Override
     public Set<Map.Entry<K, V>> entrySet(Predicate predicate) {
         checkNotNull(predicate, "Predicate cannot be null!");
+        PredicateUtils.checkDoesNotContainPagingPredicate(predicate, "entrySet");
 
         return scanAndGetResult(predicate, ResultType.ENTRY);
     }
@@ -394,6 +398,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     public UUID addEntryListener(MapListener listener, Predicate<K, V> predicate, boolean includeValue) {
         checkNotNull(listener, "listener cannot be null");
         checkNotNull(predicate, "predicate cannot be null");
+        PredicateUtils.checkDoesNotContainPagingPredicate(predicate, "addEntryListener");
 
         QueryCacheEventService eventService = getEventService();
         EventFilter filter = new QueryEventFilter(null, predicate, includeValue);
@@ -407,6 +412,7 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
         checkNotNull(listener, "listener cannot be null");
         checkNotNull(predicate, "predicate cannot be null");
         checkNotNull(key, "key cannot be null");
+        PredicateUtils.checkDoesNotContainPagingPredicate(predicate, "addEntryListener");
 
         QueryCacheEventService eventService = getEventService();
         EventFilter filter = new QueryEventFilter(toData(key), predicate, includeValue);

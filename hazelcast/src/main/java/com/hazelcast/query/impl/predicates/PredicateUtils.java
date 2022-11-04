@@ -16,6 +16,7 @@
 
 package com.hazelcast.query.impl.predicates;
 
+import com.hazelcast.query.PagingPredicate;
 import com.hazelcast.query.PartitionPredicate;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.impl.AndResultSet;
@@ -77,5 +78,22 @@ public final class PredicateUtils {
 
         Predicate unwrappedPredicate = ((PartitionPredicate) predicate).getTarget();
         return (PagingPredicateImpl) unwrappedPredicate;
+    }
+
+    public static void checkDoesNotContainPagingPredicate(Predicate predicate, String method) throws IllegalArgumentException {
+        if (PredicateUtils.containsPagingPredicate(predicate)) {
+            throw new IllegalArgumentException("Paging predicate is not supported in " + method + " method");
+        }
+    }
+
+    public static boolean containsPagingPredicate(Predicate predicate) {
+        if (predicate instanceof PagingPredicateImpl) {
+            return true;
+        }
+        if (!(predicate instanceof PartitionPredicate)) {
+            return false;
+        }
+        PartitionPredicate partitionPredicate = (PartitionPredicate) predicate;
+        return partitionPredicate.getTarget() instanceof PagingPredicateImpl;
     }
 }
