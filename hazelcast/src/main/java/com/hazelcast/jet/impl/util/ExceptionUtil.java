@@ -236,8 +236,12 @@ public final class ExceptionUtil {
         return peeledFailure instanceof JobTerminateRequestedException
                 || peeledFailure instanceof ResultLimitReachedException
                 || peeledFailure instanceof TerminatedWithSnapshotException
-                ||
-                (peeledFailure != peeledFailure.getCause()
-                        && isTechnicalCancellationException(peeledFailure.getCause()));
+                || checkCause(peeledFailure);
+    }
+
+    private static boolean checkCause(Throwable peeledFailure) {
+        return peeledFailure.getCause() != null
+                && peeledFailure != peeledFailure.getCause()
+                && isTechnicalCancellationException(peeledFailure.getCause());
     }
 }
