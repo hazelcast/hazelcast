@@ -16,6 +16,7 @@
 
 package com.hazelcast.map.impl.operation.steps;
 
+import com.hazelcast.internal.util.ThreadUtil;
 import com.hazelcast.map.impl.mapstore.writebehind.WriteBehindStore;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
@@ -59,6 +60,12 @@ public interface IMapOpStep extends Step<State> {
     default boolean isWriteBehind(State state) {
         return state.getRecordStore().getMapDataStore()
                 instanceof WriteBehindStore;
+    }
+
+    default void assertWBStoreRunsOnPartitionThread(State state) {
+        if (isStoreStep() && isWriteBehind(state)) {
+            assert ThreadUtil.isRunningOnPartitionThread();
+        }
     }
 
     /**

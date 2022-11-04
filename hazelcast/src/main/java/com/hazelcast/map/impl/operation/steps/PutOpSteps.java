@@ -154,6 +154,8 @@ public enum PutOpSteps implements IMapOpStep {
 
         @Override
         public void runStep(State state) {
+            assertWBStoreRunsOnPartitionThread(state);
+
             Object newValue = ((DefaultRecordStore) state.getRecordStore()).putIntoMapStore0(state.getKey(),
                     state.getNewValue(), state.getTtl(), state.getMaxIdle(), state.getNow(), state.getTxnId());
             state.setNewValue(newValue);

@@ -253,6 +253,8 @@ public enum EntryOpSteps implements IMapOpStep {
 
         @Override
         public void runStep(State state) {
+            assertWBStoreRunsOnPartitionThread(state);
+
             PutOpSteps.STORE.runStep(state);
         }
 
@@ -282,6 +284,8 @@ public enum EntryOpSteps implements IMapOpStep {
 
         @Override
         public void runStep(State state) {
+            assertWBStoreRunsOnPartitionThread(state);
+
             DeleteOpSteps.DELETE.runStep(state);
         }
 
