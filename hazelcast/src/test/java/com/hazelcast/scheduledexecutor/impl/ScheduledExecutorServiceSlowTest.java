@@ -68,14 +68,19 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
         IScheduledFuture<Double> future = executorService.schedule(
                 new ICountdownLatchCallableTask(initCountLatch.getName(), waitCountLatch.getName(), doneCountLatch.getName()), delay, SECONDS);
 
-        assertOpenEventually(initCountLatch);
-
         int sleepPeriod = 10000;
         long start = System.currentTimeMillis();
-        new Thread(() -> {
+        Thread thread = new Thread(() -> {
+            //This is to make sure that the executorService has scheduled the task
+            //and waiting for waitCountLatch
+            assertOpenEventually(initCountLatch);
+
             sleepAtLeastMillis(sleepPeriod);
             waitCountLatch.countDown();
-        }).start();
+        });
+        thread.start();
+        //Make sure the thread has run
+        thread.join();
 
         double result = future.get();
 
