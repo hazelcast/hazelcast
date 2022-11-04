@@ -55,6 +55,7 @@ import javax.annotation.Nonnull;
  * <ul>
  *     <li>{@link #isCooperative()}
  *     <li>{@link #init(Outbox, Context)}
+ *     <li>{@link #closeIsCooperative()}
  *     <li>{@link #close()}
  * </ul>
  *
@@ -87,12 +88,13 @@ import javax.annotation.Nonnull;
  *
  * <h3>How the methods are called</h3>
  * <p>
- * Besides {@link #init}, {@link #close} and {@link #isCooperative} the methods
- * are called in a tight loop with a possibly short back-off if the method does
- * no work. "No work" is defined as adding nothing to outbox and taking nothing
- * from inbox. If you do heavy work on each call (such as querying a remote
- * service), you can do additional back-off: use {@code sleep} in a
- * non-cooperative processor or do nothing if sufficient time didn't elapse.
+ * Besides {@link #init}, {@link #close}, {@link #isCooperative} and {@link
+ * #closeIsCooperative()} the methods are called in a tight loop with a possibly
+ * short back-off if the method does no work. "No work" is defined as adding
+ * nothing to outbox and taking nothing from inbox. If you do heavy work on each
+ * call (such as querying a remote service), you can do additional back-off: use
+ * {@code sleep} in a non-cooperative processor or do nothing if sufficient time
+ * didn't elapse.
  *
  * @since Jet 3.0
  */
