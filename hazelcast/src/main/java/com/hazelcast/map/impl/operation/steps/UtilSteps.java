@@ -23,7 +23,7 @@ import com.hazelcast.map.impl.operation.steps.engine.StepResponseUtil;
 import com.hazelcast.spi.impl.operationservice.impl.OperationRunnerImpl;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
-public enum UtilSteps implements Step<State> {
+public enum UtilSteps implements IMapOpStep {
 
     SEND_RESPONSE() {
         @Override

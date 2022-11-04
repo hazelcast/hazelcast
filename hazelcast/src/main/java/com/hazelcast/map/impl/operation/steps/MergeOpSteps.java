@@ -39,7 +39,7 @@ import java.util.Queue;
 import static com.hazelcast.core.EntryEventType.MERGED;
 import static com.hazelcast.spi.impl.merge.MergingValueFactory.createMergingEntry;
 
-public enum MergeOpSteps implements Step<State> {
+public enum MergeOpSteps implements IMapOpStep {
 
     READ() {
         @Override
@@ -102,7 +102,7 @@ public enum MergeOpSteps implements Step<State> {
 
     STORE_OR_DELETE() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isStoreStep() {
             return true;
         }
 

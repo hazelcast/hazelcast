@@ -27,7 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-public enum GetAllOpSteps implements Step<State> {
+public enum GetAllOpSteps implements IMapOpStep {
 
     READ() {
         @Override
@@ -51,7 +51,7 @@ public enum GetAllOpSteps implements Step<State> {
 
     LOAD_ALL() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isLoadStep() {
             return true;
         }
 

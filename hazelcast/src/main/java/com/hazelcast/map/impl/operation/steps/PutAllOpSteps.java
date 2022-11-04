@@ -41,7 +41,7 @@ import static com.hazelcast.core.EntryEventType.ADDED;
 import static com.hazelcast.core.EntryEventType.UPDATED;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 
-public enum PutAllOpSteps implements Step<State> {
+public enum PutAllOpSteps implements IMapOpStep {
 
     READ() {
         @Override
@@ -71,22 +71,38 @@ public enum PutAllOpSteps implements Step<State> {
 
         @Override
         public Step nextStep(State state) {
-            return PutAllOpSteps.LOAD_ALL_STORE_ALL;
+            if (!CollectionUtil.isEmpty(state.getKeysToLoad())) {
+                return PutAllOpSteps.LOAD_ALL;
+            }
+            return PutAllOpSteps.STORE_ALL;
         }
     },
 
-    LOAD_ALL_STORE_ALL() {
+    LOAD_ALL() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isLoadStep() {
             return true;
         }
 
         @Override
         public void runStep(State state) {
-            if (!CollectionUtil.isEmpty(state.getKeysToLoad())) {
-                MultipleEntryOpSteps.LOAD_ALL.runStep(state);
-            }
+            MultipleEntryOpSteps.LOAD_ALL.runStep(state);
+        }
 
+        @Override
+        public Step nextStep(State state) {
+            return STORE_ALL;
+        }
+    },
+
+    STORE_ALL() {
+        @Override
+        public boolean isStoreStep() {
+            return true;
+        }
+
+        @Override
+        public void runStep(State state) {
             DefaultRecordStore recordStore = ((DefaultRecordStore) state.getRecordStore());
             long expirationTime = recordStore.getExpirySystem().calculateExpirationTime(state.getTtl(),
                     state.getMaxIdle(), state.getNow(), state.getNow());
