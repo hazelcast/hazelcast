@@ -106,10 +106,10 @@ public class JobTimeoutTest extends JetTestSupport {
         final JobConfig jobConfig = new JobConfig().setTimeoutMillis(1000L);
         final Job job = hz.getJet().newJob(dag, jobConfig);
 
-        assertJobStatusEventually(job, JobStatus.RUNNING, 1);
+        assertJobStatusEventually(job, JobStatus.RUNNING);
         job.suspend();
 
-        assertJobStatusEventually(job, JobStatus.SUSPENDED, 1);
+        assertJobStatusEventually(job, JobStatus.SUSPENDED);
 
         assertThrows(CancellationException.class, job::join);
         assertEquals(JobStatus.FAILED, job.getStatus());
