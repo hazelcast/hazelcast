@@ -26,7 +26,7 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 
-public enum GetOpSteps implements Step<State> {
+public enum GetOpSteps implements IMapOpStep {
 
     READ() {
         @Override
@@ -47,7 +47,7 @@ public enum GetOpSteps implements Step<State> {
 
     LOAD() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isLoadStep() {
             return true;
         }
 
