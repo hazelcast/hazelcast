@@ -2,8 +2,13 @@ This document lists the new features, enhancements, fixed issues and, removed or
 
 ==== Hazelcast Platform 5.2.1 ====
 
+## Enhancements
+
+* Added the support of discovering ECS and EC2 members on AWS. See Deploying a Cluster on Amazon AWS. [#22590]
+
 ## Fixes
 
+* Fixed an issue where a map was loading old values with `map.set()` when map store offloading is enabled. [#22603]
 * Fixed an issue where the map entries recovered from persistence were not expiring after their time-to-live durations. [#22557]
 * Fixed an issue where external data store configurations could not be added dynamically. [#22464]
 
