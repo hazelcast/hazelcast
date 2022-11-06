@@ -21,14 +21,21 @@ import com.hazelcast.jet.sql.impl.opt.physical.CalcPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.DropLateItemsPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.ShouldNotExecuteRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowAggregatePhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.StreamToStreamJoinPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.UnionPhysicalRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 
 import java.util.Collections;
 import java.util.List;
@@ -41,6 +48,8 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static org.assertj.core.api.Assertions.assertThat;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class WindowSizeGcdCalculatorTest extends OptimizerTestSupport {
     static ExpressionEvalContext MOCK_EEC;
 
@@ -72,6 +81,28 @@ public class WindowSizeGcdCalculatorTest extends OptimizerTestSupport {
     }
 
     @Test
+    public void when_shouldNotExecutePlan_then_returnDefault() {
+        HazelcastTable table = streamGeneratorTable("_stream", 10);
+        List<QueryDataType> parameterTypes = Collections.singletonList(INT);
+
+        final String sql = "SELECT MAX(v) FROM " +
+                "TABLE(HOP(" +
+                "  (SELECT * FROM TABLE(IMPOSE_ORDER((SELECT * FROM TABLE(GENERATE_STREAM(10))), DESCRIPTOR(v), 1)))" +
+                "  , DESCRIPTOR(v) , 6, 3))";
+
+        PhysicalRel optimizedPhysicalRel = optimizePhysical(sql, parameterTypes, table).getPhysical();
+
+        assertPlan(optimizedPhysicalRel, plan(planRow(0, ShouldNotExecuteRel.class)));
+
+        WindowSizeGcdCalculator windowSizeGCDCalculator = new WindowSizeGcdCalculator(MOCK_EEC);
+        windowSizeGCDCalculator.calculate(optimizedPhysicalRel);
+        assertThat(windowSizeGCDCalculator.get()).isEqualTo(DEFAULT_THROTTLING_FRAME_SIZE);
+
+        ShouldNotExecuteRel sneRel = (ShouldNotExecuteRel) optimizedPhysicalRel;
+        assertThat(sneRel.message()).contains("Streaming aggregation is supported only for window aggregation");
+    }
+
+    @Test
     public void when_onlySlidingWindowInTree_then_returnWindowSize() {
         HazelcastTable streamTable = streamGeneratorTable("_stream", 10);
         List<QueryDataType> parameterTypes = Collections.singletonList(INT);
@@ -97,10 +128,9 @@ public class WindowSizeGcdCalculatorTest extends OptimizerTestSupport {
     }
 
     @Test
-    public void when_twoConsecutiveSlidingWindowsAgg_then_returnEqualGCDOfWindowsSize() {
+    public void when_twoConsecutiveSlidingWindowsAgg_then_returnGcdOfWindowsSize() {
         HazelcastTable table = streamGeneratorTable("s1", 100);
         HazelcastTable table2 = partitionedTable("map", asList(field(KEY, INT), field(VALUE, INT)), 1);
-
         List<QueryDataType> parameterTypes = asList(INT, INT);
 
         final String sql = "SELECT window_end, window_end_inner, v, COUNT(v) FROM " +
@@ -134,18 +164,20 @@ public class WindowSizeGcdCalculatorTest extends OptimizerTestSupport {
 
     @Ignore("Bug with SlidingWindow#windowPolicyProvider")
     @Test
-    public void when_unionAboveSlidingWindows_then_returnEqualGCDOfWindowsSize() {
+    public void when_unionAboveSlidingWindows_then_returnGcdOfWindowsSize() {
         HazelcastTable table = streamGeneratorTable("s1", 1);
         HazelcastTable table2 = streamGeneratorTable("s2", 10);
         HazelcastTable table3 = streamGeneratorTable("s3", 100);
         List<QueryDataType> parameterTypes = Collections.singletonList(INT);
 
+        int expectedGcd = 12;
+
         final String query = "SELECT * FROM "
-                + hop("s1", 48, 8)
+                + hop("s1", expectedGcd * 4, expectedGcd)
                 + " UNION ALL "
-                + hop("s2", 36, 12)
+                + hop("s2", expectedGcd * 3, expectedGcd)
                 + " UNION ALL "
-                + hop("s3", 24, 3);
+                + hop("s3", expectedGcd * 2, expectedGcd);
 
         PhysicalRel optimizedPhysicalRel = optimizePhysical(query, parameterTypes, table, table2, table3).getPhysical();
 
@@ -168,15 +200,55 @@ public class WindowSizeGcdCalculatorTest extends OptimizerTestSupport {
 
         WindowSizeGcdCalculator windowSizeGCDCalculator = new WindowSizeGcdCalculator(MOCK_EEC);
         windowSizeGCDCalculator.calculate(optimizedPhysicalRel);
-        assertThat(windowSizeGCDCalculator.get()).isEqualTo(12L);
+        // GCD(48, 36, 24) = 12
+        assertThat(windowSizeGCDCalculator.get()).isEqualTo(expectedGcd);
+    }
+
+    @Test
+    public void when_streamToStreamJoin_then_returnMinPostponeTime() {
+        HazelcastTable table = streamGeneratorTable("t1", 1);
+        HazelcastTable table2 = streamGeneratorTable("t2", 10);
+        HazelcastTable table3 = streamGeneratorTable("t3", 100);
+        List<QueryDataType> parameterTypes = Collections.singletonList(INT);
+
+        int expectedWindowSize = 4;
+
+        final String query = "SELECT * FROM "
+                + joinSubQuery("t1", "s1", 1)
+                + " JOIN "
+                + joinSubQuery("t2", "s2", 2)
+                + " ON s1.v BETWEEN s2.v - 5 AND s2.v + 7 "    // 'window_size' = 12
+                + " JOIN "
+                + joinSubQuery("t3", "s3", 3)
+                + " ON s3.v BETWEEN s1.v - 3 AND s1.v + 5 ";   // 'window_size' = 8
+
+        PhysicalRel optPhysicalRel = optimizePhysical(query, parameterTypes, table, table2, table3).getPhysical();
+
+        // assert plan for better visibility of what was generated
+        assertPlan(optPhysicalRel, plan(
+                planRow(0, StreamToStreamJoinPhysicalRel.class),
+                planRow(1, StreamToStreamJoinPhysicalRel.class),
+                planRow(2, FullScanPhysicalRel.class),
+                planRow(2, FullScanPhysicalRel.class),
+                planRow(1, FullScanPhysicalRel.class)
+        ));
+
+        WindowSizeGcdCalculator windowSizeGCDCalculator = new WindowSizeGcdCalculator(MOCK_EEC);
+        windowSizeGCDCalculator.calculate(optPhysicalRel);
+        // GCD(12, 8) = 4
+        assertThat(windowSizeGCDCalculator.get()).isEqualTo(expectedWindowSize);
     }
 
     @SuppressWarnings("SameParameterValue")
-    static String hop(String name, int windowSize, int windowSlide) {
+    private static String hop(String name, int windowSize, int windowSlide) {
         return "(SELECT window_start, MAX(v) AS res FROM " +
                 "TABLE(HOP(" +
                 "  (SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(v), 1)))" +
                 "  , DESCRIPTOR(v) , " + windowSize + " , " + windowSlide + ")) " +
                 "GROUP BY window_start) ";
+    }
+
+    private static String joinSubQuery(String stream, String alias, int lag) {
+        return "(SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + stream + ", DESCRIPTOR(v), " + lag + "))) AS " + alias;
     }
 }

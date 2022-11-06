@@ -47,18 +47,14 @@ import static org.apache.calcite.sql.type.SqlTypeName.TIMESTAMP_WITH_LOCAL_TIME_
 import static org.junit.Assert.assertEquals;
 
 public class StreamToStreamJoinPhysicalRuleTest extends OptimizerTestSupport {
-
-    // TODO: Test for GCD calculator of s2s join is impossible now,
-    //  we can't normally operate with streaming table in OptimizerTestSupport
-    //  need to enhance this test support.
     @Test
     public void test_maxWindowSize() {
         Map<Integer, Map<Integer, Long>> postponeTimeMap = new HashMap<>();
         postponeTimeMap.put(0, singletonMap(1, 10L));
-        postponeTimeMap.put(1, singletonMap(0, 10L));
+        postponeTimeMap.put(1, singletonMap(0, 10L)); // sum = 20
         postponeTimeMap.put(2, singletonMap(3, 15L));
-        postponeTimeMap.put(3, singletonMap(2, 6L));
-        // this pair has the lowest time window
+        postponeTimeMap.put(3, singletonMap(2, 6L));  // sum = 21
+        // this pair has the lowest time window : sum = 19
         postponeTimeMap.put(4, singletonMap(5, 13L));
         postponeTimeMap.put(5, singletonMap(4, 6L));
 

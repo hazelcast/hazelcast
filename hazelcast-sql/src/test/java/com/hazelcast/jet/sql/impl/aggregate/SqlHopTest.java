@@ -882,7 +882,7 @@ public class SqlHopTest extends SqlTestSupport {
                 )
         );
     }
-    
+
     @Test
     public void test_maxGroupedBy() {
         String name = createTable(
