@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.opt;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
 import com.hazelcast.jet.sql.impl.OptimizerContext;
+import com.hazelcast.jet.sql.impl.connector.generator.StreamSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.logical.SelectByKeyMapLogicalRule;
@@ -164,6 +165,12 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
 
     protected static HazelcastTable streamingTable(Table table, long rowCount) {
         return new HazelcastTable(table, new HazelcastTableStatistic(rowCount));
+    }
+
+    protected static HazelcastTable streamGeneratorTable(String name, int rowCount) {
+        return new HazelcastTable(
+                StreamSqlConnector.createTable(SCHEMA_NAME_PUBLIC, name, emptyList()),
+                new HazelcastTableStatistic(rowCount));
     }
 
     protected static TableField field(String name, QueryDataType type) {

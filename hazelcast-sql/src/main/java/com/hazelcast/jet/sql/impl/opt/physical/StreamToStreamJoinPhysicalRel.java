@@ -42,7 +42,7 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
     private final Map<Integer, Map<Integer, Long>> postponeTimeMap;
 
     @SuppressWarnings("checkstyle:ParameterNumber")
-    protected StreamToStreamJoinPhysicalRel(
+    StreamToStreamJoinPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelNode left,
@@ -90,6 +90,26 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
 
     public Map<Integer, Map<Integer, Long>> postponeTimeMap() {
         return postponeTimeMap;
+    }
+
+    public long minWindowSize() {
+        return minWindowSize(postponeTimeMap);
+    }
+
+    // Separated due to testing concerns
+    static long minWindowSize(Map<Integer, Map<Integer, Long>> postponeTimeMap) {
+        long min = Long.MAX_VALUE;
+
+        // postpone map representation is timeA -> timeB -> constant
+        // it means, window size is map[timeA][timeB] + map[timeB][timeA]
+        for (Map.Entry<Integer, Map<Integer, Long>> outerEntry : postponeTimeMap.entrySet()) {
+            for (Map.Entry<Integer, Long> innerEntry : outerEntry.getValue().entrySet()) {
+                long windowSize = Math.abs(innerEntry.getValue()) +
+                        Math.abs(postponeTimeMap.get(innerEntry.getKey()).get(outerEntry.getKey()));
+                min = Math.min(min, windowSize);
+            }
+        }
+        return min;
     }
 
     @Override

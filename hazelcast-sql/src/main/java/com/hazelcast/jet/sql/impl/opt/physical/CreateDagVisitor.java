@@ -49,7 +49,7 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.jet.sql.impl.opt.WatermarkKeysAssigner;
-import com.hazelcast.jet.sql.impl.opt.WindowSizeGCDCalculator;
+import com.hazelcast.jet.sql.impl.opt.WindowSizeGcdCalculator;
 import com.hazelcast.jet.sql.impl.processors.LateItemsDropP;
 import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
 import com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinProcessorSupplier;
@@ -107,7 +107,7 @@ public class CreateDagVisitor {
     private final Address localMemberAddress;
     private final QueryParameterMetadata parameterMetadata;
     private final WatermarkKeysAssigner watermarkKeysAssigner;
-    private WindowSizeGCDCalculator windowSizeGCDCalculator;
+    private final WindowSizeGcdCalculator windowSizeGCDCalculator;
 
     public CreateDagVisitor(
             NodeEngine nodeEngine,
@@ -119,7 +119,7 @@ public class CreateDagVisitor {
         this.localMemberAddress = nodeEngine.getThisAddress();
         this.parameterMetadata = parameterMetadata;
         this.watermarkKeysAssigner = watermarkKeysAssigner;
-        this.windowSizeGCDCalculator = new WindowSizeGCDCalculator(MOCK_EEC);
+        this.windowSizeGCDCalculator = new WindowSizeGcdCalculator(MOCK_EEC);
         this.objectKeys.addAll(usedViews);
     }
 

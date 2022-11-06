@@ -17,42 +17,31 @@
 package com.hazelcast.jet.sql.impl.opt;
 
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.ShouldNotExecuteRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowAggregatePhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.StreamToStreamJoinPhysicalRel;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
-import org.apache.calcite.rel.BiRel;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelVisitor;
-import org.apache.calcite.rel.core.Union;
 
 import javax.annotation.Nullable;
 
-public class WindowSizeGCDCalculator {
-    static final long DEFAULT_THROTTLING_FRAME_SIZE = 10L;
+public class WindowSizeGcdCalculator {
+    static final long DEFAULT_THROTTLING_FRAME_SIZE = 100L;
 
     private final GCDCalculatorVisitor visitor;
-    private final SlidingWindowDetector swDetector;
 
-    public WindowSizeGCDCalculator(ExpressionEvalContext eec) {
+    public WindowSizeGcdCalculator(ExpressionEvalContext eec) {
         this.visitor = new GCDCalculatorVisitor(eec);
-        this.swDetector = new SlidingWindowDetector();
     }
 
     public void calculate(PhysicalRel rel) {
-        if (shouldRun(rel)) {
-            visitor.go(rel);
-        }
+        visitor.go(rel);
     }
 
     public long get() {
         return visitor.gcd > 0 ? visitor.gcd : DEFAULT_THROTTLING_FRAME_SIZE;
-    }
-
-    private boolean shouldRun(PhysicalRel rel) {
-        swDetector.go(rel);
-        return swDetector.found;
     }
 
     private static class GCDCalculatorVisitor extends RelVisitor {
@@ -65,50 +54,35 @@ public class WindowSizeGCDCalculator {
 
         @Override
         public void visit(RelNode node, int ordinal, @Nullable RelNode parent) {
-            visit0(node, null);
+            visit0(node);
         }
 
-        private void visit0(RelNode node, @Nullable RelNode sw) {
+        private void visit0(RelNode node) {
             if (node instanceof ShouldNotExecuteRel) {
                 gcd = 0L;
                 return;
             }
 
-            if (node instanceof BiRel || node instanceof Union) {
-                int i = 0;
-                for (RelNode child : node.getInputs()) {
-                    visit0(child, sw);
-                }
-            } else if (node instanceof SlidingWindowAggregatePhysicalRel) {
+            if (node instanceof SlidingWindowAggregatePhysicalRel) {
                 SlidingWindowAggregatePhysicalRel slidingWindow = (SlidingWindowAggregatePhysicalRel) node;
                 long windowSize = slidingWindow.windowPolicyProvider().apply(eec).windowSize();
                 gcd = gcd >= 0L ? Util.gcd(gcd, windowSize) : windowSize;
-
-                visit0(slidingWindow.getInput(), slidingWindow);
-            } else if (node instanceof SlidingWindow) {
-                SlidingWindow slidingWindow = (SlidingWindow) node;
-                long windowSize = slidingWindow.windowPolicyProvider().apply(eec).windowSize();
-                gcd = gcd >= 0L ? Util.gcd(gcd, windowSize) : windowSize;
-
-                visit0(slidingWindow.getInput(), slidingWindow);
-            } else if (node instanceof FullScanPhysicalRel) {
-                return;
-            } else {
-                visit0(node.getInput(0), sw);
+            } else if (node instanceof StreamToStreamJoinPhysicalRel) {
+                StreamToStreamJoinPhysicalRel s2sJoin = (StreamToStreamJoinPhysicalRel) node;
+                long windowSize = s2sJoin.minWindowSize();
+                if (windowSize == 0L) {
+                    windowSize = 1L; // minimum available lag is 1 ms.
+                }
+                gcd = gcd >= 0L ? Util.gcd(gcd, windowSize) : Util.gcd(DEFAULT_THROTTLING_FRAME_SIZE, windowSize);
             }
-        }
-    }
 
-    private static class SlidingWindowDetector extends RelVisitor {
-        boolean found;
-
-        @Override
-        public void visit(RelNode node, int ordinal, @Nullable RelNode parent) {
-            if (node instanceof SlidingWindow || node instanceof SlidingWindowAggregatePhysicalRel) {
-                found = true;
-                return;
+            for (RelNode child : node.getInputs()) {
+                if (child instanceof SlidingWindowAggregatePhysicalRel) {
+                    SlidingWindowAggregatePhysicalRel slidingWindow = (SlidingWindowAggregatePhysicalRel) child;
+                    System.err.println(slidingWindow.windowPolicyProvider().apply(eec).windowSize());
+                }
+                visit0(child);
             }
-            super.visit(node, ordinal, parent);
         }
     }
 }

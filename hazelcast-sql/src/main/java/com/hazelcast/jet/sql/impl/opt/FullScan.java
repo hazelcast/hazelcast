@@ -56,9 +56,8 @@ public abstract class FullScan extends TableScan {
 
     @Override
     public RelWriter explainTerms(RelWriter pw) {
-        String eventPolicyPresence = lagExpression != null ? "Present" : "Absent";
         return super.explainTerms(pw)
-                .itemIf("lagExpression", eventPolicyPresence, lagExpression != null)
+                .itemIf("lagExpression", "Present", lagExpression != null)
                 .itemIf("watermarkedColumnIndex", watermarkedColumnIndex, watermarkedColumnIndex >= 0);
     }
 }
