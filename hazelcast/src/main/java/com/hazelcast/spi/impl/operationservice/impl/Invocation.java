@@ -197,6 +197,27 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
      */
     private final Runnable taskDoneCallback;
 
+    /**
+     * Shows whether invocation can retry or not. It has two purposes.
+     *
+     * <p>
+     * Control access to {@link Invocation#doInvoke(boolean)}. This method
+     * can be accessed from the invoker thread or the single threaded
+     * scheduler of {@link InvocationMonitor}. This variable ensures that
+     * when scheduler retries, invoker thread will no longer read/write to
+     * a shared non-final variable.
+     *
+     * <p>
+     * Provide a happens-before relationship between invoker thread,
+     * scheduler and callers of {@link Invocation#toString()}.
+     *
+     * <p>
+     * Note that after the invocation is registered, this variable must be
+     * set to {@code true} eventually. Also make sure that there is no read
+     * or write to a shared variable after it's set.
+     */
+    private volatile boolean invocationCanRetry;
+
 
     Invocation(Context context,
                Operation op,
@@ -496,7 +517,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
             // the consequence would be that the backups are never be made and the effects of the map.put() will never be visible,
             // even though the future returned a value;
             // so if we would complete the future, a response is sent even though its changes never made it into the system
-            resetAndReInvoke();
+            context.invocationMonitor.execute(new InvocationRetryTask(true));
             return false;
         }
         return true;
@@ -572,6 +593,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         }
 
         if (initializationFailure != null) {
+            invocationCanRetry = true;
             notifyError(initializationFailure);
             return;
         }
@@ -595,6 +617,8 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         responseReceived = FALSE;
         op.setOperationResponseHandler(this);
 
+        invocationCanRetry = true;
+
         if (isAsync) {
             context.operationExecutor.execute(op);
         } else {
@@ -603,10 +627,16 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
     }
 
     private void doInvokeRemote() {
-        assert connectionManager != null : "Endpoint manager was null";
+        Address targetAddress = this.targetAddress;
+        ServerConnection connection;
+        try {
+            assert connectionManager != null : "Endpoint manager was null";
+            connection = connectionManager.getOrConnect(targetAddress, op.getPartitionId());
+            this.connection = connection;
+        } finally {
+            invocationCanRetry = true;
+        }
 
-        ServerConnection connection = connectionManager.getOrConnect(targetAddress, op.getPartitionId());
-        this.connection = connection;
         boolean write;
         if (connection != null) {
             write = context.outboundOperationHandler.send(op, connection);
@@ -615,11 +645,11 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         }
 
         if (!write) {
-            notifyError(new RetryableIOException(getPacketNotSentMessage(connection)));
+            notifyError(new RetryableIOException(getPacketNotSentMessage(connection, targetAddress)));
         }
     }
 
-    private String getPacketNotSentMessage(Connection connection) {
+    private String getPacketNotSentMessage(Connection connection, Address targetAddress) {
         if (connection == null) {
             return "Packet not sent to -> " + targetAddress + ", there is no available connection";
         }
@@ -703,7 +733,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
             complete(INTERRUPTED);
         } else {
             try {
-                InvocationRetryTask retryTask = new InvocationRetryTask();
+                InvocationRetryTask retryTask = new InvocationRetryTask(false);
                 if (invokeCount < MAX_FAST_INVOCATION_COUNT) {
                     // fast retry for the first few invocations
                     context.invocationMonitor.execute(retryTask);
@@ -725,20 +755,6 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         completeExceptionally(new HazelcastInstanceNotActiveException(e.getMessage()));
     }
 
-    private void resetAndReInvoke() {
-        if (!context.invocationRegistry.deregister(this)) {
-            // another thread already did something else with this invocation
-            return;
-        }
-        invokeCount = 0;
-        pendingResponse = VOID;
-        pendingResponseReceivedMillis = -1;
-        backupsAcksExpected = 0;
-        backupsAcksReceived = 0;
-        lastHeartbeatMillis = 0;
-        doInvoke(false);
-    }
-
     Address getTargetAddress() {
         return targetAddress;
     }
@@ -753,6 +769,8 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
 
     @Override
     public String toString() {
+        // volatile read
+        boolean invocationCanRetry = this.invocationCanRetry;
         return "Invocation{"
                 + "op=" + op
                 + ", tryCount=" + tryCount
@@ -768,10 +786,16 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
                 + ", backupsAcksExpected=" + backupsAcksExpected
                 + ", backupsAcksReceived=" + backupsAcksReceived
                 + ", connection=" + connection
+                + ", invocationCanRetry=" + invocationCanRetry
                 + '}';
     }
 
     private class InvocationRetryTask implements Runnable {
+        private final boolean reset;
+
+        public InvocationRetryTask(boolean reset) {
+            this.reset = reset;
+        }
 
         @Override
         public void run() {
@@ -788,16 +812,30 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
                     logger.finest("Node is not joined. Re-scheduling " + this
                             + " to be executed in " + tryPauseMillis + " ms.");
                 }
-                try {
-                    context.invocationMonitor.schedule(new InvocationRetryTask(), tryPauseMillis);
-                } catch (RejectedExecutionException e) {
-                    completeWhenRetryRejected(e);
-                }
+                reschedule();
                 return;
             }
 
+            if (!invocationCanRetry) {
+                if (logger.isFinestEnabled()) {
+                    logger.finest("First invocation isn't ready to be retried. Re-scheduling " + this
+                            + " to be executed in " + tryPauseMillis + " ms.");
+                }
+                reschedule();
+                return;
+            }
+
+
             if (!context.invocationRegistry.deregister(Invocation.this)) {
                 return;
+            }
+
+            if (reset) {
+                invokeCount = 0;
+                pendingResponse = VOID;
+                pendingResponseReceivedMillis = -1;
+                backupsAcksExpected = 0;
+                backupsAcksReceived = 0;
             }
 
             // When retrying, we must reset lastHeartbeat, otherwise InvocationMonitor will see the old value
@@ -806,6 +844,13 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
             doInvoke(true);
         }
 
+        private void reschedule() {
+            try {
+                context.invocationMonitor.schedule(new InvocationRetryTask(reset), tryPauseMillis);
+            } catch (RejectedExecutionException e) {
+                completeWhenRetryRejected(e);
+            }
+        }
     }
 
     enum HeartbeatTimeout {
