@@ -78,7 +78,7 @@ public class PortableNestedFieldsTest extends SqlTestSupport {
         userType = new ClassDefinitionBuilder(1, 1)
                 .addLongField("id")
                 .addStringField("name")
-                .addPortableField("organizationAndLong", organizationAndLongType)
+                .addPortableField("organization", organizationType)
                 .build();
 
         serializationService.getPortableContext().registerClassDefinition(userType);
