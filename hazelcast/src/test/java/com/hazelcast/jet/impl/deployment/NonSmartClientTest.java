@@ -201,9 +201,9 @@ public class NonSmartClientTest extends SimpleTestInClusterSupport {
         assertFalse(job2.getFuture().isDone());
         // Cancel requested through client connected to the master, but job is coordinated by the other member.
         // The jobX.getFuture() invokes JoinSubmittedJobOperation on a member asynchronously. The jobX.cancel()
-        // invokes TerminateJobOperation. We have no control over which of this operation's doRun() method invokes
-        // first. If first is JoinSubmittedJobOperation then the join() throws CancellationException. If first is
-        // TerminateJobOperation (that results later in removing of light master context) then the join() throws
+        // invokes TerminateJobOperation. We have no control over which of these operation's doRun() method executes
+        // first. If JoinSubmittedJobOperation is first, then join() throws CancellationException. If 
+        // TerminateJobOperation is first (that results later in removing of light master context) then the join() throws
         // CompletionException.
         job1.cancel();
         try {
