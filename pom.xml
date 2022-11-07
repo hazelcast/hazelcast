@@ -1847,6 +1847,13 @@
               <artifactId>proto-google-iam-v1</artifactId>
               <version>1.1.7</version>
             </dependency>
+            <!-- Force higher version, compatible with M1 -->
+            <!-- Otherwise Docker for Java (used by TestContainers) is not able to load all JNA files for aarch64 -->
+            <dependency>
+                <groupId>net.java.dev.jna</groupId>
+                <artifactId>jna</artifactId>
+                <version>${jna.version}</version>
+            </dependency>
             <!--
             The following are test dependencies, they are not in the final distribution.
             We put them there for the dependency convergence task to succeed.
