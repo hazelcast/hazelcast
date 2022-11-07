@@ -68,12 +68,12 @@ public class JsonMetadataMutationObserver implements MutationObserver<Record> {
     }
 
     @Override
-    public void onRemoveRecord(Data key, Record record) {
+    public void onRemoveRecord(Data key, Record record, boolean backup) {
         // no-op
     }
 
     @Override
-    public void onEvictRecord(Data key, Record record) {
+    public void onEvictRecord(Data key, Record record, boolean backup) {
         // no-op
     }
 
