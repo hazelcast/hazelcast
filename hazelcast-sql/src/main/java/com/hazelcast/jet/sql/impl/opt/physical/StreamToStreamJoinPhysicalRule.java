@@ -93,6 +93,13 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
                 metadataQuery(left).extractWatermarkedFields(left),
                 metadataQuery(right).extractWatermarkedFields(right));
 
+        if (wmFields == null) {
+            // If we pass initial isUnbounded checks for left & right input with rule config,
+            // it means, we cannot execute such a query, we must abort it.
+            String message = "Non-watermarked streams are not allowed to be joined";
+            call.transformTo(fail(join, message));
+        }
+
         // a postponeTimeMap just like the one described in the TDD, but we don't use WM keys, but field indexes here
         Map<Integer, Map<Integer, Long>> postponeTimeMap = new HashMap<>();
 
@@ -313,6 +320,9 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
             WatermarkedFields rightFields
     ) {
         final int offset = join.getLeft().getRowType().getFieldList().size();
+        if (leftFields == null || rightFields == null) {
+            return null;
+        }
         Set<Integer> shiftedRightProps = rightFields.getFieldIndexes()
                 .stream()
                 .map(right -> right + offset)
