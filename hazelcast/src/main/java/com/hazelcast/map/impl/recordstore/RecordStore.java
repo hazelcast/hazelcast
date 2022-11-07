@@ -616,9 +616,10 @@ public interface RecordStore<R extends Record> {
      * <p>
      * Clears data in this record store.
      *
+     * @param backup  {@code true} if a backup partition, otherwise {@code false}.
      * @return number of cleared entries.
      */
-    int clear();
+    int clear(boolean backup);
 
     /**
      * Resets the record store to it's initial state.

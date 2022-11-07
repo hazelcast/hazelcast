@@ -70,16 +70,18 @@ public interface MutationObserver<R extends Record> {
      *
      * @param key    The key of the record
      * @param record The record
+     * @param backup  {@code true} if a backup partition, otherwise {@code false}.
      */
-    void onRemoveRecord(@Nonnull Data key, R record);
+    void onRemoveRecord(@Nonnull Data key, R record, boolean backup);
 
     /**
      * Called when a record is evicted from the observed {@link RecordStore}
      *
      * @param key    The key of the record
      * @param record The record
+     * @param backup  {@code true} if a backup partition, otherwise {@code false}.*
      */
-    void onEvictRecord(@Nonnull Data key, @Nonnull R record);
+    void onEvictRecord(@Nonnull Data key, @Nonnull R record, boolean backup);
 
     /**
      * Called when a record is loaded into the observed {@link RecordStore}
