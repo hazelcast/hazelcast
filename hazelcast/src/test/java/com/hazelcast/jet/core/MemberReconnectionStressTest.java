@@ -87,6 +87,7 @@ public class MemberReconnectionStressTest extends JetTestSupport {
 
         AtomicInteger jobCount = new AtomicInteger();
         Thread newJobThread = new Thread(() -> {
+            // Continuously submit a new job and wait for it to complete
             while (!terminated.get()) {
                 try {
                     inst1.getJet().newJob(dag).getFuture().join();
