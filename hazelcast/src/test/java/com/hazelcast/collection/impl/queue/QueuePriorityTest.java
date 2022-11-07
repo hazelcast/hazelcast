@@ -55,9 +55,13 @@ public class QueuePriorityTest extends HazelcastTestSupport {
     public void before() {
         Config config = smallInstanceConfig();
         config.getQueueConfig("default")
-              .setPriorityComparatorClassName("com.hazelcast.collection.impl.queue.model.PriorityElementComparator");
+                .setPriorityComparatorClassName("com.hazelcast.collection.impl.queue.model.PriorityElementComparator");
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(3);
         HazelcastInstance[] instances = factory.newInstances(config);
+
+        assertClusterSizeEventually(3, instances);
+        warmUpPartitions(instances);
+
         queue = instances[0].getQueue(generateKeyOwnedBy(instances[1]));
         threadPool = Executors.newCachedThreadPool();
     }
@@ -92,7 +96,6 @@ public class QueuePriorityTest extends HazelcastTestSupport {
 
     @Test
     public void testPriorityQueue_whenHighestOfferedFirst_thenTakeHighest() {
-
         PriorityElement elementLow = new PriorityElement(false, 1);
         PriorityElement elementHigh = new PriorityElement(true, 1);
 
@@ -119,7 +122,6 @@ public class QueuePriorityTest extends HazelcastTestSupport {
 
     @Test
     public void testPriorityQueue_whenTwoHighest_thenTakeFirstVersionAgain() {
-
         PriorityElement elementHigh1 = new PriorityElement(true, 1);
         PriorityElement elementHigh2 = new PriorityElement(true, 2);
 
