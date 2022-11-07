@@ -24,6 +24,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JetServiceBackend;
@@ -44,6 +45,7 @@ import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
 
 import static com.hazelcast.jet.core.TestProcessors.streamingDag;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -202,14 +204,16 @@ public class NonSmartClientTest extends SimpleTestInClusterSupport {
         // Cancel requested through client connected to the master, but job is coordinated by the other member.
         // The jobX.getFuture() invokes JoinSubmittedJobOperation on a member asynchronously. The jobX.cancel()
         // invokes TerminateJobOperation. We have no control over which of these operation's doRun() method executes
-        // first. If JoinSubmittedJobOperation is first, then join() throws CancellationException. If 
+        // first. If JoinSubmittedJobOperation is first, then join() throws CancellationException. If
         // TerminateJobOperation is first (that results later in removing of light master context) then the join() throws
         // CompletionException.
         job1.cancel();
         try {
             job1.join();
             fail("join didn't fail");
-        } catch (CancellationException | CompletionException ignored) { }
+        } catch (CompletionException e) {
+            assert isOrHasCause(e, JobNotFoundException.class);
+        } catch (CancellationException ignored) { }
     }
 
     private Job startJobAndVerifyItIsRunning() {
