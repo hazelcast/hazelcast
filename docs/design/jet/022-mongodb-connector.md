@@ -5,17 +5,12 @@
 + [Background](#background)
    - [Description](#description)
    - [Terminology](#terminology)
-   - [Actors and Scenarios](#actors-and-scenarios)
 + [Functional Design](#functional-design)
    * [Summary of Functionality](#summary-of-the-functionality)
    * [Additional Functional Design Topics](#additional-functional-design-topics)
       + [Notes/Questions/Issues](#notesquestionsissues)
 + [User Interaction](#user-interaction)
-   - [API design and/or Prototypes](#api-design-andor-prototypes)
-+ [Client Related Changes](#client-related-changes)
 + [Technical Design](#technical-design)
-+ [Testing Criteria](#testing-criteria)
-+ [Other Artifacts](#other-artifacts)
 
 
 |                                |                                                  |
@@ -49,7 +44,7 @@ properly tested and supported connector for this database.
 Create connector that:
  - has minimal API available to quickly prototype and more advanced
    one for those who need many customizations
- - support parallelism where possible**
+ - support parallelism where possible
  - support encryption for data-in-transit
  - support SQL <-> MongoDB
  - support no/low code `MapStore` feature
@@ -85,7 +80,7 @@ Use the ⚠️ or ❓icon to indicate an outstanding issue or question, and use 
 #### Source/sink
 
 Example usage of the source:
-```
+```java
 BatchSource<Document> batchSource =
         MongoDBSources.batch(
                 "batch-source",
@@ -108,7 +103,7 @@ that all returned objects will be automatically mapped to Java POJO
 [see MongoDB docs](https://www.mongodb.com/developer/languages/java/java-mapping-pojos/)
 
 Example usage of sink:
-```
+```java
 Pipeline p = Pipeline.create();
 p.readFrom(Sources.list(list))
  .map(i -> new Document("key", i))
@@ -143,14 +138,14 @@ CREATE MAPPING people (
 )
 TYPE MONGODB 
 OPTIONS (
-  'externalDataStoreRef'='mongodb-database' 
+  'externalDataStoreRef'='mongodb-ref' 
 )
 ```
 
 #### GenericMapStore support
 
 User will be able to configure map store:
-```
+```java
 Config config = new Config();
 config.addExternalDataStoreConfig(
         new ExternalDataStoreConfig("mongodb-ref")
@@ -222,13 +217,15 @@ Possible solutions:
 
 ### Implementation parts
 
-The implementation will be split into 3 parts:
+The implementation will be split into 4 parts:
 
-**PR#1**: Basic source and sink for MongoDB
+**PR#1**: Import old connector to core repository
 
-**PR#2**: The SQL connector
+**PR#2**: Basic source and sink for MongoDB
 
-**PR#3**: Support for GenericMapStore
+**PR#3**: The SQL connector
+
+**PR#4**: Support for GenericMapStore (incl. mapping derivation)
 
 ### Implementation questions
 
@@ -334,7 +331,7 @@ The implementation will be split into 3 parts:
   * Use same structure as other connectors.
 - Which other engineers or teams have you polled for input on the proposed UX changes? Which engineers or team may have relevant experience to provide feedback on UX?
 - Is usage of the new feature observable in telemetry? If so, mention where in the code telemetry counters or metrics would be added.
-  * TBD
+  * TBD - based on MongoDB metrics.
 - What might be the valuable metrics that could be shown for this feature in Management Center and/or Viridan Control Plane?
   * No special metrics; does standard for Jet jobs would be enough.
 - Should this feature be configured, enabled/disabled or managed from the Management Center? How do you think your change affects Management Center?
