@@ -123,7 +123,7 @@ User should be able to run following SQL query:
 CREATE MAPPING people
 TYPE MONGODB 
 OPTIONS (
-  'externalDataStoreRef'='mongodb-database' 
+  'externalDataStoreRef'='mongodb-ref' 
 )
 ```
 
@@ -207,13 +207,19 @@ Possible solutions:
  - query for some documents in the collection (e.g. first one) and 
    read returned objects' fields and infer types.
  - provide schema manually by user.
-   - read `$jsonSchema` validator 
-     (`db.getCollectionInfos( { name: "myCollection" } )[0].options.validator`)
-     and use it to create a schema or read one element and check if schema 
-     is available (`db.runCommand({listCollections: 1, filter:{ name: "students" }})`).
-     [MongoDB's docs on this topic](https://www.mongodb.com/docs/manual/core/schema-validation/specify-query-expression-rules/#std-label-schema-validation-query-expression)
-     [and second documentation page](https://www.mongodb.com/docs/manual/core/schema-validation/view-existing-validation-rules/).
+ - read `$jsonSchema` validator 
+   (`db.getCollectionInfos( { name: "myCollection" } )[0].options.validator`)
+   and use it to create a schema or read one element and check if schema 
+   is available (`db.runCommand({listCollections: 1, filter:{ name: "students" }})`).
+   [MongoDB's docs on this topic](https://www.mongodb.com/docs/manual/core/schema-validation/specify-query-expression-rules/#std-label-schema-validation-query-expression)
+   [and second documentation page](https://www.mongodb.com/docs/manual/core/schema-validation/view-existing-validation-rules/).
 
+All the methods can be combined and used in following order:
+ - manual schema definition
+ - reading `$jsonSchema`
+ - reading some documents
+
+Each of steps will be invoked only if previous failed.
 
 ### Implementation parts
 
@@ -221,7 +227,7 @@ The implementation will be split into 4 parts:
 
 **PR#1**: Import old connector to core repository
 
-**PR#2**: Basic source and sink for MongoDB
+**PR#2**: Source and sink for MongoDB
 
 **PR#3**: The SQL connector
 
@@ -257,7 +263,8 @@ The implementation will be split into 4 parts:
     * This feature will use GenericMapStore and External Data Factories, as mentioned in the examples above.
     
   - What are the edge cases? What are example uses or inputs that we think are uncommon but are still possible and thus need to be handled? How are these edge cases handled?
-    * User may have documents of very different schemas in one collection. In such cases the connector should not fail ()
+    * User may have documents of very different schemas in one collection. In such cases the connector should not fail - for inserts
+      it should just put new documents, for reading it should use `null` for missing fields and omit all additional fields.
     
   - What are the effect of possible mistakes by other Hazelcast team members trying to use the feature in their own code? How does the change impact how they will troubleshoot things?
     * It won't be reusable in other context. Troubleshooting will be the same as any other source/sink/connector for Jet. 
@@ -266,7 +273,7 @@ The implementation will be split into 4 parts:
     
     * Other alternatives:
       - leave implementation to users (bad: requires code duplication, no official support is also not good)
-      - keep connector in `jet-contrib` repository - but it's not as well tested as main repo
+      - keep connector in `jet-contrib` repository - but it's not as well tested as main repo and less visible
     There is also a debatable change, that source and sink will now be a processor implementation, not using
       `SourceBuilder`. However, as mentioned in [Technical design](#Source-and-sink), it's a preferred way to 
       create a SQL connector.
