@@ -42,7 +42,6 @@ public class PortableNestedFieldsTest extends SqlTestSupport {
 
     private static InternalSerializationService serializationService;
     private static ClassDefinition userType;
-
     private static ClassDefinition userType2;
     private static ClassDefinition organizationType;
     private static ClassDefinition organizationAndLongType;
