@@ -317,6 +317,7 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
 
             int backupTimeouts = 0;
             int normalTimeouts = 0;
+            int memberLeft = 0;
             int invocationCount = 0;
 
             for (Invocation inv : invocationRegistry) {
@@ -326,6 +327,8 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
                         normalTimeouts++;
                     } else if (inv.detectAndHandleBackupTimeout(backupTimeoutMillis)) {
                         backupTimeouts++;
+                    } else if (inv.detectAndHandleLeftMember()) {
+                        memberLeft++;
                     }
                 } catch (Throwable t) {
                     inspectOutOfMemoryError(t);
@@ -335,12 +338,12 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
 
             backupTimeoutsCount.inc(backupTimeouts);
             normalTimeoutsCount.inc(normalTimeouts);
-            log(invocationCount, backupTimeouts, normalTimeouts);
+            log(invocationCount, backupTimeouts, normalTimeouts, memberLeft);
         }
 
-        private void log(int invocationCount, int backupTimeouts, int invocationTimeouts) {
+        private void log(int invocationCount, int backupTimeouts, int invocationTimeouts, int memberLeft) {
             Level logLevel = null;
-            if (backupTimeouts > 0 || invocationTimeouts > 0) {
+            if (backupTimeouts > 0 || invocationTimeouts > 0 || memberLeft > 0) {
                 logLevel = INFO;
             } else if (logger.isFineEnabled()) {
                 logLevel = FINE;
@@ -349,7 +352,8 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
             if (logLevel != null) {
                 logger.log(logLevel, "Invocations:" + invocationCount
                         + " timeouts:" + invocationTimeouts
-                        + " backup-timeouts:" + backupTimeouts);
+                        + " backup-timeouts:" + backupTimeouts
+                        + " member-left: " + memberLeft);
             }
         }
     }
