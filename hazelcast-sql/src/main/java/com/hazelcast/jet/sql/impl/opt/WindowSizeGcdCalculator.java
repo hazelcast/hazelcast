@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.opt;
 
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
-import com.hazelcast.jet.sql.impl.opt.physical.ShouldNotExecuteRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowAggregatePhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.StreamToStreamJoinPhysicalRel;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -58,11 +57,6 @@ public class WindowSizeGcdCalculator {
         }
 
         private void visit0(RelNode node) {
-            if (node instanceof ShouldNotExecuteRel) {
-                gcd = 0L;
-                return;
-            }
-
             if (node instanceof SlidingWindowAggregatePhysicalRel) {
                 SlidingWindowAggregatePhysicalRel slidingWindow = (SlidingWindowAggregatePhysicalRel) node;
                 long windowSize = slidingWindow.windowPolicyProvider().apply(eec).windowSize();
