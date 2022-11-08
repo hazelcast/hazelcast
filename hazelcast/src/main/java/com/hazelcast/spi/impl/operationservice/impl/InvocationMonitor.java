@@ -112,6 +112,9 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
     private final long heartbeatBroadcastPeriodMillis;
     @Probe(name = OPERATION_METRIC_INVOCATION_MONITOR_INVOCATION_SCAN_PERIOD_MILLIS, unit = MS)
     private final long invocationScanPeriodMillis = SECONDS.toMillis(1);
+    private final long scanForLeftMembersMillis;
+    // read/write only in scheduler thread
+    private long memberLeftAtMillis;
 
     //todo: we need to get rid of the nodeEngine dependency
     InvocationMonitor(NodeEngineImpl nodeEngine,
@@ -131,6 +134,7 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
         this.invocationTimeoutMillis = invocationTimeoutMillis(properties);
         this.heartbeatBroadcastPeriodMillis = heartbeatBroadcastPeriodMillis(properties);
         this.scheduler = newScheduler(nodeEngine.getHazelcastInstance().getName());
+        this.scanForLeftMembersMillis = scanForLeftMembersMillis(properties);
     }
 
     // Only accessed by diagnostics.
@@ -160,6 +164,20 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
         }
 
         return invocationTimeoutMillis;
+    }
+
+    private long scanForLeftMembersMillis(HazelcastProperties properties) {
+        // call timeout + heartbeat timeout (same as call timeout) + scan period (for buffer time)
+        long scanForLeftMembersMillis = properties.getMillis(OPERATION_CALL_TIMEOUT_MILLIS)
+                + invocationTimeoutMillis
+                + invocationScanPeriodMillis;
+
+        if (logger.isFinestEnabled()) {
+            logger.finest("If a member leaves the cluster, invocation registry will be scanned for leaving members for "
+                    + scanForLeftMembersMillis + " ms");
+        }
+
+        return scanForLeftMembersMillis;
     }
 
     private long backupTimeoutMillis(HazelcastProperties properties) {
@@ -319,6 +337,7 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
             int normalTimeouts = 0;
             int memberLeft = 0;
             int invocationCount = 0;
+            long now = System.currentTimeMillis();
 
             for (Invocation inv : invocationRegistry) {
                 invocationCount++;
@@ -327,7 +346,9 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
                         normalTimeouts++;
                     } else if (inv.detectAndHandleBackupTimeout(backupTimeoutMillis)) {
                         backupTimeouts++;
-                    } else if (inv.detectAndHandleLeftMember()) {
+                    } else if (now < memberLeftAtMillis + scanForLeftMembersMillis
+                            && inv.detectAndHandleLeftMember()) {
+                        // if now > memberLeftAtMillis + scanForLeftMembersMillis operation is timed out anyway
                         memberLeft++;
                     }
                 } catch (Throwable t) {
@@ -392,6 +413,8 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
         @Override
         public void run0() {
             heartbeatPerMember.remove(leftMember.getAddress());
+
+            memberLeftAtMillis = System.currentTimeMillis();
 
             for (Invocation invocation : invocationRegistry) {
                 if (hasTargetLeft(invocation)) {
