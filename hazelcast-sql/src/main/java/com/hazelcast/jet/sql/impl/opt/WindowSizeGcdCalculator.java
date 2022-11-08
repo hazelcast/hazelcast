@@ -60,14 +60,14 @@ public class WindowSizeGcdCalculator {
             if (node instanceof SlidingWindowAggregatePhysicalRel) {
                 SlidingWindowAggregatePhysicalRel slidingWindow = (SlidingWindowAggregatePhysicalRel) node;
                 long windowSize = slidingWindow.windowPolicyProvider().apply(eec).windowSize();
-                gcd = gcd >= 0L ? Util.gcd(gcd, windowSize) : windowSize;
+                gcd = gcd > 0L ? Util.gcd(gcd, windowSize) : windowSize;
             } else if (node instanceof StreamToStreamJoinPhysicalRel) {
                 StreamToStreamJoinPhysicalRel s2sJoin = (StreamToStreamJoinPhysicalRel) node;
                 long windowSize = s2sJoin.minWindowSize();
                 if (windowSize == 0L) {
-                    windowSize = 1L; // minimum available lag is 1 ms.
+                    windowSize = 1L; // minimum available watermark interval is 1 ms.
                 }
-                gcd = gcd >= 0L ? Util.gcd(gcd, windowSize) : Util.gcd(DEFAULT_THROTTLING_FRAME_SIZE, windowSize);
+                gcd = gcd > 0L ? Util.gcd(gcd, windowSize) : Util.gcd(DEFAULT_THROTTLING_FRAME_SIZE, windowSize);
             }
 
             for (RelNode child : node.getInputs()) {
