@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.SortLogicalRel;
-import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.plan.RelTraitSet;
@@ -44,12 +43,12 @@ final class SortPhysicalRule extends RelRule<RelRule.Config> {
                 .build();
 
         @Override
-        default RelOptRule toRule() {
+        default SortPhysicalRule toRule() {
             return new SortPhysicalRule(this);
         }
     }
 
-    static final RelOptRule INSTANCE = new SortPhysicalRule(Config.DEFAULT);
+    static final SortPhysicalRule INSTANCE = Config.DEFAULT.toRule();
 
     private SortPhysicalRule(SortPhysicalRule.Config config) {
         super(config);
@@ -66,28 +65,23 @@ final class SortPhysicalRule extends RelRule<RelRule.Config> {
     }
 
     private static List<RelNode> toTransforms(SortLogicalRel sort) {
+        // FullScan + Sort + Limit
         List<RelNode> sortTransforms = new ArrayList<>(1);
+        // IndexScan + Limit
         List<RelNode> nonSortTransforms = new ArrayList<>(1);
 
-        for (RelNode physicalInput : OptUtils.extractPhysicalRelsFromSubset(sort.getInput())) {
+        for (RelNode input : OptUtils.extractPhysicalRelsFromSubset(sort.getInput())) {
             boolean requiresSort = requiresSort(
                     sort.getCollation(),
-                    physicalInput.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE)
+                    input.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE)
             );
-            if (!requiresSort && (sort.offset != null || sort.fetch != null)) {
-                nonSortTransforms.add(createLimit(sort, physicalInput));
-            } else if (requiresSort) {
-                SortPhysicalRel newSort = createSort(sort, physicalInput, requiresSort);
-                // if LIMIT and/or OFFSET exists -> create Limit + Sort rels
-                if (sort.offset != null || sort.fetch != null) {
-                    LimitPhysicalRel newLimit = createLimit(sort, newSort);
-                    sortTransforms.add(newLimit);
-                } else {
-                    sortTransforms.add(newSort);
-                }
-            } else {
-                nonSortTransforms.add(physicalInput);
+            if (requiresSort) {
+                input = createSort(sort, input);
             }
+            if (sort.offset != null || sort.fetch != null) {
+                input = createLimit(sort, input);
+            }
+            (requiresSort ? sortTransforms : nonSortTransforms).add(input);
         }
         return !nonSortTransforms.isEmpty() ? nonSortTransforms : sortTransforms;
     }
@@ -120,11 +114,7 @@ final class SortPhysicalRule extends RelRule<RelRule.Config> {
         }
     }
 
-    private static SortPhysicalRel createSort(
-            SortLogicalRel logicalSort,
-            RelNode physicalInput,
-            boolean requiresSort
-    ) {
+    private static SortPhysicalRel createSort(SortLogicalRel logicalSort, RelNode physicalInput) {
         // Input traits are propagated, but new collation is used.
         RelTraitSet traitSet = OptUtils.traitPlus(physicalInput.getTraitSet(), logicalSort.getCollation());
 
@@ -133,10 +123,7 @@ final class SortPhysicalRule extends RelRule<RelRule.Config> {
                 traitSet,
                 physicalInput,
                 logicalSort.getCollation(),
-                null,
-                null,
-                logicalSort.getRowType(),
-                requiresSort
+                logicalSort.getRowType()
         );
     }
 
@@ -145,7 +132,7 @@ final class SortPhysicalRule extends RelRule<RelRule.Config> {
                 logicalSort.offset,
                 logicalSort.fetch,
                 logicalSort.getCluster(),
-                physicalInput.getTraitSet(), // we inherit input traits.
+                physicalInput.getTraitSet(),  // We inherit input traits.
                 physicalInput);
     }
 }

@@ -568,11 +568,8 @@ public class CreateDagVisitor {
             return onLimit((LimitPhysicalRel) input);
         }
 
-        Expression<?> fetch;
-        Expression<?> offset;
-
-        fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
-        offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
+        Expression<?> fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
+        Expression<?> offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
 
         Vertex vertex = dag.newUniqueVertex(
                 "ClientSink",
