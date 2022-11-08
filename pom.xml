@@ -78,7 +78,7 @@
         <maven.failsafe.plugin.version>2.22.2</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.7</maven.cobertura.plugin.version>
         <maven.enforcer.plugin.version>3.0.0-M3</maven.enforcer.plugin.version>
-        <maven.os.plugin.version>1.7.0</maven.os.plugin.version>
+        <maven.os.plugin.version>1.7.1</maven.os.plugin.version>
         <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
         <maven.resources.plugin.version>3.2.0</maven.resources.plugin.version>
         <owasp.dependency-check.version>7.2.1</owasp.dependency-check.version>
