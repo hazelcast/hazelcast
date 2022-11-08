@@ -318,7 +318,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         }
     }
 
-    boolean invocationShouldHaveTargetMember() {
+    private boolean invocationShouldHaveTargetMember() {
         return !(isJoinOperation(op) || isWanReplicationOperation(op));
     }
 
@@ -812,10 +812,10 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
                 + '}';
     }
 
-    private class InvocationRetryTask implements Runnable {
+    private final class InvocationRetryTask implements Runnable {
         private final boolean reset;
 
-        public InvocationRetryTask(boolean reset) {
+        private InvocationRetryTask(boolean reset) {
             this.reset = reset;
         }
 
