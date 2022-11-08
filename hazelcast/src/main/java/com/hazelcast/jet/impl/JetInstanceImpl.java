@@ -103,9 +103,9 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
                 Thread.currentThread().interrupt();
                 result = GetJobIdsResult.EMPTY;
             } catch (ExecutionException e) {
-                // Don't ignore exceptions from master. If we don't get a response from a non-master member, it
-                // can contain only light jobs - we ignore that member's failure, because these jobs are not as
-                // important. If we don't get response from the master, we report it to the user.
+                // If we don't get a response from a non-master member, it can contain only light jobs - we ignore that
+                // member's failure, because these jobs are not as important. If we don't get response from the master,
+                // we report it to the user.
                 if (isOrHasCause(e, MemberLeftException.class) || isOrHasCause(e, TargetNotMemberException.class)) {
                     result = GetJobIdsResult.EMPTY;
                 } else {
@@ -133,6 +133,7 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
             }
             return new GetJobIdsResult(nonLightJobs);
         } catch (Exception e) {
+            // We do not ignore any exception from master.
             throw new RuntimeException("Error when getting job IDs: " + e, e);
         }
     }
