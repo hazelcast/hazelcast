@@ -23,7 +23,7 @@ import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 /**
- * A {@link Invocation} evaluates an Operation Invocation for a master member running on top of the
+ * An {@link Invocation} evaluates an Operation Invocation for a master member running on top of the
  * {@link OperationServiceImpl}.
  */
 final class MasterInvocation extends Invocation<Address> {

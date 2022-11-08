@@ -32,7 +32,7 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 
 /**
- * A {@link Invocation} evaluates an Operation Invocation for a particular partition running on top of the
+ * An {@link Invocation} evaluates an Operation Invocation for a particular partition running on top of the
  * {@link OperationServiceImpl}.
  */
 final class PartitionInvocation extends Invocation<PartitionReplica> {

@@ -19,24 +19,28 @@ package com.hazelcast.spi.impl.operationservice.impl;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.spi.impl.operationservice.InvocationBuilder;
 import com.hazelcast.spi.impl.operationservice.Operation;
+import com.hazelcast.spi.impl.operationservice.impl.Invocation.Context;
 
 /**
  * An {@link InvocationBuilder} that is tied to the {@link OperationServiceImpl}.
  */
 class InvocationBuilderImpl extends InvocationBuilder {
-
-    private final Invocation.Context context;
+    private final Context context;
     private final boolean executeOnMaster;
 
-    InvocationBuilderImpl(Invocation.Context context, String serviceName, Operation op, int partitionId) {
-        this(context, serviceName, op, partitionId, null, false);
+    static InvocationBuilderImpl createForPartition(Context context, String serviceName, Operation op, int partitionId) {
+        return new InvocationBuilderImpl(context, serviceName, op, partitionId, null, false);
     }
 
-    InvocationBuilderImpl(Invocation.Context context, String serviceName, Operation op, Address target, boolean executeOnMaster) {
-        this(context, serviceName, op, Operation.GENERIC_PARTITION_ID, target, executeOnMaster);
+    static InvocationBuilderImpl createForTarget(Context context, String serviceName, Operation op, Address target) {
+        return new InvocationBuilderImpl(context, serviceName, op, Operation.GENERIC_PARTITION_ID, target, false);
     }
 
-    private InvocationBuilderImpl(Invocation.Context context, String serviceName, Operation op,
+    static InvocationBuilderImpl createForMaster(Context context, String serviceName, Operation op) {
+        return new InvocationBuilderImpl(context, serviceName, op, Operation.GENERIC_PARTITION_ID, null, true);
+    }
+
+    private InvocationBuilderImpl(Context context, String serviceName, Operation op,
                                   int partitionId, Address target, boolean executeOnMaster) {
         super(serviceName, op, partitionId, target);
         this.context = context;

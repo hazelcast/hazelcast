@@ -289,7 +289,7 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
     @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId) {
         checkNotNegative(partitionId, "Partition ID cannot be negative!");
-        return new InvocationBuilderImpl(invocationContext, serviceName, op, partitionId)
+        return InvocationBuilderImpl.createForPartition(invocationContext, serviceName, op, partitionId)
                 .setTryCount(invocationMaxRetryCount)
                 .setTryPauseMillis(invocationRetryPauseMillis)
                 .setFailOnIndeterminateOperationState(failOnIndeterminateOperationState);
@@ -298,14 +298,14 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
     @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target) {
         checkNotNull(target, "Target cannot be null!");
-        return new InvocationBuilderImpl(invocationContext, serviceName, op, target, false)
+        return InvocationBuilderImpl.createForTarget(invocationContext, serviceName, op, target)
                 .setTryCount(invocationMaxRetryCount)
                 .setTryPauseMillis(invocationRetryPauseMillis);
     }
 
     @Override
     public InvocationBuilder createMasterInvocationBuilder(String serviceName, Operation op) {
-        return new InvocationBuilderImpl(invocationContext, serviceName, op, null, true)
+        return InvocationBuilderImpl.createForMaster(invocationContext, serviceName, op)
                 .setTryCount(invocationMaxRetryCount)
                 .setTryPauseMillis(invocationRetryPauseMillis);
     }
