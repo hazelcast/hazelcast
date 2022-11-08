@@ -24,9 +24,16 @@ import com.hazelcast.spi.impl.operationservice.impl.Invocation.Context;
 /**
  * An {@link InvocationBuilder} that is tied to the {@link OperationServiceImpl}.
  */
-class InvocationBuilderImpl extends InvocationBuilder {
+final class InvocationBuilderImpl extends InvocationBuilder {
     private final Context context;
     private final boolean executeOnMaster;
+
+    private InvocationBuilderImpl(Context context, String serviceName, Operation op,
+                                  int partitionId, Address target, boolean executeOnMaster) {
+        super(serviceName, op, partitionId, target);
+        this.context = context;
+        this.executeOnMaster = executeOnMaster;
+    }
 
     static InvocationBuilderImpl createForPartition(Context context, String serviceName, Operation op, int partitionId) {
         return new InvocationBuilderImpl(context, serviceName, op, partitionId, null, false);
@@ -38,13 +45,6 @@ class InvocationBuilderImpl extends InvocationBuilder {
 
     static InvocationBuilderImpl createForMaster(Context context, String serviceName, Operation op) {
         return new InvocationBuilderImpl(context, serviceName, op, Operation.GENERIC_PARTITION_ID, null, true);
-    }
-
-    private InvocationBuilderImpl(Context context, String serviceName, Operation op,
-                                  int partitionId, Address target, boolean executeOnMaster) {
-        super(serviceName, op, partitionId, target);
-        this.context = context;
-        this.executeOnMaster = executeOnMaster;
     }
 
     @Override
