@@ -246,7 +246,7 @@ public abstract class AbstractCacheConfig<K, V> implements CacheConfiguration<K,
      * <p>
      * Management may be enabled or disabled at runtime via {@link javax.cache.CacheManager#enableManagement(String, boolean)}.
      *
-     * @param enabled {@code true} to enable statistics, {@code false} to disable
+     * @param enabled {@code true} to enable management, {@code false} to disable
      * @return the {@link CacheConfig}
      */
     @Override
