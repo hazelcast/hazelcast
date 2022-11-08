@@ -71,9 +71,6 @@ public class WindowSizeGcdCalculator {
             }
 
             for (RelNode child : node.getInputs()) {
-                if (child instanceof SlidingWindowAggregatePhysicalRel) {
-                    SlidingWindowAggregatePhysicalRel slidingWindow = (SlidingWindowAggregatePhysicalRel) child;
-                }
                 visit0(child);
             }
         }
