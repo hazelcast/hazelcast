@@ -69,7 +69,7 @@ public class WindowSizeGcdCalculator {
                     windowSize = MINIMUM_WATERMARK_INTERVAL;
                 }
                 // we don't want to overflow input events buffers, that’s why gcd is limited with default frame size.
-                gcd = gcd > 0L ? Util.gcd(gcd, windowSize) : Util.gcd(DEFAULT_THROTTLING_FRAME_SIZE, windowSize);
+                gcd = Util.gcd(gcd > 0L ? gcd : DEFAULT_THROTTLING_FRAME_SIZE, windowSize);
             }
 
             for (RelNode child : node.getInputs()) {
