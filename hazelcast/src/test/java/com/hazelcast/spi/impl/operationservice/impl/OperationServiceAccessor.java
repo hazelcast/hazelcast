@@ -18,6 +18,9 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.util.counters.Counter;
+import com.hazelcast.spi.impl.operationservice.Operation;
+
+import java.util.Set;
 
 import static com.hazelcast.test.Accessors.getOperationService;
 
@@ -29,5 +32,10 @@ public final class OperationServiceAccessor {
     public static Counter getFailedBackupsCount(HazelcastInstance instance) {
         OperationServiceImpl operationService = getOperationService(instance);
         return operationService.failedBackupsCount;
+    }
+
+    public static Set<Operation> getAsyncOperations(HazelcastInstance instance) {
+        OperationServiceImpl operationService = getOperationService(instance);
+        return operationService.asyncOperations;
     }
 }
