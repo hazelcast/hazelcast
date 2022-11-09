@@ -228,7 +228,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                 + ")"
         );
 
-        // If you change TreeMap -> HashMap at JdbcSqlConnector:159, it will fail.
+        // If you change LinkedHashMap -> HashMap at JdbcSqlConnector:159, it will fail.
         assertRowsAnyOrder(
                 "SELECT * FROM " + tableName,
                 asList(new Row(0, "name-0"), new Row(1, "name-1"))
