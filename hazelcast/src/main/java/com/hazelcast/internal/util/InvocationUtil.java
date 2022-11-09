@@ -139,7 +139,7 @@ public final class InvocationUtil {
 
     /**
      * Invokes the given operation on all cluster members that
-     * {@code memberFilter} returns {@code true}.
+     * {@code memberFilter} returns {@code true} in parallel.
      *
      * <p>
      * The operation is retried until the cluster is stable between the start
