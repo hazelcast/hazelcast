@@ -52,10 +52,10 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeMap;
 
 import static java.lang.Integer.parseInt;
 import static java.util.Objects.requireNonNull;
@@ -156,7 +156,7 @@ public class JdbcSqlConnector implements SqlConnector {
             ResultSet rs = statement.getResultSet();
             ResultSetMetaData metaData = rs.getMetaData();
 
-            Map<String, DbField> fields = new TreeMap<>();
+            Map<String, DbField> fields = new LinkedHashMap<>();
             for (int i = 1; i <= metaData.getColumnCount(); i++) {
                 String columnName = metaData.getColumnName(i);
                 fields.put(columnName,
