@@ -210,34 +210,42 @@ public final class PartitionReplicaSyncRequestOffloadable
         }
 
         @Override
-        public void start() throws Exception {
+        public void start() {
             try {
                 nodeEngine.getExecutionService().execute(ExecutionService.ASYNC_EXECUTOR,
                         () -> {
-                            // set partition as migrating to disable mutating
-                            // operations while preparing replication operations
-                            if (!trySetMigratingFlag()) {
-                                sendRetryResponse();
-                            }
-
                             try {
-                                Integer permits = getPermits();
-                                if (permits == null) {
-                                    return;
-                                }
-                                sendOperationsForNamespaces(permits);
-                                // send retry response for remaining namespaces
-                                if (!namespaces.isEmpty()) {
-                                    logNotEnoughPermits();
+                                // set partition as migrating to disable mutating
+                                // operations while preparing replication operations
+                                if (!trySetMigratingFlag()) {
                                     sendRetryResponse();
                                 }
+
+                                try {
+                                    Integer permits = getPermits();
+                                    if (permits == null) {
+                                        return;
+                                    }
+                                    sendOperationsForNamespaces(permits);
+                                    // send retry response for remaining namespaces
+                                    if (!namespaces.isEmpty()) {
+                                        logNotEnoughPermits();
+                                        sendRetryResponse();
+                                    }
+                                } finally {
+                                    clearMigratingFlag();
+                                }
                             } finally {
-                                clearMigratingFlag();
+                                sendResponse(null);
                             }
                         });
             } catch (RejectedExecutionException e) {
                 // if execution on async executor was rejected, then send retry response
-                sendRetryResponse();
+                try {
+                    sendRetryResponse();
+                } finally {
+                    sendResponse(null);
+                }
             }
         }
     }
