@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.JetServiceBackend;
@@ -40,6 +41,7 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.idToString;
 import static java.util.stream.Collectors.joining;
+import static org.assertj.core.api.Assertions.assertThat;
 
 /**
  * Base class for tests that share the cluster for all jobs. The subclass must
@@ -56,6 +58,8 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     private static HazelcastInstance client;
 
     protected static void initialize(int memberCount, @Nullable Config config) {
+        assertNoRunningInstances();
+
         assert factory == null : "already initialized";
         factory = new TestHazelcastFactory();
         instances = new HazelcastInstance[memberCount];
@@ -160,5 +164,9 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
      */
     protected static HazelcastInstance client() {
         return client;
+    }
+
+    private static void assertNoRunningInstances() {
+        assertThat(Hazelcast.getAllHazelcastInstances()).as("There should be no running instances").isEmpty();
     }
 }
