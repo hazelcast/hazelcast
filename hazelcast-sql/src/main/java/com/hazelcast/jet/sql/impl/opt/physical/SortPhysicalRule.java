@@ -18,6 +18,7 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.logical.SortLogicalRel;
+import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.plan.RelTraitSet;
@@ -43,12 +44,12 @@ final class SortPhysicalRule extends RelRule<RelRule.Config> {
                 .build();
 
         @Override
-        default SortPhysicalRule toRule() {
+        default RelOptRule toRule() {
             return new SortPhysicalRule(this);
         }
     }
 
-    static final SortPhysicalRule INSTANCE = Config.DEFAULT.toRule();
+    static final SortPhysicalRule INSTANCE = new SortPhysicalRule(Config.DEFAULT);
 
     private SortPhysicalRule(SortPhysicalRule.Config config) {
         super(config);
@@ -65,16 +66,17 @@ final class SortPhysicalRule extends RelRule<RelRule.Config> {
     }
 
     private static List<RelNode> toTransforms(SortLogicalRel sort) {
-        // FullScan + Sort + Limit
+        // FullScan + Sort [+ Limit]
         List<RelNode> sortTransforms = new ArrayList<>(1);
-        // IndexScan + Limit
+        // IndexScan [+ Limit]
         List<RelNode> nonSortTransforms = new ArrayList<>(1);
 
-        for (RelNode input : OptUtils.extractPhysicalRelsFromSubset(sort.getInput())) {
+        for (RelNode physicalInput : OptUtils.extractPhysicalRelsFromSubset(sort.getInput())) {
             boolean requiresSort = requiresSort(
                     sort.getCollation(),
-                    input.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE)
+                    physicalInput.getTraitSet().getTrait(RelCollationTraitDef.INSTANCE)
             );
+            RelNode input = physicalInput;
             if (requiresSort) {
                 input = createSort(sort, input);
             }
