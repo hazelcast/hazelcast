@@ -26,7 +26,6 @@ import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.BiTuple;
-import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
@@ -211,7 +210,7 @@ public final class PartitionReplicaSyncRequestOffloadable
         }
 
         @Override
-        public void start() throws Exception {
+        public void start() {
             try {
                 nodeEngine.getExecutionService().execute(ExecutionService.ASYNC_EXECUTOR,
                         () -> {
@@ -247,10 +246,6 @@ public final class PartitionReplicaSyncRequestOffloadable
                 } finally {
                     sendResponse(null);
                 }
-            } catch (Throwable t) {
-                sendResponse(null);
-
-                throw ExceptionUtil.rethrow(t);
             }
         }
     }
