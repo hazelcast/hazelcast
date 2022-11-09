@@ -50,7 +50,6 @@ import com.hazelcast.partition.PartitionService;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.operationparker.impl.OperationParkerImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceAccessor;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.test.jitter.JitterRule;
 import com.hazelcast.test.metrics.MetricsRule;
@@ -180,16 +179,8 @@ public abstract class HazelcastTestSupport {
     public final void shutdownNodeFactory() {
         TestHazelcastInstanceFactory testHazelcastInstanceFactory = factory;
         if (testHazelcastInstanceFactory != null) {
-            assertNoRemainingAsyncOperation(testHazelcastInstanceFactory);
             factory = null;
             testHazelcastInstanceFactory.terminateAll();
-        }
-    }
-
-    private static void assertNoRemainingAsyncOperation(TestHazelcastInstanceFactory testHazelcastInstanceFactory) {
-        Collection<HazelcastInstance> instances = testHazelcastInstanceFactory.getAllHazelcastInstances();
-        for (HazelcastInstance instance : instances) {
-            assertEquals(0, OperationServiceAccessor.getAsyncOperationsCount(instance));
         }
     }
 
