@@ -26,6 +26,7 @@ import com.hazelcast.internal.partition.impl.PartitionDataSerializerHook;
 import com.hazelcast.internal.partition.impl.PartitionStateManager;
 import com.hazelcast.internal.services.ServiceNamespace;
 import com.hazelcast.internal.util.BiTuple;
+import com.hazelcast.internal.util.ExceptionUtil;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.spi.impl.executionservice.ExecutionService;
@@ -214,30 +215,42 @@ public final class PartitionReplicaSyncRequestOffloadable
             try {
                 nodeEngine.getExecutionService().execute(ExecutionService.ASYNC_EXECUTOR,
                         () -> {
-                            // set partition as migrating to disable mutating
-                            // operations while preparing replication operations
-                            if (!trySetMigratingFlag()) {
-                                sendRetryResponse();
-                            }
-
                             try {
-                                Integer permits = getPermits();
-                                if (permits == null) {
-                                    return;
-                                }
-                                sendOperationsForNamespaces(permits);
-                                // send retry response for remaining namespaces
-                                if (!namespaces.isEmpty()) {
-                                    logNotEnoughPermits();
+                                // set partition as migrating to disable mutating
+                                // operations while preparing replication operations
+                                if (!trySetMigratingFlag()) {
                                     sendRetryResponse();
                                 }
+
+                                try {
+                                    Integer permits = getPermits();
+                                    if (permits == null) {
+                                        return;
+                                    }
+                                    sendOperationsForNamespaces(permits);
+                                    // send retry response for remaining namespaces
+                                    if (!namespaces.isEmpty()) {
+                                        logNotEnoughPermits();
+                                        sendRetryResponse();
+                                    }
+                                } finally {
+                                    clearMigratingFlag();
+                                }
                             } finally {
-                                clearMigratingFlag();
+                                sendResponse(null);
                             }
                         });
             } catch (RejectedExecutionException e) {
                 // if execution on async executor was rejected, then send retry response
-                sendRetryResponse();
+                try {
+                    sendRetryResponse();
+                } finally {
+                    sendResponse(null);
+                }
+            } catch (Throwable t) {
+                sendResponse(null);
+
+                throw ExceptionUtil.rethrow(t);
             }
         }
     }
