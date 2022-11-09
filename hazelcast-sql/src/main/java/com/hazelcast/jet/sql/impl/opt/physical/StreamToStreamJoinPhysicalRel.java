@@ -93,6 +93,7 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
     }
 
     public long minWindowSize() {
+        assert !postponeTimeMap.isEmpty();
         return minWindowSize(postponeTimeMap);
     }
 

@@ -107,7 +107,7 @@ public class CreateDagVisitor {
     private final Address localMemberAddress;
     private final QueryParameterMetadata parameterMetadata;
     private final WatermarkKeysAssigner watermarkKeysAssigner;
-    private final WindowSizeGcdCalculator windowSizeGCDCalculator;
+    private final WindowSizeGcdCalculator windowSizeGcdCalculator;
 
     public CreateDagVisitor(
             NodeEngine nodeEngine,
@@ -119,7 +119,7 @@ public class CreateDagVisitor {
         this.localMemberAddress = nodeEngine.getThisAddress();
         this.parameterMetadata = parameterMetadata;
         this.watermarkKeysAssigner = watermarkKeysAssigner;
-        this.windowSizeGCDCalculator = new WindowSizeGcdCalculator(MOCK_EEC);
+        this.windowSizeGcdCalculator = new WindowSizeGcdCalculator(MOCK_EEC);
         this.objectKeys.addAll(usedViews);
     }
 
@@ -191,7 +191,7 @@ public class CreateDagVisitor {
                 rel.eventTimePolicyProvider(
                         rel.watermarkedColumnIndex(),
                         rel.lagExpression(),
-                        windowSizeGCDCalculator.get());
+                        windowSizeGcdCalculator.get());
 
         Map<Integer, MutableByte> fieldsKey = watermarkKeysAssigner.getWatermarkedFieldsKey(rel);
         Byte wmKey;
@@ -538,7 +538,7 @@ public class CreateDagVisitor {
     }
 
     public Vertex onRoot(RootRel rootRel) {
-        windowSizeGCDCalculator.calculate((PhysicalRel) rootRel.getInput());
+        windowSizeGcdCalculator.calculate((PhysicalRel) rootRel.getInput());
 
         RelNode input = rootRel.getInput();
         Expression<?> fetch;

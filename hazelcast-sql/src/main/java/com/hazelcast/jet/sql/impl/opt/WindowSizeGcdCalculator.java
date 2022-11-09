@@ -28,11 +28,12 @@ import javax.annotation.Nullable;
 
 public class WindowSizeGcdCalculator {
     static final long DEFAULT_THROTTLING_FRAME_SIZE = 100L;
+    static final long MINIMUM_WATERMARK_INTERVAL = 1L;
 
-    private final GCDCalculatorVisitor visitor;
+    private final GcdCalculatorVisitor visitor;
 
     public WindowSizeGcdCalculator(ExpressionEvalContext eec) {
-        this.visitor = new GCDCalculatorVisitor(eec);
+        this.visitor = new GcdCalculatorVisitor(eec);
     }
 
     public void calculate(PhysicalRel rel) {
@@ -43,11 +44,11 @@ public class WindowSizeGcdCalculator {
         return visitor.gcd > 0 ? visitor.gcd : DEFAULT_THROTTLING_FRAME_SIZE;
     }
 
-    private static class GCDCalculatorVisitor extends RelVisitor {
+    private static class GcdCalculatorVisitor extends RelVisitor {
         private final ExpressionEvalContext eec;
         private long gcd;
 
-        GCDCalculatorVisitor(ExpressionEvalContext eec) {
+        GcdCalculatorVisitor(ExpressionEvalContext eec) {
             this.eec = eec;
         }
 
@@ -65,8 +66,9 @@ public class WindowSizeGcdCalculator {
                 StreamToStreamJoinPhysicalRel s2sJoin = (StreamToStreamJoinPhysicalRel) node;
                 long windowSize = s2sJoin.minWindowSize();
                 if (windowSize == 0L) {
-                    windowSize = 1L; // minimum available watermark interval is 1 ms.
+                    windowSize = MINIMUM_WATERMARK_INTERVAL;
                 }
+                // we don't want to overflow input events buffers, that’s why gcd is limited with default frame size.
                 gcd = gcd > 0L ? Util.gcd(gcd, windowSize) : Util.gcd(DEFAULT_THROTTLING_FRAME_SIZE, windowSize);
             }
 
