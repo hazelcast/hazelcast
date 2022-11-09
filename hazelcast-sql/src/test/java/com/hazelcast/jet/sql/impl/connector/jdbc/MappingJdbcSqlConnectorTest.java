@@ -32,6 +32,7 @@ import java.sql.DriverManager;
 import java.sql.Statement;
 
 import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_EXTERNAL_DATASTORE_REF;
+import static java.util.Arrays.asList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.emptyList;
@@ -77,7 +78,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + "TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-         .hasMessageContaining("externalDataStoreRef must be set");
+                .hasMessageContaining("externalDataStoreRef must be set");
     }
 
     @Test
@@ -157,7 +158,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ")"
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-         .hasMessageContaining("could not resolve field with name fullName");
+                .hasMessageContaining("could not resolve field with name fullName");
 
         assertRowsAnyOrder("SHOW MAPPINGS",
                 emptyList()
@@ -185,7 +186,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ")"
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-         .hasMessageContaining("could not resolve field with external name myName");
+                .hasMessageContaining("could not resolve field with external name myName");
 
         assertRowsAnyOrder("SHOW MAPPINGS",
                 emptyList()
@@ -208,10 +209,29 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ")"
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-         .hasMessageContaining("type BOOLEAN of field id does not match db type INTEGER");
+                .hasMessageContaining("type BOOLEAN of field id does not match db type INTEGER");
 
         assertRowsAnyOrder("SHOW MAPPINGS",
                 emptyList()
+        );
+    }
+
+    @Test
+    public void when_createMappingWithImplicitFieldTypesDefinition_then_orderIsPreserved() throws Exception {
+        createTable(tableName);
+        insertItems(tableName, 2);
+
+        execute("CREATE MAPPING " + tableName
+                + " TYPE " + JdbcSqlConnector.TYPE_NAME + ' '
+                + " OPTIONS ( "
+                + " '" + OPTION_EXTERNAL_DATASTORE_REF + "'='" + TEST_DATABASE_REF + "'"
+                + ")"
+        );
+
+        // If you change TreeMap -> HashMap at JdbcSqlConnector:159, it will fail.
+        assertRowsAnyOrder(
+                "SELECT * FROM " + tableName,
+                asList(new Row(0, "name-0"), new Row(1, "name-1"))
         );
     }
 
