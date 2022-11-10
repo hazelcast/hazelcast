@@ -78,6 +78,7 @@ public class S3MockContainer extends GenericContainer<S3MockContainer> {
                 }))
                 .region(Region.US_EAST_1)
                 .endpointOverride(URI.create(endpointURL))
+                .forcePathStyle(true)
                 .build();
     }
 }
