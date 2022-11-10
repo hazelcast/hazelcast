@@ -192,7 +192,10 @@ User may want to read from many collections in one source. In such
 situation it's questionable if each processor should deal with one 
 collection or split it's work across collections. In the first iteration
 each processor will deal with one collection, Processor Supplier will 
-create processors on each node per collection.
+create processors on each node per collection. 
+
+Source and sink should take [read](https://www.mongodb.com/docs/manual/reference/read-concern/) 
+and [write](https://www.mongodb.com/docs/manual/reference/write-concern/) concerns into consideration.
 
 #### SQL Connector
 The SQL Connector should support:
@@ -220,6 +223,11 @@ All the methods can be combined and used in following order:
  - reading some documents
 
 Each of steps will be invoked only if previous failed.
+
+It should be also possible to push the predicates down to Mongo if possible.
+For example, if user invokes ``select name from people where age > 18``,
+the `age > 18` predicate should be - if possible - changed to Mongo's predicate
+and `name` should become the projection.
 
 ### Implementation parts
 
@@ -273,7 +281,7 @@ The implementation will be split into 4 parts:
     
     * Other alternatives:
       - leave implementation to users (bad: requires code duplication, no official support is also not good)
-      - keep connector in `jet-contrib` repository - but it's not as well tested as main repo and less visible
+      - keep connector in `hazelcast-jet-contrib` repository - but it's not as well tested as main repo and less visible
     There is also a debatable change, that source and sink will now be a processor implementation, not using
       `SourceBuilder`. However, as mentioned in [Technical design](#Source-and-sink), it's a preferred way to 
       create a SQL connector.
