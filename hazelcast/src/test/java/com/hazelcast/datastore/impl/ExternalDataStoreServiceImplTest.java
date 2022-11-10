@@ -23,7 +23,7 @@ import com.hazelcast.datastore.ExternalDataStoreFactory;
 import com.hazelcast.datastore.ExternalDataStoreService;
 import com.hazelcast.datastore.JdbcDataStoreFactory;
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -44,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ExternalDataStoreServiceImplTest extends HazelcastTestSupport {
 
