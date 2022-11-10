@@ -35,7 +35,7 @@ that could be CPU, memory, network. The optimization goal could be also defined 
 as "find the plan with the minimal latency".
 
 To formalize the optimization goal, every operator is assigned a **cost** - an abstract comparable value, that depends on the
-operator type, and operator arguments. The plan with the least cost is said to be the best plan for the given query.
+operator type, statistics and other internals. The plan with the least cost is said to be the best plan for the given query.
 
 ### 1.3 Properties
 
@@ -138,10 +138,10 @@ several examples of logical operators and their physical counterparts.
 
 *Table 1: Logical and Physical Operators*
 
-| Logical Operator | Physical Operator         |
-|------------------|---------------------------|
-| `Scan`           | `FullScan`, `IndexScan`   |
-| `Join`           | `HashJoin`, `MergeJoin`   |
+| Logical Operator | Physical Operator       |
+|------------------|-------------------------|
+| `Scan`           | `FullScan`, `IndexScan` |
+| `Join`           | `HashJoin`, `MergeJoin` |
 
 The ultimate goal of the optimizer is to find the best physical plan for the initial logical plan.
 
@@ -351,7 +351,7 @@ Filter[NONE](table1.field = 1)
 ```
 
 Then we can delegate table scans to the respective backend databases, and then perform the filter and join locally using one the
-Calcite backends. Assuming we did a filter pushdown, the plan could look like:
+Calcite backends. Assuming we did a filter push-down, the plan could look like:
 
 ```
 Join[BINDABLE]
@@ -487,7 +487,7 @@ a centralized access point to all required metadata.
 This approach is convenient and extensible, but has several performance problems:
 
 1. Compilation with Janino may take significant time to complete, increasing planning time to seconds on a fresh JVM
-1. Metadata is not cached at `RelSet`/`RelSubset` levels, and re-calculated on every call. This is not optimal,
+2. Metadata is not cached at `RelSet`/`RelSubset` levels, and re-calculated on every call. This is not optimal,
    because metadata calculation typically requires recursive dives into inputs of the operator.
 
 ### 2.6 Execution
@@ -500,9 +500,9 @@ main ideas from the Volcano/Cascades papers.
 First, an instance of the `VolcanoPlanner` is created and initialized with:
 
 1. The operator tree to be optimized (`RelNode`)
-1. The list of rules to use (`RelOptRule`)
-1. The list of property types that will be considered during optimization (`RelTraitDef`)
-1. The desired properties of the result
+2. The list of rules to use (`RelOptRule`)
+3. The list of property types that will be considered during optimization (`RelTraitDef`)
+4. The desired properties of the result
 
 Then the optimization process is started through a call to the `VolcanoOptimizer.findBestExp` method. The result is the
 optimized operator tree (`RelNode`) with the desired properties, or an exception if the desired properties cannot be
@@ -520,9 +520,9 @@ The goal of the **copy-in** phase is to prepare the initial MEMO and rule instan
 are performed:
 
 1. A copy of the operator is created using `RelNode.copy` method, with inputs replaced with the relevant `RelSubset` instances
-1. An operator is added to the relevant `RelSet` and `RelSubset` instances based on an operator's signature (`RelNode.explain`)
-1. A cost of the operator is calculated and set as the `best` cost of the current `RelSubset`
-1. For every rule that matches the given operator a rule instance (`VolcanoRuleMatch`) is added to the rule queue
+2. An operator is added to the relevant `RelSet` and `RelSubset` instances based on an operator's signature (`RelNode.explain`)
+3. A cost of the operator is calculated and set as the `best` cost of the current `RelSubset`
+4. For every rule that matches the given operator a rule instance (`VolcanoRuleMatch`) is added to the rule queue
    (`VolcanoPlanner.ruleQueue`)
 
 The copy-in is performed via `VolcanoPlanner.setRoot` method.
@@ -533,8 +533,8 @@ The optimization phase proceeds as follows. The next rule instance is taken from
 operator created during rule invocation:
 
 1. Add the operator to MEMO
-1. Update the cost of the operator's `RelSubset` and parents, if needed
-1. Schedule new rule instances for the operator and parents, if needed
+2. Update the cost of the operator's `RelSubset` and parents, if needed
+3. Schedule new rule instances for the operator and parents, if needed
 
 The process continues until the queue is empty.
 
@@ -564,8 +564,7 @@ phases:
 
 The original query is passed to Calcite's parser and is converted to the parse tree (`SqlNode`).
 
-We use the built-in parser, since it is sufficient for the supported feature set. Jet extends the parser with
-custom commands.
+We use the built-in parser, since it is sufficient for the supported feature set. Jet extends the parser with custom statements.
 
 ### 3.2 Validation
 
@@ -581,7 +580,7 @@ respectively.
 
 ### 3.3 Rewrite
 
-The initial `RelNode` may contain subqueries that are difficult to deal with. Generally, every subquery (correlated or not)
+The initial `RelNode` may contain subqueries that are difficult to deal with. Generally, every sub-query (correlated or not)
 could be replaced with a sequence of join and aggregate operators [[4]]. We use Apache Calcite built-in classes to eliminate
 subqueries (`SubQueryRemoveRule`, `SqlToRelConverter.decorrelate`).
 
@@ -605,14 +604,13 @@ In other optimizers, most of these rules are typically part of the rewrite phase
 of that cost-based optimization. In Apache Calcite, the `HepPlanner` could be used for this. However, some rules may trigger
 conflicting actions, causing the heuristic planner to fail. An example is filter "move around" rules: often it is important
 not only to push the filter down, but also to try to push it up, because it may enable further optimizations of the parent node
-(such as transitive predicate push, partition pruning, etc). The heuristic planner may fail to find these alternatives.
+(such as transitive predicate push, partition pruning, etc.). The heuristic planner may fail to find these alternatives.
 Therefore, we use the cost-based `VolcanoPlanner` as slower, but safer choice. We may reconsider this in the future, and move
 some logical rules to separate stages that use heuristic planner, as it is done in other projects (e.g. Apache Flink).
-For now this is not important, because we do not support joins, so our queries have small search spaces.
 
 Execution of logical rules might create many hundreds and thousands of alternative plans. If we add physical
-optimization to this step, it could easily blow the search space,  because the EXODUS-like search algorithm 
-does not allow for search space pruning, and requires re-execution of the same rules multiple times 
+optimization to this step, it could easily blow the search space, because the EXODUS-like search algorithm
+does not allow for search space pruning, and requires re-execution of the same rules multiple times
 to guarantee that the optimal plan is found.
 
 Consider that we produced `N` different logical plans, and have physical rules that may produce `M` alternatives
@@ -628,7 +626,7 @@ such that `cost(Pn) > cost(Pm)`, could yield better plan `Pn'`, such that `cost(
 
 Therefore, the logical phase should generally include rules, that produce plans that are generally the best starting
 points for the subsequent physical optimization with high probability. Operator fusion, removal of unused operators, scan
-field trimming, and filter pushdowns produces better plans in almost all cases, this is why we execute them at this
+field trimming, and filter push-downs produces better plans in almost all cases, this is why we execute them at this
 stage.
 
 As a part of the logical optimization process, we convert the Calcite operators with the convention `Convention.NONE`
@@ -672,7 +670,7 @@ integration with the Apache Calcite as follows:
    `PHYSICAL` convention we override a couple of methods (see `HazelcastConventions.PHYSICAL`) that roughly forces the optimizer
    to do the following: when a new `PHYSICAL` node is created, force re-optimization of the `LOGICAL` parent. This way, whenever a
    new `PHYSICAL` node is added to MEMO, the rules for the `LOGICAL` parent node is added to the execution queue.
-1. Optimization rules for intermediate nodes (i.e., not leaves, and not root) follow a similar pattern: get the input's
+2. Optimization rules for intermediate nodes (i.e., not leaves, and not root) follow a similar pattern: get the input's
    `RelSet`, extract all `RelSubset`-s with `PHYSICAL` convention, and create one intermediate physical node per `RelSubset`. This
    way we ensure that all possibly interesting properties of the current group are propagated to parent groups.
 
