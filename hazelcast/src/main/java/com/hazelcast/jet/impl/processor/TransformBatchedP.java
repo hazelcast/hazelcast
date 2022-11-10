@@ -53,4 +53,9 @@ public class TransformBatchedP<T, R> extends AbstractProcessor {
             outputTraverser = null;
         }
     }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
 }

@@ -51,4 +51,9 @@ public class ExpectNothingP extends AbstractProcessor {
         // State might be broadcast to all instances including colleagues of
         // another type - ignore it in the expect-nothing instances
     }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
 }
