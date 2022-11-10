@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.s3;
 
+import com.adobe.testing.s3mock.testcontainers.S3MockContainer;
 import com.hazelcast.function.SupplierEx;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.test.TestSources;
@@ -33,10 +34,13 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import software.amazon.awssdk.auth.credentials.AnonymousCredentialsProvider;
 import software.amazon.awssdk.core.sync.RequestBody;
+import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
@@ -72,10 +76,10 @@ public class S3MockTest extends S3TestBase {
     @BeforeClass
     public static void setupS3() {
         assumeDockerEnabled();
-        s3MockContainer = new S3MockContainer();
+        s3MockContainer = new S3MockContainer("2.4.14");
         s3MockContainer.start();
         s3MockContainer.followOutput(outputFrame -> logger.info(outputFrame.getUtf8String().trim()));
-        s3Client = s3MockContainer.client();
+        s3Client = s3Client(s3MockContainer.getHttpEndpoint());
     }
 
     @AfterClass
@@ -243,7 +247,7 @@ public class S3MockTest extends S3TestBase {
     }
 
     SupplierEx<S3Client> clientSupplier() {
-        return () -> S3MockContainer.client(s3MockContainer.endpointURL());
+        return () -> s3Client(s3MockContainer.getHttpEndpoint());
     }
 
     private void generateAndUploadObjects(String bucketName, String prefix, int objectCount, int lineCount) {
@@ -262,5 +266,15 @@ public class S3MockTest extends S3TestBase {
             s3Client.putObject(putObjectRequest, RequestBody.fromString(builder.toString()));
             builder.setLength(0);
         }
+    }
+
+    private static S3Client s3Client(String endpointURL) {
+        return S3Client
+                .builder()
+                .credentialsProvider(AnonymousCredentialsProvider.create())
+                .region(Region.US_EAST_1)
+                .endpointOverride(URI.create(endpointURL))
+                .forcePathStyle(true)
+                .build();
     }
 }
