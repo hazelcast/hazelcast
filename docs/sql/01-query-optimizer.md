@@ -325,7 +325,7 @@ another. For example, `[a ASC, b ASC]` satisfies `[a ASC]`, but not vice versa.
 Apache Calcite comes with two built-in traits:
 
 - `RelCollation` - collation
-- `Convention` - an opaque marker, that describes the application-specific type of the node
+- `Convention` - describes the application-specific type of the node ( `LOGICAL` /  `PHYSICAL` )
 
 We will use the terms `property` and `trait` interchangeably.
 
