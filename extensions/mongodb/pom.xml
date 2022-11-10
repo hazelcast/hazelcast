@@ -21,11 +21,10 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.hazelcast</groupId>
-    <artifactId>hazelcast-mongodb</artifactId>
+    <artifactId>hazelcast-jet-mongodb</artifactId>
 
     <packaging>jar</packaging>
-    <name>hazelcast-mongodb</name>
+    <name>hazelcast-jet-mongodb</name>
     <description>Ready made MongoDB connector</description>
     <url>http://www.hazelcast.com/</url>
 

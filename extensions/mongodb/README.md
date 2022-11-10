@@ -30,15 +30,15 @@ project:
 
 ```
 <dependency>
-    <groupId>com.hazelcast.jet.contrib</groupId>
-    <artifactId>mongodb</artifactId>
+    <groupId>com.hazelcast.jet</groupId>
+    <artifactId>hazelcast-jet-mongodb</artifactId>
     <version>${version}</version>
 </dependency>
 ```
 
 or if you are using Gradle: 
 ```
-compile group: 'com.hazelcast.jet.contrib', name: 'mongodb', version: ${version}
+compile group: 'com.hazelcast.jet', name: 'hazelcast-jet-mongodb', version: ${version}
 ```
 
 ## Usage
@@ -160,7 +160,7 @@ resume-token.
 To run the tests run the command below: 
 
 ```
-./gradlew test
+mvn test
 ```
 
 ## Authors
