@@ -1308,9 +1308,9 @@ public abstract class HazelcastTestSupport {
                         long elapsedMillis = historicProgress.timestamp() - taskStartTimestamp;
                         String elapsedMillisPadded = String.format("%1$5s", elapsedMillis);
                         sb.append("\t")
-                          .append(elapsedMillisPadded).append("ms: ")
-                          .append(historicProgress.getProgressString())
-                          .append("\n");
+                                .append(elapsedMillisPadded).append("ms: ")
+                                .append(historicProgress.getProgressString())
+                                .append("\n");
                     }
                     LOGGER.severe(sb.toString());
                     fail("Stall tolerance " + stallToleranceSeconds
