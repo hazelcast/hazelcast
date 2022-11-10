@@ -42,6 +42,7 @@ import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.internal.cluster.impl.AdvancedClusterStateTest.changeClusterStateEventually;
 import static com.hazelcast.internal.partition.AntiEntropyCorrectnessTest.setBackupPacketDropFilter;
+import static com.hazelcast.spi.impl.operationservice.impl.OperationServiceAccessor.getAsyncOperationsCount;
 import static com.hazelcast.test.Accessors.getNode;
 import static org.junit.Assert.assertEquals;
 
@@ -230,6 +231,9 @@ public class PartitionReplicaStateCheckerTest extends HazelcastTestSupport {
         assertTrueEventually(() -> {
             assertEquals(PartitionServiceState.SAFE, replicaStateChecker1.getPartitionServiceState());
             assertEquals(PartitionServiceState.SAFE, replicaStateChecker2.getPartitionServiceState());
+            // assert no leftovers of PartitionReplicaSyncRequestOffloadable
+            assertEquals(0, getAsyncOperationsCount(hz));
+            assertEquals(0, getAsyncOperationsCount(hz2));
         });
     }
 
