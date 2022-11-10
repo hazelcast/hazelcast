@@ -22,7 +22,7 @@ Instead of defining it as a separate value, we just treat these types as types w
 
 ## 1 Supported Types
 
-Types supported by the Hazelcast Mustang are listed in Table 1. Precision is the smallest precision in the type family.
+Types supported by the Hazelcast Mustang are listed in Table 1.
 
 `OBJECT` is a Hazelcast-specific type representing an object which doesn't match any other type.
 
