@@ -39,6 +39,7 @@ import software.amazon.awssdk.services.s3.model.PutObjectRequest;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
@@ -55,12 +56,13 @@ public class S3MockTest extends S3TestBase {
     private static S3MockContainer s3MockContainer;
 
     private static final ILogger logger = Logger.getLogger(S3MockTest.class);
-    private static final String SOURCE_BUCKET = "source-bucket";
-    private static final String SOURCE_BUCKET_2 = "source-bucket-2";
-    private static final String SOURCE_BUCKET_EMPTY = "source-bucket-empty";
-    private static final String SINK_BUCKET = "sink-bucket";
-    private static final String SINK_BUCKET_OVERWRITE = "sink-bucket-overwrite";
-    private static final String SINK_BUCKET_NONASCII = "sink-bucket-nonascii";
+    private final UUID ID = UUID.randomUUID();
+    private final String SOURCE_BUCKET = "source-bucket-" + ID;
+    private final String SOURCE_BUCKET_2 = "source-bucket-2-" + ID;
+    private final String SOURCE_BUCKET_EMPTY = "source-bucket-empty-" + ID;
+    private final String SINK_BUCKET = "sink-bucket-" + ID;
+    private final String SINK_BUCKET_OVERWRITE = "sink-bucket-overwrite-" + ID;
+    private final String SINK_BUCKET_NONASCII = "sink-bucket-nonascii-" + ID;
 
     private static final int LINE_COUNT = 100;
 
@@ -92,12 +94,6 @@ public class S3MockTest extends S3TestBase {
     @Before
     public void setup() {
         S3SinkContext.maximumPartNumber = 1;
-        deleteBucket(s3Client, SOURCE_BUCKET);
-        deleteBucket(s3Client, SOURCE_BUCKET_2);
-        deleteBucket(s3Client, SOURCE_BUCKET_EMPTY);
-        deleteBucket(s3Client, SINK_BUCKET);
-        deleteBucket(s3Client, SINK_BUCKET_OVERWRITE);
-        deleteBucket(s3Client, SINK_BUCKET_NONASCII);
     }
 
     @After
