@@ -409,16 +409,16 @@ public class APortable implements Portable {
         if (!Objects.equals(bd, that.bd)) {
             return false;
         }
-        if (ld != that.ld) {
+        if (!Objects.equals(ld, that.ld)) {
             return false;
         }
-        if (lt != that.lt) {
+        if (!Objects.equals(lt, that.lt)) {
             return false;
         }
-        if (ldt != that.ldt) {
+        if (!Objects.equals(ldt, that.ldt)) {
             return false;
         }
-        if (odt != that.odt) {
+        if (!Objects.equals(odt, that.odt)) {
             return false;
         }
         if (p != null ? !p.equals(that.p) : that.p != null) {
