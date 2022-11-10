@@ -162,6 +162,11 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     }
 
     static MapConfig initializeSqlCatalog(MapConfig config) {
+        // TODO HZ-1743 when implemented properly align this with the chosen
+        //  approach that HZ-1743 follows
+        // disabling tiered store configuration for the __sql.catalog map to
+        // prevent unnecessarily increasing tstore's memory demand
+        config.getTieredStoreConfig().setEnabled(false);
         return config
                 .setName(SQL_CATALOG_MAP_NAME)
                 .setBackupCount(MapConfig.MAX_BACKUP_COUNT)
