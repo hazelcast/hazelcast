@@ -31,7 +31,7 @@ import java.util.Set;
  */
 public class S3MockContainer extends GenericContainer<S3MockContainer> {
 
-    public static final String VERSION = "2.1.15";
+    public static final String VERSION = "2.4.14";
     public static final Integer S3_PORT = 9090;
 
     private static final String IMAGE_NAME = "adobe/s3mock";
