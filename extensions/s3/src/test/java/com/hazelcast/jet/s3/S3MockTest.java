@@ -18,6 +18,7 @@ package com.hazelcast.jet.s3;
 
 import com.adobe.testing.s3mock.testcontainers.S3MockContainer;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.jet.s3.S3Sinks.S3SinkContext;
@@ -56,11 +57,14 @@ import static software.amazon.awssdk.core.sync.ResponseTransformer.toInputStream
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class, IgnoreInJenkinsOnWindows.class})
 public class S3MockTest extends S3TestBase {
+    private static final int LINE_COUNT = 100;
 
     private static S3MockContainer s3MockContainer;
 
+    private static S3Client s3Client;
+
     private static final ILogger logger = Logger.getLogger(S3MockTest.class);
-    private final UUID ID = UUID.randomUUID();
+    private final UUID ID = UuidUtil.newUnsecureUUID();
     private final String SOURCE_BUCKET = "source-bucket-" + ID;
     private final String SOURCE_BUCKET_2 = "source-bucket-2-" + ID;
     private final String SOURCE_BUCKET_EMPTY = "source-bucket-empty-" + ID;
@@ -68,9 +72,7 @@ public class S3MockTest extends S3TestBase {
     private final String SINK_BUCKET_OVERWRITE = "sink-bucket-overwrite-" + ID;
     private final String SINK_BUCKET_NONASCII = "sink-bucket-nonascii-" + ID;
 
-    private static final int LINE_COUNT = 100;
 
-    private static S3Client s3Client;
 
 
     @BeforeClass
