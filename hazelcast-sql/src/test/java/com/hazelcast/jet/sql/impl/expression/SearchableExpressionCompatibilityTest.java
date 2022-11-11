@@ -28,6 +28,7 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -46,6 +47,7 @@ public class SearchableExpressionCompatibilityTest extends HazelcastTestSupport 
     public static final String DAG_BASE64 = "dag_ids_5.1.3.base64";
     public static final String EXECUTION_PLAN_BASE64 = "exec_plan_ids_5.1.3.base64";
 
+    @Ignore
     @Test
     public void when_deserializingPreviousPatchVersion() throws IOException {
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
