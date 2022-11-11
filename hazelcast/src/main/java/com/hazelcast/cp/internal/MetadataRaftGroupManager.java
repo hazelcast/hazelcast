@@ -222,16 +222,9 @@ public class MetadataRaftGroupManager implements SnapshotAwareService<MetadataRa
             logger.fine("Taking snapshot for commit-index: " + commitIndex);
         }
 
-        MetadataRaftGroupSnapshot snapshot = new MetadataRaftGroupSnapshot();
-        snapshot.setMembers(activeMembers);
-        snapshot.setMembersCommitIndex(activeMembersCommitIndex);
-        snapshot.setGroups(groups.values());
-        snapshot.setMembershipChangeSchedule(membershipChangeSchedule);
-        snapshot.setInitialCPMembers(initialCPMembers);
-        snapshot.setInitializedCPMembers(initializedCPMembers);
-        snapshot.setInitializationStatus(initializationStatus);
-        snapshot.setInitializationCommitIndices(initializationCommitIndices);
-
+        MetadataRaftGroupSnapshot snapshot = new MetadataRaftGroupSnapshot(activeMembers, activeMembersCommitIndex,
+                groups.values(), membershipChangeSchedule, initialCPMembers, initializedCPMembers, initializationStatus,
+                initializationCommitIndices);
         return snapshot;
     }
 
