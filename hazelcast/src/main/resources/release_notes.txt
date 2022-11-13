@@ -4,6 +4,7 @@ This document lists the new features, enhancements, fixed issues and, removed or
 
 ## Fixes
 
+* Fixed a memory leak due to incomplete clean-up of backup replica sync operations. [#22756]
 * Fixed an issue where `NullPointerException` was thrown around the `CREATE JOB` statement which is using Kafka Sink connector when Kafka has no records yet. Now, it produces an appropriate log message. [#22697]
 * Fixed an issue where the map entries recovered from persistence were not expiring after their time-to-live durations. [#22558]
 * Fixed an issue where replication over WAN was failing on the source cluster members, when there are multiple batch publishers configured in a single WAN replication. [#22500]
