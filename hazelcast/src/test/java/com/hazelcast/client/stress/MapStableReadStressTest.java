@@ -29,6 +29,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 /**
  * This tests puts a lot of key/values in a map, where the value is the same as the key. With a client these
@@ -55,6 +56,8 @@ public class MapStableReadStressTest extends StressTestSupport {
         clientConfig.getNetworkConfig().setRedoOperation(true);
         client = HazelcastClient.newHazelcastClient(clientConfig);
         map = client.getMap("map");
+
+        assertNotNull("client.getMap() returned null", map);
 
         stressThreads = new StressThread[CLIENT_THREAD_COUNT];
         for (int k = 0; k < stressThreads.length; k++) {
@@ -114,6 +117,8 @@ public class MapStableReadStressTest extends StressTestSupport {
 
         @Override
         public void doRun() throws Exception {
+            assertNotNull("The map read by StressThread is null", map);
+
             while (!isStopped()) {
                 int key = random.nextInt(MAP_SIZE);
                 int value = map.get(key);

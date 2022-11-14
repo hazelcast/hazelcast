@@ -32,6 +32,7 @@ import org.junit.runner.RunWith;
 import java.util.HashSet;
 import java.util.Set;
 
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 /**
@@ -57,6 +58,8 @@ public class MapUpdateStressTest extends StressTestSupport {
         clientConfig.getNetworkConfig().setRedoOperation(true);
         client = HazelcastClient.newHazelcastClient(clientConfig);
         map = client.getMap("map");
+
+        assertNotNull("client.getMap() returned null", map);
 
         stressThreads = new StressThread[CLIENT_THREAD_COUNT];
         for (int k = 0; k < stressThreads.length; k++) {
@@ -143,6 +146,8 @@ public class MapUpdateStressTest extends StressTestSupport {
 
         @Override
         public void doRun() throws Exception {
+            assertNotNull("The map read by StressThread is null", map);
+
             while (!isStopped()) {
                 int key = random.nextInt(MAP_SIZE);
                 int increment = random.nextInt(10);
