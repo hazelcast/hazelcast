@@ -71,11 +71,11 @@
         <maven.animal.sniffer.plugin.version>1.21</maven.animal.sniffer.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
 
-        <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
+        <maven.surefire.plugin.version>3.0.0-M7</maven.surefire.plugin.version>
         <maven.checkstyle.plugin.version>3.2.0</maven.checkstyle.plugin.version>
         <maven.sonar.plugin.version>3.6.0.1398</maven.sonar.plugin.version>
         <maven.jacoco.plugin.version>0.8.7</maven.jacoco.plugin.version>
-        <maven.failsafe.plugin.version>2.22.2</maven.failsafe.plugin.version>
+        <maven.failsafe.plugin.version>3.0.0-M7</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.7</maven.cobertura.plugin.version>
         <maven.enforcer.plugin.version>3.0.0-M3</maven.enforcer.plugin.version>
         <maven.os.plugin.version>1.7.1</maven.os.plugin.version>
@@ -377,6 +377,8 @@
                         com.hazelcast.test.annotation.SlowTest,
                         com.hazelcast.test.annotation.NightlyTest
                     </excludedGroups>
+                    <!-- Use TCP for IPC communication to avoid warnings: Corrupted STDOUT by directly writing... -->
+                    <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory" />
                 </configuration>
             </plugin>
 
@@ -401,6 +403,8 @@
                         com.hazelcast.test.annotation.SlowTest,
                         com.hazelcast.test.annotation.NightlyTest
                     </excludedGroups>
+                    <!-- Use TCP for IPC communication to avoid warnings: Corrupted STDOUT by directly writing... -->
+                    <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory" />
                 </configuration>
                 <executions>
                     <execution>
