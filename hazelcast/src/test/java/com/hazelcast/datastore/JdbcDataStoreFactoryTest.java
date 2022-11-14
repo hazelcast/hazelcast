@@ -18,7 +18,7 @@ package com.hazelcast.datastore;
 
 import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.datastore.impl.CloseableDataSource;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -35,7 +35,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JdbcDataStoreFactoryTest {
 
