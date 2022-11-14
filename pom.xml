@@ -546,6 +546,7 @@
                         <phase>generate-test-resources</phase>
                         <configuration>
                             <artifact>com.hazelcast:hazelcast:${hazelcast-3.version}</artifact>
+                            <artifact>com.hazelcast:hazelcast:${hazelcast-3.version}:jar:tests</artifact>
                         </configuration>
                     </execution>
                 </executions>
