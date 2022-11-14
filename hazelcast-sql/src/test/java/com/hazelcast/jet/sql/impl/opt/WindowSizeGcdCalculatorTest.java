@@ -211,16 +211,16 @@ public class WindowSizeGcdCalculatorTest extends OptimizerTestSupport {
         HazelcastTable table3 = streamGeneratorTable("t3", 100);
         List<QueryDataType> parameterTypes = Collections.singletonList(INT);
 
-        int expectedWindowSize = 4;
+        int expectedWindowSize = 25;
 
         final String query = "SELECT * FROM "
                 + joinSubQuery("t1", "s1", 1)
                 + " JOIN "
                 + joinSubQuery("t2", "s2", 2)
-                + " ON s1.v BETWEEN s2.v - 5 AND s2.v + 7 "    // 'window_size' = 12
+                + " ON s1.v BETWEEN s2.v - 180 AND s2.v + 70 "    // 'window_size' = 250
                 + " JOIN "
                 + joinSubQuery("t3", "s3", 3)
-                + " ON s3.v BETWEEN s1.v - 3 AND s1.v + 5 ";   // 'window_size' = 8
+                + " ON s3.v BETWEEN s1.v - 100 AND s1.v + 100 ";   // 'window_size' = 200
 
         PhysicalRel optPhysicalRel = optimizePhysical(query, parameterTypes, table, table2, table3).getPhysical();
 
@@ -235,7 +235,7 @@ public class WindowSizeGcdCalculatorTest extends OptimizerTestSupport {
 
         WindowSizeGcdCalculator windowSizeGCDCalculator = new WindowSizeGcdCalculator(MOCK_EEC);
         windowSizeGCDCalculator.calculate(optPhysicalRel);
-        // GCD(12, 8) = 4
+        // GCD(100, 40) = 4
         assertThat(windowSizeGCDCalculator.get()).isEqualTo(expectedWindowSize);
     }
 

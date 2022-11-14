@@ -28,7 +28,6 @@ import javax.annotation.Nullable;
 
 public class WindowSizeGcdCalculator {
     static final long DEFAULT_THROTTLING_FRAME_SIZE = 100L;
-    static final long MINIMUM_WATERMARK_INTERVAL = 1L;
 
     private final GcdCalculatorVisitor visitor;
 
@@ -47,6 +46,7 @@ public class WindowSizeGcdCalculator {
     private static class GcdCalculatorVisitor extends RelVisitor {
         private final ExpressionEvalContext eec;
         private long gcd;
+        private boolean windowMet = false;
 
         GcdCalculatorVisitor(ExpressionEvalContext eec) {
             this.eec = eec;
@@ -62,14 +62,13 @@ public class WindowSizeGcdCalculator {
                 SlidingWindowAggregatePhysicalRel slidingWindow = (SlidingWindowAggregatePhysicalRel) node;
                 long windowSize = slidingWindow.windowPolicyProvider().apply(eec).windowSize();
                 gcd = gcd > 0L ? Util.gcd(gcd, windowSize) : windowSize;
+                windowMet = true;
             } else if (node instanceof StreamToStreamJoinPhysicalRel) {
                 StreamToStreamJoinPhysicalRel s2sJoin = (StreamToStreamJoinPhysicalRel) node;
-                long windowSize = s2sJoin.minWindowSize();
-                if (windowSize == 0L) {
-                    windowSize = MINIMUM_WATERMARK_INTERVAL;
-                }
-                // we don't want to overflow input events buffers, that’s why gcd is limited with default frame size.
-                gcd = Util.gcd(gcd > 0L ? gcd : DEFAULT_THROTTLING_FRAME_SIZE, windowSize);
+                // It is some empirical-defined throttling value, chosen between precision and latency.
+                long windowSize = Math.min(DEFAULT_THROTTLING_FRAME_SIZE, s2sJoin.minWindowSize() / 10);
+
+                gcd = windowMet && gcd > 0 ? Util.gcd(gcd, windowSize) : windowSize;
             }
 
             for (RelNode child : node.getInputs()) {
