@@ -516,7 +516,7 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
 
         private void read0(CompletableFuture<MapEntriesWithCursor> f, int partitionId, IterationPointer[] pointers) {
             try {
-                boolean isOwned = mapServiceContext.getOrInitCachedMemberPartitions().contains(partitionId);
+                boolean isOwned = mapServiceContext.getCachedOwnedPartitions().contains(partitionId);
 
                 if (isOwned) {
                     int migrationStamp = mapServiceContext.getService().getMigrationStamp();

@@ -122,7 +122,7 @@ public class QueryResultSizeLimiter {
         }
 
         // limit number of local partitions to check to keep runtime constant
-        PartitionIdSet localPartitions = mapServiceContext.getOrInitCachedMemberPartitions();
+        PartitionIdSet localPartitions = mapServiceContext.getCachedOwnedPartitions();
         int partitionsToCheck = min(localPartitions.size(), maxLocalPartitionsLimitForPreCheck);
         if (partitionsToCheck == 0) {
             return;

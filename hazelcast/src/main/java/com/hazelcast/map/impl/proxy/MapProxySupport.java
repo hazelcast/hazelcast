@@ -1336,7 +1336,6 @@ abstract class MapProxySupport<K, V>
 
         try {
             AddIndexOperation addIndexOperation = new AddIndexOperation(name, indexConfig0);
-
             operationService.invokeOnAllPartitions(SERVICE_NAME,
                     new BinaryOperationFactory(addIndexOperation, getNodeEngine()));
         } catch (Throwable t) {

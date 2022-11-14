@@ -190,7 +190,10 @@ class MapMigrationAwareService
             // has been already started this call will do nothing
             recordStore.startLoading();
         }
-        mapServiceContext.nullifyOwnedPartitions();
+
+        if (event.getCurrentReplicaIndex() == 0 || event.getNewReplicaIndex() == 0) {
+            mapServiceContext.refreshCachedOwnedPartitions();
+        }
 
         removeOrRegenerateNearCacheUuid(event);
     }
@@ -218,7 +221,9 @@ class MapMigrationAwareService
             getMetaDataGenerator().removeUuidAndSequence(event.getPartitionId());
         }
 
-        mapServiceContext.nullifyOwnedPartitions();
+        if (event.getCurrentReplicaIndex() == 0 || event.getNewReplicaIndex() == 0) {
+            mapServiceContext.refreshCachedOwnedPartitions();
+        }
     }
 
     private void clearNonGlobalIndexes(PartitionMigrationEvent event) {
