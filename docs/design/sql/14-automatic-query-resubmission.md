@@ -8,11 +8,6 @@
 |Requirement owner| Sandeep Akhouri                                              |
 |TDD Author|Viliam Ďurina|
 |Developer(s)| Krzysztof Ślusarski |
-|Quality Engineer| TODO                             |
-|Support Engineer| TODO                             |
-|Technical Reviewers| TODO                          |
-|Simulator or Soak Test PR(s) | TODO            |
-
 ### Background
 #### Description
 

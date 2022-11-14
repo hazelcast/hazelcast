@@ -27,6 +27,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
 
 import static com.hazelcast.sql.impl.type.QueryDataTypeFamily.BIGINT;
@@ -149,7 +150,7 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
     }
 
     @Test
-    public void test_layeredInvocations() {
+    public void test_nestedInvocations() {
         String name = createTable();
 
         assertThatThrownBy(() -> sqlService.execute(
@@ -165,7 +166,15 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
                         "  , DESCRIPTOR(ts)" +
                         "  , INTERVAL '0.002' SECOND" +
                         "))"
-        )).hasMessageContaining("Multiple ordering functions are not supported");
+        )).hasMessageContaining("IMPOSE_ORDER call is not supported in this configuration");
+    }
+
+    @Test
+    public void test_imposeOrderCannotBePushedToScan() {
+        createMapping("m", Integer.class, OffsetDateTime.class);
+        assertThatThrownBy(() -> sqlService.execute(
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE m, DESCRIPTOR(this), INTERVAL '0' SECONDS))"
+        )).hasMessageContaining("Ordering functions are not supported on top of IMap mappings");
     }
 
     @Test

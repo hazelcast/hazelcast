@@ -22,13 +22,14 @@ import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 import com.hazelcast.map.impl.recordstore.RecordStore;
 
-public enum ContainsKeyOpSteps implements Step<State> {
+public enum ContainsKeyOpSteps implements IMapOpStep {
 
     READ() {
         @Override
         public void runStep(State state) {
             RecordStore recordStore = state.getRecordStore();
             Record record = recordStore.getRecordOrNull(state.getKey());
+
             if (record != null) {
                 state.setOldValue(record.getValue());
                 recordStore.accessRecord(state.getKey(), record, state.getNow());
@@ -44,7 +45,7 @@ public enum ContainsKeyOpSteps implements Step<State> {
 
     LOAD() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isLoadStep() {
             return true;
         }
 

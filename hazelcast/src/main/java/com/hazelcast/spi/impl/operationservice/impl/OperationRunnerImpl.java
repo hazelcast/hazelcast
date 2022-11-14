@@ -412,7 +412,7 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
         return (op instanceof ReadonlyOperation && staleReadOnMigrationEnabled) || isMigrationOperation(op);
     }
 
-    private void handleOperationError(Operation operation, Throwable e) {
+    public void handleOperationError(Operation operation, Throwable e) {
         if (e instanceof OutOfMemoryError) {
             OutOfMemoryErrorDispatcher.onOutOfMemory((OutOfMemoryError) e);
         }

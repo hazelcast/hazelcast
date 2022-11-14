@@ -20,7 +20,9 @@ import com.hazelcast.spi.discovery.integration.DiscoveryMode;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
 import org.mockito.MockitoAnnotations;
 
 import java.util.ArrayList;
@@ -36,6 +38,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.BDDMockito.then;
 import static org.mockito.Mockito.never;
 
+@RunWith(MockitoJUnitRunner.class)
 public class AwsEc2ClientTest {
     @Mock
     private AwsEc2Api awsEc2Api;
