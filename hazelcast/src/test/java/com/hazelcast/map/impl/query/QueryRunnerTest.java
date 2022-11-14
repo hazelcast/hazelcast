@@ -100,7 +100,7 @@ public class QueryRunnerTest extends HazelcastTestSupport {
 
         assertEquals(1, result.getRows().size());
         assertEquals(map.get(key), toObject(result.getRows().iterator().next().getValue()));
-        assertArrayEquals(result.getPartitionIds().toArray(), mapService.getMapServiceContext().getOrInitCachedMemberPartitions().toArray());
+        assertArrayEquals(result.getPartitionIds().toArray(), mapService.getMapServiceContext().getCachedOwnedPartitions().toArray());
     }
 
     @Test

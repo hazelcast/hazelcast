@@ -155,9 +155,9 @@ public interface MapServiceContext extends MapServiceContextInterceptorSupport,
      * Returns cached collection of owned partitions,
      * When it is null, reloads and caches it again.
      */
-    PartitionIdSet getOrInitCachedMemberPartitions();
+    PartitionIdSet getCachedOwnedPartitions();
 
-    void nullifyOwnedPartitions();
+    void refreshCachedOwnedPartitions();
 
     ExpirationManager getExpirationManager();
 
