@@ -125,7 +125,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
             }
         }
 
-        if (!foundLeft || !foundRight || postponeTimeMap.isEmpty()) {
+        if (!foundLeft || !foundRight) {
             call.transformTo(
                     fail(join, "A stream-to-stream join must have a join condition constraining the maximum " +
                             "difference between time values of the joined tables in both directions"));

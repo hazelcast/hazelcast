@@ -32,7 +32,6 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -40,7 +39,7 @@ import org.junit.runner.RunWith;
 import java.util.Collections;
 import java.util.List;
 
-import static com.hazelcast.jet.sql.impl.opt.WindowSizeGcdCalculator.DEFAULT_THROTTLING_FRAME_SIZE;
+import static com.hazelcast.jet.sql.impl.opt.WatermarkThrottlingFrameSizeCalculator.S2S_JOIN_MAX_THROTTLING_INTERVAL;
 import static com.hazelcast.sql.impl.extract.QueryPath.KEY;
 import static com.hazelcast.sql.impl.extract.QueryPath.VALUE;
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
@@ -50,7 +49,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class WindowSizeGcdCalculatorTest extends OptimizerTestSupport {
+public class WatermarkThrottlingFrameSizeCalculatorTest extends OptimizerTestSupport {
     static ExpressionEvalContext MOCK_EEC;
 
     @BeforeClass
@@ -73,11 +72,8 @@ public class WindowSizeGcdCalculatorTest extends OptimizerTestSupport {
                 planRow(1, FullScanPhysicalRel.class)
         ));
 
-        WindowSizeGcdCalculator windowSizeGCDCalculator = new WindowSizeGcdCalculator(MOCK_EEC);
-        windowSizeGCDCalculator.calculate(optimizedPhysicalRel);
-
         assertThat(optimizedPhysicalRel.getInput(0)).isInstanceOf(FullScanPhysicalRel.class);
-        assertThat(windowSizeGCDCalculator.get()).isEqualTo(DEFAULT_THROTTLING_FRAME_SIZE);
+        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optimizedPhysicalRel)).isEqualTo(S2S_JOIN_MAX_THROTTLING_INTERVAL);
     }
 
     @Test
@@ -94,9 +90,7 @@ public class WindowSizeGcdCalculatorTest extends OptimizerTestSupport {
 
         assertPlan(optimizedPhysicalRel, plan(planRow(0, ShouldNotExecuteRel.class)));
 
-        WindowSizeGcdCalculator windowSizeGCDCalculator = new WindowSizeGcdCalculator(MOCK_EEC);
-        windowSizeGCDCalculator.calculate(optimizedPhysicalRel);
-        assertThat(windowSizeGCDCalculator.get()).isEqualTo(DEFAULT_THROTTLING_FRAME_SIZE);
+        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optimizedPhysicalRel)).isEqualTo(S2S_JOIN_MAX_THROTTLING_INTERVAL);
 
         ShouldNotExecuteRel sneRel = (ShouldNotExecuteRel) optimizedPhysicalRel;
         assertThat(sneRel.message()).contains("Streaming aggregation is supported only for window aggregation");
@@ -122,9 +116,7 @@ public class WindowSizeGcdCalculatorTest extends OptimizerTestSupport {
                 planRow(3, FullScanPhysicalRel.class)
         ));
 
-        WindowSizeGcdCalculator windowSizeGCDCalculator = new WindowSizeGcdCalculator(MOCK_EEC);
-        windowSizeGCDCalculator.calculate(optimizedPhysicalRel);
-        assertThat(windowSizeGCDCalculator.get()).isEqualTo(6L);
+        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optimizedPhysicalRel)).isEqualTo(3L);
     }
 
     @Test
@@ -155,14 +147,10 @@ public class WindowSizeGcdCalculatorTest extends OptimizerTestSupport {
                 planRow(4, FullScanPhysicalRel.class)
         ));
 
-        WindowSizeGcdCalculator windowSizeGCDCalculator = new WindowSizeGcdCalculator(MOCK_EEC);
-        windowSizeGCDCalculator.calculate(optimizedPhysicalRel);
         // GCD(15, 6) = 3
-        assertThat(windowSizeGCDCalculator.get()).isEqualTo(3L);
-
+        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optimizedPhysicalRel)).isEqualTo(1L);
     }
 
-    @Ignore("Bug with SlidingWindow#windowPolicyProvider")
     @Test
     public void when_unionAboveSlidingWindows_then_returnGcdOfWindowsSize() {
         HazelcastTable table = streamGeneratorTable("s1", 1);
@@ -198,10 +186,8 @@ public class WindowSizeGcdCalculatorTest extends OptimizerTestSupport {
                 planRow(3, FullScanPhysicalRel.class)
         ));
 
-        WindowSizeGcdCalculator windowSizeGCDCalculator = new WindowSizeGcdCalculator(MOCK_EEC);
-        windowSizeGCDCalculator.calculate(optimizedPhysicalRel);
         // GCD(48, 36, 24) = 12
-        assertThat(windowSizeGCDCalculator.get()).isEqualTo(expectedGcd);
+        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optimizedPhysicalRel)).isEqualTo(expectedGcd);
     }
 
     @Test
@@ -217,10 +203,10 @@ public class WindowSizeGcdCalculatorTest extends OptimizerTestSupport {
                 + joinSubQuery("t1", "s1", 1)
                 + " JOIN "
                 + joinSubQuery("t2", "s2", 2)
-                + " ON s1.v BETWEEN s2.v - 180 AND s2.v + 70 "    // 'window_size' = 250
+                + " ON s1.v BETWEEN s2.v - 180 AND s2.v + 70 "    // spread = 250
                 + " JOIN "
                 + joinSubQuery("t3", "s3", 3)
-                + " ON s3.v BETWEEN s1.v - 100 AND s1.v + 100 ";   // 'window_size' = 200
+                + " ON s3.v BETWEEN s1.v - 100 AND s1.v + 100 ";   // spread = 200
 
         PhysicalRel optPhysicalRel = optimizePhysical(query, parameterTypes, table, table2, table3).getPhysical();
 
@@ -233,10 +219,8 @@ public class WindowSizeGcdCalculatorTest extends OptimizerTestSupport {
                 planRow(1, FullScanPhysicalRel.class)
         ));
 
-        WindowSizeGcdCalculator windowSizeGCDCalculator = new WindowSizeGcdCalculator(MOCK_EEC);
-        windowSizeGCDCalculator.calculate(optPhysicalRel);
-        // MIN(250/10, 200/10) = 20
-        assertThat(windowSizeGCDCalculator.get()).isEqualTo(expectedWindowSize);
+        // GCD(100, 40) = 4
+        assertThat(WatermarkThrottlingFrameSizeCalculator.calculate(optPhysicalRel)).isEqualTo(expectedWindowSize);
     }
 
     @SuppressWarnings("SameParameterValue")

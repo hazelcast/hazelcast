@@ -17,40 +17,38 @@
 package com.hazelcast.jet.sql.impl.opt;
 
 import com.hazelcast.jet.impl.util.Util;
+import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowAggregatePhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.StreamToStreamJoinPhysicalRel;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.RelVisitor;
 
 import javax.annotation.Nullable;
 
-public class WindowSizeGcdCalculator {
-    static final long DEFAULT_THROTTLING_FRAME_SIZE = 100L;
-    static final long PRESICION_DIVIDER = 10L;
+public class WatermarkThrottlingFrameSizeCalculator {
+    static final long S2S_JOIN_MAX_THROTTLING_INTERVAL = 100L;
+    static final long PRECISION_DIVIDER = 10L;
 
-    private final GcdCalculatorVisitor visitor;
+    private WatermarkThrottlingFrameSizeCalculator() { }
 
-    public WindowSizeGcdCalculator(ExpressionEvalContext eec) {
-        this.visitor = new GcdCalculatorVisitor(eec);
-    }
-
-    public void calculate(PhysicalRel rel) {
+    public static long calculate(PhysicalRel rel) {
+        GcdCalculatorVisitor visitor = new GcdCalculatorVisitor();
         visitor.go(rel);
-    }
 
-    public long get() {
-        return visitor.gcd > 0 ? visitor.gcd : DEFAULT_THROTTLING_FRAME_SIZE;
+        if (visitor.gcd == 0) {
+            // there's no window aggr in the rel, return the value for joins, which is already capped at some reasonable value
+            return visitor.maximumIntervalForJoins;
+        }
+        // if there's window aggr, cap it with the maximumIntervalForJoins
+        return Math.min(visitor.gcd, visitor.maximumIntervalForJoins);
     }
 
     private static class GcdCalculatorVisitor extends RelVisitor {
-        private final ExpressionEvalContext eec;
         private long gcd;
-        private boolean windowMet;
+        private long maximumIntervalForJoins = S2S_JOIN_MAX_THROTTLING_INTERVAL;
 
-        GcdCalculatorVisitor(ExpressionEvalContext eec) {
-            this.eec = eec;
+        GcdCalculatorVisitor() {
         }
 
         @Override
@@ -61,19 +59,19 @@ public class WindowSizeGcdCalculator {
         private void visit0(RelNode node) {
             if (node instanceof SlidingWindowAggregatePhysicalRel) {
                 SlidingWindowAggregatePhysicalRel slidingWindow = (SlidingWindowAggregatePhysicalRel) node;
-                long windowSize = slidingWindow.windowPolicyProvider().apply(eec).windowSize();
+                long windowSize = slidingWindow.windowPolicyProvider().apply(CreateDagVisitor.MOCK_EEC).frameSize();
                 gcd = gcd > 0L ? Util.gcd(gcd, windowSize) : windowSize;
-                windowMet = true;
             } else if (node instanceof StreamToStreamJoinPhysicalRel) {
                 StreamToStreamJoinPhysicalRel s2sJoin = (StreamToStreamJoinPhysicalRel) node;
-                // It is some empirical-defined throttling value, chosen between precision and latency.
-                long windowSize = Math.min(DEFAULT_THROTTLING_FRAME_SIZE, s2sJoin.minWindowSize() / PRESICION_DIVIDER);
-
-                if (windowMet) {
-                    gcd = gcd > 0 ? Util.gcd(gcd, windowSize) : windowSize;
-                } else {
-                    gcd = gcd > 0 ? Math.min(gcd, windowSize) : windowSize;
-                }
+                // For stream-to-stream join we cannot precisely define the throttling frame size, because the
+                // closing edge of records doesn't have a regular rhythm, as windows do. Therefore, we use
+                // a hard-coded value that's a trade-off between latency and the amount of watermarks.
+                // The default maximum throttling size is 100, but we reduce it to one tenth of the minimum
+                // join bounds spread, if that's less.
+                long suggestedInterval = s2sJoin.minimumSpread() / PRECISION_DIVIDER;
+                // clamp it to between 1..100
+                suggestedInterval = Math.max(Math.min(suggestedInterval, S2S_JOIN_MAX_THROTTLING_INTERVAL), 1);
+                maximumIntervalForJoins = Math.min(maximumIntervalForJoins, suggestedInterval);
             }
 
             for (RelNode child : node.getInputs()) {

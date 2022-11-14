@@ -50,15 +50,14 @@ public class StreamToStreamJoinPhysicalRuleTest extends OptimizerTestSupport {
     @Test
     public void test_maxWindowSize() {
         Map<Integer, Map<Integer, Long>> postponeTimeMap = new HashMap<>();
-        postponeTimeMap.put(0, singletonMap(1, 10L));
-        postponeTimeMap.put(1, singletonMap(0, 10L)); // sum = 20
-        postponeTimeMap.put(2, singletonMap(3, 15L));
-        postponeTimeMap.put(3, singletonMap(2, 6L));  // sum = 21
-        // this pair has the lowest time window : sum = 19
-        postponeTimeMap.put(4, singletonMap(5, 13L));
-        postponeTimeMap.put(5, singletonMap(4, 6L));
+        postponeTimeMap.put(0, singletonMap(3, 10L));
+        postponeTimeMap.put(1, singletonMap(4, 10L));
+        postponeTimeMap.put(2, singletonMap(5, 15L));
+        postponeTimeMap.put(3, singletonMap(0, 6L));
+        postponeTimeMap.put(4, singletonMap(1, 13L));
+        postponeTimeMap.put(5, singletonMap(2, 6L));
 
-        assertEquals(19L, StreamToStreamJoinPhysicalRel.minWindowSize(postponeTimeMap));
+        assertEquals(16L, StreamToStreamJoinPhysicalRel.minimumSpread(postponeTimeMap, 3));
     }
 
     @Test
