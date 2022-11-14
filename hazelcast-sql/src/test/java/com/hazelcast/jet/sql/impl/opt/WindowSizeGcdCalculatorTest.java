@@ -211,7 +211,7 @@ public class WindowSizeGcdCalculatorTest extends OptimizerTestSupport {
         HazelcastTable table3 = streamGeneratorTable("t3", 100);
         List<QueryDataType> parameterTypes = Collections.singletonList(INT);
 
-        int expectedWindowSize = 25;
+        int expectedWindowSize = 20;
 
         final String query = "SELECT * FROM "
                 + joinSubQuery("t1", "s1", 1)
@@ -235,7 +235,7 @@ public class WindowSizeGcdCalculatorTest extends OptimizerTestSupport {
 
         WindowSizeGcdCalculator windowSizeGCDCalculator = new WindowSizeGcdCalculator(MOCK_EEC);
         windowSizeGCDCalculator.calculate(optPhysicalRel);
-        // GCD(100, 40) = 4
+        // MIN(250/10, 200/10) = 20
         assertThat(windowSizeGCDCalculator.get()).isEqualTo(expectedWindowSize);
     }
 

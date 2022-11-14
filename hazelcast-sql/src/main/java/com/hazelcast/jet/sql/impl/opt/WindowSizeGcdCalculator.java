@@ -28,6 +28,7 @@ import javax.annotation.Nullable;
 
 public class WindowSizeGcdCalculator {
     static final long DEFAULT_THROTTLING_FRAME_SIZE = 100L;
+    static final long PRESICION_DIVIDER = 10L;
 
     private final GcdCalculatorVisitor visitor;
 
@@ -46,7 +47,7 @@ public class WindowSizeGcdCalculator {
     private static class GcdCalculatorVisitor extends RelVisitor {
         private final ExpressionEvalContext eec;
         private long gcd;
-        private boolean windowMet = false;
+        private boolean windowMet;
 
         GcdCalculatorVisitor(ExpressionEvalContext eec) {
             this.eec = eec;
@@ -66,9 +67,13 @@ public class WindowSizeGcdCalculator {
             } else if (node instanceof StreamToStreamJoinPhysicalRel) {
                 StreamToStreamJoinPhysicalRel s2sJoin = (StreamToStreamJoinPhysicalRel) node;
                 // It is some empirical-defined throttling value, chosen between precision and latency.
-                long windowSize = Math.min(DEFAULT_THROTTLING_FRAME_SIZE, s2sJoin.minWindowSize() / 10);
+                long windowSize = Math.min(DEFAULT_THROTTLING_FRAME_SIZE, s2sJoin.minWindowSize() / PRESICION_DIVIDER);
 
-                gcd = windowMet && gcd > 0 ? Util.gcd(gcd, windowSize) : windowSize;
+                if (windowMet) {
+                    gcd = gcd > 0 ? Util.gcd(gcd, windowSize) : windowSize;
+                } else {
+                    gcd = gcd > 0 ? Math.min(gcd, windowSize) : windowSize;
+                }
             }
 
             for (RelNode child : node.getInputs()) {
