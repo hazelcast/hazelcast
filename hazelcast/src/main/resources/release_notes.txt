@@ -8,6 +8,7 @@ This document lists the new features, enhancements, fixed issues and, removed or
 
 ## Fixes
 
+* Fixed a memory leak due to incomplete clean-up of backup replica sync operations. [#22756]
 * Fixed an issue where a map was loading old values with `map.set()` when map store offloading is enabled. [#22603]
 * Fixed an issue where the map entries recovered from persistence were not expiring after their time-to-live durations. [#22557]
 * Fixed an issue where external data store configurations could not be added dynamically. [#22464]
