@@ -534,7 +534,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
     /**
      * Awaits successful initialization, if the initialization failed it throws an exception
      */
-    private void awaitInitFinished() {
+    void awaitInitFinished() {
         try {
             boolean finished = initFinished.await(initTimeoutMillis, MILLISECONDS);
             if (!finished) {
