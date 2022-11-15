@@ -229,6 +229,7 @@
                                     <include>com.google.guava:listenablefuture</include>
                                     <include>com.google.guava:failureaccess</include>
                                     <include>org.slf4j:slf4j-api</include>
+                                    <include>com.fasterxml.jackson.core:jackson-databind</include>
                                 </includes>
                             </artifactSet>
                             <relocations>
@@ -519,7 +520,7 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
-            <scope>provided</scope>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.avro</groupId>
