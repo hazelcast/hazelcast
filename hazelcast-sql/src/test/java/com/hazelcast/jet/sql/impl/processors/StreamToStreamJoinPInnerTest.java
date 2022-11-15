@@ -54,12 +54,12 @@ import static com.hazelcast.jet.core.test.TestSupport.processorAssertion;
 import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
 import static org.apache.calcite.rel.core.JoinRelType.INNER;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 @RunWith(HazelcastSerialClassRunner.class)
@@ -120,21 +120,21 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
                         in(0, jetRow(12L, 13L)),
                         out(jetRow(12L, 13L, 9L)),
                         processorAssertion((StreamToStreamJoinP p) -> {
-                            assertEquals(asList(jetRow(12L, 9L), jetRow(12L, 13L)), p.buffer[0]);
-                            assertEquals(singletonList(jetRow(9L)), p.buffer[1]);
+                            assertEquals(asList(jetRow(12L, 9L), jetRow(12L, 13L)), p.buffer[0].content());
+                            assertEquals(singletonList(jetRow(9L)), p.buffer[1].content());
                         }),
                         in(1, wm(15L, (byte) 2)),
                         out(wm(9L, (byte) 2)),
                         processorAssertion((StreamToStreamJoinP p) -> {
-                            assertEquals(singletonList(jetRow(12L, 13L)), p.buffer[0]);
-                            assertEquals(singletonList(jetRow(9L)), p.buffer[1]);
+                            assertEquals(singletonList(jetRow(12L, 13L)), p.buffer[0].content());
+                            assertEquals(singletonList(jetRow(9L)), p.buffer[1].content());
                         }),
                         in(0, wm(12L, (byte) 1)),
                         out(wm(12L, (byte) 1)),
                         out(wm(15L, (byte) 2)),
                         processorAssertion((StreamToStreamJoinP p) -> {
-                            assertEquals(singletonList(jetRow(12L, 13L)), p.buffer[0]);
-                            assertEquals(emptyList(), p.buffer[1]);
+                            assertEquals(singletonList(jetRow(12L, 13L)), p.buffer[0].content());
+                            assertTrue(p.buffer[1].isEmpty());
                         }),
                         in(0, wm(13L, (byte) 0)),
                         out(wm(12L, (byte) 0)),
@@ -339,18 +339,18 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
 
     /**
      * From the postponeTimeMap create the equivalent condition for the join processor.
-     *
+     * <p>
      * For example, this join condition (`l` has `time1` and `time2` columns, `r` has `time`):
-     *     l.time2 BETWEEN r.time - 1 AND r.time + 4
-     *
+     * l.time2 BETWEEN r.time - 1 AND r.time + 4
+     * <p>
      * Is transformed to:
-     *     l.time2 >= r.time - 1
-     *     r.time >= l.time2 - 4
-     *
+     * l.time2 >= r.time - 1
+     * r.time >= l.time2 - 4
+     * <p>
      * For which this postponeTimeMap is created:
-     *     0: {}
-     *     1: {2:4}
-     *     2: {1:1}
+     * 0: {}
+     * 1: {2:4}
+     * 2: {1:1}
      *
      * @param wmKeyToColumnIndex Remapping of WM keys to joined column indexes. Contains
      *                           a sequence of `wmKey1`, `index1`, `wmKey2`, `index2, ... If WM key == index,
