@@ -290,13 +290,13 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
     @Override
     public void destroy() {
-        awaitInitFinished();
+        awaitSuccessfulInit();
         dropMapping(mapping);
     }
 
     @Override
     public GenericRecord load(K key) {
-        awaitInitFinished();
+        awaitSuccessfulInit();
 
         try (SqlResult queryResult = sql.execute(queries.load(), key)) {
             Iterator<SqlRow> it = queryResult.iterator();
@@ -384,7 +384,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
      */
     @Override
     public Map<K, GenericRecord> loadAll(Collection<K> keys) {
-        awaitInitFinished();
+        awaitSuccessfulInit();
 
         Object[] keysArray = keys.toArray();
 
@@ -404,7 +404,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
     @Override
     public Iterable<K> loadAllKeys() {
-        awaitInitFinished();
+        awaitSuccessfulInit();
 
         SqlResult keysResult = sql.execute(queries.loadAllKeys());
 
@@ -419,7 +419,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
     @Override
     public void store(K key, GenericRecord record) {
-        awaitInitFinished();
+        awaitSuccessfulInit();
 
         int idPos = -1;
         Object[] params = new Object[columnMetadataList.size()];
@@ -502,7 +502,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
     @Override
     public void storeAll(Map<K, GenericRecord> map) {
-        awaitInitFinished();
+        awaitSuccessfulInit();
 
         for (Entry<K, GenericRecord> entry : map.entrySet()) {
             store(entry.getKey(), entry.getValue());
@@ -511,14 +511,14 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
     @Override
     public void delete(K key) {
-        awaitInitFinished();
+        awaitSuccessfulInit();
 
         sql.execute(queries.delete(), key).close();
     }
 
     @Override
     public void deleteAll(Collection<K> keys) {
-        awaitInitFinished();
+        awaitSuccessfulInit();
 
         if (keys.isEmpty()) {
             return;
@@ -532,17 +532,21 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
     }
 
     /**
-     * Awaits successful initialization, if the initialization failed it throws an exception
+     * Awaits successful initialization; if the initialization fails, throws an exception.
      */
+    private void awaitSuccessfulInit() {
+        awaitInitFinished();
+        if (initFailure != null) {
+            throw new HazelcastException("MapStore init failed for map: " + mapName, initFailure);
+        }
+    }
+
     void awaitInitFinished() {
         try {
             boolean finished = initFinished.await(initTimeoutMillis, MILLISECONDS);
             if (!finished) {
-                throw new HazelcastException("MapStore init for map: " + mapName + " timed out after " + initTimeoutMillis
-                        + " ms", initFailure);
-            }
-            if (initFailure != null) {
-                throw new HazelcastException("MapStore init failed for map: " + mapName, initFailure);
+                throw new HazelcastException("MapStore init for map: " + mapName + " timed out after "
+                        + initTimeoutMillis + " ms", initFailure);
             }
         } catch (InterruptedException e) {
             throw new HazelcastException(e);
