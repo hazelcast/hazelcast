@@ -557,9 +557,9 @@ public interface Processor {
      * <p>
      * This flag is ignored for non-cooperative processors.
      * <p>
-     * By default {@link #close()} is assumed to be non-cooperative to guarantee
+     * By default, {@link #close()} is assumed to be non-cooperative to guarantee
      * correct-by-default behavior for custom processors, even though default
-     * implementation of {@link #close()} is empty so obviously cooperative.
+     * implementation of {@link #close()} is empty, so it's cooperative.
      * Implementors are however encouraged to override this method if the
      * default, empty {@link #close()} is used in a cooperative processor to
      * avoid offloading an empty invocation to another thread.
