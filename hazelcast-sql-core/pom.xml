@@ -115,6 +115,14 @@
             </exclusions>
         </dependency>
 
+        <!-- This dependency overrides the vulnerable 2.10.0 as a transitive dependency
+         of avatica-core-->
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-databind</artifactId>
+            <version>${jackson.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>org.apache.calcite</groupId>
             <artifactId>calcite-core</artifactId>
