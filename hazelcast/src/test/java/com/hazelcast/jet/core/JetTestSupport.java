@@ -409,16 +409,22 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
 
         // Let's wait for the job to be not RUNNING on all the members.
         assertTrueEventually(() -> {
-            //If a member throws exception ignore it
+
             try {
                 assertNotEquals(RUNNING, job.getStatus());
-                for (HazelcastInstance instance : instances) {
+            } catch (Exception e) {
+                SUPPORT_LOGGER.severe("Failure to read job status on coordinator: ", e);
+            }
+
+            for (HazelcastInstance instance : instances) {
+                try {
                     Job instanceJob = instance.getJet().getJob(job.getId());
                     if (instanceJob != null) {
                         assertNotEquals(RUNNING, instanceJob.getStatus());
                     }
+                } catch (Exception e) {
+                    SUPPORT_LOGGER.severe("Failure to read job status on member: ", e);
                 }
-            } catch (Exception ignored) {
             }
         });
     }
