@@ -26,11 +26,12 @@ import org.apache.calcite.rel.RelVisitor;
 
 import javax.annotation.Nullable;
 
-public class WatermarkThrottlingFrameSizeCalculator {
+public final class WatermarkThrottlingFrameSizeCalculator {
     static final long S2S_JOIN_MAX_THROTTLING_INTERVAL = 100L;
     static final long PRECISION_DIVIDER = 10L;
 
-    private WatermarkThrottlingFrameSizeCalculator() { }
+    private WatermarkThrottlingFrameSizeCalculator() {
+    }
 
     public static long calculate(PhysicalRel rel) {
         GcdCalculatorVisitor visitor = new GcdCalculatorVisitor();

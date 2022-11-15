@@ -49,7 +49,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class WatermarkThrottlingFrameSizeCalculatorTest extends OptimizerTestSupport {
+public final class WatermarkThrottlingFrameSizeCalculatorTest extends OptimizerTestSupport {
     static ExpressionEvalContext MOCK_EEC;
 
     @BeforeClass
