@@ -121,21 +121,22 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
     }
 
     private GetJobIdsResult filterNonLightJobs(CompletableFuture<GetJobIdsResult> masterFuture) {
+        GetJobIdsResult result;
         try {
-            GetJobIdsResult result = masterFuture.get();
-            List<Tuple2<Long, Boolean>> nonLightJobs = new ArrayList<>();
-            for (int i = 0; i < result.getJobIds().length; i++) {
-                long jobId = result.getJobIds()[i];
-                if (result.getIsLightJobs()[i]) {
-                    continue;
-                }
-                nonLightJobs.add(tuple2(jobId, false));
-            }
-            return new GetJobIdsResult(nonLightJobs);
+            result = masterFuture.get();
         } catch (Exception e) {
             // We do not ignore any exception from master.
             throw new RuntimeException("Error when getting job IDs: " + e, e);
         }
+        List<Tuple2<Long, Boolean>> nonLightJobs = new ArrayList<>();
+        for (int i = 0; i < result.getJobIds().length; i++) {
+            long jobId = result.getJobIds()[i];
+            if (result.getIsLightJobs()[i]) {
+                continue;
+            }
+            nonLightJobs.add(tuple2(jobId, false));
+        }
+        return new GetJobIdsResult(nonLightJobs);
     }
 
     @Override
