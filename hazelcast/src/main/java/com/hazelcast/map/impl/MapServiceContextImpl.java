@@ -90,6 +90,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
@@ -142,14 +143,14 @@ class MapServiceContextImpl implements MapServiceContext {
     private final ContextMutexFactory contextMutexFactory = new ContextMutexFactory();
     private final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<>();
     private final ExecutorStats offloadedExecutorStats = new ExecutorStats();
+    private final AtomicReference<PartitionIdSet> cachedOwnedPartitions = new AtomicReference<>();
+
     /**
      * @see {@link MapKeyLoader#DEFAULT_LOADED_KEY_LIMIT_PER_NODE}
      */
     private final Semaphore nodeWideLoadedKeyLimiter;
 
     private MapService mapService;
-
-    private volatile PartitionIdSet ownedPartitions;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
     MapServiceContextImpl(NodeEngine nodeEngine) {
@@ -481,28 +482,30 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public PartitionIdSet getOrInitCachedMemberPartitions() {
-        PartitionIdSet ownedPartitionIdSet = ownedPartitions;
-        if (ownedPartitionIdSet != null) {
-            return ownedPartitionIdSet;
+    public PartitionIdSet getCachedOwnedPartitions() {
+        PartitionIdSet ownedSet = cachedOwnedPartitions.get();
+        if (ownedSet == null) {
+            refreshCachedOwnedPartitions();
+            ownedSet = cachedOwnedPartitions.get();
         }
-
-        synchronized (this) {
-            ownedPartitionIdSet = ownedPartitions;
-            if (ownedPartitionIdSet != null) {
-                return ownedPartitionIdSet;
-            }
-            IPartitionService partitionService = nodeEngine.getPartitionService();
-            Collection<Integer> partitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
-            ownedPartitionIdSet = immutablePartitionIdSet(partitionService.getPartitionCount(), partitions);
-            ownedPartitions = ownedPartitionIdSet;
-        }
-        return ownedPartitionIdSet;
+        return ownedSet;
     }
 
+    private PartitionIdSet getOwnedMemberPartitions() {
+        IPartitionService partitionService = nodeEngine.getPartitionService();
+        Collection<Integer> partitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
+        return immutablePartitionIdSet(partitionService.getPartitionCount(), partitions);
+    }
+
+    @SuppressWarnings("checkstyle:multiplevariabledeclarations")
     @Override
-    public void nullifyOwnedPartitions() {
-        ownedPartitions = null;
+    // can be called concurrently
+    public void refreshCachedOwnedPartitions() {
+        PartitionIdSet expectedSet, newSet;
+        do {
+            expectedSet = cachedOwnedPartitions.get();
+            newSet = getOwnedMemberPartitions();
+        } while (!cachedOwnedPartitions.compareAndSet(expectedSet, newSet));
     }
 
     @Override

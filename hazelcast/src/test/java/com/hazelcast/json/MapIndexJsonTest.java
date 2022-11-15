@@ -272,7 +272,7 @@ public class MapIndexJsonTest extends HazelcastTestSupport {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
 
         List<Index> result = new ArrayList<>();
-        for (int partitionId : mapServiceContext.getOrInitCachedMemberPartitions()) {
+        for (int partitionId : mapServiceContext.getCachedOwnedPartitions()) {
             Indexes indexes = mapContainer.getIndexes(partitionId);
             result.add(indexes.getIndex(attribute));
         }
