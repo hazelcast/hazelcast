@@ -74,12 +74,12 @@ class StreamToStreamJoinListBuffer extends StreamToStreamJoinBuffer {
                 times[idx] = timeExtractors.get(idx).getValue().applyAsLong(row);
                 if (times[idx] < limits[idx]) {
                     remove = true;
-                    clearedRowsConsumer.accept(row);
                 }
             }
 
             if (remove) {
                 iterator.remove();
+                clearedRowsConsumer.accept(row);
             } else {
                 for (int i = 0; i < times.length; i++) {
                     newMinimums[i] = Math.min(times[i], newMinimums[i]);
