@@ -70,7 +70,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     final Object2LongHashMap<Byte> minimumBufferTimes = new Object2LongHashMap<>(Long.MIN_VALUE);
 
     // package-visible for tests
-    final IStreamToStreamJoinBuffer[] buffer;
+    final StreamToStreamJoinBuffer[] buffer;
 
     private final JetJoinInfo joinInfo;
     private final int outerJoinSide;
@@ -369,7 +369,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         return joinedRow;
     }
 
-    private IStreamToStreamJoinBuffer[] createBuffers(
+    private StreamToStreamJoinBuffer[] createBuffers(
             final List<Map.Entry<Byte, ToLongFunctionEx<JetSqlRow>>> leftTimeExtractors,
             final List<Map.Entry<Byte, ToLongFunctionEx<JetSqlRow>>> rightTimeExtractors
     ) {
@@ -383,12 +383,12 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             assert leftTimeExtractors.size() == 1;
             assert rightTimeExtractors.size() == 1;
 
-            return new IStreamToStreamJoinBuffer[]{
+            return new StreamToStreamJoinBuffer[]{
                     new StreamToStreamJoinHeapBuffer(joinInfo, true, leftTimeExtractors),
                     new StreamToStreamJoinHeapBuffer(joinInfo, false, rightTimeExtractors)
             };
         } else {
-            return new IStreamToStreamJoinBuffer[]{
+            return new StreamToStreamJoinBuffer[]{
                     new StreamToStreamJoinListBuffer(joinInfo, true, leftTimeExtractors),
                     new StreamToStreamJoinListBuffer(joinInfo, false, rightTimeExtractors)
             };

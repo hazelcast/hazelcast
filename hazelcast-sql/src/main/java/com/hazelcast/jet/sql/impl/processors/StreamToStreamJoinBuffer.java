@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-public abstract class IStreamToStreamJoinBuffer implements Iterable<JetSqlRow> {
+public abstract class StreamToStreamJoinBuffer implements Iterable<JetSqlRow> {
     protected final JetJoinInfo joinInfo;
     protected final boolean isLeft;
     protected final boolean shouldProduceNullRow;
@@ -40,7 +40,7 @@ public abstract class IStreamToStreamJoinBuffer implements Iterable<JetSqlRow> {
 
     protected JetSqlRow emptyRow;
 
-    public IStreamToStreamJoinBuffer(
+    public StreamToStreamJoinBuffer(
             JetJoinInfo joinInfo,
             boolean isLeftInput,
             List<Map.Entry<Byte, ToLongFunctionEx<JetSqlRow>>> timeExtractors

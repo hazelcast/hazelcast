@@ -31,7 +31,7 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-public class StreamToStreamJoinListBuffer extends IStreamToStreamJoinBuffer {
+public class StreamToStreamJoinListBuffer extends StreamToStreamJoinBuffer {
     private final List<JetSqlRow> buffer = new LinkedList<>();
 
     public StreamToStreamJoinListBuffer(

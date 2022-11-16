@@ -31,7 +31,7 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.Set;
 
-public class StreamToStreamJoinHeapBuffer extends IStreamToStreamJoinBuffer {
+public class StreamToStreamJoinHeapBuffer extends StreamToStreamJoinBuffer {
     private final PriorityQueue<JetSqlRow> buffer;
     private final ToLongFunctionEx<JetSqlRow> timeExtractor;
 
