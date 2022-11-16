@@ -64,11 +64,10 @@ public class SqlClientTest extends SqlTestSupport {
 
         createMapping("test", Integer.class, String.class);
 
-        // TODO: fix
-//        assertNull(sqlClientService.queryPartitionCache.get(insertQuery));
-//        sqlService.execute(insertQuery,"testVal", 1);
-//        assertNotNull(sqlClientService.queryPartitionCache.get(insertQuery));
-//        assertEquals(0, (int) sqlClientService.queryPartitionCache.get(insertQuery));
+        assertNull(sqlClientService.queryPartitionCache.get(insertQuery));
+        sqlService.execute(insertQuery, "testVal", 1);
+        assertNotNull(sqlClientService.queryPartitionCache.get(insertQuery));
+        assertEquals(1, (int) sqlClientService.queryPartitionCache.get(insertQuery));
 
         assertNull(sqlClientService.queryPartitionCache.get(updateQuery));
         sqlService.execute(updateQuery, "testVal", 1);

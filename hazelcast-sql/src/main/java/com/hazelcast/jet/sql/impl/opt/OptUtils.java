@@ -36,6 +36,7 @@ import com.hazelcast.sql.impl.plan.node.PlanNodeFieldTypeProvider;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.schema.Table;
 import com.hazelcast.sql.impl.schema.TableField;
+import com.hazelcast.sql.impl.schema.map.PartitionedMapTable;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.plan.ConventionTraitDef;
 import org.apache.calcite.plan.HazelcastRelOptCluster;
@@ -570,5 +571,30 @@ public final class OptUtils {
             }
         }
         return -1;
+    }
+
+    public static int extractKeyParamIndex(final ExpressionValues values, final PartitionedMapTable mapTable) {
+        if (values instanceof ExpressionValues.TransformedExpressionValues) {
+            int keyArgIndex = -1;
+            final Map<Integer, Integer> projectionMapping = ((ExpressionValues.TransformedExpressionValues) values)
+                    .getProjectionMapping();
+
+            for (int i = 0; i < mapTable.getFields().size(); i++) {
+                if (mapTable.paths()[i].isKey()) {
+                    keyArgIndex = i;
+                    break;
+                }
+            }
+
+            if (keyArgIndex == -1) {
+                return -1;
+            }
+
+            return projectionMapping.get(keyArgIndex) == null
+                    ? -1
+                    : projectionMapping.get(keyArgIndex);
+        } else {
+            return -1;
+        }
     }
 }

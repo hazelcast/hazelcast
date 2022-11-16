@@ -26,12 +26,15 @@ import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import org.apache.calcite.rel.type.RelDataType;
+import org.apache.calcite.rex.RexDynamicParam;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexVisitor;
 
 import java.io.Serializable;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
@@ -87,6 +90,8 @@ public abstract class ExpressionValues implements Serializable {
         private final Expression<Boolean> predicate;
         private final List<Expression<?>> projection;
         private final List<ExpressionValues> values;
+        // TODO: move to rel rule?
+        private final Map<Integer, Integer> projectionMapping;
 
         @SuppressWarnings("unchecked")
         public TransformedExpressionValues(
@@ -103,6 +108,23 @@ public abstract class ExpressionValues implements Serializable {
             this.predicate = filter == null ? null : (Expression<Boolean>) filter.accept(converter);
             this.projection = project == null ? null : toList(project, node -> node.accept(converter));
             this.values = values;
+
+            this.projectionMapping = new HashMap<>();
+
+            if (project == null) {
+                return;
+            }
+
+            for (int i = 0; i < project.size(); i++) {
+                final RexNode node = project.get(i);
+                if (node instanceof RexDynamicParam) {
+                    projectionMapping.put(i, ((RexDynamicParam) node).getIndex());
+                }
+            }
+        }
+
+        public Map<Integer, Integer> getProjectionMapping() {
+            return projectionMapping;
         }
 
         @Override

@@ -1078,6 +1078,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn;
         private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
+        private final int keyParamIndex;
 
         IMapInsertPlan(
                 PlanKey planKey,
@@ -1086,7 +1087,8 @@ abstract class SqlPlanImpl extends SqlPlan {
                 String mapName,
                 Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn,
                 PlanExecutor planExecutor,
-                List<Permission> permissions
+                List<Permission> permissions,
+                int keyParamIndex
         ) {
             super(planKey);
 
@@ -1097,6 +1099,7 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.entriesFn = entriesFn;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
+            this.keyParamIndex = keyParamIndex;
         }
 
         QueryParameterMetadata parameterMetadata() {
@@ -1109,6 +1112,10 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         Function<ExpressionEvalContext, List<Entry<Object, Object>>> entriesFn() {
             return entriesFn;
+        }
+
+        int keyParamIndex() {
+            return keyParamIndex;
         }
 
         @Override

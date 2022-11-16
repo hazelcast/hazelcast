@@ -442,7 +442,7 @@ public class PlanExecutor {
                 throw QueryException.error("Duplicate key");
             }
         }
-        return UpdateSqlResultImpl.createUpdateCountResult(0);
+        return UpdateSqlResultImpl.createUpdateCountResult(0, plan.keyParamIndex());
     }
 
     SqlResult execute(IMapSinkPlan plan, List<Object> arguments, long timeout) {

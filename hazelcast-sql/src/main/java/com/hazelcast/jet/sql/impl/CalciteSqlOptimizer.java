@@ -517,7 +517,8 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                     insert.mapName(),
                     insert.entriesFn(),
                     planExecutor,
-                    permissions
+                    permissions,
+                    insert.keyParamIndex()
             );
         } else if (physicalRel instanceof SinkMapPhysicalRel) {
             assert !isCreateJob;
