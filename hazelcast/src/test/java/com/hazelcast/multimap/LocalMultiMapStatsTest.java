@@ -35,6 +35,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
@@ -47,8 +49,8 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
     private static final int OPERATION_COUNT = 10;
 
     private HazelcastInstance instance;
-    private String mapName = "mapName";
-    private String mapNameSet = "mapNameSet";
+    private final String mapName = "mapName";
+    private final String mapNameSet = "mapNameSet";
 
     @Before
     public void setUp() {
@@ -140,7 +142,10 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
         Map<Integer, Collection<? extends Integer>> expectedMultiMap = new HashMap<>();
         testPutAllAndHitsGeneratedTemplate(expectedMultiMap,
                 (o) -> {
-                    o.putAllAsync(expectedMultiMap);
+                    // We need to wait for putAllAsync() call to finish
+                    CompletionStage<Void> voidCompletionStage = o.putAllAsync(expectedMultiMap);
+                    CompletableFuture<Void> completableFuture = (CompletableFuture<Void>) voidCompletionStage;
+                    completableFuture.join();
                 }
         );
     }
@@ -150,9 +155,14 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
         Map<Integer, Collection<? extends Integer>> expectedMultiMap = new HashMap<>();
         testPutAllAndHitsGeneratedTemplate(expectedMultiMap,
                 (o) -> {
-                    for (int i = 0; i < 100; ++i) {
-                        o.putAllAsync(i, expectedMultiMap.get(i));
+                    // We need to wait for all putAllAsync() calls to finish
+                    int loopLimit = 100;
+                    CompletableFuture<Void>[] futureList = new CompletableFuture[loopLimit];
+                    for (int i = 0; i < loopLimit; ++i) {
+                        CompletionStage<Void> voidCompletionStage = o.putAllAsync(i, expectedMultiMap.get(i));
+                        futureList[i] = (CompletableFuture<Void>) voidCompletionStage;
                     }
+                    CompletableFuture.allOf(futureList).join();
                 }
         );
     }
