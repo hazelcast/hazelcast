@@ -46,6 +46,7 @@ import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -218,18 +219,19 @@ public class HazelcastXATest extends HazelcastTestSupport {
         ExecutorService executorService = Executors.newFixedThreadPool(5);
         final CountDownLatch latch = new CountDownLatch(size);
         for (int i = 0; i < size; i++) {
-            executorService.execute(new Runnable() {
-                public void run() {
-                    try {
-                        txn(instance);
-                    } catch (Exception e) {
-                        LOGGER.severe("Exception during txn", e);
-                    } finally {
-                        latch.countDown();
-                    }
+            executorService.execute(() -> {
+                try {
+                    txn(instance);
+                } catch (Exception e) {
+                    LOGGER.severe("Exception during txn", e);
+                } finally {
+                    latch.countDown();
                 }
             });
         }
+        // Wait for the executorService to finish all tasks
+        executorService.shutdown();
+        executorService.awaitTermination(20,TimeUnit.SECONDS);
         assertOpenEventually(latch, 20);
         final IMap map = instance.getMap("m");
         for (int i = 0; i < 10; i++) {
@@ -262,6 +264,7 @@ public class HazelcastXATest extends HazelcastTestSupport {
             LOGGER.severe("Exception during transaction", e);
             error = true;
         } finally {
+            // commit or rollback
             close(error, xaResource);
         }
     }
