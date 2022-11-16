@@ -148,7 +148,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             throw new IllegalArgumentException("Not enough time bounds in postponeTimeMap");
         }
 
-        this.buffer = createBuffers(this.leftTimeExtractors, this.rightTimeExtractors);
+        this.buffer = createBuffers();
     }
 
     @Override
@@ -374,10 +374,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         return joinedRow;
     }
 
-    private StreamToStreamJoinBuffer[] createBuffers(
-            final List<Map.Entry<Byte, ToLongFunctionEx<JetSqlRow>>> leftTimeExtractors,
-            final List<Map.Entry<Byte, ToLongFunctionEx<JetSqlRow>>> rightTimeExtractors
-    ) {
+    private StreamToStreamJoinBuffer[] createBuffers() {
         Set<Byte> wmCountTracker = new HashSet<>();
         for (Entry<Byte, Map<Byte, Long>> outerEntry : postponeTimeMap.entrySet()) {
             wmCountTracker.add(outerEntry.getKey());
