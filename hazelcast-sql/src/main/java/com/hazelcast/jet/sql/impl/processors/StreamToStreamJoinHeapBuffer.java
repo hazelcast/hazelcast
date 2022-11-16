@@ -85,8 +85,7 @@ public class StreamToStreamJoinHeapBuffer extends IStreamToStreamJoinBuffer {
             @Nonnull ExpressionEvalContext eec) {
         assert limits.length == 1;
 
-        JetSqlRow row = buffer.peek();
-        while (row != null && timeExtractor.applyAsLong(row) < limits[0]) {
+        for (JetSqlRow row; (row = buffer.peek()) != null && timeExtractor.applyAsLong(row) < limits[0]; ) {
             if (shouldProduceNullRow && unusedEventsTracker.remove(row)) {
                 // 5.4 : If doing an outer join, emit events removed from the buffer,
                 // with `null`s for the other side, if the event was never joined.
@@ -95,8 +94,7 @@ public class StreamToStreamJoinHeapBuffer extends IStreamToStreamJoinBuffer {
                     pendingOutput.add(joinedRow);
                 }
             }
-            buffer.poll();
-            row = buffer.peek();
+            buffer.remove();
         }
 
         if (buffer.size() > 0) {

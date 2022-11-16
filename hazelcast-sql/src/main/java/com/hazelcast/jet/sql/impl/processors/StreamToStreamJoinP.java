@@ -70,7 +70,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     final Object2LongHashMap<Byte> minimumBufferTimes = new Object2LongHashMap<>(Long.MIN_VALUE);
 
     // package-visible for tests
-    @SuppressWarnings("unchecked")
     final IStreamToStreamJoinBuffer[] buffer;
 
     private final JetJoinInfo joinInfo;

@@ -43,7 +43,8 @@ public abstract class IStreamToStreamJoinBuffer implements Iterable<JetSqlRow> {
     public IStreamToStreamJoinBuffer(
             JetJoinInfo joinInfo,
             boolean isLeftInput,
-            List<Map.Entry<Byte, ToLongFunctionEx<JetSqlRow>>> timeExtractors) {
+            List<Map.Entry<Byte, ToLongFunctionEx<JetSqlRow>>> timeExtractors
+    ) {
         this.joinInfo = joinInfo;
         this.isLeft = isLeftInput;
         this.shouldProduceNullRow = (isLeftInput && joinInfo.isLeftOuter()) || (!isLeftInput && joinInfo.isRightOuter());

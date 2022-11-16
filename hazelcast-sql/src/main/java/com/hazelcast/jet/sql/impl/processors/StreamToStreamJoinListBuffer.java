@@ -71,7 +71,8 @@ public class StreamToStreamJoinListBuffer extends IStreamToStreamJoinBuffer {
             long[] limits,
             @Nonnull Set<JetSqlRow> unusedEventsTracker,
             @Nonnull Queue<Object> pendingOutput,
-            @Nonnull ExpressionEvalContext eec) {
+            @Nonnull ExpressionEvalContext eec
+    ) {
         long[] newMinimums = new long[timeExtractors.size()];
         Arrays.fill(newMinimums, Long.MAX_VALUE);
 
