@@ -36,7 +36,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CompletionStage;
 import java.util.function.Consumer;
 
 import static org.junit.Assert.assertEquals;
@@ -143,9 +142,7 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
         testPutAllAndHitsGeneratedTemplate(expectedMultiMap,
                 (o) -> {
                     // We need to wait for putAllAsync() call to finish
-                    CompletionStage<Void> voidCompletionStage = o.putAllAsync(expectedMultiMap);
-                    CompletableFuture<Void> completableFuture = (CompletableFuture<Void>) voidCompletionStage;
-                    completableFuture.join();
+                    o.putAllAsync(expectedMultiMap).toCompletableFuture().join();
                 }
         );
     }
@@ -159,8 +156,7 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
                     int loopLimit = 100;
                     CompletableFuture<Void>[] futureList = new CompletableFuture[loopLimit];
                     for (int i = 0; i < loopLimit; ++i) {
-                        CompletionStage<Void> voidCompletionStage = o.putAllAsync(i, expectedMultiMap.get(i));
-                        futureList[i] = (CompletableFuture<Void>) voidCompletionStage;
+                        futureList[i] = o.putAllAsync(i, expectedMultiMap.get(i)).toCompletableFuture();
                     }
                     CompletableFuture.allOf(futureList).join();
                 }
