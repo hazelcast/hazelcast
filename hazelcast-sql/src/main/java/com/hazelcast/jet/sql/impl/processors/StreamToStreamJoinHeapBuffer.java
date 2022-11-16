@@ -42,7 +42,7 @@ class StreamToStreamJoinHeapBuffer extends StreamToStreamJoinBuffer {
 
     @Override
     public void add(JetSqlRow row) {
-        buffer.offer(row);
+        buffer.add(row);
     }
 
     @Override
