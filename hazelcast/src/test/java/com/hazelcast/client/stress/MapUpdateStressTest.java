@@ -153,7 +153,8 @@ public class MapUpdateStressTest extends StressTestSupport {
                 int increment = random.nextInt(10);
                 increments[key] += increment;
                 for (; ; ) {
-                    int oldValue = map.get(key);
+                    Integer oldValue = map.get(key);
+                    assertNotNull("The entry with key: " + key + " is missing", oldValue);
                     if (map.replace(key, oldValue, oldValue + increment)) {
                         break;
                     }

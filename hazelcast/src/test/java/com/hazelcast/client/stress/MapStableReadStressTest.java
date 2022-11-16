@@ -121,8 +121,9 @@ public class MapStableReadStressTest extends StressTestSupport {
 
             while (!isStopped()) {
                 int key = random.nextInt(MAP_SIZE);
-                int value = map.get(key);
-                assertEquals("The value for the key was not consistent", key, value);
+                Integer value = map.get(key);
+                assertNotNull("The entry with key: " + key + " is missing", value);
+                assertEquals("The value for the key was not consistent", key, value.intValue());
             }
         }
     }
