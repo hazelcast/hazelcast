@@ -146,6 +146,8 @@ public class MapUpdateStressTest extends StressTestSupport {
 
         @Override
         public void doRun() throws Exception {
+            System.out.println("Starting StressThread");
+
             assertNotNull("The map read by StressThread is null", map);
 
             while (!isStopped()) {
