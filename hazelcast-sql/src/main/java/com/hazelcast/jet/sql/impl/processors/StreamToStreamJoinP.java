@@ -69,6 +69,10 @@ public class StreamToStreamJoinP extends AbstractProcessor {
      */
     final Object2LongHashMap<Byte> minimumBufferTimes = new Object2LongHashMap<>(Long.MIN_VALUE);
 
+    // package-visible for tests
+    @SuppressWarnings("unchecked")
+    final IStreamToStreamJoinBuffer[] buffer;
+
     private final JetJoinInfo joinInfo;
     private final int outerJoinSide;
     private final List<Entry<Byte, ToLongFunctionEx<JetSqlRow>>> leftTimeExtractors;
@@ -76,13 +80,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private final Map<Byte, Map<Byte, Long>> postponeTimeMap;
     private final Tuple2<Integer, Integer> columnCounts;
     private long maxProcessorAccumulatedRecords;
-
-    // NOTE: we are using LinkedList, because we are expecting:
-    //  (1) removals at any position,
-    //  (2) no index-based access, only full traversal
-    // package-visible for tests
-    @SuppressWarnings("unchecked")
-    final IStreamToStreamJoinBuffer[] buffer;
 
     private ExpressionEvalContext evalContext;
     private Iterator<JetSqlRow> iterator;
