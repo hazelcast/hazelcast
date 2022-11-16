@@ -712,10 +712,9 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         AssignDiscriminatorToScansRule rule = new AssignDiscriminatorToScansRule();
         hepProgramBuilder.addRuleInstance(rule);
 
-        // Also approach Calc-Limit transposition rule,
-        // since we support only top-level LIMIT...OFFSET,
-        // there might be the only occurence to use that rule.
-        // Also, this rule has perfect use-case exactly for heuristic planner.
+        // The Calc-Limit-Transpose rule pushes the LimitRel up before a CalcRel.
+        // We rely on this in CreateDagVisitor when handling LimitRel - it must be a
+        // direct input of the RootRel, there cannot be a Calc in between.
         hepProgramBuilder.addRuleInstance(CalcLimitTransposeRule.INSTANCE);
 
         HepPlanner planner = new HepPlanner(
