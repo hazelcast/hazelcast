@@ -285,6 +285,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public void removeAll(@Nonnull Predicate<K, V> predicate) {
         checkNotNull(predicate, "predicate cannot be null");
+        PredicateUtils.checkDoesNotContainPagingPredicate(predicate, "removeAll");
         handleHazelcastInstanceAwareParams(predicate);
 
         removeAllInternal(predicate);
