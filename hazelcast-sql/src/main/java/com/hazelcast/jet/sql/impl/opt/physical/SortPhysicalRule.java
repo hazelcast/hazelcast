@@ -66,9 +66,9 @@ final class SortPhysicalRule extends RelRule<RelRule.Config> {
     }
 
     private static List<RelNode> toTransforms(SortLogicalRel sort) {
-        // FullScan + Sort [+ Limit]
+        // Scan + Sort [+ Limit]
         List<RelNode> sortTransforms = new ArrayList<>(1);
-        // IndexScan [+ Limit]
+        // Scan [+ Limit]
         List<RelNode> nonSortTransforms = new ArrayList<>(1);
 
         for (RelNode physicalInput : OptUtils.extractPhysicalRelsFromSubset(sort.getInput())) {

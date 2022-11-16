@@ -26,7 +26,8 @@ import org.immutables.value.Value;
 import static java.util.Collections.singletonList;
 
 /**
- * Logical rule that transposes {@link LimitPhysicalRel} with {@link CalcPhysicalRel}.
+ * Logical rule that transposes {@link LimitPhysicalRel} with {@link CalcPhysicalRel},
+ * if filter is not present in Calc rex program.
  * <p>
  * Before:
  * <pre>
@@ -48,6 +49,7 @@ public class CalcLimitTransposeRule extends RelRule<RelRule.Config> implements T
                 .description(CalcLimitTransposeRule.class.getSimpleName())
                 .operandSupplier(b0 -> b0
                         .operand(CalcPhysicalRel.class)
+                        .predicate(calc -> calc.getProgram().getCondition() == null)
                         .inputs(b1 -> b1
                                 .operand(LimitPhysicalRel.class)
                                 .anyInputs()))

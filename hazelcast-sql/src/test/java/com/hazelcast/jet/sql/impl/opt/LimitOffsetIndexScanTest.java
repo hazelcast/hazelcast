@@ -39,7 +39,7 @@ public class LimitOffsetIndexScanTest extends OptimizerTestSupport {
         initialize(1, null);
     }
 
-    // Closes https://github.com/hazelcast/hazelcast/issues/19223
+    // Test for https://github.com/hazelcast/hazelcast/issues/19223
     @Test
     public void test() {
         String mapName = randomName();

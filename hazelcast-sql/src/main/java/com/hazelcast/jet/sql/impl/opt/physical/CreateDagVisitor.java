@@ -54,6 +54,7 @@ import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
 import com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinProcessorSupplier;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -530,46 +531,27 @@ public class CreateDagVisitor {
     }
 
     public Vertex onLimit(LimitPhysicalRel rel) {
-        RelNode input = rel.getInput();
-
-        Expression<?> fetch;
-        Expression<?> offset;
-
-        if (rel.fetch() == null) {
-            fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
-        } else {
-            fetch = rel.fetch(parameterMetadata);
-        }
-
-        if (rel.offset() == null) {
-            offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
-        } else {
-            offset = rel.offset(parameterMetadata);
-        }
-
-        Vertex vertex = dag.newUniqueVertex(
-                "LimitedClientSink",
-                rootResultConsumerSink(localMemberAddress, fetch, offset)
-        );
-
-        // We use distribute-to-one edge to send all the items to the initiator member.
-        // Such edge has to be partitioned, but the sink is LP=1 anyway, so we can use
-        // allToOne with any key, it goes to a single processor on a single member anyway.
-        connectInput(input, vertex, edge -> edge.distributeTo(localMemberAddress).allToOne(""));
-        return vertex;
+        throw QueryException.error("FETCH/OFFSET is only supported for the top-level SELECT");
     }
-
 
     public Vertex onRoot(RootRel rootRel) {
         RelNode input = rootRel.getInput();
 
-        // We support only top-level LIMIT ... OFFSET.
-        if (input instanceof LimitPhysicalRel) {
-            return onLimit((LimitPhysicalRel) input);
-        }
-
         Expression<?> fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
         Expression<?> offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
+
+        // We support only top-level LIMIT ... OFFSET.
+        if (input instanceof LimitPhysicalRel) {
+            LimitPhysicalRel limit = (LimitPhysicalRel) input;
+            if (limit.fetch() != null) {
+                fetch = limit.fetch(parameterMetadata);
+            }
+
+            if (limit.offset() != null) {
+                offset = limit.offset(parameterMetadata);
+            }
+            input = limit.getInput();
+        }
 
         Vertex vertex = dag.newUniqueVertex(
                 "ClientSink",
@@ -730,10 +712,5 @@ public class CreateDagVisitor {
         if (objectKey != null) {
             objectKeys.add(objectKey);
         }
-    }
-
-    private boolean isCalcWithSort(RelNode input) {
-        return input instanceof CalcPhysicalRel &&
-                ((CalcPhysicalRel) input).getInput() instanceof SortPhysicalRel;
     }
 }
