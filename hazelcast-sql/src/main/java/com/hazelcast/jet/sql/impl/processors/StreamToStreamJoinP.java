@@ -148,7 +148,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             throw new IllegalArgumentException("Not enough time bounds in postponeTimeMap");
         }
 
-        // Everything else is initialized, except runtime objects like EEC, etc.
         this.buffer = createBuffers(this.leftTimeExtractors, this.rightTimeExtractors);
     }
 

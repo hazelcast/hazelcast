@@ -341,16 +341,16 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
      * From the postponeTimeMap create the equivalent condition for the join processor.
      * <p>
      * For example, this join condition (`l` has `time1` and `time2` columns, `r` has `time`):
-     * l.time2 BETWEEN r.time - 1 AND r.time + 4
+     *     l.time2 BETWEEN r.time - 1 AND r.time + 4
      * <p>
      * Is transformed to:
-     * l.time2 >= r.time - 1
-     * r.time >= l.time2 - 4
+     *     l.time2 >= r.time - 1
+     *     r.time >= l.time2 - 4
      * <p>
      * For which this postponeTimeMap is created:
-     * 0: {}
-     * 1: {2:4}
-     * 2: {1:1}
+     *     0: {}
+     *     1: {2:4}
+     *     2: {1:1}
      *
      * @param wmKeyToColumnIndex Remapping of WM keys to joined column indexes. Contains
      *                           a sequence of `wmKey1`, `index1`, `wmKey2`, `index2, ... If WM key == index,
