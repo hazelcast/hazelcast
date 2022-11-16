@@ -17,8 +17,6 @@
 package com.hazelcast.jet.sql.impl.processors;
 
 import com.hazelcast.function.ToLongFunctionEx;
-import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import javax.annotation.Nonnull;
@@ -28,17 +26,13 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
-import java.util.Set;
+import java.util.function.Consumer;
 
-public class StreamToStreamJoinListBuffer extends StreamToStreamJoinBuffer {
+class StreamToStreamJoinListBuffer extends StreamToStreamJoinBuffer {
     private final List<JetSqlRow> buffer = new LinkedList<>();
 
-    public StreamToStreamJoinListBuffer(
-            JetJoinInfo joinInfo,
-            boolean isLeft,
-            List<Map.Entry<Byte, ToLongFunctionEx<JetSqlRow>>> timeExtractors) {
-        super(joinInfo, isLeft, timeExtractors);
+    public StreamToStreamJoinListBuffer(List<Map.Entry<Byte, ToLongFunctionEx<JetSqlRow>>> timeExtractors) {
+        super(timeExtractors);
     }
 
     @Override
@@ -67,12 +61,7 @@ public class StreamToStreamJoinListBuffer extends StreamToStreamJoinBuffer {
     }
 
     @Override
-    public long[] clearExpiredItems(
-            long[] limits,
-            @Nonnull Set<JetSqlRow> unusedEventsTracker,
-            @Nonnull Queue<Object> pendingOutput,
-            @Nonnull ExpressionEvalContext eec
-    ) {
+    public long[] clearExpiredItems(long[] limits, @Nonnull Consumer<JetSqlRow> clearedRowsConsumer) {
         long[] newMinimums = new long[timeExtractors.size()];
         Arrays.fill(newMinimums, Long.MAX_VALUE);
 
@@ -85,14 +74,7 @@ public class StreamToStreamJoinListBuffer extends StreamToStreamJoinBuffer {
                 times[idx] = timeExtractors.get(idx).getValue().applyAsLong(row);
                 if (times[idx] < limits[idx]) {
                     remove = true;
-                    if (shouldProduceNullRow && unusedEventsTracker.remove(row)) {
-                        // 5.4 : If doing an outer join, emit events removed from the buffer,
-                        // with `null`s for the other side, if the event was never joined.
-                        JetSqlRow joinedRow = composeRowWithNulls(row, eec);
-                        if (joinedRow != null) {
-                            pendingOutput.add(joinedRow);
-                        }
-                    }
+                    clearedRowsConsumer.accept(row);
                 }
             }
 

@@ -159,9 +159,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         emptyLeftRow = new JetSqlRow(ss, new Object[columnCounts.f0()]);
         emptyRightRow = new JetSqlRow(ss, new Object[columnCounts.f1()]);
         maxProcessorAccumulatedRecords = context.maxProcessorAccumulatedRecords();
-
-        buffer[0].init(emptyRightRow);
-        buffer[1].init(emptyLeftRow);
     }
 
     @SuppressWarnings("checkstyle:NestedIfDepth")
@@ -334,7 +331,16 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             limits[i] = wmState.getOrDefault(extractors.get(i).getKey(), Long.MIN_VALUE);
         }
 
-        long[] newMinimums = buffer[ordinal].clearExpiredItems(limits, unusedEventsTracker, pendingOutput, evalContext);
+        long[] newMinimums = buffer[ordinal].clearExpiredItems(limits, row -> {
+            if (outerJoinSide == ordinal && unusedEventsTracker.remove(row)) {
+                // 5.4 : If doing an outer join, emit events removed from the buffer,
+                // with `null`s for the other side, if the event was never joined.
+                JetSqlRow joinedRow = composeRowWithNulls(row, ordinal);
+                if (joinedRow != null) {
+                    pendingOutput.add(joinedRow);
+                }
+            }
+        });
 
         for (int i = 0; i < extractors.size(); i++) {
             minimumBufferTimes.put(extractors.get(i).getKey(), newMinimums[i]);
@@ -384,13 +390,13 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             assert rightTimeExtractors.size() == 1;
 
             return new StreamToStreamJoinBuffer[]{
-                    new StreamToStreamJoinHeapBuffer(joinInfo, true, leftTimeExtractors),
-                    new StreamToStreamJoinHeapBuffer(joinInfo, false, rightTimeExtractors)
+                    new StreamToStreamJoinHeapBuffer(leftTimeExtractors),
+                    new StreamToStreamJoinHeapBuffer(rightTimeExtractors)
             };
         } else {
             return new StreamToStreamJoinBuffer[]{
-                    new StreamToStreamJoinListBuffer(joinInfo, true, leftTimeExtractors),
-                    new StreamToStreamJoinListBuffer(joinInfo, false, rightTimeExtractors)
+                    new StreamToStreamJoinListBuffer(leftTimeExtractors),
+                    new StreamToStreamJoinListBuffer(rightTimeExtractors)
             };
         }
     }
