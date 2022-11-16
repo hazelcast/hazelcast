@@ -38,22 +38,20 @@ public abstract class IStreamToStreamJoinBuffer implements Iterable<JetSqlRow> {
 
     protected final List<Map.Entry<Byte, ToLongFunctionEx<JetSqlRow>>> timeExtractors;
 
-    protected JetSqlRow emptyLeftRow;
-    protected JetSqlRow emptyRightRow;
+    protected JetSqlRow emptyRow;
 
     public IStreamToStreamJoinBuffer(
             JetJoinInfo joinInfo,
-            boolean isLeft,
+            boolean isLeftInput,
             List<Map.Entry<Byte, ToLongFunctionEx<JetSqlRow>>> timeExtractors) {
         this.joinInfo = joinInfo;
-        this.isLeft = isLeft;
-        this.shouldProduceNullRow = (isLeft && joinInfo.isLeftOuter()) || (!isLeft && joinInfo.isRightOuter());
+        this.isLeft = isLeftInput;
+        this.shouldProduceNullRow = (isLeftInput && joinInfo.isLeftOuter()) || (!isLeftInput && joinInfo.isRightOuter());
         this.timeExtractors = timeExtractors;
     }
 
-    public void init(JetSqlRow left, JetSqlRow right) {
-        this.emptyLeftRow = left;
-        this.emptyRightRow = right;
+    public void init(JetSqlRow emptyRow) {
+        this.emptyRow = emptyRow;
     }
 
     public abstract void add(JetSqlRow row);
@@ -81,16 +79,18 @@ public abstract class IStreamToStreamJoinBuffer implements Iterable<JetSqlRow> {
                                              @Nonnull Queue<Object> pendingOutput,
                                              @Nonnull ExpressionEvalContext eec);
 
+    /**
+     * Produces null-filled row in case of OUTER JOIN :
+     * <ul>
+     * <li>Fills the <b>left</b> side with nulls if JOIN is RIGHT OUTER</li>
+     * <li>Fills the <b>right</b> side with nulls if JOIN is LEFT OUTER</li>
+     * </ul>
+     */
     protected JetSqlRow composeRowWithNulls(JetSqlRow row, ExpressionEvalContext eec) {
-        JetSqlRow joinedRow = null;
-        if (!isLeft && joinInfo.isRightOuter()) {
-            // fill LEFT side with nulls
-            joinedRow = ExpressionUtil.join(row, emptyLeftRow, ConstantExpression.TRUE, eec);
-
-        } else if (isLeft && joinInfo.isLeftOuter()) {
-            // fill RIGHT side with nulls
-            joinedRow = ExpressionUtil.join(row, emptyRightRow, ConstantExpression.TRUE, eec);
-        }
-        return joinedRow;
+        return ExpressionUtil.join(
+                isLeft ? row : emptyRow,
+                isLeft ? emptyRow : row,
+                ConstantExpression.TRUE,
+                eec);
     }
 }

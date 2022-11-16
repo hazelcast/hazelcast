@@ -37,9 +37,9 @@ public class StreamToStreamJoinHeapBuffer extends IStreamToStreamJoinBuffer {
 
     public StreamToStreamJoinHeapBuffer(
             JetJoinInfo joinInfo,
-            boolean isLeft,
+            boolean isLeftInput,
             List<Map.Entry<Byte, ToLongFunctionEx<JetSqlRow>>> timeExtractors) {
-        super(joinInfo, isLeft, timeExtractors);
+        super(joinInfo, isLeftInput, timeExtractors);
         assert timeExtractors.size() == 1;
 
         timeExtractor = timeExtractors.iterator().next().getValue();

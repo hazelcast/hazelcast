@@ -164,8 +164,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         emptyRightRow = new JetSqlRow(ss, new Object[columnCounts.f1()]);
         maxProcessorAccumulatedRecords = context.maxProcessorAccumulatedRecords();
 
-        buffer[0].init(emptyLeftRow, emptyRightRow);
-        buffer[1].init(emptyLeftRow, emptyRightRow);
+        buffer[0].init(emptyRightRow);
+        buffer[1].init(emptyLeftRow);
     }
 
     @SuppressWarnings("checkstyle:NestedIfDepth")
