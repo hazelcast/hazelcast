@@ -41,7 +41,6 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -375,26 +374,14 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     }
 
     private StreamToStreamJoinBuffer[] createBuffers() {
-        Set<Byte> wmCountTracker = new HashSet<>();
-        for (Entry<Byte, Map<Byte, Long>> outerEntry : postponeTimeMap.entrySet()) {
-            wmCountTracker.add(outerEntry.getKey());
-            wmCountTracker.addAll(outerEntry.getValue().keySet());
-        }
-
-        if (wmCountTracker.size() == 2) {
-            assert leftTimeExtractors.size() == 1;
-            assert rightTimeExtractors.size() == 1;
-
-            return new StreamToStreamJoinBuffer[]{
-                    new StreamToStreamJoinHeapBuffer(leftTimeExtractors),
-                    new StreamToStreamJoinHeapBuffer(rightTimeExtractors)
-            };
-        } else {
-            return new StreamToStreamJoinBuffer[]{
-                    new StreamToStreamJoinListBuffer(leftTimeExtractors),
-                    new StreamToStreamJoinListBuffer(rightTimeExtractors)
-            };
-        }
+        return new StreamToStreamJoinBuffer[]{
+                leftTimeExtractors.size() == 1
+                        ? new StreamToStreamJoinHeapBuffer(leftTimeExtractors)
+                        : new StreamToStreamJoinListBuffer(leftTimeExtractors),
+                rightTimeExtractors.size() == 1
+                        ? new StreamToStreamJoinHeapBuffer(rightTimeExtractors)
+                        : new StreamToStreamJoinListBuffer(rightTimeExtractors)
+        };
     }
 
     public static final class StreamToStreamJoinProcessorSupplier implements ProcessorSupplier, DataSerializable {
