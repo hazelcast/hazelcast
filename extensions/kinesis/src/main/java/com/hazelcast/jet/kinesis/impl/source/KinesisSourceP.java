@@ -269,6 +269,11 @@ public class KinesisSourceP<T> extends AbstractProcessor implements DynamicMetri
         }
     }
 
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
+
     private static int incrementCircular(int v, int limit) {
         v++;
         if (v == limit) {

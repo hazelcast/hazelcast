@@ -356,6 +356,11 @@ public class SlidingWindowP<K, A, R, OUT> extends AbstractProcessor {
         return true;
     }
 
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
+
     private Traverser<Object> windowTraverserAndEvictor(long wm) {
         long rangeStart = startingWindowTs(wm);
         if (rangeStart == Long.MIN_VALUE) {
