@@ -36,14 +36,8 @@ class StreamToStreamJoinHeapBuffer extends StreamToStreamJoinBuffer {
         super(timeExtractors);
         assert timeExtractors.size() == 1;
 
-        timeExtractor = timeExtractors.iterator().next().getValue();
-
-        Comparator<JetSqlRow> comparator = (row1, row2) -> {
-            ToLongFunctionEx<JetSqlRow> extractor = timeExtractor;
-            return Long.compare(extractor.applyAsLong(row1), extractor.applyAsLong(row2));
-        };
-
-        this.buffer = new PriorityQueue<>(comparator);
+        timeExtractor = timeExtractors.get(0).getValue();
+        buffer = new PriorityQueue<>(Comparator.comparingLong(timeExtractor));
     }
 
     @Override
