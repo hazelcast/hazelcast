@@ -31,7 +31,7 @@ import java.util.function.Consumer;
 class StreamToStreamJoinListBuffer extends StreamToStreamJoinBuffer {
     private final List<JetSqlRow> buffer = new LinkedList<>();
 
-    public StreamToStreamJoinListBuffer(List<Map.Entry<Byte, ToLongFunctionEx<JetSqlRow>>> timeExtractors) {
+    StreamToStreamJoinListBuffer(List<Map.Entry<Byte, ToLongFunctionEx<JetSqlRow>>> timeExtractors) {
         super(timeExtractors);
     }
 

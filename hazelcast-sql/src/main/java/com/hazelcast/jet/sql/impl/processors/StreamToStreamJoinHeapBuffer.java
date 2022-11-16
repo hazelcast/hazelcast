@@ -32,7 +32,7 @@ class StreamToStreamJoinHeapBuffer extends StreamToStreamJoinBuffer {
     private final PriorityQueue<JetSqlRow> buffer;
     private final ToLongFunctionEx<JetSqlRow> timeExtractor;
 
-    public StreamToStreamJoinHeapBuffer(List<Map.Entry<Byte, ToLongFunctionEx<JetSqlRow>>> timeExtractors) {
+    StreamToStreamJoinHeapBuffer(List<Map.Entry<Byte, ToLongFunctionEx<JetSqlRow>>> timeExtractors) {
         super(timeExtractors);
         assert timeExtractors.size() == 1;
 

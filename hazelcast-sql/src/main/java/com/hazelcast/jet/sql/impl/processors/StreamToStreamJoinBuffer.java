@@ -29,7 +29,7 @@ import java.util.function.Consumer;
 abstract class StreamToStreamJoinBuffer implements Iterable<JetSqlRow> {
     protected final List<Map.Entry<Byte, ToLongFunctionEx<JetSqlRow>>> timeExtractors;
 
-    public StreamToStreamJoinBuffer(List<Map.Entry<Byte, ToLongFunctionEx<JetSqlRow>>> timeExtractors) {
+    StreamToStreamJoinBuffer(List<Map.Entry<Byte, ToLongFunctionEx<JetSqlRow>>> timeExtractors) {
         this.timeExtractors = timeExtractors;
     }
 
