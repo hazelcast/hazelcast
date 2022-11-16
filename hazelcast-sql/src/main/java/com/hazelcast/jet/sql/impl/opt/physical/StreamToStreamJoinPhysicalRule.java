@@ -95,7 +95,7 @@ public final class StreamToStreamJoinPhysicalRule extends RelRule<RelRule.Config
         if (leftFields == null || rightFields == null) {
             // If we pass initial isUnbounded checks for left & right input with rule config,
             // it means, we cannot execute such a query, we must abort it.
-            String message = "Non-watermarked streams are not allowed to be joined";
+            String message = "For stream-to-stream join, both joined sides must have an order imposed";
             call.transformTo(fail(join, message));
             return;
         }

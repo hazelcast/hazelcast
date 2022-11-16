@@ -597,6 +597,6 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
     public void test_joinGenerators() {
         assertThatThrownBy(() ->
                 sqlService.execute("SELECT 1 from TABLE(GENERATE_STREAM(1)) JOIN TABLE(GENERATE_STREAM(3)) on 1=1;"))
-                .hasMessageContaining("Non-watermarked streams are not allowed to be joined");
+                .hasMessageContaining("For stream-to-stream join, both joined sides must have an order imposed");
     }
 }
