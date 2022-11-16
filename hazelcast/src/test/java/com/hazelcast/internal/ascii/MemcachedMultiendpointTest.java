@@ -20,15 +20,8 @@ import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
-@RunWith(HazelcastParallelClassRunner.class)
-@Category(QuickTest.class)
-public class MemcachedMultiendpointTest
-        extends MemcachedTest {
+public class MemcachedMultiendpointTest extends MemcachedTest {
 
     @Override
     protected Config createConfig() {
