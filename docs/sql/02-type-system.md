@@ -56,7 +56,8 @@ The type `TIME WITH TIME ZONE` is not supported because of its confusing behavio
 about time with offset without date part. For this reason, this type is of little use for real applications. The support for this
 type might be added in future releases if we find useful use cases for it.
 
-Structured and UDF data types are not supported at the moment. The support for these types will be added in future releases.
+Structured data types are not supported at the moment, the support of user-defined types is implemented and is experimental now.
+Check out `CREATE TYPE` command for more information.
 
 ## 2 Type Mapping
 
@@ -79,23 +80,23 @@ Table 2 establishes a strict one-to-one mapping between SQL and Java types.
 
 *Table 2: SQL-to-Java mapping*
 
-| SQL Type          | Java Type                  |
-|-------------------|----------------------------|
-| `NULL`            | `java.lang.Void`           |
-| `VARCHAR`         | `java.lang.String`         |
-| `BOOLEAN`         | `java.lang.Boolean`        |
-| `TINYINT`         | `java.lang.Byte`           |
-| `SMALLINT`        | `java.lang.Short`          |
-| `INTEGER`         | `java.lang.Integer`        |
-| `BIGINT`          | `java.lang.Long`           |
-| `DECIMAL`         | `java.math.BigDecimal`     |
-| `REAL`            | `java.lang.Float`          |
-| `DOUBLE`          | `java.lang.Double`         |
-| `DATE`            | `java.time.LocalDate`      |
-| `TIME`            | `java.time.LocalTime`      |
-| `TIMESTAMP`       | `java.time.LocalDateTime`  |
-| `TIMESTAMP W/ TZ` | `java.time.OffsetDateTime` |
-| `OBJECT`          | `java.lang.Object`         |
+| SQL Type                   | Java Type                  |
+|----------------------------|----------------------------|
+| `NULL`                     | `java.lang.Void`           |
+| `VARCHAR`                  | `java.lang.String`         |
+| `BOOLEAN`                  | `java.lang.Boolean`        |
+| `TINYINT`                  | `java.lang.Byte`           |
+| `SMALLINT`                 | `java.lang.Short`          |
+| `INTEGER`                  | `java.lang.Integer`        |
+| `BIGINT`                   | `java.lang.Long`           |
+| `DECIMAL`                  | `java.math.BigDecimal`     |
+| `REAL`                     | `java.lang.Float`          |
+| `DOUBLE`                   | `java.lang.Double`         |
+| `DATE`                     | `java.time.LocalDate`      |
+| `TIME`                     | `java.time.LocalTime`      |
+| `TIMESTAMP`                | `java.time.LocalDateTime`  |
+| `TIMESTAMP WITH TIME ZONE` | `java.time.OffsetDateTime` |
+| `OBJECT`                   | `java.lang.Object`         |
 
 `TIMESTAMP WITH TIME ZONE` is mapped to the `java.time.OffsetDateTime` class because ANSI SQL requires only zone
 displacement, so full zone information from the `java.time.ZonedDateTime` class is not needed.
@@ -106,70 +107,74 @@ Table 3 establishes a many-to-one mapping between Java and SQL types.
 
 *Table 3: Java-to-SQL mapping*
 
-| Java Type                  | SQL Type          |
-|----------------------------|-------------------|
-| `java.lang.Void`           | `NULL`            |
-| `java.lang.String`         | `VARCHAR`         |
-| `java.lang.Character`      | `VARCHAR`         |
-| `java.lang.Boolean`        | `BOOLEAN`         |
-| `java.lang.Byte`           | `TINYINT`         |
-| `java.lang.Short`          | `SMALLINT`        |
-| `java.lang.Integer`        | `INTEGER`         |
-| `java.lang.Long`           | `BIGINT`          |
-| `java.math.BigInteger`     | `DECIMAL`         |
-| `java.math.BigDecimal`     | `DECIMAL`         |
-| `java.lang.Float`          | `REAL`            |
-| `java.lang.Double`         | `DOUBLE`          |
-| `java.time.LocalDate`      | `DATE`            |
-| `java.time.LocalTime`      | `TIME`            |
-| `java.time.LocalDateTime`  | `TIMESTAMP`       |
-| `java.util.Calendar`       | `TIMESTAMP W/ TZ` |
-| `java.util.Date`           | `TIMESTAMP W/ TZ` |
-| `java.time.Instant`        | `TIMESTAMP W/ TZ` |
-| `java.time.OffsetDateTime` | `TIMESTAMP W/ TZ` |
-| `java.time.ZonedDateTime`  | `TIMESTAMP W/ TZ` |
-| Any other type             | `OBJECT`          |
+| Java Type                  | SQL Type                   |
+|----------------------------|----------------------------|
+| `java.lang.Void`           | `NULL`                     |
+| `java.lang.String`         | `VARCHAR`                  |
+| `java.lang.Character`      | `VARCHAR`                  |
+| `java.lang.Boolean`        | `BOOLEAN`                  |
+| `java.lang.Byte`           | `TINYINT`                  |
+| `java.lang.Short`          | `SMALLINT`                 |
+| `java.lang.Integer`        | `INTEGER`                  |
+| `java.lang.Long`           | `BIGINT`                   |
+| `java.math.BigInteger`     | `DECIMAL`                  |
+| `java.math.BigDecimal`     | `DECIMAL`                  |
+| `java.lang.Float`          | `REAL`                     |
+| `java.lang.Double`         | `DOUBLE`                   |
+| `java.time.LocalDate`      | `DATE`                     |
+| `java.time.LocalTime`      | `TIME`                     |
+| `java.time.LocalDateTime`  | `TIMESTAMP`                |
+| `java.util.Calendar`       | `TIMESTAMP WITH TIME ZONE` |
+| `java.util.Date`           | `TIMESTAMP WITH TIME ZONE` |
+| `java.time.Instant`        | `TIMESTAMP WITH TIME ZONE` |
+| `java.time.OffsetDateTime` | `TIMESTAMP WITH TIME ZONE` |
+| `java.time.ZonedDateTime`  | `TIMESTAMP WITH TIME ZONE` |
+| `HazelcastJsonValue`       | `JSON`                     |
+| Any other type             | `OBJECT`                   |
 
 The following SQL types are mapped to several Java types:
 
 - `VARCHAR` is mapped to `java.lang.String` and `java.lang.Character`
 - `DECIMAL` is mapped to `java.math.BigInteger` and `java.math.BigDecimal`
-- `TIMESTAMP W/ TZ` is mapped to multiple date/time classes which represent a time instant.
+- `TIMESTAMP WITH TIME ZONE` is mapped to multiple date/time classes which represent a time instant.
 
 ## 3. Type Conversions
 
 Different types might be converted to each other. The table provides the list of type conversions.
 
-*Table 4: Type conversions (I - implicit, E - explicit)*
+*Table 4: Type conversions*
 
-| From/To             | NULL | VARCHAR | BOOLEAN | TINYINT | SMALLINT | INTEGER | BIGINT | DECIMAL | REAL | DOUBLE | DATE | TIME | TIMESTAMP | TIMESTAMP W/ TZ | OBJECT |
-|---------------------|------|---------|---------|---------|----------|---------|--------|---------|------|--------|------|------|-----------|-----------------|--------|
-| **NULL**            | `-`  | `Y`     | `Y`     | `Y`     | `Y`      | `Y`     | `Y`    | `Y`     | `Y`  | `Y`    | `Y`  | `Y`  | `Y`       | `Y`             | `Y`    |
-| **VARCHAR**         |      | `-`     | `Y`     | `Y`     | `Y`      | `Y`     | `Y`    | `Y`     | `Y`  | `Y`    | `Y`  | `Y`  | `Y`       | `Y`             | `Y`    |
-| **BOOLEAN**         |      | `Y`     | `-`     |         |          |         |        |         |      |        |      |      |           |                 | `Y`    |
-| **TINYINT**         |      | `Y`     |         | `-`     | `Y`      | `Y`     | `Y`    | `Y`     | `Y`  | `Y`    |      |      |           |                 | `Y`    |
-| **SMALLINT**        |      | `Y`     |         | `Y`     | `-`      | `Y`     | `Y`    | `Y`     | `Y`  | `Y`    |      |      |           |                 | `Y`    |
-| **INTEGER**         |      | `Y`     |         | `Y`     | `Y`      | `-`     | `Y`    | `Y`     | `Y`  | `Y`    |      |      |           |                 | `Y`    |
-| **BIGINT**          |      | `Y`     |         | `Y`     | `Y`      | `Y`     | `-`    | `Y`     | `Y`  | `Y`    |      |      |           |                 | `Y`    |
-| **DECIMAL**         |      | `Y`     |         | `Y`     | `Y`      | `Y`     | `Y`    | `-`     | `Y`  | `Y`    |      |      |           |                 | `Y`    |
-| **REAL**            |      | `Y`     |         | `Y`     | `Y`      | `Y`     | `Y`    | `Y`     | `-`  | `Y`    |      |      |           |                 | `Y`    |
-| **DOUBLE**          |      | `Y`     |         | `Y`     | `Y`      | `Y`     | `Y`    | `Y`     | `Y`  | `-`    |      |      |           |                 | `Y`    |
-| **DATE**            |      | `Y`     |         |         |          |         |        |         |      |        | `-`  |      | `Y`       | `Y`             | `Y`    |
-| **TIME**            |      | `Y`     |         |         |          |         |        |         |      |        |      | `-`  | `Y`       | `Y`             | `Y`    |
-| **TIMESTAMP**       |      | `Y`     |         |         |          |         |        |         |      |        | `Y`  | `Y`  | `-`       | `Y`             | `Y`    |
-| **TIMESTAMP W/ TZ** |      | `Y`     |         |         |          |         |        |         |      |        | `Y`  | `Y`  | `Y`       | `-`             | `Y`    |
-| **OBJECT**          |      | `Y`     | `Y`     | `Y`     | `Y`      | `Y`     | `Y`    | `Y`     | `Y`  | `Y`    | `Y`  | `Y`  | `Y`       | `Y`             | `-`    |
+[//]: # (TODO: Add new type conversions for JSON in 5.3)
+
+| From/To                      | NULL | VARCHAR | BOOLEAN | TINYINT | SMALLINT | INTEGER | BIGINT | DECIMAL | REAL | DOUBLE | DATE | TIME | TIMESTAMP | TIMESTAMP WITH TIME ZONE | JSON | OBJECT |
+|------------------------------|------|---------|---------|---------|----------|---------|--------|---------|------|--------|------|------|-----------|--------------------------|------|--------|
+| **NULL**                     | `-`  | `Y`     | `Y`     | `Y`     | `Y`      | `Y`     | `Y`    | `Y`     | `Y`  | `Y`    | `Y`  | `Y`  | `Y`       | `Y`                      |      | `Y`    |
+| **VARCHAR**                  |      | `-`     | `Y`     | `Y`     | `Y`      | `Y`     | `Y`    | `Y`     | `Y`  | `Y`    | `Y`  | `Y`  | `Y`       | `Y`                      |      | `Y`    |
+| **BOOLEAN**                  |      | `Y`     | `-`     |         |          |         |        |         |      |        |      |      |           |                          |      | `Y`    |
+| **TINYINT**                  |      | `Y`     |         | `-`     | `Y`      | `Y`     | `Y`    | `Y`     | `Y`  | `Y`    |      |      |           |                          |      | `Y`    |
+| **SMALLINT**                 |      | `Y`     |         | `Y`     | `-`      | `Y`     | `Y`    | `Y`     | `Y`  | `Y`    |      |      |           |                          |      | `Y`    |
+| **INTEGER**                  |      | `Y`     |         | `Y`     | `Y`      | `-`     | `Y`    | `Y`     | `Y`  | `Y`    |      |      |           |                          |      | `Y`    |
+| **BIGINT**                   |      | `Y`     |         | `Y`     | `Y`      | `Y`     | `-`    | `Y`     | `Y`  | `Y`    |      |      |           |                          |      | `Y`    |
+| **DECIMAL**                  |      | `Y`     |         | `Y`     | `Y`      | `Y`     | `Y`    | `-`     | `Y`  | `Y`    |      |      |           |                          |      | `Y`    |
+| **REAL**                     |      | `Y`     |         | `Y`     | `Y`      | `Y`     | `Y`    | `Y`     | `-`  | `Y`    |      |      |           |                          |      | `Y`    |
+| **DOUBLE**                   |      | `Y`     |         | `Y`     | `Y`      | `Y`     | `Y`    | `Y`     | `Y`  | `-`    |      |      |           |                          |      | `Y`    |
+| **DATE**                     |      | `Y`     |         |         |          |         |        |         |      |        | `-`  |      | `Y`       | `Y`                      |      | `Y`    |
+| **TIME**                     |      | `Y`     |         |         |          |         |        |         |      |        |      | `-`  | `Y`       | `Y`                      |      | `Y`    |
+| **TIMESTAMP**                |      | `Y`     |         |         |          |         |        |         |      |        | `Y`  | `Y`  | `-`       | `Y`                      |      | `Y`    |
+| **TIMESTAMP WITH TIME ZONE** |      | `Y`     |         |         |          |         |        |         |      |        | `Y`  | `Y`  | `Y`       | `-`                      |      | `Y`    |
+| **JSON**                     |      |         |         |         |          |         |        |         |      |        |      |      |           |                          | `-`  |        |
+| **OBJECT**                   |      | `Y`     | `Y`     | `Y`     | `Y`      | `Y`     | `Y`    | `Y`     | `Y`  | `Y`    | `Y`  | `Y`  | `Y`       | `Y`                      | Y    | `-`    |
 
 Conversions between VARCHAR and temporal types are performed using patterns defined in `java.time.format.DateTimeFormatter`
 class [[1]].
 
 *Table 5: Temporal type conversion patterns*
 
-| Type              | Pattern                |
-|-------------------|------------------------|
-| `TIME`            | `ISO_LOCAL_TIME`       |
-| `DATE`            | `ISO_LOCAL_DATE`       |
-| `TIMESTAMP`       | `ISO_LOCAL_DATE_TIME`  |
-| `TIMESTAMP W/ TZ` | `ISO_OFFSET_DATE_TIME` |
+| Type                       | Pattern                |
+|----------------------------|------------------------|
+| `TIME`                     | `ISO_LOCAL_TIME`       |
+| `DATE`                     | `ISO_LOCAL_DATE`       |
+| `TIMESTAMP`                | `ISO_LOCAL_DATE_TIME`  |
+| `TIMESTAMP WITH TIME ZONE` | `ISO_OFFSET_DATE_TIME` |
 
 [1]: https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/time/format/DateTimeFormatter.html "java.time.format.DateTimeFormatter JavaDoc"
