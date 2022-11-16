@@ -56,6 +56,9 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
     @SuppressWarnings("unchecked")
     private static final Predicate<Integer, Integer> SQL_PREDICATE = Predicates.sql("this > 20");
 
+    private static final Predicate<Integer, Employee> PAGING_PREDICATE = Predicates.pagingPredicate(1);
+    private static final Predicate<Integer, Employee> PREDICATE_INCLUDING_PAGING_PREDICATE
+            = Predicates.partitionPredicate(2, PAGING_PREDICATE);
     @Test
     @SuppressWarnings("ConstantConditions")
     public void testQueryCache_whenIncludeValue_enabled() {
@@ -233,6 +236,76 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
         assertQueryCacheSizeEventually(50, queryCache);
     }
 
+    @Test(expected = IllegalArgumentException.class)
+    public void keySetThrowsWithPagingPredicate() {
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
+        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
+        queryCache.keySet(PAGING_PREDICATE);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void keySetThrowsWithPredicateIncludingAPagingPredicate() {
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
+        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
+        queryCache.keySet(PREDICATE_INCLUDING_PAGING_PREDICATE);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void valuesThrowsWithPagingPredicate() {
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
+        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
+        queryCache.values(PAGING_PREDICATE);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void valuesThrowsWithPredicateIncludingAPagingPredicate() {
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
+        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
+        queryCache.values(PREDICATE_INCLUDING_PAGING_PREDICATE);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void entrySetThrowsWithPagingPredicate() {
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
+        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
+        queryCache.entrySet(PAGING_PREDICATE);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void entrySetThrowsWithPredicateIncludingAPagingPredicate() {
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
+        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
+        queryCache.entrySet(PREDICATE_INCLUDING_PAGING_PREDICATE);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void addEntryListenerThrowsWithPagingPredicate() {
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
+        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
+        queryCache.addEntryListener(new NoopMapListener(), PAGING_PREDICATE, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void addEntryListenerOnKeyThrowsWithPagingPredicate() {
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
+        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
+        queryCache.addEntryListener(new NoopMapListener(), PAGING_PREDICATE, 1, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void addEntryListenerThrowsWithPredicateIncludingAPagingPredicate() {
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
+        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
+        queryCache.addEntryListener(new NoopMapListener(), PREDICATE_INCLUDING_PAGING_PREDICATE, true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void addEntryListenerOnKeyThrowsWithPredicateIncludingAPagingPredicate() {
+        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
+        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
+        queryCache.addEntryListener(new NoopMapListener(), PREDICATE_INCLUDING_PAGING_PREDICATE, 1, true);
+    }
+
     public static class EvenNumberEmployeeValueExtractor implements ValueExtractor<Employee, Integer> {
         @Override
         public void extract(Employee target, Integer argument, ValueCollector collector) {
@@ -296,5 +369,12 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
 
     private static void assertQueryCacheSizeEventually(final int expected, final QueryCache cache) {
         assertTrueEventually(() -> assertEquals(expected, cache.size()));
+    }
+
+    private class NoopMapListener implements EntryAddedListener<Integer, Employee> {
+        @Override
+        public void entryAdded(EntryEvent<Integer, Employee> event) {
+            // noop
+        }
     }
 }
