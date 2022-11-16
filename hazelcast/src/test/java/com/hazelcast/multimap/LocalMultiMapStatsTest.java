@@ -141,7 +141,8 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
         Map<Integer, Collection<? extends Integer>> expectedMultiMap = new HashMap<>();
         testPutAllAndHitsGeneratedTemplate(expectedMultiMap,
                 (o) -> {
-                    // We need to wait for putAllAsync() call to finish
+                    // We need to wait for putAllAsync() call to finish because
+                    // stats are being updated after the putAllAsync() completes
                     o.putAllAsync(expectedMultiMap).toCompletableFuture().join();
                 }
         );
@@ -152,7 +153,8 @@ public class LocalMultiMapStatsTest extends HazelcastTestSupport {
         Map<Integer, Collection<? extends Integer>> expectedMultiMap = new HashMap<>();
         testPutAllAndHitsGeneratedTemplate(expectedMultiMap,
                 (o) -> {
-                    // We need to wait for all putAllAsync() calls to finish
+                    // We need to wait for all putAllAsync() calls to finish because
+                    // stats are being updated after the putAllAsync() completes
                     int loopLimit = 100;
                     CompletableFuture<Void>[] futureList = new CompletableFuture[loopLimit];
                     for (int i = 0; i < loopLimit; ++i) {
