@@ -208,7 +208,7 @@ public final class CompactUtil {
                 + "cannot be serialized with zero configuration Compact "
                 + "serialization because this type can be serialized with another "
                 + "serialization mechanism. If you want to serialize "
-                + "'" + clazz + "' which uses this class in its fields, consider"
+                + "'" + clazz + "' which uses this class in its fields, consider "
                 + "overriding that serialization mechanism.");
     }
 
