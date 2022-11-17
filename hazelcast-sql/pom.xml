@@ -53,6 +53,21 @@
 
         <plugins>
             <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>add-third-party</id>
+                        <configuration>
+                            <includedLicenses combine.children="append">
+                                <includedLicense>Eclipse Distribution License - v 1.0</includedLicense>
+                            </includedLicenses>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
@@ -231,7 +246,7 @@
                                     <include>com.google.guava:guava</include>
                                     <include>com.google.guava:listenablefuture</include>
                                     <include>com.google.guava:failureaccess</include>
-                                    <include>com.esri.geometry:esri-geometry-api</include>
+                                    <include>org.locationtech.jts:jts-core</include>
                                     <include>org.slf4j:slf4j-api</include>
                                     <include>com.fasterxml.jackson.core:jackson-databind</include>
                                 </includes>
@@ -280,8 +295,8 @@
                                     <shadedPattern>${relocation.root}.com.google</shadedPattern>
                                 </relocation>
                                 <relocation>
-                                    <pattern>com.esri.core.geometry</pattern>
-                                    <shadedPattern>${relocation.root}.com.esri.core.geometry</shadedPattern>
+                                    <pattern>org.locationtech.jts</pattern>
+                                    <shadedPattern>${relocation.root}.org.locationtech.jts</shadedPattern>
                                 </relocation>
                                 <relocation>
                                     <pattern>org.slf4</pattern>
@@ -396,7 +411,7 @@
                                     </excludes>
                                 </filter>
                                 <filter>
-                                    <artifact>com.esri.geometry:esri-geometry-api</artifact>
+                                    <artifact>org.locationtech.jts:jts-core</artifact>
                                     <excludes>
                                         <exclude>META-INF/MANIFEST.MF</exclude>
                                     </excludes>
@@ -532,6 +547,15 @@
                 <exclusion>
                     <groupId>org.jetbrains.kotlin</groupId>
                     <artifactId>kotlin-stdlib-jdk8</artifactId>
+                </exclusion>
+                <!-- Unused geospatial libraries (only jts-core is required) -->
+                <exclusion>
+                    <groupId>org.locationtech.jts.io</groupId>
+                    <artifactId>jts-io-common</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.locationtech.proj4j</groupId>
+                    <artifactId>proj4j</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
