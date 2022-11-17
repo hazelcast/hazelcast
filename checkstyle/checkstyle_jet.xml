@@ -290,7 +290,8 @@
         <module name="RegexpSinglelineJava">
             <property name="format" value="(import static java\.util\.UUID\.randomUUID|UUID\.randomUUID\(\))"/>
             <property name="ignoreComments" value="true"/>
-            <property name="message" value="Please use UuidUtil.buildRandomUUID() instead of UUID.randomUUID()!"/>
+            <property name="message"
+                      value="Please use UuidUtil.newUnsecureUUID() or UuidUtil.newSecureUUID() instead of UUID.randomUUID()"/>
         </module>
     </module>
 </module>

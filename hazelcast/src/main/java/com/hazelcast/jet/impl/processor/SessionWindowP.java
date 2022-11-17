@@ -292,6 +292,11 @@ public class SessionWindowP<K, A, R, OUT> extends AbstractProcessor {
         return true;
     }
 
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
+
     private void addItem(int ordinal, Windows<A> w, K key, long timestamp, Object item) {
         aggrOp.accumulateFn(ordinal).accept(resolveAcc(w, key, timestamp), item);
     }

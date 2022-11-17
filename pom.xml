@@ -71,14 +71,14 @@
         <maven.animal.sniffer.plugin.version>1.21</maven.animal.sniffer.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
 
-        <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
+        <maven.surefire.plugin.version>3.0.0-M7</maven.surefire.plugin.version>
         <maven.checkstyle.plugin.version>3.2.0</maven.checkstyle.plugin.version>
         <maven.sonar.plugin.version>3.6.0.1398</maven.sonar.plugin.version>
         <maven.jacoco.plugin.version>0.8.7</maven.jacoco.plugin.version>
-        <maven.failsafe.plugin.version>2.22.2</maven.failsafe.plugin.version>
+        <maven.failsafe.plugin.version>3.0.0-M7</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.7</maven.cobertura.plugin.version>
         <maven.enforcer.plugin.version>3.0.0-M3</maven.enforcer.plugin.version>
-        <maven.os.plugin.version>1.7.0</maven.os.plugin.version>
+        <maven.os.plugin.version>1.7.1</maven.os.plugin.version>
         <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
         <maven.resources.plugin.version>3.2.0</maven.resources.plugin.version>
         <owasp.dependency-check.version>7.2.1</owasp.dependency-check.version>
@@ -119,7 +119,15 @@
         <picocli.version>4.6.3</picocli.version>
         <postgresql.version>42.4.2</postgresql.version>
         <prometheus.version>0.17.1</prometheus.version>
-        <protobuf.version>3.19.4</protobuf.version>
+
+        <!--
+        Protobuf libraries for each language have own major version, but share minor and patch
+        See https://developers.google.com/protocol-buffers/docs/news/2022-05-06
+        -->
+        <protobuf.version>21.9</protobuf.version>
+        <java.protobuf.version>3.${protobuf.version}</java.protobuf.version>
+        <python.protobuf.version>4.${protobuf.version}</python.protobuf.version>
+
         <scala.version>2.13</scala.version>
         <slf4j.version>1.7.36</slf4j.version>
         <spring.version>4.3.0.RELEASE</spring.version>
@@ -377,6 +385,8 @@
                         com.hazelcast.test.annotation.SlowTest,
                         com.hazelcast.test.annotation.NightlyTest
                     </excludedGroups>
+                    <!-- Use TCP for IPC communication to avoid warnings: Corrupted STDOUT by directly writing... -->
+                    <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory" />
                 </configuration>
             </plugin>
 
@@ -401,6 +411,8 @@
                         com.hazelcast.test.annotation.SlowTest,
                         com.hazelcast.test.annotation.NightlyTest
                     </excludedGroups>
+                    <!-- Use TCP for IPC communication to avoid warnings: Corrupted STDOUT by directly writing... -->
+                    <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory" />
                 </configuration>
                 <executions>
                     <execution>
@@ -1538,7 +1550,7 @@
             <dependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-bom</artifactId>
-                <version>${protobuf.version}</version>
+                <version>${java.protobuf.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -1743,6 +1755,11 @@
                 <version>7.9</version>
             </dependency>
             <dependency>
+                <groupId>com.fasterxml.woodstox</groupId>
+                <artifactId>woodstox-core</artifactId>
+                <version>6.4.0</version>
+            </dependency>
+            <dependency>
                 <groupId>org.codehaus.woodstox</groupId>
                 <artifactId>stax2-api</artifactId>
                 <version>4.2.1</version>
@@ -1841,6 +1858,13 @@
               <groupId>com.google.api.grpc</groupId>
               <artifactId>proto-google-iam-v1</artifactId>
               <version>1.1.7</version>
+            </dependency>
+            <!-- Force higher version, compatible with M1 -->
+            <!-- Otherwise Docker for Java (used by TestContainers) is not able to load all JNA files for aarch64 -->
+            <dependency>
+                <groupId>net.java.dev.jna</groupId>
+                <artifactId>jna</artifactId>
+                <version>${jna.version}</version>
             </dependency>
             <!--
             The following are test dependencies, they are not in the final distribution.

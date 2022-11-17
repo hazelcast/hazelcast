@@ -68,13 +68,13 @@ public class ConcurrentArrayRingbufferTest {
 
     @Test
     public void when_sequenceTooHigh_then_fail() {
-        exception.expect(IllegalArgumentException.class);
+        exception.expect(ConcurrentArrayRingbuffer.SequenceOutOfBoundsException.class);
         rb.get(0);
     }
 
     @Test
     public void when_sequenceTooLow_then_fail() {
-        exception.expect(IllegalArgumentException.class);
+        exception.expect(ConcurrentArrayRingbuffer.SequenceOutOfBoundsException.class);
         rb.get(-1);
     }
 

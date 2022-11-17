@@ -43,6 +43,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionOptions.TransactionType;
+import org.junit.Assert;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -424,8 +425,7 @@ public class BasicClusterStateTest extends HazelcastTestSupport {
         changeClusterStateEventually(hz2, state);
         hz1.shutdown();
 
-        expectedException.expect(MemberLeftException.class);
-        future.get();
+        assertTrueEventually(() -> Assert.assertThrows(MemberLeftException.class, future::get));
     }
 
     @Test

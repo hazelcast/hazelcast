@@ -78,10 +78,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         createTable(mapName);
 
         createMapStore();
-
-        assertTrueEventually(() -> {
-            assertRowsAnyOrder(hz, "SHOW MAPPINGS", newArrayList(new Row(MAPPING_PREFIX + mapName)));
-        }, 5);
+        awaitMappingCreated();
     }
 
     @Test
@@ -113,9 +110,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         awaitMappingCreated();
 
         mapStore.destroy();
-        assertTrueEventually(() -> {
-            assertRowsAnyOrder(hz, "SHOW MAPPINGS", newArrayList());
-        }, 5);
+        awaitMappingDestroyed();
     }
 
     @Test
@@ -127,9 +122,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
 
         GenericMapStore<Object> mapStoreNotMaster = createMapStore(instances()[1]);
         mapStoreNotMaster.destroy();
-        assertTrueEventually(() -> {
-            assertRowsAnyOrder(hz, "SHOW MAPPINGS", newArrayList());
-        }, 5);
+        awaitMappingDestroyed();
     }
 
     @Test
@@ -611,6 +604,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
 
         GenericMapStore<K> mapStore = new GenericMapStore<>();
         mapStore.init(instance, properties, mapName);
+        mapStore.awaitInitFinished();
         return mapStore;
     }
 
@@ -628,4 +622,9 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         }, 5);
     }
 
+    private void awaitMappingDestroyed() {
+        assertTrueEventually(() -> {
+            assertRowsAnyOrder(hz, "SHOW MAPPINGS", newArrayList());
+        }, 5);
+    }
 }

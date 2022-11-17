@@ -25,7 +25,7 @@ import com.hazelcast.map.impl.recordstore.RecordStore;
 
 import java.util.UUID;
 
-public enum TxnSetOpSteps implements Step<State> {
+public enum TxnSetOpSteps implements IMapOpStep {
 
     READ() {
         @Override
