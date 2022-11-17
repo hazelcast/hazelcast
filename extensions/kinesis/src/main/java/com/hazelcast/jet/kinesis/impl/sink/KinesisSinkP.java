@@ -125,6 +125,11 @@ public class KinesisSinkP<T> implements Processor {
     }
 
     @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
+
+    @Override
     public void init(@Nonnull Outbox outbox, @Nonnull Context context) {
         logger = context.logger();
         sinkCount = context.totalParallelism();

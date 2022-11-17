@@ -70,16 +70,20 @@ public class ScheduledExecutorServiceSlowTest extends ScheduledExecutorServiceTe
 
         assertOpenEventually(initCountLatch);
 
-        int sleepPeriod = 10000;
-        long start = System.currentTimeMillis();
+        long sleepPeriod = 10;
+        long sleepPeriodInMillis = SECONDS.toMillis(sleepPeriod);
+        long sleepPeriodInNanos = SECONDS.toNanos(sleepPeriod);
+
+        long start = System.nanoTime();
         new Thread(() -> {
-            sleepAtLeastMillis(sleepPeriod);
+
+            sleepAtLeastMillis(sleepPeriodInMillis);
             waitCountLatch.countDown();
         }).start();
 
         double result = future.get();
 
-        assertTrue(System.currentTimeMillis() - start > sleepPeriod);
+        assertTrue(System.nanoTime() - start > sleepPeriodInNanos);
         assertTrue(doneCountLatch.await(0, SECONDS));
         assertEquals(expectedResult, result, 0);
         assertTrue(future.isDone());

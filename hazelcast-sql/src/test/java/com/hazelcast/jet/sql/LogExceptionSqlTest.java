@@ -68,7 +68,7 @@ public class LogExceptionSqlTest extends SimpleTestInClusterSupport {
         }
 
         // result is closed before the job is cleaned on member side, so wait here
-        assertNoJobsLeftEventually(instance());
+        assertNoLightJobsLeftEventually(instance());
 
         // then
         List<Throwable> exceptions = recorder.exceptionsOfTypes(ResultLimitReachedException.class, JetException.class);

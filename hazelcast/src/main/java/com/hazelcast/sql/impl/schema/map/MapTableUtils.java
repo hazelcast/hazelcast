@@ -51,10 +51,10 @@ public final class MapTableUtils {
     public static long estimatePartitionedMapRowCount(NodeEngine nodeEngine, MapServiceContext context, String mapName) {
         long entryCount = 0L;
 
-        PartitionIdSet ownerPartitions = context.getOrInitCachedMemberPartitions();
+        PartitionIdSet ownedPartitions = context.getCachedOwnedPartitions();
 
         for (PartitionContainer partitionContainer : context.getPartitionContainers()) {
-            if (!ownerPartitions.contains(partitionContainer.getPartitionId())) {
+            if (!ownedPartitions.contains(partitionContainer.getPartitionId())) {
                 continue;
             }
 

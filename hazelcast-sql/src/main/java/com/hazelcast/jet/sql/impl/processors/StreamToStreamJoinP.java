@@ -466,4 +466,9 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             rightInputColumnCount = in.readInt();
         }
     }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
 }
