@@ -41,6 +41,7 @@ import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.INT
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.LONG;
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.SHORT;
 import static com.hazelcast.jet.sql.impl.support.expressions.ExpressionTypes.STRING;
+import static org.junit.Assert.assertNotNull;
 
 abstract class SqlIndexTestSupport extends OptimizerTestSupport {
     @SuppressWarnings("rawtypes")
@@ -145,7 +146,11 @@ abstract class SqlIndexTestSupport extends OptimizerTestSupport {
                 continue;
             }
 
+            // TODO: Should we wait for all partitions?.
+            // assertTrueEventually(() -> assertNotNull(partitionService.getPartition(key)));
+
             Partition partition = partitionService.getPartition(key);
+            assertNotNull(String.format("Partition %s was not assigned", key), partition);
 
             if (!partition.getOwner().localMember()) {
                 continue;
