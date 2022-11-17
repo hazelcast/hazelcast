@@ -379,8 +379,7 @@ public final class HazelcastTypeUtils {
         QueryDataType queryTo = toHazelcastType(targetType);
 
         if (isStruct(sourceType) || isStruct(targetType)) {
-            if (queryFrom.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)
-                    && queryTo.getTypeFamily().equals(QueryDataTypeFamily.JSON)) {
+            if (queryFrom.isCustomType() && queryTo.getTypeFamily().equals(QueryDataTypeFamily.JSON)) {
                 return true;
             }
 
