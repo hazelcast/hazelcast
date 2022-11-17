@@ -62,7 +62,7 @@ public class ToRowJsonFunctionTest extends SqlTestSupport {
         final BasicNestedFieldsTest.User user = new BasicNestedFieldsTest.User(1L, "user1", organization);
         testMap.put(1L, user);
 
-        assertRowsAnyOrder("SELECT TO_ROW_JSON(this) FROM test", rows(1,
+        assertRowsAnyOrder("SELECT CAST(this AS JSON) FROM test", rows(1,
                 new HazelcastJsonValue("[1,\"user1\",[2,\"organization1\",[3,\"office1\"]]]")));
     }
 
@@ -84,7 +84,7 @@ public class ToRowJsonFunctionTest extends SqlTestSupport {
         IMap<Long, BasicNestedFieldsTest.A> map = client().getMap("test");
         map.put(1L, a);
 
-        assertThatThrownBy(() -> assertRowsAnyOrder(client(), "SELECT TO_ROW_JSON(this) FROM test", rows(1, "a")))
+        assertThatThrownBy(() -> assertRowsAnyOrder(client(), "SELECT CAST(this AS JSON) FROM test", rows(1, "a")))
                 .hasMessageEndingWith("Cycle detected in row value")
                 .isInstanceOf(HazelcastSqlException.class)
                 .hasFieldOrPropertyWithValue("code", SqlErrorCode.DATA_EXCEPTION);

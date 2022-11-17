@@ -27,11 +27,13 @@ import com.hazelcast.jet.sql.impl.validate.literal.LiteralUtils;
 import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonParseFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonValueFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.predicate.HazelcastBetweenOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastToRowJsonFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.typeinference.HazelcastReturnTypeInference;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.SqlErrorCode;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.impl.type.QueryDataTypeFamily;
 import com.hazelcast.sql.impl.type.converter.Converter;
 import com.hazelcast.sql.impl.type.converter.Converters;
 import org.apache.calcite.plan.RelOptCluster;
@@ -242,6 +244,13 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
         if (literal != null && HazelcastTypeUtils.isJsonType(to)) {
             return getRexBuilder().makeCall(HazelcastJsonParseFunction.INSTANCE, convertedOperand);
         }
+
+        if (toType.getTypeFamily().equals(QueryDataTypeFamily.JSON)
+                && fromType.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
+            return getRexBuilder().makeCall(HazelcastToRowJsonFunction.INSTANCE, convertedOperand);
+        }
+
+        System.out.println();
 
         // Delegate to Apache Calcite.
         return getRexBuilder().makeCast(to, convertedOperand);
