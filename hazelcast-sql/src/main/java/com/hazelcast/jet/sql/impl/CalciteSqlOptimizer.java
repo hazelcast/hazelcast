@@ -50,9 +50,11 @@ import com.hazelcast.jet.sql.impl.opt.logical.LogicalRules;
 import com.hazelcast.jet.sql.impl.opt.logical.SelectByKeyMapLogicalRule;
 import com.hazelcast.jet.sql.impl.opt.physical.AssignDiscriminatorToScansRule;
 import com.hazelcast.jet.sql.impl.opt.physical.CalcLimitTransposeRule;
+import com.hazelcast.jet.sql.impl.opt.physical.CalcPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.LimitPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRules;
 import com.hazelcast.jet.sql.impl.opt.physical.RootRel;
@@ -647,7 +649,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         PhysicalRel physicalRel = optimizePhysical(context, logicalRel2);
 
-        physicalRel = uniquifyScans(physicalRel);
+        physicalRel = postOptimizationRewrites(physicalRel);
 
         if (fineLogOn) {
             logger.fine("After physical opt:\n" + RelOptUtil.toString(physicalRel));
@@ -703,18 +705,21 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
      * twice. The {@link WatermarkKeysAssigner} might need to assign a different
      * key to two identical scans, and it can't do it if they are the same
      * instance.
+     * <p>
+     * Also, it executes {@link CalcLimitTransposeRule}, which pushes the
+     * {@link LimitPhysicalRel} up before a {@link CalcPhysicalRel}.
+     * We rely on this in {@link CreateDagVisitor} when handling
+     * {@link LimitPhysicalRel} - it must be a direct input of
+     * the RootRel, there cannot be a {@link CalcPhysicalRel} in between.
      */
-    public static PhysicalRel uniquifyScans(PhysicalRel rel) {
+    public static PhysicalRel postOptimizationRewrites(PhysicalRel rel) {
         HepProgramBuilder hepProgramBuilder = new HepProgramBuilder();
 
         // Note that we must create a new instance of the rule for each optimization, because
         // the rule has a state that is used during the "optimization".
-        AssignDiscriminatorToScansRule rule = new AssignDiscriminatorToScansRule();
-        hepProgramBuilder.addRuleInstance(rule);
+        AssignDiscriminatorToScansRule assignDiscriminatorRule = new AssignDiscriminatorToScansRule();
 
-        // The Calc-Limit-Transpose rule pushes the LimitRel up before a CalcRel.
-        // We rely on this in CreateDagVisitor when handling LimitRel - it must be a
-        // direct input of the RootRel, there cannot be a Calc in between.
+        hepProgramBuilder.addRuleInstance(assignDiscriminatorRule);
         hepProgramBuilder.addRuleInstance(CalcLimitTransposeRule.INSTANCE);
 
         HepPlanner planner = new HepPlanner(
