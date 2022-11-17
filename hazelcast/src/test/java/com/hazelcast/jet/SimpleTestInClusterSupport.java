@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.JetServiceBackend;
@@ -40,6 +41,8 @@ import java.util.stream.Collectors;
 
 import static com.hazelcast.jet.Util.idToString;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -57,6 +60,8 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     private static HazelcastInstance client;
 
     protected static void initialize(int memberCount, @Nullable Config config) {
+        assertNoRunningInstances();
+
         assert factory == null : "already initialized";
         factory = new TestHazelcastFactory();
         instances = new HazelcastInstance[memberCount];
@@ -82,6 +87,16 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         client = factory.newHazelcastClient(clientConfig);
     }
 
+    protected void assertNoLightJobsLeftEventually(HazelcastInstance instance) {
+        assertTrueEventually(() -> {
+            List<Job> runningJobs = instance.getJet().getJobs().stream()
+                    .filter(Job::isLightJob)
+                    .collect(toList());
+            int size = runningJobs.size();
+            assertEquals("at this point no running light jobs were expected, but got: " + runningJobs, 0, size);
+        });
+    }
+
     @After
     public void supportAfter() {
         if (instances == null) {
@@ -103,7 +118,12 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
             jetServiceBackend.getJobExecutionService().cancelAllExecutions("ditching all jobs after a test");
             jetServiceBackend.getJobExecutionService().waitAllExecutionsTerminated();
         }
-        Collection<DistributedObject> objects = instances()[0].getDistributedObjects();
+        // If the client was created and used any proxy to a distributed object, we need to destroy that object through
+        // client, so the proxy in client's internals was destroyed as well. Without going through client, if we use
+        // the same distributed object in more than one test, we are not going to invoke InitializeDistributedObjectOperation
+        // in all of them (just in the first one).
+        Collection<DistributedObject> objects = client != null ? client.getDistributedObjects()
+                : instances()[0].getDistributedObjects();
         SUPPORT_LOGGER.info("Destroying " + objects.size()
                 + " distributed objects in SimpleTestInClusterSupport.@After: "
                 + objects.stream().map(o -> o.getServiceName() + "/" + o.getName())
@@ -113,6 +133,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         }
         for (HazelcastInstance instance : instances) {
             assertTrueEventually(() -> {
+                // Let's wait for all unprocessed operations (like destroying distributed object) to complete
                 assertEquals(0, getNodeEngineImpl(instance).getEventService().getEventQueueSize());
             });
         }
@@ -173,5 +194,9 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
      */
     protected static HazelcastInstance client() {
         return client;
+    }
+
+    private static void assertNoRunningInstances() {
+        assertThat(Hazelcast.getAllHazelcastInstances()).as("There should be no running instances").isEmpty();
     }
 }

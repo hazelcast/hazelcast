@@ -88,6 +88,11 @@ public class InsertWatermarksP<T> extends AbstractProcessor {
         return true;
     }
 
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
+
     private enum Keys {
         LAST_EMITTED_WM
     }

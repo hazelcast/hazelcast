@@ -34,14 +34,14 @@ public interface ValidatorResource {
     @BaseMessage("Unknown argument name ''{0}''")
     ExInst<SqlValidatorException> unknownArgumentName(String name);
 
-    @BaseMessage("Multiple ordering functions are not supported")
-    ExInst<SqlValidatorException> multipleOrderingFunctionsNotSupported();
-
     @BaseMessage("You must specify single ordering column")
     ExInst<SqlValidatorException> mustUseSingleOrderingColumn();
 
     @BaseMessage("UPDATE FROM SELECT not supported")
     ExInst<SqlValidatorException> updateFromSelectNotSupported();
+
+    @BaseMessage("Comparison operators are not supported for ROW type")
+    ExInst<SqlValidatorException> rowTypeComparisonNotSupported();
 
     static String imapNotMapped(String originalMessage, String identifier, String suggestion) {
         return originalMessage + " If you want to use the IMap named '" + identifier + "', execute this command first: "

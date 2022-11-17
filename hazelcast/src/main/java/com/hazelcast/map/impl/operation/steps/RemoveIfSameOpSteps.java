@@ -26,7 +26,7 @@ import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 
-public enum RemoveIfSameOpSteps implements Step<State> {
+public enum RemoveIfSameOpSteps implements IMapOpStep {
 
     READ() {
         @Override
@@ -43,7 +43,7 @@ public enum RemoveIfSameOpSteps implements Step<State> {
 
     LOAD() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isLoadStep() {
             return true;
         }
 
@@ -94,7 +94,7 @@ public enum RemoveIfSameOpSteps implements Step<State> {
 
     DELETE() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isStoreStep() {
             return true;
         }
 
@@ -116,7 +116,7 @@ public enum RemoveIfSameOpSteps implements Step<State> {
             if (state.isRecordExistsInMemory()) {
                 DefaultRecordStore recordStore = (DefaultRecordStore) state.getRecordStore();
                 Record record = recordStore.getRecord(state.getKey());
-                recordStore.removeRecord0(state.getKey(), record);
+                recordStore.removeRecord0(state.getKey(), record, false);
                 recordStore.onStore(record);
                 recordStore.updateStatsOnRemove(state.getNow());
             }

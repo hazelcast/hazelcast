@@ -16,10 +16,12 @@
 
 package com.hazelcast.kubernetes;
 
+import com.hazelcast.instance.impl.ClusterTopologyIntentTracker;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonArray;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.json.JsonValue;
+import com.hazelcast.internal.util.HostnameUtil;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.kubernetes.KubernetesConfig.ExposeExternallyMode;
 import com.hazelcast.logging.ILogger;
@@ -29,13 +31,16 @@ import com.hazelcast.spi.utils.RestClient;
 import com.hazelcast.spi.utils.RetryUtils;
 
 import javax.annotation.Nullable;
+import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
+import static com.hazelcast.instance.impl.ClusterTopologyIntentTracker.UNKNOWN;
 import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 
@@ -53,6 +58,7 @@ class KubernetesClient {
             "\"reason\":\"NotFound\"",
             "Failure in generating SSLSocketFactory");
 
+    private final String stsName;
     private final String namespace;
     private final String kubernetesMaster;
     private final String caCertificate;
@@ -62,8 +68,13 @@ class KubernetesClient {
     private final boolean useNodeNameAsExternalAddress;
     private final String servicePerPodLabelName;
     private final String servicePerPodLabelValue;
+    @Nullable
+    private final Thread stsMonitorThread;
 
     private final KubernetesTokenProvider tokenProvider;
+
+    @Nullable
+    private final ClusterTopologyIntentTracker clusterTopologyIntentTracker;
 
     private boolean isNoPublicIpAlreadyLogged;
     private boolean isKnownExceptionAlreadyLogged;
@@ -71,7 +82,7 @@ class KubernetesClient {
     KubernetesClient(String namespace, String kubernetesMaster, KubernetesTokenProvider tokenProvider,
                      String caCertificate, int retries, ExposeExternallyMode exposeExternallyMode,
                      boolean useNodeNameAsExternalAddress, String servicePerPodLabelName,
-                     String servicePerPodLabelValue) {
+                     String servicePerPodLabelValue, @Nullable ClusterTopologyIntentTracker clusterTopologyIntentTracker) {
         this.namespace = namespace;
         this.kubernetesMaster = kubernetesMaster;
         this.tokenProvider = tokenProvider;
@@ -81,9 +92,17 @@ class KubernetesClient {
         this.useNodeNameAsExternalAddress = useNodeNameAsExternalAddress;
         this.servicePerPodLabelName = servicePerPodLabelName;
         this.servicePerPodLabelValue = servicePerPodLabelValue;
-        this.apiProvider = buildKubernetesApiUrlProvider();
+        this.clusterTopologyIntentTracker = clusterTopologyIntentTracker;
+        if (clusterTopologyIntentTracker != null) {
+            clusterTopologyIntentTracker.initialize();
+        }
+        this.apiProvider =  buildKubernetesApiUrlProvider();
+        this.stsName = extractStsName();
+        this.stsMonitorThread = (clusterTopologyIntentTracker != null && clusterTopologyIntentTracker.isEnabled())
+                ? new Thread(new StsMonitor(), "hz-k8s-sts-monitor") : null;
     }
 
+    // test usage only
     KubernetesClient(String namespace, String kubernetesMaster, KubernetesTokenProvider tokenProvider,
                      String caCertificate, int retries, ExposeExternallyMode exposeExternallyMode,
                      boolean useNodeNameAsExternalAddress, String servicePerPodLabelName,
@@ -98,6 +117,25 @@ class KubernetesClient {
         this.servicePerPodLabelName = servicePerPodLabelName;
         this.servicePerPodLabelValue = servicePerPodLabelValue;
         this.apiProvider = apiProvider;
+        this.stsMonitorThread = null;
+        this.stsName = extractStsName();
+        this.clusterTopologyIntentTracker = null;
+    }
+
+    public void start() {
+        if (stsMonitorThread != null) {
+            stsMonitorThread.start();
+        }
+    }
+
+    public void destroy() {
+        if (clusterTopologyIntentTracker != null) {
+            clusterTopologyIntentTracker.destroy();
+        }
+        if (stsMonitorThread != null) {
+            LOGGER.info("Interrupting StatefulSet monitor thread");
+            stsMonitorThread.interrupt();
+        }
     }
 
     KubernetesApiProvider buildKubernetesApiUrlProvider() {
@@ -129,23 +167,33 @@ class KubernetesClient {
     }
 
     /**
-     * Retrieves POD addresses for all services in the specified {@code namespace} filtered by {@code serviceLabel}
-     * and {@code serviceLabelValue}.
+     * Retrieves POD addresses for all services in the specified {@code namespace} filtered by {@code serviceLabels}
+     * and {@code serviceLabelValues}.
      *
-     * @param serviceLabel      label used to filter responses
-     * @param serviceLabelValue label value used to filter responses
-     * @return all POD addresses from the specified {@code namespace} filtered by the label
+     * @param serviceLabels      comma separated labels used to filter responses
+     * @param serviceLabelValues comma separated label values used to filter responses
+     * @return all POD addresses from the specified {@code namespace} filtered by the labels
      * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#list-143">Kubernetes Endpoint API</a>
      */
-    List<Endpoint> endpointsByServiceLabel(String serviceLabel, String serviceLabelValue) {
+    List<Endpoint> endpointsByServiceLabel(String serviceLabels, String serviceLabelValues) {
         try {
-            String param = String.format("labelSelector=%s=%s", serviceLabel, serviceLabelValue);
+            String param = getLabelSelectorParameter(serviceLabels, serviceLabelValues);
             String urlString = String.format(apiProvider.getEndpointsByServiceLabelUrlString(),
                     kubernetesMaster, namespace, param);
             return enrichWithPublicAddresses(apiProvider.parseEndpointsList(callGet(urlString)));
         } catch (RestClientException e) {
             return handleKnownException(e);
         }
+    }
+
+    private static String getLabelSelectorParameter(String labelNames, String labelValues) {
+        List<String> labelNameList = new ArrayList<>(Arrays.asList(labelNames.split(",")));
+        List<String> labelValueList = new ArrayList<>(Arrays.asList(labelValues.split(",")));
+        List<String> selectorList = new ArrayList<>(labelNameList.size());
+        for (int i = 0; i < labelNameList.size(); i++) {
+            selectorList.add(i, String.format("%s=%s", labelNameList.get(i), labelValueList.get(i)));
+        }
+        return String.format("labelSelector=%s", String.join(",", selectorList));
     }
 
     /**
@@ -166,17 +214,17 @@ class KubernetesClient {
     }
 
     /**
-     * Retrieves POD addresses for all services in the specified {@code namespace} filtered by {@code podLabel}
-     * and {@code podLabelValue}.
+     * Retrieves POD addresses for all services in the specified {@code namespace} filtered by {@code podLabels}
+     * and {@code podLabelValues}.
      *
-     * @param podLabel      label used to filter responses
-     * @param podLabelValue label value used to filter responses
-     * @return all POD addresses from the specified {@code namespace} filtered by the label
+     * @param podLabels      comma separated labels used to filter responses
+     * @param podLabelValues comma separated label values used to filter responses
+     * @return all POD addresses from the specified {@code namespace} filtered by the labels
      * @see <a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.11/#list-143">Kubernetes Endpoint API</a>
      */
-    List<Endpoint> endpointsByPodLabel(String podLabel, String podLabelValue) {
+    List<Endpoint> endpointsByPodLabel(String podLabels, String podLabelValues) {
         try {
-            String param = String.format("labelSelector=%s=%s", podLabel, podLabelValue);
+            String param = getLabelSelectorParameter(podLabels, podLabelValues);
             String urlString = String.format("%s/api/v1/namespaces/%s/pods?%s", kubernetesMaster, namespace, param);
             return enrichWithPublicAddresses(parsePodsList(callGet(urlString)));
         } catch (RestClientException e) {
@@ -214,6 +262,41 @@ class KubernetesClient {
     // For test purpose
     boolean isKnownExceptionAlreadyLogged() {
         return isKnownExceptionAlreadyLogged;
+    }
+
+    private String extractStsName() {
+        String stsName = HostnameUtil.getLocalHostname();
+        int dashIndex = stsName.lastIndexOf('-');
+        if (dashIndex > 0) {
+            stsName = stsName.substring(0, dashIndex);
+        }
+        return stsName;
+    }
+
+    @Nullable
+    private RuntimeContext extractStsList(JsonObject jsonObject) {
+        String resourceVersion = jsonObject.get("metadata").asObject().getString("resourceVersion",
+                null);
+        // identify stateful set this pod belongs to
+        for (JsonValue item : toJsonArray(jsonObject.get("items"))) {
+            String itemName = item.asObject().get("metadata").asObject().getString("name", null);
+            if (stsName.equals(itemName)) {
+                // identified the stateful set
+                int specReplicas = item.asObject().get("spec").asObject().getInt("replicas", UNKNOWN);
+                int readyReplicas = item.asObject().get("status").asObject().getInt("readyReplicas", UNKNOWN);
+                int replicas = item.asObject().get("status").asObject().getInt("currentReplicas", UNKNOWN);
+                return new RuntimeContext(specReplicas, readyReplicas, replicas, resourceVersion);
+            }
+        }
+        return null;
+    }
+
+    private RuntimeContext extractSts(JsonObject jsonObject) {
+        int specReplicas = jsonObject.get("spec").asObject().getInt("replicas", UNKNOWN);
+        int readyReplicas = jsonObject.get("status").asObject().getInt("readyReplicas", UNKNOWN);
+        String resourceVersion = jsonObject.get("metadata").asObject().getString("resourceVersion", null);
+        int replicas = jsonObject.get("status").asObject().getInt("currentReplicas", UNKNOWN);
+        return new RuntimeContext(specReplicas, readyReplicas, replicas, resourceVersion);
     }
 
     private static List<Endpoint> parsePodsList(JsonObject podsListJson) {
@@ -606,6 +689,97 @@ class KubernetesClient {
         @Override
         public String toString() {
             return String.format("%s:%s", ip, port);
+        }
+    }
+
+    final class StsMonitor implements Runnable {
+        private String latestResourceVersion;
+        private RuntimeContext latestRuntimeContext;
+
+        /**
+         * Initializes and watches information about the StatefulSet in which Hazelcast is being executed.
+         * See <a href="https://kubernetes.io/docs/reference/using-api/api-concepts/#efficient-detection-of-changes">
+         * Efficient detection of changes on Kubernetes API reference</a>.
+         * <p>
+         * Important: If this thread starves, then timely updates may be stalled and shutdown hook
+         * may not act on the latest cluster information.
+         */
+        @Override
+        public void run() {
+            String stsUrlString = String.format("%s/apis/apps/v1/namespaces/%s/statefulsets", kubernetesMaster,
+                    namespace);
+            JsonObject jsonObject = callGet(stsUrlString);
+            latestResourceVersion = jsonObject.get("metadata").asObject().getString("resourceVersion",
+                    null);
+            latestRuntimeContext = extractStsList(jsonObject);
+            LOGGER.info("Initializing cluster topology tracker with initial context: "
+                    + latestRuntimeContext);
+            clusterTopologyIntentTracker.update(UNKNOWN,
+                    latestRuntimeContext.getSpecifiedReplicaCount(),
+                    UNKNOWN, latestRuntimeContext.getReadyReplicas(),
+                    UNKNOWN, latestRuntimeContext.getCurrentReplicas());
+            while (true) {
+                if (Thread.interrupted()) {
+                    break;
+                }
+                RestClient restClient = RestClient.create(stsUrlString)
+                        .withHeader("Authorization", String.format("Bearer %s", tokenProvider.getToken()))
+                        .withCaCertificates(caCertificate);
+                RestClient.WatchResponse watchResponse = restClient.watch(latestResourceVersion);
+                String message;
+                try {
+                    while ((message = watchResponse.nextLine()) != null) {
+                        onMessage(message);
+                    }
+                } catch (IOException e) {
+                    LOGGER.info("Exception while watching for StatefulSet changes", e);
+                    try {
+                        watchResponse.disconnect();
+                    } catch (Throwable t) {
+                        LOGGER.fine("Exception while closing connection after an IOException", t);
+                    }
+                }
+            }
+        }
+
+        @SuppressWarnings("checkstyle:cyclomaticcomplexity")
+        private void onMessage(String message) {
+            if (LOGGER.isFinestEnabled()) {
+                LOGGER.finest("Complete message from kubernetes API: " + message);
+            }
+            JsonObject jsonObject = Json.parse(message).asObject();
+            JsonObject sts = jsonObject.get("object").asObject();
+            String itemName = sts.asObject().get("metadata").asObject().getString("name", null);
+            if (!stsName.equals(itemName)) {
+                return;
+            }
+            String watchType = jsonObject.getString("type", null);
+            RuntimeContext ctx = null;
+            switch (watchType) {
+                case "MODIFIED":
+                    ctx = extractSts(sts);
+                    latestResourceVersion = ctx.getResourceVersion();
+                    break;
+                case "DELETED":
+                    ctx = extractSts(sts);
+                    latestResourceVersion = ctx.getResourceVersion();
+                    ctx = new RuntimeContext(0, ctx.getReadyReplicas(),
+                            ctx.getCurrentReplicas(), ctx.getResourceVersion());
+                    break;
+                case "ADDED":
+                    throw new IllegalStateException("A new sts with same name as this cannot be added");
+                default:
+                    LOGGER.info("Unknown watch type " + watchType + ", complete message:\n" + message);
+            }
+            if (latestRuntimeContext != null && ctx != null) {
+                LOGGER.info("Updating cluster topology tracker with previous: "
+                    + latestRuntimeContext + ", updated: " + ctx);
+                clusterTopologyIntentTracker.update(latestRuntimeContext.getSpecifiedReplicaCount(),
+                        ctx.getSpecifiedReplicaCount(),
+                        latestRuntimeContext.getReadyReplicas(), ctx.getReadyReplicas(),
+                        latestRuntimeContext.getCurrentReplicas(), ctx.getCurrentReplicas());
+            }
+            latestRuntimeContext = ctx;
         }
     }
 }

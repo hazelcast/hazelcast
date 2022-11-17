@@ -17,17 +17,10 @@
 package com.hazelcast.client.map;
 
 import com.hazelcast.map.MapPartitionIteratorBouncingTest;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
-import org.junit.experimental.categories.Category;
-import org.junit.runner.RunWith;
 
 /**
  * Member implementation for basic map methods nullability tests
  */
-@RunWith(HazelcastParallelClassRunner.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientMapPartitionIteratorBouncingTest extends MapPartitionIteratorBouncingTest {
     @Override
     protected boolean isClientDriver() {

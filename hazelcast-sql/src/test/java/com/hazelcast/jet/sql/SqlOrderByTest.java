@@ -101,9 +101,9 @@ public class SqlOrderByTest extends SqlTestSupport {
     private static final int DATA_SET_SIZE = 4096;
     private static final int DATA_SET_MAX_POSITIVE = DATA_SET_SIZE / 2;
 
-    private static final TestHazelcastFactory FACTORY = new TestHazelcastFactory();
+    private final TestHazelcastFactory factory = new TestHazelcastFactory();
 
-    private static List<HazelcastInstance> members;
+    private List<HazelcastInstance> members;
 
     @Parameter
     public SerializationMode serializationMode;
@@ -135,12 +135,9 @@ public class SqlOrderByTest extends SqlTestSupport {
 
     @Before
     public void before() {
-        // Start members if needed
-        if (members == null) {
-            members = new ArrayList<>(membersCount);
-            for (int i = 0; i < membersCount; ++i) {
-                members.add(FACTORY.newHazelcastInstance(memberConfig()));
-            }
+        members = new ArrayList<>(membersCount);
+        for (int i = 0; i < membersCount; ++i) {
+            members.add(factory.newHazelcastInstance(memberConfig()));
         }
 
         if (isPortable()) {
@@ -200,8 +197,7 @@ public class SqlOrderByTest extends SqlTestSupport {
 
     @After
     public void after() {
-        FACTORY.shutdownAll();
-        members = null;
+        factory.shutdownAll();
     }
 
     protected Config memberConfig() {
@@ -658,7 +654,7 @@ public class SqlOrderByTest extends SqlTestSupport {
             });
         }
 
-        assertOpenEventually(latch);
+        assertOpenEventually(latch, 240000);
         assertNull(exception.get());
         executor.shutdown();
     }
@@ -719,7 +715,7 @@ public class SqlOrderByTest extends SqlTestSupport {
             });
         }
 
-        assertOpenEventually(latch);
+        assertOpenEventually(latch, 240000);
         assertNull(exception.get());
         executor.shutdown();
     }

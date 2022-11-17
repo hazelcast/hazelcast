@@ -174,7 +174,9 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
     private void invokeOnSelection() {
         try {
             INVOKE_COUNT.incrementAndGet(this);
-            if (!urgent) {
+            if (urgent) {
+                invocationService.checkUrgentInvocationAllowed(this);
+            } else {
                 invocationService.checkInvocationAllowed();
             }
 
@@ -399,6 +401,10 @@ public class ClientInvocation extends BaseInvocation implements Runnable {
     }
 
     private boolean shouldRetry(Throwable t) {
+        if (t instanceof InvocationMightContainCompactDataException) {
+            return true;
+        }
+
         if (isBindToSingleConnection() && (t instanceof IOException || t instanceof TargetDisconnectedException)) {
             return false;
         }

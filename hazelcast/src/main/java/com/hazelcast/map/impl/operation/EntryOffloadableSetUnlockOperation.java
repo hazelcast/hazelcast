@@ -17,6 +17,7 @@
 package com.hazelcast.map.impl.operation;
 
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.locksupport.LockWaitNotifyKey;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.serialization.Data;
@@ -24,9 +25,6 @@ import com.hazelcast.internal.util.UUIDSerializationUtil;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.operation.steps.EntryOpSteps;
-import com.hazelcast.map.impl.operation.steps.engine.State;
-import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.impl.Versioned;
@@ -48,6 +46,7 @@ import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
         implements BackupAwareOperation, Notifier, Versioned {
 
+    protected boolean changeExpiryOnUpdate;
     protected long begin;
     protected long newTtl;
     protected UUID caller;
@@ -59,8 +58,10 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
     public EntryOffloadableSetUnlockOperation() {
     }
 
-    public EntryOffloadableSetUnlockOperation(String name, EntryEventType modificationType, long newTtl,
-                                              Data key, Data oldValue, Data newValue, UUID caller,
+    @SuppressWarnings("checkstyle:parameternumber")
+    public EntryOffloadableSetUnlockOperation(String name, EntryEventType modificationType,
+                                              boolean changeExpiryOnUpdate,
+                                              long newTtl, Data key, Data oldValue, Data newValue, UUID caller,
                                               long threadId, long begin, EntryProcessor entryBackupProcessor) {
         super(name, key, newValue);
         this.newValue = newValue;
@@ -70,6 +71,7 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
         this.modificationType = modificationType;
         this.entryBackupProcessor = entryBackupProcessor;
         this.setThreadId(threadId);
+        this.changeExpiryOnUpdate = changeExpiryOnUpdate;
         this.newTtl = newTtl;
     }
 
@@ -80,7 +82,7 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
             verifyLock();
             try {
                 operator(this).init(dataKey, oldValue, newValue,
-                                null, modificationType, null, newTtl)
+                                null, modificationType, null, changeExpiryOnUpdate, newTtl)
                         .doPostOperateOps();
             } finally {
                 unlockKey();
@@ -88,23 +90,6 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
         } finally {
             recordStore.afterOperation();
         }
-    }
-
-    @Override
-    public State createState() {
-        return super.createState()
-                .setKey(dataKey)
-                .setOldValue(oldValue)
-                .setNewValue(newValue)
-                .setModificationTypeForEP(modificationType)
-                .setTtl(newTtl)
-                .setEntryOperator(null)
-                .setUnlockNeededForEP(true);
-    }
-
-    @Override
-    public Step getStartingStep() {
-        return EntryOpSteps.EP_START;
     }
 
     private void verifyLock() {
@@ -195,6 +180,11 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
         out.writeLong(begin);
         out.writeObject(entryBackupProcessor);
         out.writeLong(newTtl);
+
+        // RU_COMPAT 5.1
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_2)) {
+            out.writeBoolean(changeExpiryOnUpdate);
+        }
     }
 
     @Override
@@ -209,6 +199,10 @@ public class EntryOffloadableSetUnlockOperation extends KeyBasedMapOperation
         begin = in.readLong();
         entryBackupProcessor = in.readObject();
         newTtl = in.readLong();
-    }
 
+        // RU_COMPAT 5.1
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_2)) {
+            changeExpiryOnUpdate = in.readBoolean();
+        }
+    }
 }

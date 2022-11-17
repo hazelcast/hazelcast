@@ -43,8 +43,9 @@ public class LockAwareLazyMapEntry extends LazyMapEntry implements LockAware {
     }
 
     public LockAwareLazyMapEntry init(InternalSerializationService serializationService,
-                                      Data key, Object value, Extractors extractors, Boolean locked, long ttl) {
-        super.init(serializationService, key, value, extractors, ttl);
+                                      Data key, Object value, Extractors extractors, Boolean locked,
+                                      long ttl, boolean changeExpiryOnUpdate) {
+        super.init(serializationService, key, value, extractors, ttl, changeExpiryOnUpdate);
         this.locked = locked;
         return this;
     }

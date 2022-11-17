@@ -17,8 +17,8 @@
 package com.hazelcast.jet.sql.impl.validate.operators.misc;
 
 import com.hazelcast.jet.sql.impl.validate.HazelcastCallBinding;
-import com.hazelcast.jet.sql.impl.validate.operators.typeinference.BinaryOperatorOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastBinaryOperator;
+import com.hazelcast.jet.sql.impl.validate.operators.typeinference.BinaryOperatorOperandTypeInference;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlBinaryOperator;

@@ -165,6 +165,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     private volatile UUID clusterId;
     private volatile ClientState clientState = ClientState.INITIAL;
     private volatile boolean connectToClusterTaskSubmitted;
+    private boolean establishedInitialClusterConnection;
 
     private enum ClientState {
         /**
@@ -454,7 +455,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
                                                                      CandidateClusterContext nextContext) {
         currentContext.destroy();
 
-        client.onClusterChange();
+        client.onTryToConnectNextCluster();
 
         nextContext.start();
 
@@ -576,6 +577,11 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         } else {
             throw new IOException("No connection found to cluster.");
         }
+    }
+
+    @Override
+    public boolean clientInitializedOnCluster() {
+        return clientState == ClientState.INITIALIZED_ON_CLUSTER;
     }
 
     Collection<Address> getPossibleMemberAddresses(AddressProvider addressProvider) {
@@ -950,20 +956,46 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             if (clusterIdChanged) {
                 checkClientStateOnClusterIdChange(connection, switchingToNextCluster);
                 logger.warning("Switching from current cluster: " + this.clusterId + " to new cluster: " + newClusterId);
-                client.onClusterConnect();
+                client.onConnectionToNewCluster();
             }
             checkClientState(connection, switchingToNextCluster);
 
             boolean connectionsEmpty = activeConnections.isEmpty();
             activeConnections.put(response.memberUuid, connection);
+
             if (connectionsEmpty) {
                 // The first connection that opens a connection to the new cluster should set `clusterId`.
                 // This one will initiate `initializeClientOnCluster` if necessary.
                 clusterId = newClusterId;
-                if (clusterIdChanged) {
+                if (establishedInitialClusterConnection) {
+                    // In split brain, the client might connect to the one half
+                    // of the cluster, and then later might reconnect to the
+                    // other half, after the half it was connected to is
+                    // completely dead. Since the cluster id is preserved in
+                    // split brain scenarios, it is impossible to distinguish
+                    // reconnection to the same cluster vs reconnection to the
+                    // other half of the split brain. However, in the latter,
+                    // we might need to send some state to the other half of
+                    // the split brain (like Compact schemas or user code
+                    // deployment classes). That forces us to send the client
+                    // state to the cluster after the first cluster connection,
+                    // regardless the cluster id is changed or not.
                     clientState = ClientState.CONNECTED_TO_CLUSTER;
-                    executor.execute(() -> initializeClientOnCluster(newClusterId));
+                    executor.execute(() -> {
+                        initializeClientOnCluster(newClusterId);
+                        /*
+                          We send statistics to the new cluster immediately to make clientVersion, isEnterprise and some other
+                          fields available in Management Center as soon as possible. They are currently sent as part of client
+                          statistics.
+
+                          This method is called here instead of above on purpose because sending statistics require an active
+                          connection to exist. Also, the client needs to be initialized on the new cluster in order for
+                          invocations to be allowed.
+                         */
+                        client.collectAndSendStatsNow();
+                    });
                 } else {
+                    establishedInitialClusterConnection = true;
                     clientState = ClientState.INITIALIZED_ON_CLUSTER;
                     fireLifecycleEvent(LifecycleState.CLIENT_CONNECTED);
                 }
@@ -1103,7 +1135,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             if (credentials instanceof TokenCredentials) {
                 secretBytes = ((TokenCredentials) credentials).getToken();
             } else {
-                secretBytes = ss.toData(credentials).toByteArray();
+                secretBytes = ss.toDataWithSchema(credentials).toByteArray();
             }
             return ClientAuthenticationCustomCodec.encodeRequest(clusterName, secretBytes, clientUuid, connectionType,
                     serializationVersion, BuildInfoProvider.getBuildInfo().getVersion(), client.getName(), labels);

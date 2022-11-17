@@ -1,0 +1,10 @@
+- import: codeql-suites/java-code-scanning.qls
+  from: codeql-java
+- exclude:
+    id:
+    - java/tainted-numeric-cast
+    - java/polynomial-redos
+    - java/path-injection
+    - java/ssrf
+    - java/zipslip
+

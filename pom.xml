@@ -23,7 +23,7 @@
     <groupId>com.hazelcast</groupId>
     <artifactId>hazelcast-root</artifactId>
     <packaging>pom</packaging>
-    <version>5.2-SNAPSHOT</version>
+    <version>5.3.0-SNAPSHOT</version>
     <name>Hazelcast Root</name>
     <description>Hazelcast In-Memory DataGrid</description>
     <url>http://www.hazelcast.com/</url>
@@ -71,42 +71,43 @@
         <maven.animal.sniffer.plugin.version>1.21</maven.animal.sniffer.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
 
-        <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
+        <maven.surefire.plugin.version>3.0.0-M7</maven.surefire.plugin.version>
         <maven.checkstyle.plugin.version>3.2.0</maven.checkstyle.plugin.version>
         <maven.sonar.plugin.version>3.6.0.1398</maven.sonar.plugin.version>
         <maven.jacoco.plugin.version>0.8.7</maven.jacoco.plugin.version>
-        <maven.failsafe.plugin.version>2.22.2</maven.failsafe.plugin.version>
+        <maven.failsafe.plugin.version>3.0.0-M7</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.7</maven.cobertura.plugin.version>
         <maven.enforcer.plugin.version>3.0.0-M3</maven.enforcer.plugin.version>
-        <maven.os.plugin.version>1.7.0</maven.os.plugin.version>
+        <maven.os.plugin.version>1.7.1</maven.os.plugin.version>
         <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
         <maven.resources.plugin.version>3.2.0</maven.resources.plugin.version>
-        <owasp.dependency-check.version>7.1.2</owasp.dependency-check.version>
+        <owasp.dependency-check.version>7.2.1</owasp.dependency-check.version>
         <maven.dependency.plugin.version>3.1.2</maven.dependency.plugin.version>
         <codehause.license.plugin.version>2.0.0</codehause.license.plugin.version>
 
         <!-- Version of the client used in Hazelcast 3 connector -->
-        <hazelcast-3.version>3.12.12</hazelcast-3.version>
+        <hazelcast-3.version>3.12.13</hazelcast-3.version>
 
         <!-- Third-party dependencies (sorted alphabetically) -->
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.1</avro.version>
-        <aws.sdk.version>1.12.276</aws.sdk.version>
+        <aws.sdk.version>1.12.333</aws.sdk.version>
         <classgraph.version>4.8.149</classgraph.version>
-        <debezium.version>1.9.3.Final</debezium.version>
+        <debezium.version>1.9.5.Final</debezium.version>
         <grpc.version>1.48.0</grpc.version>
         <guava.version>30.1.1-jre</guava.version>
         <hadoop.version>3.3.4</hadoop.version>
         <h2.version>2.1.214</h2.version>
-        <jackson.version>2.13.3</jackson.version>
+        <!-- The Jackson version must match the version in EE, if you change this you must send EE PR as well -->
+        <jackson.version>2.13.4.20221013</jackson.version>
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
         <jline.version>3.21.0</jline.version>
         <jms.api.version>2.0.1</jms.api.version>
         <json-surfer.version>0.11</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
         <jsr250.api.version>1.2</jsr250.api.version> <!-- javax.annotations -->
-        <kafka.version>2.8.1</kafka.version>
+        <kafka.version>2.8.2</kafka.version>
         <kotlin.version>1.7.10</kotlin.version>
         <log4j.version>1.2.17.redhat-00008</log4j.version>
         <log4j2.version>2.18.0</log4j2.version>
@@ -117,12 +118,20 @@
         <parquet.version>1.12.3</parquet.version>
         <picocli.version>4.6.3</picocli.version>
         <postgresql.version>42.4.2</postgresql.version>
-        <prometheus.version>0.17.0</prometheus.version>
-        <protobuf.version>3.19.4</protobuf.version>
+        <prometheus.version>0.17.1</prometheus.version>
+
+        <!--
+        Protobuf libraries for each language have own major version, but share minor and patch
+        See https://developers.google.com/protocol-buffers/docs/news/2022-05-06
+        -->
+        <protobuf.version>21.9</protobuf.version>
+        <java.protobuf.version>3.${protobuf.version}</java.protobuf.version>
+        <python.protobuf.version>4.${protobuf.version}</python.protobuf.version>
+
         <scala.version>2.13</scala.version>
         <slf4j.version>1.7.36</slf4j.version>
         <spring.version>4.3.0.RELEASE</spring.version>
-        <snakeyaml.version>1.31</snakeyaml.version>
+        <snakeyaml.version>1.32</snakeyaml.version>
         <snakeyaml.engine.version>2.3</snakeyaml.engine.version>
 
         <!-- test dependencies -->
@@ -143,8 +152,10 @@
         <mockito.version>3.6.0</mockito.version>
         <powermock.version>2.0.9</powermock.version>
         <reflections.version>0.9.10</reflections.version>
-        <testcontainers.version>1.17.3</testcontainers.version>
-        <archunit.version>0.22.0</archunit.version>
+        <testcontainers.version>1.17.5</testcontainers.version>
+        <jna.version>5.12.1</jna.version>
+        <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitRulesTest.java -->
+        <archunit.version>1.0.0</archunit.version>
         <errorprone.version>2.15.0</errorprone.version>
         <awaitility.version>4.1.1</awaitility.version>
         <hikari.version>4.0.3</hikari.version>
@@ -319,6 +330,9 @@
                     <excludes>
                         <exclude>**/package-info.java</exclude>
                     </excludes>
+                    <testExcludes>
+                        <exclude>**/package-info.java</exclude>
+                    </testExcludes>
                 </configuration>
             </plugin>
 
@@ -371,6 +385,8 @@
                         com.hazelcast.test.annotation.SlowTest,
                         com.hazelcast.test.annotation.NightlyTest
                     </excludedGroups>
+                    <!-- Use TCP for IPC communication to avoid warnings: Corrupted STDOUT by directly writing... -->
+                    <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory" />
                 </configuration>
             </plugin>
 
@@ -395,6 +411,8 @@
                         com.hazelcast.test.annotation.SlowTest,
                         com.hazelcast.test.annotation.NightlyTest
                     </excludedGroups>
+                    <!-- Use TCP for IPC communication to avoid warnings: Corrupted STDOUT by directly writing... -->
+                    <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory" />
                 </configuration>
                 <executions>
                     <execution>
@@ -659,7 +677,7 @@
                 <plugin>
                     <groupId>com.hazelcast.maven</groupId>
                     <artifactId>attribution-maven-plugin</artifactId>
-                    <version>1.0.2</version>
+                    <version>1.2.1</version>
                     <configuration>
                         <exclusionPatterns>
                         <!--
@@ -1518,7 +1536,7 @@
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-bom</artifactId>
-                <version>9.4.48.v20220622</version>
+                <version>9.4.49.v20220914</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -1532,7 +1550,7 @@
             <dependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-bom</artifactId>
-                <version>${protobuf.version}</version>
+                <version>${java.protobuf.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -1688,7 +1706,7 @@
             <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-compress</artifactId>
-                <version>1.21</version>
+                <version>1.22</version>
             </dependency>
             <dependency>
                 <groupId>joda-time</groupId>
@@ -1735,6 +1753,11 @@
                 <groupId>com.nimbusds</groupId>
                 <artifactId>nimbus-jose-jwt</artifactId>
                 <version>7.9</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.woodstox</groupId>
+                <artifactId>woodstox-core</artifactId>
+                <version>6.4.0</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.woodstox</groupId>
@@ -1784,7 +1807,7 @@
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
-                <version>3.24.0</version>
+                <version>3.27.0</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
@@ -1836,6 +1859,13 @@
               <artifactId>proto-google-iam-v1</artifactId>
               <version>1.1.7</version>
             </dependency>
+            <!-- Force higher version, compatible with M1 -->
+            <!-- Otherwise Docker for Java (used by TestContainers) is not able to load all JNA files for aarch64 -->
+            <dependency>
+                <groupId>net.java.dev.jna</groupId>
+                <artifactId>jna</artifactId>
+                <version>${jna.version}</version>
+            </dependency>
             <!--
             The following are test dependencies, they are not in the final distribution.
             We put them there for the dependency convergence task to succeed.
@@ -1853,7 +1883,7 @@
             <dependency>
                 <groupId>org.javassist</groupId>
                 <artifactId>javassist</artifactId>
-                <version>3.28.0-GA</version>
+                <version>3.29.2-GA</version>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>

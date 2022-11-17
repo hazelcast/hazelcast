@@ -26,9 +26,11 @@ import com.hazelcast.internal.serialization.impl.compact.SchemaService;
 import com.hazelcast.internal.serialization.impl.compact.schema.MemberSchemaService;
 
 import java.security.Permission;
+import java.util.Collection;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
-public class SendSchemaMessageTask extends AbstractAsyncMessageTask<Schema, Void> {
+public class SendSchemaMessageTask extends AbstractAsyncMessageTask<Schema, Collection<UUID>> {
 
     public SendSchemaMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
@@ -40,14 +42,14 @@ public class SendSchemaMessageTask extends AbstractAsyncMessageTask<Schema, Void
     }
 
     @Override
-    protected CompletableFuture<Void> processInternal() {
+    protected CompletableFuture<Collection<UUID>> processInternal() {
         MemberSchemaService memberSchemaService = getService(getServiceName());
         return memberSchemaService.putAsync(parameters);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return ClientSendSchemaCodec.encodeResponse();
+        return ClientSendSchemaCodec.encodeResponse((Collection<UUID>) response);
     }
 
     @Override

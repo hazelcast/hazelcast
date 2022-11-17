@@ -28,7 +28,7 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
-public enum ClearOpSteps implements Step<State> {
+public enum ClearOpSteps implements IMapOpStep {
 
     CLEAR_MEMORY() {
         @Override
@@ -69,7 +69,7 @@ public enum ClearOpSteps implements Step<State> {
 
     CLEAR_MAP_STORE() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isStoreStep() {
             return true;
         }
 
@@ -78,6 +78,7 @@ public enum ClearOpSteps implements Step<State> {
             DefaultRecordStore recordStore = ((DefaultRecordStore) state.getRecordStore());
             Collection<Data> keys = state.getKeys();
             recordStore.getMapDataStore().removeAll(keys);
+            recordStore.getMapDataStore().reset();
         }
 
         @Override
@@ -90,7 +91,7 @@ public enum ClearOpSteps implements Step<State> {
         @Override
         public void runStep(State state) {
             DefaultRecordStore recordStore = ((DefaultRecordStore) state.getRecordStore());
-            int removedKeyCount = recordStore.removeBulk((ArrayList<Data>) state.getKeys(), state.getRecords());
+            int removedKeyCount = recordStore.removeBulk((ArrayList<Data>) state.getKeys(), state.getRecords(), false);
             if (removedKeyCount > 0) {
                 recordStore.updateStatsOnRemove(Clock.currentTimeMillis());
             }

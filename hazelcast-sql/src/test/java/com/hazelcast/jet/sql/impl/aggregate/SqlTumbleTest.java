@@ -26,7 +26,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -444,7 +443,6 @@ public class SqlTumbleTest extends SqlTestSupport {
         );
     }
 
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/21984")
     @Test
     public void test_countWithUnionAsInput() {
         String name = createTable(
@@ -455,14 +453,13 @@ public class SqlTumbleTest extends SqlTestSupport {
                 row(timestampTz(10), null, null)
         );
 
-        String unionQuery = "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND))";
-        sqlService.execute("CREATE VIEW v1 AS " + unionQuery);
-        sqlService.execute("CREATE VIEW v2 AS " + unionQuery);
-        sqlService.execute("CREATE VIEW v3 AS (SELECT * FROM v1) UNION ALL (SELECT * FROM v2)");
+        sqlService.execute("CREATE VIEW v1 AS SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name
+                + ", DESCRIPTOR(ts), INTERVAL '0.002' SECOND))");
+        sqlService.execute("CREATE VIEW v2 AS (SELECT * FROM v1) UNION ALL (SELECT * FROM v1)");
 
-        assertRowsEventuallyInAnyOrder(
+        assertTipOfStream(
                 "SELECT window_start, COUNT(name) FROM " +
-                        "TABLE(TUMBLE(TABLE v3, DESCRIPTOR(ts), INTERVAL '0.002' SECOND)) " +
+                        "TABLE(TUMBLE(TABLE v2, DESCRIPTOR(ts), INTERVAL '0.002' SECOND)) " +
                         "GROUP BY window_start",
                 asList(
                         new Row(timestampTz(0L), 2L), // 2x Alice(t=0)

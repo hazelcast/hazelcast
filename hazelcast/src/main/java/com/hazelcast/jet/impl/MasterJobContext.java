@@ -501,6 +501,8 @@ public class MasterJobContext {
                         responses);
 
         mc.setJobStatus(RUNNING);
+        // There can be a snapshot enqueued while the job is starting, start it now if that's the case
+        mc.snapshotContext().tryBeginSnapshot();
         mc.invokeOnParticipants(operationCtor, completionCallback, executionFailureCallback, false);
 
         if (mc.jobConfig().getProcessingGuarantee() != NONE) {

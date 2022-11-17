@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Sends a schema to cluster
  */
-@Generated("244084c747b1c7a172238c9debfd0ac8")
+@Generated("35a1a725e4c1d5fe4d7e5be778877461")
 public final class ClientSendSchemaCodec {
     //hex: 0x001300
     public static final int REQUEST_MESSAGE_TYPE = 4864;
@@ -70,12 +70,23 @@ public final class ClientSendSchemaCodec {
         return SchemaCodec.decode(iterator);
     }
 
-    public static ClientMessage encodeResponse() {
+    public static ClientMessage encodeResponse(java.util.Collection<java.util.UUID> replicatedMembers) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
         clientMessage.add(initialFrame);
 
+        SetUUIDCodec.encode(clientMessage, replicatedMembers);
         return clientMessage;
+    }
+
+    /**
+     * UUIDs of the members that the schema is replicated
+     */
+    public static java.util.Set<java.util.UUID> decodeResponse(ClientMessage clientMessage) {
+        ClientMessage.ForwardFrameIterator iterator = clientMessage.frameIterator();
+        //empty initial frame
+        iterator.next();
+        return SetUUIDCodec.decode(iterator);
     }
 }

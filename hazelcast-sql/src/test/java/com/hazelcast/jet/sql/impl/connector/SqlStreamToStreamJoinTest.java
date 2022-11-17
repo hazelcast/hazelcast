@@ -23,7 +23,6 @@ import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -98,7 +97,8 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 row(timestampTz(0L)),
                 row(timestampTz(3L)),
                 row(timestampTz(4L)),
-                row(timestampTz(5L))
+                row(timestampTz(5L)),
+                row(timestampTz(51L)) // flushing event
         );
 
         String stream2 = "stream2";
@@ -109,7 +109,8 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 singletonList(TIMESTAMP_WITH_TIME_ZONE),
                 row(timestampTz(2L)),
                 row(timestampTz(5L)),
-                row(timestampTz(7L))
+                row(timestampTz(7L)),
+                row(timestampTz(50L)) // flushing event
         );
 
         sqlService.execute("CREATE VIEW s1 AS " +
@@ -138,7 +139,8 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 singletonList(TIMESTAMP_WITH_TIME_ZONE),
                 row(timestampTz(2L)),
                 row(timestampTz(5L)),
-                row(timestampTz(7L))
+                row(timestampTz(7L)),
+                row(timestampTz(50L)) // flushing event
         );
 
         String stream2 = "stream2";
@@ -150,7 +152,8 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 row(timestampTz(0L)),
                 row(timestampTz(3L)),
                 row(timestampTz(4L)),
-                row(timestampTz(5L))
+                row(timestampTz(5L)),
+                row(timestampTz(51L)) // flushing event
         );
 
         sqlService.execute("CREATE VIEW s1 AS " +
@@ -538,17 +541,62 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
     }
 
     @Test
-    @Ignore // https://github.com/hazelcast/hazelcast/issues/21984
     public void test_selfJoin() {
         TestStreamSqlConnector.create(
-                sqlService, "stream1", singletonList("a"), singletonList(TIMESTAMP_WITH_TIME_ZONE),
+                sqlService,
+                "stream1",
+                singletonList("a"),
+                singletonList(TIMESTAMP_WITH_TIME_ZONE),
                 row(timestampTz(42L)));
 
         sqlService.execute("CREATE VIEW s AS " +
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '0' SECONDS))");
 
-        assertThatThrownBy(() -> sqlService.execute("SELECT * FROM s s1 JOIN s s2 ON s1.a=s2.a"))
-                .hasCauseInstanceOf(UnsupportedOperationException.class)
-                .hasMessageContaining("The same scan used twice in the execution plan");
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM s s1 JOIN s s2 ON s1.a=s2.a",
+                singletonList(new Row(timestampTz(42L), timestampTz(42L))));
+    }
+
+    @Test
+    public void test_joinWithoutViews() {
+        TestStreamSqlConnector.create(
+                sqlService,
+                "stream1",
+                singletonList("a"),
+                singletonList(TIMESTAMP_WITH_TIME_ZONE),
+                row(timestampTz(42L)));
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM " +
+                        "(SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '1' SECONDS))) s1 " +
+                        "INNER JOIN " +
+                        "(SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '1' SECONDS))) s2 " +
+                        "ON s1.a=s2.a",
+                singletonList(new Row(timestampTz(42L), timestampTz(42L))));
+    }
+
+    @Test
+    public void test_joinWithUsingClause() {
+        TestStreamSqlConnector.create(
+                sqlService,
+                "stream1",
+                singletonList("a"),
+                singletonList(TIMESTAMP_WITH_TIME_ZONE),
+                row(timestampTz(42L)));
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM " +
+                        "(SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '1' SECONDS))) s1 " +
+                        "INNER JOIN " +
+                        "(SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '1' SECONDS))) s2 " +
+                        " USING(a)",
+                singletonList(new Row(timestampTz(42L))));
+    }
+
+    @Test
+    public void test_joinGenerators() {
+        assertThatThrownBy(() ->
+                sqlService.execute("SELECT 1 from TABLE(GENERATE_STREAM(1)) JOIN TABLE(GENERATE_STREAM(3)) on 1=1;"))
+                .hasMessageContaining("For stream-to-stream join, both joined sides must have an order imposed");
     }
 }

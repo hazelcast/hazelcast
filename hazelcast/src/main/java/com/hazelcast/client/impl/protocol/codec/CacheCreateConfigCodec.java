@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Creates the given cache configuration on Hazelcast members.
  */
-@Generated("c179100955249b203f80ee392f46b238")
+@Generated("57c5e532ea8ba3e4dd6de3e1c660d023")
 public final class CacheCreateConfigCodec {
     //hex: 0x130600
     public static final int REQUEST_MESSAGE_TYPE = 1246720;
@@ -65,6 +65,7 @@ public final class CacheCreateConfigCodec {
 
     public static ClientMessage encodeRequest(com.hazelcast.client.impl.protocol.codec.holder.CacheConfigHolder cacheConfig, boolean createAlsoOnOthers) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
+        clientMessage.setContainsSerializedDataInRequest(true);
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Cache.CreateConfig");
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[REQUEST_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);

@@ -60,7 +60,6 @@ public class State {
     private long ttl = UNSET;
     private long maxIdle = UNSET;
     private long version;
-    private long expiryTime;
     private long now = Clock.currentTimeMillis();
     private Data key;
     private Address callerAddress;
@@ -77,6 +76,8 @@ public class State {
     private volatile boolean disableWanReplicationEvent;
     private volatile boolean triggerMapLoader;
     private volatile boolean shouldLoad;
+    private volatile boolean changeExpiryOnUpdate = true;
+    private volatile boolean entryProcessorOffload;
     private volatile Object oldValue;
     private volatile Object newValue;
     private volatile Object result;
@@ -85,7 +86,6 @@ public class State {
     private volatile Collection<Data> keys;
     private volatile ArrayList<Record> records;
     private volatile EntryProcessor entryProcessor;
-    private volatile boolean entryProcessorOffload;
     private volatile EntryOperator operator;
     private volatile List<State> toStore;
     private volatile List<State> toRemove;
@@ -100,8 +100,6 @@ public class State {
     private volatile Queue<InternalIndex> notMarkedIndexes;
     private volatile Set keysFromIndex;
     private volatile Throwable throwable;
-    private volatile EntryEventType modificationTypeForEP;
-    private volatile boolean unlockNeededForEP;
 
     public State(RecordStore recordStore, MapOperation operation) {
         this.recordStore = recordStore;
@@ -114,8 +112,8 @@ public class State {
 
         setTtl(state.getTtl())
                 .setMaxIdle(state.getMaxIdle())
+                .setChangeExpiryOnUpdate(state.isChangeExpiryOnUpdate())
                 .setVersion(state.getVersion())
-                .setExpiryTime(state.getExpiryTime())
                 .setNow(state.getNow())
                 .setStaticPutParams(state.getStaticParams())
                 .setOwnerUuid(state.getOwnerUuid())
@@ -174,11 +172,6 @@ public class State {
         return this;
     }
 
-    public State ownerUuid(UUID ownerUuid) {
-        this.ownerUuid = ownerUuid;
-        return this;
-    }
-
     public State setTtl(long ttl) {
         this.ttl = ttl;
         return this;
@@ -186,11 +179,6 @@ public class State {
 
     public State setMaxIdle(long maxIdle) {
         this.maxIdle = maxIdle;
-        return this;
-    }
-
-    public State setExpiryTime(long expiryTime) {
-        this.expiryTime = expiryTime;
         return this;
     }
 
@@ -258,10 +246,6 @@ public class State {
 
     public long getVersion() {
         return version;
-    }
-
-    public long getExpiryTime() {
-        return expiryTime;
     }
 
     public long getNow() {
@@ -508,21 +492,12 @@ public class State {
         return backupPairs;
     }
 
-    public State setModificationTypeForEP(EntryEventType modificationTypeForEP) {
-        this.modificationTypeForEP = modificationTypeForEP;
-        return null;
-    }
-
-    public EntryEventType getModificationTypeForEP() {
-        return modificationTypeForEP;
-    }
-
-    public State setUnlockNeededForEP(boolean unlockNeededForEP) {
-        this.unlockNeededForEP = unlockNeededForEP;
+    public State setChangeExpiryOnUpdate(boolean changeExpiryOnUpdate) {
+        this.changeExpiryOnUpdate = changeExpiryOnUpdate;
         return this;
     }
 
-    public boolean isUnlockNeededForEP() {
-        return unlockNeededForEP;
+    public boolean isChangeExpiryOnUpdate() {
+        return changeExpiryOnUpdate;
     }
 }

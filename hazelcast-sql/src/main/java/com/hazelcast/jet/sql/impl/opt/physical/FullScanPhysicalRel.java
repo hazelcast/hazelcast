@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.opt.FullScan;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
@@ -46,19 +47,24 @@ import java.util.List;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static com.hazelcast.jet.sql.impl.opt.cost.CostUtils.TABLE_SCAN_CPU_MULTIPLIER;
 
-public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
-    private Byte watermarkKey;
+public class FullScanPhysicalRel extends FullScan implements HazelcastPhysicalScan {
+
+    /** See {@link CalciteSqlOptimizer#uniquifyScans}. */
+    private final int discriminator;
 
     FullScanPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelOptTable table,
             @Nullable BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> eventTimePolicyProvider,
-            int watermarkedColumnIndex
+            int watermarkedColumnIndex,
+            int discriminator
     ) {
         super(cluster, traitSet, table, eventTimePolicyProvider, watermarkedColumnIndex);
+        this.discriminator = discriminator;
     }
 
+    @Override
     public Expression<Boolean> filter(QueryParameterMetadata parameterMetadata) {
         PlanNodeSchema schema = OptUtils.schema(getTable());
 
@@ -67,6 +73,7 @@ public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
         return filter(schema, filter, parameterMetadata);
     }
 
+    @Override
     public List<Expression<?>> projection(QueryParameterMetadata parameterMetadata) {
         PlanNodeSchema schema = OptUtils.schema(getTable());
 
@@ -135,21 +142,22 @@ public class FullScanPhysicalRel extends FullScan implements PhysicalRel {
     @Override
     public RelWriter explainTerms(RelWriter pw) {
         return super.explainTerms(pw)
-                .itemIf("watermarkKey", watermarkKey, watermarkKey != null);
+                .item("discriminator", discriminator);
     }
 
     @Override
     public RelNode copy(RelTraitSet traitSet, List<RelNode> inputs) {
         return new FullScanPhysicalRel(getCluster(), traitSet, getTable(), eventTimePolicyProvider(),
-                watermarkedColumnIndex());
+                watermarkedColumnIndex(), getDiscriminator());
     }
 
-    public Byte getWatermarkKey() {
-        return watermarkKey;
+    public RelNode copy(RelTraitSet traitSet, int discriminator) {
+        return new FullScanPhysicalRel(getCluster(), traitSet, getTable(), eventTimePolicyProvider(),
+                watermarkedColumnIndex(), discriminator);
     }
 
-    public void setWatermarkKey(byte watermarkKey) {
-        this.watermarkKey = watermarkKey;
+    public int getDiscriminator() {
+        return discriminator;
     }
 
     public List<RexNode> getProjects() {

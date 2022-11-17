@@ -294,6 +294,36 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
         connectionManager.checkInvocationAllowed();
     }
 
+    void checkUrgentInvocationAllowed(ClientInvocation invocation) {
+        if (connectionManager.clientInitializedOnCluster()) {
+            // If the client is initialized on the cluster, that means we
+            // have sent all the schemas to the cluster, even if we are
+            // reconnected to it
+            return;
+        }
+
+        if (!client.shouldCheckUrgentInvocations()) {
+            // If there were no Compact schemas to begin with, we don't need
+            // to perform the check below. If the client didn't send a Compact
+            // schema up until this point, the retries or listener registrations
+            // could not send a schema, because if they were, we wouldn't hit
+            // this line.
+            return;
+        }
+
+        // We are not yet initialized on cluster, so the Compact schemas might
+        // not be sent yet. This message contains some serialized classes,
+        // and it is possible that it can also contain Compact serialized data.
+        // In that case, allowing this invocation to go through now could
+        // violate the invariant that the schema must come to cluster before
+        // the data. We will retry this invocation and wait until the client
+        // is initialized on the cluster, which means schemas are replicated
+        // in the cluster.
+        if (invocation.getClientMessage().isContainsSerializedDataInRequest()) {
+            throw new InvocationMightContainCompactDataException(invocation);
+        }
+    }
+
     boolean shouldFailOnIndeterminateOperationState() {
         return shouldFailOnIndeterminateOperationState;
     }

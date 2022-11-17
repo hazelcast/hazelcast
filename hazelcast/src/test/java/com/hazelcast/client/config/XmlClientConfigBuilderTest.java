@@ -33,6 +33,7 @@ import com.hazelcast.config.security.TokenIdentityConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
+import com.hazelcast.memory.Capacity;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.topic.TopicOverloadPolicy;
@@ -62,6 +63,8 @@ import java.util.Properties;
 import static com.hazelcast.config.PersistentMemoryMode.MOUNTED;
 import static com.hazelcast.config.PersistentMemoryMode.SYSTEM_MEMORY;
 import static com.hazelcast.internal.nio.IOUtil.delete;
+import static com.hazelcast.memory.MemoryUnit.GIGABYTES;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -663,6 +666,20 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
                 + HAZELCAST_CLIENT_END_TAG;
 
         buildConfig(xml);
+    }
+
+    @Test
+    @Override
+    public void testNativeMemoryConfiguration_isBackwardCompatible() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "<native-memory>\n"
+                + "  <capacity value=\"1337\" unit=\"GIGABYTES\" />\n"
+                + "</native-memory>\n"
+                + HAZELCAST_CLIENT_END_TAG;
+
+        ClientConfig clientConfig = buildConfig(xml);
+        assertThat(clientConfig.getNativeMemoryConfig().getCapacity())
+                .isEqualToComparingFieldByField(Capacity.of(1337, GIGABYTES));
     }
 
     @Override

@@ -3,7 +3,7 @@
 |||
 |---|---|
 |Related Jira|[HZ-986](https://hazelcast.atlassian.net/browse/HZ-986)|
-|Document Status / Completeness|DRAFT|
+|Document Status / Completeness|DONE|
 |Requirement owner|Sandeep Akhouri|
 |Developer(s)|Sasha Syrotenko|
 |Quality Engineer|Bartlomiej Poplawski|
@@ -388,8 +388,10 @@ Example: TODO
   of the example above.
 
 - A received row might not be late, but still can't possibly join any future
-  rows from the other input. In this case it's not added to the buffers, and
-  it's joined with null row in case of an outer join.
+  rows from the other input. But it still can join rows already in the other
+  buffer. In this case it's not added to the buffers, but it's joined with
+  buffered rows, a null-padded row is output if there's no match and it's an
+  outer join.
 
 ```
 Example1:
@@ -408,14 +410,13 @@ out: j{l.time=0, r.time=0}
 ```
 
 ```
-Example2:
-in: r{r.time=0}
--> rightBuffer=[r{r.time=0}:unused]
+Example2, join condition: l.time = r.time:
+in: l{l.time=0}
+-> leftBuffer=[l{l.time=0}:unused]
 in: wm(l.time=1)
--> rightBuffer=[]
-out: j{l.time=null, r.time=0}
+out: wm(l.time=0)
 in: r{r.time=0}
-out: j{l.time=null, r.time=0}
+out: j{l.time=0, r.time=0}
 # rightBuffer remains empty
 ```
 

@@ -19,10 +19,14 @@ package com.hazelcast.nio.serialization.compatibility;
 import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.config.SerializerConfig;
 import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.compact.CompactTestUtil;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import example.serialization.InnerDTOSerializer;
+import example.serialization.MainDTOSerializer;
+import example.serialization.NamedDTOSerializer;
 
 import java.io.DataOutputStream;
 import java.io.FileOutputStream;
@@ -82,6 +86,7 @@ final class BinaryCompatibilityFileGenerator {
             config.addSerializerConfig(serializerConfig);
         }
         config.setByteOrder(byteOrder);
+        config.getCompactSerializationConfig().setSerializers(new MainDTOSerializer(), new InnerDTOSerializer(), new NamedDTOSerializer());
         ClassDefinition classDefinition =
                 new ClassDefinitionBuilder(ReferenceObjects.PORTABLE_FACTORY_ID, ReferenceObjects.INNER_PORTABLE_CLASS_ID)
                         .addIntField("i").addFloatField("f").build();
@@ -92,6 +97,7 @@ final class BinaryCompatibilityFileGenerator {
                 .addPortableFactory(ReferenceObjects.PORTABLE_FACTORY_ID, new APortableFactory())
                 .addDataSerializableFactory(ReferenceObjects.IDENTIFIED_DATA_SERIALIZABLE_FACTORY_ID,
                         new ADataSerializableFactory())
+                .setSchemaService(CompactTestUtil.createInMemorySchemaService())
                 .addClassDefinition(classDefinition)
                 .build();
     }

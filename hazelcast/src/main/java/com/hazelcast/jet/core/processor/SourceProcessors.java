@@ -443,7 +443,8 @@ public final class SourceProcessors {
             @Nonnull ToResultSetFunction resultSetFn,
             @Nonnull FunctionEx<? super ResultSet, ? extends T> mapOutputFn
     ) {
-        return ReadJdbcP.supplier(context -> new DataSourceFromConnectionSupplier(newConnectionFn), resultSetFn, mapOutputFn);
+        return ReadJdbcP.supplier(context -> new DataSourceFromConnectionSupplier(newConnectionFn),
+                resultSetFn, mapOutputFn);
     }
 
     /**

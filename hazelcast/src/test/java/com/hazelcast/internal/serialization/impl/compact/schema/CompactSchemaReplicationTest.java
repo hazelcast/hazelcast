@@ -29,7 +29,6 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.atLeastOnce;
@@ -49,11 +48,15 @@ public class CompactSchemaReplicationTest extends CompactSchemaReplicationTestBa
             MemberSchemaService service = getSchemaService(instance);
             SchemaReplicator replicator = service.getReplicator();
 
-            // Everyone should prepare it
-            verify(service, atLeastOnce()).onSchemaPreparationRequest(SCHEMA);
+            // Everyone should call onSchemaPreparationRequest, apart from the initiator
+            if (instance != instance1) {
+                verify(service, atLeastOnce()).onSchemaPreparationRequest(SCHEMA);
+            }
 
-            // Everyone should acknowledge it
-            verify(service, atLeastOnce()).onSchemaAckRequest(SCHEMA.getSchemaId(), instance == instance1);
+            // Everyone should call onSchemaAckRequest, apart from the initiator
+            if (instance != instance1) {
+                verify(service, atLeastOnce()).onSchemaAckRequest(SCHEMA.getSchemaId());
+            }
 
             // It should be replicated everywhere
             assertEquals(SchemaReplicationStatus.REPLICATED, replicator.getReplicationStatus(SCHEMA));
@@ -71,11 +74,11 @@ public class CompactSchemaReplicationTest extends CompactSchemaReplicationTestBa
         for (HazelcastInstance instance : instances) {
             MemberSchemaService service = getSchemaService(instance);
 
-            // Some members might try to prepare it
+            // Some members might call onSchemaPreparationRequest
             verify(service, atMostOnce()).onSchemaPreparationRequest(SCHEMA);
 
-            // No-one should acknowledge it
-            verify(service, never()).onSchemaAckRequest(SCHEMA.getSchemaId(), instance == instance2);
+            // No-one should call onSchemaAckRequest
+            verify(service, never()).onSchemaAckRequest(SCHEMA.getSchemaId());
         }
     }
 
@@ -92,16 +95,18 @@ public class CompactSchemaReplicationTest extends CompactSchemaReplicationTestBa
             MemberSchemaService service = getSchemaService(instance);
             SchemaReplicator replicator = service.getReplicator();
 
-            // Everyone should prepare it
+            // Everyone should call onSchemaPreparationRequest, apart from the initiator
             if (instance == instance3) {
                 // For instance3, it must at least fail + succeed
                 verify(service, atLeast(2)).onSchemaPreparationRequest(SCHEMA);
-            } else {
+            } else if (instance != instance4) {
                 verify(service, atLeastOnce()).onSchemaPreparationRequest(SCHEMA);
             }
 
-            // Everyone should acknowledge it
-            verify(service, atLeastOnce()).onSchemaAckRequest(SCHEMA.getSchemaId(), instance == instance4);
+            // Everyone should call onSchemaAckRequest it, apart from the initiator
+            if (instance != instance4) {
+                verify(service, atLeastOnce()).onSchemaAckRequest(SCHEMA.getSchemaId());
+            }
 
             // It should be replicated everywhere
             assertEquals(SchemaReplicationStatus.REPLICATED, replicator.getReplicationStatus(SCHEMA));
@@ -112,18 +117,20 @@ public class CompactSchemaReplicationTest extends CompactSchemaReplicationTestBa
     public void testSchemaReplication_whenAMemberThrows_duringAcknowledgmentPhase() {
         doThrow(new RuntimeException())
                 .when(getSchemaService(instance4))
-                .onSchemaAckRequest(anyLong(), anyBoolean());
+                .onSchemaAckRequest(anyLong());
 
         assertThrows(HazelcastSerializationException.class, () -> fillMapUsing(instance1));
 
         for (HazelcastInstance instance : instances) {
             MemberSchemaService service = getSchemaService(instance);
 
-            // Everyone should prepare it
-            verify(service, atLeastOnce()).onSchemaPreparationRequest(SCHEMA);
+            // Everyone should call onSchemaPreparationRequest, apart from the initiator
+            if (instance != instance1) {
+                verify(service, atLeastOnce()).onSchemaPreparationRequest(SCHEMA);
+            }
 
-            // Some members might try to acknowledge it
-            verify(service, atMostOnce()).onSchemaAckRequest(SCHEMA.getSchemaId(), instance == instance1);
+            // Some members might call onSchemaAckRequest
+            verify(service, atMostOnce()).onSchemaAckRequest(SCHEMA.getSchemaId());
         }
     }
 
@@ -132,7 +139,7 @@ public class CompactSchemaReplicationTest extends CompactSchemaReplicationTestBa
         doThrow(new RetryableHazelcastException()) // Throw once
                 .doCallRealMethod() // Then succeed
                 .when(getSchemaService(instance2))
-                .onSchemaAckRequest(SCHEMA.getSchemaId(), false);
+                .onSchemaAckRequest(SCHEMA.getSchemaId());
 
         fillMapUsing(instance3);
 
@@ -140,15 +147,17 @@ public class CompactSchemaReplicationTest extends CompactSchemaReplicationTestBa
             MemberSchemaService service = getSchemaService(instance);
             SchemaReplicator replicator = service.getReplicator();
 
-            // Everyone should prepare it
-            verify(service, atLeastOnce()).onSchemaPreparationRequest(SCHEMA);
+            // Everyone should call onSchemaPreparationRequest, apart from the initiator
+            if (instance != instance3) {
+                verify(service, atLeastOnce()).onSchemaPreparationRequest(SCHEMA);
+            }
 
-            // Everyone should acknowledge it
+            // Everyone should call onSchemaAckRequest, apart from the initiator
             if (instance == instance2) {
                 // For instance2, it must at least fail + succeed
-                verify(service, atLeast(2)).onSchemaAckRequest(SCHEMA.getSchemaId(), false);
-            } else {
-                verify(service, atLeastOnce()).onSchemaAckRequest(SCHEMA.getSchemaId(), instance == instance3);
+                verify(service, atLeast(2)).onSchemaAckRequest(SCHEMA.getSchemaId());
+            } else if (instance != instance3) {
+                verify(service, atLeastOnce()).onSchemaAckRequest(SCHEMA.getSchemaId());
             }
 
             // It should be replicated everywhere

@@ -37,15 +37,15 @@ public class HeapMemoryManager implements MemoryManager {
 
     private final Accessor mem = new Accessor();
 
-    private final Long2LongHashMap allocatedAddrs = new Long2LongHashMap(1024, 0.7, -1);
+    final Long2LongHashMap allocatedAddrs = new Long2LongHashMap(1024, 0.7, -1);
 
-    private byte[] storage;
+    byte[] storage;
 
-    private int heapTop = HEAP_BOTTOM;
+    long heapTop = HEAP_BOTTOM;
 
-    private int lastAllocatedAddress;
+    long lastAllocatedAddress;
 
-    private int usedMemory;
+    long usedMemory;
 
     public HeapMemoryManager(int size) {
         this.storage = new byte[size];

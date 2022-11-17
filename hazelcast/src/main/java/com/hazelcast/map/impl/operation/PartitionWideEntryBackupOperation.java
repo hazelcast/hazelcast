@@ -72,6 +72,7 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBack
                 outComes.add(operator.getByPreferringDataNewValue());
                 outComes.add(eventType);
                 outComes.add(operator.getEntry().getNewTtl());
+                outComes.add(operator.getEntry().isChangeExpiryOnUpdate());
             }
         }, true);
 
@@ -87,9 +88,10 @@ public class PartitionWideEntryBackupOperation extends AbstractMultipleEntryBack
             Object newValue = outComes.poll();
             EntryEventType eventType = (EntryEventType) outComes.poll();
             long newTtl = (long) outComes.poll();
+            boolean changeExpiryOnUpdate = (boolean) outComes.poll();
 
             operator.init(dataKey, oldValue, newValue, null, eventType,
-                    null, newTtl).doPostOperateOps();
+                    null, changeExpiryOnUpdate, newTtl).doPostOperateOps();
         }
     }
 

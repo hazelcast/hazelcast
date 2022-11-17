@@ -17,26 +17,27 @@
 package com.hazelcast.map.impl.operation.steps;
 
 import com.hazelcast.core.EntryEventType;
+import com.hazelcast.core.Offloadable;
+import com.hazelcast.map.impl.ExecutorStats;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.operation.EntryOffloadableSetUnlockOperation;
 import com.hazelcast.map.impl.operation.EntryOperation;
 import com.hazelcast.map.impl.operation.EntryOperator;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.recordstore.RecordStore;
-import com.hazelcast.map.impl.recordstore.StaticParams;
+import com.hazelcast.spi.impl.executionservice.impl.StatsAwareRunnable;
 
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 
-public enum EntryOpSteps implements Step<State> {
+public enum EntryOpSteps implements IMapOpStep {
 
     EP_START() {
         @Override
         public void runStep(State state) {
             EntryOperator operator = operator(state.getOperation(), state.getEntryProcessor());
             operator.init(state.getKey(), state.getOldValue(), state.getNewValue(),
-                    null, state.getModificationTypeForEP(), null, state.getTtl());
+                    null, null, null, state.isChangeExpiryOnUpdate(), state.getTtl());
             state.setEntryOperator(operator);
 
             if (operator.belongsAnotherPartition(state.getKey())) {
@@ -52,14 +53,21 @@ public enum EntryOpSteps implements Step<State> {
             if (state.isStopExecution()) {
                 return EntryOpSteps.AFTER_RUN;
             }
-            return state.getOldValue() == null
-                    ? EntryOpSteps.LOAD : EntryOpSteps.PROCESS;
+
+            if (state.getOldValue() == null) {
+                return EntryOpSteps.LOAD;
+            }
+
+            if (state.isEntryProcessorOffload()) {
+                return EntryOpSteps.RUN_OFFLOADED_ENTRY_PROCESSOR;
+            }
+            return EntryOpSteps.PROCESS;
         }
     },
 
     LOAD() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isLoadStep() {
             return true;
         }
 
@@ -70,8 +78,63 @@ public enum EntryOpSteps implements Step<State> {
 
         @Override
         public Step nextStep(State state) {
-            return state.getOldValue() == null
-                    ? EntryOpSteps.PROCESS : EntryOpSteps.ON_LOAD;
+            if (state.getOldValue() != null) {
+                return EntryOpSteps.ON_LOAD;
+            }
+
+            if (state.isEntryProcessorOffload()) {
+                return EntryOpSteps.RUN_OFFLOADED_ENTRY_PROCESSOR;
+            }
+            return EntryOpSteps.PROCESS;
+        }
+    },
+
+    RUN_OFFLOADED_ENTRY_PROCESSOR() {
+        @Override
+        public boolean isStoreStep() {
+            return true;
+        }
+
+        @Override
+        public String getExecutorName(State state) {
+            return ((Offloadable) state.getEntryProcessor()).getExecutorName();
+        }
+
+        @Override
+        public void runStep(State state) {
+            RecordStore recordStore = state.getRecordStore();
+            MapContainer mapContainer = recordStore.getMapContainer();
+            boolean statisticsEnabled = mapContainer.getMapConfig().isStatisticsEnabled();
+            ExecutorStats executorStats = mapContainer.getMapServiceContext()
+                    .getOffloadedEntryProcessorExecutorStats();
+
+            if (statisticsEnabled) {
+                new StatsAwareRunnable(() -> {
+                    runStepInternal(state);
+                }, getExecutorName(state), executorStats).run();
+            } else {
+                runStepInternal(state);
+            }
+        }
+
+        private void runStepInternal(State state) {
+            EntryOperation operation = (EntryOperation) state.getOperation();
+            Object oldValueByInMemoryFormat = operation.getOldValueByInMemoryFormat(state.getOldValue());
+
+            EntryOperator entryOperator = operator(operation, state.getEntryProcessor())
+                    .operateOnKeyValue(state.getKey(), oldValueByInMemoryFormat);
+            state.setEntryOperator(entryOperator);
+        }
+
+        @Override
+        public Step nextStep(State state) {
+            EntryOperator entryOperator = state.getOperator();
+            EntryEventType modificationType = entryOperator.getEventType();
+            if (modificationType != null) {
+                return DO_POST_OPERATE_OPS;
+            }
+
+            return UtilSteps.SEND_RESPONSE;
         }
     },
 
@@ -83,6 +146,9 @@ public enum EntryOpSteps implements Step<State> {
 
         @Override
         public Step nextStep(State state) {
+            if (state.isEntryProcessorOffload()) {
+                return EntryOpSteps.RUN_OFFLOADED_ENTRY_PROCESSOR;
+            }
             return EntryOpSteps.PROCESS;
         }
     },
@@ -90,37 +156,48 @@ public enum EntryOpSteps implements Step<State> {
     PROCESS() {
         @Override
         public void runStep(State state) {
-            if (state.isEntryProcessorOffload()) {
-                return;
-            }
-
             RecordStore recordStore = state.getRecordStore();
-            MapContainer mapContainer = recordStore.getMapContainer();
-            MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
 
             EntryOperator entryOperator = state.getOperator();
-            // If result is ready, EP can be null as
-            // in EntryOffloadableSetUnlockOperation
-            if (entryOperator.getEntryProcessor() != null) {
-                entryOperator.init(state.getKey(), state.getOldValue(),
-                        null, null, null, recordStore.isLocked(state.getKey()), state.getTtl());
+            entryOperator.init(state.getKey(), state.getOldValue(),
+                    null, null, null, recordStore.isLocked(state.getKey()),
+                    state.isChangeExpiryOnUpdate(), state.getTtl());
 
-                Object clonedOldValue = entryOperator.clonedOrRawOldValue();
+            Object clonedOldValue = entryOperator.clonedOrRawOldValue();
 
-                entryOperator.init(state.getKey(), clonedOldValue,
-                        null, null, null, recordStore.isLocked(state.getKey()), state.getTtl());
+            entryOperator.init(state.getKey(), clonedOldValue,
+                    null, null, null, recordStore.isLocked(state.getKey()),
+                    state.isChangeExpiryOnUpdate(), state.getTtl());
 
-                if (!entryOperator.checkCanProceed()) {
-                    entryOperator.onTouched();
-                    state.setStopExecution(true);
-                    return;
-                }
-                entryOperator.operateOnKeyValueInternal();
-
-                if (!entryOperator.isDidMatchPredicate()) {
-                    return;
-                }
+            if (!entryOperator.checkCanProceed()) {
+                entryOperator.onTouched();
+                state.setStopExecution(true);
+                return;
             }
+            entryOperator.operateOnKeyValueInternal();
+
+            state.setEntryOperator(entryOperator);
+        }
+
+        @Override
+        public Step nextStep(State state) {
+            EntryOperator entryOperator = state.getOperator();
+            if (!entryOperator.isDidMatchPredicate()) {
+                return AFTER_RUN;
+            }
+            return DO_POST_OPERATE_OPS;
+        }
+    },
+
+    DO_POST_OPERATE_OPS() {
+        @Override
+        public void runStep(State state) {
+            EntryOperator entryOperator = state.getOperator();
+            if (!entryOperator.isDidMatchPredicate()) {
+                return;
+            }
+            MapContainer mapContainer = state.getRecordStore().getMapContainer();
+            MapServiceContext mapServiceContext = mapContainer.getMapServiceContext();
 
             EntryEventType eventType = entryOperator.getEventType();
             if (eventType == null) {
@@ -130,7 +207,6 @@ public enum EntryOpSteps implements Step<State> {
                 switch (eventType) {
                     case ADDED:
                     case UPDATED:
-                        state.setStaticPutParams(StaticParams.SET_WITH_NO_ACCESS_PARAMS);
                         if (eventType == EntryEventType.UPDATED) {
                             entryOperator.onTouched();
                         }
@@ -139,6 +215,7 @@ public enum EntryOpSteps implements Step<State> {
                                 state.getOldValue(), newValue);
                         state.setNewValue(newValue);
                         state.setTtl(entryOperator.getEntry().getNewTtl());
+                        state.setChangeExpiryOnUpdate(entryOperator.getEntry().isChangeExpiryOnUpdate());
                         break;
                     case REMOVED:
                         DeleteOpSteps.READ.runStep(state);
@@ -147,20 +224,10 @@ public enum EntryOpSteps implements Step<State> {
                         throw new IllegalArgumentException("Unexpected event found:" + eventType);
                 }
             }
-
-            if (state.isUnlockNeededForEP()) {
-                ((EntryOffloadableSetUnlockOperation) state.getOperation()).unlockKey();
-            }
         }
 
         @Override
         public Step nextStep(State state) {
-            if (state.isEntryProcessorOffload()) {
-                EntryOperation operation = (EntryOperation) state.getOperation();
-                operation.new EntryOperationOffload(state.getOldValue()).start();
-                return UtilSteps.SEND_RESPONSE;
-            }
-
             EntryEventType eventType = state.getOperator().getEventType();
             if (eventType == null) {
                 return AFTER_RUN;
@@ -180,12 +247,14 @@ public enum EntryOpSteps implements Step<State> {
 
     STORE() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isStoreStep() {
             return true;
         }
 
         @Override
         public void runStep(State state) {
+            assertWBStoreRunsOnPartitionThread(state);
+
             PutOpSteps.STORE.runStep(state);
         }
 
@@ -209,12 +278,14 @@ public enum EntryOpSteps implements Step<State> {
 
     DELETE() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isStoreStep() {
             return true;
         }
 
         @Override
         public void runStep(State state) {
+            assertWBStoreRunsOnPartitionThread(state);
+
             DeleteOpSteps.DELETE.runStep(state);
         }
 

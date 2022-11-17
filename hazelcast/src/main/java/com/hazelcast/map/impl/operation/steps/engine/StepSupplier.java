@@ -16,13 +16,13 @@
 
 package com.hazelcast.map.impl.operation.steps.engine;
 
+import com.hazelcast.core.Offloadable;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.steps.UtilSteps;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.impl.OperationRunnerImpl;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.util.function.Supplier;
 
@@ -44,6 +44,7 @@ public class StepSupplier implements Supplier<Runnable> {
 
     private volatile Runnable currentRunnable;
     private volatile Step currentStep;
+    private volatile boolean firstStep = true;
 
     /**
      * Only here to disable check for testing purposes.
@@ -59,16 +60,11 @@ public class StepSupplier implements Supplier<Runnable> {
 
         this.state = operation.createState();
         this.currentStep = operation.getStartingStep();
-        this.operationRunner = getPartitionOperationRunner(operation);
+        this.operationRunner = UtilSteps.getPartitionOperationRunner(state);
         this.checkCurrentThread = checkCurrentThread;
 
         assert state != null;
         assert currentStep != null;
-    }
-
-    private OperationRunnerImpl getPartitionOperationRunner(MapOperation operation) {
-        return (OperationRunnerImpl) ((OperationServiceImpl) operation.getNodeEngine()
-                .getOperationService()).getOperationExecutor().getPartitionOperationRunners()[state.getPartitionId()];
     }
 
     @Override
@@ -87,15 +83,20 @@ public class StepSupplier implements Supplier<Runnable> {
 
         // 1. If step needs to be offloaded,
         // return step wrapped as a runnable.
-        if (step.isOffloadStep()) {
-            return new Runnable() {
+        if (step.isOffloadStep(state)) {
+            return new ExecutorNameAwareRunnable() {
+                @Override
+                public String getExecutorName() {
+                    return step.getExecutorName(state);
+                }
+
                 @Override
                 public void run() {
                     if (checkCurrentThread) {
                         assert !isRunningOnPartitionThread();
                     }
 
-                    runStepWith(step, state);
+                    runStepWithState(step, state);
                 }
 
                 @Override
@@ -113,7 +114,7 @@ public class StepSupplier implements Supplier<Runnable> {
                 if (checkCurrentThread) {
                     assert isRunningOnPartitionThread();
                 }
-                runStepWith(step, state);
+                runStepWithState(step, state);
             }
 
             @Override
@@ -131,18 +132,22 @@ public class StepSupplier implements Supplier<Runnable> {
     /**
      * Responsibilities of this method:
      * <lu>
-     *     <li>Runs this step</li>
-     *     <li>Sets next step to run</li>
+     * <li>Runs passed step with passed state</li>
+     * <li>Sets next step to run</li>
      * </lu>
      */
-    private void runStepWith(Step step, State state) {
+    private void runStepWithState(Step step, State state) {
         boolean runningOnPartitionThread = isRunningOnPartitionThread();
+        boolean metWithPreconditions = true;
         try {
             try {
                 log(step, state);
 
-                if (runningOnPartitionThread && state.getThrowable() == null) {
-                    operationRunner.metWithPreconditions(state.getOperation());
+                if (runningOnPartitionThread && state.getThrowable() == null && firstStep) {
+                    metWithPreconditions = operationRunner.metWithPreconditions(state.getOperation());
+                    if (!metWithPreconditions) {
+                        return;
+                    }
                 }
                 step.runStep(state);
             } catch (NativeOutOfMemoryError e) {
@@ -158,8 +163,13 @@ public class StepSupplier implements Supplier<Runnable> {
             }
             state.setThrowable(throwable);
         } finally {
-            currentStep = nextStep(step);
-            currentRunnable = createRunnable(currentStep, state);
+            if (metWithPreconditions) {
+                currentStep = nextStep(step);
+                currentRunnable = createRunnable(currentStep, state);
+            } else {
+                currentStep = null;
+                currentRunnable = null;
+            }
         }
     }
 
@@ -168,6 +178,7 @@ public class StepSupplier implements Supplier<Runnable> {
      * otherwise finds next step by calling {@link Step#nextStep}
      */
     private Step nextStep(Step step) {
+        firstStep = false;
         if (state.getThrowable() != null
                 && currentStep != UtilSteps.HANDLE_ERROR) {
             return UtilSteps.HANDLE_ERROR;
@@ -185,5 +196,14 @@ public class StepSupplier implements Supplier<Runnable> {
         if (logger.isFinestEnabled()) {
             logger.finest(currentStep.toString() + " ==> " + operation.hashCode());
         }
+    }
+
+    public void handleOperationError(Throwable throwable) {
+        state.setThrowable(throwable);
+        UtilSteps.HANDLE_ERROR.runStep(state);
+    }
+
+    private interface ExecutorNameAwareRunnable extends Runnable, Offloadable {
+
     }
 }

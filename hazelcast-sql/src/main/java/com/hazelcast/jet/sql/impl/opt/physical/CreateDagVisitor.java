@@ -40,6 +40,7 @@ import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.core.processor.Processors;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
+import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
@@ -184,7 +185,15 @@ public class CreateDagVisitor {
         collectObjectKeys(table);
 
         BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> policyProvider = rel.eventTimePolicyProvider();
-        Byte watermarkKey = rel.getWatermarkKey();
+        Map<Integer, MutableByte> fieldsKey = watermarkKeysAssigner.getWatermarkedFieldsKey(rel);
+        Byte wmKey;
+        if (fieldsKey != null) {
+            wmKey = fieldsKey.get(rel.watermarkedColumnIndex()).getValue();
+        } else {
+            assert rel.watermarkedColumnIndex() < 0;
+            wmKey = null;
+        }
+
         return getJetSqlConnector(table).fullScanReader(
                 dag,
                 table,
@@ -192,7 +201,7 @@ public class CreateDagVisitor {
                 rel.filter(parameterMetadata),
                 rel.projection(parameterMetadata),
                 policyProvider != null
-                        ? context -> policyProvider.apply(context, watermarkKey)
+                        ? context -> policyProvider.apply(context, wmKey)
                         : null
         );
     }
@@ -417,7 +426,7 @@ public class CreateDagVisitor {
     }
 
     public Vertex onNestedLoopJoin(JoinNestedLoopPhysicalRel rel) {
-        assert rel.getRight() instanceof FullScanPhysicalRel : rel.getRight().getClass();
+        assert rel.getRight() instanceof HazelcastPhysicalScan : rel.getRight().getClass();
 
         Table rightTable = rel.getRight().getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(rightTable);

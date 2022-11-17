@@ -24,7 +24,7 @@ import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.DefaultRecordStore;
 
-public enum DeleteOpSteps implements Step<State> {
+public enum DeleteOpSteps implements IMapOpStep {
 
     READ() {
         @Override
@@ -54,7 +54,7 @@ public enum DeleteOpSteps implements Step<State> {
 
     DELETE() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isStoreStep() {
             return true;
         }
 
@@ -79,7 +79,7 @@ public enum DeleteOpSteps implements Step<State> {
         public void runStep(State state) {
             DefaultRecordStore recordStore = (DefaultRecordStore) state.getRecordStore();
             Record record = recordStore.getRecord(state.getKey());
-            recordStore.removeRecord0(state.getKey(), record);
+            recordStore.removeRecord0(state.getKey(), record, false);
             recordStore.onStore(record);
         }
 

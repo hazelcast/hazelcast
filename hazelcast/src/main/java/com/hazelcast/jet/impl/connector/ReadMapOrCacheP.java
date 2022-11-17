@@ -146,6 +146,11 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         return false;
     }
 
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
+
     @SuppressWarnings("unchecked")
     private void initialRead() {
         readFutures = (F[]) new CompletableFuture[partitionIds.length];
@@ -280,6 +285,11 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
         }
 
         @Override
+        public boolean closeIsCooperative() {
+            return true;
+        }
+
+        @Override
         public int preferredLocalParallelism() {
             return 1;
         }
@@ -321,6 +331,11 @@ public final class ReadMapOrCacheP<F extends CompletableFuture, B, R> extends Ab
                     .map(partitions ->
                             new ReadMapOrCacheP<>(readerSupplier.apply(hzInstance, serializationService), partitions))
                     .collect(toList());
+        }
+
+        @Override
+        public boolean closeIsCooperative() {
+            return true;
         }
 
         @Override

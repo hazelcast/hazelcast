@@ -37,7 +37,7 @@ import java.util.Map;
 
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 
-public enum MultipleEntryOpSteps implements Step<State> {
+public enum MultipleEntryOpSteps implements IMapOpStep {
 
     FIND_KEYS_TO_LOAD() {
         @Override
@@ -71,7 +71,7 @@ public enum MultipleEntryOpSteps implements Step<State> {
 
     LOAD_ALL() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isLoadStep() {
             return true;
         }
 
@@ -142,6 +142,7 @@ public enum MultipleEntryOpSteps implements Step<State> {
                                 state.getEntryProcessor(), state.getPredicate()));
 
                 EntryOpSteps.PROCESS.runStep(singleKeyState);
+                EntryOpSteps.DO_POST_OPERATE_OPS.runStep(singleKeyState);
 
                 EntryEventType eventType = singleKeyState.getOperator().getEventType();
                 if (eventType == null) {
@@ -174,7 +175,7 @@ public enum MultipleEntryOpSteps implements Step<State> {
 
     STORE_OR_DELETE() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isStoreStep() {
             return true;
         }
 
