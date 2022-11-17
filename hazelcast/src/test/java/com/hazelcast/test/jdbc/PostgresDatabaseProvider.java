@@ -18,14 +18,31 @@ package com.hazelcast.test.jdbc;
 
 import org.testcontainers.jdbc.ContainerDatabaseDriver;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+
+import static com.hazelcast.internal.util.Preconditions.checkState;
+
 public class PostgresDatabaseProvider implements TestDatabaseProvider {
 
+    private static final int LOGIN_TIMEOUT = 5;
     private String jdbcUrl;
 
     @Override
     public String createDatabase(String dbName) {
         jdbcUrl = "jdbc:tc:postgresql:10.21:///" + dbName + "?TC_DAEMON=true";
+        waitForDb();
         return jdbcUrl;
+    }
+
+    private void waitForDb() {
+        DriverManager.setLoginTimeout(LOGIN_TIMEOUT);
+        try (Connection conn = DriverManager.getConnection(jdbcUrl)) {
+            checkState(!conn.isClosed(), "at this point the connection should be open");
+        } catch (SQLException e) {
+            throw new RuntimeException("error while starting database", e);
+        }
     }
 
     @Override

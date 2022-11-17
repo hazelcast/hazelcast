@@ -20,6 +20,8 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
+import static com.hazelcast.internal.util.Preconditions.checkState;
+
 public class H2DatabaseProvider implements TestDatabaseProvider {
 
     private String jdbcUrl;
@@ -27,7 +29,16 @@ public class H2DatabaseProvider implements TestDatabaseProvider {
     @Override
     public String createDatabase(String dbName) {
         jdbcUrl = "jdbc:h2:mem:" + dbName + ";DATABASE_TO_UPPER=false;DB_CLOSE_DELAY=-1";
+        init();
         return jdbcUrl;
+    }
+
+    private void init() {
+        try (Connection conn = DriverManager.getConnection(jdbcUrl)) {
+            checkState(!conn.isClosed(), "at this point the connection should be open");
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
