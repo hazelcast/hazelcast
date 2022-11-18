@@ -41,8 +41,8 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Tests if safe-serialization property works in {@link MulticastDiscoveryStrategy}.
@@ -78,7 +78,9 @@ public class MulticastDiscoveryStrategyDeserializationTest {
             }
             datadgramsThread = null;
         }
-        assertNull(ExceptionUtil.toString(datagramsThreadException), datagramsThreadException);
+        if (datagramsThreadException != null) {
+            fail(ExceptionUtil.toString(datagramsThreadException));
+        }
         HazelcastInstanceFactory.terminateAll();
         TestDeserialized.isDeserialized = false;
 
