@@ -1,9 +1,8 @@
 package com.hazelcast.internal.tpc.nio;
 
-import com.hazelcast.internal.tpc.Eventloop;
-import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
-import com.hazelcast.internal.tpc.iobuffer.NonConcurrentIOBufferAllocator;
+import com.hazelcast.internal.tpc.iobuffer.deprecated.IOBufferImpl;
+import com.hazelcast.internal.tpc.iobuffer.deprecated.NonConcurrentIOBufferAllocator;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.jetbrains.annotations.NotNull;
@@ -17,7 +16,6 @@ import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
-import java.util.function.Supplier;
 
 import static com.hazelcast.internal.nio.Bits.BYTES_INT;
 import static com.hazelcast.internal.nio.Bits.BYTES_LONG;
@@ -141,7 +139,7 @@ public class NioAsyncSocket_LargePayloadTest {
 
         for (int k = 0; k < concurrency; k++) {
             byte[] payload = new byte[payloadSize];
-            IOBuffer buf = new IOBuffer(INT_SIZE_IN_BYTES + LONG_SIZE_IN_BYTES + payload.length);
+            IOBufferImpl buf = new IOBufferImpl(INT_SIZE_IN_BYTES + LONG_SIZE_IN_BYTES + payload.length);
             buf.writeInt(payload.length);
             buf.writeLong(requestTotal / concurrency);
             buf.writeBytes(payload);
@@ -200,7 +198,7 @@ public class NioAsyncSocket_LargePayloadTest {
                     if (round == 0) {
                         latch.countDown();
                     } else {
-                        IOBuffer responseBuf = responseAllocator.allocate(BYTES_INT + BYTES_LONG + payloadSize);
+                        IOBufferImpl responseBuf = responseAllocator.allocate(BYTES_INT + BYTES_LONG + payloadSize);
                         responseBuf.writeInt(payloadSize);
                         responseBuf.writeLong(round);
                         responseBuf.write(payloadBuffer);
@@ -260,7 +258,7 @@ public class NioAsyncSocket_LargePayloadTest {
                         }
 
                         payloadBuffer.flip();
-                        IOBuffer responseBuf = responseAllocator.allocate(BYTES_INT + BYTES_LONG + payloadSize);
+                        IOBufferImpl responseBuf = responseAllocator.allocate(BYTES_INT + BYTES_LONG + payloadSize);
                         responseBuf.writeInt(payloadSize);
                         responseBuf.writeLong(round - 1);
                         responseBuf.write(payloadBuffer);

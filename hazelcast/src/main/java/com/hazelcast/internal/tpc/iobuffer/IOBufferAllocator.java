@@ -17,7 +17,6 @@
 package com.hazelcast.internal.tpc.iobuffer;
 
 public interface IOBufferAllocator {
-
     IOBuffer allocate();
 
     IOBuffer allocate(int minSize);

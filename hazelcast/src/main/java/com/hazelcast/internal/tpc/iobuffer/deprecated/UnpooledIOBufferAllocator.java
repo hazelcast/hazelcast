@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpc.iobuffer;
+package com.hazelcast.internal.tpc.iobuffer.deprecated;
+
+import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
 
 /**
  * A {@link IOBufferAllocator} that doesn't do any pooling of IOBuffers.
@@ -25,16 +27,16 @@ public final class UnpooledIOBufferAllocator implements IOBufferAllocator {
     }
 
     @Override
-    public IOBuffer allocate() {
+    public IOBufferImpl allocate() {
         throw new RuntimeException();
     }
 
     @Override
-    public IOBuffer allocate(int minSize) {
-        return new IOBuffer(minSize);
+    public IOBufferImpl allocate(int minSize) {
+        return new IOBufferImpl(minSize);
     }
 
     @Override
-    public void free(IOBuffer buf) {
+    public void free(IOBufferImpl buf) {
     }
 }

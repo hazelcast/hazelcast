@@ -19,8 +19,7 @@ package com.hazelcast.internal.tpc.nio;
 import com.hazelcast.internal.tpc.AsyncSocket;
 import com.hazelcast.internal.tpc.Eventloop;
 import com.hazelcast.internal.tpc.ReadHandler;
-import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
-import com.hazelcast.internal.util.Preconditions;
+import com.hazelcast.internal.tpc.iobuffer.deprecated.IOBufferImpl;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.IOException;
@@ -39,8 +38,8 @@ import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
-import static java.net.StandardSocketOptions.*;
 import static java.net.StandardSocketOptions.SO_KEEPALIVE;
+import static java.net.StandardSocketOptions.SO_LINGER;
 import static java.net.StandardSocketOptions.SO_RCVBUF;
 import static java.net.StandardSocketOptions.SO_SNDBUF;
 import static java.net.StandardSocketOptions.TCP_NODELAY;
@@ -81,7 +80,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     //  concurrent
     public final AtomicReference<Thread> flushThread = new AtomicReference<>();
-    public MpmcArrayQueue<IOBuffer> unflushedBufs;
+    public MpmcArrayQueue<IOBufferImpl> unflushedBufs;
     private CompletableFuture<AsyncSocket> connectFuture;
     private final EventLoopHandler eventLoopHandler = new EventLoopHandler();
 
@@ -288,24 +287,24 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public boolean write(IOBuffer buf) {
+    public boolean write(IOBufferImpl buf) {
         return unflushedBufs.add(buf);
     }
 
     @Override
-    public boolean writeAll(Collection<IOBuffer> bufs) {
+    public boolean writeAll(Collection<IOBufferImpl> bufs) {
         return unflushedBufs.addAll(bufs);
     }
 
     @Override
-    public boolean writeAndFlush(IOBuffer buf) {
+    public boolean writeAndFlush(IOBufferImpl buf) {
         boolean result = write(buf);
         flush();
         return result;
     }
 
     @Override
-    public boolean unsafeWriteAndFlush(IOBuffer buf) {
+    public boolean unsafeWriteAndFlush(IOBufferImpl buf) {
         Thread currentFlushThread = flushThread.get();
         Thread currentThread = Thread.currentThread();
 

@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.tpc.nio;
 
-import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpc.iobuffer.deprecated.IOBufferImpl;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
@@ -31,7 +31,7 @@ public final class IOVector {
     private final static int IOV_MAX = 1024;
 
     private final ByteBuffer[] array = new ByteBuffer[IOV_MAX];
-    private final IOBuffer[] bufs = new IOBuffer[IOV_MAX];
+    private final IOBufferImpl[] bufs = new IOBufferImpl[IOV_MAX];
     private int size = 0;
     private long pending;
 
@@ -39,10 +39,10 @@ public final class IOVector {
         return size == 0;
     }
 
-    public void fill(Queue<IOBuffer> queue) {
+    public void fill(Queue<IOBufferImpl> queue) {
         int count = IOV_MAX - size;
         for (int k = 0; k < count; k++) {
-            IOBuffer buf = queue.poll();
+            IOBufferImpl buf = queue.poll();
             if (buf == null) {
                 break;
             }
@@ -55,7 +55,7 @@ public final class IOVector {
         }
     }
 
-    public boolean add(IOBuffer buf) {
+    public boolean add(IOBufferImpl buf) {
         if (size == IOV_MAX) {
             return false;
         } else {

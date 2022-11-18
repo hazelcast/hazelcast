@@ -34,15 +34,15 @@ import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.server.ServerConnection;
+import com.hazelcast.internal.tpc.AsyncSocket;
+import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
+import com.hazelcast.internal.tpc.iobuffer.deprecated.IOBufferImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
 import com.hazelcast.spi.exception.RetryableHazelcastException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.impl.responses.NormalResponse;
-import com.hazelcast.internal.tpc.AsyncSocket;
-import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
-import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
 
 import java.lang.reflect.Field;
 import java.security.AccessControlException;
@@ -277,7 +277,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         } else {
             ClientMessage.Frame frame = resultClientMessage.startFrame;
             //IOBuffer buf = new IOBuffer(resultClientMessage.getBufferLength(), false);
-            IOBuffer buf = responseBufAllocator.allocate(resultClientMessage.getBufferLength());
+            IOBufferImpl buf = responseBufAllocator.allocate(resultClientMessage.getBufferLength());
             while (frame != null) {
                 buf.writeIntL(frame.content.length + SIZE_OF_FRAME_LENGTH_AND_FLAGS);
 

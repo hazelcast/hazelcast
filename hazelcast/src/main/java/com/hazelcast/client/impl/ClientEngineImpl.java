@@ -45,6 +45,8 @@ import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.services.CoreService;
 import com.hazelcast.internal.services.ManagedService;
+import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
+import com.hazelcast.internal.tpc.iobuffer.deprecated.ConcurrentIOBufferAllocator;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.executor.ExecutorType;
 import com.hazelcast.internal.util.executor.UnblockablePoolExecutorThreadFactory;
@@ -62,8 +64,6 @@ import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.impl.proxyservice.ProxyService;
 import com.hazelcast.spi.properties.ClusterProperty;
 import com.hazelcast.sql.impl.client.SqlAbstractMessageTask;
-import com.hazelcast.internal.tpc.iobuffer.ConcurrentIOBufferAllocator;
-import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
 import com.hazelcast.transaction.TransactionManagerService;
 
 import javax.annotation.Nonnull;

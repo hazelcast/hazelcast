@@ -1,11 +1,11 @@
 package com.hazelcast.internal.tpc.nio;
 
 
+import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
+import com.hazelcast.internal.tpc.iobuffer.deprecated.IOBufferImpl;
+import com.hazelcast.internal.tpc.iobuffer.deprecated.NonConcurrentIOBufferAllocator;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
-import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
-import com.hazelcast.internal.tpc.iobuffer.NonConcurrentIOBufferAllocator;
 import org.jetbrains.annotations.NotNull;
 import org.junit.After;
 import org.junit.Before;
@@ -81,7 +81,7 @@ public class NioAsyncSocket_IntegrationTest {
         System.out.println("Starting");
 
         for (int k = 0; k < concurrency; k++) {
-            IOBuffer buf = new IOBuffer(128);
+            IOBufferImpl buf = new IOBufferImpl(128);
             buf.writeInt(8);
             buf.writeLong(requestTotal / concurrency);
             buf.flip();
@@ -112,7 +112,7 @@ public class NioAsyncSocket_IntegrationTest {
                     if (l == 0) {
                         latch.countDown();
                     } else {
-                        IOBuffer buf = responseAllocator.allocate(8);
+                        IOBufferImpl buf = responseAllocator.allocate(8);
                         buf.writeInt(8);
                         buf.writeLong(l);
                         buf.flip();
@@ -146,7 +146,7 @@ public class NioAsyncSocket_IntegrationTest {
                         int size = buffer.getInt();
                         long l = buffer.getLong();
 
-                        IOBuffer buf = responseAllocator.allocate(8);
+                        IOBufferImpl buf = responseAllocator.allocate(8);
                         buf.writeInt(-1);
                         buf.writeLong(l - 1);
                         buf.flip();

@@ -14,9 +14,10 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpc.iobuffer;
+package com.hazelcast.internal.tpc.iobuffer.deprecated;
 
 
+import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
 import org.jctools.queues.MessagePassingQueue;
 import org.jctools.queues.MpmcArrayQueue;
 
@@ -26,12 +27,12 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * A {@link IOBufferAllocator} that can be used in parallel by multiple threads.
  * <p>
- * It also allows the {@link #allocate()} of a {@link IOBuffer} to be done by a different
- * thread than {@link #free(IOBuffer)}.
+ * It also allows the {@link #allocate()} of a {@link IOBufferImpl} to be done by a different
+ * thread than {@link #free(IOBufferImpl)}.
  */
 public class ConcurrentIOBufferAllocator implements IOBufferAllocator {
 
-    private final MpmcArrayQueue<IOBuffer> queue = new MpmcArrayQueue<>(4096);
+    private final MpmcArrayQueue<IOBufferImpl> queue = new MpmcArrayQueue<>(4096);
 
     private static final AtomicLong newAllocations = new AtomicLong(0);
     private static final AtomicLong pooledAllocations = new AtomicLong(0);
@@ -42,9 +43,9 @@ public class ConcurrentIOBufferAllocator implements IOBufferAllocator {
     static class Pool {
         private long newAllocateCnt = 0;
         private long allocateCnt = 0;
-        private IOBuffer[] bufs = new IOBuffer[128];
+        private IOBufferImpl[] bufs = new IOBufferImpl[128];
         private int index = -1;
-        private final MessagePassingQueue.Consumer<IOBuffer> consumer = buf -> {
+        private final MessagePassingQueue.Consumer<IOBufferImpl> consumer = buf -> {
             index++;
             bufs[index] = buf;
         };
@@ -59,14 +60,14 @@ public class ConcurrentIOBufferAllocator implements IOBufferAllocator {
     }
 
     @Override
-    public IOBuffer allocate(int minSize) {
-        IOBuffer buf = allocate();
+    public IOBufferImpl allocate(int minSize) {
+        IOBufferImpl buf = allocate();
         buf.ensureRemaining(minSize);
         return buf;
     }
 
     @Override
-    public IOBuffer allocate() {
+    public IOBufferImpl allocate() {
         Pool pool = POOL.get();
         if (pool == null) {
             pool = new Pool();
@@ -78,7 +79,7 @@ public class ConcurrentIOBufferAllocator implements IOBufferAllocator {
 
             int count = 0;
             for (int k = 0; k < pool.bufs.length; k++) {
-                IOBuffer buf = queue.poll();
+                IOBufferImpl buf = queue.poll();
                 if (buf == null) {
                     break;
                 }
@@ -96,7 +97,7 @@ public class ConcurrentIOBufferAllocator implements IOBufferAllocator {
                 //newAllocations.incrementAndGet();
                 //System.out.println(" new buf");
                 ByteBuffer buffer = direct ? ByteBuffer.allocateDirect(minSize) : ByteBuffer.allocate(minSize);
-                IOBuffer buf = new IOBuffer(buffer);
+                IOBufferImpl buf = new IOBufferImpl(buffer);
                 buf.concurrent = true;
                 buf.allocator = this;
                 pool.newAllocateCnt++;
@@ -109,7 +110,7 @@ public class ConcurrentIOBufferAllocator implements IOBufferAllocator {
 //            System.out.println("New allocate percentage:" + (pool.newAllocateCnt * 100f) / pool.allocateCnt + "%");
 //        }
 
-        IOBuffer buf = pool.bufs[pool.index];
+        IOBufferImpl buf = pool.bufs[pool.index];
         pool.bufs[pool.index] = null;
         pool.index--;
 
@@ -128,7 +129,7 @@ public class ConcurrentIOBufferAllocator implements IOBufferAllocator {
     }
 
     @Override
-    public void free(IOBuffer buf) {
+    public void free(IOBufferImpl buf) {
         if (buf.refCount.get() != 0) {
             throw new RuntimeException("refCount should be 0, but was:" + buf.refCount.get());
         }

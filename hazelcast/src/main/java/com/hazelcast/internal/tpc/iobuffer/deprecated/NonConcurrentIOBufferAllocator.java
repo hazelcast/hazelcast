@@ -14,21 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpc.iobuffer;
+package com.hazelcast.internal.tpc.iobuffer.deprecated;
+
+import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
 
 import java.nio.ByteBuffer;
 
 /**
  * A {@link IOBufferAllocator} that can only be used serially (so by a single thread).
  * <p>
- * {@link #allocate()} should be done by the same thread as {@link #free(IOBuffer)}.
+ * {@link #allocate()} should be done by the same thread as {@link #free(IOBufferImpl)}.
  */
 public final class NonConcurrentIOBufferAllocator implements IOBufferAllocator {
     private final int minSize;
     private final boolean direct;
     private long newAllocateCnt = 0;
     private long allocateCnt = 0;
-    private IOBuffer[] bufs = new IOBuffer[4096];
+    private IOBufferImpl[] bufs = new IOBufferImpl[4096];
     private int index = -1;
 
     public NonConcurrentIOBufferAllocator(int minSize, boolean direct) {
@@ -37,7 +39,7 @@ public final class NonConcurrentIOBufferAllocator implements IOBufferAllocator {
     }
 
     @Override
-    public IOBuffer allocate() {
+    public IOBufferImpl allocate() {
         allocateCnt++;
 
         if (index == -1) {
@@ -48,7 +50,7 @@ public final class NonConcurrentIOBufferAllocator implements IOBufferAllocator {
                 //newAllocations.incrementAndGet();
                 //System.out.println(" new buf");
                 ByteBuffer buffer = direct ? ByteBuffer.allocateDirect(minSize) : ByteBuffer.allocate(minSize);
-                IOBuffer buf = new IOBuffer(buffer);
+                IOBufferImpl buf = new IOBufferImpl(buffer);
                 buf.concurrent = false;
                 newAllocateCnt++;
                 buf.allocator = this;
@@ -61,7 +63,7 @@ public final class NonConcurrentIOBufferAllocator implements IOBufferAllocator {
 //            System.out.println("New allocate percentage:" + (newAllocateCnt * 100f) / allocateCnt + "%");
 //        }
 
-        IOBuffer buf = bufs[index];
+        IOBufferImpl buf = bufs[index];
         bufs[index] = null;
         index--;
         buf.acquire();
@@ -69,19 +71,19 @@ public final class NonConcurrentIOBufferAllocator implements IOBufferAllocator {
     }
 
     @Override
-    public IOBuffer allocate(int minSize) {
-        IOBuffer buf = allocate();
+    public IOBufferImpl allocate(int minSize) {
+        IOBufferImpl buf = allocate();
         buf.ensureRemaining(minSize);
         return buf;
     }
 
     @Override
-    public void free(IOBuffer buf) {
+    public void free(IOBufferImpl buf) {
         buf.clear();
         buf.next = null;
 
         if (index == bufs.length - 1) {
-            IOBuffer[] newBuf = new IOBuffer[bufs.length * 2];
+            IOBufferImpl[] newBuf = new IOBufferImpl[bufs.length * 2];
             System.arraycopy(bufs, 0, newBuf, 0, bufs.length);
             bufs = newBuf;
         }

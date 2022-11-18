@@ -16,10 +16,12 @@
 
 package com.hazelcast.internal.tpc;
 
+import com.hazelcast.internal.tpc.iobuffer.deprecated.IOBufferImpl;
+
 /**
  * The ReadHandler currently is a mess. The problem is that there is currently not a unified buffer
  * that fits with Nio (ByteBuffer) and IOUring (Netty ByteBuf). So we need to fix the
- * {@link com.hazelcast.internal.tpc.iobuffer.IOBuffer} so that we can have a single
+ * {@link IOBufferImpl} so that we can have a single
  * ReadHandler that can be used for NioEventloop/IOUringEventLoop/EpollEventloop.
  */
 public interface ReadHandler {
