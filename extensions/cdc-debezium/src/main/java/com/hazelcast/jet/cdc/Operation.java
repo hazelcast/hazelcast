@@ -66,7 +66,7 @@ public enum Operation {
      * Returns the Debezium operation code as String.
      */
     public String code() {
-        return String.valueOf(id);
+        return id == null ? null : String.valueOf(id);
     }
 
     /**

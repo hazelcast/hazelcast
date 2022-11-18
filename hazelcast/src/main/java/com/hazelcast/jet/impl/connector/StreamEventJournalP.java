@@ -270,6 +270,11 @@ public final class StreamEventJournalP<E, T> extends AbstractProcessor {
         return true;
     }
 
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
+
     @SuppressWarnings("unchecked")
     private void initialRead() {
         readFutures = new CompletableFuture[partitionIds.length];

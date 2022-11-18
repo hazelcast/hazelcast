@@ -29,6 +29,7 @@ import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
@@ -50,8 +51,8 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -155,7 +156,7 @@ public class JdbcSqlConnector implements SqlConnector {
             ResultSet rs = statement.getResultSet();
             ResultSetMetaData metaData = rs.getMetaData();
 
-            Map<String, DbField> fields = new HashMap<>();
+            Map<String, DbField> fields = new LinkedHashMap<>();
             for (int i = 1; i <= metaData.getColumnCount(); i++) {
                 String columnName = metaData.getColumnName(i);
                 fields.put(columnName,
@@ -275,7 +276,6 @@ public class JdbcSqlConnector implements SqlConnector {
         }
     }
 
-
     @Nonnull
     @Override
     public Vertex fullScanReader(
@@ -285,7 +285,12 @@ public class JdbcSqlConnector implements SqlConnector {
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection,
             @Nullable FunctionEx<ExpressionEvalContext,
-                    EventTimePolicy<JetSqlRow>> eventTimePolicyProvider) {
+                    EventTimePolicy<JetSqlRow>> eventTimePolicyProvider
+    ) {
+        if (eventTimePolicyProvider != null) {
+            throw QueryException.error("Ordering functions are not supported on top of " + TYPE_NAME + " mappings");
+        }
+
         JdbcTable table = (JdbcTable) table0;
 
         SelectQueryBuilder builder = new SelectQueryBuilder(hzTable);

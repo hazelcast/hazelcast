@@ -34,7 +34,6 @@ import java.util.Map;
 
 import static com.google.common.io.Files.toByteArray;
 import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.EE_JAR;
-import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.EE_TEST_JAR;
 import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.OS_JAR;
 import static com.hazelcast.test.starter.HazelcastVersionLocator.Artifact.OS_TEST_JAR;
 import static org.junit.Assert.assertEquals;
@@ -57,8 +56,6 @@ public class HazelcastVersionLocatorTest {
         assertHash(files.get(OS_TEST_JAR), "220509ece9fc152525c91ba7c75ce600", "OS tests");
 
         assertHash(files.get(EE_JAR), "765816e628ca4ca57d5bd7387e761eaa", "EE");
-
-        assertHash(files.get(EE_TEST_JAR), "162bcb2412570845e6fd91ee61b54f94", "EE tests");
     }
 
     private void assertHash(File file, String expectedHash, String label) throws Exception {

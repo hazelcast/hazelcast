@@ -56,7 +56,7 @@
                 </executions>
                 <configuration>
                     <protoTestSourceRoot>${project.basedir}/src/test/resources</protoTestSourceRoot>
-                    <protocArtifact>com.google.protobuf:protoc:${protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
+                    <protocArtifact>com.google.protobuf:protoc:${java.protobuf.version}:exe:${os.detected.classifier}</protocArtifact>
                 </configuration>
             </plugin>
             <plugin>
@@ -80,7 +80,7 @@
         <dependency>
             <groupId>com.google.protobuf</groupId>
             <artifactId>protobuf-java</artifactId>
-            <version>${protobuf.version}</version>
+            <version>${java.protobuf.version}</version>
         </dependency>
     </dependencies>
 </project>

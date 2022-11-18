@@ -77,6 +77,8 @@ public class NioChannelMemoryLeakTest extends HazelcastTestSupport {
         assertClusterSizeEventually(3, instance1, instance2, instance3);
 
         for (int i = 0; i < 5; i++) {
+            sleepSeconds(1);
+
             closeConnectionBetween(instance1, instance3);
             closeConnectionBetween(instance2, instance3);
             assertClusterSizeEventually(2, instance1, instance2);

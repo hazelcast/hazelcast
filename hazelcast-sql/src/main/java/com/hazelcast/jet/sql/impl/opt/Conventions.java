@@ -32,8 +32,8 @@ public final class Conventions {
         }
 
         @Override
-        public boolean useAbstractConvertersForConversion(RelTraitSet fromTraits, RelTraitSet toTraits) {
-            return !fromTraits.satisfies(toTraits);
+        public boolean useAbstractConvertersForConversion(RelTraitSet fromTraits, RelTraitSet required) {
+            return !fromTraits.satisfies(required);
         }
     };
 
