@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.expression.datetime;
 
 import com.hazelcast.sql.impl.QueryException;
 
+import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
@@ -68,7 +69,7 @@ import java.util.regex.Pattern;
         "checkstyle:ExecutableStatementCount", "checkstyle:InnerAssignment", "checkstyle:MagicNumber",
         "checkstyle:MethodLength", "checkstyle:MultipleVariableDeclarations", "checkstyle:NestedIfDepth",
         "checkstyle:NPathComplexity"})
-public class Formatter {
+public class Formatter implements Serializable {
     private static final Pattern DATETIME_TEMPLATE = Pattern.compile(
             "((?:FM|TM)*)(SSSSS?|HH(?:12|24)?|MI|[SMU]S|FF[1-6]|[AP](?:M|\\.M\\.)|[ap](?:m|\\.m\\.)|"
             + "DA?Y|[Dd]a?y|I?DDD|DD|I?D|W|[WI]W|CC|J|Q|MON(?:TH)?|[Mm]on(?:th)?|MM|RM|rm|"

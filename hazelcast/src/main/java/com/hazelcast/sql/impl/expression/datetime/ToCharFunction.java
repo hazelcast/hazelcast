@@ -16,6 +16,8 @@
 
 package com.hazelcast.sql.impl.expression.datetime;
 
+import com.hazelcast.nio.ObjectDataInput;
+import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.ConcurrentInitialSetCache;
@@ -25,6 +27,8 @@ import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.TriExpression;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
+
+import java.io.IOException;
 
 public class ToCharFunction extends TriExpression<String> implements IdentifiedDataSerializable {
     private static final int CACHE_SIZE = 100;
@@ -63,7 +67,7 @@ public class ToCharFunction extends TriExpression<String> implements IdentifiedD
         }
 
         Object input = operand1.eval(row, context);
-        String locale = (String) operand3.eval(row, context);
+        String locale = operand3 == null ? "en-US" : (String) operand3.eval(row, context);
         return formatter.format(input, locale);
     }
 
@@ -79,5 +83,20 @@ public class ToCharFunction extends TriExpression<String> implements IdentifiedD
     @Override
     public QueryDataType getType() {
         return QueryDataType.VARCHAR;
+    }
+
+    @Override
+    public void writeData(ObjectDataOutput out) throws IOException {
+        super.writeData(out);
+        out.writeObject(constantFormatterCache);
+    }
+
+    @Override
+    public void readData(ObjectDataInput in) throws IOException {
+        super.readData(in);
+        constantFormatterCache = in.readObject();
+        if (constantFormatterCache == null) {
+            formatterCache = new ConcurrentInitialSetCache<>(CACHE_SIZE);
+        }
     }
 }
