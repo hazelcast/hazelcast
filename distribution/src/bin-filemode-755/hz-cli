@@ -46,4 +46,14 @@ $JVM_OPTIONS \
 $JAVA_OPTS \
 )
 
+# trim CLASSPATH
+CLASSPATH="${CLASSPATH##:}"
+CLASSPATH="${CLASSPATH%%:}"
+
+# Bash on Windows may produce paths such as /c/path/to/lib and Java wants c:\path\to\lib
+# and, in this case, the cygpath command *should* be available - use it to format paths
+if [ "$(command -v cygpath)" != "" ]; then
+  CLASSPATH=$(cygpath -w -p "$CLASSPATH")
+fi
+
 $JAVA "${JAVA_OPTS_ARRAY[@]}" -cp "$CLASSPATH" com.hazelcast.client.console.HazelcastCommandLine "$@"
