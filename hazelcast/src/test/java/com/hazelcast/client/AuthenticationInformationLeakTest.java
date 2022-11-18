@@ -49,12 +49,14 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY;
 import static com.hazelcast.test.Accessors.getClientEngineImpl;
 import static com.hazelcast.test.HazelcastTestSupport.assertContains;
 import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
 import static com.hazelcast.test.HazelcastTestSupport.assertNotContains;
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -167,11 +169,17 @@ public class AuthenticationInformationLeakTest {
         ClientMessage msg = MapGetCodec.encodeRequest("mapName", keyData, 0);
         msg.setPartitionId(getPartitionId(keyData));
         ClientTestUtil.writeClientMessage(os, msg);
-        ClientMessage res = ClientTestUtil.readResponse(is);
-        if (res.getMessageType() != ErrorsCodec.EXCEPTION_MESSAGE_TYPE) {
-            assertEquals(res.getMessageType(), MapGetCodec.RESPONSE_MESSAGE_TYPE);
+        AtomicReference<ClientMessage> res = new AtomicReference<>();
+        // The server sends an exception message and immediately closes the connection without waiting the message to
+        // be written. It's possible that we receive EOF from socket, which will make ClientTestUtil.readResponse throw.
+        // Therefore, we use assertTrueEventually here.
+        assertTrueEventually(() -> {
+            res.set(ClientTestUtil.readResponse(is));
+        });
+        if (res.get().getMessageType() != ErrorsCodec.EXCEPTION_MESSAGE_TYPE) {
+            assertEquals(res.get().getMessageType(), MapGetCodec.RESPONSE_MESSAGE_TYPE);
         }
-        return res;
+        return res.get();
     }
 
     private int getPartitionId(Data keyData) {
