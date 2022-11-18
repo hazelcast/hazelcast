@@ -200,16 +200,16 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
     /**
      * Shows whether invocation can retry or not. It has two purposes.
      *
-     * <p>
+     * <ul><li>
      * Control access to {@link Invocation#doInvoke(boolean)}. This method
      * can be accessed from the invoker thread or the single threaded
      * scheduler of {@link InvocationMonitor}. This variable ensures that
      * when scheduler retries, invoker thread will no longer read/write to
      * a shared non-final variable.
-     *
-     * <p>
+     * </li><li>
      * Provide a happens-before relationship between invoker thread,
      * scheduler and callers of {@link Invocation#toString()}.
+     * </li></ul>
      *
      * <p>
      * Note that after the invocation is registered, this variable must be
