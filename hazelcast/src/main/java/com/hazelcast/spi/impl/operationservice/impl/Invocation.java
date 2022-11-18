@@ -477,7 +477,6 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
     boolean detectAndHandleLeftMember() {
         // volatile read
         if (invocationCanRetry
-                // for wan and join operations maybe something can be done in future
                 && invocationShouldHaveTargetMember()
                 // if target member is null, error is already notified
                 && targetMember != null
