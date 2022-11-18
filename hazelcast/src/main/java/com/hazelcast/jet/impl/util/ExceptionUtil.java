@@ -103,8 +103,8 @@ public final class ExceptionUtil {
 
     /**
      * If {@code t} is either of {@link CompletionException}, {@link ExecutionException}
-     * or {@link InvocationTargetException}, returns its cause, peeling it recursively.
-     * Otherwise returns {@code t}.
+     * {@link JetException} or {@link InvocationTargetException}, returns its cause, peeling it recursively.
+     * Otherwise, returns {@code t}.
      *
      * @param t Throwable to peel
      * @see #peeledAndUnchecked(Throwable)
@@ -112,7 +112,8 @@ public final class ExceptionUtil {
     public static Throwable peel(@Nullable Throwable t) {
         while ((t instanceof CompletionException
                 || t instanceof ExecutionException
-                || t instanceof InvocationTargetException)
+                || t instanceof InvocationTargetException
+                || t instanceof JetException)
                 && t.getCause() != null
                 && t.getCause() != t
         ) {

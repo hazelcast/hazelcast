@@ -21,14 +21,13 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.TestProcessors.MockP;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.util.concurrent.ExecutionException;
@@ -36,18 +35,13 @@ import java.util.concurrent.ExecutionException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
-import static org.hamcrest.core.StringContains.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ExceptionUtilTest extends JetTestSupport {
-
-    @Rule
-    public final ExpectedException exceptionRule = ExpectedException.none();
 
     @Test
     public void when_throwableIsRuntimeException_then_peelReturnsOriginal() {
@@ -68,8 +62,22 @@ public class ExceptionUtilTest extends JetTestSupport {
     @Test
     public void when_throwableIsExecutionExceptionWithNullCause_then_returnHazelcastException() {
         ExecutionException exception = new ExecutionException(null);
-        exceptionRule.expect(JetException.class);
-        throw rethrow(exception);
+        assertThrows(JetException.class, () -> { throw rethrow(exception); });
+    }
+
+    @Test
+    public void when_throwableIsJetExceptionWithNullCause_then_returnItself() {
+        JetException exception = new JetException("here stacktrace", null);
+        Throwable result = peel(exception);
+        assertEquals(exception, result);
+    }
+
+    @Test
+    public void when_throwableIsJetExceptionWithNonNullCause_then_returnCause() {
+        JetException exception = new JetException("here stacktrace", new HazelcastSerializationException("oh no"));
+        Throwable result = peel(exception);
+        assertEquals("oh no", result.getMessage());
+        assertEquals(HazelcastSerializationException.class, result.getClass());
     }
 
     @Test
@@ -100,7 +108,7 @@ public class ExceptionUtilTest extends JetTestSupport {
             dag.newVertex("source", () -> new MockP().setCompleteError(exc)).localParallelism(1);
             client.getJet().newJob(dag).join();
         } catch (Exception caught) {
-            assertThat(caught.toString(), containsString(exc.toString()));
+            assertContains(caught.toString(), exc.toString());
         }
     }
 
