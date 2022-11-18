@@ -61,6 +61,10 @@ public class ExpirySystemImpl implements ExpirySystem {
     private static final HazelcastProperty EXPIRED_KEY_SCAN_TIMEOUT_NANOS
             = new HazelcastProperty(PROP_EXPIRED_KEY_SCAN_TIMEOUT_NANOS,
             DEFAULT_EXPIRED_KEY_SCAN_TIMEOUT_NANOS, NANOSECONDS);
+
+    // this should be removed after https://github.com/hazelcast/hazelcast/issues/20589 solved
+    private static final HazelcastProperty DEBUG
+            = new HazelcastProperty("hazelcast.internal.test.debug.ExpirySystemImpl", false);
     private static final int ONE_HUNDRED_PERCENT = 100;
     private static final int MIN_TOTAL_NUMBER_OF_KEYS_TO_SCAN = 100;
     private static final int MAX_SAMPLE_AT_A_TIME = 16;
@@ -76,6 +80,7 @@ public class ExpirySystemImpl implements ExpirySystem {
     private final MapServiceContext mapServiceContext;
     private final ClearExpiredRecordsTask clearExpiredRecordsTask;
     private final InvalidationQueue<ExpiredKey> expiredKeys = new InvalidationQueue<>();
+    private final boolean debug;
 
     private Iterator<Map.Entry<Data, ExpiryMetadata>> cachedExpirationIterator;
     // This is volatile since it can be initialized at runtime lazily and
@@ -95,6 +100,7 @@ public class ExpirySystemImpl implements ExpirySystem {
         this.mapServiceContext = mapServiceContext;
         this.canPrimaryDriveExpiration = mapServiceContext.getClearExpiredRecordsTask().canPrimaryDriveExpiration();
         this.expiredKeyScanTimeoutNanos = nodeEngine.getProperties().getNanos(EXPIRED_KEY_SCAN_TIMEOUT_NANOS);
+        this.debug = nodeEngine.getProperties().getBoolean(DEBUG);
     }
 
     @Override
@@ -125,6 +131,9 @@ public class ExpirySystemImpl implements ExpirySystem {
         }
 
         if (createIfAbsent) {
+            if (debug) {
+                logger.finest(new Exception("expireTimeByKey create"));
+            }
             expireTimeByKey = createExpiryTimeByKeyMap();
             return expireTimeByKey;
         }
@@ -204,6 +213,9 @@ public class ExpirySystemImpl implements ExpirySystem {
             expiryMetadata = createExpiryMetadata(ttlMillis, maxIdleMillis,
                     expirationTime, lastUpdateTime);
             Data nativeKey = recordStore.getStorage().toBackingDataKeyFormat(key);
+            if (debug) {
+                logger.finest(new Exception("expireTimeByKey put"));
+            }
             expireTimeByKey.put(nativeKey, expiryMetadata);
             return;
         }
@@ -410,16 +422,25 @@ public class ExpirySystemImpl implements ExpirySystem {
     // this method is overridden
     protected ExpiryMetadata getExpiryMetadataForExpiryCheck(Data key,
                                                              Map<Data, ExpiryMetadata> expireTimeByKey) {
+        if (debug) {
+            logger.finest(new Exception("expireTimeByKey get"));
+        }
         return expireTimeByKey.get(key);
     }
 
     // this method is overridden
     protected Iterator<Map.Entry<Data, ExpiryMetadata>> initIteratorOf(Map<Data, ExpiryMetadata> expireTimeByKey) {
+        if (debug) {
+            logger.finest(new Exception("expireTimeByKey iterator"));
+        }
         return expireTimeByKey.entrySet().iterator();
     }
 
     // this method is overridden
     protected void callRemove(Data key, Map<Data, ExpiryMetadata> expireTimeByKey) {
+        if (debug) {
+            logger.finest(new Exception("expireTimeByKey remove"));
+        }
         expireTimeByKey.remove(key);
     }
 

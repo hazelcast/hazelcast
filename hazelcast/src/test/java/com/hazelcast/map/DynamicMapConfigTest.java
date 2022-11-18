@@ -67,6 +67,7 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
 
         Config config = getConfig();
         config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1");
+        config.setProperty("hazelcast.internal.test.debug.ExpirySystemImpl", "true");
 
         HazelcastInstance node = createHazelcastInstance(config);
 
