@@ -27,7 +27,6 @@ import com.hazelcast.jet.JobAlreadyExistsException;
 import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.TopologyChangedException;
-import com.hazelcast.jet.datamodel.Tuple3;
 import com.hazelcast.jet.impl.exception.EnteringPassiveClusterStateException;
 import com.hazelcast.jet.impl.exception.JetDisabledException;
 import com.hazelcast.jet.impl.exception.JobTerminateRequestedException;
@@ -52,17 +51,16 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.JET_EXCEPTIONS_RANGE_START;
-import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 
 public final class ExceptionUtil {
 
-    private static final List<Tuple3<Integer, Class<? extends Throwable>, ExceptionFactory>> EXCEPTIONS = Arrays.asList(
-            tuple3(JET_EXCEPTIONS_RANGE_START, JetException.class, JetException::new),
-            tuple3(JET_EXCEPTIONS_RANGE_START + 1, TopologyChangedException.class, TopologyChangedException::new),
-            tuple3(JET_EXCEPTIONS_RANGE_START + 2, JobNotFoundException.class, JobNotFoundException::new),
-            tuple3(JET_EXCEPTIONS_RANGE_START + 3, JobAlreadyExistsException.class, JobAlreadyExistsException::new),
-            tuple3(JET_EXCEPTIONS_RANGE_START + 4, AssertionCompletedException.class, AssertionCompletedException::new),
-            tuple3(JET_EXCEPTIONS_RANGE_START + 5, JetDisabledException.class, JetDisabledException::new)
+    private static final List<JetExceptionTuple> EXCEPTIONS = Arrays.asList(
+            jetException(JET_EXCEPTIONS_RANGE_START, JetException.class, JetException::new),
+            jetException(JET_EXCEPTIONS_RANGE_START + 1, TopologyChangedException.class, TopologyChangedException::new),
+            jetException(JET_EXCEPTIONS_RANGE_START + 2, JobNotFoundException.class, JobNotFoundException::new),
+            jetException(JET_EXCEPTIONS_RANGE_START + 3, JobAlreadyExistsException.class, JobAlreadyExistsException::new),
+            jetException(JET_EXCEPTIONS_RANGE_START + 4, AssertionCompletedException.class, AssertionCompletedException::new),
+            jetException(JET_EXCEPTIONS_RANGE_START + 5, JetDisabledException.class, JetDisabledException::new)
         );
 
     private ExceptionUtil() { }
@@ -96,8 +94,8 @@ public final class ExceptionUtil {
      * Called during startup to make our exceptions known to Hazelcast serialization
      */
     public static void registerJetExceptions(@Nonnull ClientExceptionFactory factory) {
-        for (Tuple3<Integer, Class<? extends Throwable>, ExceptionFactory> exception : EXCEPTIONS) {
-            factory.register(exception.f0(), exception.f1(), exception.f2());
+        for (JetExceptionTuple exception : EXCEPTIONS) {
+            factory.register(exception.index, exception.type, exception.factory);
         }
     }
 
@@ -110,16 +108,20 @@ public final class ExceptionUtil {
      * @see #peeledAndUnchecked(Throwable)
      */
     public static Throwable peel(@Nullable Throwable t) {
-        while ((t instanceof CompletionException
-                || t instanceof ExecutionException
-                || t instanceof InvocationTargetException
-                || t instanceof JetException)
+        while (isPeelableException(t)
                 && t.getCause() != null
                 && t.getCause() != t
         ) {
             t = t.getCause();
         }
         return t;
+    }
+
+    private static boolean isPeelableException(@Nullable Throwable t) {
+        return t instanceof CompletionException
+                || t instanceof ExecutionException
+                || t instanceof InvocationTargetException
+                || t instanceof JetException;
     }
 
     /**
@@ -245,4 +247,21 @@ public final class ExceptionUtil {
                 && peeledFailure != peeledFailure.getCause()
                 && isTechnicalCancellationException(peeledFailure.getCause());
     }
+
+    //<editor-fold desc="JetExceptionTuple class">
+    private static final class JetExceptionTuple {
+        final int index;
+        final Class<? extends Throwable> type;
+        final ExceptionFactory factory;
+
+        private JetExceptionTuple(int index, Class<? extends Throwable> type, ExceptionFactory factory) {
+            this.index = index;
+            this.type = type;
+            this.factory = factory;
+        }
+    }
+    private static JetExceptionTuple jetException(int index, Class<? extends Throwable> type, ExceptionFactory factory) {
+        return new JetExceptionTuple(index, type, factory);
+    }
+    //</editor-fold>
 }

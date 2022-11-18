@@ -62,7 +62,9 @@ public class ExceptionUtilTest extends JetTestSupport {
     @Test
     public void when_throwableIsExecutionExceptionWithNullCause_then_returnHazelcastException() {
         ExecutionException exception = new ExecutionException(null);
-        assertThrows(JetException.class, () -> { throw rethrow(exception); });
+        assertThrows(JetException.class, () -> {
+            throw rethrow(exception);
+        });
     }
 
     @Test
