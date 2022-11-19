@@ -54,6 +54,7 @@ import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
 import com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinProcessorSupplier;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -529,34 +530,27 @@ public class CreateDagVisitor {
         return merger;
     }
 
+    public Vertex onLimit(LimitPhysicalRel rel) {
+        throw QueryException.error("FETCH/OFFSET is only supported for the top-level SELECT");
+    }
+
     public Vertex onRoot(RootRel rootRel) {
         RelNode input = rootRel.getInput();
-        Expression<?> fetch;
-        Expression<?> offset;
 
-        if (input instanceof SortPhysicalRel || isCalcWithSort(input)) {
-            SortPhysicalRel sortRel = input instanceof SortPhysicalRel
-                    ? (SortPhysicalRel) input
-                    : (SortPhysicalRel) ((CalcPhysicalRel) input).getInput();
+        Expression<?> fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
+        Expression<?> offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
 
-            if (sortRel.fetch == null) {
-                fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
-            } else {
-                fetch = sortRel.fetch(parameterMetadata);
+        // We support only top-level LIMIT ... OFFSET.
+        if (input instanceof LimitPhysicalRel) {
+            LimitPhysicalRel limit = (LimitPhysicalRel) input;
+            if (limit.fetch() != null) {
+                fetch = limit.fetch(parameterMetadata);
             }
 
-            if (sortRel.offset == null) {
-                offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
-            } else {
-                offset = sortRel.offset(parameterMetadata);
+            if (limit.offset() != null) {
+                offset = limit.offset(parameterMetadata);
             }
-
-            if (!sortRel.requiresSort()) {
-                input = sortRel.getInput();
-            }
-        } else {
-            fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
-            offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
+            input = limit.getInput();
         }
 
         Vertex vertex = dag.newUniqueVertex(
@@ -718,10 +712,5 @@ public class CreateDagVisitor {
         if (objectKey != null) {
             objectKeys.add(objectKey);
         }
-    }
-
-    private boolean isCalcWithSort(RelNode input) {
-        return input instanceof CalcPhysicalRel &&
-                ((CalcPhysicalRel) input).getInput() instanceof SortPhysicalRel;
     }
 }
