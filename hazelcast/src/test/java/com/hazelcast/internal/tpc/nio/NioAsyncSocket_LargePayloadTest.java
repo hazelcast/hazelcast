@@ -1,6 +1,6 @@
 package com.hazelcast.internal.tpc.nio;
 
-import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
+import com.hazelcast.internal.tpc.iobuffer.deprecated.IOBufferAllocator;
 import com.hazelcast.internal.tpc.iobuffer.deprecated.IOBufferImpl;
 import com.hazelcast.internal.tpc.iobuffer.deprecated.NonConcurrentIOBufferAllocator;
 import com.hazelcast.test.HazelcastSerialClassRunner;

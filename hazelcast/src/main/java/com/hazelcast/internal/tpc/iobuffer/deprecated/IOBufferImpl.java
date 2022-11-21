@@ -17,7 +17,6 @@
 package com.hazelcast.internal.tpc.iobuffer.deprecated;
 
 import com.hazelcast.internal.tpc.AsyncSocket;
-import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;

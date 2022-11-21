@@ -35,7 +35,7 @@ import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.tpc.AsyncSocket;
-import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
+import com.hazelcast.internal.tpc.iobuffer.deprecated.IOBufferAllocator;
 import com.hazelcast.internal.tpc.iobuffer.deprecated.IOBufferImpl;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.Credentials;

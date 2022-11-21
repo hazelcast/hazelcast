@@ -17,7 +17,6 @@
 package com.hazelcast.internal.tpc.iobuffer.deprecated;
 
 
-import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
 import org.jctools.queues.MessagePassingQueue;
 import org.jctools.queues.MpmcArrayQueue;
 

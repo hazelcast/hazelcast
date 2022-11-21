@@ -6,7 +6,7 @@ import java.util.Arrays;
 class TpcIOBufferAllocator implements IOBufferAllocator {
     private static final int DEFAULT_SIZE = 4096;
     private static final int INITIAL_POOL_SIZE = 4096;
-    private static final int BUFFER_SIZE = 16384;
+    static final int BUFFER_SIZE = 16384;
 
     private ByteBuffer[] bufferPool = new ByteBuffer[INITIAL_POOL_SIZE];
     private int bufferPoolPos;
