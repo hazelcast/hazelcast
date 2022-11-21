@@ -900,14 +900,6 @@ abstract class SqlPlanImpl extends SqlPlan {
         public SqlResult execute(QueryId queryId, List<Object> arguments, long timeout) {
             return planExecutor.execute(this, queryId, arguments, timeout);
         }
-
-        @Override
-        public String toString() {
-            return "SelectPlan{" +
-                    "dag=" + dag +
-                    ", query='" + query + '\'' +
-                    '}';
-        }
     }
 
     static class DmlPlan extends SqlPlanImpl {

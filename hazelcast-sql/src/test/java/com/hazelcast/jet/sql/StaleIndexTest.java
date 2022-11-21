@@ -1,3 +1,19 @@
+/*
+ * Copyright 2021 Hazelcast Inc.
+ *
+ * Licensed under the Hazelcast Community License (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://hazelcast.com/hazelcast-community-license
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.jet.sql;
 
 import com.hazelcast.config.IndexConfig;
@@ -14,6 +30,7 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -51,6 +68,8 @@ public class StaleIndexTest extends OptimizerTestSupport {
         );
     }
 
+    // Test is flaky, because cache invalidation is running once per second, and it isn't always possible to reach it.
+    @Ignore
     @Test
     public void test() {
         map = instance().getMap("m");
@@ -61,12 +80,9 @@ public class StaleIndexTest extends OptimizerTestSupport {
 
         map.destroy();
 
-        System.err.println(sqlService.getPlanCache().getPlans().values().iterator().next());
         // The test is timing-dependent, plan cache should be invalidated,
         // but occasionally it may not be invalidated.
         createIndexAndExecuteQuery("f1");
-        System.err.println(sqlService.getPlanCache().getPlans().values().iterator().next());
-
 
         // plan should be invalidated now
         assertTrueEventually(() -> assertEquals(0, sqlService.getPlanCache().size()));
