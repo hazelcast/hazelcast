@@ -645,6 +645,9 @@ public class Formatter implements Serializable {
 
             integerMask.prepare();
             fractionMask.prepare();
+            if (integerMask.minDigits == 0 && fractionMask.minDigits == 0) {
+                (integerMask.digits > 0 ? integerMask : fractionMask).minDigits = 1;
+            }
 
             form = roman && integerMask.digits == 0 && fractionMask.digits == 0 ? Form.Roman
                     : exponential ? Form.Exponential : Form.Normal;
@@ -705,18 +708,18 @@ public class Formatter implements Serializable {
                 integerMask.format(s, negative, null, null, 0, symbols);
                 fractionMask.format(s, negative, null, null, 0, symbols);
             } else {
-                int t = negative ? 1 : 0;
-                int begin = value.charAt(t) == '0' ? t + 1 : t;
                 int dot = value.indexOf('.');
                 int exp = dot == -1 ? -1 : value.indexOf('E', dot + 2);
-                String integer = value.substring(begin, dot != -1 ? dot : value.length());
+                String integer = value.substring(negative ? 1 : 0, dot != -1 ? dot : value.length());
                 String fraction = dot == -1 ? "" : value.substring(dot + 1, exp != -1 ? exp : value.length());
                 int exponent = exp == -1 ? 0 : Integer.parseInt(value.substring(exp + 1));
                 // Step 1 - Normalized form
                 String digits = integer + fraction;
-                exponent -= fraction.length();
                 while (digits.startsWith("0")) {
                     digits = digits.substring(1);
+                }
+                if (!digits.isEmpty()) {
+                    exponent -= fraction.length();
                 }
                 // Step 2 - Find the actual number
                 exponent += shift;

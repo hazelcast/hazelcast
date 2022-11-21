@@ -128,11 +128,23 @@ public class FormatterTest {
     }
 
     @Test
-    public void testSign() {
-        Formatter f = new Formatter("0.9S");
-        check( 1, f, "1+  ");
-        check( 0, f, "0+  ");
-        check(-1, f, "1-  ");
+    public void testSignAndAnchoring() {
+        check(0,  "+0.0",  "-0.0",  "S0.0", "SG0.0");
+        check(0,  " +.0",  " -.0",  "S9.0", "9SG.0", "9S.0");
+        check(0,  "+0  ",  "-0  ",  "S0.9", "SG0.9");
+
+        check(0,  "0.0+",  "0.0-",  "0.0S", "0.0SG");
+        check(0,  " .0+",  " .0-",  "9.0S", "9.0SG");
+        check(0,  "0+  ",  "0-  ",  "0.9S", "0SG.9", "0S.9");
+
+        check(0,  "+0  ",  "-0  ",  "SG9.9", "S9.9");
+        check(0,  "0+  ",  "0-  ",  "9SG.9", "9S.9", "9.S9", "9.9S");
+        check(0,  "0 + ",  "0 - ",  "9.SG9");
+        check(0,  "0  +",  "0  -",  "9.9SG");
+
+        check(0,  "+.0",  "-.0",  "SG.9", "S.9");
+        check(0,  ".+0",  ".-0",  ".SG9", ".S9");
+        check(0,  ".0+",  ".0-",  ".9SG", ".9S");
 
         check(4.5,  "  4.5 ",  "< 4.5>",  "99.9BR", "BR99.9", "BR99.9BR", "BR99.9B");
         check(4.5,  "  4.5 ",  " <4.5>",  "99.9B",   "B99.9",  "B99.9B");
