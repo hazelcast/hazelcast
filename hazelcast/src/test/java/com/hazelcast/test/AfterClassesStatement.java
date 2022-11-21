@@ -19,6 +19,7 @@ package com.hazelcast.test;
 import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
 import org.junit.runners.model.Statement;
 
 import java.util.Collection;
@@ -42,7 +43,7 @@ class AfterClassesStatement extends Statement {
         Set<HazelcastInstance> instances = Hazelcast.getAllHazelcastInstances();
         if (!instances.isEmpty()) {
             String message = "Instances haven't been shut down: " + instances;
-            Hazelcast.shutdownAll();
+            HazelcastInstanceFactory.terminateAll();
             throw new IllegalStateException(message);
         }
         Collection<HazelcastInstance> clientInstances = HazelcastClient.getAllHazelcastClients();
