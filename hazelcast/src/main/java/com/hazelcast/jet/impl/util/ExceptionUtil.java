@@ -120,8 +120,7 @@ public final class ExceptionUtil {
     private static boolean isPeelableException(@Nullable Throwable t) {
         return t instanceof CompletionException
                 || t instanceof ExecutionException
-                || t instanceof InvocationTargetException
-                || t instanceof JetException;
+                || t instanceof InvocationTargetException;
     }
 
     /**

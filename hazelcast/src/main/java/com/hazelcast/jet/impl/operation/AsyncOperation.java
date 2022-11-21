@@ -27,6 +27,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTechnicalCancellationException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isTopologyException;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
@@ -92,7 +93,7 @@ public abstract class AsyncOperation extends Operation implements IdentifiedData
                 sendResponse(value);
             } catch (Exception e) {
                 Throwable ex = peel(e);
-                if (value instanceof Throwable && ex instanceof HazelcastSerializationException) {
+                if (value instanceof Throwable && isOrHasCause(ex, HazelcastSerializationException.class)) {
                     // Sometimes exceptions are not serializable, for example on
                     // https://github.com/hazelcast/hazelcast-jet/issues/1995.
                     // When sending exception as a response and the serialization fails,
@@ -101,7 +102,7 @@ public abstract class AsyncOperation extends Operation implements IdentifiedData
                     // another exception that can be serialized.
                     sendResponse(new JetException(stackTraceToString(ex)));
                 } else {
-                    throw e;
+                    sendResponse(ex);
                 }
             }
         }
