@@ -18,7 +18,6 @@ package com.hazelcast.sql.impl.expression.datetime;
 
 import com.hazelcast.sql.impl.QueryException;
 
-import java.io.Serializable;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
@@ -67,7 +66,7 @@ import java.util.regex.Pattern;
  */
 @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ExecutableStatementCount", "checkstyle:MagicNumber",
         "checkstyle:MethodLength", "checkstyle:NestedIfDepth", "checkstyle:NPathComplexity"})
-public class Formatter implements Serializable {
+public abstract class Formatter {
     private static final Pattern DATETIME_TEMPLATE = Pattern.compile(
             "((?:FM|TM)*)(SSSSS?|HH(?:12|24)?|MI|[SMU]S|FF[1-6]|[AP](?:M|\\.M\\.)|[ap](?:m|\\.m\\.)|"
             + "DA?Y|[Dd]a?y|I?DDD|DD|I?D|W|[WI]W|CC|J|Q|MON(?:TH)?|[Mm]on(?:th)?|MM|RM|rm|"
@@ -81,25 +80,14 @@ public class Formatter implements Serializable {
     private static final String[] ROMAN = {"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"};
     private static final String[] ORDINAL = {"th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th"};
 
-    private final String format;
-    private BiFunction<Object, Locale, String> formatter;
-
-    public Formatter(String format) {
-        this.format = format;
+    public static Formatter forDates(String format) {
+        return new DateFormat(format);
+    }
+    public static Formatter forNumbers(String format) {
+        return new NumberFormat(format);
     }
 
-    public String format(Object input, String locale) {
-        if (formatter == null) {
-            formatter = input instanceof Temporal ? new DateFormat(format) : new NumberFormat(format);
-        }
-        if (formatter instanceof DateFormat && !(input instanceof Temporal)) {
-            throw QueryException.dataException("Input parameter is expected to be date/time");
-        }
-        if (formatter instanceof NumberFormat && !(input instanceof Number)) {
-            throw QueryException.dataException("Input parameter is expected to be numeric");
-        }
-        return formatter.apply(input, Locale.forLanguageTag(locale));
-    }
+    public abstract String format(Object input, Locale locale);
 
     private static StringBuilder toRoman(int number) {
         StringBuilder r = new StringBuilder();
@@ -116,7 +104,7 @@ public class Formatter implements Serializable {
                 ? "th" : ORDINAL[number.charAt(number.length() - 1) - '0'];
     }
 
-    private static class DateFormat implements BiFunction<Object, Locale, String> {
+    private static class DateFormat extends Formatter {
         static final DateTimeFormatter MERIDIEM_FORMATTER = DateTimeFormatter.ofPattern("a");
         static final DateTimeFormatter TIMEZONE_FORMATTER = DateTimeFormatter.ofPattern("O");
         static final DateTimeFormatter ERA_FORMATTER = DateTimeFormatter.ofPattern("G");
@@ -305,7 +293,10 @@ public class Formatter implements Serializable {
         }
 
         @Override
-        public String apply(Object input, Locale locale) {
+        public String format(Object input, Locale locale) {
+            if (!(input instanceof Temporal)) {
+                throw QueryException.dataException("Input parameter is expected to be date/time");
+            }
             StringBuilder s = new StringBuilder();
             parts.forEach(p -> p.format(s, (Temporal) input, locale));
             return s.toString();
@@ -336,7 +327,7 @@ public class Formatter implements Serializable {
      *          and {@link BigDecimal} are using the decimal representation of floating point
      *          numbers, but for the former, the rounding mode is not configurable. </ol>
      */
-    private static class NumberFormat implements BiFunction<Object, Locale, String> {
+    private static class NumberFormat extends Formatter {
         private final Form form;
         private final Mask integerMask = new Mask(true);
         private final Mask fractionMask = new Mask(false);
@@ -697,7 +688,10 @@ public class Formatter implements Serializable {
          *      updated accordingly. </ol>
          */
         @Override
-        public String apply(Object input, Locale locale) {
+        public String format(Object input, Locale locale) {
+            if (!(input instanceof Number)) {
+                throw QueryException.dataException("Input parameter is expected to be numeric");
+            }
             DecimalFormatSymbols symbols = DecimalFormatSymbols.getInstance(locale);
             StringBuilder s = new StringBuilder();
             String value = input.toString();

@@ -17,11 +17,9 @@
 package com.hazelcast.sql.impl.expression.datetime;
 
 import com.hazelcast.nio.ObjectDataInput;
-import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.sql.impl.SqlDataSerializerHook;
 import com.hazelcast.sql.impl.expression.ConcurrentInitialSetCache;
-import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.TriExpression;
@@ -29,11 +27,14 @@ import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.time.temporal.Temporal;
+import java.util.Locale;
 
 public class ToCharFunction extends TriExpression<String> implements IdentifiedDataSerializable {
     private static final int CACHE_SIZE = 100;
     private transient ConcurrentInitialSetCache<String, Formatter> formatterCache;
-    private Formatter constantFormatterCache;
+    private transient ConcurrentInitialSetCache<String, Locale> localeCache;
 
     public ToCharFunction() { }
 
@@ -58,26 +59,18 @@ public class ToCharFunction extends TriExpression<String> implements IdentifiedD
 
     @Override
     public String eval(Row row, ExpressionEvalContext context) {
-        Formatter formatter;
-        if (constantFormatterCache != null) {
-            formatter = constantFormatterCache;
-        } else {
-            String format = (String) operand2.eval(row, context);
-            formatter = formatterCache.computeIfAbsent(format, Formatter::new);
-        }
-
         Object input = operand1.eval(row, context);
-        String locale = operand3 == null ? "en-US" : (String) operand3.eval(row, context);
+        String format = (String) operand2.eval(row, context);
+        Formatter formatter = formatterCache.computeIfAbsent(format,
+                input instanceof Temporal ? Formatter::forDates : Formatter::forNumbers);
+        Locale locale = operand3 == null ? Locale.US : localeCache.computeIfAbsent(
+                (String) operand3.eval(row, context), Locale::forLanguageTag);
         return formatter.format(input, locale);
     }
 
     private void prepareCache() {
-        if (operand2 instanceof ConstantExpression<?>) {
-            String format = (String) operand2.eval(null, null);
-            constantFormatterCache = new Formatter(format);
-        } else {
-            formatterCache = new ConcurrentInitialSetCache<>(CACHE_SIZE);
-        }
+        formatterCache = new ConcurrentInitialSetCache<>(CACHE_SIZE);
+        localeCache = new ConcurrentInitialSetCache<>(CACHE_SIZE);
     }
 
     @Override
@@ -86,17 +79,13 @@ public class ToCharFunction extends TriExpression<String> implements IdentifiedD
     }
 
     @Override
-    public void writeData(ObjectDataOutput out) throws IOException {
-        super.writeData(out);
-        out.writeObject(constantFormatterCache);
-    }
-
-    @Override
     public void readData(ObjectDataInput in) throws IOException {
         super.readData(in);
-        constantFormatterCache = in.readObject();
-        if (constantFormatterCache == null) {
-            formatterCache = new ConcurrentInitialSetCache<>(CACHE_SIZE);
-        }
+        prepareCache();
+    }
+
+    private void readObject(ObjectInputStream in) throws ClassNotFoundException, IOException {
+        in.defaultReadObject();
+        prepareCache();
     }
 }
