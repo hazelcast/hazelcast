@@ -48,6 +48,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertClusterSize;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static com.hazelcast.test.HazelcastTestSupport.sleepAtLeastSeconds;
@@ -175,8 +176,10 @@ public class ClientXATest {
     @Test
     public void testRecovery() throws Exception {
         HazelcastInstance instance = Hazelcast.newHazelcastInstance();
-        Hazelcast.newHazelcastInstance();
-        Hazelcast.newHazelcastInstance();
+        HazelcastInstance instance2 = Hazelcast.newHazelcastInstance();
+        HazelcastInstance instance3 = Hazelcast.newHazelcastInstance();
+
+        assertClusterSize(3, instance, instance2, instance3);
 
         HazelcastXAResource xaResource = instance.getXAResource();
         Xid myXid = new SerializableXID(42, "globalTransactionId".getBytes(), "branchQualifier".getBytes());
