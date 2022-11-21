@@ -94,6 +94,7 @@ public final class MapTableUtils {
 
             List<String> indexAttributes = indexConfig.getAttributes();
             List<Integer> indexFieldOrdinals = new ArrayList<>(indexAttributes.size());
+            List<QueryPath> indexFieldQueryPaths = new ArrayList<>(indexAttributes.size());
             List<QueryDataType> indexFieldConverterTypes = new ArrayList<>(indexAttributes.size());
             String[] components = index.getComponents();
 
@@ -121,6 +122,7 @@ public final class MapTableUtils {
                 }
 
                 indexFieldOrdinals.add(ordinal);
+                indexFieldQueryPaths.add(attributePath);
                 indexFieldConverterTypes.add(converterType);
             }
 
@@ -129,6 +131,7 @@ public final class MapTableUtils {
                     indexConfig.getType(),
                     components.length,
                     indexFieldOrdinals,
+                    indexFieldQueryPaths,
                     indexFieldConverterTypes
             );
 

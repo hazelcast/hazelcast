@@ -75,8 +75,8 @@ public class PartitionedMapPlanObjectKeyTest extends CoreSqlTestSupport {
         Object keyJetMetadata2 = new Object();
         Object valueJetMetadata2 = new Object();
 
-        List<MapTableIndex> indexes1 = singletonList(new MapTableIndex("idx", IndexType.SORTED, 0, emptyList(), emptyList()));
-        List<MapTableIndex> indexes2 = singletonList(new MapTableIndex("idx", IndexType.HASH, 0, emptyList(), emptyList()));
+        List<MapTableIndex> indexes1 = singletonList(new MapTableIndex("idx", IndexType.SORTED, 0, emptyList(), emptyList(), emptyList()));
+        List<MapTableIndex> indexes2 = singletonList(new MapTableIndex("idx", IndexType.HASH, 0, emptyList(), emptyList(), emptyList()));
 
         boolean hd1 = false;
         boolean hd2 = true;

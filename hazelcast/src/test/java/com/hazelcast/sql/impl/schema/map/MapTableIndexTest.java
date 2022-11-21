@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.schema.map;
 
 import com.hazelcast.config.IndexType;
 import com.hazelcast.sql.impl.CoreSqlTestSupport;
+import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.type.QueryDataType;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -40,12 +41,19 @@ import static org.junit.Assert.assertEquals;
 public class MapTableIndexTest extends CoreSqlTestSupport {
     @Test
     public void testContent() {
-        MapTableIndex index = new MapTableIndex("index", SORTED, 1, singletonList(1), singletonList(INT));
+        MapTableIndex index = new MapTableIndex(
+                "index",
+                SORTED,
+                1,
+                singletonList(1),
+                singletonList(QueryPath.KEY_PATH),
+                singletonList(INT));
 
         assertEquals("index", index.getName());
         assertEquals(SORTED, index.getType());
         assertEquals(1, index.getComponentsCount());
         assertEquals(singletonList(1), index.getFieldOrdinals());
+        assertEquals(singletonList(QueryPath.KEY_PATH), index.getFieldQueryPaths());
         assertEquals(singletonList(INT), index.getFieldConverterTypes());
     }
 
@@ -63,17 +71,21 @@ public class MapTableIndexTest extends CoreSqlTestSupport {
         List<Integer> ordinals1 = singletonList(1);
         List<Integer> ordinals2 = singletonList(2);
 
+        List<QueryPath> path1 = singletonList(QueryPath.KEY_PATH);
+        List<QueryPath> path2 = singletonList(QueryPath.VALUE_PATH);
+
         List<QueryDataType> types1 = singletonList(INT);
         List<QueryDataType> types2 = singletonList(BIGINT);
 
-        MapTableIndex index = new MapTableIndex(name1, type1, components1, ordinals1, types1);
+        MapTableIndex index = new MapTableIndex(name1, type1, components1, ordinals1, path1, types1);
 
-        checkEquals(index, new MapTableIndex(name1, type1, components1, ordinals1, types1), true);
+        checkEquals(index, new MapTableIndex(name1, type1, components1, ordinals1, path1, types1), true);
 
-        checkEquals(index, new MapTableIndex(name2, type1, components1, ordinals1, types1), false);
-        checkEquals(index, new MapTableIndex(name1, type2, components1, ordinals1, types1), false);
-        checkEquals(index, new MapTableIndex(name1, type1, components2, ordinals1, types1), false);
-        checkEquals(index, new MapTableIndex(name1, type1, components1, ordinals2, types1), false);
-        checkEquals(index, new MapTableIndex(name1, type1, components1, ordinals1, types2), false);
+        checkEquals(index, new MapTableIndex(name2, type1, components1, ordinals1, path1, types1), false);
+        checkEquals(index, new MapTableIndex(name1, type2, components1, ordinals1, path1, types1), false);
+        checkEquals(index, new MapTableIndex(name1, type1, components2, ordinals1, path1, types1), false);
+        checkEquals(index, new MapTableIndex(name1, type1, components1, ordinals2, path1, types1), false);
+        checkEquals(index, new MapTableIndex(name1, type1, components1, ordinals1, path2, types1), false);
+        checkEquals(index, new MapTableIndex(name1, type1, components1, ordinals1, path1, types2), false);
     }
 }

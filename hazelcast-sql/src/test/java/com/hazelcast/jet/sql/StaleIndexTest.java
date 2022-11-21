@@ -27,7 +27,6 @@ import static com.hazelcast.sql.impl.type.QueryDataType.VARCHAR;
 import static java.util.Arrays.asList;
 import static java.util.Collections.singletonList;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -58,20 +57,23 @@ public class StaleIndexTest extends OptimizerTestSupport {
         createMapping("m", int.class, FooTuple.class);
 
         // Sometimes it fails due to FullScan being picked up over IndexScan (commented part).
-        createIndexAndExecuteQuery("f0", false);
+        createIndexAndExecuteQuery("f0");
 
         map.destroy();
 
+        System.err.println(sqlService.getPlanCache().getPlans().values().iterator().next());
         // The test is timing-dependent, plan cache should be invalidated,
         // but occasionally it may not be invalidated.
-        createIndexAndExecuteQuery("f1", true);
+        createIndexAndExecuteQuery("f1");
+        System.err.println(sqlService.getPlanCache().getPlans().values().iterator().next());
+
 
         // plan should be invalidated now
         assertTrueEventually(() -> assertEquals(0, sqlService.getPlanCache().size()));
-        createIndexAndExecuteQuery("f1", false);
+        createIndexAndExecuteQuery("f1");
     }
 
-    private void createIndexAndExecuteQuery(String indexedField, boolean flakyRun /*, boolean indexedLaunch */) {
+    private void createIndexAndExecuteQuery(String indexedField  /*, boolean indexedLaunch */) {
         map.addIndex(new IndexConfig(IndexType.SORTED, indexedField).setName("foo"));
         map.put(0, new FooTuple("v0", "v1"));
         map.put(1, new FooTuple("v1", "v0"));
@@ -82,26 +84,9 @@ public class StaleIndexTest extends OptimizerTestSupport {
         map.put(6, new FooTuple("v10", "v20"));
 
         List<MapTableIndex> partitionedMapIndexes = getPartitionedMapIndexes(mapContainer(map), mapTableFields);
-        assertFalse(partitionedMapIndexes.isEmpty());
+        assertEquals(1, partitionedMapIndexes.size());
 
-//        HazelcastTable table = partitionedTable(map.getName(), mapTableFields, partitionedMapIndexes, map.size());
-//        List<QueryDataType> parameterTypes = asList(INT, VARCHAR, VARCHAR);
-//        PhysicalRel optimizedPhysicalRel = optimizePhysical(query, parameterTypes, table).getPhysical();
-//        assertPlan(optimizedPhysicalRel, plan(
-//                planRow(0, indexedLaunch ? IndexScanMapPhysicalRel.class : FullScanPhysicalRel.class)
-//        ));
-
-        if (flakyRun) {
-            try {
-                assertRowsAnyOrder(query, singletonList(new Row(0)));
-            } catch (Exception e) {
-                // TODO: fail-fast.
-                e.printStackTrace();
-            }
-
-        } else {
-            assertRowsAnyOrder(query, singletonList(new Row(0)));
-        }
+        assertRowsAnyOrder(query, singletonList(new Row(0)));
     }
 
     public static class FooTuple implements Serializable {
