@@ -28,7 +28,7 @@ import java.util.Collection;
 import java.util.Set;
 import java.util.function.BiConsumer;
 
-public enum ClearOpSteps implements Step<State> {
+public enum ClearOpSteps implements IMapOpStep {
 
     CLEAR_MEMORY() {
         @Override
@@ -69,7 +69,7 @@ public enum ClearOpSteps implements Step<State> {
 
     CLEAR_MAP_STORE() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isStoreStep() {
             return true;
         }
 

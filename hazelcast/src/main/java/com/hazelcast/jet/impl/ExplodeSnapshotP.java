@@ -98,4 +98,9 @@ public class ExplodeSnapshotP extends AbstractProcessor {
         }
         return flatMapper.tryProcess(castItem.getValue());
     }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
 }

@@ -25,6 +25,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.ascii.HTTPCommunicator.ConnectionResponse;
+import com.hazelcast.internal.ascii.rest.RestValue;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.json.JsonObject;
 import com.hazelcast.internal.management.dto.WanReplicationConfigDTO;
@@ -44,6 +45,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_JSON;
@@ -59,6 +61,7 @@ import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static com.hazelcast.test.HazelcastTestSupport.sleepAtLeastSeconds;
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_OK;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -413,6 +416,69 @@ public class RestTest {
         } finally {
             socket.close();
         }
+    }
+
+    @Test
+    public void testMapGetWithEscapedName() throws IOException {
+        String mapName = randomMapName();
+        IMap<String, String> map = instance.getMap(mapName + " a");
+        map.put("key 1", "value1");
+        ConnectionResponse response = communicator.mapGet(mapName + "%20a", "key%201");
+        assertEquals(HTTP_OK, response.responseCode);
+        assertEquals(response.response, "value1");
+    }
+
+    @Test
+    public void testQueuePollWithEscapedName() throws IOException {
+        String queueName = randomString();
+        IQueue<String> queue = instance.getQueue(queueName + " a");
+        assertTrue(queue.offer("value 1"));
+        ConnectionResponse response = communicator.queuePoll(queueName + "%20a", 10);
+        assertEquals(HTTP_OK, response.responseCode);
+        assertEquals(response.response, "value 1");
+    }
+
+    @Test
+    public void testQueueOfferWithEscapedNameAndValue() throws IOException {
+        String queueName = randomString();
+        IQueue<Object> queue = instance.getQueue(queueName + " a");
+        assertEquals(HTTP_OK, communicator.queueOffer(queueName + "%20a" + "/value%201", "data"));
+        assertEquals(queue.size(), 1);
+
+        ConnectionResponse response = communicator.queuePoll(queueName + "%20a", 10);
+        assertEquals(HTTP_OK, response.responseCode);
+        assertEquals(response.response, "value 1");
+    }
+
+    @Test
+    public void testMapPutWithEscapedNameAndKey() throws IOException {
+        String mapName = randomMapName();
+        IMap<String, RestValue> map = instance.getMap(mapName + " a");
+        assertEquals(HTTP_OK, communicator.mapPut(mapName + "%20a", "key%201", "value1"));
+        assertEquals(1, map.size());
+        assertArrayEquals(map.get("key 1").getValue(), "value1".getBytes(StandardCharsets.UTF_8));
+    }
+
+    @Test
+    public void testDeleteAllMapWithEscapedName() throws IOException {
+        String mapName = randomMapName();
+        IMap<String, String> map = instance.getMap(mapName + " a");
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+        assertEquals(HTTP_OK, communicator.mapDeleteAll(mapName + "%20a"));
+        assertEquals(0, map.size());
+    }
+
+    @Test
+    public void testDeleteMapWithEscapedName() throws IOException {
+        String mapName = randomMapName();
+        IMap<String, String> map = instance.getMap(mapName + " a");
+        map.put("key 1", "value1");
+        map.put("key2", "value2");
+        map.put("key3", "value3");
+        assertEquals(HTTP_OK, communicator.mapDelete(mapName + "%20a", "key%201"));
+        assertEquals(2, map.size());
     }
 
     private JsonObject assertJsonContains(String json, String... attributesAndValues) {

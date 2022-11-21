@@ -39,7 +39,7 @@ import java.util.List;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 
-public enum PartitionWideOpSteps implements Step<State> {
+public enum PartitionWideOpSteps implements IMapOpStep {
 
     PROCESS() {
         @Override
@@ -164,7 +164,7 @@ public enum PartitionWideOpSteps implements Step<State> {
 
     STORE_OR_DELETE() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isStoreStep() {
             return true;
         }
 

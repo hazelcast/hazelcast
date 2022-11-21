@@ -30,10 +30,15 @@ import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,10 +83,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         createTable(mapName);
 
         createMapStore();
-
-        assertTrueEventually(() -> {
-            assertRowsAnyOrder(hz, "SHOW MAPPINGS", newArrayList(new Row(MAPPING_PREFIX + mapName)));
-        }, 5);
+        awaitMappingCreated();
     }
 
     @Test
@@ -113,9 +115,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         awaitMappingCreated();
 
         mapStore.destroy();
-        assertTrueEventually(() -> {
-            assertRowsAnyOrder(hz, "SHOW MAPPINGS", newArrayList());
-        }, 5);
+        awaitMappingDestroyed();
     }
 
     @Test
@@ -127,9 +127,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
 
         GenericMapStore<Object> mapStoreNotMaster = createMapStore(instances()[1]);
         mapStoreNotMaster.destroy();
-        assertTrueEventually(() -> {
-            assertRowsAnyOrder(hz, "SHOW MAPPINGS", newArrayList());
-        }, 5);
+        awaitMappingDestroyed();
     }
 
     @Test
@@ -595,6 +593,35 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         assertThat(record).isNotNull();
     }
 
+    @Test
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/22527")
+    public void givenColumnPropSubset_whenStore_thenTableContainsRow() throws SQLException {
+        createTable(mapName, "id INT PRIMARY KEY", "name VARCHAR(100)", "other VARCHAR(100) DEFAULT 'def'");
+        try (Connection conn = DriverManager.getConnection(dbConnectionUrl);
+             Statement stmt = conn.createStatement()
+        ) {
+            stmt.execute("INSERT INTO " + mapName + " (id, name) VALUES(0, 'name-0')");
+        }
+
+        Properties properties = new Properties();
+        properties.setProperty(EXTERNAL_REF_ID_PROPERTY, TEST_DATABASE_REF);
+
+        properties.setProperty("columns", "id,name");
+        GenericMapStore<Integer> mapStore = createMapStore(properties, hz);
+
+        GenericRecord person = GenericRecordBuilder.compact(mapName)
+                .setInt32("id", 1)
+                .setString("name", "name-1")
+                .build();
+        mapStore.store(1, person);
+
+
+        assertJdbcRowsAnyOrder(mapName,
+                new Row(0, "name-0"),
+                new Row(1, "name-1")
+        );
+    }
+
     private <K> GenericMapStore<K> createMapStore() {
         return createMapStore(hz);
     }
@@ -611,6 +638,7 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
 
         GenericMapStore<K> mapStore = new GenericMapStore<>();
         mapStore.init(instance, properties, mapName);
+        mapStore.awaitInitFinished();
         return mapStore;
     }
 
@@ -628,4 +656,9 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         }, 5);
     }
 
+    private void awaitMappingDestroyed() {
+        assertTrueEventually(() -> {
+            assertRowsAnyOrder(hz, "SHOW MAPPINGS", newArrayList());
+        }, 5);
+    }
 }
