@@ -27,6 +27,7 @@ import com.hazelcast.internal.management.operation.UpdateMapConfigOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.MapService;
+import com.hazelcast.map.listener.EntryEvictedListener;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
@@ -46,6 +47,7 @@ import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.Accessors.getOperationService;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -65,6 +67,7 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
     public void testMapConfigUpdate_reflectedToRecordStore() throws InterruptedException {
         String mapName = randomMapName();
         CountDownLatch expiredLatch = new CountDownLatch(1);
+        CountDownLatch evictedLatch = new CountDownLatch(1);
 
         Config config = getConfig();
         config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1");
@@ -72,10 +75,17 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
         HazelcastInstance node = createHazelcastInstance(config);
 
         IMap<Integer, Integer> map = node.getMap(mapName);
+
+        // add listeners
         map.addEntryListener((EntryExpiredListener<Integer, Integer>) event -> {
             logger.info("Entry expired: " + event);
             expiredLatch.countDown();
         }, 1, false);
+        map.addEntryListener((EntryEvictedListener<Integer, Integer>) event -> {
+            logger.info("Entry evicted: " + event);
+            evictedLatch.countDown();
+        }, 2, false);
+
         // trigger recordStore creation
         map.put(1, 1);
 
@@ -84,7 +94,15 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
         // entries after config update will be affected.
         map.put(1, 1);
 
-        assertTrue(expiredLatch.await(60, TimeUnit.SECONDS));
+        assertTrue("Entry didn't expire", expiredLatch.await(60, TimeUnit.SECONDS));
+
+        // test eviction with infinite ttl and max-idle
+        map.put(2, 2, 0, TimeUnit.SECONDS, 0, TimeUnit.SECONDS);
+        map.put(3, 3);
+
+        assertEquals(1, map.size());
+
+        assertTrue("Entry didn't evict", evictedLatch.await(60, TimeUnit.SECONDS));
     }
 
     private void updateMapConfig(String mapName, HazelcastInstance node) {
@@ -109,7 +127,7 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
         mapConfig.setAsyncBackupCount(2);
         EvictionConfig evictionConfig = mapConfig.getEvictionConfig();
         evictionConfig.setEvictionPolicy(EvictionPolicy.LRU);
-        evictionConfig.setSize(111).setMaxSizePolicy(MaxSizePolicy.FREE_HEAP_SIZE);
+        evictionConfig.setSize(1).setMaxSizePolicy(MaxSizePolicy.PER_NODE);
         return mapConfig;
     }
 
