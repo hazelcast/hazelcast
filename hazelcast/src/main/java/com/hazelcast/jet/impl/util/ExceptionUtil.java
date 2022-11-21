@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.util;
 
 import com.hazelcast.client.impl.protocol.ClientExceptionFactory;
-import com.hazelcast.client.impl.protocol.ClientExceptionFactory.ExceptionFactory;
 import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.core.OperationTimeoutException;
@@ -44,8 +43,6 @@ import javax.annotation.Nullable;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
-import java.util.List;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
@@ -53,15 +50,6 @@ import java.util.function.BiConsumer;
 import static com.hazelcast.client.impl.protocol.ClientProtocolErrorCodes.JET_EXCEPTIONS_RANGE_START;
 
 public final class ExceptionUtil {
-
-    private static final List<JetExceptionTuple> EXCEPTIONS = Arrays.asList(
-            jetException(JET_EXCEPTIONS_RANGE_START, JetException.class, JetException::new),
-            jetException(JET_EXCEPTIONS_RANGE_START + 1, TopologyChangedException.class, TopologyChangedException::new),
-            jetException(JET_EXCEPTIONS_RANGE_START + 2, JobNotFoundException.class, JobNotFoundException::new),
-            jetException(JET_EXCEPTIONS_RANGE_START + 3, JobAlreadyExistsException.class, JobAlreadyExistsException::new),
-            jetException(JET_EXCEPTIONS_RANGE_START + 4, AssertionCompletedException.class, AssertionCompletedException::new),
-            jetException(JET_EXCEPTIONS_RANGE_START + 5, JetDisabledException.class, JetDisabledException::new)
-        );
 
     private ExceptionUtil() { }
 
@@ -94,14 +82,18 @@ public final class ExceptionUtil {
      * Called during startup to make our exceptions known to Hazelcast serialization
      */
     public static void registerJetExceptions(@Nonnull ClientExceptionFactory factory) {
-        for (JetExceptionTuple exception : EXCEPTIONS) {
-            factory.register(exception.index, exception.type, exception.factory);
-        }
+        int id = JET_EXCEPTIONS_RANGE_START;
+        factory.register(id++, JetException.class, JetException::new);
+        factory.register(id++, TopologyChangedException.class, TopologyChangedException::new);
+        factory.register(id++, JobNotFoundException.class, JobNotFoundException::new);
+        factory.register(id++, JobAlreadyExistsException.class, JobAlreadyExistsException::new);
+        factory.register(id++, AssertionCompletedException.class, AssertionCompletedException::new);
+        factory.register(id, JetDisabledException.class, JetDisabledException::new);
     }
 
     /**
      * If {@code t} is either of {@link CompletionException}, {@link ExecutionException}
-     * {@link JetException} or {@link InvocationTargetException}, returns its cause, peeling it recursively.
+     * or {@link InvocationTargetException}, returns its cause, peeling it recursively.
      * Otherwise, returns {@code t}.
      *
      * @param t Throwable to peel
@@ -247,20 +239,4 @@ public final class ExceptionUtil {
                 && isTechnicalCancellationException(peeledFailure.getCause());
     }
 
-    //<editor-fold desc="JetExceptionTuple class">
-    private static final class JetExceptionTuple {
-        final int index;
-        final Class<? extends Throwable> type;
-        final ExceptionFactory factory;
-
-        private JetExceptionTuple(int index, Class<? extends Throwable> type, ExceptionFactory factory) {
-            this.index = index;
-            this.type = type;
-            this.factory = factory;
-        }
-    }
-    private static JetExceptionTuple jetException(int index, Class<? extends Throwable> type, ExceptionFactory factory) {
-        return new JetExceptionTuple(index, type, factory);
-    }
-    //</editor-fold>
 }
