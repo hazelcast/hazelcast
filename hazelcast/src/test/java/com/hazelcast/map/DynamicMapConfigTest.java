@@ -24,12 +24,10 @@ import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.management.operation.UpdateMapConfigOperation;
-import com.hazelcast.map.impl.MapContainer;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 import com.hazelcast.map.impl.MapService;
-import com.hazelcast.map.impl.MapServiceContext;
-import com.hazelcast.map.impl.PartitionContainer;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
-import com.hazelcast.map.impl.recordstore.RecordStore;
+import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -43,11 +41,11 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.config.EvictionPolicy.NONE;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
 import static com.hazelcast.test.Accessors.getAddress;
 import static com.hazelcast.test.Accessors.getOperationService;
-import static java.util.Objects.requireNonNull;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -58,12 +56,15 @@ import static org.junit.Assert.assertTrue;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class DynamicMapConfigTest extends HazelcastTestSupport {
 
+    private final ILogger logger = Logger.getLogger(getClass());
+
     @ClassRule
     public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-trace-dynamic-map-config-update.xml");
 
     @Test
-    public void testMapConfigUpdate_reflectedToRecordStore() {
+    public void testMapConfigUpdate_reflectedToRecordStore() throws InterruptedException {
         String mapName = randomMapName();
+        CountDownLatch expiredLatch = new CountDownLatch(1);
 
         Config config = getConfig();
         config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "1");
@@ -71,19 +72,19 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
         HazelcastInstance node = createHazelcastInstance(config);
 
         IMap<Integer, Integer> map = node.getMap(mapName);
+        map.addEntryListener((EntryExpiredListener<Integer, Integer>) event -> {
+            logger.info("Entry expired: " + event);
+            expiredLatch.countDown();
+        }, 1, false);
         // trigger recordStore creation
         map.put(1, 1);
-
-        assertFalse("RecordStore must not be evictable before the map config update", isEvictionEnabled(map));
-        assertFalse("RecordStore must not be expirable before the map config update", isRecordStoreExpirable(map));
 
         updateMapConfig(mapName, node);
         // trigger recordStore expiry system, only added/updated
         // entries after config update will be affected.
         map.put(1, 1);
 
-        assertTrue("RecordStore must be evictable after MapConfig update", isEvictionEnabled(map));
-        assertTrue("RecordStore must be expirable after MapConfig update", isRecordStoreExpirable(map));
+        assertTrue(expiredLatch.await(60, TimeUnit.SECONDS));
     }
 
     private void updateMapConfig(String mapName, HazelcastInstance node) {
@@ -99,27 +100,9 @@ public class DynamicMapConfigTest extends HazelcastTestSupport {
         executeOperation(node, updateMapConfigOperation);
     }
 
-    private boolean isRecordStoreExpirable(IMap map) {
-        MapProxyImpl mapProxy = (MapProxyImpl) map;
-        MapService mapService = (MapService) mapProxy.getService();
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        PartitionContainer container = mapServiceContext.getPartitionContainer(0);
-        RecordStore recordStore = container.getExistingRecordStore(map.getName());
-        return requireNonNull(recordStore).isExpirable();
-    }
-
-    private boolean isEvictionEnabled(IMap map) {
-        MapProxyImpl mapProxy = (MapProxyImpl) map;
-        MapService mapService = (MapService) mapProxy.getService();
-        MapServiceContext mapServiceContext = mapService.getMapServiceContext();
-        MapContainer mapContainer = mapServiceContext.getMapContainer(map.getName());
-        EvictionPolicy evictionPolicy = mapContainer.getMapConfig().getEvictionConfig().getEvictionPolicy();
-        return evictionPolicy != NONE;
-    }
-
     private MapConfig createMapConfig() {
         MapConfig mapConfig = new MapConfig();
-        mapConfig.setTimeToLiveSeconds(100);
+        mapConfig.setTimeToLiveSeconds(1);
         mapConfig.setMaxIdleSeconds(22);
         mapConfig.setReadBackupData(false);
         mapConfig.setBackupCount(3);
