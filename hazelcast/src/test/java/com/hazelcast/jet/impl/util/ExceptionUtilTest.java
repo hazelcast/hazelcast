@@ -21,7 +21,6 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.core.TestProcessors.MockP;
-import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -65,21 +64,6 @@ public class ExceptionUtilTest extends JetTestSupport {
         assertThrows(JetException.class, () -> {
             throw rethrow(exception);
         });
-    }
-
-    @Test
-    public void when_throwableIsJetExceptionWithNullCause_then_returnItself() {
-        JetException exception = new JetException("here stacktrace", null);
-        Throwable result = peel(exception);
-        assertEquals(exception, result);
-    }
-
-    @Test
-    public void when_throwableIsJetExceptionWithNonNullCause_then_returnCause() {
-        JetException exception = new JetException("here stacktrace", new HazelcastSerializationException("oh no"));
-        Throwable result = peel(exception);
-        assertEquals("oh no", result.getMessage());
-        assertEquals(HazelcastSerializationException.class, result.getClass());
     }
 
     @Test
