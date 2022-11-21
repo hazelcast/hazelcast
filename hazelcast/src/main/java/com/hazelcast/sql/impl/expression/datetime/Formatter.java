@@ -65,10 +65,8 @@ import java.util.regex.Pattern;
  *          this necessitates to have a {@code '0'} at the end of the pattern if the PostgreSQL
  *          convention is desired. </ol>
  */
-@SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:DeclarationOrder",
-        "checkstyle:ExecutableStatementCount", "checkstyle:InnerAssignment", "checkstyle:MagicNumber",
-        "checkstyle:MethodLength", "checkstyle:MultipleVariableDeclarations", "checkstyle:NestedIfDepth",
-        "checkstyle:NPathComplexity"})
+@SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ExecutableStatementCount", "checkstyle:MagicNumber",
+        "checkstyle:MethodLength", "checkstyle:NestedIfDepth", "checkstyle:NPathComplexity"})
 public class Formatter implements Serializable {
     private static final Pattern DATETIME_TEMPLATE = Pattern.compile(
             "((?:FM|TM)*)(SSSSS?|HH(?:12|24)?|MI|[SMU]S|FF[1-6]|[AP](?:M|\\.M\\.)|[ap](?:m|\\.m\\.)|"
@@ -78,6 +76,11 @@ public class Formatter implements Serializable {
     private static final Pattern NUMERIC_TEMPLATE = Pattern.compile(
             "FM|[90]+|[,G.D]|BR?|SG?|MI?|PL?|CR?|F?\"[^\"]*\"|V9+|TH|th|EEEE|RN");
     private static final Pattern SIGN = Pattern.compile("[+-]");
+
+    private static final int[] ARABIC = {1000,  900, 500,  400, 100,   90,  50,   40,  10,    9,   5,    4,   1};
+    private static final String[] ROMAN = {"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"};
+    private static final String[] ORDINAL = {"th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th"};
+
     private final String format;
     private BiFunction<Object, Locale, String> formatter;
 
@@ -98,10 +101,6 @@ public class Formatter implements Serializable {
         return formatter.apply(input, Locale.forLanguageTag(locale));
     }
 
-    private static final int[] ARABIC = {1000,  900, 500,  400, 100,   90,  50,   40,  10,    9,   5,    4,   1};
-    private static final String[] ROMAN = {"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"};
-    private static final String[] ORDINAL = {"th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th"};
-
     private static StringBuilder toRoman(int number) {
         StringBuilder r = new StringBuilder();
         for (int j = 0; j < ARABIC.length; j++) {
@@ -114,10 +113,21 @@ public class Formatter implements Serializable {
 
     private static String getOrdinal(String number) {
         return number.endsWith("11") || number.endsWith("12") || number.endsWith("13")
-                ? "th" : ORDINAL[number.charAt(number.length() - 1) - 48];
+                ? "th" : ORDINAL[number.charAt(number.length() - 1) - '0'];
     }
 
     private static class DateFormat implements BiFunction<Object, Locale, String> {
+        static final DateTimeFormatter MERIDIEM_FORMATTER = DateTimeFormatter.ofPattern("a");
+        static final DateTimeFormatter TIMEZONE_FORMATTER = DateTimeFormatter.ofPattern("O");
+        static final DateTimeFormatter ERA_FORMATTER = DateTimeFormatter.ofPattern("G");
+
+        static final BiFunction<Object, Locale, Object> UPPERCASE = (o, l) -> ((String) o).toUpperCase(l);
+        static final BiFunction<Object, Locale, Object> LOWERCASE = (o, l) -> ((String) o).toLowerCase(l);
+        static final BiFunction<Object, Locale, Object> WITH_PERIODS = (o, l) -> {
+            String r = (String) o;
+            return r.length() != 2 ? r : r.charAt(0) + "." + r.charAt(1) + ".";
+        };
+
         private final List<Part> parts = new ArrayList<>();
 
         interface Part {
@@ -143,7 +153,8 @@ public class Formatter implements Serializable {
         }
 
         static class PatternInstance implements Part {
-            final boolean fill, translate;
+            final boolean fill;
+            final boolean translate;
             final Pattern pattern;
             final Ordinal ordinal;
 
@@ -183,19 +194,6 @@ public class Formatter implements Serializable {
                 return (fill ? "FM" : "") + (translate ? "TM" : "") + pattern + (ordinal == null ? "" : ordinal);
             }
         }
-
-        static final DateTimeFormatter
-                MERIDIEM_FORMATTER = DateTimeFormatter.ofPattern("a"),
-                TIMEZONE_FORMATTER = DateTimeFormatter.ofPattern("O"),
-                ERA_FORMATTER = DateTimeFormatter.ofPattern("G");
-
-        static final BiFunction<Object, Locale, Object>
-                UPPERCASE = (o, l) -> ((String) o).toUpperCase(l),
-                LOWERCASE = (o, l) -> ((String) o).toLowerCase(l),
-                WITH_PERIODS = (o, l) -> {
-                    String r = (String) o;
-                    return r.length() != 2 ? r : r.charAt(0) + "." + r.charAt(1) + ".";
-                };
 
         @SuppressWarnings("checkstyle:MethodParamPad")
         enum Pattern {
@@ -294,7 +292,8 @@ public class Formatter implements Serializable {
                 if (group.startsWith("\"")) {
                     parts.add(new Literal(group.substring(1, group.length() - 1)));
                 } else {
-                    String prefix = m.group(1), suffix = m.group(3);
+                    String prefix = m.group(1);
+                    String suffix = m.group(3);
                     String pattern = m.group(2).replace('.', '_').replace(',', '_');
                     parts.add(new PatternInstance(prefix.contains("FM"), prefix.contains("TM"),
                             Pattern.valueOf(pattern), suffix == null ? null : Ordinal.valueOf(suffix)));
@@ -339,9 +338,10 @@ public class Formatter implements Serializable {
      */
     private static class NumberFormat implements BiFunction<Object, Locale, String> {
         private final Form form;
-        private final Mask integerMask = new Mask(true), fractionMask = new Mask(false);
+        private final Mask integerMask = new Mask(true);
+        private final Mask fractionMask = new Mask(false);
         private final boolean currency;
-        private final int exponent;
+        private final int shift;
 
         enum Form { Normal, Exponential, Roman }
 
@@ -353,6 +353,8 @@ public class Formatter implements Serializable {
             BR, B, SG, S, MI, M, PL, P, CR, C, TH, th, EEEE, RN;
 
             static final List<Pattern> SIGN = Arrays.asList(BR, B, SG, S, MI, M, PL, P);
+            static final List<Pattern> ANCHORED = Arrays.asList(B, S, M, P, C, TH, th, EEEE, RN);
+
             boolean isSign() {
                 return SIGN.contains(this);
             }
@@ -369,7 +371,6 @@ public class Formatter implements Serializable {
                 throw new IllegalArgumentException();
             }
 
-            static final List<Pattern> ANCHORED = Arrays.asList(B, S, M, P, C, TH, th, EEEE, RN);
             @Override
             public boolean isAnchored() {
                 return ANCHORED.contains(this);
@@ -405,12 +406,15 @@ public class Formatter implements Serializable {
          * represent arbitrary text, sign/currency/ordinals/exponent/roman numerals, grouping/
          * decimal separators, and digit groups respectively.
          */
-        class Mask extends ArrayList<Object> {
+        class Mask {
             final boolean pre;
             final StringBuilder digitMask = new StringBuilder();
+            final List<Object> groups = new ArrayList<>();
             final List<Boolean> fillModes = new ArrayList<>();
             boolean fillMode = true;
-            int offerSign = -1, digits, minDigits;
+            int offerSign = -1;
+            int digits;
+            int minDigits;
             boolean sign;
             Pattern bracket;
 
@@ -422,10 +426,9 @@ public class Formatter implements Serializable {
                 fillMode = !fillMode;
             }
 
-            @Override
-            public boolean add(Object g) {
+            public void add(Object g) {
+                groups.add(g);
                 fillModes.add(fillMode);
-                return super.add(g);
             }
 
             void addDigits(String digits) {
@@ -435,12 +438,12 @@ public class Formatter implements Serializable {
 
             void prepare() {
                 if (pre) {
-                    Collections.reverse(this);
+                    Collections.reverse(groups);
                     Collections.reverse(fillModes);
                     digitMask.reverse();
                 }
-                for (int i = 0; i < size(); i++) {
-                    Object g = get(i);
+                for (int i = 0; i < groups.size(); i++) {
+                    Object g = groups.get(i);
                     if (!(g instanceof Anchorable) || ((Anchorable) g).isAnchored()) {
                         offerSign = i;
                     }
@@ -461,7 +464,7 @@ public class Formatter implements Serializable {
                 Pattern inferred = bracket == null && pair.bracket != null ? pair.bracket
                         : pre && !sign && !pair.sign && form != Form.Roman ? Pattern.M : null;
                 if (inferred != null) {
-                    add(offerSign, inferred);
+                    groups.add(offerSign, inferred);
                     fillModes.add(offerSign, fillModes.get(Math.max(offerSign - 1, 0)));
                 }
             }
@@ -485,8 +488,8 @@ public class Formatter implements Serializable {
                 List<Object> parts = new ArrayList<>();
                 // d: Accumulate the count of processed digits in the mask
                 // f: Accumulate the filler space until a fixed element or the end of the mask is encountered
-                for (int i = 0, d = 0, f = 0; i < size();) {
-                    Object g = get(i);
+                for (int i = 0, d = 0, f = 0; i < groups.size();) {
+                    Object g = groups.get(i);
                     boolean fillMode = fillModes.get(i);
                     if (g instanceof Literal) {
                         parts.add(((Literal) g).contents);
@@ -571,7 +574,8 @@ public class Formatter implements Serializable {
                     }
 
                     i++;
-                    if (f > 0 && (i == size() || (get(i) instanceof Anchorable && !((Anchorable) get(i)).isAnchored()))) {
+                    if (f > 0 && (i == groups.size() || (groups.get(i) instanceof Anchorable
+                            && !((Anchorable) groups.get(i)).isAnchored()))) {
                         StringBuilder r = new StringBuilder();
                         for (; f > 0; f--) {
                             r.append(' ');
@@ -587,7 +591,7 @@ public class Formatter implements Serializable {
 
             @Override
             public String toString() {
-                List<Object> mask = new ArrayList<>(this);
+                List<Object> mask = new ArrayList<>(groups);
                 if (pre) {
                     Collections.reverse(mask);
                 }
@@ -598,8 +602,11 @@ public class Formatter implements Serializable {
         NumberFormat(String format) {
             Matcher m = NUMERIC_TEMPLATE.matcher(format);
             Mask mask = integerMask;
-            boolean currency = false, exponential = false, roman = false;
-            int i = 0, exponent = 0;
+            boolean currency = false;
+            boolean exponential = false;
+            boolean roman = false;
+            int shift = 0;
+            int i = 0;
 
             for (; m.find(); i = m.end()) {
                 if (m.start() > i) {
@@ -609,7 +616,7 @@ public class Formatter implements Serializable {
                 if (group.equals("FM")) {
                     mask.toggleFillMode();
                 } else if (group.startsWith("V")) {
-                    exponent += group.length() - 1;
+                    shift += group.length() - 1;
                 } else if (group.startsWith("F") || group.startsWith("\"")) {
                     mask.add(new Literal(group));
                 } else if (group.startsWith("9") || group.startsWith("0")) {
@@ -642,7 +649,7 @@ public class Formatter implements Serializable {
             form = roman && integerMask.digits == 0 && fractionMask.digits == 0 ? Form.Roman
                     : exponential ? Form.Exponential : Form.Normal;
             this.currency = currency;
-            this.exponent = exponent;
+            this.shift = shift;
 
             integerMask.ensureSignProvision(fractionMask);
             fractionMask.ensureSignProvision(integerMask);
@@ -657,7 +664,7 @@ public class Formatter implements Serializable {
          *      decrement the exponent accordingly. In this normalized form, there is an imaginary
          *      floating-point (decimal separator [.]) at the index {@code digits.length() +
          *      exponent}.
-         * <li> Increment the exponent by the exponent of this number format. At this point,
+         * <li> Increment the exponent by the shift amount of this number format. At this point,
          *      ‑exponent is the length of the fraction part if exponent ≤ 0.
          * <li> Determine the lengths of the integer and fraction parts. In the exponential form,
          *      they are the number of integer and fraction digits in the pattern, and the
@@ -698,10 +705,12 @@ public class Formatter implements Serializable {
                 integerMask.format(s, negative, null, null, 0, symbols);
                 fractionMask.format(s, negative, null, null, 0, symbols);
             } else {
-                int t = negative ? 1 : 0, begin = value.charAt(t) == '0' ? t + 1 : t;
-                int dot = value.indexOf('.'), exp = dot == -1 ? -1 : value.indexOf('E', dot + 2);
+                int t = negative ? 1 : 0;
+                int begin = value.charAt(t) == '0' ? t + 1 : t;
+                int dot = value.indexOf('.');
+                int exp = dot == -1 ? -1 : value.indexOf('E', dot + 2);
                 String integer = value.substring(begin, dot != -1 ? dot : value.length());
-                String fraction = (dot == -1 ? "" : value.substring(dot + 1, exp != -1 ? exp : value.length()));
+                String fraction = dot == -1 ? "" : value.substring(dot + 1, exp != -1 ? exp : value.length());
                 int exponent = exp == -1 ? 0 : Integer.parseInt(value.substring(exp + 1));
                 // Step 1 - Normalized form
                 String digits = integer + fraction;
@@ -710,7 +719,7 @@ public class Formatter implements Serializable {
                     digits = digits.substring(1);
                 }
                 // Step 2 - Find the actual number
-                exponent += this.exponent;
+                exponent += shift;
                 // Step 3 - Determine the lengths of the integer and fraction
                 boolean exponential = form == Form.Exponential;
                 int integerLength = exponential ? integerMask.digits : digits.length() + exponent;

@@ -217,7 +217,7 @@ public class FormatterTest {
     }
 
     @Test
-    public void testFeatureOrtogonality() {
+    public void testFeatureOrthogonality() {
         Formatter f = new Formatter("FM999V99 -> RN");
         check(3.14,  f, "314 -> CCCXIV");
     }
