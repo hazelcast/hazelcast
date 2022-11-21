@@ -18,7 +18,6 @@ package com.hazelcast.datastore;
 
 import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.datastore.impl.CloseableDataSource;
-import com.hazelcast.datastore.impl.HikariTestUtil;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -31,6 +30,7 @@ import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 
+import static com.hazelcast.datastore.impl.HikariTestUtil.assertDataSourceClosed;
 import static com.hazelcast.datastore.impl.HikariTestUtil.assertEventuallyNoHikariThreads;
 import static com.hazelcast.datastore.impl.HikariTestUtil.assertPoolNameEndsWith;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -117,7 +117,7 @@ public class JdbcDataStoreFactoryTest {
         CloseableDataSource closeableDataSource = (CloseableDataSource) jdbcDataStoreFactory.getDataStore();
         closeableDataSource.close();
 
-        HikariTestUtil.assertDataSourceClosed(closeableDataSource, TEST_CONFIG_NAME);
+        assertDataSourceClosed(closeableDataSource, TEST_CONFIG_NAME);
     }
 
     private ResultSet executeQuery(CloseableDataSource closeableDataSource, String sql) throws SQLException {
@@ -151,7 +151,7 @@ public class JdbcDataStoreFactoryTest {
         DataSource dataSource = jdbcDataStoreFactory.getDataStore();
         jdbcDataStoreFactory.close();
 
-        HikariTestUtil.assertDataSourceClosed(dataSource, TEST_CONFIG_NAME);
+        assertDataSourceClosed(dataSource, TEST_CONFIG_NAME);
     }
 
 }
