@@ -126,6 +126,11 @@ public class HashJoinP<E0> extends AbstractProcessor {
         return lookupTableForOrdinal.get(key);
     }
 
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
+
     private class CombinationsTraverser<OUT> implements Traverser<OUT> {
         private final BiFunction<E0, Object[], OUT> mapTupleToOutputFn;
         private final Object[] lookedUpValues;

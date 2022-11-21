@@ -83,6 +83,11 @@ public final class AssertionP<S, T> extends AbstractProcessor {
         return true;
     }
 
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
+
     @Nonnull
     public static <A, T> ProcessorMetaSupplier assertionP(
         @Nonnull String name,

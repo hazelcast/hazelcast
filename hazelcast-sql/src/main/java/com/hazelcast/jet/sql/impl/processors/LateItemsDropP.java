@@ -82,4 +82,9 @@ public class LateItemsDropP extends AbstractProcessor {
         }
         return super.tryProcessWatermark(watermark);
     }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
 }

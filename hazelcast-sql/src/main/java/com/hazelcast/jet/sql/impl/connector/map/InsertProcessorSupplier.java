@@ -172,5 +172,10 @@ final class InsertProcessorSupplier implements ProcessorSupplier, DataSerializab
             }
             return true;
         }
+
+        @Override
+        public boolean closeIsCooperative() {
+            return true;
+        }
     }
 }
