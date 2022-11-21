@@ -46,7 +46,6 @@ import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.net.Socket;
 import java.nio.charset.StandardCharsets;
-import java.util.UUID;
 
 import static com.hazelcast.internal.ascii.rest.HttpCommand.CONTENT_TYPE_JSON;
 import static com.hazelcast.internal.nio.IOUtil.readFully;
@@ -259,15 +258,6 @@ public class RestTest {
         assertJsonContains(result,
                 "status", "fail",
                 "message", "WAN sync is not supported.");
-    }
-
-    @Test
-    public void wanSyncGetProgress() throws Exception {
-        Config config = instance.getConfig();
-        String result = communicator.wanSyncGetProgress(config.getClusterName(), "", UUID.randomUUID());
-        assertJsonContains(result,
-                "status", "fail",
-                "message", "Wan Sync requires Hazelcast Enterprise Edition.");
     }
 
     @Test

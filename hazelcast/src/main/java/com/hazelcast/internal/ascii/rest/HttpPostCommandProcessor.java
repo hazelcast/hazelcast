@@ -104,8 +104,6 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
                 handleWanSyncMap(command);
             } else if (uri.startsWith(URI_WAN_SYNC_ALL_MAPS)) {
                 handleWanSyncAllMaps(command);
-            } else if (uri.startsWith(URI_WAN_SYNC_GET_PROGRESS)) {
-                handleWanSyncGetProgress(command);
             } else if (uri.startsWith(URI_WAN_CLEAR_QUEUES)) {
                 handleWanClearQueues(command);
             } else if (uri.startsWith(URI_ADD_WAN_CONFIG)) {
@@ -345,14 +343,6 @@ public class HttpPostCommandProcessor extends HttpCommandProcessor<HttpPostComma
         UUID uuid = getNode().getNodeEngine().getWanReplicationService()
                 .syncAllMaps(wanRepName, publisherId);
         prepareResponse(cmd, response(SUCCESS, "message", "Sync initiated", "uuid", uuid.toString()));
-    }
-
-    protected void handleWanSyncGetProgress(HttpPostCommand command) throws Throwable {
-        prepareResponse(
-                SC_500,
-                command,
-                response(FAIL, "message", "Wan Sync requires Hazelcast Enterprise Edition.")
-        );
     }
 
     /**

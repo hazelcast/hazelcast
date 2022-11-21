@@ -92,7 +92,6 @@ public class HTTPCommunicator {
     // WAN
     public static final String URI_WAN_SYNC_MAP = "wan/sync/map";
     public static final String URI_WAN_SYNC_ALL_MAPS = "wan/sync/allmaps";
-    public static final String URI_WAN_SYNC_GET_PROGRESS = "wan/sync/getProgress";
     public static final String URI_WAN_CLEAR_QUEUES = "wan/clearWanQueues";
     public static final String URI_ADD_WAN_CONFIG = "wan/addWanConfig";
     public static final String URI_WAN_PAUSE_PUBLISHER = "wan/pausePublisher";
@@ -342,11 +341,6 @@ public class HTTPCommunicator {
                                   String wanRepName, String publisherId) throws IOException {
         String url = getUrl(URI_WAN_SYNC_ALL_MAPS);
         return doPost(url, clusterName, clusterPassword, wanRepName, publisherId).response;
-    }
-
-    public String wanSyncGetProgress(String clusterName, String clusterPassword, UUID syncUUID) throws IOException {
-        String url = getUrl(URI_WAN_SYNC_GET_PROGRESS);
-        return doPost(url, clusterName, clusterPassword, syncUUID.toString()).response;
     }
 
     public String wanMapConsistencyCheck(String clusterName, String clusterPassword,
