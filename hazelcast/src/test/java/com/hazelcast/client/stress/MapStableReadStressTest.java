@@ -115,8 +115,9 @@ public class MapStableReadStressTest extends StressTestSupport {
         @Override
         public void doRun() throws Exception {
             while (!isStopped()) {
-                int key = random.nextInt(MAP_SIZE);
-                int value = map.get(key);
+                // do not want to get NPE when map does not contain key
+                Integer key = random.nextInt(MAP_SIZE);
+                Integer value = map.get(key);
                 assertEquals("The value for the key was not consistent", key, value);
             }
         }

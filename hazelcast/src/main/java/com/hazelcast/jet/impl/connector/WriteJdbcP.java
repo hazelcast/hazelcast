@@ -198,6 +198,12 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
             idleCount = 0;
             inbox.clear();
         } catch (SQLException e) {
+            // Commit failed, we need to execute rollback
+            try {
+                connection.rollback();
+            } catch (SQLException sqlException) {
+                logger.severe("Exception during rollback", sqlException);
+            }
             if (isNonTransientPredicate.test(e) || snapshotUtility.usesTransactionLifecycle()) {
                 throw ExceptionUtil.rethrow(e);
             } else {
@@ -244,8 +250,13 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
                 throw new JetException("The dataSource implements neither " + DataSource.class.getName() + " nor "
                         + XADataSource.class.getName());
             }
-            connection.setAutoCommit(false);
+
             supportsBatch = connection.getMetaData().supportsBatchUpdates();
+
+            // Call setAutoCommit(false) after getting the metadata. Otherwise, Hikari thinks that connection is dirty
+            // See the issue "Connection.getMetaData() causes Hikari to return dirty connections"
+            // https://github.com/brettwooldridge/HikariCP/issues/866
+            connection.setAutoCommit(false);
             statement = connection.prepareStatement(updateQuery);
         } catch (SQLException e) {
             if (isNonTransientPredicate.test(e) || snapshotUtility.usesTransactionLifecycle()) {

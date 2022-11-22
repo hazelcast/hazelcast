@@ -104,6 +104,11 @@ public class GroupP<K, A, R, OUT> extends AbstractProcessor {
         return emitFromTraverser(resultTraverser);
     }
 
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
+
     private class ResultTraverser implements Traverser<Entry<K, A>> {
         private final Iterator<Entry<K, A>> iter = keyToAcc.entrySet().iterator();
 
