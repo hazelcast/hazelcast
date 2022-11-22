@@ -49,7 +49,6 @@ import java.net.Socket;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.nio.Protocols.CLIENT_BINARY;
 import static com.hazelcast.test.Accessors.getClientEngineImpl;
@@ -89,29 +88,34 @@ public class AuthenticationInformationLeakTest {
     }
 
     @Test
-    public void testAuthenticationExceptionDoesNotLeakInfo() throws IOException {
+    public void testAuthenticationExceptionDoesNotLeakInfo() {
         SerializationService ss = new DefaultSerializationServiceBuilder().build();
         InetSocketAddress endpoint = instance.getCluster().getLocalMember().getSocketAddress();
-        try (Socket socket = new Socket()) {
-            socket.setReuseAddress(true);
-            socket.connect(endpoint);
-            ClientMessage res;
-            try (OutputStream os = socket.getOutputStream(); InputStream is = socket.getInputStream()) {
-                os.write(CLIENT_BINARY.getBytes(StandardCharsets.UTF_8));
-                res = getKeyValue(ss, os, is);
+        // The server sends an exception message and immediately closes the connection without waiting the message to
+        // be written. It's possible that we receive EOF from socket, which will make ClientTestUtil.readResponse throw.
+        // Therefore, we use assertTrueEventually here.
+        assertTrueEventually(() -> {
+            try (Socket socket = new Socket()) {
+                socket.setReuseAddress(true);
+                socket.connect(endpoint);
+                ClientMessage res;
+                try (OutputStream os = socket.getOutputStream(); InputStream is = socket.getInputStream()) {
+                    os.write(CLIENT_BINARY.getBytes(StandardCharsets.UTF_8));
+                    res = getKeyValue(ss, os, is);
+                }
+                assertEquals(res.getMessageType(), ErrorsCodec.EXCEPTION_MESSAGE_TYPE);
+                ClientExceptionFactory factory = new ClientExceptionFactory(false, Thread.currentThread().getContextClassLoader());
+                Throwable err = factory.createException(res);
+                String message = err.getMessage();
+                assertInstanceOf(AuthenticationException.class, err.getCause());
+                assertContains(message, "must authenticate before any operation");
+                String messageLowerCase = message.toLowerCase();
+                assertNotContains(messageLowerCase, "connection");
+                assertNotContains(messageLowerCase, "authenticated");
+                assertNotContains(messageLowerCase, "creationTime");
+                assertNotContains(messageLowerCase, "clientAttributes");
             }
-            assertEquals(res.getMessageType(), ErrorsCodec.EXCEPTION_MESSAGE_TYPE);
-            ClientExceptionFactory factory = new ClientExceptionFactory(false, Thread.currentThread().getContextClassLoader());
-            Throwable err = factory.createException(res);
-            String message = err.getMessage();
-            assertInstanceOf(AuthenticationException.class, err.getCause());
-            assertContains(message, "must authenticate before any operation");
-            String messageLowerCase = message.toLowerCase();
-            assertNotContains(messageLowerCase, "connection");
-            assertNotContains(messageLowerCase, "authenticated");
-            assertNotContains(messageLowerCase, "creationTime");
-            assertNotContains(messageLowerCase, "clientAttributes");
-        }
+        });
     }
 
     @Test
@@ -169,17 +173,11 @@ public class AuthenticationInformationLeakTest {
         ClientMessage msg = MapGetCodec.encodeRequest("mapName", keyData, 0);
         msg.setPartitionId(getPartitionId(keyData));
         ClientTestUtil.writeClientMessage(os, msg);
-        AtomicReference<ClientMessage> res = new AtomicReference<>();
-        // The server sends an exception message and immediately closes the connection without waiting the message to
-        // be written. It's possible that we receive EOF from socket, which will make ClientTestUtil.readResponse throw.
-        // Therefore, we use assertTrueEventually here.
-        assertTrueEventually(() -> {
-            res.set(ClientTestUtil.readResponse(is));
-        });
-        if (res.get().getMessageType() != ErrorsCodec.EXCEPTION_MESSAGE_TYPE) {
-            assertEquals(res.get().getMessageType(), MapGetCodec.RESPONSE_MESSAGE_TYPE);
+        ClientMessage res = ClientTestUtil.readResponse(is);
+        if (res.getMessageType() != ErrorsCodec.EXCEPTION_MESSAGE_TYPE) {
+            assertEquals(res.getMessageType(), MapGetCodec.RESPONSE_MESSAGE_TYPE);
         }
-        return res.get();
+        return res;
     }
 
     private int getPartitionId(Data keyData) {
