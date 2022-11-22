@@ -28,6 +28,7 @@ import com.hazelcast.jet.sql.impl.expression.json.JsonQueryFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonValueFunction;
 import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonParseFunction;
+import com.hazelcast.jet.sql.impl.validate.operators.special.HazelcastToRowJsonFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.string.HazelcastLikeOperator;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.SqlColumnType;
@@ -492,7 +493,7 @@ public final class RexToExpression {
                     return JsonArrayFunction.create(fields, nullClause);
                 } else if (function == HazelcastSqlOperatorTable.TO_ROW) {
                     return ToRowFunction.create(operands[0]);
-                } else if (function == HazelcastSqlOperatorTable.TO_ROW_JSON) {
+                } else if (function == HazelcastToRowJsonFunction.INSTANCE) {
                     return ToRowJsonFunction.create(operands[0]);
                 }
 

@@ -249,8 +249,6 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
             return getRexBuilder().makeCall(HazelcastToRowJsonFunction.INSTANCE, convertedOperand);
         }
 
-        System.out.println();
-
         // Delegate to Apache Calcite.
         return getRexBuilder().makeCast(to, convertedOperand);
     }

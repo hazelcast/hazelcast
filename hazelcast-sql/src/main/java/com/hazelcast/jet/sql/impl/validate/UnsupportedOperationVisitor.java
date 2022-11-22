@@ -256,7 +256,6 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.PARQUET_FILE);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.DOT);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TO_ROW);
-        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TO_ROW_JSON);
 
         // SYMBOLS
         SUPPORTED_SYMBOLS = new HashSet<>();
