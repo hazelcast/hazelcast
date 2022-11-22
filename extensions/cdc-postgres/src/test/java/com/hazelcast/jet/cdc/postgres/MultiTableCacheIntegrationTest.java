@@ -102,17 +102,13 @@ public class MultiTableCacheIntegrationTest extends AbstractPostgresCdcIntegrati
 
         //when
         executeBatch("INSERT INTO customers VALUES (1005, 'Jason', 'Bourne', 'jason@bourne.org')");
-        int globalQueryIndex = 1;
-        for (int i = 1; i <= REPEATS; i += 50) {
-            List<String> batch = new ArrayList<>();
-            for (int j = 0; j < 50 && globalQueryIndex <= REPEATS; j++) {
-                batch.add("UPDATE customers SET first_name='Anne" + globalQueryIndex + "' WHERE id=1004");
-                batch.add("UPDATE orders SET quantity='" + globalQueryIndex + "' WHERE id=10004");
-
-                batch.add("DELETE FROM orders WHERE id=10003");
-                globalQueryIndex++;
+        List<String> batch = new ArrayList<>();
+        for (int i = 1; i <= REPEATS; i++) {
+            batch.addAll(createTestSqlQueries(i));
+            if (batch.size() >= 50 || i == REPEATS) {
+                executeBatch(batch.toArray(new String[0]));
+                batch.clear();
             }
-            executeBatch(batch.toArray(new String[0]));
         }
         executeBatch("DELETE FROM customers WHERE id=1005");
         executeBatch("INSERT INTO orders VALUES (10007, '2016-02-19', 1002, 2, 106)");
@@ -133,6 +129,15 @@ public class MultiTableCacheIntegrationTest extends AbstractPostgresCdcIntegrati
                         new Customer(1004, "Anne" + REPEATS, "Kretchmar", "annek@noanswer.org")));
         expected.put(1005, new OrdersOfCustomer());
         assertEqualsEventually(() -> getIMapContent(hz), expected);
+    }
+
+    private static List<String> createTestSqlQueries(int index) {
+        List<String> batch = new ArrayList<>();
+        batch.add("UPDATE customers SET first_name='Anne" + index + "' WHERE id=1004");
+        batch.add("UPDATE orders SET quantity='" + index + "' WHERE id=10004");
+
+        batch.add("DELETE FROM orders WHERE id=10003");
+        return batch;
     }
 
     @Nonnull
