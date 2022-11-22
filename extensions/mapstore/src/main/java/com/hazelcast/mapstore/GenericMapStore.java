@@ -97,7 +97,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
      * Timeout for initialization of GenericMapStore
      */
     public static final HazelcastProperty MAPSTORE_INIT_TIMEOUT
-            = new HazelcastProperty("hazelcast.mapstore.init.timeout", 5, SECONDS);
+            = new HazelcastProperty("hazelcast.mapstore.init.timeout", 30, SECONDS);
 
     static final String MAPPING_PREFIX = "__map-store.";
 
