@@ -22,6 +22,7 @@ import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.collection.Object2LongHashMap;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.AppendableTraverser;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
@@ -47,11 +48,15 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.util.CollectionUtil.hasNonEmptyIntersection;
+import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
+
 
 /**
  * See {@code docs/design/sql/15-stream-to-stream-join.md}.
@@ -90,7 +95,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private JetSqlRow emptyLeftRow;
     private JetSqlRow emptyRightRow;
 
-    private Traverser<Entry> snapshotTraverser;
+    private Traverser<Map.Entry> snapshotTraverser;
 
 
     @SuppressWarnings("checkstyle:ExecutableStatementCount")
@@ -293,25 +298,53 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         return true;
     }
 
+    @SuppressWarnings({"ResultOfMethodCallIgnored", "rawtypes"})
     @Override
     public boolean saveToSnapshot() {
-//        if (!isLastStage || flushTraverser != null) {
-//            return flushBuffers();
-//        }
-//        if (snapshotTraverser == null) {
-//            snapshotTraverser = traverseIterable(tsToKeyToAcc.entrySet())
-//                    .<Entry>flatMap(e -> traverseIterable(e.getValue().entrySet())
-//                            .map(e2 -> entry(new SlidingWindowP.SnapshotKey(e.getKey(), e2.getKey()), e2.getValue()))
-//                    )
-//                    .append(entry(broadcastKey(SlidingWindowP.Keys.NEXT_WIN_TO_EMIT), nextWinToEmit))
-//                    .onFirstNull(() -> {
-//                        logFinest(getLogger(), "Saved nextWinToEmit: %s", nextWinToEmit);
-//                        snapshotTraverser = null;
-//                    });
-//        }
+        if (snapshotTraverser == null) {
+            AtomicInteger offset = new AtomicInteger(lastEmittedWm.size());
+
+            // Note : author assumes, that snapshot doesn't guarantee write order.
+            int expectedCapacity = lastReceivedWm.size() + buffer[0].size() + buffer[1].size();
+            snapshotTraverser = new AppendableTraverser<>(expectedCapacity);
+
+            for (Entry e : lastEmittedWm.entrySet()) {
+                snapshotTraverser.append(entry(WmSnapshotKey.wmKey((Byte) e.getKey()), e.getValue()));
+            }
+
+            for (JetSqlRow row : buffer[0]) {
+                snapshotTraverser.append(entry(BufferSnapshotKey.bufferKey(offset.getAndIncrement(), true), row));
+            }
+
+            for (JetSqlRow row : buffer[1]) {
+                snapshotTraverser.append(entry(BufferSnapshotKey.bufferKey(offset.getAndIncrement(), false), row));
+            }
+
+            snapshotTraverser = snapshotTraverser.onFirstNull(() -> {
+                snapshotTraverser = null;
+            });
+        }
         return emitFromTraverserToSnapshot(snapshotTraverser);
     }
 
+    @Override
+    protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
+        if (key instanceof WmSnapshotKey) {
+            WmSnapshotKey wmSnapshotKey = (WmSnapshotKey) key;
+            lastEmittedWm.put(wmSnapshotKey.wmKey(), (Long) value);
+        } else {
+            if (key instanceof BufferSnapshotKey) {
+                BufferSnapshotKey bufferSnapshotKey = (BufferSnapshotKey) key;
+                if (bufferSnapshotKey.isLeftBuffer()) {
+                    buffer[0].add((JetSqlRow) value);
+                } else {
+                    buffer[1].add((JetSqlRow) value);
+                }
+            } else {
+                throw new AssertionError("Unreachable");
+            }
+        }
+    }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean processPendingOutput() {
@@ -477,5 +510,91 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     @Override
     public boolean closeIsCooperative() {
         return true;
+    }
+
+    private static class WmSnapshotKey implements DataSerializable {
+        private Byte wmKey;
+
+        private WmSnapshotKey(Byte wmKey) {
+            this.wmKey = wmKey;
+        }
+
+        public Byte wmKey() {
+            return wmKey;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeByte(wmKey);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            this.wmKey = in.readByte();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            WmSnapshotKey that = (WmSnapshotKey) o;
+            return wmKey == that.wmKey;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(wmKey);
+        }
+
+        public static WmSnapshotKey wmKey(Byte wmKey) {
+            return new WmSnapshotKey(wmKey);
+        }
+    }
+
+    private static class BufferSnapshotKey implements DataSerializable {
+        private int offset;
+        private boolean isLeftBuffer;
+
+        private BufferSnapshotKey(int offset, boolean isLeftBuffer) {
+            this.offset = offset;
+            this.isLeftBuffer = isLeftBuffer;
+        }
+
+        public int offset() {
+            return offset;
+        }
+
+        public boolean isLeftBuffer() {
+            return isLeftBuffer;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(offset);
+            out.writeBoolean(isLeftBuffer);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            offset = in.readInt();
+            isLeftBuffer = in.readBoolean();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            BufferSnapshotKey that = (BufferSnapshotKey) o;
+            return offset == that.offset && isLeftBuffer == that.isLeftBuffer;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(offset, isLeftBuffer);
+        }
+
+        public static BufferSnapshotKey bufferKey(int offset, boolean isLeftBuffer) {
+            return new BufferSnapshotKey(offset, isLeftBuffer);
+        }
     }
 }
