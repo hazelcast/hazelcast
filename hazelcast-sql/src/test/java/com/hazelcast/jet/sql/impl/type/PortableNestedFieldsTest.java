@@ -117,7 +117,7 @@ public class PortableNestedFieldsTest extends SqlTestSupport {
     }
 
     @Test
-    public void testSelectingNestedPortableReturnsDeserializedRecord() {
+    public void test_nestedPortablesAreReturnedAsDeserialized() {
         instance().getSql().execute("CREATE TYPE Office OPTIONS "
                 + "('format'='portable', 'portableFactoryId'='1', 'portableClassId'='3', 'portableClassVersion'='0')");
         instance().getSql().execute("CREATE TYPE Organization OPTIONS "

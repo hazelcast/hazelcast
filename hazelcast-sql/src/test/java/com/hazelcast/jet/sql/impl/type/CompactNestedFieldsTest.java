@@ -17,12 +17,10 @@
 package com.hazelcast.jet.sql.impl.type;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.internal.serialization.impl.compact.CompactInternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.compact.DeserializedGenericRecord;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRow;
-import com.hazelcast.sql.impl.expression.FieldAccessExpression;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -30,10 +28,6 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 
-import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.times;
-import static org.mockito.Mockito.verify;
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -82,7 +76,7 @@ public class CompactNestedFieldsTest extends SqlTestSupport {
     }
 
     @Test
-    public void testCompactLazyDeserialization() {
+    public void test_nestedCompactsAreReturnedAsDeserialized() {
         client().getSql().execute("CREATE TYPE Office ("
                 + "id BIGINT, "
                 + "name VARCHAR "
@@ -117,8 +111,6 @@ public class CompactNestedFieldsTest extends SqlTestSupport {
 
         client().getSql().execute("INSERT INTO test VALUES (1, 1, 'user1', (1, 1, (1, 'organization1', (1, 'office1'))))");
 
-
-        FieldAccessExpression mock = mock(FieldAccessExpression.class);
         SqlResult result = client().getSql().execute("SELECT (organizationAndLong).organization.office FROM test");
         ArrayList<SqlRow> rows = new ArrayList<>();
         for (SqlRow row : result) {
@@ -127,9 +119,6 @@ public class CompactNestedFieldsTest extends SqlTestSupport {
         // Even if we do lazy deserialization the result should be deserialized:
         assertEquals(1, rows.size());
         assertInstanceOf(DeserializedGenericRecord.class, rows.get(0).getObject(0));
-
-        // Verify that lazy deserialization is used for field access operations.
-        verify(mock, times(2)).extractCompactField(any(CompactInternalGenericRecord.class), any(), any(), any());
     }
 
     @Test

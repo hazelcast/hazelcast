@@ -54,7 +54,8 @@ public interface Expression<T> extends DataSerializable, Serializable {
     T eval(Row row, ExpressionEvalContext context);
 
     /**
-     * Evaluates this expression.
+     * Evaluates this expression. By default, this method ignores useLazyDeserialization parameter,
+     * i.e, expression that uses the default implementation won't use lazy deserialization.
      *
      * @param row the row to evaluate this expression on
      * @param context the expression evaluation context
