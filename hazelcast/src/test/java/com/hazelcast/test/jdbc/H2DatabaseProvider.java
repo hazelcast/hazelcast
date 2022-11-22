@@ -22,7 +22,7 @@ import java.sql.SQLException;
 
 public class H2DatabaseProvider implements TestDatabaseProvider {
 
-    private static final int LOGIN_TIMEOUT = 15;
+    private static final int LOGIN_TIMEOUT = 60;
 
     private String jdbcUrl;
 

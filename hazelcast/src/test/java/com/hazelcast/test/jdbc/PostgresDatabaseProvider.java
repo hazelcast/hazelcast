@@ -20,7 +20,7 @@ import org.testcontainers.jdbc.ContainerDatabaseDriver;
 
 public class PostgresDatabaseProvider implements TestDatabaseProvider {
 
-    private static final int LOGIN_TIMEOUT = 5;
+    private static final int LOGIN_TIMEOUT = 120;
     private String jdbcUrl;
 
     @Override
