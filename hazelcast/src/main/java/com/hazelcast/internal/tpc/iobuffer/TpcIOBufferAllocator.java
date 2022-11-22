@@ -3,30 +3,33 @@ package com.hazelcast.internal.tpc.iobuffer;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-class TpcIOBufferAllocator implements IOBufferAllocator {
-    private static final int DEFAULT_SIZE = 4096;
-    private static final int INITIAL_POOL_SIZE = 4096;
+class TpcIOBufferAllocator implements IOBufferAllocator<TpcIOBuffer> {
+    static final int DEFAULT_SIZE = 4096;
+    static final int INITIAL_POOL_SIZE = 4096;
     static final int BUFFER_SIZE = 16384;
 
-    private ByteBuffer[] bufferPool = new ByteBuffer[INITIAL_POOL_SIZE];
+    ByteBuffer[] bufferPool = new ByteBuffer[INITIAL_POOL_SIZE];
     private int bufferPoolPos;
 
     @Override
-    public IOBuffer allocate() {
+    public TpcIOBuffer allocate() {
         return allocate(DEFAULT_SIZE);
     }
 
     @Override
-    public IOBuffer allocate(int minSize) {
-        return null;
+    public TpcIOBuffer allocate(int minSize) {
+        return new TpcIOBuffer(this, minSize);
     }
 
     @Override
-    public void free(IOBuffer buf) {
-
+    public void free(TpcIOBuffer buf) {
+        for (int i = 0; i < buf.chunks.length; i++) {
+            ByteBuffer chunk = buf.chunks[i];
+            reclaim(chunk);
+        }
     }
 
-    private ByteBuffer getNextBuffer() {
+    ByteBuffer getNextBuffer() {
         if (bufferPoolPos == 0) {
             return ByteBuffer.allocateDirect(BUFFER_SIZE);
         }

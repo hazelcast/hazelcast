@@ -16,10 +16,10 @@
 
 package com.hazelcast.internal.tpc.iobuffer;
 
-public interface IOBufferAllocator {
-    IOBuffer allocate();
+public interface IOBufferAllocator<T extends IOBuffer> {
+    T allocate();
 
-    IOBuffer allocate(int minSize);
+    T allocate(int minSize);
 
-    void free(IOBuffer buf);
+    void free(T buf);
 }
