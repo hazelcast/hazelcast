@@ -3,7 +3,9 @@ if [ -z "$SCRIPT_DIR" ]; then
   exit 1;
 fi;
 
-export HAZELCAST_HOME="$(cd "$SCRIPT_DIR/.." && pwd)"
+if [ -z "$HAZELCAST_HOME"]; then
+  export HAZELCAST_HOME="$(cd "$SCRIPT_DIR/.." && pwd)"
+fi
 
 if [ "$JAVA_HOME" ]; then
     JAVA="$JAVA_HOME/bin/java"

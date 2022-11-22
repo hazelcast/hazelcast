@@ -56,4 +56,4 @@ if [ "$(command -v cygpath)" != "" ]; then
   CLASSPATH=$(cygpath -w -p "$CLASSPATH")
 fi
 
-$JAVA "${JAVA_OPTS_ARRAY[@]}" -cp "$CLASSPATH" com.hazelcast.client.console.HazelcastCommandLine "$@"
+"$JAVA" "${JAVA_OPTS_ARRAY[@]}" -cp "$CLASSPATH" com.hazelcast.client.console.HazelcastCommandLine "$@"
