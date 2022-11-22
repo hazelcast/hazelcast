@@ -245,8 +245,7 @@ public final class HazelcastSqlToRelConverter extends SqlToRelConverter {
             return getRexBuilder().makeCall(HazelcastJsonParseFunction.INSTANCE, convertedOperand);
         }
 
-        if (toType.getTypeFamily().equals(QueryDataTypeFamily.JSON)
-                && fromType.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
+        if (toType.getTypeFamily().equals(QueryDataTypeFamily.JSON) && fromType.isCustomType()) {
             return getRexBuilder().makeCall(HazelcastToRowJsonFunction.INSTANCE, convertedOperand);
         }
 

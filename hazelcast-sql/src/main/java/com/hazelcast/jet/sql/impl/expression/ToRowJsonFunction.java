@@ -96,6 +96,6 @@ public class ToRowJsonFunction extends UniExpressionWithType<HazelcastJsonValue>
 
     @Override
     public QueryDataType getType() {
-        return QueryDataType.ROW;
+        return QueryDataType.JSON;
     }
 }
