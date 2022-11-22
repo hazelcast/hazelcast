@@ -20,9 +20,11 @@ import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.collection.Object2LongHashMap;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.AppendableTraverser;
+import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
@@ -30,6 +32,7 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -51,11 +54,14 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.internal.util.CollectionUtil.hasNonEmptyIntersection;
 import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
+import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinBroadcastKeys.LAST_EMITTED_KEYED_WM;
+import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinBroadcastKeys.LAST_RECEIVED_KEYED_WM;
+import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinBroadcastKeys.MIN_BUFFER_TIME;
 
 
 /**
@@ -95,7 +101,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private JetSqlRow emptyLeftRow;
     private JetSqlRow emptyRightRow;
 
-    private Traverser<Map.Entry> snapshotTraverser;
+    private Traverser<Entry> snapshotTraverser;
 
 
     @SuppressWarnings("checkstyle:ExecutableStatementCount")
@@ -180,6 +186,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             throw new AccumulationLimitExceededException();
         }
 
+        // region item placement in buffer
         boolean avoidBuffer = false;
         if (currItem == null) {
             // drop the event, if it's late according to any watermarked value it contains
@@ -219,7 +226,9 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                 unusedEventsTracker.add(currItem);
             }
         }
+        // endregion
 
+        // region join procedure
         while (iterator.hasNext()) {
             JetSqlRow oppositeBufferItem = iterator.next();
             JetSqlRow preparedOutput = ExpressionUtil.join(
@@ -253,6 +262,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                 return false;
             }
         }
+        // endregion
 
         iterator = null;
         currItem = null;
@@ -301,49 +311,130 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     @SuppressWarnings({"ResultOfMethodCallIgnored", "rawtypes"})
     @Override
     public boolean saveToSnapshot() {
-        if (snapshotTraverser == null) {
-            AtomicInteger offset = new AtomicInteger(lastEmittedWm.size());
+        // TODO: broadcast-distributed edges.
+        // TODO: guarantee now just equi-join
 
-            // Note : author assumes, that snapshot doesn't guarantee write order.
-            int expectedCapacity = lastReceivedWm.size() + buffer[0].size() + buffer[1].size();
+        if (snapshotTraverser == null) {
+            // Note : in fact, first three collection contains from six to ten's object in total,
+            //   it's not so much, as you may imagine from first reading.
+            int expectedCapacity = lastReceivedWm.size() + lastEmittedWm.size() + minimumBufferTimes.size()
+                    + buffer[0].size() + buffer[1].size();
+
             snapshotTraverser = new AppendableTraverser<>(expectedCapacity);
 
             for (Entry e : lastEmittedWm.entrySet()) {
-                snapshotTraverser.append(entry(WmSnapshotKey.wmKey((Byte) e.getKey()), e.getValue()));
+                snapshotTraverser.append(
+                        entry(
+                                broadcastKey(LAST_EMITTED_KEYED_WM),
+                                WatermarkValue.wmValue((Byte) e.getKey(), (Long) e.getValue())
+                        )
+                );
+            }
+
+            for (Entry e : lastReceivedWm.entrySet()) {
+                snapshotTraverser.append(
+                        entry(
+                                broadcastKey(LAST_RECEIVED_KEYED_WM),
+                                WatermarkValue.wmValue((Byte) e.getKey(), (Long) e.getValue())
+                        )
+                );
+            }
+
+            for (Entry e : minimumBufferTimes.entrySet()) {
+                snapshotTraverser.append(
+                        entry(
+                                broadcastKey(MIN_BUFFER_TIME),
+                                MinBufferTimeSnapshotValue.minBufferTimeValue((Byte) e.getKey(), (Long) e.getValue())
+                        )
+                );
             }
 
             for (JetSqlRow row : buffer[0]) {
-                snapshotTraverser.append(entry(BufferSnapshotKey.bufferKey(offset.getAndIncrement(), true), row));
+                snapshotTraverser.append(
+                        entry(
+                                ObjectArrayKey.project(row, joinInfo.leftEquiJoinIndices()),
+                                BufferSnapshotValue.bufferValue(row, 0)
+                        ));
             }
 
             for (JetSqlRow row : buffer[1]) {
-                snapshotTraverser.append(entry(BufferSnapshotKey.bufferKey(offset.getAndIncrement(), false), row));
+                snapshotTraverser.append(
+                        entry(
+                                ObjectArrayKey.project(row, joinInfo.rightEquiJoinIndices()),
+                                BufferSnapshotValue.bufferValue(row, 1)
+                        ));
             }
 
-            snapshotTraverser = snapshotTraverser.onFirstNull(() -> {
-                snapshotTraverser = null;
-            });
+            snapshotTraverser = snapshotTraverser.onFirstNull(() -> snapshotTraverser = null);
         }
+
         return emitFromTraverserToSnapshot(snapshotTraverser);
     }
 
+    @SuppressWarnings("unchecked")
     @Override
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
-        if (key instanceof WmSnapshotKey) {
-            WmSnapshotKey wmSnapshotKey = (WmSnapshotKey) key;
-            lastEmittedWm.put(wmSnapshotKey.wmKey(), (Long) value);
-        } else {
-            if (key instanceof BufferSnapshotKey) {
-                BufferSnapshotKey bufferSnapshotKey = (BufferSnapshotKey) key;
-                if (bufferSnapshotKey.isLeftBuffer()) {
-                    buffer[0].add((JetSqlRow) value);
-                } else {
-                    buffer[1].add((JetSqlRow) value);
+        if (key instanceof BroadcastKey) {
+            BroadcastKey broadcastKey = (BroadcastKey) key;
+
+            if (value instanceof MinBufferTimeSnapshotValue) {
+                MinBufferTimeSnapshotValue mbtsv = (MinBufferTimeSnapshotValue) value;
+                // We pick minimal available time among all processors' time.
+                if (minimumBufferTimes.get(mbtsv.wmKey()) > mbtsv.minBufferTime()) {
+                    minimumBufferTimes.put(mbtsv.wmKey(), mbtsv.minBufferTime());
                 }
+                return;
+            }
+
+            WatermarkValue wmValue = (WatermarkValue) value;
+            // We pick minimal available watermark (both emitted/received) among all processors
+            if (LAST_EMITTED_KEYED_WM.equals(broadcastKey.key())) {
+                Long lastEmittedWmTime = lastEmittedWm.get(wmValue.key());
+                if (lastEmittedWmTime <= Long.MIN_VALUE + 1 ||
+                        lastEmittedWmTime > wmValue.timestamp()) {
+                    lastEmittedWm.put(wmValue.key(), wmValue.timestamp());
+                }
+            } else if (LAST_RECEIVED_KEYED_WM.equals(broadcastKey.key())) {
+                Long lastReceivedWmTime = lastReceivedWm.get(wmValue.key());
+                if (lastReceivedWmTime <= Long.MIN_VALUE + 1 ||
+                        lastReceivedWmTime > wmValue.timestamp()) {
+                    lastReceivedWm.put(wmValue.key(), wmValue.timestamp());
+                }
+            } else {
+                throw new JetException("Unexpected broadcast key: " + broadcastKey.key());
+            }
+
+        } else {
+            if (value instanceof BufferSnapshotValue) {
+                BufferSnapshotValue bsv = (BufferSnapshotValue) value;
+                buffer[bsv.bufferOrdinal()].add(bsv.row());
             } else {
                 throw new AssertionError("Unreachable");
             }
         }
+    }
+
+    @Override
+    public boolean finishSnapshotRestore() {
+        // Note: buffer won't be cleaned up, because late and/or unmatched items
+        //  won't be even added during normal processor work (line 211).
+
+        // Process missing watermarks, see STSJPITest$test_equalTimes_singleWmKeyPerInput as a good example.
+        for (Entry<Byte, Long> entry : lastReceivedWm.entrySet()) {
+            Watermark wmToRestore = new Watermark(entry.getValue(), entry.getKey());
+            applyToWmState(wmToRestore);
+        }
+
+        for (Byte wmKey : wmState.keySet()) {
+            long minimumBufferTime = minimumBufferTimes.get(wmKey);
+            long lastReceivedWm = this.lastReceivedWm.getValue(wmKey);
+            long newWmTime = Math.min(minimumBufferTime, lastReceivedWm);
+            if (newWmTime > lastEmittedWm.getValue(wmKey)) {
+                pendingOutput.add(new Watermark(newWmTime, wmKey));
+                lastEmittedWm.put(wmKey, newWmTime);
+            }
+        }
+        return true;
     }
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
@@ -370,6 +461,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             Long oldLimit = wmState.get(entry.getKey());
             if (newLimit > oldLimit) {
                 wmState.put(entry.getKey(), newLimit);
+                System.err.println("New WM state: " + entry.getKey() + " -> " + newLimit);
                 modified = true;
             }
         }
@@ -512,89 +604,147 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         return true;
     }
 
-    private static class WmSnapshotKey implements DataSerializable {
-        private Byte wmKey;
+    enum StreamToStreamJoinBroadcastKeys {
+        LAST_EMITTED_KEYED_WM,
+        LAST_RECEIVED_KEYED_WM,
+        MIN_BUFFER_TIME
+    }
 
-        private WmSnapshotKey(Byte wmKey) {
+    private static final class BufferSnapshotValue implements DataSerializable {
+        private JetSqlRow row;
+        private int bufferOrdinal;
+
+        @SuppressWarnings("unused")
+        public BufferSnapshotValue() {
+        }
+
+        private BufferSnapshotValue(JetSqlRow row, int bufferOrdinal) {
+            this.row = row;
+            this.bufferOrdinal = bufferOrdinal;
+        }
+
+        public JetSqlRow row() {
+            return row;
+        }
+
+        public int bufferOrdinal() {
+            return bufferOrdinal;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(bufferOrdinal);
+            out.writeObject(row);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            bufferOrdinal = in.readInt();
+            row = in.readObject(JetSqlRow.class);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            BufferSnapshotValue that = (BufferSnapshotValue) o;
+            return row.equals(that.row) && bufferOrdinal == that.bufferOrdinal;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(row, bufferOrdinal);
+        }
+
+        @Override
+        public String toString() {
+            return "BufferSnapshotValue{" +
+                    "row=" + row.get(0) +
+                    ", isLeftBuffer=" + bufferOrdinal +
+                    '}';
+        }
+
+        public static BufferSnapshotValue bufferValue(JetSqlRow row, int bufferOrdinal) {
+            return new BufferSnapshotValue(row, bufferOrdinal);
+        }
+    }
+
+    private static final class WatermarkValue implements DataSerializable {
+        private Byte key;
+        private Long timestamp;
+
+        public WatermarkValue() {
+        }
+
+        public WatermarkValue(Byte key, Long timestamp) {
+            this.key = key;
+            this.timestamp = timestamp;
+        }
+
+        public Byte key() {
+            return key;
+        }
+
+        public Long timestamp() {
+            return timestamp;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeByte(key);
+            out.writeLong(timestamp);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            key = in.readByte();
+            timestamp = in.readLong();
+        }
+
+        public static WatermarkValue wmValue(@Nonnull Byte key, @Nonnull Long timestamp) {
+            return new WatermarkValue(key, timestamp);
+        }
+    }
+
+    private static final class MinBufferTimeSnapshotValue implements DataSerializable {
+        private Byte wmKey;
+        private Long minBufferTime;
+
+        @SuppressWarnings("unused")
+        public MinBufferTimeSnapshotValue() {
+        }
+
+        private MinBufferTimeSnapshotValue(Byte wmKey, Long minBufferTime) {
             this.wmKey = wmKey;
+            this.minBufferTime = minBufferTime;
         }
 
         public Byte wmKey() {
             return wmKey;
         }
 
+        public Long minBufferTime() {
+            return minBufferTime;
+        }
+
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeByte(wmKey);
+            out.writeLong(minBufferTime);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
-            this.wmKey = in.readByte();
+            wmKey = in.readByte();
+            minBufferTime = in.readLong();
         }
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            WmSnapshotKey that = (WmSnapshotKey) o;
-            return wmKey == that.wmKey;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(wmKey);
-        }
-
-        public static WmSnapshotKey wmKey(Byte wmKey) {
-            return new WmSnapshotKey(wmKey);
-        }
-    }
-
-    private static class BufferSnapshotKey implements DataSerializable {
-        private int offset;
-        private boolean isLeftBuffer;
-
-        private BufferSnapshotKey(int offset, boolean isLeftBuffer) {
-            this.offset = offset;
-            this.isLeftBuffer = isLeftBuffer;
-        }
-
-        public int offset() {
-            return offset;
-        }
-
-        public boolean isLeftBuffer() {
-            return isLeftBuffer;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeInt(offset);
-            out.writeBoolean(isLeftBuffer);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            offset = in.readInt();
-            isLeftBuffer = in.readBoolean();
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            BufferSnapshotKey that = (BufferSnapshotKey) o;
-            return offset == that.offset && isLeftBuffer == that.isLeftBuffer;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(offset, isLeftBuffer);
-        }
-
-        public static BufferSnapshotKey bufferKey(int offset, boolean isLeftBuffer) {
-            return new BufferSnapshotKey(offset, isLeftBuffer);
+        public static MinBufferTimeSnapshotValue minBufferTimeValue(Byte wmKey, Long minBufferTime) {
+            return new MinBufferTimeSnapshotValue(wmKey, minBufferTime);
         }
     }
 }
