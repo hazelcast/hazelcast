@@ -20,6 +20,7 @@ import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.collection.Object2LongHashMap;
+import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -88,6 +89,9 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private final Queue<Object> pendingOutput = new ArrayDeque<>();
     private JetSqlRow emptyLeftRow;
     private JetSqlRow emptyRightRow;
+
+    private Traverser<Entry> snapshotTraverser;
+
 
     @SuppressWarnings("checkstyle:ExecutableStatementCount")
     public StreamToStreamJoinP(
@@ -288,6 +292,26 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
         return true;
     }
+
+    @Override
+    public boolean saveToSnapshot() {
+//        if (!isLastStage || flushTraverser != null) {
+//            return flushBuffers();
+//        }
+//        if (snapshotTraverser == null) {
+//            snapshotTraverser = traverseIterable(tsToKeyToAcc.entrySet())
+//                    .<Entry>flatMap(e -> traverseIterable(e.getValue().entrySet())
+//                            .map(e2 -> entry(new SlidingWindowP.SnapshotKey(e.getKey(), e2.getKey()), e2.getValue()))
+//                    )
+//                    .append(entry(broadcastKey(SlidingWindowP.Keys.NEXT_WIN_TO_EMIT), nextWinToEmit))
+//                    .onFirstNull(() -> {
+//                        logFinest(getLogger(), "Saved nextWinToEmit: %s", nextWinToEmit);
+//                        snapshotTraverser = null;
+//                    });
+//        }
+        return emitFromTraverserToSnapshot(snapshotTraverser);
+    }
+
 
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean processPendingOutput() {
