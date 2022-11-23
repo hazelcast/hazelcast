@@ -18,16 +18,16 @@ package com.hazelcast.xa;
 
 import com.atomikos.icatch.jta.UserTransactionManager;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.map.IMap;
-import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.transaction.HazelcastXAResource;
 import com.hazelcast.transaction.TransactionContext;
+import com.hazelcast.transaction.TransactionalMap;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import org.junit.After;
 import org.junit.Before;
@@ -42,18 +42,15 @@ import javax.transaction.xa.XAResource;
 import javax.transaction.xa.Xid;
 import java.io.File;
 import java.io.FilenameFilter;
-import java.util.List;
 import java.util.Random;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(QuickTest.class)
@@ -232,20 +229,7 @@ public class HazelcastXATest extends HazelcastTestSupport {
                 }
             });
         }
-        // Wait for the executorService to finish all tasks
-        executorService.shutdown();
-        boolean awaitTermination = executorService.awaitTermination(30, TimeUnit.SECONDS);
-        LOGGER.info("Executor termination result : " + awaitTermination);
-        if(!awaitTermination) {
-            //Attempt to stop all actively executing tasks
-            List<Runnable> runnableList = executorService.shutdownNow();
-            fail(runnableList.size() + " tasks could not finish in time");
-        }
-
-        //Verify the latch
-        assertEquals(0, latch.getCount());
-
-        //Verify the map
+        assertOpenEventually(latch, 60);
         final IMap map = instance.getMap("m");
         for (int i = 0; i < 10; i++) {
             assertFalse(map.isLocked(i));
