@@ -16,6 +16,7 @@
 
 package com.hazelcast.mapstore;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
@@ -97,7 +98,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
      * Timeout for initialization of GenericMapStore
      */
     public static final HazelcastProperty MAPSTORE_INIT_TIMEOUT
-            = new HazelcastProperty("hazelcast.mapstore.init.timeout", 5, SECONDS);
+            = new HazelcastProperty("hazelcast.mapstore.init.timeout", 30, SECONDS);
 
     static final String MAPPING_PREFIX = "__map-store.";
 
@@ -551,6 +552,11 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
         } catch (InterruptedException e) {
             throw new HazelcastException(e);
         }
+    }
+
+    @VisibleForTesting
+    boolean initHasFinished() {
+        return initFinished.getCount() == 0;
     }
 
     private static class GenericMapStoreProperties {
