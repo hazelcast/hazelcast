@@ -79,9 +79,17 @@ public final class PredicateUtils {
         return (PagingPredicateImpl) unwrappedPredicate;
     }
 
-    public static void checkDoesNotContainPagingPredicate(Predicate predicate, String method) throws IllegalArgumentException {
+    /**
+     * This method is used for checking a predicate that it is not/does not contain a {@link com.hazelcast.query.PagingPredicate}
+     *
+     * @throws IllegalArgumentException if the predicate is a {@link com.hazelcast.query.PagingPredicate} or is a
+     *                                  {@link com.hazelcast.query.PartitionPredicate} that includes a
+     *                                  {@link com.hazelcast.query.PagingPredicate}
+     */
+    public static void checkDoesNotContainPagingPredicate(Predicate predicate, String methodName)
+            throws IllegalArgumentException {
         if (PredicateUtils.containsPagingPredicate(predicate)) {
-            throw new IllegalArgumentException("Paging predicate is not supported in " + method + " method");
+            throw new IllegalArgumentException("Paging predicate is not supported in " + methodName + " method");
         }
     }
 

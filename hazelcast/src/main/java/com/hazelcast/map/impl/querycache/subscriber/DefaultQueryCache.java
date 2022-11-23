@@ -335,7 +335,6 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     @Override
     public Set<K> keySet(Predicate predicate) {
         checkNotNull(predicate, "Predicate cannot be null!");
-        checkDoesNotContainPagingPredicate(predicate, "keySet");
 
         return scanAndGetResult(predicate, ResultType.KEY);
     }
@@ -343,7 +342,6 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     @Override
     public Collection<V> values(Predicate predicate) {
         checkNotNull(predicate, "Predicate cannot be null!");
-        checkDoesNotContainPagingPredicate(predicate, "values");
 
         if (!includeValue) {
             return Collections.emptySet();
@@ -355,7 +353,6 @@ class DefaultQueryCache<K, V> extends AbstractInternalQueryCache<K, V> {
     @Override
     public Set<Map.Entry<K, V>> entrySet(Predicate predicate) {
         checkNotNull(predicate, "Predicate cannot be null!");
-        checkDoesNotContainPagingPredicate(predicate, "entrySet");
 
         return scanAndGetResult(predicate, ResultType.ENTRY);
     }

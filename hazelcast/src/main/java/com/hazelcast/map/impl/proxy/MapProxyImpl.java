@@ -1030,7 +1030,9 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
      *                    allowed
      * @param <R>         the return type
      * @return an iterator for the projected entries
-     * @throws IllegalArgumentException if the predicate is of type {@link PagingPredicate}
+     * @throws IllegalArgumentException if the predicate is a {@link com.hazelcast.query.PagingPredicate} or is a
+     *                                  {@link com.hazelcast.query.PartitionPredicate} that includes a
+     *                                  {@link com.hazelcast.query.PagingPredicate}
      * @since 3.9
      */
     @Nonnull

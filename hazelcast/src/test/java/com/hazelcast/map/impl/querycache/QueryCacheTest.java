@@ -237,48 +237,6 @@ public class QueryCacheTest extends AbstractQueryCacheTestSupport {
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void keySetThrowsWithPagingPredicate() {
-        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
-        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
-        queryCache.keySet(PAGING_PREDICATE);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void keySetThrowsWithPredicateIncludingAPagingPredicate() {
-        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
-        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
-        queryCache.keySet(PREDICATE_INCLUDING_PAGING_PREDICATE);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void valuesThrowsWithPagingPredicate() {
-        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
-        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
-        queryCache.values(PAGING_PREDICATE);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void valuesThrowsWithPredicateIncludingAPagingPredicate() {
-        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
-        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
-        queryCache.values(PREDICATE_INCLUDING_PAGING_PREDICATE);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void entrySetThrowsWithPagingPredicate() {
-        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
-        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
-        queryCache.entrySet(PAGING_PREDICATE);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void entrySetThrowsWithPredicateIncludingAPagingPredicate() {
-        IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
-        QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
-        queryCache.entrySet(PREDICATE_INCLUDING_PAGING_PREDICATE);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
     public void addEntryListenerThrowsWithPagingPredicate() {
         IMap<Integer, Employee> map = getIMapWithDefaultConfig(TRUE_PREDICATE);
         QueryCache<Integer, Employee> queryCache = map.getQueryCache(cacheName);
