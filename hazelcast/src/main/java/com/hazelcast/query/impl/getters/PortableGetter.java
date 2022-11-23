@@ -30,7 +30,7 @@ public final class PortableGetter extends Getter {
         this.serializationService = serializationService;
     }
 
-    public Object getValueInternal(Object target, String fieldPath, boolean useLazyDeserialization) throws Exception {
+    private Object getValueInternal(Object target, String fieldPath, boolean useLazyDeserialization) throws Exception {
         InternalGenericRecord record;
         if (target instanceof PortableGenericRecord) {
             record = (InternalGenericRecord) target;
