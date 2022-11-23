@@ -85,6 +85,11 @@ public class HashJoinCollectP<K, T, V> extends AbstractProcessor {
         return tryEmit(lookupTable);
     }
 
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
+
     // We need a custom ArrayList subclass because the user's V type could be
     // ArrayList and then the logic that relies on instanceof would break
     static final class HashJoinArrayList extends ArrayList<Object> {

@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.connector;
 
-
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;

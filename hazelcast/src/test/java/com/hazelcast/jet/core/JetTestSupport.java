@@ -131,7 +131,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
                 JetService jet = instance.getJet();
                 List<Job> jobs = jet.getJobs();
                 for (Job job : jobs) {
-                    ditchJob(job, instances.toArray(new HazelcastInstance[instances.size()]));
+                    ditchJob(job, instances.toArray(new HazelcastInstance[0]));
                 }
 
                 JobClassLoaderService jobClassLoaderService = ((HazelcastInstanceImpl) instance).node
@@ -404,14 +404,26 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
      * retry.
      */
     public static void ditchJob(@Nonnull Job job, @Nonnull HazelcastInstance... instances) {
+        //Cancel the job on cluster members
         ditchJob0(job, instances);
+
         // Let's wait for the job to be not RUNNING on all the members.
         assertTrueEventually(() -> {
-            assertNotEquals(RUNNING, job.getStatus());
+
+            try {
+                assertNotEquals(RUNNING, job.getStatus());
+            } catch (Exception e) {
+                SUPPORT_LOGGER.severe("Failure to read job status on coordinator: ", e);
+            }
+
             for (HazelcastInstance instance : instances) {
-                Job instanceJob = instance.getJet().getJob(job.getId());
-                if (instanceJob != null) {
-                    assertNotEquals(RUNNING, instanceJob.getStatus());
+                try {
+                    Job instanceJob = instance.getJet().getJob(job.getId());
+                    if (instanceJob != null) {
+                        assertNotEquals(RUNNING, instanceJob.getStatus());
+                    }
+                } catch (Exception e) {
+                    SUPPORT_LOGGER.severe("Failure to read job status on member: ", e);
                 }
             }
         });
@@ -461,7 +473,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
 
             sleepMillis(500);
             SUPPORT_LOGGER.warning("Failed to cancel the job and it is " + status + ", retrying. Failure: "
-                    + cancellationFailure, cancellationFailure);
+                                   + cancellationFailure, cancellationFailure);
         }
         // if we got here, 10 attempts to cancel the job have failed. Cluster is in bad shape probably, shut it down
         try {

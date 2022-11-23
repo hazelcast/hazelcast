@@ -147,4 +147,9 @@ public class SqlHashJoinP extends AbstractProcessor {
             rightInputColumnCount = in.readInt();
         }
     }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
 }

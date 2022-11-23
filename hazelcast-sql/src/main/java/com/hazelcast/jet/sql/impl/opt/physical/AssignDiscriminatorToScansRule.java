@@ -26,7 +26,7 @@ import org.immutables.value.Value;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 
 /**
- * See {@link CalciteSqlOptimizer#uniquifyScans(PhysicalRel)}.
+ * See {@link CalciteSqlOptimizer#postOptimizationRewrites(PhysicalRel)}.
  */
 @Value.Enclosing
 public final class AssignDiscriminatorToScansRule extends RelRule<RelRule.Config> {
