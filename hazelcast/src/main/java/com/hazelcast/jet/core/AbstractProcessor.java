@@ -27,6 +27,7 @@ import java.util.Map.Entry;
 import java.util.function.Function;
 
 import static com.hazelcast.internal.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.jet.impl.util.LoggingUtil.logFinest;
 
 
 /**
@@ -90,7 +91,12 @@ public abstract class AbstractProcessor implements Processor {
     @Override
     public final void restoreFromSnapshot(@Nonnull Inbox inbox) {
         for (Entry entry; (entry = (Entry) inbox.poll()) != null; ) {
-            restoreFromSnapshot(entry.getKey(), entry.getValue());
+            Object key = entry.getKey();
+            Object value = entry.getValue();
+            if (getLogger().isFinestEnabled()) {
+                logFinest(getLogger(), "Restore from snapshot key: %s, value: %s", key, value);
+            }
+            restoreFromSnapshot(key, value);
         }
     }
 
@@ -473,9 +479,14 @@ public abstract class AbstractProcessor implements Processor {
             item = traverser.next();
         }
         for (; item != null; item = traverser.next()) {
-            if (!tryEmitToSnapshot(item.getKey(), item.getValue())) {
+            Object key = item.getKey();
+            Object value = item.getValue();
+            if (!tryEmitToSnapshot(key, value)) {
                 pendingSnapshotItem = item;
                 return false;
+            }
+            if (getLogger().isFinestEnabled()) {
+                logFinest(getLogger(), "Emit to snapshot key: %s, value: %s", key, value);
             }
         }
         return true;
