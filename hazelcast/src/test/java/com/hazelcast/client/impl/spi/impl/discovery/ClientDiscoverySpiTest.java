@@ -81,6 +81,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -372,6 +373,26 @@ public class ClientDiscoverySpiTest extends HazelcastTestSupport {
                 "hazelcast-client-dummy-multicast-discovery-test.xml");
 
         HazelcastClient.newHazelcastClient(clientConfig);
+    }
+
+    @Test
+    public void testCustomDiscovery_startCalledOnce() {
+        HazelcastInstance instance = Hazelcast.newHazelcastInstance();
+
+        ClientConfig config = new ClientConfig();
+        config.setProperty(ClusterProperty.DISCOVERY_SPI_ENABLED.getName(), "true");
+
+        final DiscoveryService discoveryService = mock(DiscoveryService.class);
+        when(discoveryService.discoverNodes()).thenReturn(Collections.singletonList(new SimpleDiscoveryNode(instance.getCluster().getLocalMember().getAddress())));
+        DiscoveryServiceProvider discoveryServiceProvider = arg0 -> discoveryService;
+        ClientNetworkConfig networkConfig = config.getNetworkConfig();
+        config.getConnectionStrategyConfig().getConnectionRetryConfig().setClusterConnectTimeoutMillis(0);
+        networkConfig.getDiscoveryConfig().addDiscoveryStrategyConfig(new DiscoveryStrategyConfig());
+        networkConfig.getDiscoveryConfig().setDiscoveryServiceProvider(discoveryServiceProvider);
+
+        HazelcastClient.newHazelcastClient(config);
+
+        verify(discoveryService, times(1)).start();
     }
 
     private DiscoveryServiceSettings buildDiscoveryServiceSettings(DiscoveryConfig config) {
