@@ -25,6 +25,7 @@ import com.hazelcast.client.impl.protocol.codec.JetGetJobMetricsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSubmissionTimeCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSuspensionCauseCodec;
+import com.hazelcast.client.impl.protocol.codec.JetIsJobUserCancelledCodec;
 import com.hazelcast.client.impl.protocol.codec.JetJoinSubmittedJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetResumeJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
@@ -86,6 +87,16 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
             ClientMessage response = invocation(request, masterId()).invoke().get();
             int jobStatusIndex = JetGetJobStatusCodec.decodeResponse(response);
             return JobStatus.values()[jobStatusIndex];
+        });
+    }
+
+    @Override
+    public boolean isUserCancelled() {
+        assert !isLightJob();
+        return callAndRetryIfTargetNotFound(()  -> {
+            ClientMessage request = JetIsJobUserCancelledCodec.encodeRequest(getId());
+            ClientMessage response = invocation(request, masterId()).invoke().get();
+            return JetIsJobUserCancelledCodec.decodeResponse(response);
         });
     }
 

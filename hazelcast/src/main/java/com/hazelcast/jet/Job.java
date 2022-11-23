@@ -150,6 +150,13 @@ public interface Job {
     @Nonnull
     JobStatus getStatus();
 
+    /**
+     * Returns true, if the job is user-cancelled. Returns false, if it
+     * completed normally or failed due to another error. Throws
+     * {@link IllegalStateException}, if the job isn’t done.
+     */
+    boolean isUserCancelled();
+
     // ### Methods below apply only to normal (non-light) jobs.
 
 

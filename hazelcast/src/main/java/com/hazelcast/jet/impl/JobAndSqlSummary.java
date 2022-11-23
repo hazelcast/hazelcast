@@ -31,6 +31,7 @@ public class JobAndSqlSummary {
     private final long completionTime;
     private final String failureText;
     private final SqlSummary sqlSummary;
+    private final boolean userCancelled;
 
     public JobAndSqlSummary(
             boolean isLightJob,
@@ -41,7 +42,8 @@ public class JobAndSqlSummary {
             long submissionTime,
             long completionTime,
             String failureText,
-            SqlSummary sqlSummary) {
+            SqlSummary sqlSummary,
+            boolean userCancelled) {
         this.isLightJob = isLightJob;
         this.jobId = jobId;
         this.executionId = executionId;
@@ -51,6 +53,7 @@ public class JobAndSqlSummary {
         this.completionTime = completionTime;
         this.failureText = failureText;
         this.sqlSummary = sqlSummary;
+        this.userCancelled = userCancelled;
     }
 
     public boolean isLightJob() {
@@ -89,6 +92,10 @@ public class JobAndSqlSummary {
         return sqlSummary;
     }
 
+    public boolean isUserCancelled() {
+        return userCancelled;
+    }
+
     @Override
     public String toString() {
         return "JobAndSqlSummary{" +
@@ -101,6 +108,7 @@ public class JobAndSqlSummary {
                 ", completionTime=" + completionTime +
                 ", failureText='" + failureText + '\'' +
                 ", sqlSummary=" + sqlSummary +
+                ", userCancelled=" + userCancelled +
                 '}';
     }
 
@@ -116,12 +124,13 @@ public class JobAndSqlSummary {
         return isLightJob == that.isLightJob && jobId == that.jobId && executionId == that.executionId
                 && submissionTime == that.submissionTime && completionTime == that.completionTime
                 && Objects.equals(nameOrId, that.nameOrId) && status == that.status
-                && Objects.equals(failureText, that.failureText) && Objects.equals(sqlSummary, that.sqlSummary);
+                && Objects.equals(failureText, that.failureText) && Objects.equals(sqlSummary, that.sqlSummary)
+                && userCancelled == that.userCancelled;
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(isLightJob, jobId, executionId, nameOrId, status, submissionTime, completionTime, failureText,
-                sqlSummary);
+                sqlSummary, userCancelled);
     }
 }

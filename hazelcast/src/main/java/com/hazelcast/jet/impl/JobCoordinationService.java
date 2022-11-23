@@ -471,7 +471,7 @@ public class JobCoordinationService {
         return ((LightMasterContext) mc).getCompletionFuture();
     }
 
-    public CompletableFuture<Void> terminateJob(long jobId, TerminationMode terminationMode) {
+    public CompletableFuture<Void> terminateJob(long jobId, TerminationMode terminationMode, boolean userInitiated) {
         return runWithJob(jobId,
                 masterContext -> {
                     // User can cancel in any state, other terminations are allowed only when running.
@@ -487,7 +487,9 @@ public class JobCoordinationService {
                                 + ", should be " + RUNNING);
                     }
 
-                    String terminationResult = masterContext.jobContext().requestTermination(terminationMode, false).f1();
+                    String terminationResult = masterContext.jobContext()
+                            .requestTermination(terminationMode, false, userInitiated)
+                            .f1();
                     if (terminationResult != null) {
                         throw new IllegalStateException("Cannot " + terminationMode + ": " + terminationResult);
                     }
@@ -645,6 +647,22 @@ public class JobCoordinationService {
         );
     }
 
+    public CompletableFuture<Boolean> isJobUserCancelled(long jobId) {
+
+        return callWithJob(jobId,
+                mc -> {
+                    // If we have MasterContext it means that the job has not finished yet so cannot be cancelled
+                    // TODO: is race condition with removing MC possible?
+                    // TODO: do we need to check status like in getStatus()?
+                    return false;
+                },
+                JobResult::isUserCancelled,
+                // If we do not have result, the job has not finished yet so cannot be cancelled.
+                jobRecord -> false,
+                jobExecutionRecord -> false
+        );
+    }
+
     /**
      * Returns the latest metrics for a job or fails with {@link JobNotFoundException}
      * if the requested job is not found.
@@ -723,7 +741,7 @@ public class JobCoordinationService {
                 jobRepository.getJobResults().stream()
                         .map(r -> new JobAndSqlSummary(
                                 false, r.getJobId(), 0, r.getJobNameOrId(), r.getJobStatus(), r.getCreationTime(),
-                                r.getCompletionTime(), r.getFailureText(), null))
+                                r.getCompletionTime(), r.getFailureText(), null, r.isUserCancelled()))
                         .forEach(s -> jobs.put(s.getJobId(), s));
             }
 
@@ -745,7 +763,9 @@ public class JobCoordinationService {
                 new SqlSummary(query, Boolean.TRUE.equals(unbounded)) : null;
         return new JobAndSqlSummary(
                 true, lmc.getJobId(), lmc.getJobId(), idToString(lmc.getJobId()),
-                RUNNING, lmc.getStartTime(), 0, null, sqlSummary);
+                RUNNING, lmc.getStartTime(), 0, null, sqlSummary,
+                //TODO: user cancelled
+                false);
     }
 
     /**
@@ -957,14 +977,15 @@ public class JobCoordinationService {
      * Completes the job which is coordinated with the given master context object.
      */
     @CheckReturnValue
-    CompletableFuture<Void> completeJob(MasterContext masterContext, Throwable error, long completionTime) {
+    CompletableFuture<Void> completeJob(MasterContext masterContext, Throwable error, long completionTime,
+                                        boolean userCancelled) {
         return submitToCoordinatorThread(() -> {
             // the order of operations is important.
             List<RawJobMetrics> jobMetrics =
                     masterContext.jobConfig().isStoreMetricsAfterJobCompletion()
                             ? masterContext.jobContext().jobMetrics()
                             : null;
-            jobRepository.completeJob(masterContext, jobMetrics, error, completionTime);
+            jobRepository.completeJob(masterContext, jobMetrics, error, completionTime, userCancelled);
             if (removeMasterContext(masterContext)) {
                 completeObservables(masterContext.jobRecord().getOwnedObservables(), error);
                 logger.fine(masterContext.jobIdString() + " is completed");
@@ -1216,15 +1237,23 @@ public class JobCoordinationService {
         MasterContext ctx = masterContexts.get(record.getJobId());
         long execId = ctx == null ? 0 : ctx.executionId();
         JobStatus status;
+        boolean userCancelled;
         if (ctx == null) {
             JobExecutionRecord executionRecord = jobRepository.getJobExecutionRecord(record.getJobId());
             status = executionRecord != null && executionRecord.isSuspended()
+                    // TODO: should return failed state?
+                    // this method is invoked only for running jobs
                     ? JobStatus.SUSPENDED : JobStatus.NOT_RUNNING;
+            // TODO: get cancellation from JobResult if exists
+            userCancelled = false;
         } else {
             status = ctx.jobStatus();
+            // running, so not cancelled
+            userCancelled = false;
         }
         return new JobAndSqlSummary(false, record.getJobId(), execId, record.getJobNameOrId(), status,
-                record.getCreationTime(), 0, null, null);
+                record.getCreationTime(), 0, null, null,
+                userCancelled);
     }
 
     private InternalPartitionServiceImpl getInternalPartitionService() {
@@ -1386,7 +1415,7 @@ public class JobCoordinationService {
 
             try {
                 if (mc != null && isMaster() && !mc.jobStatus().isTerminal()) {
-                    terminateJob(jobId, CANCEL_FORCEFUL);
+                    terminateJob(jobId, CANCEL_FORCEFUL, false);
                 } else if (lightMc != null && !lightMc.isCancelled()) {
                     lightMc.requestTermination();
                 }

@@ -52,7 +52,7 @@ public class TerminateJobOperation extends AsyncJobOperation {
             getJobCoordinationService().terminateLightJob(jobId());
             return completedFuture(null);
         } else {
-            return getJobCoordinationService().terminateJob(jobId(), terminationMode);
+            return getJobCoordinationService().terminateJob(jobId(), terminationMode, true);
         }
     }
 

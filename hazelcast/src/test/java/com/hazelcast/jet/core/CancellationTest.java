@@ -53,6 +53,7 @@ import java.util.function.Function;
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static java.util.Collections.singletonList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -151,6 +152,7 @@ public class CancellationTest extends JetTestSupport {
 
         // Then
         assertThatThrownBy(() -> job.join());
+        assertThat(job.isUserCancelled()).isTrue();
     }
 
     @Test
@@ -193,6 +195,7 @@ public class CancellationTest extends JetTestSupport {
 
         // Then
         assertThatThrownBy(() -> job.join());
+        assertThat(job.isUserCancelled()).isTrue();
     }
 
     @Test
@@ -221,7 +224,7 @@ public class CancellationTest extends JetTestSupport {
     }
 
     @Test
-    public void when_jobFailsOnOnInitiatorNode_then_cancelledOnOtherNodes() throws Throwable {
+    public void when_jobFailsOnInitiatorNode_then_cancelledOnOtherNodes() throws Throwable {
         // Given
         HazelcastInstance instance = createHazelcastInstance();
         createHazelcastInstance();
@@ -249,7 +252,7 @@ public class CancellationTest extends JetTestSupport {
     }
 
     @Test
-    public void when_jobFailsOnOnNonInitiatorNode_then_cancelledOnInitiatorNode() throws Throwable {
+    public void when_jobFailsOnNonInitiatorNode_then_cancelledOnInitiatorNode() throws Throwable {
         // Given
         HazelcastInstance instance = createHazelcastInstance();
         HazelcastInstance other = createHazelcastInstance();
@@ -323,6 +326,8 @@ public class CancellationTest extends JetTestSupport {
 
         // When-Then: should not fail
         job.cancel();
+        assertThat(job.isUserCancelled()).as("Should not mark completed job as cancelled")
+                .isFalse();
     }
 
     @Test

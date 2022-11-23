@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
@@ -23,6 +24,7 @@ import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -37,13 +39,18 @@ import static com.hazelcast.jet.impl.util.Util.exceptionallyCompletedFuture;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 import static java.util.concurrent.CompletableFuture.completedFuture;
 
-public class JobResult implements IdentifiedDataSerializable {
+public class JobResult implements IdentifiedDataSerializable, Versioned {
 
     private long jobId;
     private JobConfig jobConfig;
     private long creationTime;
     private long completionTime;
     private String failureText;
+
+    /**
+     * If the job was cancelled by the user
+     */
+    private boolean userCancelled;
 
     public JobResult() {
     }
@@ -52,13 +59,14 @@ public class JobResult implements IdentifiedDataSerializable {
               @Nonnull JobConfig jobConfig,
               long creationTime,
               long completionTime,
-              @Nullable String failureText
-    ) {
+              @Nullable String failureText,
+              boolean userCancelled) {
         this.jobId = jobId;
         this.jobConfig = jobConfig;
         this.creationTime = creationTime;
         this.completionTime = completionTime;
         this.failureText = failureText;
+        this.userCancelled = userCancelled;
     }
 
     public long getJobId() {
@@ -85,6 +93,10 @@ public class JobResult implements IdentifiedDataSerializable {
     @Nullable
     public String getFailureText() {
         return failureText;
+    }
+
+    public boolean isUserCancelled() {
+        return userCancelled;
     }
 
     /**
@@ -131,6 +143,7 @@ public class JobResult implements IdentifiedDataSerializable {
                 ", creationTime=" + toLocalDateTime(creationTime) +
                 ", completionTime=" + toLocalDateTime(completionTime) +
                 ", failureText=" + failureText +
+                ", userCancelled=" + userCancelled +
                 '}';
     }
 
@@ -151,6 +164,9 @@ public class JobResult implements IdentifiedDataSerializable {
         out.writeLong(creationTime);
         out.writeLong(completionTime);
         out.writeObject(failureText);
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_3)) {
+            out.writeBoolean(userCancelled);
+        }
     }
 
     @Override
@@ -160,5 +176,8 @@ public class JobResult implements IdentifiedDataSerializable {
         creationTime = in.readLong();
         completionTime = in.readLong();
         failureText = in.readObject();
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_3)) {
+            userCancelled = in.readBoolean();
+        }
     }
 }

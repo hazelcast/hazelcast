@@ -449,6 +449,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             assertPsClosedWithError();
             assertPmsClosedWithError();
         });
+
+        assertJobIsUserCancelled(job);
     }
 
     @Test
@@ -1020,6 +1022,18 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             assertNotNull(jobResult.getFailureText());
             assertContains(jobResult.getFailureText(), expected.toString());
             assertEquals("jobStatus", JobStatus.FAILED, normalJob.getStatus());
+            assertFalse("jobResult.isUserCancelled", jobResult.isUserCancelled());
+        }
+    }
+
+    private void assertJobIsUserCancelled(Job job) {
+        assertTrue(job.getFuture().isDone());
+        assertTrue(job.isUserCancelled());
+
+        if (!job.isLightJob()) {
+            Job normalJob = job;
+            JobResult jobResult = getJobResult(normalJob);
+            assertFalse("jobResult.isUserCancelled", jobResult.isUserCancelled());
         }
     }
 

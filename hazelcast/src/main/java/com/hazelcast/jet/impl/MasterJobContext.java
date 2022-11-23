@@ -169,6 +169,7 @@ public class MasterJobContext {
      * complete.
      */
     private volatile TerminationMode requestedTerminationMode;
+    private volatile boolean userInitiatedTermination;
 
     MasterJobContext(MasterContext masterContext, ILogger logger) {
         this.mc = masterContext;
@@ -337,20 +338,21 @@ public class MasterJobContext {
 
     /**
      * Returns a tuple of:<ol>
-     *     <li>a future that will be completed when the execution completes (or
-     *          a completed future, if execution is not RUNNING or STARTING)
-     *     <li>a string with a message why this call did nothing or null, if
-     *          this call actually initiated the termination
+     * <li>a future that will be completed when the execution completes (or
+     * a completed future, if execution is not RUNNING or STARTING)
+     * <li>a string with a message why this call did nothing or null, if
+     * this call actually initiated the termination
      * </ol>
      *
      * @param allowWhileExportingSnapshot if false and jobStatus is
-     *      SUSPENDED_EXPORTING_SNAPSHOT, termination will be rejected
+     *                                    SUSPENDED_EXPORTING_SNAPSHOT, termination will be rejected
+     * @param userInitiated if the termination was requested by the user
      */
     @Nonnull
     Tuple2<CompletableFuture<Void>, String> requestTermination(
             TerminationMode mode,
-            @SuppressWarnings("SameParameterValue") boolean allowWhileExportingSnapshot
-    ) {
+            @SuppressWarnings("SameParameterValue") boolean allowWhileExportingSnapshot,
+            boolean userInitiated) {
         mc.coordinationService().assertOnCoordinatorThread();
         // Switch graceful method to forceful if we don't do snapshots, except for graceful
         // cancellation, which is allowed even if not snapshotting.
@@ -378,6 +380,7 @@ public class MasterJobContext {
                 return tuple2(executionCompletionFuture, message);
             }
             requestedTerminationMode = mode;
+            userInitiatedTermination = userInitiated;
             // handle cancellation of a suspended job
             if (localStatus == SUSPENDED || localStatus == SUSPENDED_EXPORTING_SNAPSHOT) {
                 mc.setJobStatus(FAILED);
@@ -394,7 +397,9 @@ public class MasterJobContext {
 
         if (localStatus == SUSPENDED || localStatus == SUSPENDED_EXPORTING_SNAPSHOT) {
             try {
-                mc.coordinationService().completeJob(mc, new CancellationException(), System.currentTimeMillis()).get();
+                mc.coordinationService()
+                        .completeJob(mc, new CancellationException(), System.currentTimeMillis(), userInitiated)
+                        .get();
             } catch (Exception e) {
                 throw rethrow(e);
             }
@@ -407,7 +412,15 @@ public class MasterJobContext {
         return result;
     }
 
-    private void rewriteDagWithSnapshotRestore(DAG dag, long snapshotId, String mapName, String snapshotName) {
+    @Nonnull
+    Tuple2<CompletableFuture<Void>, String> requestTermination(
+            TerminationMode mode,
+            @SuppressWarnings("SameParameterValue") boolean allowWhileExportingSnapshot
+    ) {
+        return requestTermination(mode, allowWhileExportingSnapshot, false);
+    }
+
+        private void rewriteDagWithSnapshotRestore(DAG dag, long snapshotId, String mapName, String snapshotName) {
         IMap<Object, Object> snapshotMap = mc.nodeEngine().getHazelcastInstance().getMap(mapName);
         long resolvedSnapshotId = validateSnapshot(
                 snapshotId, snapshotMap, mc.jobIdString(), snapshotName);
@@ -535,7 +548,9 @@ public class MasterJobContext {
      *     forcefully.
      * <li>Returns a {@link JobTerminateRequestedException} if the current
      *     execution is stopped due to a requested termination, except for
-     *     CANCEL_GRACEFUL, in which case CancellationException is returned.
+     *     {@link TerminationMode#CANCEL_GRACEFUL} and
+     *     {@link TerminationMode#CANCEL_FORCEFUL}, in which case
+     *     {@link CancellationException} is returned.
      * <li>If there is at least one user failure, such as an exception in user
      *     code (restartable or not), then returns that failure.
      * <li>Otherwise, the failure is because a job participant has left the
@@ -703,14 +718,16 @@ public class MasterJobContext {
                 } else {
                     long completionTime = System.currentTimeMillis();
                     boolean isSuccess = logExecutionSummary(failure, completionTime);
+                    //TODO: set user cancelled here?
                     mc.setJobStatus(isSuccess ? COMPLETED : FAILED);
                     if (failure instanceof LocalMemberResetException) {
                         logger.fine("Cancelling job " + mc.jobIdString() + " locally: member (local or remote) reset. " +
                                 "We don't delete job metadata: job will restart on majority cluster");
                         setFinalResult(new CancellationException());
                     } else {
+                        //TODO: nobody waits for this future, in particular executionCompletionFuture.complete(null);
                         mc.coordinationService()
-                          .completeJob(mc, failure, completionTime)
+                          .completeJob(mc, failure, completionTime, userInitiatedTermination)
                           .whenComplete(withTryCatch(logger, (r, f) -> {
                               if (f != null) {
                                   logger.warning("Completion of " + mc.jobIdString() + " failed", f);
@@ -868,7 +885,7 @@ public class MasterJobContext {
     @Nonnull
     CompletableFuture<Void> gracefullyTerminate() {
         CompletableFuture<CompletableFuture<Void>> future = mc.coordinationService().submitToCoordinatorThread(
-                () -> requestTermination(RESTART_GRACEFUL, false).f0());
+                () -> requestTermination(RESTART_GRACEFUL, false, true).f0());
         return future.thenCompose(Function.identity());
     }
 
@@ -899,7 +916,7 @@ public class MasterJobContext {
         }
 
         JobStatus localStatus = mc.jobStatus();
-        if (localStatus == RUNNING && requestTermination(TerminationMode.RESTART_GRACEFUL, false).f1() == null) {
+        if (localStatus == RUNNING && requestTermination(TerminationMode.RESTART_GRACEFUL, false, false).f1() == null) {
             logger.info("Requested restart of " + mc.jobIdString() + " to make use of added member(s). "
                     + "Job was running on " + mc.executionPlanMap().size() + " members, cluster now has "
                     + dataMembersWithPartitionsCount + " data members with assigned partitions");

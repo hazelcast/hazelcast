@@ -36,7 +36,7 @@ import static org.junit.Assert.assertEquals;
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JetGetJobAndSqlSummaryListMessageTaskExceptionTest extends AbstractJetMultiTargetMessageTaskTest {
-    private static final JobAndSqlSummary SUMMARY = new JobAndSqlSummary(true, 0, 0, "", JobStatus.RUNNING, 0, 0, "", null);
+    private static final JobAndSqlSummary SUMMARY = new JobAndSqlSummary(true, 0, 0, "", JobStatus.RUNNING, 0, 0, "", null, false);
 
     @Test
     public void when_reducingWithIgnoredExceptions_then_exceptionIsNotRethrown() throws Throwable {

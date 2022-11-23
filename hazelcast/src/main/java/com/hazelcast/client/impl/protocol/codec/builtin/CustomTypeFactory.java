@@ -53,9 +53,7 @@ import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlColumnType;
 
 import javax.annotation.Nonnull;
-import java.util.Comparator;
 import java.util.List;
-import java.util.TreeMap;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.DurationConfig;
@@ -300,9 +298,10 @@ public final class CustomTypeFactory {
             long submissionTime,
             long completionTime,
             String failureText,
-            SqlSummary sqlSummary
-    ) {
+            SqlSummary sqlSummary,
+            boolean isUserCancelledExists,
+            boolean userCancelled) {
         return new JobAndSqlSummary(lightJob, jobId, executionId, nameOrId, JobStatus.getById(jobStatus), submissionTime,
-                completionTime, failureText, sqlSummary);
+                completionTime, failureText, sqlSummary, userCancelled);
     }
 }
