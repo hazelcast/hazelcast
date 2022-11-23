@@ -18,8 +18,7 @@ package com.hazelcast.map.impl.nearcache;
 
 import com.hazelcast.core.ReadOnly;
 import com.hazelcast.map.EntryProcessor;
-import org.jetbrains.annotations.Nullable;
-
+import javax.annotation.Nullable;
 import java.util.Map;
 
 public class TestReadOnlyProcessor implements EntryProcessor<Integer, Integer, Boolean>, ReadOnly {
@@ -29,8 +28,9 @@ public class TestReadOnlyProcessor implements EntryProcessor<Integer, Integer, B
         return true;
     }
 
-    @Nullable
+
     @Override
+    @Nullable
     public EntryProcessor<Integer, Integer, Boolean> getBackupProcessor() {
         return null;
     }
