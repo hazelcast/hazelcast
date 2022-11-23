@@ -59,6 +59,7 @@ import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({ QuickTest.class })
@@ -89,33 +90,49 @@ public class AuthenticationInformationLeakTest {
 
     @Test
     public void testAuthenticationExceptionDoesNotLeakInfo() {
+        // See testAuthenticationExceptionDoesNotLeakInfoInternal for why we use assertTrueEventually here.
+        assertTrueEventually(() -> {
+            assertTrue(testAuthenticationExceptionDoesNotLeakInfoInternal());
+        });
+    }
+
+    /**
+     * This functions uses a tcp socket to be able to write messages that we want without authenticating.
+     * <p>
+     * In case of an authentication failure, the server sends an exception message and immediately closes the connection
+     * without waiting the message to be written to the client connection. It's possible that we receive EOF from socket,
+     * which will make getKeyValue() throw.
+     * <p>
+     * Therefore, this function should be used with a retry mechanism.
+     *
+     * @return true if no IOException happened, false otherwise
+     */
+    private boolean testAuthenticationExceptionDoesNotLeakInfoInternal() {
         SerializationService ss = new DefaultSerializationServiceBuilder().build();
         InetSocketAddress endpoint = instance.getCluster().getLocalMember().getSocketAddress();
-        // The server sends an exception message and immediately closes the connection without waiting the message to
-        // be written. It's possible that we receive EOF from socket, which will make ClientTestUtil.readResponse throw.
-        // Therefore, we use assertTrueEventually here.
-        assertTrueEventually(() -> {
-            try (Socket socket = new Socket()) {
-                socket.setReuseAddress(true);
-                socket.connect(endpoint);
-                ClientMessage res;
-                try (OutputStream os = socket.getOutputStream(); InputStream is = socket.getInputStream()) {
-                    os.write(CLIENT_BINARY.getBytes(StandardCharsets.UTF_8));
-                    res = getKeyValue(ss, os, is);
-                }
-                assertEquals(res.getMessageType(), ErrorsCodec.EXCEPTION_MESSAGE_TYPE);
-                ClientExceptionFactory factory = new ClientExceptionFactory(false, Thread.currentThread().getContextClassLoader());
-                Throwable err = factory.createException(res);
-                String message = err.getMessage();
-                assertInstanceOf(AuthenticationException.class, err.getCause());
-                assertContains(message, "must authenticate before any operation");
-                String messageLowerCase = message.toLowerCase();
-                assertNotContains(messageLowerCase, "connection");
-                assertNotContains(messageLowerCase, "authenticated");
-                assertNotContains(messageLowerCase, "creationTime");
-                assertNotContains(messageLowerCase, "clientAttributes");
+        try (Socket socket = new Socket()) {
+            socket.setReuseAddress(true);
+            socket.connect(endpoint);
+            ClientMessage res;
+            try (OutputStream os = socket.getOutputStream(); InputStream is = socket.getInputStream()) {
+                os.write(CLIENT_BINARY.getBytes(StandardCharsets.UTF_8));
+                res = getKeyValue(ss, os, is);
             }
-        });
+            assertEquals(res.getMessageType(), ErrorsCodec.EXCEPTION_MESSAGE_TYPE);
+            ClientExceptionFactory factory = new ClientExceptionFactory(false, Thread.currentThread().getContextClassLoader());
+            Throwable err = factory.createException(res);
+            String message = err.getMessage();
+            assertInstanceOf(AuthenticationException.class, err.getCause());
+            assertContains(message, "must authenticate before any operation");
+            String messageLowerCase = message.toLowerCase();
+            assertNotContains(messageLowerCase, "connection");
+            assertNotContains(messageLowerCase, "authenticated");
+            assertNotContains(messageLowerCase, "creationTime");
+            assertNotContains(messageLowerCase, "clientAttributes");
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
     }
 
     @Test
