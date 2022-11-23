@@ -108,7 +108,6 @@ public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSe
                                         boolean useLazyDeserialization) {
         final PortableGetter getter = new PortableGetter(ss);
         try {
-            // Use lazy deserialization
             return getter.getValue(portable, name, useLazyDeserialization);
         } catch (Exception e) {
             return null;
@@ -120,7 +119,6 @@ public class FieldAccessExpression<T> implements Expression<T>, IdentifiedDataSe
                                       boolean useLazyDeserialization) {
         final CompactGetter getter = new CompactGetter(ss);
         try {
-            // Use lazy deserialization
             return getter.getValue(compact, name, useLazyDeserialization);
         } catch (Exception e) {
             return null;

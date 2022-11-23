@@ -46,31 +46,7 @@ public class CompactNestedFieldsTest extends SqlTestSupport {
 
     @Test
     public void test_basicQuerying() {
-        client().getSql().execute("CREATE TYPE Office ("
-                + "id BIGINT, "
-                + "name VARCHAR "
-                + ") OPTIONS ('format'='compact', 'compactTypeName'='OfficeCompactType')");
-
-        client().getSql().execute("CREATE TYPE Organization ("
-                + "id BIGINT, "
-                + "name VARCHAR, "
-                + "office Office"
-                + ") OPTIONS ('format'='compact', 'compactTypeName'='OrganizationCompactType')");
-
-        client().getSql().execute(
-                "CREATE MAPPING test ("
-                        + "__key BIGINT,"
-                        + "id BIGINT, "
-                        + "name VARCHAR, "
-                        + "organization Organization"
-                        + ")"
-                        + "TYPE IMap "
-                        + "OPTIONS ("
-                        + "'keyFormat'='bigint',"
-                        + "'valueFormat'='compact',"
-                        + "'valueCompactTypeName'='UserCompactType'"
-                        + ")");
-
+        setupCompactTypesForNestedQuery(client());
         client().getSql().execute("INSERT INTO test VALUES (1, 1, 'user1', (1, 'organization1', (1, 'office1')))");
         assertRowsAnyOrder("SELECT (organization).office.name FROM test", rows(1, "office1"));
     }

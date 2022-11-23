@@ -37,7 +37,7 @@ public final class PortableGetter extends Getter {
         } else {
             record = serializationService.readAsInternalGenericRecord((Data) target);
         }
-        GenericRecordQueryReader reader = new GenericRecordQueryReader(record);
+        GenericRecordQueryReader reader = new GenericRecordQueryReader(record, useLazyDeserialization);
         return reader.read(fieldPath);
     }
 

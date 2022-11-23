@@ -93,23 +93,7 @@ public class PortableNestedFieldsTest extends SqlTestSupport {
 
     @Test
     public void test_basicQuerying() {
-        instance().getSql().execute("CREATE TYPE Office OPTIONS "
-                + "('format'='portable', 'portableFactoryId'='1', 'portableClassId'='3', 'portableClassVersion'='0')");
-        instance().getSql().execute("CREATE TYPE Organization OPTIONS "
-                + "('format'='portable', 'portableFactoryId'='1', 'portableClassId'='2', 'portableClassVersion'='0')");
-
-        instance().getSql().execute("CREATE MAPPING test ("
-                + "__key BIGINT, "
-                + "id BIGINT, "
-                + "name VARCHAR, "
-                + "organization Organization "
-                + ") TYPE IMap "
-                + "OPTIONS ("
-                + "'keyFormat'='bigint', "
-                + "'valueFormat'='portable', "
-                + "'valuePortableFactoryId'='1', "
-                + "'valuePortableClassId'='1')");
-
+        setupPortableTypesForNestedQuery(instance());
         instance().getSql().execute("INSERT INTO test VALUES (1, 1, 'user1', (1, 'organization1', (1, 'office1')))");
 
         assertRowsAnyOrder("SELECT (organization).name FROM test", rows(1, "organization1"));

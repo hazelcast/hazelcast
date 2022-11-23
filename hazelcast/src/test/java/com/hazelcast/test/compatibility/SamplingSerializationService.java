@@ -25,8 +25,10 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
+import com.hazelcast.internal.serialization.impl.compact.CompactStreamSerializer;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
+import com.hazelcast.internal.serialization.impl.portable.PortableSerializer;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.JobRecord;
 import com.hazelcast.jet.impl.JobSummary;
@@ -242,6 +244,26 @@ public class SamplingSerializationService implements InternalSerializationServic
     @Override
     public byte getVersion() {
         return delegate.getVersion();
+    }
+
+    @Override
+    public CompactStreamSerializer getCompactStreamSerializer() {
+        return delegate.getCompactStreamSerializer();
+    }
+
+    @Override
+    public void setCompactStreamSerializer(CompactStreamSerializer serializer) {
+        delegate.setCompactStreamSerializer(serializer);
+    }
+
+    @Override
+    public PortableSerializer getPortableSerializer() {
+        return delegate.getPortableSerializer();
+    }
+
+    @Override
+    public void setPortableSerializer(PortableSerializer serializer) {
+        delegate.setPortableSerializer(serializer);
     }
 
     @Override

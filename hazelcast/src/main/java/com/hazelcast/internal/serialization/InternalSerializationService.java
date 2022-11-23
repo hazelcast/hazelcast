@@ -21,8 +21,10 @@ import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.Disposable;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
+import com.hazelcast.internal.serialization.impl.compact.CompactStreamSerializer;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
+import com.hazelcast.internal.serialization.impl.portable.PortableSerializer;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.partition.PartitioningStrategy;
@@ -159,4 +161,20 @@ public interface InternalSerializationService extends SerializationService, Disp
 
     byte getVersion();
 
+    /**
+     * Used by tests for mocking
+     */
+    CompactStreamSerializer getCompactStreamSerializer();
+
+    /**
+     * Used by tests for mocking
+     */
+    void setCompactStreamSerializer(CompactStreamSerializer serializer);
+
+    PortableSerializer getPortableSerializer();
+
+    /**
+     * Used by tests for mocking
+     */
+    void setPortableSerializer(PortableSerializer serializer);
 }

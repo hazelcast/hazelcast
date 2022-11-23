@@ -314,7 +314,8 @@ public final class PortableSerializer implements StreamSerializer<Object> {
         return (T) genericRecord;
     }
 
-    <T> T readAsInternalGenericRecord(BufferObjectDataInput in, int factoryId, int classId) throws IOException {
+    // Public for testing
+    public <T> T readAsInternalGenericRecord(BufferObjectDataInput in, int factoryId, int classId) throws IOException {
         int version = in.readInt();
         ClassDefinition cd = setupPositionAndDefinition(in, factoryId, classId, version);
         PortableInternalGenericRecord reader = new PortableInternalGenericRecord(this, in, cd);

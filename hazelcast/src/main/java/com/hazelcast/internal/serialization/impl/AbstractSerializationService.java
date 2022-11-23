@@ -715,8 +715,12 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     // Used by tests
-    protected void setCompactStreamSerializer(CompactStreamSerializer compactStreamSerializer) {
-        this.compactStreamSerializer = compactStreamSerializer;
+    public CompactStreamSerializer getCompactStreamSerializer() {
+        return this.compactStreamSerializer;
+    }
+
+    public void setCompactStreamSerializer(CompactStreamSerializer serializer) {
+        this.compactStreamSerializer = serializer;
     }
 
     public abstract static class Builder<T extends Builder<T>> {

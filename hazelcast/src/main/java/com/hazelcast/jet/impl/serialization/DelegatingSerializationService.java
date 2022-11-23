@@ -26,6 +26,7 @@ import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.SerializerAdapter;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
+import com.hazelcast.internal.serialization.impl.portable.PortableSerializer;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Serializer;
@@ -125,6 +126,16 @@ public class DelegatingSerializationService extends AbstractSerializationService
     @Override
     public PortableContext getPortableContext() {
         return delegate.getPortableContext();
+    }
+
+    @Override
+    public PortableSerializer getPortableSerializer() {
+        return delegate.getPortableSerializer();
+    }
+
+    @Override
+    public void setPortableSerializer(PortableSerializer serializer) {
+        delegate.setPortableSerializer(serializer);
     }
 
     @Override
