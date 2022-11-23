@@ -1414,7 +1414,10 @@ public class ClientMapProxy<K, V> extends ClientProxy
     @Override
     public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<K, V, R> entryProcessor,
                                           @Nonnull Predicate<K, V> predicate) {
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
+        checkNotNull(entryProcessor, NULL_ENTRY_PROCESSOR_IS_NOT_ALLOWED);
         checkDoesNotContainPagingPredicate(predicate, "executeOnEntries");
+
         ClientMessage request = MapExecuteWithPredicateCodec.encodeRequest(name, toData(entryProcessor), toData(predicate));
         ClientMessage response = invokeWithPredicate(request, predicate);
 

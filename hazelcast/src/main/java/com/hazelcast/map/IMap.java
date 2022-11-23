@@ -451,9 +451,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      *
      * @param predicate matching entries with this predicate will be removed
      *                  from this map
-     * @throws NullPointerException if the specified predicate is null
+     * @throws NullPointerException     if the specified predicate is null
      * @throws IllegalArgumentException if the predicate is a {@link com.hazelcast.query.PagingPredicate} or is a
-     * {@link com.hazelcast.query.PartitionPredicate} that includes a {@link com.hazelcast.query.PagingPredicate}
+     *                                  {@link com.hazelcast.query.PartitionPredicate} that includes a
+     *                                  {@link com.hazelcast.query.PagingPredicate}
      */
     void removeAll(@Nonnull Predicate<K, V> predicate);
 
@@ -2078,8 +2079,9 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @return a UUID.randomUUID().toString() which is used as a key to remove the listener
      * @throws UnsupportedOperationException if this operation isn't supported, for example on a Hazelcast client
      * @throws NullPointerException          if the {@code listener} or {@code predicate} is {@code null}
-     * @throws IllegalArgumentException if the predicate is a {@link com.hazelcast.query.PagingPredicate} or is a
-     * {@link com.hazelcast.query.PartitionPredicate} that includes a {@link com.hazelcast.query.PagingPredicate}
+     * @throws IllegalArgumentException      if the predicate is a {@link com.hazelcast.query.PagingPredicate} or is a
+     *                                       {@link com.hazelcast.query.PartitionPredicate} that includes a
+     *                                       {@link com.hazelcast.query.PagingPredicate}
      * @see MapListener
      */
     UUID addLocalEntryListener(@Nonnull MapListener listener,
@@ -2099,11 +2101,12 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @param key          key to listen for
      * @param includeValue {@code true} if {@code EntryEvent} should contain the value
      * @return a UUID.randomUUID().toString() which is used as a key to remove the listener
-     * @throws NullPointerException if the listener is {@code null}
-     * @throws NullPointerException if the predicate is {@code null}
+     * @throws NullPointerException          if the listener is {@code null}
+     * @throws NullPointerException          if the predicate is {@code null}
      * @throws UnsupportedOperationException if this operation isn't supported, for example on a Hazelcast client
-     * @throws IllegalArgumentException if the predicate is a {@link com.hazelcast.query.PagingPredicate} or is a
-     * {@link com.hazelcast.query.PartitionPredicate} that includes a {@link com.hazelcast.query.PagingPredicate}
+     * @throws IllegalArgumentException      if the predicate is a {@link com.hazelcast.query.PagingPredicate} or is a
+     *                                       {@link com.hazelcast.query.PartitionPredicate} that includes a
+     *                                       {@link com.hazelcast.query.PagingPredicate}
      * @see MapListener
      */
     UUID addLocalEntryListener(@Nonnull MapListener listener,
@@ -2223,10 +2226,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @param predicate    predicate for filtering entries
      * @param includeValue {@code true} if {@code EntryEvent} should contain the value
      * @return a UUID.randomUUID().toString() which is used as a key to remove the listener
-     * @throws NullPointerException if the specified {@code listener} or {@code predicate}
-     *                              is {@code null}
+     * @throws NullPointerException     if the specified {@code listener} or {@code predicate}
+     *                                  is {@code null}
      * @throws IllegalArgumentException if the predicate is a {@link com.hazelcast.query.PagingPredicate} or is a
-     * {@link com.hazelcast.query.PartitionPredicate} that includes a {@link com.hazelcast.query.PagingPredicate}
+     *                                  {@link com.hazelcast.query.PartitionPredicate} that includes a
+     *                                  {@link com.hazelcast.query.PagingPredicate}
      * @see MapListener
      */
     UUID addEntryListener(@Nonnull MapListener listener,
@@ -2243,9 +2247,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @param key          key to listen for
      * @param includeValue {@code true} if {@code EntryEvent} should contain the value
      * @return a UUID.randomUUID().toString() which is used as a key to remove the listener
-     * @throws NullPointerException if the specified {@code listener} or {@code predicate} is {@code null}
+     * @throws NullPointerException     if the specified {@code listener} or {@code predicate} is {@code null}
      * @throws IllegalArgumentException if the predicate is a {@link com.hazelcast.query.PagingPredicate} or is a
-     * {@link com.hazelcast.query.PartitionPredicate} that includes a {@link com.hazelcast.query.PagingPredicate}
+     *                                  {@link com.hazelcast.query.PartitionPredicate} that includes a
+     *                                  {@link com.hazelcast.query.PagingPredicate}
      * @see MapListener
      */
     UUID addEntryListener(@Nonnull MapListener listener,
@@ -2497,7 +2502,7 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @param predicate specified query criteria
      * @return an immutable set of the keys of matching locally owned entries
      * @throws QueryResultSizeExceededException if query result size limit is exceeded
-     * @throws UnsupportedOperationException if this operation isn't supported, for example on a Hazelcast client
+     * @throws UnsupportedOperationException    if this operation isn't supported, for example on a Hazelcast client
      * @see ClusterProperty#QUERY_RESULT_SIZE_LIMIT
      */
     Set<K> localKeySet(@Nonnull Predicate<K, V> predicate);
@@ -2882,7 +2887,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @param predicate      predicate to filter the entries with
      * @param <R>            return type for entry processor
      * @throws IllegalArgumentException if the predicate is a {@link com.hazelcast.query.PagingPredicate} or is a
-     * {@link com.hazelcast.query.PartitionPredicate} that includes a {@link com.hazelcast.query.PagingPredicate}
+     *                                  {@link com.hazelcast.query.PartitionPredicate} that includes a
+     *                                  {@link com.hazelcast.query.PagingPredicate}
      * @return results mapped by entry key
      */
     <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<K, V, R> entryProcessor,
@@ -2915,7 +2921,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @param predicate  predicate to filter the entries with
      * @param <R>        type of the result
      * @throws IllegalArgumentException if the predicate is a {@link com.hazelcast.query.PagingPredicate} or is a
-     * {@link com.hazelcast.query.PartitionPredicate} that includes a {@link com.hazelcast.query.PagingPredicate}
+     *                                  {@link com.hazelcast.query.PartitionPredicate} that includes a
+     *                                  {@link com.hazelcast.query.PagingPredicate}
      * @return the result of the given type
      * @since 3.8
      */
@@ -2939,7 +2946,8 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @param predicate  predicate to filter the entries with
      * @param <R>        type of the result
      * @throws IllegalArgumentException if the predicate is a {@link com.hazelcast.query.PagingPredicate} or is a
-     * {@link com.hazelcast.query.PartitionPredicate} that includes a {@link com.hazelcast.query.PagingPredicate}
+     *                                  {@link com.hazelcast.query.PartitionPredicate} that includes a
+     *                                  {@link com.hazelcast.query.PagingPredicate}
      * @return the result of the given type
      * @since 3.8
      */
@@ -2976,9 +2984,10 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @param predicate    the predicate for filtering entries
      * @param includeValue {@code true} if this {@code QueryCache} is allowed to cache values of entries, otherwise {@code false}
      * @return the {@code QueryCache} instance with the supplied {@code name}
-     * @throws NullPointerException if the specified {@code name} or {@code predicate} is {@code null}
+     * @throws NullPointerException     if the specified {@code name} or {@code predicate} is {@code null}
      * @throws IllegalArgumentException if the predicate is a {@link com.hazelcast.query.PagingPredicate} or is a
-     * {@link com.hazelcast.query.PartitionPredicate} that includes a {@link com.hazelcast.query.PagingPredicate}
+     *                                  {@link com.hazelcast.query.PartitionPredicate} that includes a
+     *                                  {@link com.hazelcast.query.PagingPredicate}
      * @see QueryCache
      * @since 3.8
      */
@@ -3007,10 +3016,11 @@ public interface IMap<K, V> extends ConcurrentMap<K, V>, BaseMap<K, V>, Iterable
      * @param includeValue {@code true} if this {@code QueryCache} is allowed to cache values of
      *                     entries, otherwise {@code false}
      * @return the {@code QueryCache} instance with the supplied {@code name}
-     * @throws NullPointerException if the specified {@code name} or {@code listener} or {@code predicate}
-     *                              is {@code null}
+     * @throws NullPointerException     if the specified {@code name} or {@code listener} or {@code predicate}
+     *                                  is {@code null}
      * @throws IllegalArgumentException if the predicate is a {@link com.hazelcast.query.PagingPredicate} or is a
-     * {@link com.hazelcast.query.PartitionPredicate} that includes a {@link com.hazelcast.query.PagingPredicate}
+     *                                  {@link com.hazelcast.query.PartitionPredicate} that includes a
+     *                                  {@link com.hazelcast.query.PagingPredicate}
      * @see QueryCache
      * @since 3.8
      */
