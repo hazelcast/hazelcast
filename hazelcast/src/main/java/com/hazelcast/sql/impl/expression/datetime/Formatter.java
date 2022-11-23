@@ -91,6 +91,35 @@ public abstract class Formatter {
 
     public abstract String format(Object input, Locale locale);
 
+    interface GroupProcessor {
+        void acceptLiteral(String literal);
+        void acceptGroup(String group, Matcher m);
+    }
+
+    private static void parse(Pattern template, GroupProcessor processor, String format) {
+        Matcher m = template.matcher(format);
+        StringBuilder literal = new StringBuilder();
+        int i = 0;
+        for (; m.find(); i = m.end()) {
+            if (m.start() > i) {
+                literal.append(format, i, m.start());
+            }
+            String group = m.group();
+            if (group.startsWith("\\")) {
+                literal.append(group);
+            } else {
+                if (literal.length() > 0) {
+                    processor.acceptLiteral(literal.toString());
+                    literal.setLength(0);
+                }
+                processor.acceptGroup(group, m);
+            }
+        }
+        if (i < m.regionEnd() || literal.length() > 0) {
+            processor.acceptLiteral(literal + format.substring(i));
+        }
+    }
+
     /** Expects {@code <LITERAL>|"<LITERAL>"?} where {@code LITERAL: (\.|[^"])*} */
     private static String unescape(String input) {
         StringBuilder s = new StringBuilder(input.length());
@@ -121,7 +150,7 @@ public abstract class Formatter {
                 ? "th" : ORDINAL[number.charAt(number.length() - 1) - '0'];
     }
 
-    private static class DateFormat extends Formatter {
+    private static class DateFormat extends Formatter implements GroupProcessor {
         static final DateTimeFormatter MERIDIEM_FORMATTER = DateTimeFormatter.ofPattern("a");
         static final DateTimeFormatter TIMEZONE_FORMATTER = DateTimeFormatter.ofPattern("O");
         static final DateTimeFormatter ERA_FORMATTER = DateTimeFormatter.ofPattern("G");
@@ -287,35 +316,24 @@ public abstract class Formatter {
         enum Ordinal { TH, th }
 
         DateFormat(String format) {
-            Matcher m = DATETIME_TEMPLATE.matcher(format);
-            StringBuilder literal = new StringBuilder();
-            int i = 0;
-            for (; m.find(); i = m.end()) {
-                if (m.start() > i) {
-                    literal.append(format, i, m.start());
-                }
-                String group = m.group();
-                if (group.startsWith("\\")) {
-                    literal.append(group);
-                } else {
-                    if (literal.length() > 0) {
-                        parts.add(new Literal(literal.toString()));
-                        literal.setLength(0);
-                    }
+            parse(DATETIME_TEMPLATE, this, format);
+        }
 
-                    if (group.startsWith("\"")) {
-                        parts.add(new Literal(group));
-                    } else {
-                        String prefix = m.group(1);
-                        String suffix = m.group(3);
-                        String pattern = m.group(2).replace('.', '_').replace(',', '_');
-                        parts.add(new PatternInstance(prefix.contains("FM"), prefix.contains("TM"),
-                                Pattern.valueOf(pattern), suffix == null ? null : Ordinal.valueOf(suffix)));
-                    }
-                }
-            }
-            if (i < m.regionEnd() || literal.length() > 0) {
-                parts.add(new Literal(literal + format.substring(i)));
+        @Override
+        public void acceptLiteral(String literal) {
+            parts.add(new Literal(literal));
+        }
+
+        @Override
+        public void acceptGroup(String group, Matcher m) {
+            if (group.startsWith("\"")) {
+                parts.add(new Literal(group));
+            } else {
+                String prefix = m.group(1);
+                String suffix = m.group(3);
+                String pattern = m.group(2).replace('.', '_').replace(',', '_');
+                parts.add(new PatternInstance(prefix.contains("FM"), prefix.contains("TM"),
+                        Pattern.valueOf(pattern), suffix == null ? null : Ordinal.valueOf(suffix)));
             }
         }
 
@@ -613,59 +631,51 @@ public abstract class Formatter {
             }
         }
 
-        NumberFormat(String format) {
-            Matcher m = NUMERIC_TEMPLATE.matcher(format);
-            StringBuilder literal = new StringBuilder();
+        class NumericGroupProcessor implements GroupProcessor {
             Mask mask = integerMask;
-            boolean currency = false;
-            boolean exponential = false;
-            boolean roman = false;
-            int shift = 0;
-            int i = 0;
+            boolean currency;
+            boolean exponential;
+            boolean roman;
+            int shift;
 
-            for (; m.find(); i = m.end()) {
-                if (m.start() > i) {
-                    literal.append(format, i, m.start());
-                }
-                String group = m.group();
-                if (group.startsWith("\\")) {
-                    literal.append(group);
+            @Override
+            public void acceptLiteral(String literal) {
+                mask.add(new Literal(literal));
+            }
+
+            @Override
+            public void acceptGroup(String group, Matcher m) {
+                if (group.equals("FM")) {
+                    mask.toggleFillMode();
+                } else if (group.startsWith("V")) {
+                    shift += group.length() - 1;
+                } else if (group.startsWith("F") || group.startsWith("\"")) {
+                    mask.add(new Literal(group));
+                } else if (group.startsWith("9") || group.startsWith("0")) {
+                    mask.addDigits(group);
+                } else if (group.length() == 1 && ",G.D".contains(group)) {
+                    if (".D".contains(group) && mask == integerMask) {
+                        fractionMask.fillMode = integerMask.fillMode;
+                        mask = fractionMask;
+                    }
+                    mask.add(group.charAt(0));
                 } else {
-                    if (literal.length() > 0) {
-                        mask.add(new Literal(literal.toString()));
-                        literal.setLength(0);
-                    }
-
-                    if (group.equals("FM")) {
-                        mask.toggleFillMode();
-                    } else if (group.startsWith("V")) {
-                        shift += group.length() - 1;
-                    } else if (group.startsWith("F") || group.startsWith("\"")) {
-                        mask.add(new Literal(group));
-                    } else if (group.startsWith("9") || group.startsWith("0")) {
-                        mask.addDigits(group);
-                    } else if (group.length() == 1 && ",G.D".contains(group)) {
-                        if (".D".contains(group) && mask == integerMask) {
-                            fractionMask.fillMode = integerMask.fillMode;
-                            mask = fractionMask;
-                        }
-                        mask.add(group.charAt(0));
-                    } else {
-                        Pattern pattern = Pattern.valueOf(group);
-                        mask.add(pattern);
-                        if (pattern == Pattern.CR || pattern == Pattern.C) {
-                            currency = true;
-                        } else if (pattern == Pattern.EEEE) {
-                            exponential = true;
-                        } else if (pattern == Pattern.RN) {
-                            roman = true;
-                        }
+                    Pattern pattern = Pattern.valueOf(group);
+                    mask.add(pattern);
+                    if (pattern == Pattern.CR || pattern == Pattern.C) {
+                        currency = true;
+                    } else if (pattern == Pattern.EEEE) {
+                        exponential = true;
+                    } else if (pattern == Pattern.RN) {
+                        roman = true;
                     }
                 }
             }
-            if (i < m.regionEnd() || literal.length() > 0) {
-                mask.add(new Literal(literal + format.substring(i)));
-            }
+        }
+
+        NumberFormat(String format) {
+            NumericGroupProcessor p = new NumericGroupProcessor();
+            parse(NUMERIC_TEMPLATE, p, format);
 
             integerMask.prepare();
             fractionMask.prepare();
@@ -673,10 +683,10 @@ public abstract class Formatter {
                 (integerMask.digits > 0 ? integerMask : fractionMask).minDigits = 1;
             }
 
-            form = roman && integerMask.digits == 0 && fractionMask.digits == 0 ? Form.Roman
-                    : exponential ? Form.Exponential : Form.Normal;
-            this.currency = currency;
-            this.shift = shift;
+            form = p.roman && integerMask.digits == 0 && fractionMask.digits == 0 ? Form.Roman
+                    : p.exponential ? Form.Exponential : Form.Normal;
+            currency = p.currency;
+            shift = p.shift;
 
             integerMask.ensureSignProvision(fractionMask);
             fractionMask.ensureSignProvision(integerMask);
