@@ -223,14 +223,36 @@ public class FormatterTest {
 
     @Test
     public void testLiterals() {
-        Formatter f = forNumbers("FM\"Integer: \"999 \"Fraction: \".999");
-        check(48.59, f, "Integer: 48 Fraction: .59");
-
         check(4.5,  "  $4.5",  " -$4.5",   "M$99.9",  "$99.9");
         check(4.5,  "$  4.5",  "$ -4.5",  "F$M99.9", "F$99.9");
 
         check(4.5,  " 4.5 USD ",  "-4.5 USD ",  "9.99 \"USD\"");
         check(4.5,  " 4.5  USD",  "-4.5  USD",  "9.99 F\"USD\"");
+
+        check(45,  " 4.5",  "-4.5",  "9\".\"9", "9\\.9");
+        check(45,  " 450",  "-450",  "99\"0\"", "99\\0");
+
+        Formatter f = forNumbers("FM\"Integer: \"999 \"Fraction: \".999");
+        check(48.59, f, "Integer: 48 Fraction: .59");
+
+        f = forNumbers("FM\\\"999\"\\\" + \\\"\".999\\\"");
+        check(48.59, f, "\"48\" + \".59\"");
+    }
+
+    @Test
+    public void testEscaping() {
+        check("\"\\\"\"", "\"", "Quote in quotes");
+        check("\"\\\"",   "\"", "Quote in unpaired quotes");
+        check(  "\\\"",   "\"", "Quote not in quotes");
+        check(    "\"",   "",   "Unescaped quote");
+
+        check("\"\\\\\"", "\\", "Backslash in quotes");
+        check("\"\\\\",   "\\", "Backslash in unpaired quotes");
+        check(  "\\\\",   "\\", "Backslash not in quotes");
+        check(    "\\",   "\\", "Unescaped backslash");
+
+        check("\"\\a\"", "a", "Unnecessary escape in quotes");
+        check(  "\\a",   "a", "Unnecessary escape not in quotes");
     }
 
     @Test
@@ -244,6 +266,11 @@ public class FormatterTest {
         Formatter f = forNumbers("FM9G999D99");
         check(1234.56, f, "1,234.56", US);
         check(1234.56, f, "1.234,56", TR);
+    }
+
+    private void check(String literal, String expected, String message) {
+        assertEquals(message, expected, forDates(literal).format(Year.of(0), US));
+        assertEquals(message, expected, forNumbers("FM" + literal).format(0, US));
     }
 
     private void check(double input, String expectedPositive, String expectedNegative, String... formats) {
