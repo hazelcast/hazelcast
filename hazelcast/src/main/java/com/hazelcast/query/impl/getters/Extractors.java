@@ -82,7 +82,7 @@ public final class Extractors {
             Getter getter = getGetter(targetObject, attributeName, failOnMissingReflectiveAttribute);
             try {
                 if (getter instanceof CompactGetter || getter instanceof PortableGetter) {
-                    // Use lazy deserialization for compact field access.
+                    // Use lazy deserialization for compact and portable field access.
                     return getter.getValue(targetObject, attributeName, useLazyDeserialization);
                 }
                 return getter.getValue(targetObject, attributeName, metadata);
