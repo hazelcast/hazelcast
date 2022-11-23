@@ -93,6 +93,10 @@ public final class PredicateUtils {
         }
     }
 
+    /**
+     * Returns true if the predicate passed is a {@link com.hazelcast.query.PagingPredicate}
+     * or is a {@link com.hazelcast.query.PartitionPredicate} that includes a {@link com.hazelcast.query.PagingPredicate}
+     */
     public static boolean containsPagingPredicate(Predicate predicate) {
         if (predicate instanceof PagingPredicateImpl) {
             return true;
