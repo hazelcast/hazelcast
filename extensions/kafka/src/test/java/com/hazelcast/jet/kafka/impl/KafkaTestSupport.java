@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.kafka.impl;
 
-import com.hazelcast.internal.util.OsHelper;
 import com.hazelcast.test.DockerTestUtil;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
@@ -49,19 +48,21 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static java.util.Collections.emptyMap;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public abstract class KafkaTestSupport {
+    static final long KAFKA_MAX_BLOCK_MS = MINUTES.toMillis(10);
     protected Admin admin;
     protected KafkaProducer<Integer, String> producer;
     protected String brokerConnectionString;
     private KafkaProducer<String, String> stringStringProducer;
 
     public static KafkaTestSupport create() {
-        if (!DockerTestUtil.dockerEnabled() || OsHelper.isArmMac()) {
+        if (!DockerTestUtil.dockerEnabled()) {
             if (System.getProperties().containsKey("test.kafka.version")) {
                 throw new IllegalArgumentException("'test.kafka.version' system property requires docker and x86_64 CPU");
             }
@@ -113,6 +114,7 @@ public abstract class KafkaTestSupport {
             producerProps.setProperty("bootstrap.servers", brokerConnectionString);
             producerProps.setProperty("key.serializer", IntegerSerializer.class.getCanonicalName());
             producerProps.setProperty("value.serializer", StringSerializer.class.getCanonicalName());
+            producerProps.setProperty("max.block.ms", String.valueOf(KAFKA_MAX_BLOCK_MS));
             producer = new KafkaProducer<>(producerProps);
         }
         return producer;
@@ -200,7 +202,7 @@ public abstract class KafkaTestSupport {
                 consumerProperties,
                 topic
         )) {
-            long timeLimit = System.nanoTime() + SECONDS.toNanos(10);
+            long timeLimit = System.nanoTime() + SECONDS.toNanos(KAFKA_MAX_BLOCK_MS);
             Set<K> seenKeys = new HashSet<>();
             for (int totalRecords = 0; totalRecords < expected.size() && System.nanoTime() < timeLimit; ) {
                 ConsumerRecords<K, V> records = consumer.poll(Duration.ofMillis(100));
