@@ -16,18 +16,17 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc.postgres;
 
-import com.hazelcast.jet.sql.impl.connector.jdbc.MappingJdbcSqlConnectorTest;
+import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnectorStabilityTest;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.jdbc.PostgresDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
 @Category(NightlyTest.class)
-public class PostgresMappingJdbcSqlConnectorTest extends MappingJdbcSqlConnectorTest {
+public class PostgresJdbcSqlConnectorStabilityTest extends JdbcSqlConnectorStabilityTest {
 
     @BeforeClass
     public static void beforeClass() {
         initialize(new PostgresDatabaseProvider());
     }
-
 }

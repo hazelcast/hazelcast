@@ -110,7 +110,7 @@ public abstract class OptimizerTestSupport extends SqlTestSupport {
         LogicalRel logicalRel = optimizeLogicalInternal(sql, context);
         PhysicalRel physicalRel = (PhysicalRel) context
                 .optimize(logicalRel, PhysicalRules.getRuleSet(), OptUtils.toPhysicalConvention(logicalRel.getTraitSet()));
-        physicalRel = CalciteSqlOptimizer.uniquifyScans(physicalRel);
+        physicalRel = CalciteSqlOptimizer.postOptimizationRewrites(physicalRel);
         return new Result(logicalRel, physicalRel);
     }
 
