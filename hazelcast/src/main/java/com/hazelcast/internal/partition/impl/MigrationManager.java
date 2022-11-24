@@ -588,7 +588,7 @@ public class MigrationManager {
     /**
      * Clears the migration queue and triggers the control task. Called on the master node.
      */
-    void triggerControlTask() {
+    public void triggerControlTask() {
         migrationQueue.clear();
         migrationThread.abortMigrationTask();
         if (stats.getRemainingMigrations() > 0) {

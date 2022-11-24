@@ -35,7 +35,7 @@ public final class DiscoveryServiceSettings {
     private ILogger logger;
     private ClassLoader configClassLoader;
     private DiscoveryConfig discoveryConfig;
-    private List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs = new ArrayList<DiscoveryStrategyConfig>();
+    private List<DiscoveryStrategyConfig> aliasedDiscoveryConfigs = new ArrayList<>();
     private boolean autoDetectionEnabled;
     private DiscoveryMode discoveryMode;
 

@@ -66,7 +66,7 @@ public class LoginModuleConfig {
 
         public static LoginModuleUsage get(String v) {
             try {
-                return LoginModuleUsage.valueOf(v.toUpperCase(StringUtil.LOCALE_INTERNAL));
+                return LoginModuleUsage.valueOf(StringUtil.upperCaseInternal(v));
             } catch (Exception ignore) {
                 ignore(ignore);
             }

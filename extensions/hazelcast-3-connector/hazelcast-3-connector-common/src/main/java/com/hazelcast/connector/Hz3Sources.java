@@ -51,8 +51,8 @@ import static com.hazelcast.jet.pipeline.Sources.batchFromProcessor;
  * must be set with the Hazelcast 3 client and the Hazelcast 3 connector:
  * <pre>{@code
  * List<String> jars = new ArrayList<>();
- * jars.add("hazelcast-3.12.12.jar");
- * jars.add("hazelcast-client-3.12.12.jar");
+ * jars.add("hazelcast-3.12.13.jar");
+ * jars.add("hazelcast-client-3.12.13.jar");
  * jars.add("hazelcast-3-connector-impl.jar");
  * JobConfig config = new JobConfig();
  * config.addCustomClasspaths(source.name(), jars)

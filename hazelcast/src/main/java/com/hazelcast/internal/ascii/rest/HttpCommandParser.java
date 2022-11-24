@@ -21,9 +21,12 @@ import com.hazelcast.internal.ascii.TextCommand;
 import com.hazelcast.internal.ascii.memcache.ErrorCommand;
 import com.hazelcast.internal.nio.ascii.TextDecoder;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URLDecoder;
 import java.util.StringTokenizer;
 
 import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_CLIENT;
+import static com.hazelcast.internal.ascii.TextCommandConstants.TextCommandType.ERROR_SERVER;
 
 abstract class HttpCommandParser<HC extends HttpCommand> implements CommandParser {
 
@@ -37,7 +40,12 @@ abstract class HttpCommandParser<HC extends HttpCommand> implements CommandParse
         } else {
             return new ErrorCommand(ERROR_CLIENT);
         }
-        return createHttpCommand(decoder, uri);
+        try {
+            String urlDecodedUri = URLDecoder.decode(uri, "UTF-8");
+            return createHttpCommand(decoder, urlDecodedUri);
+        } catch (UnsupportedEncodingException e) {
+            return new ErrorCommand(ERROR_SERVER, "UTF-8 encoding is not supported by JVM!");
+        }
     }
 
     abstract HC createHttpCommand(TextDecoder decoder, String uri);

@@ -24,7 +24,7 @@ import com.hazelcast.transaction.TransactionException;
 
 import java.util.UUID;
 
-public enum TxnLockAndGetOpSteps implements Step<State> {
+public enum TxnLockAndGetOpSteps implements IMapOpStep {
 
     READ() {
         @Override

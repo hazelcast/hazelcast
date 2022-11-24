@@ -16,13 +16,13 @@
 
 package com.hazelcast.map.impl.operation.steps.engine;
 
+import com.hazelcast.core.Offloadable;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.steps.UtilSteps;
 import com.hazelcast.memory.NativeOutOfMemoryError;
 import com.hazelcast.spi.impl.PartitionSpecificRunnable;
 import com.hazelcast.spi.impl.operationservice.impl.OperationRunnerImpl;
-import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
 
 import java.util.function.Supplier;
 
@@ -60,16 +60,11 @@ public class StepSupplier implements Supplier<Runnable> {
 
         this.state = operation.createState();
         this.currentStep = operation.getStartingStep();
-        this.operationRunner = getPartitionOperationRunner(operation);
+        this.operationRunner = UtilSteps.getPartitionOperationRunner(state);
         this.checkCurrentThread = checkCurrentThread;
 
         assert state != null;
         assert currentStep != null;
-    }
-
-    private OperationRunnerImpl getPartitionOperationRunner(MapOperation operation) {
-        return (OperationRunnerImpl) ((OperationServiceImpl) operation.getNodeEngine()
-                .getOperationService()).getOperationExecutor().getPartitionOperationRunners()[state.getPartitionId()];
     }
 
     @Override
@@ -88,8 +83,13 @@ public class StepSupplier implements Supplier<Runnable> {
 
         // 1. If step needs to be offloaded,
         // return step wrapped as a runnable.
-        if (step.isOffloadStep()) {
-            return new Runnable() {
+        if (step.isOffloadStep(state)) {
+            return new ExecutorNameAwareRunnable() {
+                @Override
+                public String getExecutorName() {
+                    return step.getExecutorName(state);
+                }
+
                 @Override
                 public void run() {
                     if (checkCurrentThread) {
@@ -196,5 +196,14 @@ public class StepSupplier implements Supplier<Runnable> {
         if (logger.isFinestEnabled()) {
             logger.finest(currentStep.toString() + " ==> " + operation.hashCode());
         }
+    }
+
+    public void handleOperationError(Throwable throwable) {
+        state.setThrowable(throwable);
+        UtilSteps.HANDLE_ERROR.runStep(state);
+    }
+
+    private interface ExecutorNameAwareRunnable extends Runnable, Offloadable {
+
     }
 }

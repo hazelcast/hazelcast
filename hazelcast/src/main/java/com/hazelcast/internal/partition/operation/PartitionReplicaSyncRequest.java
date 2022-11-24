@@ -276,7 +276,7 @@ public class PartitionReplicaSyncRequest extends AbstractPartitionOperation
         InternalPartitionServiceImpl partitionService = getService();
         PartitionReplicaVersionManager versionManager = partitionService.getPartitionReplicaVersionManager();
 
-        long[] versions = versionManager.getPartitionReplicaVersions(partitionId, ns);
+        long[] versions = versionManager.getPartitionReplicaVersionsForSync(partitionId, ns);
         PartitionReplicaSyncResponse syncResponse = new PartitionReplicaSyncResponse(operations,
                 chunkSuppliers, ns, versions,
                 isChunkedMigrationEnabled(),
