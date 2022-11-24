@@ -86,16 +86,13 @@ public class FormatterTest {
         f = forDates("FF1 FF2 FF3(=MS) FF4 FF5 FF6(=US)");
         check(LocalTime.ofNanoOfDay(123456789), f, "1 12 123(=123) 1234 12345 123456(=123456)");
 
-        f = forDates("\"Quarter\" YYYY-\"Q\"Q is in the CCth century.");
+        f = forDates("\"Quarter\" YYYY-\"Q\"Q is in the CCth \"century\".");
         check(YearMonth.of(2022, 9), f, "Quarter 2022-Q3 is in the 21st century.");
-
-        f = forDates("Roman numeral for Month is RM.");
-        check(YearMonth.of(2022, 9), f, "Roman numeral for September is IX.");
 
         f = forDates("Plato founded the \"Academy\" in c. YYYY AD.");
         check(Year.of(-386), f, "Plato founded the Academy in c. 387 BC.");
 
-        f = forDates("Plato \"Akademi\"'yi TMA.D. YYYY civarında kurdu.");
+        f = forDates("Plato \"Akademi\"'yi TMA.D. YYYY civarında \"kurdu\".");
         check(Year.of(-386), f, "Plato Akademi'yi M.Ö. 387 civarında kurdu.", TR);
 
         f = forDates("AD(=BC) A.D.(=B.C.) ad(=bc) a.d.(=b.c.)");
@@ -104,6 +101,9 @@ public class FormatterTest {
         f = forDates("The Halley's closest approach to the Earth was on DD Month YYYY AD (the Jth \"Julian day\").");
         check(LocalDate.of(837, 2, 28), f,
                 "The Halley's closest approach to the Earth was on 28 February 837 AD (the 2026827th Julian day).");
+
+        f = forDates("RM.RD.RY");
+        check(LocalDate.of(2022, 9, 26), f, "IX.XXVI.MMXXII");
     }
 
     @Test

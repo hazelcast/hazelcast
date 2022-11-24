@@ -50,6 +50,9 @@ import java.util.regex.Pattern;
  * PostgreSQL <code>to_char()</code></a> with the following differences.
  * <ol><li> {@code FM} and {@code TM} prefixes enable the fill and translation modes for date
  *          patterns respectively, which are disabled by default.
+ *     <li> {@code RY}/{@code ry} and {@code RD}/{@code rd} patterns are introduced to format
+ *          {@link ChronoField#YEAR_OF_ERA} and {@link ChronoField#DAY_OF_MONTH} respectively as
+ *          roman numerals.
  *     <li> {@code V} pattern can be combined with a decimal point.
  *     <li> {@code M} and {@code P} patterns are introduced as the anchored versions of {@code MI}
  *          and {@code PL} patterns respectively.
@@ -71,8 +74,8 @@ public abstract class Formatter {
     private static final String LITERAL = "\"(?:" + ESCAPED + "|[^\"])*\"?|" + ESCAPED;
     private static final Pattern DATETIME_TEMPLATE = Pattern.compile(
             "((?:FM|TM)*)(SSSSS?|HH(?:12|24)?|MI|[SMU]S|FF[1-6]|[AP](?:M|\\.M\\.)|[ap](?:m|\\.m\\.)|"
-            + "DA?Y|[Dd]a?y|I?DDD|DD|I?D|W|[WI]W|CC|J|Q|MON(?:TH)?|[Mm]on(?:th)?|MM|RM|rm|"
-            + "Y,YYY|[YI]Y{0,3}|BC|B\\.C\\.|bc|b\\.c\\.|AD|A\\.D\\.|ad|a\\.d\\.|"
+            + "DA?Y|[Dd]a?y|I?DDD|DD|I?D|J|W|[WI]W|MON(?:TH)?|[Mm]on(?:th)?|MM|Y,YYY|[YI]Y{0,3}|"
+            + "Q|CC|BC|B\\.C\\.|bc|b\\.c\\.|AD|A\\.D\\.|ad|a\\.d\\.|R[DMY]|r[dmy]|"
             + "TZ[HM]?|TZ|tz|OF)(TH|th)?|" + LITERAL);
     private static final Pattern NUMERIC_TEMPLATE = Pattern.compile(
             "FM|[90]+|[,G.D]|BR?|SG?|MI?|PL?|CR?|V9+|TH|th|EEEE|RN|F?" + LITERAL);
@@ -135,14 +138,20 @@ public abstract class Formatter {
         return s.toString();
     }
 
-    private static StringBuilder toRoman(int number) {
-        StringBuilder r = new StringBuilder();
-        for (int j = 0; j < ARABIC.length; j++) {
-            for (; number >= ARABIC[j]; number -= ARABIC[j]) {
-                r.append(ROMAN[j]);
+    private static String toRoman(int number) {
+        StringBuilder s = new StringBuilder(15);
+        if (number > 3999) {
+            for (int i = 0; i < 15; i++) {
+                s.append('#');
+            }
+        } else {
+            for (int i = 0; i < ARABIC.length; i++) {
+                for (; number >= ARABIC[i]; number -= ARABIC[i]) {
+                    s.append(ROMAN[i]);
+                }
             }
         }
-        return r;
+        return s.toString();
     }
 
     private static String getOrdinal(String number) {
@@ -284,8 +293,12 @@ public abstract class Formatter {
             CC    ((t, l) -> (int) Math.ceil(t.get(ChronoField.YEAR_OF_ERA) / 100f), 2),
             J     ((t, l) -> t.getLong(JulianFields.JULIAN_DAY), 7),
             Q     (IsoFields.QUARTER_OF_YEAR, 1),
+            RY    ((t, l) -> toRoman(t.get(ChronoField.YEAR_OF_ERA)), 15),
+            ry    (RY, LOWERCASE),
             RM    ((t, l) -> toRoman(t.get(ChronoField.MONTH_OF_YEAR)), 4),
             rm    (RM, LOWERCASE),
+            RD    ((t, l) -> toRoman(t.get(ChronoField.DAY_OF_MONTH)), 6),
+            rd    (RD, LOWERCASE),
             TZ    ((t, l) -> SIGN.split(TIMEZONE_FORMATTER.withLocale(l).format(t))[0], 3),
             tz    (TZ, LOWERCASE),
             TZH   ((t, l) -> ZoneOffset.from(t).getTotalSeconds() / 3600, 2),
@@ -559,17 +572,11 @@ public abstract class Formatter {
                                 f += symbols.getExponentSeparator().length() + 3;
                             }
                         } else if (p == Pattern.RN) {
-                            if (integer != null) {
-                                long n = integer.isEmpty() ? 0 : Long.parseLong(integer);
-                                StringBuilder r;
-                                if (((n == 0 || negative) && form == Form.Roman) || n > 3999) {
-                                    r = new StringBuilder(15);
-                                    for (int j = 0; j < 15; j++) {
-                                        r.append('#');
-                                    }
-                                } else {
-                                    r = toRoman((int) n);
-                                }
+                            int n = integer == null || integer.length() > 4 ? Integer.MAX_VALUE
+                                    : integer.isEmpty() ? 0 : Integer.parseInt(integer);
+                            if (form == Form.Roman || n != 0) {
+                                String r = toRoman(form == Form.Roman && (n == 0 || negative)
+                                        ? Integer.MAX_VALUE : n);
                                 parts.add(r);
                                 if (fillMode) {
                                     f += 15 - r.length();
