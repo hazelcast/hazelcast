@@ -94,15 +94,6 @@ public class JobSummary implements IdentifiedDataSerializable, Versioned {
         return nameOrId;
     }
 
-    /**
-     * @deprecated use {@link #getNameOrId()}, semantics is the same
-     */
-    @Nonnull
-    @Deprecated
-    public String getName() {
-        return nameOrId;
-    }
-
     @Nonnull
     public JobStatus getStatus() {
         return status;
