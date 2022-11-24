@@ -38,7 +38,6 @@ public enum TxnLockAndGetOpSteps implements IMapOpStep {
             boolean blockReads = state.isBlockReads();
             long callId = state.getOperation().getCallId();
 
-            recordStore.unlock(dataKey, ownerUuid, threadId, callId);
             if (!recordStore.txnLock(dataKey, ownerUuid, threadId, callId, ttl, blockReads)) {
                 throw new TransactionException("Transaction couldn't obtain lock.");
             }
