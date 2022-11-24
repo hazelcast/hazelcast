@@ -490,7 +490,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
             totalMeasuredLatency += Timer.nanosElapsed(startNanos);
 
             assertEquals(i, keyStats().getInsertCount());
-            assertTrue(keyStats().getTotalInsertLatency() > previousTotalInsertLatency);
+            assertTrue(keyStats().getTotalInsertLatency() >= previousTotalInsertLatency);
             assertTrue(keyStats().getTotalInsertLatency() <= totalMeasuredLatency);
 
             previousTotalInsertLatency = keyStats().getTotalInsertLatency();
