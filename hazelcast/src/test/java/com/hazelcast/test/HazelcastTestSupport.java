@@ -209,6 +209,7 @@ public abstract class HazelcastTestSupport {
 
     public static Config shrinkInstanceConfig(Config config) {
         smallInstanceConfigWithoutJetAndMetrics(config);
+        config.getMetricsConfig().setEnabled(true);
         config.getJetConfig().setEnabled(true).setCooperativeThreadCount(2);
         return config;
     }
