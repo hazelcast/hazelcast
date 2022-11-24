@@ -753,9 +753,10 @@ public abstract class Formatter {
                 fractionMask.format(s, negative, null, null, 0, symbols);
             } else {
                 int dot = value.indexOf('.');
-                int exp = dot == -1 ? -1 : value.indexOf('E', dot + 2);
-                String integer = value.substring(negative ? 1 : 0, dot != -1 ? dot : value.length());
-                String fraction = dot == -1 ? "" : value.substring(dot + 1, exp != -1 ? exp : value.length());
+                int exp = value.indexOf('E', dot + 2);
+                int e = exp != -1 ? exp : value.length();
+                String integer = value.substring(negative ? 1 : 0, dot != -1 ? dot : e);
+                String fraction = dot == -1 ? "" : value.substring(dot + 1, e);
                 int exponent = exp == -1 ? 0 : Integer.parseInt(value.substring(exp + 1));
                 // Step 1 - Normalized form
                 String digits = integer + fraction;
