@@ -97,7 +97,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         when(snapshotContext.currentMapName()).thenReturn("map1");
         when(snapshotContext.currentSnapshotId()).thenReturn(0L);
         writer = new AsyncSnapshotWriterImpl(128, nodeEngine, snapshotContext, "vertex", 0, 1,
-                nodeEngine.getSerializationService());
+                (InternalSerializationService) nodeEngine.getSerializationService());
         when(snapshotContext.currentSnapshotId()).thenReturn(1L); // simulates starting new snapshot
         map = instance.getMap("map1");
         assertTrue(writer.usableChunkCapacity > 0);
@@ -115,7 +115,7 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         for (int i = 64; i < 196; i++) {
             when(snapshotContext.currentMapName()).thenReturn(randomMapName());
             writer = new AsyncSnapshotWriterImpl(128, nodeEngine, snapshotContext, "vertex", 0, 1,
-                    nodeEngine.getSerializationService());
+                    (InternalSerializationService) nodeEngine.getSerializationService());
             try {
                 assertTrue(writer.offer(entry(serialize("k"), serialize(String.join("", nCopies(i, "a"))))));
                 assertTrue(writer.flushAndResetMap());
