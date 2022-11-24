@@ -868,6 +868,7 @@ public class MapProxyImpl<K, V> extends MapProxySupport<K, V> implements EventJo
     @Override
     public <R> Map<K, R> executeOnEntries(@Nonnull EntryProcessor<K, V, R> entryProcessor,
                                           @Nonnull Predicate<K, V> predicate) {
+        checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
         checkDoesNotContainPagingPredicate(predicate, "executeOnEntries");
         handleHazelcastInstanceAwareParams(entryProcessor, predicate);
         List<Data> result = new ArrayList<>();
