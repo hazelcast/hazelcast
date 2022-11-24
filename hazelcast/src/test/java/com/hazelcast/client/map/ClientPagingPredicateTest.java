@@ -47,4 +47,31 @@ public class ClientPagingPredicateTest extends PagingPredicateTest {
         // do nothing
     }
 
+    @Test
+    @Ignore("local entry listener is not supported on clients")
+    @Override
+    public void testAddLocalEntryListenerThrowsWithPagingPredicate() {
+        // do nothing
+    }
+
+    @Test
+    @Ignore("local entry listener is not supported on clients")
+    @Override
+    public void testAddLocalEntryListenerThrowsWithPredicateIncludingPagingPredicate() {
+        // do nothing
+    }
+
+    @Test
+    @Ignore("local entry listener is not supported on clients")
+    @Override
+    public void testAddLocalEntryListenerWithKeyThrowsWithPagingPredicate() {
+        // do nothing
+    }
+
+    @Test
+    @Ignore("local entry listener is not supported on clients")
+    @Override
+    public void testAddLocalEntryListenerWithKeyThrowsWithPredicateIncludingPagingPredicate() {
+    }
+
 }

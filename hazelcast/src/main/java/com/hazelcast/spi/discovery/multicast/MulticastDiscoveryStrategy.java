@@ -81,6 +81,7 @@ public class MulticastDiscoveryStrategy extends AbstractDiscoveryStrategy {
             MulticastDiscoverySerializationHelper serializationHelper = new MulticastDiscoverySerializationHelper(
                     safeSerialization);
             multicastSocket = new MulticastSocket(null);
+            multicastSocket.setReuseAddress(true);
             multicastSocket.bind(new InetSocketAddress(port));
             if (discoveryNode != null) {
                 // See MulticastService.createMulticastService(...)
@@ -89,7 +90,6 @@ public class MulticastDiscoveryStrategy extends AbstractDiscoveryStrategy {
                     multicastSocket.setInterface(inetAddress);
                 }
             }
-            multicastSocket.setReuseAddress(true);
             multicastSocket.setTimeToLive(SOCKET_TIME_TO_LIVE);
             multicastSocket.setReceiveBufferSize(DATA_OUTPUT_BUFFER_SIZE);
             multicastSocket.setSendBufferSize(DATA_OUTPUT_BUFFER_SIZE);
