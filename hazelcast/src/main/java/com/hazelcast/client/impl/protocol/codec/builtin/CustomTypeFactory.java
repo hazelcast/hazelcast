@@ -303,6 +303,6 @@ public final class CustomTypeFactory {
             boolean userCancelled
     ) {
         return new JobAndSqlSummary(lightJob, jobId, executionId, nameOrId, JobStatus.getById(jobStatus), submissionTime,
-                completionTime, failureText, sqlSummary, userCancelled);
+                completionTime, failureText, sqlSummary, isUserCancelledExists ? userCancelled : false);
     }
 }

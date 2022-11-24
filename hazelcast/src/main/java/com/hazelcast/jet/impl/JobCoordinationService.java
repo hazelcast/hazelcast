@@ -733,7 +733,8 @@ public class JobCoordinationService {
     private JobSummary toJobSummary(JobAndSqlSummary jobAndSqlSummary) {
         return new JobSummary(jobAndSqlSummary.isLightJob(), jobAndSqlSummary.getJobId(), jobAndSqlSummary.getExecutionId(),
                 jobAndSqlSummary.getNameOrId(), jobAndSqlSummary.getStatus(), jobAndSqlSummary.getSubmissionTime(),
-                jobAndSqlSummary.getCompletionTime(), jobAndSqlSummary.getFailureText());
+                jobAndSqlSummary.getCompletionTime(), jobAndSqlSummary.getFailureText(),
+                jobAndSqlSummary.isUserCancelled());
     }
 
     /**
