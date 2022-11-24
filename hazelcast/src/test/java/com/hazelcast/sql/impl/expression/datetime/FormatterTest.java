@@ -77,11 +77,11 @@ public class FormatterTest {
             check(LocalTime.of(14, 53), f, "02:53 Ö.S.", TR);
         }
 
-        f = forDates("At HH24:MI:SS, SSSS(=SSSSS) seconds are passed from the midnight.");
+        f = forDates("At HH24:MI:SS, SSSS(=SSSSS) \"seconds are passed from the midnight.\"");
         check(LocalTime.of(12, 34, 56), f,
                 "At 12:34:56, 45296(=45296) seconds are passed from the midnight.");
 
-        f = forDates("YYYY-MM-DD is the DDDth \"day\" of YYYY.");
+        f = forDates("YYYY-MM-DD \"is the\" DDDth \"day of\" YYYY.");
         check(LocalDate.of(2022, 9, 26), f, "2022-9-26 is the 269th day of 2022.");
 
         f = forDates("FMY,YYY(Y,YYY) FMYYYY(YYYY) FMYYY(YYY) FMYY(YY) FMY(Y)");
@@ -90,19 +90,19 @@ public class FormatterTest {
         f = forDates("FF1 FF2 FF3(=MS) FF4 FF5 FF6(=US)");
         check(LocalTime.ofNanoOfDay(123456789), f, "1 12 123(=123) 1234 12345 123456(=123456)");
 
-        f = forDates("\"Quarter\" YYYY-\"Q\"Q is in the CCth \"century\".");
+        f = forDates("\"Quarter\" YYYY-\"Q\"Q \"is in the\" CCth \"century.\"");
         check(YearMonth.of(2022, 9), f, "Quarter 2022-Q3 is in the 21st century.");
 
-        f = forDates("Plato founded the \"Academy\" in c. YYYY AD.");
+        f = forDates("\"Plato founded the Academy in c.\" YYYY AD.");
         check(Year.of(-386), f, "Plato founded the Academy in c. 387 BC.");
 
-        f = forDates("Plato \"Akademi\"'yi TMA.D. YYYY civarında \"kurdu\".");
+        f = forDates("\"Plato Akademi'yi\" TMA.D. YYYY \"civarında kurdu.\"");
         check(Year.of(-386), f, "Plato Akademi'yi M.Ö. 387 civarında kurdu.", TR);
 
         f = forDates("AD(=BC) A.D.(=B.C.) ad(=bc) a.d.(=b.c.)");
         check(Year.of(0), f, "BC(=BC) B.C.(=B.C.) bc(=bc) b.c.(=b.c.)");
 
-        f = forDates("The Halley's closest approach to the Earth was on DD Month YYYY AD (the Jth \"Julian day\").");
+        f = forDates("\"The Halley's closest approach to the Earth was on\" DD Month YYYY AD (the Jth \"Julian day\").");
         check(LocalDate.of(837, 2, 28), f,
                 "The Halley's closest approach to the Earth was on 28 February 837 AD (the 2026827th Julian day).");
 
@@ -116,7 +116,7 @@ public class FormatterTest {
         check(LocalDate.of(2022, 10, 25), f, "2022-W43-2");
         check(LocalDate.of(2019, 12, 30), f, "2020-W01-1");
 
-        f = forDates("YYYY-FMMM-FMDD is the IDDDth \"day\" of week-year IYYY.");
+        f = forDates("YYYY-FMMM-FMDD \"is the\" IDDDth \"day of week-year\" IYYY.");
         check(LocalDate.of(2008, 12, 29), f, "2008-12-29 is the 1st day of week-year 2009.");
         check(LocalDate.of(2010, 1, 3), f, "2010-01-03 is the 371st day of week-year 2009.");
 
@@ -342,6 +342,22 @@ public class FormatterTest {
     public void testFeatureOrthogonality() {
         Formatter f = forNumbers("FM999V99 -> RN");
         check(3.14,  f, "314 -> CCCXIV");
+    }
+
+    @Test
+    public void testLowercasePatterns() {
+        Formatter f = forDates("yyyy-fmmm-fmdd hh:fmmi am tztzh");
+        check(LocalDateTime.of(2022, 9, 26, 14, 53).atOffset(ZoneOffset.ofHours(3)), f,
+                "2022-09-26 2:53 pm gmt+3");
+
+        f = forNumbers("fm9.99eeee");
+        check(0.0004859, f, "4.86e-04");
+
+        f = forNumbers("fmrn");
+        check(485, f, "cdlxxxv");
+
+        f = forNumbers("9d99 f\"USD\"");
+        check(4.5, f, " 4.5  USD");
     }
 
     @Test

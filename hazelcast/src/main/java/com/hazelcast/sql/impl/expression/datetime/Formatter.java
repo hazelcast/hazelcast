@@ -72,13 +72,16 @@ import java.util.regex.Pattern;
 public abstract class Formatter {
     private static final String ESCAPED = "\\\\.";
     private static final String LITERAL = "\"(?:" + ESCAPED + "|[^\"])*\"?|" + ESCAPED;
+    private static final String DATETIME
+            = "SSSSS?|HH(?:12|24)?|MI|[SMU]S|FF[1-6]|[AP](?:M|\\.M\\.)|"
+            + "DA?Y|Da?y|I?DDD|DD|I?D|J|W|[WI]W|MON(?:TH)?|Mon(?:th)?|MM|Y,YYY|[YI]Y{0,3}|"
+            + "Q|CC|BC|B\\.C\\.|AD|A\\.D\\.|R[DMY]|r[dmy]|TZ[HM]?|TZ|OF";
+    private static final String NUMERIC
+            = "[,G.D]|FM|BR?|SG?|MI?|PL?|CR?|V9+|TH|EEEE|RN";
     private static final Pattern DATETIME_TEMPLATE = Pattern.compile(
-            "((?:FM|TM)*)(SSSSS?|HH(?:12|24)?|MI|[SMU]S|FF[1-6]|[AP](?:M|\\.M\\.)|[ap](?:m|\\.m\\.)|"
-            + "DA?Y|[Dd]a?y|I?DDD|DD|I?D|J|W|[WI]W|MON(?:TH)?|[Mm]on(?:th)?|MM|Y,YYY|[YI]Y{0,3}|"
-            + "Q|CC|BC|B\\.C\\.|bc|b\\.c\\.|AD|A\\.D\\.|ad|a\\.d\\.|R[DMY]|r[dmy]|"
-            + "TZ[HM]?|TZ|tz|OF)(TH|th)?|" + LITERAL);
+            "((?:FM|fm|TM|tm)*)(" + DATETIME + "|" + DATETIME.toLowerCase() + ")(TH|th)?|" + LITERAL);
     private static final Pattern NUMERIC_TEMPLATE = Pattern.compile(
-            "FM|[90]+|[,G.D]|BR?|SG?|MI?|PL?|CR?|V9+|TH|th|EEEE|RN|F?" + LITERAL);
+            "[90]+|" + NUMERIC + "|" + NUMERIC.toLowerCase() + "|[Ff]?" + LITERAL);
     private static final Pattern SIGN = Pattern.compile("[+-]");
 
     private static final int[] ARABIC = {1000,  900, 500,  400, 100,   90,  50,   40,  10,    9,   5,    4,   1};
@@ -120,6 +123,14 @@ public abstract class Formatter {
         }
         if (i < m.regionEnd() || literal.length() > 0) {
             processor.acceptLiteral(literal + format.substring(i));
+        }
+    }
+
+    private static <T extends Enum<T>> T valueOf(Class<T> type, String name) {
+        try {
+            return Enum.valueOf(type, name);
+        } catch (IllegalArgumentException e) {
+            return Enum.valueOf(type, name.toUpperCase());
         }
     }
 
@@ -342,11 +353,11 @@ public abstract class Formatter {
             if (group.startsWith("\"")) {
                 parts.add(new Literal(group));
             } else {
-                String prefix = m.group(1);
+                String prefix = m.group(1).toUpperCase();
                 String suffix = m.group(3);
                 String pattern = m.group(2).replace('.', '_').replace(',', '_');
                 parts.add(new PatternInstance(prefix.contains("FM"), prefix.contains("TM"),
-                        Pattern.valueOf(pattern), suffix == null ? null : Ordinal.valueOf(suffix)));
+                        valueOf(Pattern.class, pattern), suffix == null ? null : Ordinal.valueOf(suffix)));
             }
         }
 
@@ -399,10 +410,10 @@ public abstract class Formatter {
         }
 
         enum Pattern implements Anchorable {
-            BR, B, SG, S, MI, M, PL, P, CR, C, TH, th, EEEE, RN;
+            BR, B, SG, S, MI, M, PL, P, CR, C, TH, th, EEEE, eeee, RN, rn;
 
             static final List<Pattern> SIGN = Arrays.asList(BR, B, SG, S, MI, M, PL, P);
-            static final List<Pattern> ANCHORED = Arrays.asList(B, S, M, P, C, TH, th, EEEE, RN);
+            static final List<Pattern> ANCHORED = Arrays.asList(B, S, M, P, C, TH, th, EEEE, eeee, RN, rn);
 
             boolean isSign() {
                 return SIGN.contains(this);
@@ -431,7 +442,7 @@ public abstract class Formatter {
             final boolean anchored;
 
             Literal(String literal) {
-                anchored = !literal.startsWith("F");
+                anchored = "Ff".indexOf(literal.charAt(0)) == -1;
                 contents = unescape(literal.substring(anchored ? 0 : 1));
             }
 
@@ -556,10 +567,11 @@ public abstract class Formatter {
                             } else if (fillMode) {
                                 f += 2;
                             }
-                        } else if (p == Pattern.EEEE) {
+                        } else if (p == Pattern.EEEE || p == Pattern.eeee) {
                             if (digits == null || exponent != 0) {
                                 StringBuilder r = new StringBuilder();
-                                r.append(symbols.getExponentSeparator());
+                                String e = symbols.getExponentSeparator();
+                                r.append(p == Pattern.EEEE ? e : e.toLowerCase());
                                 r.append(exponent < 0 ? '-' : '+');
                                 if (digits == null) {
                                     r.append("##");
@@ -571,13 +583,13 @@ public abstract class Formatter {
                             } else if (fillMode) {
                                 f += symbols.getExponentSeparator().length() + 3;
                             }
-                        } else if (p == Pattern.RN) {
+                        } else if (p == Pattern.RN || p == Pattern.rn) {
                             int n = integer == null || integer.length() > 4 ? Integer.MAX_VALUE
                                     : integer.isEmpty() ? 0 : Integer.parseInt(integer);
                             if (form == Form.Roman || n != 0) {
                                 String r = toRoman(form == Form.Roman && (n == 0 || negative)
                                         ? Integer.MAX_VALUE : n);
-                                parts.add(r);
+                                parts.add(p == Pattern.rn ? r.toLowerCase() : r);
                                 if (fillMode) {
                                     f += 15 - r.length();
                                 }
@@ -652,28 +664,29 @@ public abstract class Formatter {
 
             @Override
             public void acceptGroup(String group, Matcher m) {
-                if (group.equals("FM")) {
+                String g = group.toUpperCase();
+                if (g.equals("FM")) {
                     mask.toggleFillMode();
-                } else if (group.startsWith("V")) {
+                } else if (g.startsWith("V")) {
                     shift += group.length() - 1;
-                } else if (group.startsWith("F") || group.startsWith("\"")) {
+                } else if (g.startsWith("F") || g.startsWith("\"")) {
                     mask.add(new Literal(group));
-                } else if (group.startsWith("9") || group.startsWith("0")) {
+                } else if (g.startsWith("9") || g.startsWith("0")) {
                     mask.addDigits(group);
-                } else if (group.length() == 1 && ",G.D".contains(group)) {
-                    if (".D".contains(group) && mask == integerMask) {
+                } else if (g.length() == 1 && ",G.D".contains(g)) {
+                    if (".D".contains(g) && mask == integerMask) {
                         fractionMask.fillMode = integerMask.fillMode;
                         mask = fractionMask;
                     }
-                    mask.add(group.charAt(0));
+                    mask.add(g.charAt(0));
                 } else {
-                    Pattern pattern = Pattern.valueOf(group);
+                    Pattern pattern = valueOf(Pattern.class, group);
                     mask.add(pattern);
                     if (pattern == Pattern.CR || pattern == Pattern.C) {
                         currency = true;
-                    } else if (pattern == Pattern.EEEE) {
+                    } else if (pattern == Pattern.EEEE || pattern == Pattern.eeee) {
                         exponential = true;
-                    } else if (pattern == Pattern.RN) {
+                    } else if (pattern == Pattern.RN || pattern == Pattern.rn) {
                         roman = true;
                     }
                 }
