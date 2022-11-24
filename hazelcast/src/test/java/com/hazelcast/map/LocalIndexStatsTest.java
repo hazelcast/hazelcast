@@ -44,6 +44,7 @@ import java.util.Collection;
 
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -490,8 +491,8 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
             totalMeasuredLatency += Timer.nanosElapsed(startNanos);
 
             assertEquals(i, keyStats().getInsertCount());
-            assertTrue(keyStats().getTotalInsertLatency() >= previousTotalInsertLatency);
-            assertTrue(keyStats().getTotalInsertLatency() <= totalMeasuredLatency);
+            assertThat(keyStats().getTotalInsertLatency()).isGreaterThanOrEqualTo(previousTotalInsertLatency);
+            assertThat(keyStats().getTotalInsertLatency()).isLessThanOrEqualTo(totalMeasuredLatency);
 
             previousTotalInsertLatency = keyStats().getTotalInsertLatency();
         }
