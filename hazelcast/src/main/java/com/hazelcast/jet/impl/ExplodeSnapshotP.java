@@ -62,11 +62,11 @@ public class ExplodeSnapshotP extends AbstractProcessor {
         BufferObjectDataInput in = serializationService.createObjectDataInput(data);
 
         return () -> uncheckCall(() -> {
-            Object key = in.readObject();
+            Object key = serializationService.readObject(in, true);
             if (key == SnapshotDataValueTerminator.INSTANCE) {
                 return null;
             }
-            Object value = in.readObject();
+            Object value = serializationService.readObject(in, true);
             return key instanceof BroadcastKey
                     ? new BroadcastEntry(key, value)
                     : entry(key, value);

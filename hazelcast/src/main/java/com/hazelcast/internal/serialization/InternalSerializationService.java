@@ -75,7 +75,11 @@ public interface InternalSerializationService extends SerializationService, Disp
 
     void writeObject(ObjectDataOutput out, Object obj);
 
-    <T> T readObject(ObjectDataInput in);
+    default <T> T readObject(ObjectDataInput in) {
+        return readObject(in, false);
+    }
+
+    <T> T readObject(ObjectDataInput in, boolean useBigEndianForReadingTypeId);
 
     <T> T readObject(ObjectDataInput in, Class aClass);
 
