@@ -187,6 +187,10 @@ public class MasterJobContext {
         return requestedTerminationMode;
     }
 
+    boolean isUserInitiatedTermination() {
+        return userInitiatedTermination;
+    }
+
     private boolean isCancelled() {
         return requestedTerminationMode == CANCEL_FORCEFUL;
     }
@@ -338,10 +342,10 @@ public class MasterJobContext {
 
     /**
      * Returns a tuple of:<ol>
-     * <li>a future that will be completed when the execution completes (or
-     * a completed future, if execution is not RUNNING or STARTING)
-     * <li>a string with a message why this call did nothing or null, if
-     * this call actually initiated the termination
+     *     <li>a future that will be completed when the execution completes (or
+     *         a completed future, if execution is not RUNNING or STARTING)
+     *     <li>a string with a message why this call did nothing or null, if
+     *         this call actually initiated the termination
      * </ol>
      *
      * @param allowWhileExportingSnapshot if false and jobStatus is
@@ -352,7 +356,8 @@ public class MasterJobContext {
     Tuple2<CompletableFuture<Void>, String> requestTermination(
             TerminationMode mode,
             @SuppressWarnings("SameParameterValue") boolean allowWhileExportingSnapshot,
-            boolean userInitiated) {
+            boolean userInitiated
+    ) {
         mc.coordinationService().assertOnCoordinatorThread();
         // Switch graceful method to forceful if we don't do snapshots, except for graceful
         // cancellation, which is allowed even if not snapshotting.
@@ -718,7 +723,6 @@ public class MasterJobContext {
                 } else {
                     long completionTime = System.currentTimeMillis();
                     boolean isSuccess = logExecutionSummary(failure, completionTime);
-                    //TODO: set user cancelled here?
                     mc.setJobStatus(isSuccess ? COMPLETED : FAILED);
                     if (failure instanceof LocalMemberResetException) {
                         logger.fine("Cancelling job " + mc.jobIdString() + " locally: member (local or remote) reset. " +

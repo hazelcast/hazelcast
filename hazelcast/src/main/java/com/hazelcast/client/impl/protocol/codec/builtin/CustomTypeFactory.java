@@ -300,7 +300,8 @@ public final class CustomTypeFactory {
             String failureText,
             SqlSummary sqlSummary,
             boolean isUserCancelledExists,
-            boolean userCancelled) {
+            boolean userCancelled
+    ) {
         return new JobAndSqlSummary(lightJob, jobId, executionId, nameOrId, JobStatus.getById(jobStatus), submissionTime,
                 completionTime, failureText, sqlSummary, userCancelled);
     }

@@ -31,10 +31,8 @@ import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
@@ -51,7 +49,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Function;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -65,9 +62,6 @@ import static org.junit.Assume.assumeFalse;
 public class CancellationTest extends JetTestSupport {
 
     private static final int ASSERTION_TIMEOUT_SECONDS = 15;
-
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
 
     @Parameter
     public boolean useLightJob;
@@ -107,12 +101,15 @@ public class CancellationTest extends JetTestSupport {
 
         // Then
         assertExecutionTerminated();
-        expectedException.expect(CancellationException.class);
-        job.join();
+        joinAndExpectCancellation(job);
     }
 
     private Job newJob(HazelcastInstance instance, DAG dag) {
         return useLightJob ? instance.getJet().newLightJob(dag) : instance.getJet().newJob(dag);
+    }
+
+    private static void joinAndExpectCancellation(Job job) {
+        assertThatThrownBy(job::join).isInstanceOf(CancellationException.class);
     }
 
     @Test
@@ -132,8 +129,7 @@ public class CancellationTest extends JetTestSupport {
 
         // Then
         assertExecutionTerminated();
-        expectedException.expect(CancellationException.class);
-        job.join();
+        joinAndExpectCancellation(job);
     }
 
     @Test
@@ -151,7 +147,7 @@ public class CancellationTest extends JetTestSupport {
         job.cancel();
 
         // Then
-        assertThatThrownBy(() -> job.join());
+        joinAndExpectCancellation(job);
         assertThat(job.isUserCancelled()).isTrue();
     }
 
@@ -173,8 +169,7 @@ public class CancellationTest extends JetTestSupport {
 
         // Then
         assertExecutionTerminated();
-        expectedException.expect(CancellationException.class);
-        job.join();
+        joinAndExpectCancellation(job);
     }
 
     @Test
@@ -194,7 +189,7 @@ public class CancellationTest extends JetTestSupport {
         job.cancel();
 
         // Then
-        assertThatThrownBy(() -> job.join());
+        joinAndExpectCancellation(job);
         assertThat(job.isUserCancelled()).isTrue();
     }
 
@@ -218,9 +213,10 @@ public class CancellationTest extends JetTestSupport {
 
         // Then
         assertExecutionTerminated();
-        expectedException.expect(CancellationException.class);
+        joinAndExpectCancellation(job);
         Job tracked = instance2.getJet().getJobs().iterator().next();
-        tracked.join();
+        joinAndExpectCancellation(tracked);
+        assertThat(tracked.isUserCancelled()).isTrue();
     }
 
     @Test
@@ -238,17 +234,15 @@ public class CancellationTest extends JetTestSupport {
         Job job = newJob(instance, dag);
         assertExecutionStarted();
 
-        // Then
+        // When
         FaultyProcessor.failNow = true;
-        assertExecutionTerminated();
 
-        expectedException.expect(fault.getClass());
-        expectedException.expectMessage(fault.getMessage());
-        try {
-            job.join();
-        } catch (Exception e) {
-            throw peel(e);
-        }
+        // Then
+        assertExecutionTerminated();
+        assertThatThrownBy(job::join)
+                .isInstanceOf(fault.getClass())
+                .hasMessageContaining(fault.getMessage());
+        assertThat(job.isUserCancelled()).isFalse();
     }
 
     @Test
@@ -265,17 +259,16 @@ public class CancellationTest extends JetTestSupport {
         Job job = newJob(instance, dag);
         assertExecutionStarted();
 
-        // Then
+        // When
         FaultyProcessor.failNow = true;
+
+        // Then
         assertExecutionTerminated();
 
-        expectedException.expect(fault.getClass());
-        expectedException.expectMessage(fault.getMessage());
-        try {
-            job.join();
-        } catch (Exception e) {
-            throw peel(e);
-        }
+        assertThatThrownBy(job::join)
+                .isInstanceOf(fault.getClass())
+                .hasMessageContaining(fault.getMessage());
+        assertThat(job.isUserCancelled()).isFalse();
     }
 
     @Test
@@ -363,6 +356,7 @@ public class CancellationTest extends JetTestSupport {
         Job job = hz.getJet().newJob(dag, new JobConfig().setSnapshotIntervalMillis(100).setProcessingGuarantee(EXACTLY_ONCE));
         sleepSeconds(2); // wait for the job to start and attempt the 1st snapshot
         cancelAndJoin(job);
+        assertThat(job.isUserCancelled()).isTrue();
     }
 
     @Test
@@ -378,6 +372,7 @@ public class CancellationTest extends JetTestSupport {
         Job job = hz.getJet().newJob(dag, new JobConfig().setSnapshotIntervalMillis(100).setProcessingGuarantee(EXACTLY_ONCE));
         sleepSeconds(2); // wait for the job to start and attempt the 1st snapshot
         cancelAndJoin(job);
+        assertThat(job.isUserCancelled()).isTrue();
     }
 
     private static void assertExecutionStarted() {

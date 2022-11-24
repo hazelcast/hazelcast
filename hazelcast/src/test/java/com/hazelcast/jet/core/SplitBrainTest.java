@@ -47,11 +47,12 @@ import static com.hazelcast.jet.core.JobStatus.COMPLETED;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.STARTING;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({NightlyTest.class})
@@ -100,6 +101,9 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
                 JetServiceBackend service = getJetServiceBackend(firstSubCluster[0]);
                 assertEquals(COMPLETED, service.getJobCoordinationService().getJobStatus(jobId).get());
             });
+            // should be immediate result because we ask master
+            assertThat(getJetServiceBackend(firstSubCluster[0]).getJobCoordinationService().isJobUserCancelled(jobId))
+                    .isCompletedWithValue(false);
 
             JetServiceBackend service2 = getJetServiceBackend(secondSubCluster[0]);
 
@@ -123,13 +127,7 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
             assertEquals(clusterSize, MockPS.receivedCloseErrors.size());
             MockPS.receivedCloseErrors.forEach(t -> assertTrue("received " + t, t instanceof CancellationException));
 
-            try {
-                minorityJobFutureRef[0].get();
-                fail();
-            } catch (CancellationException expected) {
-            } catch (Exception e) {
-                throw new AssertionError(e);
-            }
+            assertThatThrownBy(minorityJobFutureRef[0]::get).isInstanceOf(CancellationException.class);
         };
 
         testSplitBrain(firstSubClusterSize, secondSubClusterSize, beforeSplit, onSplit, afterMerge);
@@ -246,13 +244,8 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
             assertTrueEventually(() -> assertEquals(secondSubClusterSize, MockPS.receivedCloseErrors.size()), 20);
             MockPS.receivedCloseErrors.forEach(t -> assertTrue("received: " + t, t instanceof CancellationException));
 
-            try {
-                jobRef[0].getFuture().get(30, TimeUnit.SECONDS);
-                fail();
-            } catch (CancellationException ignored) {
-            } catch (Exception e) {
-                throw new AssertionError(e);
-            }
+            assertThatThrownBy(() -> jobRef[0].getFuture().get(30, TimeUnit.SECONDS))
+                    .isInstanceOf(CancellationException.class);
         };
 
         testSplitBrain(firstSubClusterSize, secondSubClusterSize, null, onSplit, afterMerge);

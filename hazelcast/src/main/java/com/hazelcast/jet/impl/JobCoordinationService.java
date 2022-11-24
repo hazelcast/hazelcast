@@ -651,15 +651,24 @@ public class JobCoordinationService {
 
         return callWithJob(jobId,
                 mc -> {
-                    // If we have MasterContext it means that the job has not finished yet so cannot be cancelled
-                    // TODO: is race condition with removing MC possible?
-                    // TODO: do we need to check status like in getStatus()?
-                    return false;
+                    JobStatus jobStatus = mc.jobStatus();
+                    switch (jobStatus) {
+                        case COMPLETED:
+                            return false;
+                        case FAILED:
+                            return mc.jobContext().isUserInitiatedTermination();
+                        default:
+                            throw new IllegalStateException("Job not finished");
+                    }
                 },
                 JobResult::isUserCancelled,
                 // If we do not have result, the job has not finished yet so cannot be cancelled.
-                jobRecord -> false,
-                jobExecutionRecord -> false
+                jobRecord -> {
+                    throw new IllegalStateException("Job not finished");
+                },
+                jobExecutionRecord -> {
+                    throw new IllegalStateException("Job not finished");
+                }
         );
     }
 

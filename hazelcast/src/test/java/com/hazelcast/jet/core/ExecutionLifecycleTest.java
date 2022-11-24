@@ -449,8 +449,6 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             assertPsClosedWithError();
             assertPmsClosedWithError();
         });
-
-        assertJobIsUserCancelled(job);
     }
 
     @Test
@@ -1008,6 +1006,8 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     }
 
     private void assertJobFailed(Job job, Throwable expected) {
+        boolean isCancelled = expected instanceof CancellationException;
+
         assertTrue(job.getFuture().isDone());
         try {
             job.join();
@@ -1015,25 +1015,23 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         } catch (Throwable caught) {
             assertExceptionInCauses(expected, caught);
         }
+
         if (!job.isLightJob()) {
+            // TODO: test this also for light jobs when isUserCancelled is implemented
+            assertThat(job.isUserCancelled())
+                    .as("job.isUserCancelled")
+                    .isEqualTo(isCancelled);
+
             Job normalJob = job;
             JobResult jobResult = getJobResult(normalJob);
             assertFalse("jobResult.isSuccessful", jobResult.isSuccessful());
             assertNotNull(jobResult.getFailureText());
             assertContains(jobResult.getFailureText(), expected.toString());
             assertEquals("jobStatus", JobStatus.FAILED, normalJob.getStatus());
-            assertFalse("jobResult.isUserCancelled", jobResult.isUserCancelled());
-        }
-    }
 
-    private void assertJobIsUserCancelled(Job job) {
-        assertTrue(job.getFuture().isDone());
-        assertTrue(job.isUserCancelled());
-
-        if (!job.isLightJob()) {
-            Job normalJob = job;
-            JobResult jobResult = getJobResult(normalJob);
-            assertFalse("jobResult.isUserCancelled", jobResult.isUserCancelled());
+            assertThat(jobResult.isUserCancelled())
+                    .as("jobResult.isUserCancelled")
+                    .isEqualTo(isCancelled);
         }
     }
 
