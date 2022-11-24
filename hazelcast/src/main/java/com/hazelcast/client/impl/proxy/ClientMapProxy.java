@@ -168,6 +168,8 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 
 import static com.hazelcast.query.impl.predicates.PredicateUtils.checkDoesNotContainPagingPredicate;
+import static com.hazelcast.query.impl.predicates.PredicateUtils.containsPagingPredicate;
+import static com.hazelcast.query.impl.predicates.PredicateUtils.unwrapPagingPredicate;
 import static com.hazelcast.internal.util.CollectionUtil.objectToDataCollection;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
@@ -1209,7 +1211,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     @Override
     public Set<K> keySet(@Nonnull Predicate<K, V> predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        if (PredicateUtils.containsPagingPredicate(predicate)) {
+        if (containsPagingPredicate(predicate)) {
             return keySetWithPagingPredicate(predicate);
         }
 
@@ -1221,7 +1223,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @SuppressWarnings("unchecked")
     private Set keySetWithPagingPredicate(Predicate predicate) {
-        PagingPredicateImpl pagingPredicate = PredicateUtils.unwrapPagingPredicate(predicate);
+        PagingPredicateImpl pagingPredicate = unwrapPagingPredicate(predicate);
         pagingPredicate.setIterationType(IterationType.KEY);
 
         PagingPredicateHolder pagingPredicateHolder = PagingPredicateHolder.of(predicate, getSerializationService());
@@ -1241,7 +1243,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     @Override
     public Set<Entry<K, V>> entrySet(@Nonnull Predicate predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        if (PredicateUtils.containsPagingPredicate(predicate)) {
+        if (containsPagingPredicate(predicate)) {
             return entrySetWithPagingPredicate(predicate);
         }
         ClientMessage request = MapEntriesWithPredicateCodec.encodeRequest(name, toData(predicate));
@@ -1256,7 +1258,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     }
 
     private Set entrySetWithPagingPredicate(Predicate predicate) {
-        PagingPredicateImpl pagingPredicate = PredicateUtils.unwrapPagingPredicate(predicate);
+        PagingPredicateImpl pagingPredicate = unwrapPagingPredicate(predicate);
         pagingPredicate.setIterationType(IterationType.ENTRY);
 
         PagingPredicateHolder pagingPredicateHolder = PagingPredicateHolder.of(predicate, getSerializationService());
@@ -1274,7 +1276,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
     @Override
     public Collection<V> values(@Nonnull Predicate predicate) {
         checkNotNull(predicate, NULL_PREDICATE_IS_NOT_ALLOWED);
-        if (PredicateUtils.containsPagingPredicate(predicate)) {
+        if (containsPagingPredicate(predicate)) {
             return valuesForPagingPredicate(predicate);
         }
 
@@ -1297,7 +1299,7 @@ public class ClientMapProxy<K, V> extends ClientProxy
 
     @SuppressWarnings("unchecked")
     private Collection<V> valuesForPagingPredicate(Predicate predicate) {
-        PagingPredicateImpl pagingPredicate = PredicateUtils.unwrapPagingPredicate(predicate);
+        PagingPredicateImpl pagingPredicate = unwrapPagingPredicate(predicate);
         pagingPredicate.setIterationType(IterationType.VALUE);
 
         PagingPredicateHolder pagingPredicateHolder = PagingPredicateHolder.of(predicate, getSerializationService());
