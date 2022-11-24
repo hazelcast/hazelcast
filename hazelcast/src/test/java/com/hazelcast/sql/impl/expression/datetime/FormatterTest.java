@@ -16,6 +16,7 @@
 
 package com.hazelcast.sql.impl.expression.datetime;
 
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -36,9 +37,12 @@ import java.util.Locale;
 
 import static com.hazelcast.sql.impl.expression.datetime.Formatter.forDates;
 import static com.hazelcast.sql.impl.expression.datetime.Formatter.forNumbers;
+import static java.lang.Double.NEGATIVE_INFINITY;
+import static java.lang.Double.NaN;
 import static java.util.Locale.US;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertThrows;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -121,15 +125,27 @@ public class FormatterTest {
     }
 
     @Test
-    public void testRounding() {
-        Formatter f = forNumbers("FM0.9");
-        check(0.15, f, "0.2");
+    public void testDigitsAndGrouping() {
+        Formatter f = forNumbers("0,909.090");
+        check(-123.4, f, "-0,123.400");
+
+        f = forNumbers("9,090.909");
+        check(-123.4, f, "  -123.40 ");
+
+        f = forNumbers("9G99G999D99");
+        check(-123456.78, f, "-1,23,456.78");
     }
 
     @Test
-    public void testGrouping() {
-        Formatter f = forNumbers("9G99G999D990");
-        check(-123456.78, f, "-1,23,456.780");
+    public void testRounding() {
+        Formatter f = forNumbers("FM0.9");
+        check(0.15, f, "0.2");
+
+        f = forNumbers("FM.99");
+        check(0.015, f, ".02");
+
+        f = forNumbers("FM99");
+        check(9.9, f, "10");
     }
 
     @Test
@@ -170,7 +186,7 @@ public class FormatterTest {
 
     @Test
     public void testMultiplier() {
-        check(4.85,  " 485",  "-485",  "999V99", "999V9V9", "V9FMV9FM999");
+        check(4.5,  " 450",  "-450",  "999V99", "999V9V9", "V9FMV9FM999");
         check(0.0485,  " 4.9 E-01",  "-4.9 E-01",  "9.9V9 EEEE", "9V9.9 EEEE", "9.9 V9EEEE", "9.9 EEEEV9");
     }
 
@@ -178,6 +194,7 @@ public class FormatterTest {
     public void testExponentialForm() {
         Formatter f = forNumbers("FM9.99EEEE");
         check(0.0004859, f, "4.86E-04");
+        check(5e4, f, "5E+04");
     }
 
     @Test
@@ -199,7 +216,13 @@ public class FormatterTest {
 
     @Test
     public void testOrdinals() {
-        Formatter f = forNumbers("FM999th");
+        Formatter f = forNumbers("9TH");
+        check(-1, f, "-1ST");
+        check( 0, f, " 0TH");
+        check( 2, f, " 2ND");
+        check( 3, f, " 3RD");
+
+        f = forNumbers("FM999th");
         check(410, f, "410th");
         check(411, f, "411th");
         check(412, f, "412th");
@@ -207,6 +230,9 @@ public class FormatterTest {
         check(421, f, "421st");
         check(422, f, "422nd");
         check(423, f, "423rd");
+
+        check(411.2, f, "411th");
+        check(420.5, f, "421st");
     }
 
     @Test
@@ -217,8 +243,35 @@ public class FormatterTest {
         f = forNumbers("RN");
         check(485,  f, "        CDLXXXV");
         check(3888, f, "MMMDCCCLXXXVIII");
+    }
+
+    @Test
+    public void testOverflow() {
+        Formatter f = forNumbers("9");
+        check(-10, f, "-#");
+        check(NaN, f, " #");
+
+        f = forNumbers(".9");
+        check(-1,  f, "-.#");
+        check(NaN, f, " .#");
+
+        f = forNumbers("SG");
+        check(-1,  f, "-");
+        check(NaN, f, "+");
+
+        f = forNumbers("9th");
+        check(-10, f, "  -#");
+        check(NaN, f, "   #");
+
+        f = forNumbers("9.9EEEE");
+        check(NEGATIVE_INFINITY, f, "-#.#E+##");
+        check(NaN,               f, " #.#E+##");
+
+        f = forNumbers("FMRN");
+        check(-1,   f, "###############");
         check(0,    f, "###############");
         check(4000, f, "###############");
+        check(NaN,  f, "###############");
     }
 
     @Test
@@ -256,16 +309,48 @@ public class FormatterTest {
     }
 
     @Test
+    public void testFillMode() {
+        check(4.5,  "  4.5 ",  " -4.5 ",    "99.99");
+        check(4.5,    "4.5",    "-4.5",   "FM99.99");
+        check(4.5,  "  4.5",   " -4.5",     "99.FM99");
+        check(4.5,    "4.5 ",   "-4.5 ",  "FM99.FM99");
+
+        check(5,    "     5",  "    -5",  "9EEEE");
+        check(0.5,  " .5    ",  "-.5    ",  ".9EEEE");
+
+        Formatter f = forNumbers("999 (RN)");
+        check(0,   f, "                  0 ()");
+        check(988, f, "      988 (CMLXXXVIII)");
+    }
+
+    @Test
+    public void testLocales() {
+        Formatter f = forNumbers("FM9G999D99 CR");
+        check(1234.56, f, "1,234.56 $", US);
+        check(1234.56, f, "1.234,56 " + (jdk >= 11 ? "₺" : "TL"), TR);
+
+        if (jdk >= 17) {
+            Locale fr_CH = new Locale("fr", "CH");
+            f = forNumbers("FM9G999D99");
+            check(1234.56, f, "1 234,56", fr_CH);
+            f = forNumbers("FM9G999D99 CR");
+            check(1234.56, f, "1 234.56 CHF", fr_CH);
+        }
+    }
+
+    @Test
     public void testFeatureOrthogonality() {
         Formatter f = forNumbers("FM999V99 -> RN");
         check(3.14,  f, "314 -> CCCXIV");
     }
 
     @Test
-    public void testLocales() {
-        Formatter f = forNumbers("FM9G999D99");
-        check(1234.56, f, "1,234.56", US);
-        check(1234.56, f, "1.234,56", TR);
+    public void testIncompatibleFormat() {
+        assertThrows("Input parameter is expected to be date/time", QueryException.class,
+                () -> forDates("YYYY-MM-DD").format(0, US));
+
+        assertThrows("Input parameter is expected to be numeric", QueryException.class,
+                () -> forNumbers("9").format(LocalDate.MIN, US));
     }
 
     private void check(String literal, String expected, String message) {

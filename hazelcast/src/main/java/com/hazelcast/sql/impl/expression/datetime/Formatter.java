@@ -510,7 +510,7 @@ public abstract class Formatter {
                         : pre && !sign && !pair.sign && form != Form.Roman ? Pattern.M : null;
                 if (inferred != null) {
                     groups.add(offerSign, inferred);
-                    fillModes.add(offerSign, fillModes.get(Math.max(offerSign - 1, 0)));
+                    fillModes.add(offerSign, fillModes.isEmpty() ? fillMode : fillModes.get(offerSign - 1));
                 }
             }
 
@@ -550,7 +550,7 @@ public abstract class Formatter {
                         } else if (p == Pattern.CR || p == Pattern.C) {
                             parts.add(symbols.getCurrencySymbol());
                         } else if (p == Pattern.TH || p == Pattern.th) {
-                            if (integer != null) {
+                            if (integer != null && !integer.isEmpty()) {
                                 String th = getOrdinal(integer);
                                 parts.add(p == Pattern.TH ? th.toUpperCase() : th);
                             } else if (fillMode) {
@@ -799,8 +799,8 @@ public abstract class Formatter {
                 // Step 5 - Padding
                 if (form != Form.Roman && integerLength > integerMask.digits) {
                     // Integer part overflows; pattern is filled with #'s.
-                    integerMask.format(s, negative, null, null, exponent, symbols);
-                    fractionMask.format(s, negative, null, null, exponent, symbols);
+                    integerMask.format(s, negative, null, null, 0, symbols);
+                    fractionMask.format(s, negative, null, null, 0, symbols);
                 } else {
                     if (integerLength > digits.length()) {
                         // Floating-point underflows; integer part is padded wth 0's.
@@ -831,6 +831,9 @@ public abstract class Formatter {
                     }
 
                     // Step 6 - Format the integer and fraction masks
+                    if (integer.isEmpty() && integerMask.minDigits > 0) {
+                        integer = "0";
+                    }
                     integerMask.format(s, negative, integer, fraction, exponent, symbols);
                     fractionMask.format(s, negative, integer, fraction, exponent, symbols);
                 }
