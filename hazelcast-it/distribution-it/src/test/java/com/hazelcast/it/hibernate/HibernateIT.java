@@ -86,6 +86,10 @@ public class HibernateIT extends HazelcastTestSupport {
         tx.commit();
         session.close();
 
+        //test can fail on macOS docker-desktop due to small (1-2ms) clock drifts on VM
+        //`HazelcastTimestamper.nextTimestamp` returns future time which leads to cache misses
+        sleepMillis(10);
+
         for (int i = 0; i < 10; i++) {
             session = sessionFactory.openSession();
             AnnotatedEntity retrieved = session.get(AnnotatedEntity.class, (long) 1);
