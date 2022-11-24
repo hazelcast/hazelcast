@@ -18,7 +18,6 @@ package com.hazelcast.spi.impl.eventservice.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
-import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
@@ -677,16 +676,9 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
 
     @Override
     public OnJoinRegistrationOperation getPreJoinOperation() {
-        // pre-join operations are only sent by master member
+        // EventService's pre-join operations are only sent by master member
+        // also EventService's pre-join op is sent from joining member to master in JoinRequest
         return getOnJoinRegistrationOperation();
-    }
-
-    @Override
-    public Operation getPostJoinOperation() {
-        ClusterService clusterService = nodeEngine.getClusterService();
-        // Send post join registration operation only if this is the newly joining member.
-        // Master will send registrations with pre-join operation.
-        return clusterService.isMaster() ? null : getOnJoinRegistrationOperation();
     }
 
     /**

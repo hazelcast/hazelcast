@@ -280,7 +280,7 @@ public class ClusterJoinManager {
                 return;
             }
 
-            startJoinRequest(joinRequest.toMemberInfo());
+            startJoinRequest(joinRequest.toMemberInfo(), joinRequest.getPreJoinOperation());
         } finally {
             clusterServiceLock.unlock();
         }
@@ -443,8 +443,9 @@ public class ClusterJoinManager {
      * will get processed as they arrive for the first time.
      *
      * @param memberInfo the joining member info
+     * @param preJoinOperation which is prepared on joining members and will run on the master
      */
-    private void startJoinRequest(MemberInfo memberInfo) {
+    private void startJoinRequest(MemberInfo memberInfo, OnJoinOp preJoinOperation) {
         long now = Clock.currentTimeMillis();
         if (logger.isFineEnabled()) {
             String timeToStart = (timeToStartJoin > 0 ? ", timeToStart: " + (timeToStartJoin - now) : "");
@@ -468,7 +469,7 @@ public class ClusterJoinManager {
                     + ". Previous UUID was " + existing.getUuid());
         }
         if (now >= timeToStartJoin) {
-            startJoin();
+            startJoin(preJoinOperation);
         }
     }
 
@@ -763,8 +764,10 @@ public class ClusterJoinManager {
 
     /**
      * Starts join process on master member.
+     *
+     * @param preJoinOperation
      */
-    private void startJoin() {
+    private void startJoin(OnJoinOp preJoinOperation) {
         logger.fine("Starting join...");
         clusterServiceLock.lock();
         try {
@@ -786,6 +789,10 @@ public class ClusterJoinManager {
                 UUID thisUuid = clusterService.getThisUuid();
                 if (!clusterService.updateMembers(newMembersView, node.getThisAddress(), thisUuid, thisUuid)) {
                     return;
+                }
+
+                if (preJoinOperation != null) {
+                    nodeEngine.getOperationService().run(preJoinOperation);
                 }
 
                 // post join operations must be lock free, that means no locks at all:
