@@ -53,21 +53,6 @@
 
         <plugins>
             <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>license-maven-plugin</artifactId>
-                <executions>
-                    <execution>
-                        <id>add-third-party</id>
-                        <configuration>
-                            <includedLicenses combine.children="append">
-                                <includedLicense>Eclipse Distribution License - v 1.0</includedLicense>
-                            </includedLicenses>
-                        </configuration>
-                    </execution>
-                </executions>
-            </plugin>
-
-            <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
