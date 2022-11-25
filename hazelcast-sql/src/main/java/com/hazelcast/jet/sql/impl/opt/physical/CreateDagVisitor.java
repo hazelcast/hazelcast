@@ -49,6 +49,7 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.jet.sql.impl.opt.WatermarkKeysAssigner;
+import com.hazelcast.jet.sql.impl.opt.WatermarkThrottlingFrameSizeCalculator;
 import com.hazelcast.jet.sql.impl.processors.LateItemsDropP;
 import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
 import com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinProcessorSupplier;
@@ -95,7 +96,7 @@ import static java.util.Collections.singletonList;
 public class CreateDagVisitor {
 
     // TODO https://github.com/hazelcast/hazelcast/issues/20383
-    private static final ExpressionEvalContext MOCK_EEC =
+    public static final ExpressionEvalContext MOCK_EEC =
             new ExpressionEvalContext(emptyList(), new DefaultSerializationServiceBuilder().build());
 
     private static final int LOW_PRIORITY = 10;
@@ -107,6 +108,7 @@ public class CreateDagVisitor {
     private final Address localMemberAddress;
     private final QueryParameterMetadata parameterMetadata;
     private final WatermarkKeysAssigner watermarkKeysAssigner;
+    private long watermarkThrottlingFrameSize = -1;
 
     public CreateDagVisitor(
             NodeEngine nodeEngine,
@@ -185,7 +187,12 @@ public class CreateDagVisitor {
         Table table = hazelcastTable.getTarget();
         collectObjectKeys(table);
 
-        BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> policyProvider = rel.eventTimePolicyProvider();
+        BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> policyProvider =
+                rel.eventTimePolicyProvider(
+                        rel.watermarkedColumnIndex(),
+                        rel.lagExpression(),
+                        watermarkThrottlingFrameSize);
+
         Map<Integer, MutableByte> fieldsKey = watermarkKeysAssigner.getWatermarkedFieldsKey(rel);
         Byte wmKey;
         if (fieldsKey != null) {
@@ -535,6 +542,8 @@ public class CreateDagVisitor {
     }
 
     public Vertex onRoot(RootRel rootRel) {
+        watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate((PhysicalRel) rootRel.getInput());
+
         RelNode input = rootRel.getInput();
 
         Expression<?> fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);

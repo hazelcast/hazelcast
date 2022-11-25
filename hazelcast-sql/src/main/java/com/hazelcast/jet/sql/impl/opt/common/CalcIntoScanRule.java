@@ -126,7 +126,7 @@ public final class CalcIntoScanRule extends RelRule<Config> implements Transform
                 scan.getCluster(),
                 OptUtils.toLogicalConvention(scan.getTraitSet()),
                 convertedTable,
-                scan.eventTimePolicyProvider(),
+                scan.lagExpression(),
                 OptUtils.getTargetField(program, scan.watermarkedColumnIndex())
         ));
     }
