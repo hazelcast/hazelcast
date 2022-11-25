@@ -43,8 +43,8 @@ public class CardinalityEstimatorStressTest extends HazelcastTestSupport {
         // timeout helps to make sure the encoding engine used is the correct one.
         long expected = 10 * 1000 * 1000;
 
-        float tolerancePct = .3f;
-        long acceptableDelta = (long) ((tolerancePct / 100) * expected);
+        float sigma = 0.008125f;
+        long acceptableDelta = (long) (2 * sigma * expected);
 
         int loggingFrequency = 100 * 1000;
         for (int i = 0; i < expected; i++) {
