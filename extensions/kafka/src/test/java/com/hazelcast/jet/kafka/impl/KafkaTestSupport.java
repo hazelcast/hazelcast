@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.kafka.impl;
 
-import com.hazelcast.test.DockerTestUtil;
 import org.apache.kafka.clients.admin.Admin;
 import org.apache.kafka.clients.admin.CreateTopicsResult;
 import org.apache.kafka.clients.admin.NewPartitions;
@@ -46,6 +45,7 @@ import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.test.DockerTestUtil.dockerEnabled;
 import static com.hazelcast.test.HazelcastTestSupport.randomString;
 import static java.util.Collections.emptyMap;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -55,16 +55,16 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 public abstract class KafkaTestSupport {
-    static final long KAFKA_MAX_BLOCK_MS = MINUTES.toMillis(10);
+    static final long KAFKA_MAX_BLOCK_MS = MINUTES.toMillis(2);
     protected Admin admin;
     protected KafkaProducer<Integer, String> producer;
     protected String brokerConnectionString;
     private KafkaProducer<String, String> stringStringProducer;
 
     public static KafkaTestSupport create() {
-        if (!DockerTestUtil.dockerEnabled()) {
+        if (!dockerEnabled()) {
             if (System.getProperties().containsKey("test.kafka.version")) {
-                throw new IllegalArgumentException("'test.kafka.version' system property requires docker and x86_64 CPU");
+                throw new IllegalArgumentException("'test.kafka.version' system property requires docker enabled");
             }
             return new EmbeddedKafkaTestSupport();
         } else {
