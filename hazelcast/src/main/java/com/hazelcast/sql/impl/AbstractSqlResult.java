@@ -35,10 +35,9 @@ public abstract class AbstractSqlResult implements SqlResult {
     public abstract boolean isInfiniteRows();
 
     /**
-     * Returns ID of the partition queried for simple single-partition queries e.g. SELECT * FROM test WHERE __key = 1
-     *
-     * @return {@code -1} if the query potentially executed on more than 1 partition,
-     * ID of the queried partition otherwise
+     * Returns index of the query parameter that should be used as a partition
+     * key to determine the coordinator for future executions of the same query,
+     * or -1 if there's no such parameter.
      */
     public abstract int getPartitionArgumentIndex();
 
