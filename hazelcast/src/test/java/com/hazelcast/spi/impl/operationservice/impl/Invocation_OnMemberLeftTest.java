@@ -102,6 +102,11 @@ public class Invocation_OnMemberLeftTest extends HazelcastTestSupport {
         }
     }
 
+    /**
+     * We use static field because instance of FailingUnresponsiveMasterOperation is ser/deser, and we want to have one
+     * instance of AtomicBoolean. Since the whole test class is run with HazelcastParallelClassRunner that field cannot be reused
+     * in other tests then following one.
+     */
     private static final AtomicBoolean MASTER_EXCEPTION_HANDLED = new AtomicBoolean();
 
     @Test
