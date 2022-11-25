@@ -86,21 +86,23 @@ public class HibernateIT extends HazelcastTestSupport {
         tx.commit();
         session.close();
 
-        //test can fail on macOS docker-desktop due to small (1-2ms) clock drifts on VM
-        //`HazelcastTimestamper.nextTimestamp` returns future time which leads to cache misses
-        sleepMillis(10);
-
-        for (int i = 0; i < 10; i++) {
-            session = sessionFactory.openSession();
-            AnnotatedEntity retrieved = session.get(AnnotatedEntity.class, (long) 1);
-            assertThat(retrieved.getTitle()).isEqualTo("some-title");
-            session.close();
-        }
 
         Statistics stats = sessionFactory.getStatistics();
         assertThat(stats.getEntityInsertCount()).isEqualTo(1);
         assertThat(stats.getSecondLevelCachePutCount()).isEqualTo(1);
-        assertThat(stats.getSecondLevelCacheHitCount()).isEqualTo(10);
+
+        // The assertion below can fail the first time on macOS docker-desktop due to small (1-2ms) clock drifts on VM.
+        // See https://github.com/docker/for-mac/issues/2076
+        assertTrueEventually(() -> {
+            stats.clear();
+            for (int i = 0; i < 10; i++) {
+                Session session2 = sessionFactory.openSession();
+                AnnotatedEntity retrieved = session2.get(AnnotatedEntity.class, (long) 1);
+                assertThat(retrieved.getTitle()).isEqualTo("some-title");
+                session2.close();
+            }
+            assertThat(stats.getSecondLevelCacheHitCount()).isEqualTo(9);
+        });
     }
 
     private SessionFactory createSessionFactory(Properties props) {
