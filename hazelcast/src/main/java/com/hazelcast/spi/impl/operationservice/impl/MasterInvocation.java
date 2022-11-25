@@ -18,47 +18,42 @@ package com.hazelcast.spi.impl.operationservice.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
-import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
-import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
-
 /**
- * An {@link Invocation} evaluates an Operation Invocation for a particular target running on top of the
+ * An {@link Invocation} evaluates an Operation Invocation for a master member running on top of the
  * {@link OperationServiceImpl}.
  */
-final class TargetInvocation extends Invocation<Address> {
-
-    private final Address target;
-
-    TargetInvocation(Context context,
-                     Operation op,
-                     Address target,
-                     Runnable doneCallback,
-                     int tryCount,
-                     long tryPauseMillis,
-                     long callTimeoutMillis,
-                     boolean deserialize,
-                     ServerConnectionManager connectionManager) {
+final class MasterInvocation extends Invocation<Address> {
+    MasterInvocation(
+            Context context,
+            Operation op,
+            Runnable doneCallback,
+            int tryCount,
+            long tryPauseMillis,
+            long callTimeoutMillis,
+            boolean deserialize,
+            ServerConnectionManager connectionManager
+    ) {
         super(context, op, doneCallback, tryCount, tryPauseMillis, callTimeoutMillis, deserialize, connectionManager);
-        this.target = target;
     }
 
-    TargetInvocation(Context context,
-                     Operation op,
-                     Address target,
-                     int tryCount,
-                     long tryPauseMillis,
-                     long callTimeoutMillis,
-                     boolean deserialize) {
-        this(context, op, target, null, tryCount, tryPauseMillis, callTimeoutMillis, deserialize, null);
+    MasterInvocation(
+            Context context,
+            Operation op,
+            int tryCount,
+            long tryPauseMillis,
+            long callTimeoutMillis,
+            boolean deserialize
+    ) {
+        this(context, op, null, tryCount, tryPauseMillis, callTimeoutMillis, deserialize, null);
     }
 
     @Override
     Address getInvocationTarget() {
-        return target;
+        return context.clusterService.getMasterAddress();
     }
 
     @Override
@@ -68,12 +63,11 @@ final class TargetInvocation extends Invocation<Address> {
 
     @Override
     Member toTargetMember(Address target) {
-        assert target == this.target;
         return context.clusterService.getMember(target);
     }
 
     @Override
     ExceptionAction onException(Throwable t) {
-        return t instanceof MemberLeftException ? THROW_EXCEPTION : op.onInvocationException(t);
+        return op.onMasterInvocationException(t);
     }
 }
