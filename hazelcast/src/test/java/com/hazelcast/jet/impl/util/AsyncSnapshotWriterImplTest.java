@@ -208,9 +208,9 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         byte[] data = map.get(new SnapshotDataKey(partitionKey, 1, "vertex", 0));
         assertEquals(data.length + Bits.INT_SIZE_IN_BYTES, writer.getTotalPayloadBytes());
         BufferObjectDataInput in = serializationService.createObjectDataInput(data);
-        assertEquals(key, in.readObject());
-        assertEquals(value, in.readObject());
-        assertEquals(SnapshotDataValueTerminator.INSTANCE, in.readObject());
+        assertEquals(key, serializationService.readObject(in, true));
+        assertEquals(value, serializationService.readObject(in, true));
+        assertEquals(SnapshotDataValueTerminator.INSTANCE, serializationService.readObject(in, true));
     }
 
     @Test
@@ -290,8 +290,8 @@ public class AsyncSnapshotWriterImplTest extends JetTestSupport {
         });
 
         BufferObjectDataInput in = serializationService.createObjectDataInput(os.toByteArray());
-        Assert.assertEquals("foo", in.readObject());
-        Assert.assertEquals("bar", in.readObject());
+        Assert.assertEquals("foo", serializationService.readObject(in, true));
+        Assert.assertEquals("bar", serializationService.readObject(in, true));
     }
 
     @Test
