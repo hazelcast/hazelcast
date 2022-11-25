@@ -30,6 +30,7 @@ import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.zaxxer.hikari.HikariDataSource;
+import org.intellij.lang.annotations.Language;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -64,6 +65,7 @@ import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -76,13 +78,15 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     private static final String DUMMY_DATA_STORE = "dummy-data-store";
 
     @ClassRule
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({"rawtypes", "resource"})
     public static PostgreSQLContainer container = new PostgreSQLContainer<>("postgres:12.1")
-            .withCommand("postgres -c max_prepared_transactions=10");
+            .withCommand("postgres -c max_prepared_transactions=10")
+            .withCommand("postgres -c max_connections=500")
+            ;
 
     private static final int PERSON_COUNT = 10;
 
-    private static AtomicInteger tableCounter = new AtomicInteger();
+    private static final AtomicInteger TABLE_COUNTER = new AtomicInteger();
     private static HikariDataSource hikariDataSource;
     private String tableName;
 
@@ -92,7 +96,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     }
 
     @BeforeClass
-    public static void setupClass() throws SQLException {
+    public static void setupClass() {
         Config config = smallInstanceConfig();
         configureJdbcDataStore(JDBC_DATA_STORE, container.getJdbcUrl(), container.getUsername(), container.getPassword(), config);
         configureDummyDataStore(DUMMY_DATA_STORE, config);
@@ -101,18 +105,24 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
 
     @Before
     public void setup() throws SQLException {
-        tableName = "T" + tableCounter.incrementAndGet();
+        tableName = "T" + TABLE_COUNTER.incrementAndGet();
         logger.info("Will use table: " + tableName);
-        try (Connection connection = ((DataSource) createDataSource(false)).getConnection()) {
-            connection.createStatement()
-                    .execute("CREATE TABLE " + tableName + "(id int, name varchar(255))");
-        }
+        executeSql("CREATE TABLE " + tableName + "(id int, name varchar(255))");
     }
 
     @After
     public void tearDown() throws Exception {
         if (hikariDataSource != null) {
             hikariDataSource.close();
+        }
+        container.execInContainer("sudo service postgresql restart");
+        // kill any hanging connection
+        executeSql("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE pid <> pg_backend_pid()");
+    }
+
+    private static void executeSql(@Language("sql") String sql) throws SQLException {
+        try (Connection connection = ((DataSource) createDataSource(false)).getConnection()) {
+            connection.createStatement().execute(sql);
         }
     }
 
