@@ -475,7 +475,7 @@ public class PlanExecutor {
                 .submitToKey(key, EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR)
                 .toCompletableFuture();
         await(future, timeout);
-        return UpdateSqlResultImpl.createUpdateCountResult(0);
+        return UpdateSqlResultImpl.createUpdateCountResult(0, plan.keyConditionParamIndex());
     }
 
     SqlResult execute(CreateTypePlan plan) {

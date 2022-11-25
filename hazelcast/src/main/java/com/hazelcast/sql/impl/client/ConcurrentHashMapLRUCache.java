@@ -114,11 +114,6 @@ public class ConcurrentHashMapLRUCache<K, V> {
         }
     }
 
-    public V getOrDefault(K key, V defaultValue) {
-        final V value = get(key);
-        return value != null ? value : defaultValue;
-    }
-
     // write
     @GuardedBy("lock")
     private V handleNewCacheEntry(K key, Function<? super K, ? extends V> valueFunction) {

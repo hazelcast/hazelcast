@@ -57,6 +57,7 @@ public class SqlClientTest extends SqlTestSupport {
         final String selectQuery = "SELECT * FROM test WHERE __key = ?";
         final String insertQuery = "INSERT INTO test (this, __key) VALUES (?, ?)";
         final String updateQuery = "UPDATE test SET this = ? WHERE __key = ?";
+        final String deleteQuery = "DELETE FROM test WHERE __key = ?";
 
         final HazelcastInstance client = factory().newHazelcastClient();
         final SqlService sqlService = client.getSql();
@@ -64,20 +65,25 @@ public class SqlClientTest extends SqlTestSupport {
 
         createMapping("test", Integer.class, String.class);
 
-        assertNull(sqlClientService.queryPartitionCache.get(insertQuery));
+        assertNull(sqlClientService.partitionArgumentIndexCache.get(insertQuery));
         sqlService.execute(insertQuery, "testVal", 1);
-        assertNotNull(sqlClientService.queryPartitionCache.get(insertQuery));
-        assertEquals(1, (int) sqlClientService.queryPartitionCache.get(insertQuery));
+        assertNotNull(sqlClientService.partitionArgumentIndexCache.get(insertQuery));
+        assertEquals(1, (int) sqlClientService.partitionArgumentIndexCache.get(insertQuery));
 
-        assertNull(sqlClientService.queryPartitionCache.get(updateQuery));
+        assertNull(sqlClientService.partitionArgumentIndexCache.get(updateQuery));
         sqlService.execute(updateQuery, "testVal", 1);
-        assertNotNull(sqlClientService.queryPartitionCache.get(updateQuery));
-        assertEquals(1, (int) sqlClientService.queryPartitionCache.get(updateQuery));
+        assertNotNull(sqlClientService.partitionArgumentIndexCache.get(updateQuery));
+        assertEquals(1, (int) sqlClientService.partitionArgumentIndexCache.get(updateQuery));
 
-        assertNull(sqlClientService.queryPartitionCache.get(selectQuery));
+        assertNull(sqlClientService.partitionArgumentIndexCache.get(selectQuery));
         sqlService.execute(selectQuery, 1);
-        assertNotNull(sqlClientService.queryPartitionCache.get(selectQuery));
-        assertEquals(0, (int) sqlClientService.queryPartitionCache.get(selectQuery));
+        assertNotNull(sqlClientService.partitionArgumentIndexCache.get(selectQuery));
+        assertEquals(0, (int) sqlClientService.partitionArgumentIndexCache.get(selectQuery));
+
+        assertNull(sqlClientService.partitionArgumentIndexCache.get(deleteQuery));
+        sqlService.execute(deleteQuery, 1);
+        assertNotNull(sqlClientService.partitionArgumentIndexCache.get(deleteQuery));
+        assertEquals(0, (int) sqlClientService.partitionArgumentIndexCache.get(deleteQuery));
     }
 
     @Test

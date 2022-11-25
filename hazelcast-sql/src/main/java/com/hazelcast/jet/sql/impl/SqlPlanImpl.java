@@ -1300,6 +1300,7 @@ abstract class SqlPlanImpl extends SqlPlan {
         private final Expression<?> keyCondition;
         private final PlanExecutor planExecutor;
         private final List<Permission> permissions;
+        private final int keyConditionParamIndex;
 
         IMapDeletePlan(
                 PlanKey planKey,
@@ -1318,6 +1319,9 @@ abstract class SqlPlanImpl extends SqlPlan {
             this.keyCondition = keyCondition;
             this.planExecutor = planExecutor;
             this.permissions = permissions;
+            this.keyConditionParamIndex = keyCondition instanceof ParameterExpression
+                    ? ((ParameterExpression<?>) keyCondition).getIndex()
+                    : -1;
         }
 
         QueryParameterMetadata parameterMetadata() {
@@ -1330,6 +1334,10 @@ abstract class SqlPlanImpl extends SqlPlan {
 
         Expression<?> keyCondition() {
             return keyCondition;
+        }
+
+        int keyConditionParamIndex() {
+            return keyConditionParamIndex;
         }
 
         @Override

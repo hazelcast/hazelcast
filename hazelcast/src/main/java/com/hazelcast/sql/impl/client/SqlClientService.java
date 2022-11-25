@@ -35,7 +35,6 @@ import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.logging.ILogger;
-import com.hazelcast.partition.Partition;
 import com.hazelcast.sql.HazelcastSqlException;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlRowMetadata;
@@ -69,12 +68,12 @@ import static com.hazelcast.sql.impl.SqlErrorCode.TOPOLOGY_CHANGE;
  */
 public class SqlClientService implements SqlService {
     private static final int MAX_FAST_INVOCATION_COUNT = 5;
-    private static final int FAST_PATH_CAPACITY = 100;
-    private static final int QUERY_CACHE_CAPACITY = 1000;
+    private static final int ARG_INDEX_CACHE_FAST_PATH_CAPACITY = 100;
+    private static final int ARG_INDEX_CACHE_CAPACITY = 1000;
 
     @SuppressWarnings("checkstyle:VisibilityModifier")
-    public final ConcurrentHashMapLRUCache<String, Integer> queryPartitionCache =
-            new ConcurrentHashMapLRUCache<>(QUERY_CACHE_CAPACITY, FAST_PATH_CAPACITY);
+    public final ConcurrentHashMapLRUCache<String, Integer> partitionArgumentIndexCache =
+            new ConcurrentHashMapLRUCache<>(ARG_INDEX_CACHE_CAPACITY, ARG_INDEX_CACHE_FAST_PATH_CAPACITY);
 
     private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
@@ -100,17 +99,9 @@ public class SqlClientService implements SqlService {
     @Nonnull
     @Override
     public SqlResult execute(@Nonnull SqlStatement statement) {
-        final Integer partitionArgumentIndex = queryPartitionCache.getOrDefault(statement.getSql(), -1);
-        int partitionIndex = -1;
-        if (partitionArgumentIndex != -1) {
-            final Object partitionKey = statement.getParameters().get(partitionArgumentIndex);
-            final Partition partition = client.getPartitionService().getPartition(partitionKey);
-            if (partition != null) {
-                partitionIndex = partition.getPartitionId();
-            }
-        }
-        final ClientConnection connection = partitionIndex != -1
-                ? getQueryConnection(partitionIndex)
+        final Integer partitionId = extractPartitionId(statement);
+        final ClientConnection connection = partitionId != null
+                ? getQueryConnection(partitionId)
                 : getQueryConnection();
 
         final QueryId id = QueryId.create(connection.getRemoteUuid());
@@ -301,7 +292,7 @@ public class SqlClientService implements SqlService {
             );
         } else {
             if (response.partitionArgumentIndex != -1) {
-                queryPartitionCache.computeIfAbsent(
+                partitionArgumentIndexCache.computeIfAbsent(
                         statement.getSql(),
                         k -> response.partitionArgumentIndex
                 );
@@ -432,6 +423,30 @@ public class SqlClientService implements SqlService {
         ClientInvocationFuture fut = invokeAsync(request, connection);
 
         return fut.get();
+    }
+
+    private Integer extractPartitionId(SqlStatement statement) {
+        if (statement.getParameters().size() == 1) {
+            return null;
+        }
+
+        final Integer argIndex = partitionArgumentIndexCache.get(statement.getSql());
+        if (argIndex == null) {
+            return null;
+        }
+
+        assert argIndex != -1 : "no-partition responses shouldn't be stored in queryPartitionCache";
+
+        if (argIndex > statement.getParameters().size() || argIndex < 0) {
+            return null;
+        }
+
+        final Object key = statement.getParameters().get(argIndex);
+        if (key == null) {
+            return null;
+        }
+
+        return client.getClientPartitionService().getPartitionId(key);
     }
 
     private static HazelcastSqlException handleResponseError(SqlError error) {
