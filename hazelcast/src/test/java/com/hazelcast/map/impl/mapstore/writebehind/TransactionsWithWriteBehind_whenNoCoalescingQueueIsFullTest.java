@@ -46,17 +46,17 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindFlushTest.assertWriteBehindQueuesEmpty;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static java.lang.Thread.currentThread;
 import static org.hamcrest.core.Is.isA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -256,7 +256,7 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
     }
 
     private Config getConfig(String mapName, long maxWbqCapacity) {
-        Config config = smallInstanceConfig();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
         config.setProperty(ClusterProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY.toString(),
                 String.valueOf(maxWbqCapacity));
         config.getMapConfig(mapName)
@@ -290,7 +290,7 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
 
     }
 
-    @Test
+    @Test(timeout = 5 * 60 * 1000)
     public void stress() throws InterruptedException {
         final String mapName = "map-name";
         final long maxWbqCapacity = 50;
@@ -304,31 +304,42 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
 
         AtomicBoolean stop = new AtomicBoolean(false);
         int availableProcessors = Math.min(4, RuntimeAvailableProcessors.get());
-        ExecutorService executorService = Executors.newFixedThreadPool(availableProcessors);
+
+        List<Thread> threads = new ArrayList<>();
 
         for (int i = 0; i < availableProcessors; i++) {
-            executorService.submit(() -> {
+            threads.add(new Thread(() -> {
                 while (!stop.get()) {
+                    if (currentThread().isInterrupted()) {
+                        break;
+                    }
                     OpType[] values = OpType.values();
                     OpType op = values[RandomPicker.getInt(values.length)];
                     op.doOp(mapName, node1, RandomPicker.getInt(2, keySpace));
                 }
-            });
+            }));
         }
 
-        executorService.submit(() -> {
+        threads.add(new Thread(() -> {
             while (!stop.get()) {
+                if (currentThread().isInterrupted()) {
+                    break;
+                }
                 HazelcastInstance node3 = factory.newHazelcastInstance(config);
                 sleepSeconds(2);
                 node3.shutdown();
             }
-        });
+        }));
+
+        for (Thread thread : threads) {
+            thread.start();
+        }
 
         sleepSeconds(30);
         stop.set(true);
-        executorService.shutdown();
-        if (!executorService.awaitTermination(30, SECONDS)) {
-            throw new IllegalStateException("Not terminated yet...");
+
+        for (Thread thread : threads) {
+            thread.join();
         }
 
         node1.getMap(mapName).flush();
