@@ -69,11 +69,12 @@ import static com.hazelcast.sql.impl.SqlErrorCode.TOPOLOGY_CHANGE;
  */
 public class SqlClientService implements SqlService {
     private static final int MAX_FAST_INVOCATION_COUNT = 5;
+    private static final int FAST_PATH_CAPACITY = 100;
     private static final int QUERY_CACHE_CAPACITY = 1000;
 
     @SuppressWarnings("checkstyle:VisibilityModifier")
     public final ConcurrentHashMapLRUCache<String, Integer> queryPartitionCache =
-            new ConcurrentHashMapLRUCache<>(QUERY_CACHE_CAPACITY);
+            new ConcurrentHashMapLRUCache<>(QUERY_CACHE_CAPACITY, FAST_PATH_CAPACITY);
 
     private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
@@ -300,9 +301,9 @@ public class SqlClientService implements SqlService {
             );
         } else {
             if (response.partitionArgumentIndex != -1) {
-                queryPartitionCache.put(
+                queryPartitionCache.computeIfAbsent(
                         statement.getSql(),
-                        response.partitionArgumentIndex
+                        k -> response.partitionArgumentIndex
                 );
             }
 

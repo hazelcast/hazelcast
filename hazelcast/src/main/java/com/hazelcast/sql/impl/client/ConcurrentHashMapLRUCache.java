@@ -99,26 +99,24 @@ public class ConcurrentHashMapLRUCache<K, V> {
     }
 
     public V get(K key) {
-        moveToTheEndOfADeque(key);
-        return cache.get(key);
+        V value = cache.get(key);
+
+        if (size <= fastPathMaxCapacity) {
+            return value;
+        }
+
+        try {
+            lock.readLock().lock();
+            moveToTheEndOfADeque(key);
+            return value;
+        } finally {
+            lock.readLock().unlock();
+        }
     }
 
     public V getOrDefault(K key, V defaultValue) {
         final V value = get(key);
         return value != null ? value : defaultValue;
-    }
-
-    public V put(K key, V value) {
-        moveToTheEndOfADeque(key);
-        if (cache.size() == this.maxCapacity) {
-            removeLruKey();
-        }
-
-        keyQueue.offer(key);
-        cache.put(key, value);
-        size = cache.size();
-
-        return value;
     }
 
     // write
