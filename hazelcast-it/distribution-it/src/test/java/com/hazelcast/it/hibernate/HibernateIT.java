@@ -101,7 +101,7 @@ public class HibernateIT extends HazelcastTestSupport {
                 assertThat(retrieved.getTitle()).isEqualTo("some-title");
                 session2.close();
             }
-            assertThat(stats.getSecondLevelCacheHitCount()).isEqualTo(9);
+            assertThat(stats.getSecondLevelCacheHitCount()).isEqualTo(10);
         });
     }
 
