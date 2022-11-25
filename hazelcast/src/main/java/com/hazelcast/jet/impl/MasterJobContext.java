@@ -425,7 +425,7 @@ public class MasterJobContext {
         return requestTermination(mode, allowWhileExportingSnapshot, false);
     }
 
-        private void rewriteDagWithSnapshotRestore(DAG dag, long snapshotId, String mapName, String snapshotName) {
+    private void rewriteDagWithSnapshotRestore(DAG dag, long snapshotId, String mapName, String snapshotName) {
         IMap<Object, Object> snapshotMap = mc.nodeEngine().getHazelcastInstance().getMap(mapName);
         long resolvedSnapshotId = validateSnapshot(
                 snapshotId, snapshotMap, mc.jobIdString(), snapshotName);
@@ -550,7 +550,6 @@ public class MasterJobContext {
      * <ul>
      * <li>Returns {@code null} if there is no failure
      * <li>Returns a {@link CancellationException} if the job is cancelled
-     *     forcefully.
      * <li>Returns a {@link JobTerminateRequestedException} if the current
      *     execution is stopped due to a requested termination, except for
      *     {@link TerminationMode#CANCEL_GRACEFUL} and

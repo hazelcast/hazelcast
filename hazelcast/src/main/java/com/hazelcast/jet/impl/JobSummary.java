@@ -41,7 +41,8 @@ public class JobSummary implements IdentifiedDataSerializable, Versioned {
     private long completionTime;
     private String failureText;
     /**
-     * If the job was cancelled by the user
+     * True, if the job has been cancelled based on a user request, false
+     * otherwise (also while the job is running).
      */
     private boolean userCancelled;
 
@@ -118,6 +119,10 @@ public class JobSummary implements IdentifiedDataSerializable, Versioned {
         return failureText;
     }
 
+    /**
+     * @return True, if the job has been cancelled based on a user request,
+     * false otherwise (also while the job is running).
+     */
     public boolean isUserCancelled() {
         return userCancelled;
     }

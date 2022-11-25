@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LocalMemberResetException;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.jet.CancellationByUserException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobNotFoundException;
@@ -179,6 +180,31 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     }
 
     protected abstract JobStatus getStatus0();
+
+    @Override
+    public final boolean isUserCancelled() {
+        if (isLightJob()) {
+            CompletableFuture<Void> f = getFuture();
+            if (!f.isDone()) {
+                throw new IllegalStateException("Job not finished");
+            }
+            if (!f.isCancelled()) {
+                return false;
+            }
+            try {
+                f.getNow(null);
+                throw new AssertionError("Future changed state");
+            } catch (CancellationByUserException byUser) {
+                return true;
+            } catch (CancellationException e) {
+                return false;
+            }
+        } else {
+            return isUserCancelled0();
+        }
+    }
+
+    protected abstract boolean isUserCancelled0();
 
     @Override
     public long getSubmissionTime() {

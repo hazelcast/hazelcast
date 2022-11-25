@@ -31,6 +31,10 @@ public class JobAndSqlSummary {
     private final long completionTime;
     private final String failureText;
     private final SqlSummary sqlSummary;
+    /**
+     * True, if the job has been cancelled based on a user request, false
+     * otherwise (also while the job is running).
+     */
     private final boolean userCancelled;
 
     public JobAndSqlSummary(
@@ -92,6 +96,10 @@ public class JobAndSqlSummary {
         return sqlSummary;
     }
 
+    /**
+     * @return True, if the job has been cancelled based on a user request,
+     * false otherwise (also while the job is running).
+     */
     public boolean isUserCancelled() {
         return userCancelled;
     }

@@ -22,6 +22,7 @@ import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.MembersView;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.CancellationByUserException;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
@@ -93,6 +94,7 @@ public final class LightMasterContext {
     private final CompletableFuture<Void> jobCompletionFuture = new CompletableFuture<>();
     private final Set<Vertex> vertices;
     private final JobClassLoaderService jobClassLoaderService;
+    private volatile boolean userInitiatedTermination;
 
     private LightMasterContext(NodeEngine nodeEngine, long jobId, ILogger logger, String jobIdString,
                               JobConfig jobConfig, Map<MemberInfo, ExecutionPlan> executionPlanMap,
@@ -193,7 +195,9 @@ public final class LightMasterContext {
                 // translate JobTerminateRequestedException(CANCEL_FORCEFUL) to CancellationException
                 if (fail instanceof JobTerminateRequestedException
                         && ((JobTerminateRequestedException) fail).mode() == CANCEL_FORCEFUL) {
-                    CancellationException newFailure = new CancellationException();
+                    Throwable newFailure = userInitiatedTermination
+                            ? new CancellationByUserException()
+                            : new CancellationException();
                     newFailure.initCause(failure);
                     fail = newFailure;
                 }
@@ -312,7 +316,8 @@ public final class LightMasterContext {
         return result;
     }
 
-    public void requestTermination() {
+    public void requestTermination(boolean userInitiated) {
+        this.userInitiatedTermination = userInitiated;
         cancelInvocations();
     }
 

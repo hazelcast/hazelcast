@@ -67,7 +67,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     @Nonnull @Override
-    public JobStatus getStatus0() {
+    protected JobStatus getStatus0() {
         assert !isLightJob();
         try {
             return this.<JobStatus>invokeOp(new GetJobStatusOperation(getId())).get();
@@ -77,8 +77,7 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     @Override
-    public boolean isUserCancelled() {
-        //TODO: light jobs?
+    protected boolean isUserCancelled0() {
         assert !isLightJob();
         try {
             return this.<Boolean>invokeOp(new IsJobUserCancelledOperation(getId())).get();

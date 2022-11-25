@@ -80,7 +80,7 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
 
     @Nonnull
     @Override
-    public JobStatus getStatus0() {
+    protected JobStatus getStatus0() {
         assert !isLightJob();
         return callAndRetryIfTargetNotFound(()  -> {
             ClientMessage request = JetGetJobStatusCodec.encodeRequest(getId());
@@ -91,7 +91,7 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     }
 
     @Override
-    public boolean isUserCancelled() {
+    protected boolean isUserCancelled0() {
         assert !isLightJob();
         return callAndRetryIfTargetNotFound(()  -> {
             ClientMessage request = JetIsJobUserCancelledCodec.encodeRequest(getId());

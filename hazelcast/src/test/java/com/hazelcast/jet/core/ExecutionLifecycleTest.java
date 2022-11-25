@@ -25,6 +25,7 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
+import com.hazelcast.jet.CancellationByUserException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
@@ -445,7 +446,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         NoOutputSourceP.executionStarted.await();
         cancelAndJoin(job);
         assertTrueEventually(() -> {
-            assertJobFailed(job, new CancellationException());
+            assertJobFailed(job, useLightJob ? new CancellationByUserException() : new CancellationException());
             assertPsClosedWithError();
             assertPmsClosedWithError();
         });

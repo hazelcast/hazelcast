@@ -509,12 +509,12 @@ public class JobCoordinationService {
         );
     }
 
-    public void terminateLightJob(long jobId) {
+    public void terminateLightJob(long jobId, boolean userInitiated) {
         Object mc = lightMasterContexts.get(jobId);
         if (mc == null || mc == UNINITIALIZED_LIGHT_JOB_MARKER) {
             throw new JobNotFoundException(jobId);
         }
-        ((LightMasterContext) mc).requestTermination();
+        ((LightMasterContext) mc).requestTermination(userInitiated);
     }
 
     /**
@@ -1427,7 +1427,7 @@ public class JobCoordinationService {
                 if (mc != null && isMaster() && !mc.jobStatus().isTerminal()) {
                     terminateJob(jobId, CANCEL_FORCEFUL, false);
                 } else if (lightMc != null && !lightMc.isCancelled()) {
-                    lightMc.requestTermination();
+                    lightMc.requestTermination(false);
                 }
             } finally {
                 scheduledJobTimeouts.remove(jobId);
