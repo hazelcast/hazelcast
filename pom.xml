@@ -555,6 +555,104 @@
                         <configuration>
                             <artifact>com.hazelcast:hazelcast:${hazelcast-3.version}</artifact>
                             <artifact>com.hazelcast:hazelcast:${hazelcast-3.version}:jar:tests</artifact>
+
+                            <!-- Below are the jars used in compatibility tests. Install them to local repository -->
+                            <artifact>com.hazelcast:hazelcast:3.7</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.7:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.7.1</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.7.1:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.7.2</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.7.2:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.7.3</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.7.3:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.7.4</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.7.4:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.7.5</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.7.5:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.7.6</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.7.6:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.7.7</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.7.7:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.7.8</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.7.8:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.8</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.8:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.8.1</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.8.1:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.8.2</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.8.2:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.8.3</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.8.3:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.8.4</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.8.4:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.8.5</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.8.5:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.8.6</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.8.6:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.8.7</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.8.7:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.8.8</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.8.8:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.8.9</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.8.9:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.9</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.9:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.9.1</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.9.1:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.9.2</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.9.2:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.9.3</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.9.3:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.9.4</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.9.4:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.10</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.10:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.10.1</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.10.1:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.10.2</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.10.2:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.10.3</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.10.3:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.10.4</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.10.4:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:3.12.13</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.12.13:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:4.0</artifact>
+                            <artifact>com.hazelcast:hazelcast:4.0:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:4.0.3</artifact>
+                            <artifact>com.hazelcast:hazelcast:4.0.3:jar:tests</artifact>
+
                         </configuration>
                     </execution>
                 </executions>
