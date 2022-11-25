@@ -156,6 +156,21 @@ class TpcIOBuffer implements IOBuffer {
     }
 
     @Override
+    public void write(ByteBuffer src) {
+        write(src, src.remaining());
+    }
+
+    @Override
+    public void write(ByteBuffer src, int count) {
+        ensureRemaining(count);
+        for (int i = 0; i < count; i++) {
+            writeByteUnsafe(src.get());
+        }
+    }
+
+
+
+    @Override
     public int remaining() {
         return totalCapacity - pos;
     }

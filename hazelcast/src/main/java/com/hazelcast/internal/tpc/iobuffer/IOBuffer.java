@@ -1,5 +1,7 @@
 package com.hazelcast.internal.tpc.iobuffer;
 
+import java.nio.ByteBuffer;
+
 public interface IOBuffer {
     void release();
 
@@ -24,6 +26,10 @@ public interface IOBuffer {
     void writeIntL(int value);
 
     void writeLong(long value);
+
+    void write(ByteBuffer src);
+
+    void write(ByteBuffer src, int count);
 
     int remaining();
 }
