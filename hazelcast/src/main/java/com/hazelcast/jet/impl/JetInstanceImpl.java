@@ -124,9 +124,12 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
         GetJobIdsResult result;
         try {
             result = masterFuture.get();
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            return GetJobIdsResult.EMPTY;
         } catch (Exception e) {
             // We do not ignore any exception from master.
-            throw new RuntimeException("Error when getting job IDs: " + e, e);
+            throw rethrow(e);
         }
         List<Tuple2<Long, Boolean>> nonLightJobs = new ArrayList<>();
         for (int i = 0; i < result.getJobIds().length; i++) {
