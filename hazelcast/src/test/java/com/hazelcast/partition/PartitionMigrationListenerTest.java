@@ -390,17 +390,14 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         }
 
         /**
-         * Migration can be re-started due to some timing issues,
+         * Migration can be re-started due to some issues,
          * this reset is used to track whether we have expected
-         * number of migrations in case of a successful run.
+         * number of migration started and completed events.
+         * Per each start we expect one matching completion.
          */
         public void reset() {
             migrationStarted.set(0);
             migrationCompleted.set(0);
-            for (int i = 0; i < numberOfPartitions; i++) {
-                replicaMigrationCompleted[i].set(0);
-                replicaMigrationFailed[i].set(0);
-            }
         }
 
         @Override
