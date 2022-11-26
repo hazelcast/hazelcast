@@ -127,7 +127,7 @@ public class ReadOptimizedLruCache<K, V> {
         final V value;
         volatile long timestamp;
 
-        public ValueAndTimestamp(V value) {
+        ValueAndTimestamp(V value) {
             this.value = value;
             touch();
         }
