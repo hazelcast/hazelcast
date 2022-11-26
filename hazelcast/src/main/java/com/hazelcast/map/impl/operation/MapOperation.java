@@ -198,11 +198,6 @@ public abstract class MapOperation extends AbstractNamedOperation
                 .setDisableWanReplicationEvent(disableWanReplicationEvent());
     }
 
-    @Override
-    public void applyState(State state) {
-        //
-    }
-
     protected void runInternal() {
         // Intentionally empty method body.
         // Concrete classes can override this method.

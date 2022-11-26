@@ -50,8 +50,8 @@ public abstract class KeyBasedMapOperation extends MapOperation
     public State createState() {
         return super.createState()
                 .setKey(dataKey)
-                .setThreadId(threadId)
-                .setNewValue(dataValue);
+                .setNewValue(dataValue)
+                .setThreadId(threadId);
     }
 
     public final Data getKey() {
