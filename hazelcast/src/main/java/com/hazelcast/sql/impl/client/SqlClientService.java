@@ -68,12 +68,12 @@ import static com.hazelcast.sql.impl.SqlErrorCode.TOPOLOGY_CHANGE;
  */
 public class SqlClientService implements SqlService {
     private static final int MAX_FAST_INVOCATION_COUNT = 5;
-    private static final int ARG_INDEX_CACHE_FAST_PATH_CAPACITY = 100;
+    private static final int ARG_INDEX_CACHE_CLEANUP_THRESHOLD = 1100;
     private static final int ARG_INDEX_CACHE_CAPACITY = 1000;
 
     @SuppressWarnings("checkstyle:VisibilityModifier")
-    public final ConcurrentHashMapLRUCache<String, Integer> partitionArgumentIndexCache =
-            new ConcurrentHashMapLRUCache<>(ARG_INDEX_CACHE_CAPACITY, ARG_INDEX_CACHE_FAST_PATH_CAPACITY);
+    public final ReadOptimizedLruCache<String, Integer> partitionArgumentIndexCache =
+            new ReadOptimizedLruCache<>(ARG_INDEX_CACHE_CAPACITY, ARG_INDEX_CACHE_CLEANUP_THRESHOLD);
 
     private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
@@ -135,7 +135,7 @@ public class SqlClientService implements SqlService {
 
         try {
             ClientMessage message = invoke(requestMessage, connection);
-            handleExecuteResponse(statement, res, message);
+            handleExecuteResponse(statement.getSql(), partitionId, res, message);
             return res;
         } catch (Exception e) {
             RuntimeException error = rethrow(e, connection);
@@ -279,7 +279,12 @@ public class SqlClientService implements SqlService {
         }
     }
 
-    private void handleExecuteResponse(final SqlStatement statement, SqlClientResult res, ClientMessage message) {
+    private void handleExecuteResponse(
+            String sqlText,
+            int originalPartitionArgumentIndex,
+            SqlClientResult res,
+            ClientMessage message
+    ) {
         SqlExecuteCodec.ResponseParameters response = SqlExecuteCodec.decodeResponse(message);
         SqlError sqlError = response.error;
         if (sqlError != null) {
@@ -291,11 +296,12 @@ public class SqlClientService implements SqlService {
                     sqlError.getSuggestion()
             );
         } else {
-            if (response.partitionArgumentIndex != -1) {
-                partitionArgumentIndexCache.computeIfAbsent(
-                        statement.getSql(),
-                        k -> response.partitionArgumentIndex
-                );
+            if (response.partitionArgumentIndex != originalPartitionArgumentIndex) {
+                if (response.partitionArgumentIndex != -1) {
+                    partitionArgumentIndexCache.put(sqlText, response.partitionArgumentIndex);
+                } else {
+                    partitionArgumentIndexCache.remove(sqlText);
+                }
             }
 
             res.onExecuteResponse(
