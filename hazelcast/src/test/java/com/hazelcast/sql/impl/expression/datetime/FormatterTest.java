@@ -170,6 +170,8 @@ public class FormatterTest {
         check(0,  ".+0",  ".-0",  ".SG9", ".S9");
         check(0,  ".0+",  ".0-",  ".9SG", ".9S");
 
+        check(0,  " 0 ",  "<0>",  "9BR", "BR9", "9B", "B9", "BR9BR", "B9B", "BR9B", "B9BR");
+
         check(4.5,  "  4.5 ",  "< 4.5>",  "99.9BR", "BR99.9", "BR99.9BR", "BR99.9B");
         check(4.5,  "  4.5 ",  " <4.5>",  "99.9B",   "B99.9",  "B99.9B");
         check(4.5,  " +4.5 ",  " <4.5>",  "P9.9B",   "BP9.9",  "PB9.9");
@@ -215,6 +217,14 @@ public class FormatterTest {
         check(4.5,  " $ 4.5 ",  "<$ 4.5>",  "BRCR99.9");
         check(4.5,  "  $4.5 ",  "< $4.5>",   "BRC99.9",  "C99.9BR");
         check(4.5,  "  $4.5 ",  " <$4.5>",    "BC99.9",  "C99.9B");
+
+        check(5,  "$ 5 ",  "$<5>",  "CRBR9", "CRB9", "CR9B");
+        check(5,  " $5 ",  "$<5>",  "CB9");
+        check(5,  " $5 ",  "<$5>",  "BRCR9", "BRC9", "C9BR", "BC9", "C9B");
+
+        check(5,  " 5 $",  "<5>$",  "9BRCR", "9BCR",  "B9CR");
+        check(5,  " 5$ ",  "<5>$",  "9BC");
+        check(5,  " 5$ ",  "<5$>",  "9CRBR", "9CBR", "BR9C", "9CB", "B9C");
     }
 
     @Test
@@ -263,8 +273,8 @@ public class FormatterTest {
         check(NaN, f, "+");
 
         f = forNumbers("9th");
-        check(-10, f, "  -#");
-        check(NaN, f, "   #");
+        check(-10, f, "-#  ");
+        check(NaN, f, " #  ");
 
         f = forNumbers("9.9EEEE");
         check(NEGATIVE_INFINITY, f, "-#.#E+##");
@@ -318,12 +328,15 @@ public class FormatterTest {
         check(4.5,  "  4.5",   " -4.5",     "99.FM99");
         check(4.5,    "4.5 ",   "-4.5 ",  "FM99.FM99");
 
-        check(5,    "     5",  "    -5",  "9EEEE");
+        check(5,  " 5 ",  "<5>",  "B9");
+        check(5,   "5",   "<5>",  "FMB9");
+
+        check(5,     " 5    ",   "-5    ",   "9EEEE");
         check(0.5,  " .5    ",  "-.5    ",  ".9EEEE");
 
         Formatter f = forNumbers("999 (RN)");
-        check(0,   f, "                  0 ()");
-        check(988, f, "      988 (CMLXXXVIII)");
+        check(0,   f, "   0 ()               ");
+        check(988, f, " 988 (CMLXXXVIII)     ");
     }
 
     @Test

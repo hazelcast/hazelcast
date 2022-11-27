@@ -162,7 +162,11 @@ import java.util.regex.Pattern;
  * <tr><td> {@code CR} <td> {@code C} <td> currency symbol or ISO 4217 currency code
  * </table>
  *
- * <br><b> Overflow </b><ul>
+ * <br><b> Notes </b><ul>
+ * <li> The format string consists of <em>the integer and fraction parts</em>, which are split at
+ *      the first decimal separator, or just after the last digit position, or the end of the
+ *      format string depending on availability. The order of processing is right-to-left in the
+ *      integer part and left-to-right in the fraction part.
  * <li> If the format string contains {@code EEEE} or {@code eeee} patterns, it is said to be in
  *      <em>the exponential form</em>, in which no overflow is possible unless the number is
  *      infinite. If it contains {@code RN} or {@code rn} patterns and no digit positions, it is in
@@ -174,7 +178,12 @@ import java.util.regex.Pattern;
  * <li> In an overflow; digit positions print a single hash (#), {@code EEEE} and {@code eeee}
  *      patterns print +## as the exponent, {@code RN} and {@code rn} patterns print 15 hashes, and
  *      {@code TH} and {@code th} patterns print 2 spaces. The other patterns print what they print
- *      when there is no overflow. Note that NaN (non-a-number) is considered positive. </ul>
+ *      when there is no overflow. Note that NaN (non-a-number) is considered positive.
+ * <li> In the normal and exponential forms, if there is no sign provision, an {@code M} pattern is
+ *      prepended to the integer part. Similarly, if only one part has {@code BR} and/or {@code B}
+ *      patterns, the latest bracket in the order of processing is inserted to the opposite part.
+ *      The inferred sign is inserted so that it encloses all non-fixed patterns in the part to
+ *      which it is inserted. </ul>
  *
  * <br><h2> General Notes <ol>
  * <li> <b>Lowercase variants</b> of patterns are also accepted. If there is no special meaning of
@@ -197,15 +206,14 @@ import java.util.regex.Pattern;
  *           and {@code MI}/{@code PL} patterns print a single space if the number is
  *           non-negative/negative respectively.
  *      <li> The extra space introduced by the fill mode is not printed until a <b><em>fixed</em>
- *           </b> pattern or the end of the format string is encountered. The order of processing
- *           is right-to-left in the integer part and left-to-right in the fraction part. As a
- *           result, unfixed, or <b><em>anchored</em></b>, patterns floats right within the extra
- *           space in the integer and floats left in the fraction. Digit positions and
- *           decimal/grouping separators cannot float for obvious reasons, but they are considered
- *           "transparent" while anchoring other patterns.
+ *           </b> pattern or the end of the format string is encountered. As a result, unfixed, or
+ *           <b><em>anchored</em></b>, patterns float right within the extra space in the integer
+ *           part and float left in the fraction part. Digit positions and decimal/grouping
+ *           separators cannot float for obvious reasons, but they are considered "transparent"
+ *           while anchoring other patterns.
  *      <li> Zero-padding and space-padding are completely orthogonal, which makes it possible to
  *           have zero-padded fractions, which are aligned at the decimal separator. However, this
- *           necessitates to have a {@code '0'} at the end of the fraction part if the Postgres
+ *           requires the last digit of the fraction part to be {@code '0'} if the Postgres
  *           convention is desired. </ol>
  * <li> {@code TM} pattern toggles <b><em>the translate mode</em></b> until it is toggled again by
  *      another {@code TM} pattern or the end of the format string is reached. The translate mode
@@ -557,8 +565,8 @@ public abstract class Formatter {
      */
     private static class NumberFormat extends Formatter {
         private final Form form;
-        private final Mask integerMask = new Mask(true);
-        private final Mask fractionMask = new Mask(false);
+        private final Mask integerMask;
+        private final Mask fractionMask;
         private final boolean currency;
         private final int shift;
 
@@ -623,42 +631,30 @@ public abstract class Formatter {
          */
         class Mask {
             final boolean pre;
-            final StringBuilder digitMask = new StringBuilder();
-            final List<Object> groups = new ArrayList<>();
-            final List<Boolean> fillModes = new ArrayList<>();
-            boolean fillMode = true;
+            final List<Object> groups;
+            final List<Boolean> fillModes;
+            final int digits;
+            final int minDigits;
+
+            boolean nextFillMode;
             int offerSign = -1;
-            int digits;
-            int minDigits;
             boolean sign;
             Pattern bracket;
 
-            Mask(boolean pre) {
+            Mask(boolean pre, List<Object> groups, List<Boolean> fillModes, boolean nextFillMode,
+                    StringBuilder digitMask, int minDigits) {
                 this.pre = pre;
-            }
+                this.groups = new ArrayList<>(groups);
+                this.fillModes = new ArrayList<>(fillModes);
+                this.nextFillMode = nextFillMode;
 
-            void toggleFillMode() {
-                fillMode = !fillMode;
-            }
-
-            public void add(Object g) {
-                groups.add(g);
-                fillModes.add(fillMode);
-            }
-
-            void addDigits(String digits) {
-                digitMask.append(digits);
-                add(digits.length());
-            }
-
-            void prepare() {
                 if (pre) {
-                    Collections.reverse(groups);
-                    Collections.reverse(fillModes);
+                    Collections.reverse(this.groups);
+                    Collections.reverse(this.fillModes);
                     digitMask.reverse();
                 }
-                for (int i = 0; i < groups.size(); i++) {
-                    Object g = groups.get(i);
+                for (int i = 0; i < this.groups.size(); i++) {
+                    Object g = this.groups.get(i);
                     if (!(g instanceof Anchorable) || ((Anchorable) g).isAnchored()) {
                         offerSign = i;
                     }
@@ -671,7 +667,7 @@ public abstract class Formatter {
                 }
                 offerSign++;
                 digits = digitMask.length();
-                minDigits = digitMask.lastIndexOf("0") + 1;
+                this.minDigits = Math.max(digitMask.lastIndexOf("0") + 1, minDigits);
             }
 
             /** Ensure matching bracket. Add anchored minus if there is no sign provision. */
@@ -680,7 +676,8 @@ public abstract class Formatter {
                         : pre && !sign && !pair.sign && form != Form.Roman ? Pattern.M : null;
                 if (inferred != null) {
                     groups.add(offerSign, inferred);
-                    fillModes.add(offerSign, fillModes.isEmpty() ? fillMode : fillModes.get(offerSign - 1));
+                    fillModes.add(offerSign, offerSign == fillModes.size() ? nextFillMode
+                            : fillModes.get(offerSign));
                 }
             }
 
@@ -809,8 +806,14 @@ public abstract class Formatter {
             }
         }
 
-        class NumericGroupProcessor implements GroupProcessor {
-            Mask mask = integerMask;
+        static class NumericGroupProcessor implements GroupProcessor {
+            final List<Object> groups = new ArrayList<>();
+            final List<Boolean> fillModes = new ArrayList<>();
+            final StringBuilder integerDigits = new StringBuilder();
+            final StringBuilder fractionDigits = new StringBuilder();
+            boolean fillMode = true;
+            int decimalSeparator = -1;
+            int afterLastDigit = -1;
             boolean currency;
             boolean exponential;
             boolean roman;
@@ -818,29 +821,30 @@ public abstract class Formatter {
 
             @Override
             public void acceptLiteral(String literal) {
-                mask.add(new Literal(literal));
+                add(new Literal(literal));
             }
 
             @Override
             public void acceptGroup(String group, Matcher m) {
                 String g = group.toUpperCase();
                 if (g.equals("FM")) {
-                    mask.toggleFillMode();
+                    fillMode = !fillMode;
                 } else if (g.startsWith("V")) {
                     shift += group.length() - 1;
                 } else if (g.startsWith("F") || g.startsWith("\"")) {
-                    mask.add(new Literal(group));
+                    add(new Literal(group));
                 } else if (g.startsWith("9") || g.startsWith("0")) {
-                    mask.addDigits(group);
+                    (decimalSeparator == -1 ? integerDigits : fractionDigits).append(group);
+                    add(group.length());
+                    afterLastDigit = groups.size();
                 } else if (g.length() == 1 && ",G.D".contains(g)) {
-                    if (".D".contains(g) && mask == integerMask) {
-                        fractionMask.fillMode = integerMask.fillMode;
-                        mask = fractionMask;
+                    if (".D".contains(g) && decimalSeparator == -1) {
+                        decimalSeparator = groups.size();
                     }
-                    mask.add(g.charAt(0));
+                    add(g.charAt(0));
                 } else {
                     Pattern pattern = valueOf(Pattern.class, group);
-                    mask.add(pattern);
+                    add(pattern);
                     if (pattern == Pattern.CR || pattern == Pattern.C) {
                         currency = true;
                     } else if (pattern == Pattern.EEEE || pattern == Pattern.eeee) {
@@ -850,17 +854,24 @@ public abstract class Formatter {
                     }
                 }
             }
+
+            void add(Object group) {
+                groups.add(group);
+                fillModes.add(fillMode);
+            }
         }
 
         NumberFormat(String format) {
             NumericGroupProcessor p = new NumericGroupProcessor();
             parse(NUMERIC_TEMPLATE, p, format);
-
-            integerMask.prepare();
-            fractionMask.prepare();
-            if (integerMask.minDigits == 0 && fractionMask.minDigits == 0) {
-                (integerMask.digits > 0 ? integerMask : fractionMask).minDigits = 1;
-            }
+            int split = p.decimalSeparator != -1 ? p.decimalSeparator
+                    : p.afterLastDigit != -1 ? p.afterLastDigit : p.groups.size();
+            boolean zero = p.integerDigits.indexOf("0") != -1 || p.fractionDigits.indexOf("0") != -1;
+            integerMask = new Mask(true, p.groups.subList(0, split), p.fillModes.subList(0, split),
+                    p.fillModes.get(0), p.integerDigits, !zero && p.integerDigits.length() > 0 ? 1 : 0);
+            fractionMask = new Mask(false, p.groups.subList(split, p.groups.size()),
+                    p.fillModes.subList(split, p.fillModes.size()), p.fillMode, p.fractionDigits,
+                    !zero && p.integerDigits.length() == 0 ? 1 : 0);
 
             form = p.roman && integerMask.digits == 0 && fractionMask.digits == 0 ? Form.Roman
                     : p.exponential ? Form.Exponential : Form.Normal;
@@ -1015,7 +1026,6 @@ public abstract class Formatter {
         }
 
         @Override
-        @SuppressWarnings("UnnecessaryToStringCall")
         public String toString() {
             return integerMask.toString() + fractionMask.toString();
         }
