@@ -109,11 +109,9 @@ final class SparseBitSet {
                 storages.set(prefix, createdStorage);
             } else {
                 Storage32 newStorage = storage.add((int) member);
-                if (newStorage == storage) {
-                    lastStorage = storage;
-                } else {
+                lastStorage = newStorage;
+                if (newStorage != storage) {
                     // storage was upgraded
-                    lastStorage = newStorage;
                     storages.set(prefix, newStorage);
                 }
             }
