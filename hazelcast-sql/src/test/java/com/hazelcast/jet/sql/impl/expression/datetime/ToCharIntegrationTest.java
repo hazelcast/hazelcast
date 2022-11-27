@@ -55,12 +55,12 @@ public class ToCharIntegrationTest extends ExpressionTestSupport {
 
     @Test
     public void testTemporals() {
-        check(LocalDate.of(2022, 9, 26), "Day, Mon DDth, YYYY", "Monday, Sep 26th, 2022");
-        check(LocalDate.of(2022, 9, 26), "DD TMMonth YYYY", "tr-TR", "26 Eylül 2022");
-        check(LocalTime.of(14, 53, 34), "HH:MI:SS AM", "2:53:34 PM");
-        check(LocalDateTime.of(2022, 9, 26, 14, 53), "Day, Mon DDth, HH24:MI", "Monday, Sep 26th, 14:53");
+        check(LocalDate.of(2022, 9, 26), "FMDay, Mon DDth, YYYY", "Monday, Sep 26th, 2022");
+        check(LocalDate.of(2022, 9, 26), "FMDD Month YYYY", "tr-TR", "26 Eylül 2022");
+        check(LocalTime.of(14, 53, 34), "FMHH:MI:SS AM", "2:53:34 PM");
+        check(LocalDateTime.of(2022, 9, 26, 14, 53), "FMDay, Mon DDth, HH24:MI", "Monday, Sep 26th, 14:53");
 //        check(LocalDateTime.of(2022, 9, 26, 14, 53).atOffset(ZoneOffset.ofHours(3)),
-//                "Day, Mon DDth, HH24:MI UTCFMTZH", "Monday, Sep 26th, 14:53 UTC+03");
+//                "FMDay, Mon DDth, HH24:MI UTCFMTZH", "Monday, Sep 26th, 14:53 UTC+03");
     }
 
     @Test

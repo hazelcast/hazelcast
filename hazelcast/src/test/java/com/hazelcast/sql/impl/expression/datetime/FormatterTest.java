@@ -59,69 +59,72 @@ public class FormatterTest {
 
     @Test
     public void testDates() {
-        Formatter f = forDates("Day, Mon DDth, YYYY");
+        Formatter f = forDates("FMDay, Mon DDth, YYYY");
         check(LocalDate.of(2022, 9, 26), f, "Monday, Sep 26th, 2022");
 
-        f = forDates("DD TMMonth YYYY");
+        f = forDates("FMDD Month YYYY");
         check(LocalDate.of(2022, 9, 26), f, "26 Eylül 2022", TR);
 
-        f = forDates("YYYY-FMMM-FMDD HH:FMMI AM OF");
+        f = forDates("FMTMDD Month YYYY");
+        check(LocalDate.of(2022, 9, 26), f, "26 September 2022", TR);
+
+        f = forDates("YYYY-MM-DD FMHH:MI AM OF");
         check(LocalDateTime.of(2022, 9, 26, 14, 53).atOffset(ZoneOffset.ofHours(3)), f,
                 "2022-09-26 2:53 PM +03:00");
 
-        f = forDates("FMHH12:FMMI A.M. TZFMTZH:FMTZM");
+        f = forDates("HH12:MI A.M. TZTZH:TZM");
         check(LocalTime.of(14, 53).atOffset(ZoneOffset.ofHours(3)), f, "02:53 P.M. GMT+03:00");
 
         if (jdk >= 11) {
-            f = forDates("FMHH12:FMMI TMA.M.");
+            f = forDates("HH12:MI A.M.");
             check(LocalTime.of(14, 53), f, "02:53 Ö.S.", TR);
         }
 
-        f = forDates("At HH24:MI:SS, SSSS(=SSSSS) \"seconds are passed from the midnight.\"");
+        f = forDates("At HH24:MI:SS, FMSSSS(=SSSSS) \"seconds are passed from the midnight.\"");
         check(LocalTime.of(12, 34, 56), f,
                 "At 12:34:56, 45296(=45296) seconds are passed from the midnight.");
 
-        f = forDates("YYYY-MM-DD \"is the\" DDDth \"day of\" YYYY.");
-        check(LocalDate.of(2022, 9, 26), f, "2022-9-26 is the 269th day of 2022.");
+        f = forDates("YYYY-MM-DD \"is the\" FMDDDth \"day of\" YYYY.");
+        check(LocalDate.of(2022, 9, 26), f, "2022-09-26 is the 269th day of 2022.");
 
-        f = forDates("FMY,YYY(Y,YYY) FMYYYY(YYYY) FMYYY(YYY) FMYY(YY) FMY(Y)");
-        check(Year.of(1), f, "0,001(1) 0001(1) 001(1) 01(1) 1(1)");
+        f = forDates("Y,YYY YYYY YYY YY Y -FM Y,YYY YYYY YYY YY Y");
+        check(Year.of(1), f, "0,001 0001 001 01 1 - 1 1 1 1 1");
 
         f = forDates("FF1 FF2 FF3(=MS) FF4 FF5 FF6(=US)");
         check(LocalTime.ofNanoOfDay(123456789), f, "1 12 123(=123) 1234 12345 123456(=123456)");
 
-        f = forDates("\"Quarter\" YYYY-\"Q\"Q \"is in the\" CCth \"century.\"");
+        f = forDates("\"Quarter\" FMYYYY-\"Q\"Q \"is in the\" CCth \"century.\"");
         check(YearMonth.of(2022, 9), f, "Quarter 2022-Q3 is in the 21st century.");
 
-        f = forDates("\"Plato founded the Academy in c.\" YYYY AD.");
+        f = forDates("\"Plato founded the Academy in c.\" FMYYYY AD.");
         check(Year.of(-386), f, "Plato founded the Academy in c. 387 BC.");
 
-        f = forDates("\"Plato Akademi'yi\" TMA.D. YYYY \"civarında kurdu.\"");
+        f = forDates("\"Plato Akademi'yi\" A.D. FMYYYY \"civarında kurdu.\"");
         check(Year.of(-386), f, "Plato Akademi'yi M.Ö. 387 civarında kurdu.", TR);
 
         f = forDates("AD(=BC) A.D.(=B.C.) ad(=bc) a.d.(=b.c.)");
         check(Year.of(0), f, "BC(=BC) B.C.(=B.C.) bc(=bc) b.c.(=b.c.)");
 
-        f = forDates("\"The Halley's closest approach to the Earth was on\" DD Month YYYY AD (the Jth \"Julian day\").");
+        f = forDates("\"The Halley's closest approach to the Earth was on\" FMDD Month YYYY AD (the Jth \"Julian day\").");
         check(LocalDate.of(837, 2, 28), f,
                 "The Halley's closest approach to the Earth was on 28 February 837 AD (the 2026827th Julian day).");
 
-        f = forDates("RM.RD.RY");
+        f = forDates("FMRM.RD.RY");
         check(LocalDate.of(2022, 9, 26), f, "IX.XXVI.MMXXII");
     }
 
     @Test
     public void testWeekDates() {
-        Formatter f = forDates("IYYY-\"W\"FMIW-ID");
+        Formatter f = forDates("IYYY-\"W\"IW-FMID");
         check(LocalDate.of(2022, 10, 25), f, "2022-W43-2");
         check(LocalDate.of(2019, 12, 30), f, "2020-W01-1");
 
-        f = forDates("YYYY-FMMM-FMDD \"is the\" IDDDth \"day of week-year\" IYYY.");
+        f = forDates("YYYY-MM-DD \"is the\" FMIDDDth \"day of week-year\" IYYY.");
         check(LocalDate.of(2008, 12, 29), f, "2008-12-29 is the 1st day of week-year 2009.");
         check(LocalDate.of(2010, 1, 3), f, "2010-01-03 is the 371st day of week-year 2009.");
 
-        f = forDates("FMIYYY(IYYY) FMIYY(IYY) FMIY(IY) FMI(I)");
-        check(LocalDate.of(1, 1, 1), f, "0001(1) 001(1) 01(1) 1(1)");
+        f = forDates("IYYY IYY IY I -FM IYYY IYY IY I");
+        check(LocalDate.of(1, 1, 1), f, "0001 001 01 1 - 1 1 1 1");
     }
 
     @Test
@@ -346,7 +349,7 @@ public class FormatterTest {
 
     @Test
     public void testLowercasePatterns() {
-        Formatter f = forDates("yyyy-fmmm-fmdd hh:fmmi am tztzh");
+        Formatter f = forDates("yyyy-mm-dd fmhh:mi am tztzh");
         check(LocalDateTime.of(2022, 9, 26, 14, 53).atOffset(ZoneOffset.ofHours(3)), f,
                 "2022-09-26 2:53 pm gmt+3");
 

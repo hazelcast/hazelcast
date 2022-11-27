@@ -124,12 +124,12 @@ import java.util.regex.Pattern;
  * <tr><td> {@code TZH}                 <td> time-zone hours (e.g. +3)
  * <tr><td> {@code TZM}                 <td> time-zone minutes (0-59)
  * <tr><td> {@code OF}                  <td> time-zone offset from UTC (e.g. +03:00)
+ * <tr><td> {@code FM}                  <td> toggle fill mode
+ * <tr><td> {@code TM}                  <td> toggle translate mode
  * </table>
  *
  * <table>
  * <tr><th> Modifier          <th> Description
- * <tr><td> {@code FM} prefix <td> enable fill mode (pad with zeros or spaces)
- * <tr><td> {@code TM} prefix <td> enable translate mode (localization)
  * <tr><td> {@code TH} suffix <td> uppercase ordinal number suffix (English only)
  * <tr><td> {@code th} suffix <td> lowercase ordinal number suffix (English only)
  * </table>
@@ -179,18 +179,15 @@ import java.util.regex.Pattern;
  * <br><h2> General Notes <ol>
  * <li> <b>Lowercase variants</b> of patterns are also accepted. If there is no special meaning of
  *      the lowercase variant, it has the same effect as its uppercase version.
- * <li> {@code FM} pattern toggles <b><em>the fill mode</em></b>. In date formats: <ol type="a">
- *      <li> {@code FM} pattern only applies to the next pattern and only enables the fill mode,
- *           which is disabled by default.
+ * <li> {@code FM} pattern toggles <b><em>the fill mode</em></b> until it is toggled again by
+ *      another {@code FM} pattern or the end of the format string is reached. The fill mode is
+ *      enabled by default. In date formats: <ol type="a">
  *      <li> In the fill mode, numeric fields are left-padded with zeros and textual fields are
  *           left-padded with spaces.
  *      <li> The extra space introduced by the fill mode is printed immediately, i.e. it is not
  *           possible to float the fields to one side.
  *      </ol>
  *      In numeric formats: <ol type="a">
- *      <li> {@code FM} pattern toggles the fill mode until it is toggled again by another {@code
- *           FM} pattern or the end of the format string is reached. The fill mode is enabled by
- *           default.
  *      <li> In the fill mode, all patterns with insignificant input print spaces. For example;
  *           {@code 9} pattern prints a single space if it corresponds to a leading/trailing zero,
  *           decimal/grouping separators print a single space if they are not in between digits,
@@ -210,6 +207,9 @@ import java.util.regex.Pattern;
  *           have zero-padded fractions, which are aligned at the decimal separator. However, this
  *           necessitates to have a {@code '0'} at the end of the fraction part if the Postgres
  *           convention is desired. </ol>
+ * <li> {@code TM} pattern toggles <b><em>the translate mode</em></b> until it is toggled again by
+ *      another {@code TM} pattern or the end of the format string is reached. The translate mode
+ *      is enabled by default and causes textual fields to be localized.
  * <li> Consecutive unrecognized characters are interpreted as a <b><em>literal</em></b>. It is
  *      also possible to specify a literal by enclosing zero or more characters within double
  *      quotes. If the format string ends before an opening quote is paired, a closing quote is
@@ -230,7 +230,7 @@ public abstract class Formatter {
     private static final String NUMERIC
             = "[,G.D]|FM|BR?|SG?|MI?|PL?|CR?|V9+|TH|EEEE|RN";
     private static final Pattern DATETIME_TEMPLATE = Pattern.compile(
-            "((?:FM|fm|TM|tm)*)(" + DATETIME + "|" + DATETIME.toLowerCase() + ")(TH|th)?|" + LITERAL);
+            "FM|fm|TM|tm|(" + DATETIME + "|" + DATETIME.toLowerCase() + ")(TH|th)?|" + LITERAL);
     private static final Pattern NUMERIC_TEMPLATE = Pattern.compile(
             "[90]+|" + NUMERIC + "|" + NUMERIC.toLowerCase() + "|[Ff]?" + LITERAL);
     private static final Pattern SIGN = Pattern.compile("[+-]");
@@ -321,7 +321,7 @@ public abstract class Formatter {
                 ? "th" : ORDINAL[number.charAt(number.length() - 1) - '0'];
     }
 
-    private static class DateFormat extends Formatter implements GroupProcessor {
+    private static class DateFormat extends Formatter {
         static final DateTimeFormatter MERIDIEM_FORMATTER = DateTimeFormatter.ofPattern("a");
         static final DateTimeFormatter TIMEZONE_FORMATTER = DateTimeFormatter.ofPattern("O");
         static final DateTimeFormatter ERA_FORMATTER = DateTimeFormatter.ofPattern("G");
@@ -396,7 +396,7 @@ public abstract class Formatter {
 
             @Override
             public String toString() {
-                return (fill ? "FM" : "") + (translate ? "TM" : "") + pattern + (ordinal == null ? "" : ordinal);
+                return pattern + (ordinal == null ? "" : ordinal.toString());
             }
         }
 
@@ -490,26 +490,34 @@ public abstract class Formatter {
 
         enum Ordinal { TH, th }
 
-        DateFormat(String format) {
-            parse(DATETIME_TEMPLATE, this, format);
-        }
+        class DateTimeGroupProcessor implements GroupProcessor {
+            boolean fillMode = true;
+            boolean translateMode = true;
 
-        @Override
-        public void acceptLiteral(String literal) {
-            parts.add(new Literal(literal));
-        }
-
-        @Override
-        public void acceptGroup(String group, Matcher m) {
-            if (group.startsWith("\"")) {
-                parts.add(new Literal(group));
-            } else {
-                String prefix = m.group(1).toUpperCase();
-                String suffix = m.group(3);
-                String pattern = m.group(2).replace('.', '_').replace(',', '_');
-                parts.add(new PatternInstance(prefix.contains("FM"), prefix.contains("TM"),
-                        valueOf(Pattern.class, pattern), suffix == null ? null : Ordinal.valueOf(suffix)));
+            @Override
+            public void acceptLiteral(String literal) {
+                parts.add(new Literal(literal));
             }
+
+            @Override
+            public void acceptGroup(String group, Matcher m) {
+                if (group.equalsIgnoreCase("FM")) {
+                    fillMode = !fillMode;
+                } else if (group.equalsIgnoreCase("TM")) {
+                    translateMode = !translateMode;
+                } else if (group.startsWith("\"")) {
+                    parts.add(new Literal(group));
+                } else {
+                    String pattern = m.group(1).replace('.', '_').replace(',', '_');
+                    String suffix = m.group(2);
+                    parts.add(new PatternInstance(fillMode, translateMode, valueOf(Pattern.class, pattern),
+                            suffix == null ? null : Ordinal.valueOf(suffix)));
+                }
+            }
+        }
+
+        DateFormat(String format) {
+            parse(DATETIME_TEMPLATE, new DateTimeGroupProcessor(), format);
         }
 
         @Override
