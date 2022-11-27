@@ -250,7 +250,7 @@ public class NearCacheTest extends NearCacheTestSupport {
         NearCacheStats stats = getNearCacheStats(map);
         long ownedEntryCount = stats.getOwnedEntryCount();
         long misses = stats.getMisses();
-        assertTrue(format("Near Cache entry count should be > %d but were %d", 400, ownedEntryCount), ownedEntryCount > 400);
+        assertTrue(format("Near Cache  entry count should be > %d but were %d", 400, ownedEntryCount), ownedEntryCount > 400);
         assertEquals(format("Near Cache misses should be %d but were %d", mapSize, misses), mapSize, misses);
 
         // make some hits
