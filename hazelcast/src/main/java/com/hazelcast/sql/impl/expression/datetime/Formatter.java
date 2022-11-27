@@ -46,26 +46,177 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * Implementation of <a href="https://www.postgresql.org/docs/14/functions-formatting.html">
- * PostgreSQL <code>to_char()</code></a> with the following differences.
- * <ol><li> {@code FM} and {@code TM} prefixes enable the fill and translation modes for date
- *          patterns respectively, which are disabled by default.
- *     <li> {@code RY}/{@code ry} and {@code RD}/{@code rd} patterns are introduced to format
- *          {@link ChronoField#YEAR_OF_ERA} and {@link ChronoField#DAY_OF_MONTH} respectively as
- *          roman numerals.
- *     <li> {@code V} pattern can be combined with a decimal point.
- *     <li> {@code M} and {@code P} patterns are introduced as the anchored versions of {@code MI}
- *          and {@code PL} patterns respectively.
- *     <li> {@code PR} pattern is replaced with {@code B} and {@code BR} patterns. The former is
- *          the anchored version of the latter.
- *     <li> {@code L} pattern is replaced with {@code C} and {@code CR} patterns. The former is the
- *          anchored version of the latter.
- *     <li> Literals are anchored by default. To fix its position, a literal should be prepended
- *          with an {@code F} pattern.
- *     <li> Zero-padding and space-padding are completely orthogonal, which makes it possible to
- *          have zero-padded fractions, which are aligned at the the decimal separator. However,
- *          this necessitates to have a {@code '0'} at the end of the pattern if the PostgreSQL
- *          convention is desired. </ol>
+ * <h2> Date/Time Formatting
+ * <table>
+ * <tr><th> Pattern                     <th> Description
+ * <tr><td> {@code HH}, {@code HH12}    <td> hour of day (1–12)
+ * <tr><td> {@code HH24}                <td> hour of day (0–23)
+ * <tr><td> {@code MI}                  <td> minute of hour (0–59)
+ * <tr><td> {@code SS}                  <td> second of minute (0–59)
+ * <tr><td> {@code MS}, {@code FF3}     <td> millisecond (0–999)
+ * <tr><td> {@code US}, {@code FF6}     <td> microsecond (0–999999)
+ * <tr><td> {@code FF1}                 <td> tenth of second (0–9)
+ * <tr><td> {@code FF2}                 <td> hundredth of second (0–99)
+ * <tr><td> {@code FF4}                 <td> tenth of a millisecond (0–9999)
+ * <tr><td> {@code FF5}                 <td> hundredth of a millisecond (0–99999)
+ * <tr><td> {@code SSSS}, {@code SSSSS} <td> seconds past midnight (0–86399)
+ * <tr><td> {@code AM}, {@code am}, {@code PM}, {@code pm}
+ *                                      <td> meridiem indicator (without periods)
+ * <tr><td> {@code A.M.}, {@code a.m.}, {@code P.M.}, {@code p.m.}
+ *                                      <td> meridiem indicator (with periods)
+ * <tr><td> {@code Y,YYY}               <td> year of era (4 or more digits) with comma
+ * <tr><td> {@code YYYY}                <td> year of era (4 or more digits)
+ * <tr><td> {@code YYY}                 <td> last 3 digits of year of era
+ * <tr><td> {@code YY}                  <td> last 2 digits of year of era
+ * <tr><td> {@code Y}                   <td> last digit of year of era
+ * <tr><td> {@code IYYY}                <td> ISO 8601 week-numbering year (4 or more digits)
+ * <tr><td> {@code IYY}                 <td> last 3 digits of ISO 8601 week-numbering year
+ * <tr><td> {@code IY}                  <td> last 2 digits of ISO 8601 week-numbering year
+ * <tr><td> {@code I}                   <td> last digit of ISO 8601 week-numbering year
+ * <tr><td> {@code BC}, {@code bc}, {@code AD}, {@code ad}
+ *                                      <td> era indicator (without periods)
+ * <tr><td> {@code B.C.}, {@code b.c.}, {@code A.D.}, {@code a.d.}
+ *                                      <td> era indicator (with periods)
+ * <tr><td> {@code MONTH}               <td> full uppercase month name (space-padded to 9 chars)
+ * <tr><td> {@code Month}               <td> full capitalized month name (space-padded to 9 chars)
+ * <tr><td> {@code month}               <td> full lowercase month name (space-padded to 9 chars)
+ * <tr><td> {@code MON}                 <td> abbreviated uppercase month name (3 chars in English,
+ *                                           localized lengths vary)
+ * <tr><td> {@code Mon}                 <td> abbreviated capitalized month name (3 chars in
+ *                                           English, localized lengths vary)
+ * <tr><td> {@code mon}                 <td> abbreviated lowercase month name (3 chars in English,
+ *                                           localized lengths vary)
+ * <tr><td> {@code MM}                  <td> month number (1–12)
+ * <tr><td> {@code DAY}                 <td> full uppercase day name (space-padded to 9 chars)
+ * <tr><td> {@code Day}                 <td> full capitalized day name (space-padded to 9 chars)
+ * <tr><td> {@code day}                 <td> full lowercase day name (space-padded to 9 chars)
+ * <tr><td> {@code DY}                  <td> abbreviated uppercase day name (3 chars in English,
+ *                                           localized lengths vary)
+ * <tr><td> {@code Dy}                  <td> abbreviated capitalized day name (3 chars in English,
+ *                                           localized lengths vary)
+ * <tr><td> {@code dy}                  <td> abbreviated lowercase day name (3 chars in English,
+ *                                           localized lengths vary)
+ * <tr><td> {@code DDD}                 <td> day of year (1–366)
+ * <tr><td> {@code IDDD}                <td> day of ISO 8601 week-numbering year (1–371; day 1 of
+ *                                           the year is Monday of the first ISO week)
+ * <tr><td> {@code DD}                  <td> day of month (1–31)
+ * <tr><td> {@code D}                   <td> day of the week, Monday (1) to Sunday (7)
+ * <tr><td> {@code ID}                  <td> ISO 8601 day of the week, Monday (1) to Sunday (7)
+ * <tr><td> {@code W}                   <td> week of month (1–5) (the first week starts on the
+ *                                           first day of the month)
+ * <tr><td> {@code WW}                  <td> week number of year (1–53) (the first week starts on
+ *                                           the first day of the year)
+ * <tr><td> {@code IW}                  <td> week number of ISO 8601 week-numbering year (1–53; the
+ *                                           first Thursday of the year is in week 1)
+ * <tr><td> {@code CC}                  <td> century of era (2 digits) (the twenty-first century
+ *                                           starts on 2001-01-01)
+ * <tr><td> {@code J}                   <td> Julian Date (integer days since November 24, 4714 BC
+ *                                           at local midnight)
+ * <tr><td> {@code Q}                   <td> quarter of year (1-4)
+ * <tr><td> {@code RY}                  <td> year of era in uppercase Roman numerals
+ * <tr><td> {@code ry}                  <td> year of era in lowercase Roman numerals
+ * <tr><td> {@code RM}                  <td> month number in uppercase Roman numerals (I–XII)
+ * <tr><td> {@code rm}                  <td> month number in lowercase Roman numerals (i–xii)
+ * <tr><td> {@code RD}                  <td> day of month in uppercase Roman numerals (I–XXXI)
+ * <tr><td> {@code rd}                  <td> day of month in lowercase Roman numerals (i–xxxi)
+ * <tr><td> {@code TZ}                  <td> uppercase time-zone abbreviation (e.g. GMT, UTC)
+ * <tr><td> {@code tz}                  <td> lowercase time-zone abbreviation (e.g. gmt, utc)
+ * <tr><td> {@code TZH}                 <td> time-zone hours (e.g. +3)
+ * <tr><td> {@code TZM}                 <td> time-zone minutes (0-59)
+ * <tr><td> {@code OF}                  <td> time-zone offset from UTC (e.g. +03:00)
+ * </table>
+ *
+ * <table>
+ * <tr><th> Modifier          <th> Description
+ * <tr><td> {@code FM} prefix <td> enable fill mode (pad with zeros or spaces)
+ * <tr><td> {@code TM} prefix <td> enable translate mode (localization)
+ * <tr><td> {@code TH} suffix <td> uppercase ordinal number suffix (English only)
+ * <tr><td> {@code th} suffix <td> lowercase ordinal number suffix (English only)
+ * </table>
+ *
+ * <br><h2> Numeric Formatting
+ * <table>
+ * <tr><th> Pattern            <th> Description
+ * <tr><td> {@code 9}          <td> digit position (can be dropped if insignificant)
+ * <tr><td> {@code 0}          <td> digit position (will not be dropped, even if insignificant)
+ * <tr><td> {@code .} (period) <td> decimal separator
+ * <tr><td> {@code D}          <td> localized decimal separator
+ * <tr><td> {@code ,} (comma)  <td> grouping separator
+ * <tr><td> {@code G}          <td> localized grouping separator
+ * <tr><td> {@code V}          <td> shift specified number of digits (e.g. V99 = x10<sup>2</sup>)
+ * <tr><td> {@code TH}         <td> uppercase ordinal suffix for the integer part (English only)
+ * <tr><td> {@code th}         <td> lowercase ordinal suffix for the integer part (English only)
+ * <tr><td> {@code EEEE}       <td> exponent for scientific notation (e.g. E+03, x10^+03)
+ * <tr><td> {@code eeee}       <td> lowercase exponent for scientific notation (e.g. e+03, x10^+03)
+ * <tr><td> {@code RN}         <td> uppercase Roman numeral for the integer part
+ * <tr><td> {@code rn}         <td> lowercase Roman numeral for the integer part
+ * <tr><td> {@code FM}         <td> toggle fill mode
+ * </table>
+ *
+ * <table>
+ * <tr><th> Fixed      <th> Anchored  <th> Description
+ * <tr><td> {@code BR} <td> {@code B} <td> negative value in angle brackets
+ * <tr><td> {@code SG} <td> {@code S} <td> sign
+ * <tr><td> {@code MI} <td> {@code M} <td> minus sign if number is negative
+ * <tr><td> {@code PL} <td> {@code P} <td> plus sign if number is non-negative
+ * <tr><td> {@code CR} <td> {@code C} <td> currency symbol or ISO 4217 currency code
+ * </table>
+ *
+ * <br><b> Overflow </b><ul>
+ * <li> If the format string contains {@code EEEE} or {@code eeee} patterns, it is said to be in
+ *      <em>the exponential form</em>, in which no overflow is possible unless the number is
+ *      infinite. If it contains {@code RN} or {@code rn} patterns and no digit positions, it is in
+ *      <em>the Roman form</em>, in which there is an overflow unless number ∈ [1, 4000).
+ *      Otherwise, the format string is in <em>the normal form</em>, in which the number overflows
+ *      only if it requires more digit positions than specified for the integer part. In this form,
+ *      {@code RN} and {@code rn} patterns format the integer part if |number| < 4000; otherwise,
+ *      they switch to the overflow mode.
+ * <li> In an overflow; digit positions print a single hash (#), {@code EEEE} and {@code eeee}
+ *      patterns print +## as the exponent, {@code RN} and {@code rn} patterns print 15 hashes, and
+ *      {@code TH} and {@code th} patterns print 2 spaces. The other patterns print what they print
+ *      when there is no overflow. Note that NaN (non-a-number) is considered positive. </ul>
+ *
+ * <br><h2> General Notes <ol>
+ * <li> <b>Lowercase variants</b> of patterns are also accepted. If there is no special meaning of
+ *      the lowercase variant, it has the same effect as its uppercase version.
+ * <li> {@code FM} pattern toggles <b><em>the fill mode</em></b>. In date formats: <ol type="a">
+ *      <li> {@code FM} pattern only applies to the next pattern and only enables the fill mode,
+ *           which is disabled by default.
+ *      <li> In the fill mode, numeric fields are left-padded with zeros and textual fields are
+ *           left-padded with spaces.
+ *      <li> The extra space introduced by the fill mode is printed immediately, i.e. it is not
+ *           possible to float the fields to one side.
+ *      </ol>
+ *      In numeric formats: <ol type="a">
+ *      <li> {@code FM} pattern toggles the fill mode until it is toggled again by another {@code
+ *           FM} pattern or the end of the format string is reached. The fill mode is enabled by
+ *           default.
+ *      <li> In the fill mode, all patterns with insignificant input print spaces. For example;
+ *           {@code 9} pattern prints a single space if it corresponds to a leading/trailing zero,
+ *           decimal/grouping separators print a single space if they are not in between digits,
+ *           {@code TH} pattern prints 2 spaces if the integer part is 0, {@code EEEE} pattern
+ *           prints 4 spaces if the exponent is 0, {@code RN} pattern pads the Roman numeral to
+ *           meet 15 characters, {@code BR} pattern prints 2 spaces if the number is non-negative,
+ *           and {@code MI}/{@code PL} patterns print a single space if the number is
+ *           non-negative/negative respectively.
+ *      <li> The extra space introduced by the fill mode is not printed until a <b><em>fixed</em>
+ *           </b> pattern or the end of the format string is encountered. The order of processing
+ *           is right-to-left in the integer part and left-to-right in the fraction part. As a
+ *           result, unfixed, or <b><em>anchored</em></b>, patterns floats right within the extra
+ *           space in the integer and floats left in the fraction. Digit positions and
+ *           decimal/grouping separators cannot float for obvious reasons, but they are considered
+ *           "transparent" while anchoring other patterns.
+ *      <li> Zero-padding and space-padding are completely orthogonal, which makes it possible to
+ *           have zero-padded fractions, which are aligned at the decimal separator. However, this
+ *           necessitates to have a {@code '0'} at the end of the fraction part if the Postgres
+ *           convention is desired. </ol>
+ * <li> Consecutive unrecognized characters are interpreted as a <b><em>literal</em></b>. It is
+ *      also possible to specify a literal by enclosing zero or more characters within double
+ *      quotes. If the format string ends before an opening quote is paired, a closing quote is
+ *      assumed just after the last character. If a double quote is to be printed, it must be
+ *      escaped with a leading backslash. In general, escaping a character causes it to lose its
+ *      special meaning if any. In numeric formats, literals are anchored by default. To fix its
+ *      position, a literal should be prepended with an {@code F} pattern, e.g. F$, F"USD". </ol>
  */
 @SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ExecutableStatementCount", "checkstyle:MagicNumber",
         "checkstyle:MethodLength", "checkstyle:NestedIfDepth", "checkstyle:NPathComplexity"})
@@ -379,22 +530,22 @@ public abstract class Formatter {
 
     /**
      * This implementation does not leverage {@link DecimalFormat} or {@link java.util.Formatter}
-     * because of the following reasons.
-     * <ol><li> {@link DecimalFormat} does not fill the pattern space with #'s when the integer
-     *          part overflows. Instead, it truncates the integer part, which cannot be checked
-     *          without obtaining its decimal representation.
-     *     <li> {@link DecimalFormat} does not support multiple grouping sizes and separators.
-     *     <li> {@link DecimalFormat} rounds the fractional part using its binary representation,
-     *          which produces wrong results even for simple cases such as (0.15 → #.# → 0.1) in
-     *          {@link RoundingMode#HALF_UP}.
-     *     <li> {@link java.util.Formatter} does not cache or expose the intermediate
-     *          representation of the format string.
-     *     <li> {@link java.util.Formatter} can correctly handle rounding by leveraging
-     *          {@link sun.misc.FormattedFloatingDecimal} for {@link Float} and {@link Double}, and
-     *          by using {@link BigDecimal#BigDecimal(BigInteger, int, MathContext)
-     *          BigDecimal(BigInteger, scale, precision)}. Both {@link sun.misc.FormattedFloatingDecimal}
-     *          and {@link BigDecimal} are using the decimal representation of floating point
-     *          numbers, but for the former, the rounding mode is not configurable. </ol>
+     * because of the following reasons. <ol>
+     * <li> {@link DecimalFormat} does not fill the pattern space with #'s when the integer part
+     *      overflows. Instead, it truncates the integer part, which cannot be checked without
+     *      obtaining its decimal representation.
+     * <li> {@link DecimalFormat} does not support multiple grouping sizes and separators.
+     * <li> {@link DecimalFormat} rounds the fractional part using its binary representation, which
+     *      produces wrong results even for simple cases such as (0.15 → #.# → 0.1) in {@link
+     *      RoundingMode#HALF_UP}.
+     * <li> {@link java.util.Formatter} does not cache or expose the intermediate representation of
+     *      the format string.
+     * <li> {@link java.util.Formatter} can correctly handle rounding by leveraging {@link
+     *      sun.misc.FormattedFloatingDecimal} for {@link Float} and {@link Double}, and by using
+     *      {@link BigDecimal#BigDecimal(BigInteger, int, MathContext) BigDecimal(BigInteger,
+     *      scale, precision)}. Both {@link sun.misc.FormattedFloatingDecimal} and {@link
+     *      BigDecimal} are using the decimal representation of floating point numbers, but for the
+     *      former, the rounding mode is not configurable. </ol>
      */
     private static class NumberFormat extends Formatter {
         private final Form form;
@@ -459,8 +610,8 @@ public abstract class Formatter {
 
         /**
          * Stores {@link Literal}, {@link Pattern}, {@link Character} and {@link Integer} to
-         * represent arbitrary text, sign/currency/ordinals/exponent/roman numerals, grouping/
-         * decimal separators, and digit groups respectively.
+         * represent arbitrary text, sign/currency/ordinals/exponent/roman numerals,
+         * decimal/grouping separators, and digit groups respectively.
          */
         class Mask {
             final boolean pre;
