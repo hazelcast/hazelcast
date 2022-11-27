@@ -353,14 +353,8 @@ public class QueryDataType implements IdentifiedDataSerializable, Serializable {
         }
 
         QueryDataType type = (QueryDataType) o;
-
-        if (converter.getTypeFamily().equals(QueryDataTypeFamily.OBJECT)) {
-            return converter.getId() == type.converter.getId();
-        } else if (converter.getTypeFamily().equals(QueryDataTypeFamily.ROW)) {
-            return converter.getId() == type.converter.getId();
-        } else {
-            return converter.getId() == type.converter.getId();
-        }
+        
+        return converter.getId() == type.converter.getId();
     }
 
     @Override
