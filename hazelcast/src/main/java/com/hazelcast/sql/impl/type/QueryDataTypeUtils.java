@@ -194,6 +194,21 @@ public final class QueryDataTypeUtils {
         QueryDataTypeFamily typeFamily = converter.getTypeFamily();
 
         switch (typeFamily) {
+            case BOOLEAN:
+            case TINYINT:
+            case SMALLINT:
+            case BIGINT:
+            case REAL:
+            case DOUBLE:
+            case DATE:
+            case TIME:
+            case TIMESTAMP:
+            case NULL:
+            case JSON:
+            case ROW:
+            case OBJECT:
+                return typeFamily;
+                
             case VARCHAR:
                 if (converter == StringConverter.INSTANCE) {
                     return VARCHAR;
@@ -202,21 +217,9 @@ public final class QueryDataTypeUtils {
 
                     return VARCHAR_CHARACTER;
                 }
-
-            case BOOLEAN:
-                return BOOLEAN;
-
-            case TINYINT:
-                return TINYINT;
-
-            case SMALLINT:
-                return SMALLINT;
-
+                
             case INTEGER:
                 return INT;
-
-            case BIGINT:
-                return BIGINT;
 
             case DECIMAL:
                 if (converter == BigDecimalConverter.INSTANCE) {
@@ -226,21 +229,6 @@ public final class QueryDataTypeUtils {
 
                     return DECIMAL_BIG_INTEGER;
                 }
-
-            case REAL:
-                return REAL;
-
-            case DOUBLE:
-                return DOUBLE;
-
-            case DATE:
-                return DATE;
-
-            case TIME:
-                return TIME;
-
-            case TIMESTAMP:
-                return TIMESTAMP;
 
             case TIMESTAMP_WITH_TIME_ZONE:
                 if (converter == DateConverter.INSTANCE) {
@@ -257,17 +245,9 @@ public final class QueryDataTypeUtils {
                     return TIMESTAMP_WITH_TZ_ZONED_DATE_TIME;
                 }
 
-            case OBJECT:
             case MAP:
                 return OBJECT;
 
-            case NULL:
-                return NULL;
-
-            case JSON:
-                return JSON;
-            case ROW:
-                return ROW;
             default:
                 throw new IllegalArgumentException("Unexpected class: " + clazz);
         }
@@ -277,55 +257,27 @@ public final class QueryDataTypeUtils {
     public static QueryDataType resolveTypeForTypeFamily(QueryDataTypeFamily typeFamily) {
         switch (typeFamily) {
             case VARCHAR:
-                return VARCHAR;
-
             case BOOLEAN:
-                return BOOLEAN;
-
             case TINYINT:
-                return TINYINT;
-
             case SMALLINT:
-                return SMALLINT;
+            case BIGINT:
+            case DECIMAL:
+            case REAL:
+            case DOUBLE:
+            case DATE:
+            case TIME:
+            case TIMESTAMP:
+            case OBJECT:
+            case NULL:
+            case JSON:
+            case ROW:
+                return typeFamily;                
 
             case INTEGER:
                 return INT;
-
-            case BIGINT:
-                return BIGINT;
-
-            case DECIMAL:
-                return DECIMAL;
-
-            case REAL:
-                return REAL;
-
-            case DOUBLE:
-                return DOUBLE;
-
-            case DATE:
-                return DATE;
-
-            case TIME:
-                return TIME;
-
-            case TIMESTAMP:
-                return TIMESTAMP;
-
+                
             case TIMESTAMP_WITH_TIME_ZONE:
                 return TIMESTAMP_WITH_TZ_OFFSET_DATE_TIME;
-
-            case OBJECT:
-                return OBJECT;
-
-            case NULL:
-                return NULL;
-
-            case JSON:
-                return JSON;
-
-            case ROW:
-                return ROW;
 
             default:
                 throw new IllegalArgumentException("Unexpected type family: " + typeFamily);
