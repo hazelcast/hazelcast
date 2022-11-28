@@ -433,7 +433,7 @@ public class SqlClientService implements SqlService {
     }
 
     private Integer extractPartitionId(SqlStatement statement, int argIndex) {
-        if (statement.getParameters().size() == 1) {
+        if (statement.getParameters().size() == 0) {
             return null;
         }
 
