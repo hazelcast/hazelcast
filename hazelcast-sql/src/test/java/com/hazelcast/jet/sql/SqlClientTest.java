@@ -43,7 +43,6 @@ import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 public class SqlClientTest extends SqlTestSupport {
@@ -78,27 +77,11 @@ public class SqlClientTest extends SqlTestSupport {
 
     @Test
     public void test_partitionBasedRouting() {
-        final String selectQuery = "SELECT * FROM test WHERE __key = ?";
-        final String updateQuery = "UPDATE test SET this = ? WHERE __key = ?";
-        final String deleteQuery = "DELETE FROM test WHERE __key = ?";
+        createMapping("test", Integer.class, String.class);
 
-        final SqlService sqlService = client().getSql();
-        final SqlClientService sqlClientService = (SqlClientService) sqlService;
-
-        assertNull(sqlClientService.partitionArgumentIndexCache.get(updateQuery));
-        sqlService.execute(updateQuery, "testVal", 1);
-        assertNotNull(sqlClientService.partitionArgumentIndexCache.get(updateQuery));
-        assertEquals(1, (int) sqlClientService.partitionArgumentIndexCache.get(updateQuery));
-
-        assertNull(sqlClientService.partitionArgumentIndexCache.get(selectQuery));
-        sqlService.execute(selectQuery, 1);
-        assertNotNull(sqlClientService.partitionArgumentIndexCache.get(selectQuery));
-        assertEquals(0, (int) sqlClientService.partitionArgumentIndexCache.get(selectQuery));
-
-        assertNull(sqlClientService.partitionArgumentIndexCache.get(deleteQuery));
-        sqlService.execute(deleteQuery, 1);
-        assertNotNull(sqlClientService.partitionArgumentIndexCache.get(deleteQuery));
-        assertEquals(0, (int) sqlClientService.partitionArgumentIndexCache.get(deleteQuery));
+        checkPartitionArgumentIndex("SELECT * FROM test WHERE __key = ?", 0, 1);
+        checkPartitionArgumentIndex("UPDATE test SET this = ? WHERE __key = ?", 1, "testVal", 1);
+        checkPartitionArgumentIndex("DELETE FROM test WHERE __key = ?", 0, 1);
     }
 
     private void checkPartitionArgumentIndex(String sql, Integer expectedIndex, Object... arguments) {
