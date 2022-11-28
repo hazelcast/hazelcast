@@ -48,12 +48,12 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ClientCompatibilityTest_2_5 {
+public class ClientCompatibilityTest_2_6 {
     private final List<ClientMessage> clientMessages = new ArrayList<>();
 
     @Before
     public void setUp() throws IOException {
-        File file = new File(getClass().getResource("/2.5.protocol.compatibility.binary").getFile());
+        File file = new File(getClass().getResource("/2.6.protocol.compatibility.binary").getFile());
         InputStream inputStream = new FileInputStream(file);
         byte[] data = new byte[(int) file.length()];
         inputStream.read(data);
@@ -6729,7 +6729,8 @@ public class ClientCompatibilityTest_2_5 {
         assertTrue(isEqual(anSqlError, parameters.error));
         assertTrue(parameters.isIsInfiniteRowsExists);
         assertTrue(isEqual(aBoolean, parameters.isInfiniteRows));
-        assertFalse(parameters.isPartitionArgumentIndexExists);
+        assertTrue(parameters.isPartitionArgumentIndexExists);
+        assertTrue(isEqual(anInt, parameters.partitionArgumentIndex));
     }
 
     @Test
