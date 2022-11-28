@@ -154,7 +154,6 @@
                             <finalName>${project.build.finalName}</finalName>
                             <createSourcesJar>true</createSourcesJar>
                             <shadeSourcesContent>true</shadeSourcesContent>
-                            <shadeTestJar>true</shadeTestJar>
                             <artifactSet>
                                 <excludes>
                                     <exclude>com.fasterxml.jackson.core:jackson-annotations</exclude>
