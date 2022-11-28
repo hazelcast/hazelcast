@@ -485,7 +485,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             Long oldLimit = wmState.get(entry.getKey());
             if (newLimit > oldLimit) {
                 wmState.put(entry.getKey(), newLimit);
-                System.err.println("New WM state: " + entry.getKey() + " -> " + newLimit);
                 modified = true;
             }
         }
