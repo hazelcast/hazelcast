@@ -132,9 +132,13 @@ public interface OperationService {
 
     <E> InvocationFuture<E> invokeOnTarget(String serviceName, Operation op, Address target);
 
+    <E> InvocationFuture<E> invokeOnMaster(String serviceName, Operation op);
+
     InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId);
 
     InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target);
+
+    InvocationBuilder createMasterInvocationBuilder(String serviceName, Operation op);
 
     /**
      * Invokes a set of operations on each partition.
