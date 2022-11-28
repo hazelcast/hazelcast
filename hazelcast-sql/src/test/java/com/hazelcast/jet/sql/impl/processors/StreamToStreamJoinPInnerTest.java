@@ -111,7 +111,6 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
 
         TestSupport.verifyProcessor(supplier)
                 .outputChecker(SAME_ITEMS_ANY_ORDER)
-                .disableSnapshots()
                 .expectExactOutput(
                         in(0, jetRow(12L, 9L)),
                         in(1, jetRow(9L)),
@@ -169,7 +168,6 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         SupplierEx<Processor> supplier = createProcessor(2, 2);
 
         TestSupport.verifyProcessor(supplier)
-                .disableSnapshots()
                 .outputChecker(SAME_ITEMS_ANY_ORDER)
                 .expectExactOutput(
                         in(0, jetRow(12L, 10L)),
