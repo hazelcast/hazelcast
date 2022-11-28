@@ -234,7 +234,6 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         assertThatThrownBy(() -> mapStore.load(0))
                 .isInstanceOf(HazelcastException.class)
                 .hasStackTraceContaining("Column 'age' not found");
-        mapStore = null;
     }
 
     @Test
@@ -250,7 +249,6 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         secondProps.setProperty(COLUMNS_PROPERTY, "id,name,age");
         mapStore = createMapStore(secondProps, hz, false);
         mapStore.init(hz, secondProps, mapName);
-        mapStore.awaitInitFinished();
 
         assertThatThrownBy(() -> mapStore.load(0))
                 .isInstanceOf(HazelcastException.class)
