@@ -63,12 +63,11 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
         }
 
         Sink<Document> sink = MongoDBSinks
-                .<Document>builder(SINK_NAME, () -> mongoClient( "non-existing-server", 0))
+                .<Document>builder(SINK_NAME, () -> mongoClient("non-existing-server", 0))
                 .databaseFn(client -> client.getDatabase(DB_NAME))
                 .collectionFn(db -> db.getCollection(COL_NAME))
                 .destroyFn(MongoClient::close)
                 .build();
-
 
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.list(list))
