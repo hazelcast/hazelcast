@@ -25,6 +25,8 @@ import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
 import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
+import com.hazelcast.sql.SqlResult;
+import com.hazelcast.sql.SqlRow;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
@@ -41,6 +43,7 @@ import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -61,8 +64,8 @@ import static org.assertj.core.util.Lists.newArrayList;
  * This test runs the MapStore methods directly, but it runs within real Hazelcast instance
  */
 @RunWith(HazelcastSerialClassRunner.class)
-@Category({ QuickTest.class, SerialTest.class })
-    public class GenericMapStoreTest extends JdbcSqlTestSupport {
+@Category({QuickTest.class, SerialTest.class})
+public class GenericMapStoreTest extends JdbcSqlTestSupport {
 
     public String mapName;
 
@@ -86,6 +89,14 @@ import static org.assertj.core.util.Lists.newArrayList;
             mapStore.destroy();
             mapStore = null;
         }
+
+        try (SqlResult result = sqlService.execute("SHOW MAPPINGS")) {
+            for (SqlRow next : result) {
+                Object name = next.getObject(0);
+                logger.warning("Mapping " + name + " exists after test, dropping");
+                sqlService.execute("DROP MAPPING IF EXISTS " + name).close();
+            }
+        }
     }
 
     @Test
@@ -93,7 +104,7 @@ import static org.assertj.core.util.Lists.newArrayList;
         createTable(mapName);
 
         mapStore = createMapStore();
-        awaitMappingCreated();
+        assertMappingCreated();
     }
 
     @Test
@@ -122,23 +133,23 @@ import static org.assertj.core.util.Lists.newArrayList;
         createTable(mapName);
 
         mapStore = createMapStore();
-        awaitMappingCreated();
+        assertMappingCreated();
 
         mapStore.destroy();
-        awaitMappingDestroyed();
+        assertMappingDestroyed();
     }
 
     @Test
-        public void whenMapStoreDestroyOnNonMaster_thenDropMapping() throws Exception {
+    public void whenMapStoreDestroyOnNonMaster_thenDropMapping() throws Exception {
         createTable(mapName);
 
         mapStore = createMapStore();
-        awaitMappingCreated();
+        assertMappingCreated();
 
         GenericMapStore<Object> mapStoreNotMaster = createMapStore(instances()[1]);
         mapStoreNotMaster.awaitInitFinished();
         mapStoreNotMaster.destroy();
-        awaitMappingDestroyed();
+        assertMappingDestroyed();
     }
 
     @Test
@@ -232,7 +243,7 @@ import static org.assertj.core.util.Lists.newArrayList;
         createTable(mapName, "id INT PRIMARY KEY", "name VARCHAR(100)", "age INT");
         executeJdbc("INSERT INTO " + mapName + " VALUES(0, 'name-0', 42)");
         createMapping(mapName, MAPPING_PREFIX + mapName);
-        awaitMappingCreated();
+        assertMappingCreated();
         // This simulates a second map store on a different instance. The mapping is created, but must be validated
         // (e.g. the config might differ on members)
         Properties secondProps = new Properties();
@@ -245,7 +256,6 @@ import static org.assertj.core.util.Lists.newArrayList;
         assertThatThrownBy(() -> mapStore.load(0))
                 .isInstanceOf(HazelcastException.class)
                 .hasStackTraceContaining("Column 'age' not found");
-        mapStore.destroy();
     }
 
     @Test
@@ -647,6 +657,10 @@ import static org.assertj.core.util.Lists.newArrayList;
         return createMapStore(properties, instance);
     }
 
+    private <K> GenericMapStore<K> createMapStore(Properties properties, HazelcastInstance instance) {
+        return createMapStore(properties, instance, true);
+    }
+
     private <K> GenericMapStore<K> createMapStore(Properties properties, HazelcastInstance instance, boolean init) {
         MapConfig mapConfig = createMapConfigWithMapStore(mapName);
         instance.getConfig().addMapConfig(mapConfig);
@@ -659,10 +673,6 @@ import static org.assertj.core.util.Lists.newArrayList;
         return mapStore;
     }
 
-    private <K> GenericMapStore<K> createMapStore(Properties properties, HazelcastInstance instance) {
-        return createMapStore(properties, instance, true);
-    }
-
     private static MapConfig createMapConfigWithMapStore(String mapName) {
         MapStoreConfig mapStoreConfig = new MapStoreConfig();
         mapStoreConfig.setClassName(GenericMapStore.class.getName());
@@ -671,15 +681,13 @@ import static org.assertj.core.util.Lists.newArrayList;
         return mapConfig;
     }
 
-    private void awaitMappingCreated() {
+    private void assertMappingCreated() {
         assertTrueEventually(() -> {
             assertRowsAnyOrder(hz, "SHOW MAPPINGS", newArrayList(new Row(MAPPING_PREFIX + mapName)));
         }, 60);
     }
 
-    private void awaitMappingDestroyed() {
-        assertTrueEventually(() -> {
-            assertRowsAnyOrder(hz, "SHOW MAPPINGS", newArrayList());
-        }, 60);
+    private void assertMappingDestroyed() {
+        assertTrueEventually(() -> assertRowsAnyOrder(hz, "SHOW MAPPINGS", newArrayList()), 60);
     }
 }
