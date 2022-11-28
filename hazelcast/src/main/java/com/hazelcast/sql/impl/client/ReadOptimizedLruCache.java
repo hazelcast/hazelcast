@@ -65,6 +65,11 @@ public class ReadOptimizedLruCache<K, V> {
         cache = new ConcurrentHashMap<>(cleanupThreshold);
     }
 
+    public V getOrDefault(K key, V defaultValue) {
+        final V existingValue = get(key);
+        return existingValue != null ? existingValue : defaultValue;
+    }
+
     public V get(K key) {
         ValueAndTimestamp<V> valueFromCache = cache.get(key);
         if (valueFromCache == null) {
@@ -75,6 +80,10 @@ public class ReadOptimizedLruCache<K, V> {
     }
 
     public void put(K key, V value) {
+        if (value == null) {
+            throw new IllegalArgumentException("Null values are disallowed");
+        }
+
         ValueAndTimestamp<V> oldValue = cache.put(key, new ValueAndTimestamp<>(value));
         if (oldValue == null && cache.size() > cleanupThreshold) {
             doCleanup();

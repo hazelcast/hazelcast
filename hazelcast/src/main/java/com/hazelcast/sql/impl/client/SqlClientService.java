@@ -99,7 +99,8 @@ public class SqlClientService implements SqlService {
     @Nonnull
     @Override
     public SqlResult execute(@Nonnull SqlStatement statement) {
-        final Integer partitionId = extractPartitionId(statement);
+        final Integer argIndex = partitionArgumentIndexCache.getOrDefault(statement.getSql(), -1);
+        final Integer partitionId = extractPartitionId(statement, argIndex);
         final ClientConnection connection = partitionId != null
                 ? getQueryConnection(partitionId)
                 : getQueryConnection();
@@ -135,7 +136,7 @@ public class SqlClientService implements SqlService {
 
         try {
             ClientMessage message = invoke(requestMessage, connection);
-            handleExecuteResponse(statement.getSql(), partitionId, res, message);
+            handleExecuteResponse(statement.getSql(), argIndex, res, message);
             return res;
         } catch (Exception e) {
             RuntimeException error = rethrow(e, connection);
@@ -431,17 +432,10 @@ public class SqlClientService implements SqlService {
         return fut.get();
     }
 
-    private Integer extractPartitionId(SqlStatement statement) {
+    private Integer extractPartitionId(SqlStatement statement, int argIndex) {
         if (statement.getParameters().size() == 1) {
             return null;
         }
-
-        final Integer argIndex = partitionArgumentIndexCache.get(statement.getSql());
-        if (argIndex == null) {
-            return null;
-        }
-
-        assert argIndex != -1 : "no-partition responses shouldn't be stored in queryPartitionCache";
 
         if (argIndex > statement.getParameters().size() || argIndex < 0) {
             return null;
