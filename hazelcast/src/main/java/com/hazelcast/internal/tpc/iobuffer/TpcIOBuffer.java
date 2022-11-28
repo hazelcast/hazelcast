@@ -23,13 +23,23 @@ class TpcIOBuffer implements IOBuffer {
      */
     private int pos;
 
-    private int totalCapacity;
+    private int limit;
 
     TpcIOBuffer(TpcIOBufferAllocator allocator, int minSize) {
         this.allocator = allocator;
         this.chunks = new ByteBuffer[((minSize - 1)/ BUFFER_SIZE) + 1];
         for (int i = 0; i < chunks.length; i++) {
-            addChunk(allocator.getNextBuffer());
+            addChunk(allocator.getNextByteBuffer());
+        }
+    }
+
+    void reset(int minSize) {
+        this.chunksPos = 0;
+        this.pos = 0;
+        this.limit = 0;
+
+        for (int i = 0; i < ((minSize - 1)/ BUFFER_SIZE) + 1; i++) {
+            addChunk(allocator.getNextByteBuffer());
         }
     }
 
@@ -53,7 +63,7 @@ class TpcIOBuffer implements IOBuffer {
 
     @Override
     public void flip() {
-        throw new NotImplementedYetException();
+        throw new IllegalStateException();
     }
 
     @Override
@@ -102,13 +112,14 @@ class TpcIOBuffer implements IOBuffer {
         int firstChunk = index / BUFFER_SIZE;
         int lastChunk = (index + INT_SIZE_IN_BYTES - 1) / BUFFER_SIZE;
         if (firstChunk == lastChunk) {
-            int ret = chunks[firstChunk].getInt(index);
+            int ret = chunks[firstChunk].getInt(index % BUFFER_SIZE);
             return ret;
         }
         int result = 0;
         for (int i = 0; i < INT_SIZE_IN_BYTES; i++) {
             result = result << 8;
-            result += chunks[(index + i) / BUFFER_SIZE].get((index + i) % BUFFER_SIZE);
+            byte readByte = chunks[(index + i) / BUFFER_SIZE].get((index + i) % BUFFER_SIZE);
+            result |= readByte & 0xFF;
         }
         return result;
     }
@@ -116,7 +127,11 @@ class TpcIOBuffer implements IOBuffer {
     @Override
     public void writeInt(int value) {
         if (BUFFER_SIZE - (pos % BUFFER_SIZE) >= INT_SIZE_IN_BYTES) {
-            chunks[pos / BUFFER_SIZE].putInt(value);
+            int chunk = pos / BUFFER_SIZE;
+            if (chunk == chunksPos) {
+                ensureRemaining(INT_SIZE_IN_BYTES);
+            }
+            chunks[chunk].putInt(value);
             pos += INT_SIZE_IN_BYTES;
             return;
         }
@@ -168,23 +183,21 @@ class TpcIOBuffer implements IOBuffer {
         }
     }
 
-
-
     @Override
     public int remaining() {
-        return totalCapacity - pos;
+        return limit - pos;
     }
 
     private void ensureRemaining(int length) {
         while (remaining() < length) {
-            addChunk(allocator.getNextBuffer());
+            addChunk(allocator.getNextByteBuffer());
         }
     }
 
     void addChunk(ByteBuffer chunk) {
         ensureRemainingForNewChunk();
         chunks[chunksPos++] = chunk;
-        totalCapacity += BUFFER_SIZE;
+        limit += BUFFER_SIZE;
     }
 
     /**
@@ -194,8 +207,5 @@ class TpcIOBuffer implements IOBuffer {
         if (chunksPos == chunks.length) {
             chunks = Arrays.copyOf(chunks, chunks.length * 2);
         }
-    }
-
-    private static class NotImplementedYetException extends RuntimeException {
     }
 }
