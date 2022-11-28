@@ -25,8 +25,6 @@ import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
 import com.hazelcast.jet.test.SerialTest;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
-import com.hazelcast.sql.SqlResult;
-import com.hazelcast.sql.SqlRow;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
@@ -88,14 +86,6 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
             mapStore.destroy();
             mapStore = null;
         }
-
-        try (SqlResult result = sqlService.execute("SHOW MAPPINGS")) {
-            for (SqlRow next : result) {
-                Object name = next.getObject(0);
-                logger.warning("Mapping " + name + " exists after test, dropping");
-                sqlService.execute("DROP MAPPING IF EXISTS " + name).close();
-            }
-        }
     }
 
     @Test
@@ -146,7 +136,6 @@ public class GenericMapStoreTest extends JdbcSqlTestSupport {
         assertMappingCreated();
 
         GenericMapStore<Object> mapStoreNotMaster = createMapStore(instances()[1]);
-        mapStoreNotMaster.awaitInitFinished();
         mapStoreNotMaster.destroy();
         assertMappingDestroyed();
     }
