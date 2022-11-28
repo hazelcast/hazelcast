@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet;
+package com.hazelcast.jet.impl;
 
 import java.util.concurrent.CancellationException;
 
@@ -37,5 +37,13 @@ public class CancellationByUserException extends CancellationException {
      */
     public CancellationByUserException(String message) {
         super(message);
+    }
+
+    /**
+     * Creates the exception with a message and a cause.
+     */
+    public CancellationByUserException(String message, Throwable cause) {
+        super(message);
+        initCause(cause);
     }
 }
