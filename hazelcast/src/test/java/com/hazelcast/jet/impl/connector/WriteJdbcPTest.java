@@ -47,6 +47,7 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientException;
 import java.sql.Statement;
@@ -112,6 +113,8 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
         if (hikariDataSource != null) {
             hikariDataSource.close();
         }
+
+        listRemainingConnections();
         // kill any hanging connection
         executeSql("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE pid <> pg_backend_pid()");
     }
@@ -119,6 +122,27 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     private static void executeSql(@Language("sql") String sql) throws SQLException {
         try (Connection connection = ((DataSource) createDataSource(false)).getConnection()) {
             connection.createStatement().execute(sql);
+        }
+    }
+    private void listRemainingConnections() throws SQLException {
+        try (
+                Connection connection = ((DataSource) createDataSource(false)).getConnection();
+                ResultSet resultSet = connection.createStatement().executeQuery(
+                        "SELECT * FROM pg_stat_activity WHERE pid <> pg_backend_pid()")
+        ) {
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            List<String> connections = new ArrayList<>();
+            for (int i = 0; i < metaData.getColumnCount(); i++) {
+                connections.add(metaData.getColumnName(i) + "|");
+            }
+            while (resultSet.next()) {
+                for (int i = 0; i < metaData.getColumnCount(); i++) {
+                    connections.add(resultSet.getObject(i) + "|");
+                }
+            }
+            if (!connections.isEmpty()) {
+                logger.warning("Remaining connections: \n" + String.join("\n", connections));
+            }
         }
     }
 
