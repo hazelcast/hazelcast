@@ -59,10 +59,12 @@ public class TcpServerConnectionManagerMetricsTest extends HazelcastTestSupport 
     }
 
     private void verifyCollectedOnce(CapturingCollector collector, MetricDescriptor expectedDescriptor) {
-        CapturingCollector.Capture capture = collector.captures().get(expectedDescriptor);
-        assertNotNull(capture);
-        assertEquals(1, capture.hits());
-        assertInstanceOf(Long.class, capture.singleCapturedValue());
+        assertTrueEventually(() -> {
+            CapturingCollector.Capture capture = collector.captures().get(expectedDescriptor);
+            assertNotNull(capture);
+            assertEquals(1, capture.hits());
+            assertInstanceOf(Long.class, capture.singleCapturedValue());
+        });
     }
 
     private MetricDescriptor metricDescriptor(String prefix, String metric) {
