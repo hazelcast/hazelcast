@@ -55,7 +55,7 @@ public class QueryBounceTest {
             BounceMemberRule.with(getConfig())
                     .clusterSize(4)
                     .driverCount(4)
-                    .driverType(BounceTestConfiguration.DriverType.MEMBER)
+                    .driverType(getDriverType())
                     .useTerminate(useTerminate())
                     .build();
 
@@ -80,6 +80,10 @@ public class QueryBounceTest {
     // nice with rules: parameters are injected after rules instantiation.
     protected boolean useTerminate() {
         return false;
+    }
+
+    protected BounceTestConfiguration.DriverType getDriverType() {
+        return BounceTestConfiguration.DriverType.MEMBER;
     }
 
     private void prepareAndRunQueryTasks(boolean withIndexes) {
