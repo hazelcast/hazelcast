@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.processors;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
@@ -27,9 +28,11 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.AppendableTraverser;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.Processor;
+import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.impl.connector.ReadMapOrCacheP;
 import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
@@ -55,6 +58,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
+import java.util.function.Function;
 
 import static com.hazelcast.internal.util.CollectionUtil.hasNonEmptyIntersection;
 import static com.hazelcast.jet.Util.entry;
@@ -172,12 +176,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     @Override
     protected void init(@Nonnull Context context) throws Exception {
         this.evalContext = ExpressionEvalContext.from(context);
-
-        if (!joinInfo.isEquiJoin() && context.processingGuarantee() != ProcessingGuarantee.NONE) {
-            throw new UnsupportedOperationException(
-                    "Non-equi-join fault tolerant stream-to-stream JOIN is not supported");
-        }
-
         SerializationService ss = evalContext.getSerializationService();
         emptyLeftRow = new JetSqlRow(ss, new Object[columnCounts.f0()]);
         emptyRightRow = new JetSqlRow(ss, new Object[columnCounts.f1()]);
@@ -458,6 +456,11 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         return true;
     }
 
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
+
     @SuppressWarnings("BooleanMethodIsAlwaysInverted")
     private boolean processPendingOutput() {
         while (!pendingOutput.isEmpty()) {
@@ -518,9 +521,9 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private List<Entry<Byte, ToLongFunctionEx<JetSqlRow>>> timeExtractors(int ordinal) {
         return ordinal == 0 ? leftTimeExtractors : rightTimeExtractors;
     }
-
     // If current join type is LEFT/RIGHT and a row don't have a matching row on the other side
     // we should to produce input row with null-filled opposite side.
+
     private JetSqlRow composeRowWithNulls(JetSqlRow row, int ordinal) {
         JetSqlRow joinedRow = null;
         if (ordinal == 1 && joinInfo.isRightOuter()) {
@@ -554,6 +557,12 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         };
     }
 
+    enum StreamToStreamJoinBroadcastKeys {
+        LAST_EMITTED_KEYED_WM,
+        LAST_RECEIVED_KEYED_WM,
+        MIN_BUFFER_TIME
+    }
+
     public static final class StreamToStreamJoinProcessorSupplier implements ProcessorSupplier, DataSerializable {
         private JetJoinInfo joinInfo;
         private Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors;
@@ -581,6 +590,14 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             this.leftInputColumnCount = leftInputColumnCount;
             this.rightInputColumnCount = rightInputColumnCount;
 
+        }
+
+        @Override
+        public void init(@Nonnull Context context) throws Exception {
+            if (!joinInfo.isEquiJoin() && context.processingGuarantee() != ProcessingGuarantee.NONE) {
+                throw new UnsupportedOperationException(
+                        "Non-equi-join fault tolerant stream-to-stream JOIN is not supported");
+            }
         }
 
         @Nonnull
@@ -618,17 +635,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             leftInputColumnCount = in.readInt();
             rightInputColumnCount = in.readInt();
         }
-    }
-
-    @Override
-    public boolean closeIsCooperative() {
-        return true;
-    }
-
-    enum StreamToStreamJoinBroadcastKeys {
-        LAST_EMITTED_KEYED_WM,
-        LAST_RECEIVED_KEYED_WM,
-        MIN_BUFFER_TIME
     }
 
     private static final class BufferSnapshotValue implements DataSerializable {
