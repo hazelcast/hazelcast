@@ -337,8 +337,9 @@ public abstract class HashSlotArrayBase implements HashSlotArray {
     }
 
     protected final void assertValid() {
-        assert baseAddress - HEADER_SIZE != NULL_ADDRESS
-                : "This instance doesn't point to a valid hashtable. Base address = " + baseAddress;
+        assert NULL_ADDRESS != (baseAddress - HEADER_SIZE)
+                : String.format("This instance doesn't point to a valid hashtable "
+                + "[baseAddress: %d, headerSize: %d]", baseAddress, HEADER_SIZE);
     }
 
     protected final MemoryAllocator malloc() {
