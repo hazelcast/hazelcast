@@ -289,7 +289,7 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
     @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, int partitionId) {
         checkNotNegative(partitionId, "Partition ID cannot be negative!");
-        return new InvocationBuilderImpl(invocationContext, serviceName, op, partitionId)
+        return InvocationBuilderImpl.createForPartition(invocationContext, serviceName, op, partitionId)
                 .setTryCount(invocationMaxRetryCount)
                 .setTryPauseMillis(invocationRetryPauseMillis)
                 .setFailOnIndeterminateOperationState(failOnIndeterminateOperationState);
@@ -298,7 +298,14 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
     @Override
     public InvocationBuilder createInvocationBuilder(String serviceName, Operation op, Address target) {
         checkNotNull(target, "Target cannot be null!");
-        return new InvocationBuilderImpl(invocationContext, serviceName, op, target)
+        return InvocationBuilderImpl.createForTarget(invocationContext, serviceName, op, target)
+                .setTryCount(invocationMaxRetryCount)
+                .setTryPauseMillis(invocationRetryPauseMillis);
+    }
+
+    @Override
+    public InvocationBuilder createMasterInvocationBuilder(String serviceName, Operation op) {
+        return InvocationBuilderImpl.createForMaster(invocationContext, serviceName, op)
                 .setTryCount(invocationMaxRetryCount)
                 .setTryPauseMillis(invocationRetryPauseMillis);
     }
@@ -363,6 +370,14 @@ public final class OperationServiceImpl implements StaticMetricsProvider, LiveOp
 
         return new TargetInvocation(invocationContext, op, target, invocationMaxRetryCount, invocationRetryPauseMillis,
                 DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT).invoke();
+    }
+
+    @Override
+    public <E> InvocationFuture<E> invokeOnMaster(String serviceName, Operation op) {
+        op.setServiceName(serviceName);
+
+        return new MasterInvocation(invocationContext, op, invocationMaxRetryCount,
+                invocationRetryPauseMillis, DEFAULT_CALL_TIMEOUT, DEFAULT_DESERIALIZE_RESULT).invoke();
     }
 
     @Override
