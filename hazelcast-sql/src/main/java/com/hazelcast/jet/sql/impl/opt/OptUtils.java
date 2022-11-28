@@ -462,7 +462,7 @@ public final class OptUtils {
         }
     }
 
-    private static int findKeyIndex(Table table) {
+    public static int findKeyIndex(Table table) {
         List<String> primaryKey = SqlConnectorUtil.getJetSqlConnector(table).getPrimaryKey(table);
         // just single field keys supported at the moment
         assert primaryKey.size() == 1;

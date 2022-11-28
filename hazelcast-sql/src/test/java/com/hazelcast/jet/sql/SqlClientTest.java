@@ -20,6 +20,7 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.ExecutionContext;
+import com.hazelcast.jet.sql.impl.connector.map.model.Person;
 import com.hazelcast.jet.sql.impl.connector.test.TestBatchSqlConnector;
 import com.hazelcast.jet.sql.impl.connector.test.TestFailingSqlConnector;
 import com.hazelcast.map.IMap;
@@ -49,26 +50,40 @@ public class SqlClientTest extends SqlTestSupport {
 
     @BeforeClass
     public static void setUpClass() {
-        initialize(2, null);
+        initializeWithClient(2, null, null);
+    }
+
+    @Test
+    public void test_partitionBasedRouting_insert() {
+        createMapping("test_simpleKey", Integer.class, String.class);
+        createMapping("test_complexKey", Person.class, String.class);
+
+        checkPartitionArgumentIndex("INSERT INTO test_simpleKey (__key, this) VALUES (?, ?)", 0, 1, "value");
+        checkPartitionArgumentIndex("INSERT INTO test_simpleKey (this, __key) VALUES (?, ?)", 1, "value", 2);
+        // no dynamic argument
+        checkPartitionArgumentIndex("INSERT INTO test_simpleKey (this, __key) VALUES ('value', 3)", null);
+        checkPartitionArgumentIndex("INSERT INTO test_simpleKey (this, __key) VALUES ('value', 4), ('value', 5)", null);
+        // has dynamic argument, but multiple rows
+        checkPartitionArgumentIndex("INSERT INTO test_simpleKey (this, __key) VALUES (?, ?), (?, ?)", null,
+                "value", 6, "value", 7);
+
+        // partition argument index not supported if `__key` isn't directly assigned to
+        checkPartitionArgumentIndex("INSERT INTO test_complexKey (this, id, name) VALUES (?, ?, ?)", null,
+                "value-1", 1, "name-1");
+        // this test case is here just for completeness to show that we cannot support complex keys and partition argument
+        assertThatThrownBy(() -> checkPartitionArgumentIndex("INSERT INTO test_complexKey (this, __key) VALUES (?, ?)", null,
+                "value-1", new Person(2, "name-2")))
+                .hasMessageEndingWith("Writing to top-level fields of type OBJECT not supported");
     }
 
     @Test
     public void test_partitionBasedRouting() {
         final String selectQuery = "SELECT * FROM test WHERE __key = ?";
-        final String insertQuery = "INSERT INTO test (this, __key) VALUES (?, ?)";
         final String updateQuery = "UPDATE test SET this = ? WHERE __key = ?";
         final String deleteQuery = "DELETE FROM test WHERE __key = ?";
 
-        final HazelcastInstance client = factory().newHazelcastClient();
-        final SqlService sqlService = client.getSql();
+        final SqlService sqlService = client().getSql();
         final SqlClientService sqlClientService = (SqlClientService) sqlService;
-
-        createMapping("test", Integer.class, String.class);
-
-        assertNull(sqlClientService.partitionArgumentIndexCache.get(insertQuery));
-        sqlService.execute(insertQuery, "testVal", 1);
-        assertNotNull(sqlClientService.partitionArgumentIndexCache.get(insertQuery));
-        assertEquals(1, (int) sqlClientService.partitionArgumentIndexCache.get(insertQuery));
 
         assertNull(sqlClientService.partitionArgumentIndexCache.get(updateQuery));
         sqlService.execute(updateQuery, "testVal", 1);
@@ -84,6 +99,13 @@ public class SqlClientTest extends SqlTestSupport {
         sqlService.execute(deleteQuery, 1);
         assertNotNull(sqlClientService.partitionArgumentIndexCache.get(deleteQuery));
         assertEquals(0, (int) sqlClientService.partitionArgumentIndexCache.get(deleteQuery));
+    }
+
+    private void checkPartitionArgumentIndex(String sql, Integer expectedIndex, Object... arguments) {
+        final SqlClientService sqlService = (SqlClientService) client().getSql();
+        assertNull(sqlService.partitionArgumentIndexCache.get(sql));
+        sqlService.execute(sql, arguments);
+        assertEquals(expectedIndex, sqlService.partitionArgumentIndexCache.get(sql));
     }
 
     @Test

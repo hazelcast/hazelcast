@@ -20,6 +20,7 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
+import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -37,7 +38,6 @@ import org.apache.calcite.rel.type.RelDataType;
 import org.apache.calcite.sql.SqlKind;
 
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
 import java.util.function.Function;
 
@@ -61,7 +61,7 @@ public class InsertMapPhysicalRel extends AbstractRelNode implements PhysicalRel
 
         this.table = table;
         this.values = values;
-        this.keyParamIndex = extractKeyParamIndex(values, table());
+        this.keyParamIndex = values.getDynamicParamIndex(OptUtils.findKeyIndex(table()));
     }
 
     public String mapName() {
@@ -96,31 +96,6 @@ public class InsertMapPhysicalRel extends AbstractRelNode implements PhysicalRel
 
     private PartitionedMapTable table() {
         return table.unwrap(HazelcastTable.class).getTarget();
-    }
-
-    private int extractKeyParamIndex(final ExpressionValues values, final PartitionedMapTable mapTable) {
-        if (values instanceof ExpressionValues.TransformedExpressionValues) {
-            int keyArgIndex = -1;
-            final Map<Integer, Integer> projectionMapping = ((ExpressionValues.TransformedExpressionValues) values)
-                    .getProjectionMapping();
-
-            for (int i = 0; i < mapTable.getFields().size(); i++) {
-                if (mapTable.paths()[i].isKey()) {
-                    keyArgIndex = i;
-                    break;
-                }
-            }
-
-            if (keyArgIndex == -1) {
-                return -1;
-            }
-
-            return projectionMapping.get(keyArgIndex) == null
-                    ? -1
-                    : projectionMapping.get(keyArgIndex);
-        } else {
-            return -1;
-        }
     }
 
     @Override

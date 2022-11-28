@@ -22,19 +22,17 @@ import com.hazelcast.jet.sql.impl.opt.physical.visitor.RexToExpression;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import com.hazelcast.sql.impl.row.EmptyRow;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import org.apache.calcite.rel.type.RelDataType;
-import org.apache.calcite.rex.RexDynamicParam;
 import org.apache.calcite.rex.RexLiteral;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexVisitor;
 
 import java.io.Serializable;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Stream;
 
 import static com.hazelcast.jet.impl.util.Util.toList;
@@ -48,6 +46,13 @@ public abstract class ExpressionValues implements Serializable {
     public abstract int size();
 
     public abstract Stream<JetSqlRow> toValues(ExpressionEvalContext context);
+
+    /**
+     * Return the index of the dynamic parameter that provides the value for the
+     * given fieldIndex. If the given fieldIndex isn't supplied by a dynamic
+     * parameter, return -1.
+     */
+    public abstract int getDynamicParamIndex(int fieldIndex);
 
     /**
      * Representation of the VALUES clause data in the form of a simple {@code
@@ -76,6 +81,11 @@ public abstract class ExpressionValues implements Serializable {
         }
 
         @Override
+        public int getDynamicParamIndex(int fieldIndex) {
+            return -1;
+        }
+
+        @Override
         public String toString() {
             return "{expressions=" + expressions + "}";
         }
@@ -90,8 +100,6 @@ public abstract class ExpressionValues implements Serializable {
         private final Expression<Boolean> predicate;
         private final List<Expression<?>> projection;
         private final List<ExpressionValues> values;
-        // TODO: move to rel rule?
-        private final Map<Integer, Integer> projectionMapping;
 
         @SuppressWarnings("unchecked")
         public TransformedExpressionValues(
@@ -108,23 +116,6 @@ public abstract class ExpressionValues implements Serializable {
             this.predicate = filter == null ? null : (Expression<Boolean>) filter.accept(converter);
             this.projection = project == null ? null : toList(project, node -> node.accept(converter));
             this.values = values;
-
-            this.projectionMapping = new HashMap<>();
-
-            if (project == null) {
-                return;
-            }
-
-            for (int i = 0; i < project.size(); i++) {
-                final RexNode node = project.get(i);
-                if (node instanceof RexDynamicParam) {
-                    projectionMapping.put(i, ((RexDynamicParam) node).getIndex());
-                }
-            }
-        }
-
-        public Map<Integer, Integer> getProjectionMapping() {
-            return projectionMapping;
         }
 
         @Override
@@ -136,6 +127,18 @@ public abstract class ExpressionValues implements Serializable {
         public Stream<JetSqlRow> toValues(ExpressionEvalContext context) {
             return values.stream()
                     .flatMap(vs -> ExpressionUtil.evaluate(predicate, projection, vs.toValues(context), context).stream());
+        }
+
+        @Override
+        public int getDynamicParamIndex(int fieldIndex) {
+            if (projection == null || projection.size() <= fieldIndex) {
+                return -1;
+            }
+            Expression<?> p = projection.get(fieldIndex);
+            if (p instanceof ParameterExpression) {
+                return ((ParameterExpression<?>) p).getIndex();
+            }
+            return -1;
         }
 
         @Override
