@@ -437,7 +437,7 @@ public class SqlClientService implements SqlService {
             return null;
         }
 
-        if (argIndex > statement.getParameters().size() || argIndex < 0) {
+        if (argIndex >= statement.getParameters().size() || argIndex < 0) {
             return null;
         }
 
