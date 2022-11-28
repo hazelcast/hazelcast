@@ -79,9 +79,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     @ClassRule
     @SuppressWarnings({"rawtypes", "resource"})
     public static PostgreSQLContainer container = new PostgreSQLContainer<>("postgres:12.1")
-            .withCommand("postgres -c max_prepared_transactions=10")
-            .withCommand("postgres -c max_connections=500")
-            ;
+            .withCommand("postgres -c max_prepared_transactions=10 -c max_connections=500");
 
     private static final int PERSON_COUNT = 10;
 
@@ -114,7 +112,6 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
         if (hikariDataSource != null) {
             hikariDataSource.close();
         }
-        container.execInContainer("sudo service postgresql restart");
         // kill any hanging connection
         executeSql("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE pid <> pg_backend_pid()");
     }
