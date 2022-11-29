@@ -156,8 +156,6 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
         // Init can run on partition thread, creating a mapping uses other maps, so it needs to run elsewhere
         asyncExecutor.submit(() -> {
-            // We create the mapping only on the master node
-            // On other members we wait until the mapping has been created
             createMappingForMapStore(mapName);
         });
     }
@@ -197,6 +195,8 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
             }
             queries = new Queries(mapping, properties.idColumn, columnMetadataList);
         } catch (Exception e) {
+            // We create the mapping on the first member initializing the MapStore
+            // Other members trying to concurrently initialize will fail and just read the mapping
             if (e.getMessage() != null && e.getMessage().startsWith("Mapping or view already exists:")) {
                 readExistingMapping();
             } else {
@@ -291,7 +291,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
     @Override
     public void destroy() {
-        awaitSuccessfulInit();
+        awaitInitFinished();
         dropMapping(mapping);
     }
 
