@@ -18,11 +18,11 @@ package com.hazelcast.jet.elastic;
 
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.jet.elastic.ElasticSinkBuilderTest.ClientHolder;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import org.apache.http.HttpHost;
+import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
@@ -31,11 +31,12 @@ import org.elasticsearch.client.RestClientBuilder;
 import org.junit.After;
 import org.junit.Test;
 
-import java.io.IOException;
 import java.util.Collections;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -57,7 +58,7 @@ public class LocalElasticSinkTest extends CommonElasticSinksTest {
     }
 
     @Test
-    public void when_writeToSink_then_shouldCloseClient() throws IOException {
+    public void when_writeToSink_then_shouldCloseClient() {
         ClientHolder.elasticClients.clear();
 
         Sink<String> elasticSink = new ElasticSinkBuilder<>()
@@ -67,7 +68,7 @@ public class LocalElasticSinkTest extends CommonElasticSinksTest {
                     )));
                     when(builder.build()).thenAnswer(invocation -> {
                         Object result = invocation.callRealMethod();
-                        RestClient client = (RestClient) spy(result);
+                        RestClient client = (RestClient) result;
                         ClientHolder.elasticClients.add(client);
                         return client;
                     });
@@ -83,9 +84,12 @@ public class LocalElasticSinkTest extends CommonElasticSinksTest {
 
         hz.getJet().newJob(p).join();
 
-        for (RestClient client : ClientHolder.elasticClients) {
-            verify(client).close();
-        }
+        assertTrueEventually(() -> {
+            for (RestClient client : ClientHolder.elasticClients) {
+                CloseableHttpAsyncClient httpClient = getFieldValueReflectively(client, "client");
+                assertThat(httpClient.isRunning()).isFalse();
+            }
+        });
     }
 
 }
