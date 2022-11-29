@@ -44,6 +44,11 @@ public class CardinalityEstimatorStressTest extends HazelcastTestSupport {
         long expected = 10 * 1000 * 1000;
 
         float sigma = 0.008125f;
+
+        // This test is deterministic, actual value never changes.
+        // So we can pick 0.003 for big endian and ~0.012 for little endian.
+        // I picked two times sigma arbitrarily.
+        // Also see https://en.wikipedia.org/wiki/Chebyshev's_inequality
         long acceptableDelta = (long) (2 * sigma * expected);
 
         int loggingFrequency = 100 * 1000;
