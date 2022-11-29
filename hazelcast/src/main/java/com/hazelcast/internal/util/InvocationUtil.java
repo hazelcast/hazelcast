@@ -47,8 +47,8 @@ import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFutur
  * Utility methods for invocations.
  */
 public final class InvocationUtil {
-    private static final Predicate<Member> ALL_MEMBERS_FILTER = member -> true;
-    private static final Predicate<Member> EXCLUDE_LOCAL_MEMBERS_FILTER = member -> !member.localMember();
+    private static final Predicate<Member> ALL_MEMBERS_MATCH = member -> true;
+    private static final Predicate<Member> ALL_BUT_LOCAL_MEMBERS_MATCH = member -> !member.localMember();
 
     private InvocationUtil() {
     }
@@ -126,7 +126,7 @@ public final class InvocationUtil {
             Supplier<Operation> operationSupplier,
             int maxRetries
     ) {
-        return invokeOnStableClusterParallel(nodeEngine, operationSupplier, maxRetries, ALL_MEMBERS_FILTER);
+        return invokeOnStableClusterParallel(nodeEngine, operationSupplier, maxRetries, ALL_MEMBERS_MATCH);
     }
 
     public static InternalCompletableFuture<Collection<UUID>> invokeOnStableClusterParallelExcludeLocal(
@@ -134,7 +134,7 @@ public final class InvocationUtil {
             Supplier<Operation> operationSupplier,
             int maxRetries
     ) {
-        return invokeOnStableClusterParallel(nodeEngine, operationSupplier, maxRetries, EXCLUDE_LOCAL_MEMBERS_FILTER);
+        return invokeOnStableClusterParallel(nodeEngine, operationSupplier, maxRetries, ALL_BUT_LOCAL_MEMBERS_MATCH);
     }
 
     /**

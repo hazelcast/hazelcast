@@ -76,7 +76,7 @@ class ParallelOperationInvoker {
 
     private void doInvoke() {
         members = clusterService.getMembers();
-        InternalCompletableFuture[] futures = invokeOnFilteredMembers(members);
+        InternalCompletableFuture[] futures = invokeOnMatchingMembers(members);
         CompletableFuture.allOf(futures)
                 .whenCompleteAsync(
                         (ignored, throwable) -> completeFutureOrRetry(throwable == null, futures),
@@ -87,7 +87,7 @@ class ParallelOperationInvoker {
         nodeEngine.getExecutionService().schedule(this::doInvoke, retryDelayMillis, TimeUnit.MILLISECONDS);
     }
 
-    private InternalCompletableFuture[] invokeOnFilteredMembers(Collection<Member> members) {
+    private InternalCompletableFuture[] invokeOnMatchingMembers(Collection<Member> members) {
         return members.stream()
                 .filter(memberFilter)
                 .map(this::invokeOnMember)
