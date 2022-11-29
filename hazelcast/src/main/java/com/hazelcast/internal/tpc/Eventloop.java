@@ -17,7 +17,7 @@
 package com.hazelcast.internal.tpc;
 
 
-import com.hazelcast.internal.tpc.iobuffer.deprecated.IOBufferImpl;
+import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpc.util.CircularQueue;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.ThreadAffinityHelper;
@@ -355,7 +355,7 @@ public abstract class Eventloop implements Executor {
      * @return true if the buffer was accepted, false otherwise.
      * @throws NullPointerException if buff is null.
      */
-    public final boolean offer(IOBufferImpl buff) {
+    public final boolean offer(IOBuffer buff) {
         //todo: Don't want to add localRunQueue optimization like the offer(Runnable)?
 
         if (concurrentRunQueue.offer(buff)) {
@@ -413,8 +413,8 @@ public abstract class Eventloop implements Executor {
                 } catch (Exception e) {
                     logger.warning(e);
                 }
-            } else if (task instanceof IOBufferImpl) {
-                scheduler.schedule((IOBufferImpl) task);
+            } else if (task instanceof IOBuffer) {
+                scheduler.schedule((IOBuffer) task);
             } else {
                 throw new RuntimeException("Unrecognized type:" + task.getClass());
             }
@@ -612,7 +612,7 @@ public abstract class Eventloop implements Executor {
 
         boolean tick();
 
-        void schedule(IOBufferImpl task);
+        void schedule(IOBuffer task);
     }
 
     /**

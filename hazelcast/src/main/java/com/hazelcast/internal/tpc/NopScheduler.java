@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.iobuffer.deprecated.IOBufferImpl;
+import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
 
 /**
  * A scheduler that doesn't do anything.
@@ -33,6 +33,6 @@ public class NopScheduler implements Eventloop.Scheduler {
     }
 
     @Override
-    public void schedule(IOBufferImpl task) {
+    public void schedule(IOBuffer task) {
     }
 }
