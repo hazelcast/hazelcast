@@ -73,10 +73,11 @@ public class SessionAwareSemaphoreReleaseAcquiredSessionsOnFailureTest extends H
     @Test
     public void testAcquire_shouldReleaseSessionsOnRuntimeError() throws InterruptedException {
         initSemaphoreAndAcquirePermits(10, 5);
-        assertEquals(getSessionAcquireCount(), 5);
+        assertEquals(5, getSessionAcquireCount());
         Future future = spawn(() -> {
             Thread.currentThread().interrupt();
-            semaphore.acquire(5);
+            //Make the semaphore block, so that Thread.interrupt() can be detected
+            semaphore.acquire(6);
         });
 
         try {
@@ -86,13 +87,13 @@ public class SessionAwareSemaphoreReleaseAcquiredSessionsOnFailureTest extends H
             assertTrue(e.getCause() instanceof HazelcastException);
             assertTrue(e.getCause().getCause() instanceof InterruptedException);
         }
-        assertEquals(getSessionAcquireCount(), 5);
+        assertEquals(5, getSessionAcquireCount());
     }
 
     @Test
     public void testTryAcquire_shouldReleaseSessionsOnRuntimeError() throws InterruptedException {
         initSemaphoreAndAcquirePermits(2, 1);
-        assertEquals(getSessionAcquireCount(), 1);
+        assertEquals(1, getSessionAcquireCount());
         Future future = spawn(() -> {
             Thread.currentThread().interrupt();
             semaphore.tryAcquire(10, TimeUnit.MINUTES);
@@ -105,13 +106,13 @@ public class SessionAwareSemaphoreReleaseAcquiredSessionsOnFailureTest extends H
             assertTrue(e.getCause() instanceof HazelcastException);
             assertTrue(e.getCause().getCause() instanceof InterruptedException);
         }
-        assertEquals(getSessionAcquireCount(), 1);
+        assertEquals(1, getSessionAcquireCount());
     }
 
     @Test
     public void testDrainPermits_shouldReleaseSessionsOnRuntimeError() throws InterruptedException {
         initSemaphoreAndAcquirePermits(42, 2);
-        assertEquals(getSessionAcquireCount(), 2);
+        assertEquals(2, getSessionAcquireCount());
         Future future = spawn(() -> {
             Thread.currentThread().interrupt();
             semaphore.drainPermits();
@@ -124,7 +125,7 @@ public class SessionAwareSemaphoreReleaseAcquiredSessionsOnFailureTest extends H
             assertTrue(e.getCause() instanceof HazelcastException);
             assertTrue(e.getCause().getCause() instanceof InterruptedException);
         }
-        assertEquals(getSessionAcquireCount(), 2);
+        assertEquals(2, getSessionAcquireCount());
     }
 
     private void initSemaphoreAndAcquirePermits(int initialPermits, int acquiredPermits) {
