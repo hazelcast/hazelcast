@@ -30,7 +30,6 @@ import com.hazelcast.jet.test.IgnoreInJenkinsOnWindows;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.SlowTest;
 import com.zaxxer.hikari.HikariDataSource;
-import org.intellij.lang.annotations.Language;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -105,6 +104,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     public void setup() throws SQLException {
         tableName = "T" + TABLE_COUNTER.incrementAndGet();
         logger.info("Will use table: " + tableName);
+        /* language=SQL */
         executeSql("CREATE TABLE " + tableName + "(id int, name varchar(255))");
     }
 
@@ -116,10 +116,11 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
 
         listRemainingConnections();
         // kill any hanging connection
+        /* language=SQL */
         executeSql("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE pid <> pg_backend_pid()");
     }
 
-    private static void executeSql(@Language("sql") String sql) throws SQLException {
+    private static void executeSql(String sql) throws SQLException {
         try (Connection connection = ((DataSource) createDataSource(false)).getConnection()) {
             connection.createStatement().execute(sql);
         }
