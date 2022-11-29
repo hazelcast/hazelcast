@@ -729,6 +729,7 @@ public class MasterJobContext {
                         setFinalResult(new CancellationException());
                     } else {
                         //TODO: nobody waits for this future, in particular executionCompletionFuture.complete(null);
+                        // execution future can be completed before or after job future is completed
                         mc.coordinationService()
                           .completeJob(mc, failure, completionTime, userInitiatedTermination)
                           .whenComplete(withTryCatch(logger, (r, f) -> {

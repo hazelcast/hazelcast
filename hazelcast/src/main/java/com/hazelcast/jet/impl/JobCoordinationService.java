@@ -106,6 +106,7 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
 import static com.hazelcast.internal.util.executor.ExecutorType.CACHED;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.COMPLETING;
+import static com.hazelcast.jet.core.JobStatus.FAILED;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
@@ -598,6 +599,8 @@ public class JobCoordinationService {
      * if the requested job is not found.
      */
     public CompletableFuture<JobStatus> getJobStatus(long jobId) {
+        // Logic of determining job status should be in sync
+        // with getJobAndSqlSummary and getJobAndSqlSummaryList.
         return callWithJob(jobId,
                 mc -> {
                     // When the job finishes running, we write NOT_RUNNING to jobStatus first and then
@@ -648,7 +651,8 @@ public class JobCoordinationService {
     }
 
     public CompletableFuture<Boolean> isJobUserCancelled(long jobId) {
-
+        // Logic of determining userCancelled should be in sync
+        // with getJobAndSqlSummary and getJobAndSqlSummaryList.
         return callWithJob(jobId,
                 mc -> {
                     JobStatus jobStatus = mc.jobStatus();
@@ -745,9 +749,13 @@ public class JobCoordinationService {
             Map<Long, JobAndSqlSummary> jobs = new HashMap<>();
             if (isMaster()) {
                 // running jobs
-                jobRepository.getJobRecords().stream().map(this::getJobAndSqlSummary).forEach(s -> jobs.put(s.getJobId(), s));
+                jobRepository.getJobRecords().stream()
+                        .map(this::getJobAndSqlSummary)
+                        .forEach(s -> jobs.put(s.getJobId(), s));
 
                 // completed jobs
+                // (can overwrite entries created from JobRecords but that is fine and in fact desired
+                // because JobResult is always more recent than JobRecord for given job)
                 jobRepository.getJobResults().stream()
                         .map(r -> new JobAndSqlSummary(
                                 false, r.getJobId(), 0, r.getJobNameOrId(), r.getJobStatus(), r.getCreationTime(),
@@ -786,7 +794,8 @@ public class JobCoordinationService {
         //
         // This is unlikely and we do not care however such scenario is possible:
         // 1. user submits a light job
-        // 2. user gets the job by id and joins it (separate Job proxy instance is necessary because different future will be used than for submit)
+        // 2. user gets the job by id and joins it (separate Job proxy instance is necessary
+        //    because different future will be used than for submit)
         // 3. job finishes (either normally or via error or cancellation)
         // 4. join finishes - user get information that the job completed (from join, not submit)
         // 5. user asks for jobs list and the job is reported as running
@@ -933,14 +942,17 @@ public class JobCoordinationService {
         return submitToCoordinatorThread(() -> {
             // when job is finalized, actions happen in this order:
             // - JobResult and JobMetrics are created
-            // - JobRecord and JobExecutionRecord are deleted
+            // - JobRecord and JobExecutionRecord are deleted (asynchronously and in parallel)
             // - masterContext is removed from the map
             // We check them in reverse order so that no race is possible.
             //
-            // We check the JobResult after MasterContext for optimization because in most cases
-            // there will either be MasterContext or JobResult. Neither of them is present only after
-            // master failed and the new master didn't yet scan jobs. We check the JobResult
-            // again at the end for correctness.
+            // We check the JobResult after MasterContext for correctness and
+            // optimization. In most cases there will either be MasterContext or
+            // JobResult. Neither of them is present only after master failed
+            // and the new master didn't yet scan jobs. We check the JobResult
+            // again at the end for correctness. In some cases (slow deleteJob
+            // execution) there can exist  JobResult, one of both JobRecord and
+            // JobExecutionRecord, and no MasterContext.
 
             // check masterContext first
             MasterContext mc = masterContexts.get(jobId);
@@ -1269,17 +1281,26 @@ public class JobCoordinationService {
         JobStatus status;
         boolean userCancelled;
         if (ctx == null) {
+            // If we have a JobRecord but not the MasterContext it may mean that:
+            // 1) job has not yet created MasterContext => NOT_RUNNING
+            // 2) job is suspended => SUSPENDED
+            // 3) job has already ended but JobRecord has not yet been deleted =>
+            //    do not care, result will be overwritten by the one obtained from JorResult
+            //    which is guaranteed to exist in this case
             JobExecutionRecord executionRecord = jobRepository.getJobExecutionRecord(record.getJobId());
             status = executionRecord != null && executionRecord.isSuspended()
-                    // TODO: should return failed state?
-                    // this method is invoked only for running jobs
                     ? JobStatus.SUSPENDED : JobStatus.NOT_RUNNING;
-            // TODO: get cancellation from JobResult if exists
             userCancelled = false;
         } else {
-            status = ctx.jobStatus();
-            // running, so not cancelled
-            userCancelled = false;
+            // order of reads is important, see comment in getJobStatus
+            TerminationMode terminationMode = ctx.jobContext().requestedTerminationMode();
+            JobStatus jobStatus = ctx.jobStatus();
+            status = jobStatus == RUNNING && terminationMode != null
+                    ? COMPLETING
+                    : jobStatus;
+            // job is running, so not cancelled
+            // or has just ended but MasterContext still exists
+            userCancelled = status == FAILED && ctx.jobContext().isUserInitiatedTermination();
         }
         return new JobAndSqlSummary(false, record.getJobId(), execId, record.getJobNameOrId(), status,
                 record.getCreationTime(), 0, null, null,

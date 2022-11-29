@@ -408,8 +408,7 @@ public class JobRepository {
     }
 
     /**
-     * Performs cleanup after job completion. Deletes job record and job resources but keeps the job id
-     * so that it will not be used again for a new job submission.
+     * Performs cleanup after job completion.
      */
     void deleteJob(long jobId) {
         // delete the job record and related records
