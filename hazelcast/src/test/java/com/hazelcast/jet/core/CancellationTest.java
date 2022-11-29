@@ -22,6 +22,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.TestProcessors.DummyStatefulP;
 import com.hazelcast.jet.core.TestProcessors.MockP;
+import com.hazelcast.jet.impl.CancellationByUserException;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -42,7 +43,6 @@ import javax.annotation.Nonnull;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicLong;
@@ -109,7 +109,7 @@ public class CancellationTest extends JetTestSupport {
     }
 
     private static void joinAndExpectCancellation(Job job) {
-        assertThatThrownBy(job::join).isInstanceOf(CancellationException.class);
+        assertThatThrownBy(job::join).isInstanceOf(CancellationByUserException.class);
     }
 
     @Test

@@ -52,6 +52,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -96,6 +97,25 @@ public class JobSummaryTest extends JetTestSupport {
     }
 
     @Test
+    public void when_batchJob_cancelled() {
+        Job job = instance.getJet().newJob(newStreamPipeline(), new JobConfig().setName("jobA"));
+        String msg = "";
+        job.cancel();
+        try {
+            job.join();
+            fail("Join should throw CancellationByUserException");
+        } catch (CancellationByUserException e) {
+            msg = e.toString();
+        }
+
+        JobSummary summary = getJetClientInstanceImpl(client).getJobSummaryList().get(0);
+        assertEquals(JobStatus.FAILED, summary.getStatus());
+        assertEquals(0, summary.getExecutionId());
+        assertTrue(summary.isUserCancelled());
+        assertContains(summary.getFailureText(), msg);
+    }
+
+    @Test
     public void when_streamingJobLifecycle() {
         Job job = instance.getJet().newJob(newStreamPipeline(), new JobConfig().setName("jobA"));
         List<JobSummary> list = getJetClientInstanceImpl(client).getJobSummaryList();
@@ -135,6 +155,7 @@ public class JobSummaryTest extends JetTestSupport {
             assertEquals(JobStatus.FAILED, summary.getStatus());
             assertEquals(0, summary.getExecutionId());
             assertTrue(summary.isUserCancelled());
+            assertContains(summary.getFailureText(), new CancellationByUserException().toString());
         }, 20);
     }
 
@@ -246,6 +267,8 @@ public class JobSummaryTest extends JetTestSupport {
         String msg = "";
         try {
             job.join();
+        } catch (CancellationException cancelled) {
+            fail("Job should not be cancelled in this test");
         } catch (Exception e) {
             msg = e.getMessage();
         }

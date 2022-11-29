@@ -446,7 +446,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         NoOutputSourceP.executionStarted.await();
         cancelAndJoin(job);
         assertTrueEventually(() -> {
-            assertJobFailed(job, useLightJob ? new CancellationByUserException() : new CancellationException());
+            assertJobFailed(job, new CancellationByUserException());
             assertPsClosedWithError();
             assertPmsClosedWithError();
         });
@@ -949,6 +949,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
         assertOneOfExceptionsInCauses(MockPMS.receivedCloseError.get(),
                 MOCK_ERROR,
                 new CancellationException(),
+                new CancellationByUserException(),
                 new JobTerminateRequestedException(CANCEL_FORCEFUL));
     }
 
@@ -1018,12 +1019,11 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
             assertExceptionInCauses(expected, caught);
         }
 
-        if (!job.isLightJob()) {
-            // TODO: test this also for light jobs when isUserCancelled is implemented
-            assertThat(job.isUserCancelled())
-                    .as("job.isUserCancelled")
-                    .isEqualTo(isCancelled);
+        assertThat(job.isUserCancelled())
+                .as("job.isUserCancelled")
+                .isEqualTo(isCancelled);
 
+        if (!job.isLightJob()) {
             Job normalJob = job;
             JobResult jobResult = getJobResult(normalJob);
             assertFalse("jobResult.isSuccessful", jobResult.isSuccessful());

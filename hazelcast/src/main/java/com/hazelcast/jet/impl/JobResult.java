@@ -110,7 +110,9 @@ public class JobResult implements IdentifiedDataSerializable, Versioned {
             return null;
         }
         Throwable throwable;
-        if (failureText.startsWith(CancellationException.class.getName())) {
+        if (isUserCancelled()) {
+            throwable = new CancellationByUserException(failureText);
+        } else if (failureText.startsWith(CancellationException.class.getName())) {
             int prefixLength = (CancellationException.class.getName() + ": ").length();
             String message = failureText.length() >= prefixLength ? failureText.substring(prefixLength) : null;
             throwable = new CancellationException(message);

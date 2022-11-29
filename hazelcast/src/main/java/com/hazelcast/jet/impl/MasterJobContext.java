@@ -389,7 +389,7 @@ public class MasterJobContext {
             // handle cancellation of a suspended job
             if (localStatus == SUSPENDED || localStatus == SUSPENDED_EXPORTING_SNAPSHOT) {
                 mc.setJobStatus(FAILED);
-                setFinalResult(new CancellationException());
+                setFinalResult(isUserInitiatedTermination() ? new CancellationByUserException() : new CancellationException());
             }
             if (mode.isWithTerminalSnapshot()) {
                 mc.snapshotContext().enqueueSnapshot(null, true, null);
@@ -403,7 +403,9 @@ public class MasterJobContext {
         if (localStatus == SUSPENDED || localStatus == SUSPENDED_EXPORTING_SNAPSHOT) {
             try {
                 mc.coordinationService()
-                        .completeJob(mc, new CancellationException(), System.currentTimeMillis(), userInitiated)
+                        .completeJob(mc,
+                                isUserInitiatedTermination() ? new CancellationByUserException() : new CancellationException(),
+                                System.currentTimeMillis(), userInitiated)
                         .get();
             } catch (Exception e) {
                 throw rethrow(e);
@@ -565,7 +567,7 @@ public class MasterJobContext {
     private Throwable getErrorFromResponses(String opName, Collection<Map.Entry<MemberInfo, Object>> responses) {
         if (isCancelled()) {
             logger.fine(mc.jobIdString() + " to be cancelled after " + opName);
-            return new CancellationException();
+            return isUserInitiatedTermination() ? new CancellationByUserException() : new CancellationException();
         }
 
         Map<Boolean, List<Entry<Address, Object>>> grouped = responses.stream()
@@ -728,8 +730,6 @@ public class MasterJobContext {
                                 "We don't delete job metadata: job will restart on majority cluster");
                         setFinalResult(new CancellationException());
                     } else {
-                        //TODO: nobody waits for this future, in particular executionCompletionFuture.complete(null);
-                        // execution future can be completed before or after job future is completed
                         mc.coordinationService()
                           .completeJob(mc, failure, completionTime, userInitiatedTermination)
                           .whenComplete(withTryCatch(logger, (r, f) -> {
