@@ -1285,7 +1285,7 @@ public class JobCoordinationService {
             // 1) job has not yet created MasterContext => NOT_RUNNING
             // 2) job is suspended => SUSPENDED
             // 3) job has already ended but JobRecord has not yet been deleted =>
-            //    do not care, result will be overwritten by the one obtained from JorResult
+            //    do not care, result will be overwritten by the one obtained from JobResult
             //    which is guaranteed to exist in this case
             JobExecutionRecord executionRecord = jobRepository.getJobExecutionRecord(record.getJobId());
             status = executionRecord != null && executionRecord.isSuspended()

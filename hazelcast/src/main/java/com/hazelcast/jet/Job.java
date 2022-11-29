@@ -152,9 +152,9 @@ public interface Job {
 
     /**
      * Returns true, if the job is user-cancelled. Returns false, if it
-     * completed normally or failed due to another error. Throws
-     * {@link IllegalStateException}, if the job isn’t done.
+     * completed normally or failed due to another error.
      *
+     * @throws IllegalStateException if the job isn’t done.
      * @since 5.3
      */
     boolean isUserCancelled();

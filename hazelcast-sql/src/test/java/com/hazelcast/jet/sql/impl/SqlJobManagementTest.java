@@ -108,7 +108,7 @@ public class SqlJobManagementTest extends SqlTestSupport {
     }
 
     @Test
-    public void when_jobSumbitted_then_exists() {
+    public void when_jobSubmitted_then_exists() {
         // given
         createMapping("dest", Long.class, Long.class);
 

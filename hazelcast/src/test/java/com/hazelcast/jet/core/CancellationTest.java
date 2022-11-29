@@ -220,7 +220,7 @@ public class CancellationTest extends JetTestSupport {
     }
 
     @Test
-    public void when_jobFailsOnInitiatorNode_then_cancelledOnOtherNodes() throws Throwable {
+    public void when_jobFailsOnInitiatorNode_then_cancelledOnOtherNodes() {
         // Given
         HazelcastInstance instance = createHazelcastInstance();
         createHazelcastInstance();
@@ -246,7 +246,7 @@ public class CancellationTest extends JetTestSupport {
     }
 
     @Test
-    public void when_jobFailsOnNonInitiatorNode_then_cancelledOnInitiatorNode() throws Throwable {
+    public void when_jobFailsOnNonInitiatorNode_then_cancelledOnInitiatorNode() {
         // Given
         HazelcastInstance instance = createHazelcastInstance();
         HazelcastInstance other = createHazelcastInstance();

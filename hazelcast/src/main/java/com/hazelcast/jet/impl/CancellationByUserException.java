@@ -20,7 +20,7 @@ import java.util.concurrent.CancellationException;
 
 /**
  * Thrown as a result of a job that was canceled by the user
- * @since Jet 5.3
+ * @since 5.3
  */
 public class CancellationByUserException extends CancellationException {
 
