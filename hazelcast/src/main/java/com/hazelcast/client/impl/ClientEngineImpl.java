@@ -45,8 +45,7 @@ import com.hazelcast.internal.partition.IPartitionService;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.services.CoreService;
 import com.hazelcast.internal.services.ManagedService;
-import com.hazelcast.internal.tpc.iobuffer.deprecated.ConcurrentIOBufferAllocator;
-import com.hazelcast.internal.tpc.iobuffer.deprecated.IOBufferAllocator;
+import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.util.RuntimeAvailableProcessors;
 import com.hazelcast.internal.util.executor.ExecutorType;
 import com.hazelcast.internal.util.executor.UnblockablePoolExecutorThreadFactory;
@@ -83,6 +82,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
+import static com.hazelcast.internal.tpc.iobuffer.IOBufferAllocatorFactory.createConcurrentAllocator;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
@@ -121,7 +121,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     private final ClientLifecycleMonitor lifecycleMonitor;
     private final Map<UUID, Consumer<Long>> backupListeners = new ConcurrentHashMap<>();
     private final AddressChecker addressChecker;
-    private final IOBufferAllocator responseBufAllocator = new ConcurrentIOBufferAllocator(4096,true);
+    private final IOBufferAllocator responseBufAllocator = createConcurrentAllocator();
 
     // not final for the testing purposes
     private ClientEndpointStatisticsManager endpointStatisticsManager;

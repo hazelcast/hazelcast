@@ -5,6 +5,8 @@ import java.nio.ByteBuffer;
 public interface IOBuffer {
     void release();
 
+    void releaseNextChunk(ByteBuffer chunk);
+
     int position();
 
     void clear();
@@ -32,4 +34,8 @@ public interface IOBuffer {
     void write(ByteBuffer src, int count);
 
     int remaining();
+
+    ByteBuffer[] getChunks();
+
+    boolean hasRemainingChunks();
 }

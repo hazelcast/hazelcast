@@ -8,28 +8,28 @@ import org.junit.experimental.categories.Category;
 import java.util.Random;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
-import static com.hazelcast.internal.tpc.iobuffer.TpcIOBufferAllocator.BUFFER_SIZE;
-import static com.hazelcast.internal.tpc.iobuffer.TpcIOBufferAllocator.INITIAL_POOL_SIZE;
+import static com.hazelcast.internal.tpc.iobuffer.ThreadLocalIOBufferAllocator.BUFFER_SIZE;
+import static com.hazelcast.internal.tpc.iobuffer.ThreadLocalIOBufferAllocator.INITIAL_POOL_SIZE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class TpcIOBufferTest {
-    private final TpcIOBufferAllocator allocator = new TpcIOBufferAllocator();
+public class ThreadLocalIOBufferTest {
+    private final ThreadLocalIOBufferAllocator allocator = new ThreadLocalIOBufferAllocator();
     private final Random random = new Random();
 
     @Test
     public void when_allocatingNewBuffer() {
-        allocator.allocate(TpcIOBufferAllocator.BUFFER_SIZE);
+        allocator.allocate(ThreadLocalIOBufferAllocator.BUFFER_SIZE);
     }
 
     @Test
     public void when_overflowingBufferCache() {
         assert allocator.byteBufferPool.length == INITIAL_POOL_SIZE;
 
-        TpcIOBuffer[] buffers = new TpcIOBuffer[INITIAL_POOL_SIZE + 1];
+        ThreadLocalIOBuffer[] buffers = new ThreadLocalIOBuffer[INITIAL_POOL_SIZE + 1];
         for (int i = 0; i < INITIAL_POOL_SIZE + 1; i++) {
             buffers[i] = allocator.allocate();
         }
@@ -42,7 +42,7 @@ public class TpcIOBufferTest {
 
     @Test
     public void when_writingInt_then_valueCanBeRead() {
-        TpcIOBuffer buffer = allocator.allocate();
+        ThreadLocalIOBuffer buffer = allocator.allocate();
         int randomInt = random.nextInt();
         buffer.writeInt(randomInt);
         buffer.writeIntL(randomInt);
@@ -57,7 +57,7 @@ public class TpcIOBufferTest {
 
     @Test
     public void when_writingSplittedInt_then_valueCanBeRead() {
-        TpcIOBuffer buffer = allocator.allocate();
+        ThreadLocalIOBuffer buffer = allocator.allocate();
         int randomInt = random.nextInt();
 
         buffer.writeBytes(new byte[BUFFER_SIZE - 2]);
@@ -68,7 +68,7 @@ public class TpcIOBufferTest {
 
     @Test
     public void when_writingMultipleInts_then_properValuesAreRead() {
-        TpcIOBuffer buffer = allocator.allocate();
+        ThreadLocalIOBuffer buffer = allocator.allocate();
         for (int i = 0; i < BUFFER_SIZE; i++) {
             buffer.writeInt(i);
         }
@@ -86,7 +86,7 @@ public class TpcIOBufferTest {
         assertNull(allocator.ioBufferPool[0]);
         assertNull(allocator.byteBufferPool[0]);
 
-        TpcIOBuffer buffer = allocator.allocate(1);
+        ThreadLocalIOBuffer buffer = allocator.allocate(1);
         allocator.free(buffer);
 
         assertEquals(1, allocator.byteBufferPoolPos);

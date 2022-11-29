@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.iobuffer.deprecated.IOBufferImpl;
+import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
 import com.hazelcast.internal.util.counters.SwCounter;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -202,14 +202,14 @@ public abstract class AsyncSocket implements Closeable {
      * @param buf the IOBuffer to write.
      * @return true if the IOBuffer was accepted, false otherwise.
      */
-    public abstract boolean write(IOBufferImpl buf);
+    public abstract boolean write(IOBuffer buf);
 
-    public abstract boolean writeAll(Collection<IOBufferImpl> bufs);
+    public abstract boolean writeAll(Collection<IOBuffer> bufs);
 
     /**
      * Writes a IOBuffer and flushes it.
      * <p>
-     * This is the same as calling {@link #write(IOBufferImpl)} followed by a {@link #flush()}.
+     * This is the same as calling {@link #write(IOBuffer)} followed by a {@link #flush()}.
      * <p>
      * There is no guarantee that IOBuffer is actually going to be received by the caller if
      * the AsyncSocket has accepted the IOBuffer. E.g. when the connection closes.
@@ -219,14 +219,14 @@ public abstract class AsyncSocket implements Closeable {
      * @param buf the IOBuffer to write.
      * @return true if the IOBuffer was accepted, false otherwise.
      */
-    public abstract boolean writeAndFlush(IOBufferImpl buf);
+    public abstract boolean writeAndFlush(IOBuffer buf);
 
     /**
      * Writes a IOBuffer and ensure it gets written.
      * <p>
      * Should only be called from within the Eventloop.
      */
-    public abstract boolean unsafeWriteAndFlush(IOBufferImpl buf);
+    public abstract boolean unsafeWriteAndFlush(IOBuffer buf);
 
     /**
      * Connects asynchronously to some address.

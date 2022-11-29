@@ -35,8 +35,8 @@ import com.hazelcast.internal.nio.ConnectionType;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.server.ServerConnection;
 import com.hazelcast.internal.tpc.AsyncSocket;
-import com.hazelcast.internal.tpc.iobuffer.deprecated.IOBufferAllocator;
-import com.hazelcast.internal.tpc.iobuffer.deprecated.IOBufferImpl;
+import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.Credentials;
 import com.hazelcast.security.SecurityContext;
@@ -277,7 +277,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
         } else {
             ClientMessage.Frame frame = resultClientMessage.startFrame;
             //IOBuffer buf = new IOBuffer(resultClientMessage.getBufferLength(), false);
-            IOBufferImpl buf = responseBufAllocator.allocate(resultClientMessage.getBufferLength());
+            IOBuffer buf = responseBufAllocator.allocate(resultClientMessage.getBufferLength());
             while (frame != null) {
                 buf.writeIntL(frame.content.length + SIZE_OF_FRAME_LENGTH_AND_FLAGS);
 
@@ -290,7 +290,7 @@ public abstract class AbstractMessageTask<P> implements MessageTask, SecureReque
                 buf.writeBytes(frame.content);
                 frame = frame.next;
             }
-            buf.byteBuffer().flip();//nasty
+            buf.flip();
             asyncSocket.writeAndFlush(buf);
         }
         //TODO framing not implemented yet, should be split into frames before writing to connection

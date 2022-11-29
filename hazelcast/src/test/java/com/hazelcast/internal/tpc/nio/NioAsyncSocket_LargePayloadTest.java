@@ -1,8 +1,8 @@
 package com.hazelcast.internal.tpc.nio;
 
-import com.hazelcast.internal.tpc.iobuffer.deprecated.IOBufferAllocator;
-import com.hazelcast.internal.tpc.iobuffer.deprecated.IOBufferImpl;
-import com.hazelcast.internal.tpc.iobuffer.deprecated.NonConcurrentIOBufferAllocator;
+import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
+import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocatorFactory;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.jetbrains.annotations.NotNull;
@@ -21,6 +21,8 @@ import static com.hazelcast.internal.nio.Bits.BYTES_INT;
 import static com.hazelcast.internal.nio.Bits.BYTES_LONG;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.internal.tpc.iobuffer.IOBufferAllocatorFactory.createConcurrentAllocator;
+import static com.hazelcast.internal.tpc.iobuffer.IOBufferAllocatorFactory.createThreadLocal;
 import static com.hazelcast.internal.tpc.util.Util.put;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -135,11 +137,13 @@ public class NioAsyncSocket_LargePayloadTest {
 
         NioAsyncSocket clientSocket = newClient(serverAddress, latch);
 
+        IOBufferAllocator allocator = createThreadLocal();
+
         System.out.println("Starting");
 
         for (int k = 0; k < concurrency; k++) {
             byte[] payload = new byte[payloadSize];
-            IOBufferImpl buf = new IOBufferImpl(INT_SIZE_IN_BYTES + LONG_SIZE_IN_BYTES + payload.length);
+            IOBuffer buf = allocator.allocate(INT_SIZE_IN_BYTES + LONG_SIZE_IN_BYTES + payload.length);
             buf.writeInt(payload.length);
             buf.writeLong(requestTotal / concurrency);
             buf.writeBytes(payload);
@@ -166,7 +170,7 @@ public class NioAsyncSocket_LargePayloadTest {
             private ByteBuffer payloadBuffer;
             private long round;
             private int payloadSize = -1;
-            private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
+            private final IOBufferAllocator<? extends IOBuffer> responseAllocator = IOBufferAllocatorFactory.createThreadLocal();
 
             @Override
             public void onRead(ByteBuffer receiveBuf) {
@@ -194,11 +198,10 @@ public class NioAsyncSocket_LargePayloadTest {
                     }
                     payloadBuffer.flip();
 
-                    System.out.println("round:" + round);
                     if (round == 0) {
                         latch.countDown();
                     } else {
-                        IOBufferImpl responseBuf = responseAllocator.allocate(BYTES_INT + BYTES_LONG + payloadSize);
+                        IOBuffer responseBuf = responseAllocator.allocate(BYTES_INT + BYTES_LONG + payloadSize);
                         responseBuf.writeInt(payloadSize);
                         responseBuf.writeLong(round);
                         responseBuf.write(payloadBuffer);
@@ -232,7 +235,7 @@ public class NioAsyncSocket_LargePayloadTest {
                 private ByteBuffer payloadBuffer;
                 private long round;
                 private int payloadSize = -1;
-                private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
+                private final IOBufferAllocator responseAllocator = createConcurrentAllocator();
 
                 @Override
                 public void onRead(ByteBuffer receiveBuf) {
@@ -258,7 +261,7 @@ public class NioAsyncSocket_LargePayloadTest {
                         }
 
                         payloadBuffer.flip();
-                        IOBufferImpl responseBuf = responseAllocator.allocate(BYTES_INT + BYTES_LONG + payloadSize);
+                        IOBuffer responseBuf = responseAllocator.allocate(BYTES_INT + BYTES_LONG + payloadSize);
                         responseBuf.writeInt(payloadSize);
                         responseBuf.writeLong(round - 1);
                         responseBuf.write(payloadBuffer);

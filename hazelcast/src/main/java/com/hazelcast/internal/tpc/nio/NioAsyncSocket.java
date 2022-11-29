@@ -19,7 +19,7 @@ package com.hazelcast.internal.tpc.nio;
 import com.hazelcast.internal.tpc.AsyncSocket;
 import com.hazelcast.internal.tpc.Eventloop;
 import com.hazelcast.internal.tpc.ReadHandler;
-import com.hazelcast.internal.tpc.iobuffer.deprecated.IOBufferImpl;
+import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.IOException;
@@ -80,7 +80,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     //  concurrent
     public final AtomicReference<Thread> flushThread = new AtomicReference<>();
-    public MpmcArrayQueue<IOBufferImpl> unflushedBufs;
+    public MpmcArrayQueue<IOBuffer> unflushedBufs;
     private CompletableFuture<AsyncSocket> connectFuture;
     private final EventLoopHandler eventLoopHandler = new EventLoopHandler();
 
@@ -287,24 +287,24 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public boolean write(IOBufferImpl buf) {
+    public boolean write(IOBuffer buf) {
         return unflushedBufs.add(buf);
     }
 
     @Override
-    public boolean writeAll(Collection<IOBufferImpl> bufs) {
+    public boolean writeAll(Collection<IOBuffer> bufs) {
         return unflushedBufs.addAll(bufs);
     }
 
     @Override
-    public boolean writeAndFlush(IOBufferImpl buf) {
+    public boolean writeAndFlush(IOBuffer buf) {
         boolean result = write(buf);
         flush();
         return result;
     }
 
     @Override
-    public boolean unsafeWriteAndFlush(IOBufferImpl buf) {
+    public boolean unsafeWriteAndFlush(IOBuffer buf) {
         Thread currentFlushThread = flushThread.get();
         Thread currentThread = Thread.currentThread();
 

@@ -16,10 +16,14 @@
 
 package com.hazelcast.internal.tpc.iobuffer;
 
+import java.nio.ByteBuffer;
+
 public interface IOBufferAllocator<T extends IOBuffer> {
     T allocate();
 
     T allocate(int minSize);
 
     void free(T buf);
+
+    void free(ByteBuffer chunk);
 }

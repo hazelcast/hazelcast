@@ -3,34 +3,39 @@ package com.hazelcast.internal.tpc.iobuffer;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-class TpcIOBufferAllocator implements IOBufferAllocator<TpcIOBuffer> {
+class ThreadLocalIOBufferAllocator implements IOBufferAllocator<ThreadLocalIOBuffer> {
     static final int DEFAULT_SIZE = 4096;
     static final int INITIAL_POOL_SIZE = 4096;
     static final int BUFFER_SIZE = 16384;
 
     ByteBuffer[] byteBufferPool = new ByteBuffer[INITIAL_POOL_SIZE];
-    TpcIOBuffer[] ioBufferPool = new TpcIOBuffer[INITIAL_POOL_SIZE];
+    ThreadLocalIOBuffer[] ioBufferPool = new ThreadLocalIOBuffer[INITIAL_POOL_SIZE];
 
     int byteBufferPoolPos;
     int ioBufferPoolPos;
 
     @Override
-    public TpcIOBuffer allocate() {
+    public ThreadLocalIOBuffer allocate() {
         return allocate(DEFAULT_SIZE);
     }
 
     @Override
-    public TpcIOBuffer allocate(int minSize) {
+    public ThreadLocalIOBuffer allocate(int minSize) {
         return getNextIOBuffer(minSize);
     }
 
     @Override
-    public void free(TpcIOBuffer ioBuffer) {
-        for (int i = 0; i < ioBuffer.chunks.length; i++) {
+    public void free(ThreadLocalIOBuffer ioBuffer) {
+        for (int i = ioBuffer.chunkToRelease; i < ioBuffer.chunks.length; i++) {
             ByteBuffer chunk = ioBuffer.chunks[i];
             reclaim(chunk);
         }
         reclaim(ioBuffer);
+    }
+
+    @Override
+    public void free(ByteBuffer chunk) {
+        reclaim(chunk);
     }
 
     ByteBuffer getNextByteBuffer() {
@@ -40,11 +45,11 @@ class TpcIOBufferAllocator implements IOBufferAllocator<TpcIOBuffer> {
         return byteBufferPool[--byteBufferPoolPos];
     }
 
-    private TpcIOBuffer getNextIOBuffer(int minSize) {
+    private ThreadLocalIOBuffer getNextIOBuffer(int minSize) {
         if (ioBufferPoolPos == 0) {
-            return new TpcIOBuffer(this, minSize);
+            return new ThreadLocalIOBuffer(this, minSize);
         }
-        TpcIOBuffer buffer = ioBufferPool[--ioBufferPoolPos];
+        ThreadLocalIOBuffer buffer = ioBufferPool[--ioBufferPoolPos];
         buffer.reset(minSize);
         return buffer;
     }
@@ -54,7 +59,7 @@ class TpcIOBufferAllocator implements IOBufferAllocator<TpcIOBuffer> {
         byteBufferPool[byteBufferPoolPos++] = byteBuffer;
     }
 
-    private void reclaim(TpcIOBuffer ioBuffer) {
+    private void reclaim(ThreadLocalIOBuffer ioBuffer) {
         ensureRemainingIoBuffer();
         ioBufferPool[ioBufferPoolPos++] = ioBuffer;
     }

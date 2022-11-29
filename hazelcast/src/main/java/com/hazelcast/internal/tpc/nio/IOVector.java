@@ -16,12 +16,15 @@
 
 package com.hazelcast.internal.tpc.nio;
 
-import com.hazelcast.internal.tpc.iobuffer.deprecated.IOBufferImpl;
+import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.channels.SocketChannel;
+import java.util.Arrays;
 import java.util.Queue;
+
+import static com.hazelcast.internal.util.QuickMath.nextPowerOfTwo;
 
 /**
  * Contains logic to do vectorized I/O (so instead of passing a single buffer, an array of buffer is passed to socket.write).
@@ -30,50 +33,53 @@ public final class IOVector {
 
     private final static int IOV_MAX = 1024;
 
-    private final ByteBuffer[] array = new ByteBuffer[IOV_MAX];
-    private final IOBufferImpl[] bufs = new IOBufferImpl[IOV_MAX];
-    private int size = 0;
+    private final IOBuffer[] ioBuffers = new IOBuffer[IOV_MAX];
+    private ByteBuffer[] byteBuffers = new ByteBuffer[IOV_MAX];
+
+    private int ioBuffersSize = 0;
+    private int byteBuffersSize = 0;
     private long pending;
 
     public boolean isEmpty() {
-        return size == 0;
+        return ioBuffersSize == 0;
     }
 
-    public void fill(Queue<IOBufferImpl> queue) {
-        int count = IOV_MAX - size;
+    public void fill(Queue<IOBuffer> queue) {
+        int count = IOV_MAX - ioBuffersSize;
         for (int k = 0; k < count; k++) {
-            IOBufferImpl buf = queue.poll();
+            IOBuffer buf = queue.poll();
             if (buf == null) {
                 break;
             }
-
-            ByteBuffer buffer = buf.byteBuffer();
-            array[size] = buffer;
-            bufs[size] = buf;
-            size++;
-            pending += buffer.remaining();
+            add0(buf);
         }
     }
 
-    public boolean add(IOBufferImpl buf) {
-        if (size == IOV_MAX) {
+    public boolean add(IOBuffer buf) {
+        if (ioBuffersSize == IOV_MAX) {
             return false;
         } else {
-            ByteBuffer buffer = buf.byteBuffer();
-            array[size] = buffer;
-            bufs[size] = buf;
-            size++;
-            pending += buffer.remaining();
+            add0(buf);
             return true;
         }
     }
 
+    private void add0(IOBuffer buf) {
+        ioBuffers[ioBuffersSize] = buf;
+        ioBuffersSize++;
+        ByteBuffer[] chunks = buf.getChunks();
+        ensureRemaining(chunks.length);
+        System.arraycopy(chunks, 0, byteBuffers, byteBuffersSize, chunks.length);
+        byteBuffersSize += chunks.length;
+        pending += buf.remaining();
+    }
+
     public long write(SocketChannel socketChannel) throws IOException {
         long written;
-        if (size == 1) {
-            written = socketChannel.write(array[0]);
+        if (byteBuffersSize == 1) {
+            written = socketChannel.write(byteBuffers[0]);
         } else {
-            written = socketChannel.write(array, 0, size);
+            written = socketChannel.write(byteBuffers, 0, byteBuffersSize);
         }
         compact(written);
         return written;
@@ -82,41 +88,62 @@ public final class IOVector {
     void compact(long written) {
         if (written == pending) {
             // everything was written
-            for (int k = 0; k < size; k++) {
-                array[k] = null;
-                bufs[k].release();
-                bufs[k] = null;
+            for (int i = 0; i < ioBuffersSize; i++) {
+                ioBuffers[i].release();
+                ioBuffers[i] = null;
             }
-            size = 0;
+            for (int i = 0; i < byteBuffersSize; i++) {
+                byteBuffers[i] = null;
+            }
+            byteBuffersSize = 0;
+            ioBuffersSize = 0;
             pending = 0;
-        } else {
-            // not everything was written
-            int toIndex = 0;
-            int length = size;
-            for (int k = 0; k < length; k++) {
-                if (array[k].hasRemaining()) {
-                    if (k == 0) {
-                        // the first one is not empty, we are done
-                        break;
-                    } else {
-                        array[toIndex] = array[k];
-                        array[k] = null;
-                        bufs[toIndex] = bufs[k];
-                        bufs[k] = null;
-                        toIndex++;
-                    }
+            return;
+        }
+
+        // not everything was written
+        int toIndexByteBuffers = 0;
+        int initialByteBuffersLength = byteBuffersSize;
+        for (int i = 0; i < initialByteBuffersLength; i++) {
+            if (byteBuffers[i].hasRemaining()) {
+                if (i == 0) {
+                    // the first one is not empty, we are done
+                    break;
                 } else {
-                    size--;
-                    array[k] = null;
-                    bufs[k].release();
-                    bufs[k] = null;
+                    byteBuffers[i] = null;
+                    byteBuffers[toIndexByteBuffers] = byteBuffers[i];
+                    toIndexByteBuffers++;
                 }
+            } else {
+                byteBuffersSize--;
+                byteBuffers[i] = null;
             }
-            pending -= written;
+        }
+
+        int toIndexIoBuffers = 0;
+        int initialIOBuffersLength = ioBuffersSize;
+        for (int i = 0; i < initialIOBuffersLength; i++) {
+            if (ioBuffers[i].hasRemainingChunks()) {
+                if (i == 0) {
+                    // the first one is not empty, we are done
+                    break;
+                } else {
+                    ioBuffers[i] = null;
+                    ioBuffers[toIndexIoBuffers] = ioBuffers[i];
+                    toIndexIoBuffers++;
+                }
+            } else {
+                ioBuffersSize--;
+                ioBuffers[i] = null;
+            }
         }
     }
 
-    public int size() {
-        return size;
+    private void ensureRemaining(int size) {
+        if (byteBuffers.length >= byteBuffersSize + size) {
+            return;
+        }
+        int nextSize = nextPowerOfTwo(byteBuffersSize + size);
+        byteBuffers = Arrays.copyOf(byteBuffers, nextSize);
     }
 }

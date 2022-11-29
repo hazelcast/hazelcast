@@ -6,10 +6,10 @@ import java.util.Arrays;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
-import static com.hazelcast.internal.tpc.iobuffer.TpcIOBufferAllocator.BUFFER_SIZE;
+import static com.hazelcast.internal.tpc.iobuffer.ThreadLocalIOBufferAllocator.BUFFER_SIZE;
 
-class TpcIOBuffer implements IOBuffer {
-    private final TpcIOBufferAllocator allocator;
+class ThreadLocalIOBuffer implements IOBuffer {
+    private final ThreadLocalIOBufferAllocator allocator;
 
     ByteBuffer[] chunks;
 
@@ -25,7 +25,9 @@ class TpcIOBuffer implements IOBuffer {
 
     private int limit;
 
-    TpcIOBuffer(TpcIOBufferAllocator allocator, int minSize) {
+    int chunkToRelease;
+
+    ThreadLocalIOBuffer(ThreadLocalIOBufferAllocator allocator, int minSize) {
         this.allocator = allocator;
         this.chunks = new ByteBuffer[((minSize - 1)/ BUFFER_SIZE) + 1];
         for (int i = 0; i < chunks.length; i++) {
@@ -37,6 +39,7 @@ class TpcIOBuffer implements IOBuffer {
         this.chunksPos = 0;
         this.pos = 0;
         this.limit = 0;
+        this.chunkToRelease = 0;
 
         for (int i = 0; i < ((minSize - 1)/ BUFFER_SIZE) + 1; i++) {
             addChunk(allocator.getNextByteBuffer());
@@ -46,6 +49,12 @@ class TpcIOBuffer implements IOBuffer {
     @Override
     public void release() {
         allocator.free(this);
+    }
+
+    @Override
+    public void releaseNextChunk(ByteBuffer chunk) {
+        assert chunk == chunks[chunkToRelease];
+        allocator.free(chunks[chunkToRelease++]);
     }
 
     @Override
@@ -63,7 +72,11 @@ class TpcIOBuffer implements IOBuffer {
 
     @Override
     public void flip() {
-        throw new IllegalStateException();
+        limit = pos;
+        pos = 0;
+        for (int i = 0; i < chunks.length; i++) {
+            chunks[i].flip();
+        }
     }
 
     @Override
@@ -186,6 +199,16 @@ class TpcIOBuffer implements IOBuffer {
     @Override
     public int remaining() {
         return limit - pos;
+    }
+
+    @Override
+    public ByteBuffer[] getChunks() {
+        return chunks;
+    }
+
+    @Override
+    public boolean hasRemainingChunks() {
+        return chunkToRelease < chunks.length;
     }
 
     private void ensureRemaining(int length) {

@@ -1,9 +1,8 @@
 package com.hazelcast.internal.tpc.nio;
 
 
-import com.hazelcast.internal.tpc.iobuffer.deprecated.IOBufferAllocator;
-import com.hazelcast.internal.tpc.iobuffer.deprecated.IOBufferImpl;
-import com.hazelcast.internal.tpc.iobuffer.deprecated.NonConcurrentIOBufferAllocator;
+import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import org.jetbrains.annotations.NotNull;
@@ -20,6 +19,8 @@ import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.internal.nio.Bits.BYTES_INT;
 import static com.hazelcast.internal.nio.Bits.BYTES_LONG;
+import static com.hazelcast.internal.tpc.iobuffer.IOBufferAllocatorFactory.createConcurrentAllocator;
+import static com.hazelcast.internal.tpc.iobuffer.IOBufferAllocatorFactory.createThreadLocal;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -78,10 +79,12 @@ public class NioAsyncSocket_IntegrationTest {
 
         NioAsyncSocket clientSocket = newClient(serverAddress, latch);
 
+        IOBufferAllocator allocator = createThreadLocal();
+
         System.out.println("Starting");
 
         for (int k = 0; k < concurrency; k++) {
-            IOBufferImpl buf = new IOBufferImpl(128);
+            IOBuffer buf = allocator.allocate(128);
             buf.writeInt(8);
             buf.writeLong(requestTotal / concurrency);
             buf.flip();
@@ -98,7 +101,7 @@ public class NioAsyncSocket_IntegrationTest {
         clientSocket = NioAsyncSocket.open();
         clientSocket.tcpNoDelay(true);
         clientSocket.readHandler(new NioAsyncReadHandler() {
-            private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
+            private final IOBufferAllocator responseAllocator = createConcurrentAllocator();
 
             @Override
             public void onRead(ByteBuffer buffer) {
@@ -112,7 +115,7 @@ public class NioAsyncSocket_IntegrationTest {
                     if (l == 0) {
                         latch.countDown();
                     } else {
-                        IOBufferImpl buf = responseAllocator.allocate(8);
+                        IOBuffer buf = responseAllocator.allocate(8);
                         buf.writeInt(8);
                         buf.writeLong(l);
                         buf.flip();
@@ -135,7 +138,7 @@ public class NioAsyncSocket_IntegrationTest {
             socket.tcpNoDelay(true);
             socket.soLinger(-1);
             socket.readHandler(new NioAsyncReadHandler() {
-                private final IOBufferAllocator responseAllocator = new NonConcurrentIOBufferAllocator(8, true);
+                private final IOBufferAllocator responseAllocator = createConcurrentAllocator();
 
                 @Override
                 public void onRead(ByteBuffer buffer) {
@@ -146,7 +149,7 @@ public class NioAsyncSocket_IntegrationTest {
                         int size = buffer.getInt();
                         long l = buffer.getLong();
 
-                        IOBufferImpl buf = responseAllocator.allocate(8);
+                        IOBuffer buf = responseAllocator.allocate(8);
                         buf.writeInt(-1);
                         buf.writeLong(l - 1);
                         buf.flip();
