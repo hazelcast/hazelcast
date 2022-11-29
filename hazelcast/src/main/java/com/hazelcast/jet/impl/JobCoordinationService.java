@@ -771,10 +771,30 @@ public class JobCoordinationService {
         Object unbounded = lmc.getJobConfig().getArgument(JobConfigArguments.KEY_SQL_UNBOUNDED);
         SqlSummary sqlSummary = query != null && unbounded != null ?
                 new SqlSummary(query, Boolean.TRUE.equals(unbounded)) : null;
+
+        // For simplicity, we assume here that light job is running iff LightMasterContext exists:
+        // running jobs are not cancelled and others are not visible.
+        //
+        // It is possible that LightMasterContext still exists (for a short period of time)
+        // when the job is already terminated.
+        // LightMasterContext is removed from map in submitLightJob() _after_ setting result
+        // on the jobCompletionFuture in LightMasterContext.finalizeJob().
+        // jobCompletionFuture is also used in join operation so join operation sees
+        // finished job even though master context still exists.
+        // Also, future completion handlers (thenApply etc.) are not guaranteed to run in
+        // any particular order and can be executed in parallel.
+        //
+        // This is unlikely and we do not care however such scenario is possible:
+        // 1. user submits a light job
+        // 2. user gets the job by id and joins it (separate Job proxy instance is necessary because different future will be used than for submit)
+        // 3. job finishes (either normally or via error or cancellation)
+        // 4. join finishes - user get information that the job completed (from join, not submit)
+        // 5. user asks for jobs list and the job is reported as running
+        //
+        // In such scenario finished job will be reported as running.
         return new JobAndSqlSummary(
                 true, lmc.getJobId(), lmc.getJobId(), idToString(lmc.getJobId()),
                 RUNNING, lmc.getStartTime(), 0, null, sqlSummary,
-                //TODO: user cancelled
                 false);
     }
 

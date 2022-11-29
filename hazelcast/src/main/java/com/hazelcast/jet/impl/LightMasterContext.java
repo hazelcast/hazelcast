@@ -191,7 +191,8 @@ public final class LightMasterContext {
             if (fail == null) {
                 jobCompletionFuture.complete(null);
             } else {
-                // translate JobTerminateRequestedException(CANCEL_FORCEFUL) to CancellationException
+                // translate JobTerminateRequestedException(CANCEL_FORCEFUL)
+                // to CancellationException or CancellationByUserException
                 if (fail instanceof JobTerminateRequestedException
                         && ((JobTerminateRequestedException) fail).mode() == CANCEL_FORCEFUL) {
                     Throwable newFailure = userInitiatedTermination

@@ -32,6 +32,7 @@ import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -39,8 +40,13 @@ import org.junit.runner.RunWith;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CancellationException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.Util.idToString;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -86,6 +92,7 @@ public class JobSummaryTest extends JetTestSupport {
         assertEquals(job.getId(), jobSummary.getJobId());
         assertEquals(JobStatus.COMPLETED, jobSummary.getStatus());
         assertNull(jobSummary.getFailureText());
+        assertFalse(jobSummary.isUserCancelled());
     }
 
     @Test
@@ -102,6 +109,7 @@ public class JobSummaryTest extends JetTestSupport {
         assertTrueEventually(() -> {
             JobSummary summary = getJetClientInstanceImpl(client).getJobSummaryList().get(0);
             assertEquals(JobStatus.RUNNING, summary.getStatus());
+            assertFalse(summary.isUserCancelled());
         }, 20);
 
         job.suspend();
@@ -109,6 +117,7 @@ public class JobSummaryTest extends JetTestSupport {
         assertTrueEventually(() -> {
             JobSummary summary = getJetClientInstanceImpl(client).getJobSummaryList().get(0);
             assertEquals(JobStatus.SUSPENDED, summary.getStatus());
+            assertFalse(summary.isUserCancelled());
         }, 20);
 
         job.resume();
@@ -116,6 +125,7 @@ public class JobSummaryTest extends JetTestSupport {
         assertTrueEventually(() -> {
             JobSummary summary = getJetClientInstanceImpl(client).getJobSummaryList().get(0);
             assertEquals(JobStatus.RUNNING, summary.getStatus());
+            assertFalse(summary.isUserCancelled());
         }, 20);
 
         job.cancel();
@@ -124,6 +134,7 @@ public class JobSummaryTest extends JetTestSupport {
             JobSummary summary = getJetClientInstanceImpl(client).getJobSummaryList().get(0);
             assertEquals(JobStatus.FAILED, summary.getStatus());
             assertEquals(0, summary.getExecutionId());
+            assertTrue(summary.isUserCancelled());
         }, 20);
     }
 
@@ -140,6 +151,30 @@ public class JobSummaryTest extends JetTestSupport {
         assertTrue(jobSummary.isLightJob());
         assertEquals(idToString(job.getId()), jobSummary.getNameOrId());
         assertEquals(job.getId(), jobSummary.getJobId());
+        assertEquals(JobStatus.RUNNING, jobSummary.getStatus());
+        assertFalse(jobSummary.isUserCancelled());
+    }
+
+    @Test
+    @Ignore("Flaky due to race condition described in JobCoordinationService.getJobAndSqlSummary(LightMasterContext)")
+    // To see it failing add some delay (eg. 100ms) in JobCoordinationService.submitLightJob in mc.getCompletionFuture().whenComplete invocation
+    public void when_lightJobIsCancelled_then_itIsNotReportedOnList() throws InterruptedException {
+        // given
+        Job job = instance.getJet().newLightJob(newStreamPipeline());
+        // wait till jobs are scanned
+        Thread.sleep(200);
+
+        assertTrueEventually(() -> assertEquals(1, getJetClientInstanceImpl(client).getJobSummaryList().size()));
+
+        // when
+        Executors.newSingleThreadScheduledExecutor().schedule(job::cancel, 100, TimeUnit.MILLISECONDS);
+
+        assertThatThrownBy(() -> getJetClientInstanceImpl(client).getJob(job.getId()).join())
+                .isInstanceOf(CancellationException.class);
+
+        // then
+        List<JobSummary> list = getJetClientInstanceImpl(client).getJobSummaryList();
+        assertThat(list).isEmpty();
     }
 
     @Test
@@ -220,6 +255,8 @@ public class JobSummaryTest extends JetTestSupport {
 
         assertContains(new JetException(jobSummary.getFailureText()).toString(), msg);
         assertNotEquals(0, jobSummary.getCompletionTime());
+        assertEquals(JobStatus.FAILED, jobSummary.getStatus());
+        assertFalse(jobSummary.isUserCancelled());
     }
 
     private Pipeline newStreamPipeline() {
