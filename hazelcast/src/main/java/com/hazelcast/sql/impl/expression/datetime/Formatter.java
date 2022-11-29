@@ -179,11 +179,11 @@ import java.util.regex.Pattern;
  *      patterns print +## as the exponent, {@code RN} and {@code rn} patterns print 15 hashes, and
  *      {@code TH} and {@code th} patterns print 2 spaces. The other patterns print what they print
  *      when there is no overflow. Note that NaN (non-a-number) is considered positive.
- * <li> In the normal and exponential forms, if there is no sign provision, an {@code M} pattern is
- *      prepended to the integer part. Similarly, if only one part has {@code BR} and/or {@code B}
- *      patterns, the latest bracket in the order of processing is inserted to the opposite part.
- *      The inferred sign is inserted so that it encloses all non-fixed patterns in the part to
- *      which it is inserted. </ul>
+ * <li> In the normal and exponential forms, if there is no negative sign provision, an {@code M}
+ *      pattern is prepended to the integer part. Similarly, if only one part has {@code BR} and/or
+ *      {@code B} patterns, the latest bracket in the order of processing is inserted to the
+ *      opposite part. The inferred sign is inserted so that it encloses all non-fixed patterns in
+ *      the part to which it is inserted. </ul>
  *
  * <br><h2> General Notes <ol>
  * <li> <b>Lowercase variants</b> of patterns are also accepted. If there is no special meaning of
@@ -580,10 +580,14 @@ public abstract class Formatter {
             BR, B, SG, S, MI, M, PL, P, CR, C, TH, th, EEEE, eeee, RN, rn;
 
             static final List<Pattern> SIGN = Arrays.asList(BR, B, SG, S, MI, M, PL, P);
+            static final List<Pattern> NEGATIVE = Arrays.asList(BR, B, SG, S, MI, M);
             static final List<Pattern> ANCHORED = Arrays.asList(B, S, M, P, C, TH, th, EEEE, eeee, RN, rn);
 
             boolean isSign() {
                 return SIGN.contains(this);
+            }
+            boolean isNegativeSign() {
+                return NEGATIVE.contains(this);
             }
             char getSign(boolean pre, boolean negative) {
                 if (this == BR || this == B) {
@@ -638,7 +642,7 @@ public abstract class Formatter {
 
             boolean nextFillMode;
             int offerSign = -1;
-            boolean sign;
+            boolean negative;
             Pattern bracket;
 
             Mask(boolean pre, List<Object> groups, List<Boolean> fillModes, boolean nextFillMode,
@@ -658,8 +662,8 @@ public abstract class Formatter {
                     if (!(g instanceof Anchorable) || ((Anchorable) g).isAnchored()) {
                         offerSign = i;
                     }
-                    if (g instanceof Pattern && ((Pattern) g).isSign()) {
-                        sign = true;
+                    if (g instanceof Pattern && ((Pattern) g).isNegativeSign()) {
+                        negative = true;
                         if (g == Pattern.BR || g == Pattern.B) {
                             bracket = (Pattern) g;
                         }
@@ -670,10 +674,10 @@ public abstract class Formatter {
                 this.minDigits = Math.max(digitMask.lastIndexOf("0") + 1, minDigits);
             }
 
-            /** Ensure matching bracket. Add anchored minus if there is no sign provision. */
+            /** Ensure matching bracket. Add anchored minus if there is no negative sign provision. */
             void ensureSignProvision(Mask pair) {
                 Pattern inferred = bracket == null && pair.bracket != null ? pair.bracket
-                        : pre && !sign && !pair.sign && form != Form.Roman ? Pattern.M : null;
+                        : pre && !negative && !pair.negative && form != Form.Roman ? Pattern.M : null;
                 if (inferred != null) {
                     groups.add(offerSign, inferred);
                     fillModes.add(offerSign, offerSign == fillModes.size() ? nextFillMode
