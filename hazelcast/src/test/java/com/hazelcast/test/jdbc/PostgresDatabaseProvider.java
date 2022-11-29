@@ -20,11 +20,13 @@ import org.testcontainers.jdbc.ContainerDatabaseDriver;
 
 public class PostgresDatabaseProvider implements TestDatabaseProvider {
 
+    private static final int LOGIN_TIMEOUT = 120;
     private String jdbcUrl;
 
     @Override
     public String createDatabase(String dbName) {
         jdbcUrl = "jdbc:tc:postgresql:10.21:///" + dbName + "?TC_DAEMON=true";
+        waitForDb(jdbcUrl, LOGIN_TIMEOUT);
         return jdbcUrl;
     }
 

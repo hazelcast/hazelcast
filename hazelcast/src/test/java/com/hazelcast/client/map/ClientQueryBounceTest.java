@@ -19,6 +19,7 @@ package com.hazelcast.client.map;
 import com.hazelcast.map.QueryBounceTest;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.SlowTest;
+import com.hazelcast.test.bounce.BounceTestConfiguration;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
@@ -28,5 +29,8 @@ import org.junit.runner.RunWith;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category(SlowTest.class)
 public class ClientQueryBounceTest extends QueryBounceTest {
-
+    @Override
+    protected BounceTestConfiguration.DriverType getDriverType() {
+        return BounceTestConfiguration.DriverType.CLIENT;
+    }
 }

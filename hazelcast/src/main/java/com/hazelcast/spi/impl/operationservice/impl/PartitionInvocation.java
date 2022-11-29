@@ -16,12 +16,12 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
 import com.hazelcast.internal.partition.InternalPartition;
 import com.hazelcast.internal.partition.PartitionReplica;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.partition.NoDataMemberInClusterException;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
@@ -32,7 +32,7 @@ import static com.hazelcast.cluster.memberselector.MemberSelectors.DATA_MEMBER_S
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 
 /**
- * A {@link Invocation} evaluates a Operation Invocation for a particular partition running on top of the
+ * An {@link Invocation} evaluates an Operation Invocation for a particular partition running on top of the
  * {@link OperationServiceImpl}.
  */
 final class PartitionInvocation extends Invocation<PartitionReplica> {
