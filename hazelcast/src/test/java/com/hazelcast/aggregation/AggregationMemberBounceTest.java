@@ -61,7 +61,6 @@ public class AggregationMemberBounceTest extends HazelcastTestSupport {
 
     @Test
     public void aggregationReturnsCorrectResultWhenBouncing() {
-
         Runnable[] runnables = new Runnable[DRIVER_COUNT];
         for (int i = 0; i < DRIVER_COUNT; i++) {
             HazelcastInstance driver = bounceMemberRule.getNextTestDriver();
