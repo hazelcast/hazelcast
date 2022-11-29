@@ -39,12 +39,10 @@ import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -70,12 +68,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
      */
     final Object2LongHashMap<Byte> minimumBufferTimes = new Object2LongHashMap<>(Long.MIN_VALUE);
 
-    // NOTE: we are using LinkedList, because we are expecting:
-    //  (1) removals at any position,
-    //  (2) no index-based access, only full traversal
     // package-visible for tests
-    @SuppressWarnings("unchecked")
-    final List<JetSqlRow>[] buffer = new List[]{new LinkedList<>(), new LinkedList<>()};
+    final StreamToStreamJoinBuffer[] buffer;
 
     private final JetJoinInfo joinInfo;
     private final int outerJoinSide;
@@ -152,6 +146,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         if (!found[0] || !found[1]) {
             throw new IllegalArgumentException("Not enough time bounds in postponeTimeMap");
         }
+
+        this.buffer = createBuffers();
     }
 
     @Override
@@ -327,46 +323,22 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         List<Entry<Byte, ToLongFunctionEx<JetSqlRow>>> extractors = timeExtractors(ordinal);
         long[] limits = new long[extractors.size()];
         // when removing from the buffer, we'll also recalculate the minimum buffer times
-        long[] newMinimums = new long[extractors.size()];
-        Arrays.fill(newMinimums, Long.MAX_VALUE);
 
         for (int i = 0; i < extractors.size(); i++) {
             // TODO ignore time fields not in WM state
             limits[i] = wmState.getOrDefault(extractors.get(i).getKey(), Long.MIN_VALUE);
         }
 
-        // Remove all expired events in left & right buffers
-        // 5.4 : If doing an outer join, emit events removed from the buffer,
-        // with `null`s for the other side, if the event was never joined.
-        // TODO optimization: use PriorityQueues. At least in case of a single WM key.
-        final Iterator<JetSqlRow> iterator = buffer[ordinal].iterator();
-        long[] times = new long[extractors.size()];
-        while (iterator.hasNext()) {
-            JetSqlRow row = iterator.next();
-            boolean remove = false;
-            for (int idx = 0; idx < extractors.size(); idx++) {
-                times[idx] = extractors.get(idx).getValue().applyAsLong(row);
-                if (times[idx] < limits[idx]) {
-                    remove = true;
-                    if (outerJoinSide == ordinal && unusedEventsTracker.remove(row)) {
-                        // 5.4 : If doing an outer join, emit events removed from the buffer,
-                        // with `null`s for the other side, if the event was never joined.
-                        JetSqlRow joinedRow = composeRowWithNulls(row, ordinal);
-                        if (joinedRow != null) {
-                            pendingOutput.add(joinedRow);
-                        }
-                    }
+        long[] newMinimums = buffer[ordinal].clearExpiredItems(limits, row -> {
+            if (outerJoinSide == ordinal && unusedEventsTracker.remove(row)) {
+                // 5.4 : If doing an outer join, emit events removed from the buffer,
+                // with `null`s for the other side, if the event was never joined.
+                JetSqlRow joinedRow = composeRowWithNulls(row, ordinal);
+                if (joinedRow != null) {
+                    pendingOutput.add(joinedRow);
                 }
             }
-
-            if (remove) {
-                iterator.remove();
-            } else {
-                for (int i = 0; i < times.length; i++) {
-                    newMinimums[i] = Math.min(times[i], newMinimums[i]);
-                }
-            }
-        }
+        });
 
         for (int i = 0; i < extractors.size(); i++) {
             minimumBufferTimes.put(extractors.get(i).getKey(), newMinimums[i]);
@@ -399,6 +371,17 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             );
         }
         return joinedRow;
+    }
+
+    private StreamToStreamJoinBuffer[] createBuffers() {
+        return new StreamToStreamJoinBuffer[]{
+                leftTimeExtractors.size() == 1
+                        ? new StreamToStreamJoinHeapBuffer(leftTimeExtractors)
+                        : new StreamToStreamJoinListBuffer(leftTimeExtractors),
+                rightTimeExtractors.size() == 1
+                        ? new StreamToStreamJoinHeapBuffer(rightTimeExtractors)
+                        : new StreamToStreamJoinListBuffer(rightTimeExtractors)
+        };
     }
 
     public static final class StreamToStreamJoinProcessorSupplier implements ProcessorSupplier, DataSerializable {
@@ -465,5 +448,10 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             leftInputColumnCount = in.readInt();
             rightInputColumnCount = in.readInt();
         }
+    }
+
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
     }
 }

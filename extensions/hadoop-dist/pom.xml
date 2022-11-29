@@ -86,7 +86,6 @@
                         <includedLicense>The Go license</includedLicense>
                         <includedLicense>CDDL</includedLicense>
                         <includedLicense>CDDL 1.1</includedLicense>
-                        <includedLicense>Eclipse Distribution License - v 1.0</includedLicense>
                     </includedLicenses>
                 </configuration>
             </plugin>

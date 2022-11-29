@@ -1,4 +1,4 @@
-# Distributed Scan
+# Distributed Scan (Outdated since Hazelcast 5.0)
 
 ## Overview
 

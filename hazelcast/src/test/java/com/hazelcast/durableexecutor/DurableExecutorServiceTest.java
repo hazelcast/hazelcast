@@ -602,12 +602,15 @@ public class DurableExecutorServiceTest extends ExecutorServiceTestSupport {
         DurableExecutorService executor = instance.getDurableExecutorService(executorName);
         executor.submit(new OneSecondSleepingTask()).get();
 
-        // collect metrics
-        Map<String, List<Long>> metrics = collectMetrics(DURABLE_EXECUTOR_PREFIX, instance);
-
-        // check results
-        assertMetricsCollected(metrics, 1000, 0,
-                1, 1, 0, 1, 0);
+        // Metrics are updated after the response is sent
+        assertTrueEventually(() -> {
+                    // collect metrics
+                    Map<String, List<Long>> metrics = collectMetrics(DURABLE_EXECUTOR_PREFIX, instance);
+                    // check results
+                    assertMetricsCollected(metrics, 1000, 0,
+                            1, 1, 0, 1, 0);
+                }
+        );
     }
 
     @Test
