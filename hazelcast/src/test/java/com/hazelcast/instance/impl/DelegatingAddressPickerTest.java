@@ -112,10 +112,10 @@ public class DelegatingAddressPickerTest {
 
         NetworkConfig networkConfig = config.getNetworkConfig();
         //All the picker.getBindAddress(X) calls return the same bind address
-        assertAddressBetweenPorts(memberBindAddress, picker.getBindAddress(EndpointQualifier.MEMBER),networkConfig);
-        assertAddressBetweenPorts(memberBindAddress, picker.getBindAddress(EndpointQualifier.CLIENT),networkConfig);
-        assertAddressBetweenPorts(memberBindAddress, picker.getBindAddress(EndpointQualifier.REST),networkConfig);
-        assertAddressBetweenPorts(memberBindAddress, picker.getBindAddress(wanEndpointQualifier),networkConfig);
+        assertAddressBetweenPorts(memberBindAddress, picker.getBindAddress(EndpointQualifier.MEMBER), networkConfig);
+        assertAddressBetweenPorts(memberBindAddress, picker.getBindAddress(EndpointQualifier.CLIENT), networkConfig);
+        assertAddressBetweenPorts(memberBindAddress, picker.getBindAddress(EndpointQualifier.REST), networkConfig);
+        assertAddressBetweenPorts(memberBindAddress, picker.getBindAddress(wanEndpointQualifier), networkConfig);
 
         assertEquals(memberPublicAddress, picker.getPublicAddress(EndpointQualifier.MEMBER));
         assertEquals(memberPublicAddress, picker.getPublicAddress(EndpointQualifier.CLIENT));
@@ -199,7 +199,7 @@ public class DelegatingAddressPickerTest {
     }
 
     private void assertAddressBetweenPorts(Address expected, Address actual, NetworkConfig networkConfig) {
-       assertAddressBetweenPorts(expected,actual,networkConfig.isPortAutoIncrement(),networkConfig.getPortCount());
+       assertAddressBetweenPorts(expected, actual, networkConfig.isPortAutoIncrement(), networkConfig.getPortCount());
     }
 
     private void assertAddressBetweenPorts(Address expected, Address actual, boolean isPortAutoIncrement, int portCount) {
