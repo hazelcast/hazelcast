@@ -741,17 +741,15 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
     @Test
     public void testListenerRegistrationWhileANewMemberJoining() {
         CountDownLatch latch = new CountDownLatch(1);
+        Config config = getConfigWithService(new PostJoinAwareServiceImpl(latch), PostJoinAwareServiceImpl.SERVICE_NAME);
 
-        Config masterConfig = getConfigWithService(new PostJoinAwareServiceImpl(latch), PostJoinAwareServiceImpl.SERVICE_NAME);
-        HazelcastInstance hz1 = factory.newHazelcastInstance(masterConfig);
-
-        Config joiningConfig = getConfigWithService(new PostJoinAwareServiceImpl(latch), PostJoinAwareServiceImpl.SERVICE_NAME);
         EntryListenerConfig listenerConfig = new EntryListenerConfig();
-        CountDownLatch entryAddedLatch = new CountDownLatch(1);
+        CountDownLatch entryAddedLatch = new CountDownLatch(2);
         listenerConfig.setImplementation((EntryAddedListener) event -> entryAddedLatch.countDown());
-        joiningConfig.getMapConfig("test").addEntryListenerConfig(listenerConfig);
+        config.getMapConfig("test").addEntryListenerConfig(listenerConfig);
 
-        factory.newHazelcastInstance(joiningConfig);
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
 
         IMap<Object, Object> map = hz1.getMap("test");
 

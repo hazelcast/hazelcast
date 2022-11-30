@@ -22,8 +22,8 @@ import com.hazelcast.spi.impl.operationservice.PartitionAwareOperation;
 
 /**
  * Services which need to perform operations on a joining member just before the member is set as joined must implement
- *  * this interface. These operations are executed on the joining member before it is set as joined, in contrast to
- *  * {@link PostJoinAwareService#getPostJoinOperation()}s which are executed on the joining member after it is set as joined.
+ * this interface. These operations are executed on the joining member before it is set as joined, in contrast to
+ * {@link PostJoinAwareService#getPostJoinOperation()}s which are executed on the joining member after it is set as joined.
  * The practical outcome is that pre-join operations are already executed before the {@link com.hazelcast.core.HazelcastInstance}
  * is returned to the caller, while post-join operations may be still executing.
  * Additionally, pre-join operations must implement {@link AllowedDuringPassiveState}, since they have to be executed
