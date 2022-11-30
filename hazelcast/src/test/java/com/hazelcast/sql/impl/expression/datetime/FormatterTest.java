@@ -272,6 +272,10 @@ public class FormatterTest {
         check(-1,  f, "-");
         check(NaN, f, "+");
 
+        f = forNumbers("");
+        check(-1,  f, "-");
+        check(NaN, f, " ");
+
         f = forNumbers("9th");
         check(-10, f, "-#  ");
         check(NaN, f, " #  ");
@@ -377,7 +381,10 @@ public class FormatterTest {
     }
 
     @Test
-    public void testIncompatibleFormat() {
+    public void testEmptyOrIncompatibleFormat() {
+        check(LocalDate.MIN, forDates(""), "");
+        check(0, forNumbers(""), " ");
+
         assertThrows("Input parameter is expected to be date/time", QueryException.class,
                 () -> forDates("YYYY-MM-DD").format(0, US));
 

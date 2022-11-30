@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.expression.datetime;
 
 import com.hazelcast.sql.impl.QueryException;
 
+import javax.annotation.Nonnull;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
@@ -247,14 +248,14 @@ public abstract class Formatter {
     private static final String[] ROMAN = {"M", "CM", "D", "CD", "C", "XC", "L", "XL", "X", "IX", "V", "IV", "I"};
     private static final String[] ORDINAL = {"th", "st", "nd", "rd", "th", "th", "th", "th", "th", "th"};
 
-    public static Formatter forDates(String format) {
+    public static Formatter forDates(@Nonnull String format) {
         return new DateFormat(format);
     }
-    public static Formatter forNumbers(String format) {
+    public static Formatter forNumbers(@Nonnull String format) {
         return new NumberFormat(format);
     }
 
-    public abstract String format(Object input, Locale locale);
+    public abstract String format(@Nonnull Object input, @Nonnull Locale locale);
 
     interface GroupProcessor {
         void acceptLiteral(String literal);
@@ -529,7 +530,7 @@ public abstract class Formatter {
         }
 
         @Override
-        public String format(Object input, Locale locale) {
+        public String format(@Nonnull Object input, @Nonnull Locale locale) {
             if (!(input instanceof Temporal)) {
                 throw QueryException.dataException("Input parameter is expected to be date/time");
             }
@@ -872,7 +873,8 @@ public abstract class Formatter {
                     : p.afterLastDigit != -1 ? p.afterLastDigit : p.groups.size();
             boolean zero = p.integerDigits.indexOf("0") != -1 || p.fractionDigits.indexOf("0") != -1;
             integerMask = new Mask(true, p.groups.subList(0, split), p.fillModes.subList(0, split),
-                    p.fillModes.get(0), p.integerDigits, !zero && p.integerDigits.length() > 0 ? 1 : 0);
+                    p.fillModes.isEmpty() ? p.fillMode : p.fillModes.get(0), p.integerDigits,
+                    !zero && p.integerDigits.length() > 0 ? 1 : 0);
             fractionMask = new Mask(false, p.groups.subList(split, p.groups.size()),
                     p.fillModes.subList(split, p.fillModes.size()), p.fillMode, p.fractionDigits,
                     !zero && p.integerDigits.length() == 0 ? 1 : 0);
@@ -925,7 +927,7 @@ public abstract class Formatter {
          *      updated accordingly. </ol>
          */
         @Override
-        public String format(Object input, Locale locale) {
+        public String format(@Nonnull Object input, @Nonnull Locale locale) {
             if (!(input instanceof Number)) {
                 throw QueryException.dataException("Input parameter is expected to be numeric");
             }
