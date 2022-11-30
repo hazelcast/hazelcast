@@ -19,14 +19,20 @@ package com.hazelcast.map;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.partition.PartitionTableView;
+import com.hazelcast.internal.partition.TestPartitionUtils;
 import com.hazelcast.query.Predicate;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.SampleTestObjects;
+import com.hazelcast.query.impl.LoggingIndexes;
+import com.hazelcast.test.ChangeLoggingRule;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.annotation.SlowTest;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import com.hazelcast.test.bounce.BounceTestConfiguration;
 import com.hazelcast.test.jitter.JitterRule;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -35,6 +41,8 @@ import org.junit.runner.RunWith;
 import java.util.Collection;
 import java.util.Random;
 
+import static com.hazelcast.query.impl.Indexes.CUSTOM_INDEXES_CLASS_NAME;
+import static com.hazelcast.test.Accessors.getPartitionService;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static org.junit.Assert.assertEquals;
@@ -49,6 +57,17 @@ public class QueryBounceTest {
     private static final String TEST_MAP_NAME = "employees";
     private static final int COUNT_ENTRIES = 10000;
     private static final int CONCURRENCY = 10;
+
+    // enable trace logging for migrations
+    // see
+    @ClassRule
+    public static ChangeLoggingRule changeLoggingRule = new ChangeLoggingRule("log4j2-trace-migrations.xml");
+
+    // change Indexes implementation to LoggingIndexes class that decorates plain
+    // Indexes class with logging.
+    @Rule
+    public OverridePropertyRule customIndexImplProperty = OverridePropertyRule.set(CUSTOM_INDEXES_CLASS_NAME,
+            LoggingIndexes.class.getName());
 
     @Rule
     public BounceMemberRule bounceMemberRule =
@@ -69,7 +88,15 @@ public class QueryBounceTest {
 
     @Test
     public void testQueryWithIndexes() {
-        prepareAndRunQueryTasks(true);
+        try {
+            prepareAndRunQueryTasks(true);
+        } catch (AssertionError e) {
+            PartitionTableView partitionTableView = getPartitionService(bounceMemberRule.getSteadyMember())
+                    .createPartitionTableView();
+            System.out.println("Partition assignments at time of failure:\n"
+                    + TestPartitionUtils.dumpPartitionTable(partitionTableView));
+            throw e;
+        }
     }
 
     protected Config getConfig() {
