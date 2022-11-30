@@ -40,7 +40,6 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Map;
@@ -64,7 +63,7 @@ import static com.hazelcast.jet.core.test.JetAssert.fail;
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category(QuickTest.class)
-public class OrderedProcessingMultipleMemberTest extends SimpleTestInClusterSupport implements Serializable {
+public class OrderedProcessingMultipleMemberTest extends SimpleTestInClusterSupport {
 
     // Used to set the LP of the stage with the higher value than upstream parallelism
     private static final int HIGH_LOCAL_PARALLELISM = 11;
@@ -244,7 +243,7 @@ public class OrderedProcessingMultipleMemberTest extends SimpleTestInClusterSupp
         StreamStage<Map.Entry<Long, Long>> applied = srcStage.apply(transform);
 
         applied.groupingKey(Map.Entry::getKey)
-                .mapStateful(() -> create(keyCount), this::orderValidator)
+                .mapStateful(() -> create(keyCount), OrderedProcessingMultipleMemberTest::orderValidator)
                 .writeTo(AssertionSinks.assertCollectedEventually(60,
                         list -> {
                             assertTrue("when", itemCount <= list.size());
@@ -277,7 +276,7 @@ public class OrderedProcessingMultipleMemberTest extends SimpleTestInClusterSupp
         return state;
     }
 
-    private boolean orderValidator(LongAccumulator[] s, Long key, Map.Entry<Long, Long> entry) {
+    private static boolean orderValidator(LongAccumulator[] s, Long key, Map.Entry<Long, Long> entry) {
         LongAccumulator acc = s[key.intValue()];
         long value = entry.getValue();
         if (acc.get() >= value) {
