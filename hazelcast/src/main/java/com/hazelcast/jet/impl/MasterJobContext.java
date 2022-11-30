@@ -420,14 +420,6 @@ public class MasterJobContext {
         return result;
     }
 
-    @Nonnull
-    Tuple2<CompletableFuture<Void>, String> requestTermination(
-            TerminationMode mode,
-            @SuppressWarnings("SameParameterValue") boolean allowWhileExportingSnapshot
-    ) {
-        return requestTermination(mode, allowWhileExportingSnapshot, false);
-    }
-
     private void rewriteDagWithSnapshotRestore(DAG dag, long snapshotId, String mapName, String snapshotName) {
         IMap<Object, Object> snapshotMap = mc.nodeEngine().getHazelcastInstance().getMap(mapName);
         long resolvedSnapshotId = validateSnapshot(
