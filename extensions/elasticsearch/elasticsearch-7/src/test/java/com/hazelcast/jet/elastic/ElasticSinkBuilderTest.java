@@ -24,7 +24,6 @@ import com.hazelcast.logging.Logger;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.apache.http.HttpHost;
-import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.elasticsearch.action.bulk.BulkRequest;
 import org.elasticsearch.action.index.IndexRequest;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
@@ -33,9 +32,7 @@ import org.elasticsearch.client.RestClientBuilder;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 import static java.util.Collections.emptyMap;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
@@ -74,12 +71,7 @@ public class ElasticSinkBuilderTest extends PipelineTestSupport {
             // ignore - elastic is not running
         }
 
-        assertTrueEventually(() -> {
-            for (RestClient client : ClientHolder.elasticClients) {
-                CloseableHttpAsyncClient httpClient = getFieldValueReflectively(client, "client");
-                assertThat(httpClient.isRunning()).isFalse();
-            }
-        });
+        ClientHolder.assertAllClientsNotRunning();
     }
 
 }

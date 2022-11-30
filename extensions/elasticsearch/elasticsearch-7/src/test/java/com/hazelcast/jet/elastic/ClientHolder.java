@@ -16,13 +16,17 @@
 
 package com.hazelcast.jet.elastic;
 
+import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.elasticsearch.client.RestClient;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
+import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
+import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
 import static java.util.Collections.synchronizedList;
+import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 
 /**
  * Holder for created Elastic clients during tests
@@ -31,5 +35,14 @@ final class ClientHolder implements Serializable {
     static List<RestClient> elasticClients = synchronizedList(new ArrayList<>());
 
     private ClientHolder() {
+    }
+
+    static void assertAllClientsNotRunning() {
+        assertTrueEventually(() -> {
+            for (RestClient client : elasticClients) {
+                CloseableHttpAsyncClient httpClient = getFieldValueReflectively(client, "client");
+                assertThat(httpClient.isRunning()).isFalse();
+            }
+        });
     }
 }
