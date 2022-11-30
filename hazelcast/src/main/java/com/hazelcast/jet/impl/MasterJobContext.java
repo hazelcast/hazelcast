@@ -170,6 +170,17 @@ public class MasterJobContext {
      * complete.
      */
     private volatile TerminationMode requestedTerminationMode;
+    /**
+     * When a job termination is requested, stores information if the
+     * termination was initiated by the user. It is reset back to false when
+     * execute operations complete.
+     * Set and cleared in coordination with {@link #requestedTerminationMode}.
+     * <p>
+     * Note that at present this information is trustworthy only for
+     * cancellations. For other modes of termination we may not have enough
+     * information about what initiated it. In dubious cases we default to false
+     * i.e. not user-initiated action.
+     */
     private volatile boolean userInitiatedTermination;
 
     MasterJobContext(MasterContext masterContext, ILogger logger) {
@@ -253,11 +264,11 @@ public class MasterJobContext {
                           ))
                           .whenComplete((r, e) -> {
                               if (e != null) {
-                                  finalizeJob(peel(e));
+                                  finalizeExecution(peel(e));
                               }
                           });
               } catch (Throwable e) {
-                  finalizeJob(e);
+                  finalizeExecution(e);
               }
           });
     }
@@ -318,7 +329,7 @@ public class MasterJobContext {
                     throw new JobTerminateRequestedException(requestedTerminationMode);
                 }
                 // requested termination mode is RESTART, ignore it because we are just starting
-                requestedTerminationMode = null;
+                clearTerminationRequest();
             }
             ClassLoader classLoader = mc.getJetServiceBackend().getJobClassLoaderService()
                                         .getOrCreateClassLoader(mc.jobConfig(), mc.jobId(), COORDINATOR);
@@ -425,6 +436,11 @@ public class MasterJobContext {
         }
 
         return result;
+    }
+
+    private void clearTerminationRequest() {
+        requestedTerminationMode = null;
+        userInitiatedTermination = false;
     }
 
     private void rewriteDagWithSnapshotRestore(DAG dag, long snapshotId, String mapName, String snapshotName) {
@@ -643,7 +659,7 @@ public class MasterJobContext {
             // StartExecutionOp, so wait for that too.
             mc.snapshotContext().terminalSnapshotFuture()
                     // have to use Async version, the future is completed inside a synchronized block
-                    .whenCompleteAsync(withTryCatch(logger, (r, e) -> finalizeJob(finalError)));
+                    .whenCompleteAsync(withTryCatch(logger, (r, e) -> finalizeExecution(finalError)));
         } else {
             if (error instanceof ExecutionNotFoundException) {
                 // If the StartExecutionOperation didn't find the execution, it means that it was cancelled.
@@ -657,7 +673,7 @@ public class MasterJobContext {
                 // We keep this (and possibly other) exceptions as they are
                 // and let the execution complete with failure.
             }
-            finalizeJob(error);
+            finalizeExecution(error);
         }
     }
 
@@ -679,7 +695,7 @@ public class MasterJobContext {
                         }, null, true));
     }
 
-    void finalizeJob(@Nullable Throwable failure) {
+    void finalizeExecution(@Nullable Throwable failure) {
         mc.coordinationService().submitToCoordinatorThread(() -> {
             mc.lock();
             JobStatus status = mc.jobStatus();
@@ -743,7 +759,7 @@ public class MasterJobContext {
                     nonSynchronizedAction = NO_OP;
                 }
                 // reset the state for the next execution
-                requestedTerminationMode = null;
+                clearTerminationRequest();
                 executionFailureCallback = null;
             } finally {
                 mc.unlock();
@@ -889,7 +905,7 @@ public class MasterJobContext {
     @Nonnull
     CompletableFuture<Void> gracefullyTerminate() {
         CompletableFuture<CompletableFuture<Void>> future = mc.coordinationService().submitToCoordinatorThread(
-                () -> requestTermination(RESTART_GRACEFUL, false, true).f0());
+                () -> requestTermination(RESTART_GRACEFUL, false, false).f0());
         return future.thenCompose(Function.identity());
     }
 

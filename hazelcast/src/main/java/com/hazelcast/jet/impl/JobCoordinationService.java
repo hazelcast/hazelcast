@@ -1249,7 +1249,7 @@ public class JobCoordinationService {
         if (!masterContext.jobConfig().isAutoScaling() && masterContext.jobExecutionRecord().executed()) {
             logger.info("Suspending or failing " + masterContext.jobIdString()
                     + " since auto-restart is disabled and the job has been executed before");
-            masterContext.jobContext().finalizeJob(new TopologyChangedException());
+            masterContext.jobContext().finalizeExecution(new TopologyChangedException());
             return true;
         }
         return false;
