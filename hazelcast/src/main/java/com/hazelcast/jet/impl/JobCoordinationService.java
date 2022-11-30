@@ -670,9 +670,7 @@ public class JobCoordinationService {
                 jobRecord -> {
                     throw new IllegalStateException("Job not finished");
                 },
-                jobExecutionRecord -> {
-                    throw new IllegalStateException("Job not finished");
-                }
+                null
         );
     }
 
