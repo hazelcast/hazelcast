@@ -22,7 +22,7 @@ import static com.hazelcast.internal.nio.Bits.BYTES_LONG;
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.internal.tpc.iobuffer.IOBufferAllocatorFactory.createConcurrentAllocator;
-import static com.hazelcast.internal.tpc.iobuffer.IOBufferAllocatorFactory.createThreadLocal;
+import static com.hazelcast.internal.tpc.iobuffer.IOBufferAllocatorFactory.createGrowingThreadLocal;
 import static com.hazelcast.internal.tpc.util.Util.put;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -137,7 +137,7 @@ public class NioAsyncSocket_LargePayloadTest {
 
         NioAsyncSocket clientSocket = newClient(serverAddress, latch);
 
-        IOBufferAllocator allocator = createThreadLocal();
+        IOBufferAllocator allocator = createGrowingThreadLocal();
 
         System.out.println("Starting");
 
@@ -170,7 +170,7 @@ public class NioAsyncSocket_LargePayloadTest {
             private ByteBuffer payloadBuffer;
             private long round;
             private int payloadSize = -1;
-            private final IOBufferAllocator<? extends IOBuffer> responseAllocator = IOBufferAllocatorFactory.createThreadLocal();
+            private final IOBufferAllocator<? extends IOBuffer> responseAllocator = IOBufferAllocatorFactory.createGrowingThreadLocal();
 
             @Override
             public void onRead(ByteBuffer receiveBuf) {

@@ -19,6 +19,8 @@ package com.hazelcast.internal.tpc.iobuffer;
 import java.nio.ByteBuffer;
 
 public interface IOBufferAllocator<T extends IOBuffer> {
+    int DEFAULT_IO_BUFFER_SIZE = 4096;
+
     T allocate();
 
     T allocate(int minSize);

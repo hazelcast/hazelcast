@@ -1,4 +1,4 @@
-package com.hazelcast.internal.tpc.iobuffer;
+    package com.hazelcast.internal.tpc.iobuffer;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -9,7 +9,8 @@ import static com.hazelcast.internal.nio.Bits.SHORT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.tpc.iobuffer.ThreadLocalIOBufferAllocator.BUFFER_SIZE;
 
 class ThreadLocalIOBuffer implements IOBuffer {
-    private final ThreadLocalIOBufferAllocator allocator;
+    private final ConcurrentIOBufferAllocator superAllocator;
+    private ThreadLocalIOBufferAllocator allocator;
 
     ByteBuffer[] chunks;
 
@@ -27,9 +28,11 @@ class ThreadLocalIOBuffer implements IOBuffer {
 
     int chunkToRelease;
 
-    ThreadLocalIOBuffer(ThreadLocalIOBufferAllocator allocator, int minSize) {
+    ThreadLocalIOBuffer(ThreadLocalIOBufferAllocator allocator, int minSize, ConcurrentIOBufferAllocator concurrentAllocator) {
         this.allocator = allocator;
+        this.superAllocator = concurrentAllocator;
         this.chunks = new ByteBuffer[((minSize - 1)/ BUFFER_SIZE) + 1];
+
         for (int i = 0; i < chunks.length; i++) {
             addChunk(allocator.getNextByteBuffer());
         }
@@ -46,15 +49,28 @@ class ThreadLocalIOBuffer implements IOBuffer {
         }
     }
 
+    void overtakenBy(ThreadLocalIOBufferAllocator allocator) {
+        this.allocator = allocator;
+    }
+
     @Override
     public void release() {
-        allocator.free(this);
+        if (superAllocator == null) {
+            allocator.free(this);
+            return;
+        }
+        superAllocator.free(this);
     }
 
     @Override
     public void releaseNextChunk(ByteBuffer chunk) {
         assert chunk == chunks[chunkToRelease];
-        allocator.free(chunks[chunkToRelease++]);
+
+        if (superAllocator == null) {
+            allocator.free(chunks[chunkToRelease++]);
+            return;
+        }
+        superAllocator.free(chunk);
     }
 
     @Override
@@ -223,9 +239,6 @@ class ThreadLocalIOBuffer implements IOBuffer {
         limit += BUFFER_SIZE;
     }
 
-    /**
-     * TODO: creates litter during warmup, can be replaced with object array pool.
-     */
     private void ensureRemainingForNewChunk() {
         if (chunksPos == chunks.length) {
             chunks = Arrays.copyOf(chunks, chunks.length * 2);

@@ -20,7 +20,7 @@ import java.util.concurrent.CountDownLatch;
 import static com.hazelcast.internal.nio.Bits.BYTES_INT;
 import static com.hazelcast.internal.nio.Bits.BYTES_LONG;
 import static com.hazelcast.internal.tpc.iobuffer.IOBufferAllocatorFactory.createConcurrentAllocator;
-import static com.hazelcast.internal.tpc.iobuffer.IOBufferAllocatorFactory.createThreadLocal;
+import static com.hazelcast.internal.tpc.iobuffer.IOBufferAllocatorFactory.createGrowingThreadLocal;
 import static com.hazelcast.test.HazelcastTestSupport.assertOpenEventually;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -79,7 +79,7 @@ public class NioAsyncSocket_IntegrationTest {
 
         NioAsyncSocket clientSocket = newClient(serverAddress, latch);
 
-        IOBufferAllocator allocator = createThreadLocal();
+        IOBufferAllocator allocator = createGrowingThreadLocal();
 
         System.out.println("Starting");
 
