@@ -133,11 +133,11 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
         ) {
             ResultSetMetaData metaData = resultSet.getMetaData();
             List<String> connections = new ArrayList<>();
-            for (int i = 0; i < metaData.getColumnCount(); i++) {
+            for (int i = 1; i <= metaData.getColumnCount(); i++) {
                 connections.add(metaData.getColumnName(i) + "|");
             }
             while (resultSet.next()) {
-                for (int i = 0; i < metaData.getColumnCount(); i++) {
+                for (int i = 1; i <= metaData.getColumnCount(); i++) {
                     connections.add(resultSet.getObject(i) + "|");
                 }
             }
