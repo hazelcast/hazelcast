@@ -33,6 +33,7 @@ import static com.hazelcast.test.SplitBrainTestSupport.blockCommunicationBetween
 import static com.hazelcast.test.SplitBrainTestSupport.unblockCommunicationBetween;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastParallelClassRunner.class)

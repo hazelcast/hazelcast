@@ -22,7 +22,6 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
-import org.apache.http.impl.nio.client.CloseableHttpAsyncClient;
 import org.elasticsearch.action.search.SearchRequest;
 import org.elasticsearch.client.RestClient;
 import org.elasticsearch.client.RestClientBuilder;
@@ -30,9 +29,6 @@ import org.junit.After;
 import org.junit.Test;
 
 import static com.google.common.collect.ImmutableMap.of;
-import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
-import static com.hazelcast.test.starter.ReflectionUtils.getFieldValueReflectively;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
@@ -105,12 +101,7 @@ public class LocalElasticSourcesTest extends CommonElasticSourcesTest {
 
         submitJob(p);
 
-        assertTrueEventually(() -> {
-            for (RestClient client : ClientHolder.elasticClients) {
-                CloseableHttpAsyncClient httpClient = getFieldValueReflectively(client, "client");
-                assertThat(httpClient.isRunning()).isFalse();
-            }
-        });
+        ClientHolder.assertAllClientsNotRunning();
     }
 
 }
