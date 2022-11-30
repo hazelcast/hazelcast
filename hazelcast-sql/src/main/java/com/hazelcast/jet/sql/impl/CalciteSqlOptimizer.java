@@ -88,6 +88,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.MapPermission;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.sql.SqlColumnMetadata;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.impl.QueryException;
@@ -221,7 +222,12 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         TableResolverImpl tableResolverImpl = mappingCatalog(nodeEngine, this.tablesStorage);
         this.tableResolvers = singletonList(tableResolverImpl);
-        this.planExecutor = new PlanExecutor(tableResolverImpl, nodeEngine.getHazelcastInstance(), resultRegistry);
+        this.planExecutor = new PlanExecutor(
+                tableResolverImpl,
+                nodeEngine.getHazelcastInstance(),
+                resultRegistry,
+                ((NodeEngineImpl) nodeEngine).getMetricsRegistry()
+        );
 
         this.logger = nodeEngine.getLogger(getClass());
     }

@@ -20,11 +20,17 @@ import com.hazelcast.config.BitmapIndexOptions;
 import com.hazelcast.config.IndexConfig;
 import com.hazelcast.config.IndexType;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsRegistry;
+import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.util.counters.Counter;
+import com.hazelcast.internal.util.counters.MwCounter;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.RestartableException;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.util.ReflectionUtils;
@@ -81,6 +87,7 @@ import com.hazelcast.sql.impl.schema.type.TypeKind;
 import com.hazelcast.sql.impl.schema.view.View;
 import com.hazelcast.sql.impl.state.QueryResultRegistry;
 import com.hazelcast.sql.impl.type.QueryDataType;
+import com.hazelcast.sql.metrics.MetricNames;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.type.RelDataTypeField;
 import org.apache.calcite.sql.SqlNode;
@@ -123,14 +130,21 @@ public class PlanExecutor {
     private final HazelcastInstance hazelcastInstance;
     private final QueryResultRegistry resultRegistry;
 
+    @Probe(name = MetricNames.QUERIES_EXECUTED)
+    private final Counter queriesExecuted = MwCounter.newMwCounter();
+
     public PlanExecutor(
             TableResolverImpl catalog,
             HazelcastInstance hazelcastInstance,
-            QueryResultRegistry resultRegistry
+            QueryResultRegistry resultRegistry,
+            MetricsRegistry registry
     ) {
         this.catalog = catalog;
         this.hazelcastInstance = hazelcastInstance;
         this.resultRegistry = resultRegistry;
+        final MetricDescriptor descriptor = registry.newMetricDescriptor()
+                .withTag(MetricTags.MODULE, MetricNames.MODULE_TAG);
+        registry.registerStaticMetrics(descriptor, this);
     }
 
     SqlResult execute(CreateMappingPlan plan) {
@@ -418,6 +432,8 @@ public class PlanExecutor {
                 ? new StaticQueryResultProducerImpl(row)
                 : new StaticQueryResultProducerImpl(emptyIterator());
 
+        queriesExecuted.inc();
+
         return new SqlResultImpl(
                 queryId,
                 resultProducer,
@@ -442,6 +458,9 @@ public class PlanExecutor {
                 throw QueryException.error("Duplicate key");
             }
         }
+
+        queriesExecuted.inc();
+
         return UpdateSqlResultImpl.createUpdateCountResult(0, plan.keyParamIndex());
     }
 
@@ -464,6 +483,7 @@ public class PlanExecutor {
                 .submitToKey(key, plan.updaterSupplier().get(arguments))
                 .toCompletableFuture();
         await(future, timeout);
+        queriesExecuted.inc();
         return UpdateSqlResultImpl.createUpdateCountResult(0, plan.keyConditionParamIndex());
     }
 
@@ -475,6 +495,9 @@ public class PlanExecutor {
                 .submitToKey(key, EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR)
                 .toCompletableFuture();
         await(future, timeout);
+
+        queriesExecuted.inc();
+
         return UpdateSqlResultImpl.createUpdateCountResult(0, plan.keyConditionParamIndex());
     }
 
