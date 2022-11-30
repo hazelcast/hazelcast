@@ -89,6 +89,9 @@ public class SplitBrainTest extends JetSplitBrainTestSupport {
         Future[] minorityJobFutureRef = new Future[1];
 
         BiConsumer<HazelcastInstance[], HazelcastInstance[]> onSplit = (firstSubCluster, secondSubCluster) -> {
+            // Wait for the MockPS to be closed on all members before releasing the processor
+            assertTrueEventually(() -> assertEquals(clusterSize, MockPS.closeCount.get()));
+
             NoOutputSourceP.proceedLatch.countDown();
 
             assertTrueEventually(() ->

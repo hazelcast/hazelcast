@@ -76,6 +76,7 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -130,7 +131,7 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
                 JetService jet = instance.getJet();
                 List<Job> jobs = jet.getJobs();
                 for (Job job : jobs) {
-                    ditchJob(job, instances.toArray(new HazelcastInstance[instances.size()]));
+                    ditchJob(job, instances.toArray(new HazelcastInstance[0]));
                 }
 
                 JobClassLoaderService jobClassLoaderService = ((HazelcastInstanceImpl) instance).node
@@ -402,7 +403,33 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
      * will ignore if it's not running. If the cancellation fails, it will
      * retry.
      */
-    public static void ditchJob(@Nonnull Job job, @Nonnull HazelcastInstance... instancesToShutDown) {
+    public static void ditchJob(@Nonnull Job job, @Nonnull HazelcastInstance... instances) {
+        //Cancel the job on cluster members
+        ditchJob0(job, instances);
+
+        // Let's wait for the job to be not RUNNING on all the members.
+        assertTrueEventually(() -> {
+
+            try {
+                assertNotEquals(RUNNING, job.getStatus());
+            } catch (Exception e) {
+                SUPPORT_LOGGER.severe("Failure to read job status on coordinator: ", e);
+            }
+
+            for (HazelcastInstance instance : instances) {
+                try {
+                    Job instanceJob = instance.getJet().getJob(job.getId());
+                    if (instanceJob != null) {
+                        assertNotEquals(RUNNING, instanceJob.getStatus());
+                    }
+                } catch (Exception e) {
+                    SUPPORT_LOGGER.severe("Failure to read job status on member: ", e);
+                }
+            }
+        });
+    }
+
+    private static void ditchJob0(@Nonnull Job job, @Nonnull HazelcastInstance... instancesToShutDown) {
         int numAttempts;
         for (numAttempts = 0; numAttempts < 10; numAttempts++) {
             JobStatus status = null;
@@ -494,6 +521,13 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
     public static void assertJobExecuting(Job job, HazelcastInstance instance) {
         ExecutionContext execCtx = getJetServiceBackend(instance).getJobExecutionService().getExecutionContext(job.getId());
         assertNotNull("Job should be executing on member " + instance + ", but is not", execCtx);
+    }
+
+    /**
+     * Returns the count of {@link ExecutionContext} that are running on given {@code instance}.
+     */
+    public static int getExecutionContextCount(HazelcastInstance instance) {
+        return getJetServiceBackend(instance).getJobExecutionService().getExecutionContexts().size();
     }
 
     /**

@@ -62,7 +62,9 @@ import static com.hazelcast.jet.impl.connector.ExternalDataStoreTestUtil.configu
 import static com.hazelcast.jet.impl.connector.ExternalDataStoreTestUtil.configureJdbcDataStore;
 import static com.hazelcast.jet.pipeline.ExternalDataStoreRef.externalDataStoreRef;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.spy;
@@ -80,8 +82,8 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
             .withCommand("postgres -c max_prepared_transactions=10 -c max_connections=500");
 
     private static final int PERSON_COUNT = 10;
-
     private static final AtomicInteger TABLE_COUNTER = new AtomicInteger();
+
     private static HikariDataSource hikariDataSource;
     private String tableName;
 
@@ -145,6 +147,13 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
         }
     }
 
+    @After
+    public void tearDown() throws Exception {
+        if (hikariDataSource != null) {
+            hikariDataSource.close();
+        }
+    }
+
     @Test
     public void test() throws SQLException {
         Pipeline p = Pipeline.create();
@@ -160,6 +169,34 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
 
         instance().getJet().newJob(p).join();
         assertEquals(PERSON_COUNT, rowCount());
+    }
+
+    @Test
+    public void test_supplied_closeable_datasource_is_NOT_closed() throws SQLException {
+        Pipeline p = Pipeline.create();
+
+        p.readFrom(TestSources.items(IntStream.range(0, PERSON_COUNT).boxed().toArray(Integer[]::new)))
+                .map(item -> entry(item, item.toString()))
+                .writeTo(Sinks.jdbc("INSERT INTO " + tableName + " VALUES(?, ?)",
+                        WriteJdbcPTest::createHikariDataSource,
+                        (stmt, item) -> {
+                            stmt.setInt(1, item.getKey());
+                            stmt.setString(2, item.getValue());
+                        }
+                ));
+        instance().getJet().newJob(p).join();
+        assertEquals(PERSON_COUNT, rowCount());
+        assertFalse(hikariDataSource.isClosed());
+    }
+
+    private static DataSource createHikariDataSource() {
+        hikariDataSource = new HikariDataSource();
+        assertThat(hikariDataSource).isInstanceOf(AutoCloseable.class);
+
+        hikariDataSource.setJdbcUrl(container.getJdbcUrl());
+        hikariDataSource.setUsername(container.getUsername());
+        hikariDataSource.setPassword(container.getPassword());
+        return hikariDataSource;
     }
 
     @Test

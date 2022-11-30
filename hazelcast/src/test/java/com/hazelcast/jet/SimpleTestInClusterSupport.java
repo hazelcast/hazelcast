@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.JetServiceBackend;
@@ -41,6 +42,7 @@ import java.util.stream.Collectors;
 import static com.hazelcast.jet.Util.idToString;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -58,6 +60,8 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     private static HazelcastInstance client;
 
     protected static void initialize(int memberCount, @Nullable Config config) {
+        assertNoRunningInstances();
+
         assert factory == null : "already initialized";
         factory = new TestHazelcastFactory();
         instances = new HazelcastInstance[memberCount];
@@ -83,13 +87,13 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         client = factory.newHazelcastClient(clientConfig);
     }
 
-    protected void assertNoJobsLeftEventually(HazelcastInstance instance) {
+    protected void assertNoLightJobsLeftEventually(HazelcastInstance instance) {
         assertTrueEventually(() -> {
             List<Job> runningJobs = instance.getJet().getJobs().stream()
-                                            .filter(j -> !j.getFuture().isDone() && !j.getStatus().isTerminal())
-                                            .collect(toList());
+                    .filter(Job::isLightJob)
+                    .collect(toList());
             int size = runningJobs.size();
-            assertEquals("at this point no running jobs were expected, but got: " + runningJobs, 0, size);
+            assertEquals("at this point no running light jobs were expected, but got: " + runningJobs, 0, size);
         });
     }
 
@@ -129,6 +133,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
         }
         for (HazelcastInstance instance : instances) {
             assertTrueEventually(() -> {
+                // Let's wait for all unprocessed operations (like destroying distributed object) to complete
                 assertEquals(0, getNodeEngineImpl(instance).getEventService().getEventQueueSize());
             });
         }
@@ -189,5 +194,9 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
      */
     protected static HazelcastInstance client() {
         return client;
+    }
+
+    private static void assertNoRunningInstances() {
+        assertThat(Hazelcast.getAllHazelcastInstances()).as("There should be no running instances").isEmpty();
     }
 }

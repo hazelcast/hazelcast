@@ -17,6 +17,8 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import com.hazelcast.core.HazelcastException;
+import com.hazelcast.datastore.ExternalDataStoreFactory;
+import com.hazelcast.datastore.impl.CloseableDataSource;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.EventTimePolicy;
@@ -139,36 +141,51 @@ public class JdbcSqlConnector implements SqlConnector {
                 options.get(OPTION_EXTERNAL_DATASTORE_REF),
                 OPTION_EXTERNAL_DATASTORE_REF + " must be set"
         );
-        try {
-            DataSource dataSource = (DataSource) nodeEngine.getExternalDataStoreService()
-                                                           .getExternalDataStoreFactory(externalDataStoreRef)
-                                                           .getDataStore();
+        DataSource dataSource = createDataStore(nodeEngine, externalDataStoreRef);
+        try (
+                Connection connection = dataSource.getConnection();
+                Statement statement = connection.createStatement()
+        ) {
+            Set<String> pkColumns = readPrimaryKeyColumns(externalTableName, connection);
 
-            try (Connection connection = dataSource.getConnection();
-                 Statement statement = connection.createStatement()) {
-                Set<String> pkColumns = readPrimaryKeyColumns(externalTableName, connection);
-
-                boolean hasResultSet = statement.execute("SELECT * FROM " + externalTableName + " LIMIT 0");
-                if (!hasResultSet) {
-                    throw new IllegalStateException("Could not resolve fields for table " + externalTableName);
-                }
-                ResultSet rs = statement.getResultSet();
-                ResultSetMetaData metaData = rs.getMetaData();
-
-                Map<String, DbField> fields = new HashMap<>();
-                for (int i = 1; i <= metaData.getColumnCount(); i++) {
-                    String columnName = metaData.getColumnName(i);
-                    fields.put(columnName,
-                            new DbField(metaData.getColumnTypeName(i),
-                                    columnName,
-                                    pkColumns.contains(columnName)
-                            ));
-                }
-                return fields;
+            boolean hasResultSet = statement.execute("SELECT * FROM " + externalTableName + " LIMIT 0");
+            if (!hasResultSet) {
+                throw new IllegalStateException("Could not resolve fields for table " + externalTableName);
             }
+            ResultSet rs = statement.getResultSet();
+            ResultSetMetaData metaData = rs.getMetaData();
+
+            Map<String, DbField> fields = new HashMap<>();
+            for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                String columnName = metaData.getColumnName(i);
+                fields.put(columnName,
+                        new DbField(metaData.getColumnTypeName(i),
+                                columnName,
+                                pkColumns.contains(columnName)
+                        ));
+            }
+            return fields;
         } catch (Exception e) {
             throw new HazelcastException("Could not read column metadata for table " + externalDataStoreRef, e);
+        } finally {
+            closeDataSource(dataSource);
         }
+    }
+
+    private void closeDataSource(DataSource dataSource) {
+        if (dataSource instanceof CloseableDataSource) {
+            try {
+                ((CloseableDataSource) dataSource).close();
+            } catch (Exception e) {
+                throw new HazelcastException("Could not close datasource " + dataSource, e);
+            }
+        }
+    }
+
+    private static DataSource createDataStore(NodeEngine nodeEngine, String externalDataStoreRef) {
+        final ExternalDataStoreFactory<DataSource> externalDataStoreFactory = nodeEngine.getExternalDataStoreService()
+                .getExternalDataStoreFactory(externalDataStoreRef);
+        return externalDataStoreFactory.getDataStore();
     }
 
     private Set<String> readPrimaryKeyColumns(@Nonnull String externalName, Connection connection) {
@@ -233,30 +250,28 @@ public class JdbcSqlConnector implements SqlConnector {
     }
 
     private SqlDialect resolveDialect(NodeEngine nodeEngine, String externalDataStoreRef) {
-        try {
-            DataSource dataSource = (DataSource) nodeEngine.getExternalDataStoreService()
-                                                           .getExternalDataStoreFactory(externalDataStoreRef)
-                                                           .getDataStore();
+        DataSource dataSource = createDataStore(nodeEngine, externalDataStoreRef);
 
-            try (Connection connection = dataSource.getConnection()) {
+        try (Connection connection = dataSource.getConnection()) {
 
-                SqlDialect dialect = SqlDialectFactoryImpl.INSTANCE.create(connection.getMetaData());
-                String databaseProductName = connection.getMetaData().getDatabaseProductName();
-                switch (databaseProductName) {
-                    case "MySQL":
-                    case "PostgreSQL":
-                    case "H2":
-                        return dialect;
+            SqlDialect dialect = SqlDialectFactoryImpl.INSTANCE.create(connection.getMetaData());
+            String databaseProductName = connection.getMetaData().getDatabaseProductName();
+            switch (databaseProductName) {
+                case "MySQL":
+                case "PostgreSQL":
+                case "H2":
+                    return dialect;
 
-                    default:
-                        LOG.warning("Database " + databaseProductName + " is not officially supported");
-                        return dialect;
-                }
-
+                default:
+                    LOG.warning("Database " + databaseProductName + " is not officially supported");
+                    return dialect;
             }
-        } catch (SQLException e) {
+
+        } catch (Exception e) {
             throw new HazelcastException("Could not determine dialect for externalDataStoreRef: "
                     + externalDataStoreRef, e);
+        } finally {
+            closeDataSource(dataSource);
         }
     }
 

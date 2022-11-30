@@ -17,6 +17,7 @@
 package com.hazelcast.jet.cdc;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.hazelcast.collection.IList;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
@@ -44,8 +45,8 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Objects;
 
-import static com.hazelcast.jet.cdc.Operation.UNSPECIFIED;
 import static org.assertj.core.api.Assertions.assertThat;
+import static com.hazelcast.jet.cdc.Operation.UNSPECIFIED;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.testcontainers.containers.MySQLContainer.MYSQL_PORT;
 import static org.testcontainers.containers.PostgreSQLContainer.POSTGRESQL_PORT;
@@ -426,6 +427,35 @@ public class DebeziumCdcIntegrationTest extends AbstractCdcIntegrationTest {
             hz.getJet().newJob(pipeline);
 
             assertTrueEventually(() -> assertThat(hz.getList("notFailWhenOldValueNotPresent")).isNotEmpty());
+        }
+    }
+
+    @Test
+    public void nullIsNotValidOperationId() {
+        try (MySQLContainer<?> container = mySqlContainer()) {
+            container.start();
+
+            HazelcastInstance[] hazelcastInstances = createHazelcastInstances(1);
+            HazelcastInstance hz = hazelcastInstances[0];
+            IList<ChangeRecord> changeRecordList = hz.getList("nullIsNotValidOperationId");
+
+            StreamSource<ChangeRecord> source = mySqlSource(container);
+            Pipeline p = Pipeline.create();
+            p
+                    .readFrom(source)
+                    .withIngestionTimestamps()
+                    .setLocalParallelism(1)
+                    .writeTo(Sinks.list(changeRecordList));
+
+            Job job = hz.getJet().newJob(p);
+
+            assertJobStatusEventually(job, JobStatus.RUNNING);
+
+            assertTrueEventually(() -> {
+                logger.info(String.format("List size: %s", changeRecordList.size()));
+                assertThat(changeRecordList).as("nullIsNotValidOperationId").isNotEmpty();
+                logger.info(changeRecordList.get(0).toString()); // <-- 'null' is not a valid operation id
+            });
         }
     }
 

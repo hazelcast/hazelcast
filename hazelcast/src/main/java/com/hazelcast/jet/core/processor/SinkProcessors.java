@@ -49,6 +49,7 @@ import javax.jms.Connection;
 import javax.jms.Message;
 import javax.jms.Session;
 import javax.sql.CommonDataSource;
+import javax.sql.DataSource;
 import java.io.BufferedWriter;
 import java.nio.charset.Charset;
 import java.sql.PreparedStatement;
@@ -100,7 +101,7 @@ public final class SinkProcessors {
      */
     @Nonnull
     public static ProcessorMetaSupplier writeRemoteMapP(
-        @Nonnull String mapName, @Nonnull ClientConfig clientConfig
+            @Nonnull String mapName, @Nonnull ClientConfig clientConfig
     ) {
         return writeRemoteMapP(mapName, clientConfig, identity(), identity());
     }
@@ -166,7 +167,7 @@ public final class SinkProcessors {
     /**
      * Returns a supplier of processors for
      * {@link Sinks#remoteMapWithUpdating(String, ClientConfig, FunctionEx
-     * , BiFunctionEx)}.
+     *, BiFunctionEx)}.
      */
     @Nonnull
     public static <T, K, V> ProcessorMetaSupplier updateRemoteMapP(
@@ -331,8 +332,8 @@ public final class SinkProcessors {
      * The returned processor will have preferred local parallelism of 1. It
      * will not participate in state saving for fault tolerance.
      *
-     * @param createFn     supplies the writer. The argument to this function
-     *                     is the context for the given processor.
+     * @param createFn    supplies the writer. The argument to this function
+     *                    is the context for the given processor.
      * @param onReceiveFn function that Jet calls upon receiving each item for the sink
      * @param flushFn     function that flushes the writer
      * @param destroyFn   function that destroys the writer
@@ -397,7 +398,8 @@ public final class SinkProcessors {
         checkNotNull(dataSourceSupplier, "dataSourceSupplier");
         checkNotNull(bindFn, "bindFn");
         checkPositive(batchLimit, "batchLimit");
-        return WriteJdbcP.metaSupplier(jdbcUrl, updateQuery, ctx -> dataSourceSupplier.get(), bindFn, exactlyOnce, batchLimit);
+        return WriteJdbcP.metaSupplier(jdbcUrl, updateQuery, ctx -> dataSourceSupplier.get(),
+                bindFn, exactlyOnce, batchLimit);
     }
 
     /**
@@ -422,7 +424,7 @@ public final class SinkProcessors {
                 bindFn, exactlyOnce, batchLimit);
     }
 
-    private static FunctionEx<ProcessorMetaSupplier.Context, CommonDataSource> dataSourceSupplier(String externalDataStoreName) {
+    private static FunctionEx<ProcessorMetaSupplier.Context, DataSource> dataSourceSupplier(String externalDataStoreName) {
         return context -> getDataStoreFactory(context, externalDataStoreName).getDataStore();
     }
 

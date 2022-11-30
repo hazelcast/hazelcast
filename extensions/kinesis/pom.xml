@@ -29,7 +29,7 @@
     <parent>
         <groupId>com.hazelcast.jet</groupId>
         <artifactId>hazelcast-jet-extensions</artifactId>
-        <version>5.2.1-SNAPSHOT</version>
+        <version>5.2.2-SNAPSHOT</version>
     </parent>
 
     <build>
@@ -70,7 +70,6 @@
         <dependency>
             <groupId>com.fasterxml.jackson.dataformat</groupId>
             <artifactId>jackson-dataformat-cbor</artifactId>
-            <version>${jackson.version}</version>
         </dependency>
 
         <!-- TEST -->

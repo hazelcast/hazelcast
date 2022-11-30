@@ -17,11 +17,15 @@
 package com.hazelcast.datastore;
 
 import com.hazelcast.config.ExternalDataStoreConfig;
+import com.hazelcast.datastore.impl.CloseableDataSource;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.spi.annotation.Beta;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import javax.sql.DataSource;
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Creates a JDBC data store as a {@link DataSource}.
@@ -35,23 +39,42 @@ import javax.sql.DataSource;
  */
 @Beta
 public class JdbcDataStoreFactory implements ExternalDataStoreFactory<DataSource> {
-    private ExternalDataStoreConfig config;
-    private DataSource shareDataSource;
 
+    private static final AtomicInteger DATA_SOURCE_COUNTER = new AtomicInteger();
+
+    protected HikariDataSource sharedDataSource;
+    protected CloseableDataSource sharedCloseableDataSource;
+    protected ExternalDataStoreConfig config;
+
+    @Override
     public void init(ExternalDataStoreConfig config) {
         this.config = config;
         if (config.isShared()) {
-            shareDataSource = createDataSource();
+            sharedDataSource = doCreateDataSource();
+            sharedCloseableDataSource = CloseableDataSource.nonClosing(sharedDataSource);
         }
     }
 
     @Override
     public DataSource getDataStore() {
-        return config.isShared() ? shareDataSource : createDataSource();
+        return config.isShared() ? sharedCloseableDataSource : CloseableDataSource.closing(doCreateDataSource());
     }
 
-    private DataSource createDataSource() {
-        HikariConfig dataSourceConfig = new HikariConfig(config.getProperties());
+    protected HikariDataSource doCreateDataSource() {
+        Properties properties = new Properties();
+        properties.putAll(config.getProperties());
+        if (!properties.containsKey("poolName")) {
+            String suffix = StringUtil.isNullOrEmpty(config.getName()) ? "" : "-" + config.getName();
+            properties.put("poolName", "HikariPool-" + DATA_SOURCE_COUNTER.getAndIncrement() + suffix);
+        }
+        HikariConfig dataSourceConfig = new HikariConfig(properties);
         return new HikariDataSource(dataSourceConfig);
+    }
+
+    @Override
+    public void close() throws Exception {
+        if (sharedDataSource != null) {
+            sharedDataSource.close();
+        }
     }
 }

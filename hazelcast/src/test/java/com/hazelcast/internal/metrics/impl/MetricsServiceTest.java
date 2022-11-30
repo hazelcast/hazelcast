@@ -26,6 +26,7 @@ import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
 import com.hazelcast.internal.metrics.ProbeLevel;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
+import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer;
 import com.hazelcast.internal.metrics.managementcenter.ConcurrentArrayRingbuffer.RingbufferSlice;
 import com.hazelcast.internal.metrics.managementcenter.MetricsResultSet;
 import com.hazelcast.logging.ILogger;
@@ -38,14 +39,10 @@ import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.JmxLeakHelper;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
-import org.hamcrest.CoreMatchers;
-import org.hamcrest.core.Is;
 import org.junit.After;
 import org.junit.Before;
-import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 import org.mockito.InOrder;
 import org.mockito.Mock;
@@ -59,6 +56,7 @@ import static com.hazelcast.internal.metrics.MetricTarget.MANAGEMENT_CENTER;
 import static com.hazelcast.internal.metrics.ProbeUnit.COUNT;
 import static com.hazelcast.internal.metrics.impl.DefaultMetricDescriptorSupplier.DEFAULT_DESCRIPTOR_SUPPLIER;
 import static com.hazelcast.internal.metrics.impl.MetricsCompressor.extractMetrics;
+import static org.assertj.core.api.Assertions.assertThatExceptionOfType;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyDouble;
 import static org.mockito.ArgumentMatchers.anyLong;
@@ -75,9 +73,6 @@ import static org.mockito.MockitoAnnotations.initMocks;
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class MetricsServiceTest extends HazelcastTestSupport {
-    @Rule
-    public ExpectedException expectedException = ExpectedException.none();
-
     @Mock
     private Node nodeMock;
     @Mock
@@ -306,11 +301,10 @@ public class MetricsServiceTest extends HazelcastTestSupport {
         long futureSequence = 42;
         long headSequence = 0;
 
-        expectedException.expect(ExecutionException.class);
-        expectedException.expectCause(Is.is(CoreMatchers.instanceOf(IllegalArgumentException.class)));
-        expectedException.expectMessage(Long.toString(futureSequence));
-        expectedException.expectMessage(Long.toString(headSequence));
-        readMetrics(metricsService, futureSequence, metricConsumerMock);
+        assertThatExceptionOfType(ExecutionException.class)
+                .isThrownBy(() -> readMetrics(metricsService, futureSequence, metricConsumerMock))
+                .withCauseExactlyInstanceOf(ConcurrentArrayRingbuffer.SequenceOutOfBoundsException.class)
+                .withMessageContainingAll(Long.toString(futureSequence), Long.toString(headSequence));
     }
 
     @Test
