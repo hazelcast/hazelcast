@@ -192,6 +192,13 @@ public class MasterJobContext {
         return userInitiatedTermination;
     }
 
+    /**
+     * Creates exception with appropriate type for job cancellation.
+     */
+    private Throwable createCancellationException() {
+        return isUserInitiatedTermination() ? new CancellationByUserException() : new CancellationException();
+    }
+
     private boolean isCancelled() {
         return requestedTerminationMode == CANCEL_FORCEFUL;
     }
@@ -390,7 +397,7 @@ public class MasterJobContext {
             // handle cancellation of a suspended job
             if (localStatus == SUSPENDED || localStatus == SUSPENDED_EXPORTING_SNAPSHOT) {
                 mc.setJobStatus(FAILED);
-                setFinalResult(isUserInitiatedTermination() ? new CancellationByUserException() : new CancellationException());
+                setFinalResult(createCancellationException());
             }
             if (mode.isWithTerminalSnapshot()) {
                 mc.snapshotContext().enqueueSnapshot(null, true, null);
@@ -405,7 +412,7 @@ public class MasterJobContext {
             try {
                 mc.coordinationService()
                         .completeJob(mc,
-                                isUserInitiatedTermination() ? new CancellationByUserException() : new CancellationException(),
+                                createCancellationException(),
                                 System.currentTimeMillis(), userInitiated)
                         .get();
             } catch (Exception e) {
@@ -560,7 +567,7 @@ public class MasterJobContext {
     private Throwable getErrorFromResponses(String opName, Collection<Map.Entry<MemberInfo, Object>> responses) {
         if (isCancelled()) {
             logger.fine(mc.jobIdString() + " to be cancelled after " + opName);
-            return isUserInitiatedTermination() ? new CancellationByUserException() : new CancellationException();
+            return createCancellationException();
         }
 
         Map<Boolean, List<Entry<Address, Object>>> grouped = responses.stream()
