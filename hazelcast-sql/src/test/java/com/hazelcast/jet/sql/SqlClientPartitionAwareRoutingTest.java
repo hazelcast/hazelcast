@@ -52,22 +52,22 @@ public class SqlClientPartitionAwareRoutingTest extends SqlTestSupport {
 
     @Test
     public void test_selectRouting() {
-        testQuery("SELECT * FROM test WHERE __key = ?", MetricNames.QUERIES_EXECUTED, 100);
+        testQuery("SELECT * FROM test WHERE __key = ?", MetricNames.FAST_QUERIES_EXECUTED, 100);
     }
 
     @Test
     public void test_insertRouting() {
-        testQuery("INSERT INTO test (this, __key) VALUES ('testVal', ?)", MetricNames.QUERIES_EXECUTED, 100);
+        testQuery("INSERT INTO test (this, __key) VALUES ('testVal', ?)", MetricNames.FAST_QUERIES_EXECUTED, 100);
     }
 
     @Test
     public void test_updateRouting() {
-        testQuery("UPDATE test SET this = 'testVal' WHERE __key = ?", MetricNames.QUERIES_EXECUTED, 100);
+        testQuery("UPDATE test SET this = 'testVal' WHERE __key = ?", MetricNames.FAST_QUERIES_EXECUTED, 100);
     }
 
     @Test
     public void test_deleteRouting() {
-        testQuery("DELETE FROM test WHERE __key = ?", MetricNames.QUERIES_EXECUTED, 100);
+        testQuery("DELETE FROM test WHERE __key = ?", MetricNames.FAST_QUERIES_EXECUTED, 100);
     }
 
     private void testQuery(String sql, String metricName, int keysNumber) {

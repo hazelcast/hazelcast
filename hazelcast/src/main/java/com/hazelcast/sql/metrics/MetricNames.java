@@ -26,11 +26,11 @@ public final class MetricNames {
      * Name of SQL module typically used in the MODULE metric tag.
      */
     public static final String MODULE_TAG = "sql";
-    // TODO: rename to sql.quick.queries.executed or add increments into all queries?
+
     /**
      * Total number of queries executed by the SQL engine.
      */
-    public static final String QUERIES_EXECUTED = "sql.queries.executed";
+    public static final String FAST_QUERIES_EXECUTED = "sql.fast.queries.executed";
 
     private MetricNames() { }
 }

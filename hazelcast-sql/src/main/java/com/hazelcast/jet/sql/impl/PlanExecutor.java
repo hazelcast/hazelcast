@@ -130,7 +130,7 @@ public class PlanExecutor {
     private final HazelcastInstance hazelcastInstance;
     private final QueryResultRegistry resultRegistry;
 
-    @Probe(name = MetricNames.QUERIES_EXECUTED)
+    @Probe(name = MetricNames.FAST_QUERIES_EXECUTED)
     private final Counter queriesExecuted = MwCounter.newMwCounter();
 
     public PlanExecutor(
