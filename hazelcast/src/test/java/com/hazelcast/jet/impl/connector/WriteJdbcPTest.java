@@ -147,13 +147,6 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
         }
     }
 
-    @After
-    public void tearDown() throws Exception {
-        if (hikariDataSource != null) {
-            hikariDataSource.close();
-        }
-    }
-
     @Test
     public void test() throws SQLException {
         Pipeline p = Pipeline.create();
