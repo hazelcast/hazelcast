@@ -25,7 +25,7 @@ import com.hazelcast.function.SupplierEx;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.internal.cluster.impl.ClusterServiceImpl;
 import com.hazelcast.internal.cluster.impl.MembersView;
-import com.hazelcast.jet.impl.CancellationByUserException;
+import com.hazelcast.jet.impl.exception.CancellationByUserException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
@@ -1009,7 +1009,7 @@ public class ExecutionLifecycleTest extends SimpleTestInClusterSupport {
     }
 
     private void assertJobFailed(Job job, Throwable expected) {
-        boolean isCancelled = expected instanceof CancellationException;
+        boolean isCancelled = expected instanceof CancellationByUserException;
 
         assertTrue(job.getFuture().isDone());
         try {
