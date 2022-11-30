@@ -27,6 +27,9 @@
     <network>
         <discovery-strategies>
             <discovery-strategy enabled="true" class="com.hazelcast.spi.discovery.multicast.MulticastDiscoveryStrategy">
+                <properties>
+                    <property name="port">54329</property>
+                </properties>
             </discovery-strategy>
         </discovery-strategies>
     </network>
