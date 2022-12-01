@@ -68,6 +68,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CancellationException;
@@ -139,7 +140,6 @@ public class MasterJobContext {
     private final ILogger logger;
     private final int defaultParallelism;
     private final int defaultQueueSize;
-
     private volatile long executionStartTime = System.currentTimeMillis();
     private volatile ExecutionFailureCallback executionFailureCallback;
     private volatile Set<Vertex> vertices;
@@ -165,23 +165,17 @@ public class MasterJobContext {
     private final NonCompletableFuture jobCompletionFuture = new NonCompletableFuture();
 
     /**
-     * Null initially. When a job termination is requested, it is assigned a
-     * termination mode. It's reset back to null when execute operations
-     * complete.
-     */
-    private volatile TerminationMode requestedTerminationMode;
-    /**
-     * When a job termination is requested, stores information if the
-     * termination was initiated by the user. It is reset back to false when
-     * execute operations complete.
-     * Set and cleared in coordination with {@link #requestedTerminationMode}.
+     * Current execution termination request in progress if any. There can be at
+     * most one active request at any given time. Cleared when execution is
+     * terminated.
      * <p>
-     * Note that at present this information is trustworthy only for
-     * cancellations. For other modes of termination we may not have enough
-     * information about what initiated it. In dubious cases we default to false
-     * i.e. not user-initiated action.
+     * Members of {@link TerminationRequest} can be accessed directly through
+     * this field only when guarded by {@link MasterContext#lock()}, otherwise
+     * inconsistent values are possible in subsequent reads. Standard access
+     * pattern should involve invocation of {@link #getTerminationRequest()}
+     * once and using returned value.
      */
-    private volatile boolean userInitiatedTermination;
+    private volatile TerminationRequest terminationRequest;
 
     MasterJobContext(MasterContext masterContext, ILogger logger) {
         this.mc = masterContext;
@@ -195,12 +189,16 @@ public class MasterJobContext {
         return jobCompletionFuture;
     }
 
-    TerminationMode requestedTerminationMode() {
-        return requestedTerminationMode;
+    Optional<TerminationRequest> getTerminationRequest() {
+        return Optional.ofNullable(terminationRequest);
+    }
+
+    Optional<TerminationMode> requestedTerminationMode() {
+        return getTerminationRequest().map(TerminationRequest::requestedTerminationMode);
     }
 
     boolean isUserInitiatedTermination() {
-        return userInitiatedTermination;
+        return getTerminationRequest().map(TerminationRequest::isUserInitiatedTermination).orElse(false);
     }
 
     /**
@@ -211,7 +209,9 @@ public class MasterJobContext {
     }
 
     private boolean isCancelled() {
-        return requestedTerminationMode == CANCEL_FORCEFUL;
+        return requestedTerminationMode()
+                .map(mode -> mode == CANCEL_FORCEFUL)
+                .orElse(false);
     }
 
     /**
@@ -324,12 +324,12 @@ public class MasterJobContext {
             // ensure JobExecutionRecord exists
             mc.writeJobExecutionRecord(true);
 
-            if (requestedTerminationMode != null) {
-                if (requestedTerminationMode.actionAfterTerminate() != RESTART) {
-                    throw new JobTerminateRequestedException(requestedTerminationMode);
+            if (terminationRequest != null) {
+                if (terminationRequest.requestedTerminationMode.actionAfterTerminate() != RESTART) {
+                    throw new JobTerminateRequestedException(terminationRequest.requestedTerminationMode);
                 }
                 // requested termination mode is RESTART, ignore it because we are just starting
-                clearTerminationRequest();
+                terminationRequest = null;
             }
             ClassLoader classLoader = mc.getJetServiceBackend().getJobClassLoaderService()
                                         .getOrCreateClassLoader(mc.jobConfig(), mc.jobId(), COORDINATOR);
@@ -397,14 +397,13 @@ public class MasterJobContext {
                 // if suspended, we can only cancel the job. Other terminations have no effect.
                 return tuple2(executionCompletionFuture, "Job is " + SUSPENDED);
             }
-            if (requestedTerminationMode != null) {
+            if (terminationRequest != null) {
                 // don't report the cancellation of a cancelled job as an error
-                String message = requestedTerminationMode == CANCEL_FORCEFUL && mode == CANCEL_FORCEFUL ? null
-                        : "Job is already terminating in mode: " + requestedTerminationMode.name();
+                String message = terminationRequest.requestedTerminationMode == CANCEL_FORCEFUL && mode == CANCEL_FORCEFUL ? null
+                        : "Job is already terminating in mode: " + terminationRequest.requestedTerminationMode.name();
                 return tuple2(executionCompletionFuture, message);
             }
-            requestedTerminationMode = mode;
-            userInitiatedTermination = userInitiated;
+            terminationRequest = new TerminationRequest(mode, userInitiated);
             // handle cancellation of a suspended job
             if (localStatus == SUSPENDED || localStatus == SUSPENDED_EXPORTING_SNAPSHOT) {
                 mc.setJobStatus(FAILED);
@@ -436,11 +435,6 @@ public class MasterJobContext {
         }
 
         return result;
-    }
-
-    private void clearTerminationRequest() {
-        requestedTerminationMode = null;
-        userInitiatedTermination = false;
     }
 
     private void rewriteDagWithSnapshotRestore(DAG dag, long snapshotId, String mapName, String snapshotName) {
@@ -525,9 +519,9 @@ public class MasterJobContext {
         long executionId = mc.executionId();
         mc.resetStartOperationResponses();
         executionFailureCallback = new ExecutionFailureCallback(executionId, mc.startOperationResponses());
-        if (requestedTerminationMode != null) {
-            handleTermination(requestedTerminationMode);
-        }
+
+        getTerminationRequest().ifPresent(request ->
+            handleTermination(request.requestedTerminationMode()));
 
         boolean savingMetricsEnabled = mc.jobConfig().isStoreMetricsAfterJobCompletion();
         Function<ExecutionPlan, Operation> operationCtor =
@@ -608,8 +602,8 @@ public class MasterJobContext {
         if (failures.stream().allMatch(entry -> entry.getValue() instanceof TerminatedWithSnapshotException)) {
             assert opName.equals("Execution") : "opName is '" + opName + "', expected 'Execution'";
             logger.fine(opName + " of " + mc.jobIdString() + " terminated after a terminal snapshot");
-            TerminationMode mode = requestedTerminationMode;
-            assert mode != null && mode.isWithTerminalSnapshot() : "mode=" + mode;
+            TerminationMode mode = requestedTerminationMode().orElseThrow(() -> new AssertionError("mode is null"));
+            assert mode.isWithTerminalSnapshot() : "mode=" + mode;
             return mode == CANCEL_GRACEFUL ? new CancellationException() : new JobTerminateRequestedException(mode);
         }
 
@@ -663,15 +657,18 @@ public class MasterJobContext {
         } else {
             if (error instanceof ExecutionNotFoundException) {
                 // If the StartExecutionOperation didn't find the execution, it means that it was cancelled.
-                if (requestedTerminationMode != null) {
-                    // This cancellation can be because the master cancelled it. If that's the case, convert the exception
-                    // to JobTerminateRequestedException.
-                    error = new JobTerminateRequestedException(requestedTerminationMode).initCause(error);
-                }
-                // The cancellation can also happen if some participant left and
-                // the target cancelled the execution locally in JobExecutionService.onMemberRemoved().
-                // We keep this (and possibly other) exceptions as they are
-                // and let the execution complete with failure.
+                final Throwable notFoundException = error;
+                error = getTerminationRequest()
+                        // This cancellation can be because the master cancelled it. If that's the case, convert the exception
+                        // to JobTerminateRequestedException.
+                        .map(request -> new JobTerminateRequestedException(request.requestedTerminationMode())
+                                .initCause(notFoundException))
+                        // The cancellation can also happen if some participant left and
+                        // the target cancelled the execution locally in JobExecutionService.onMemberRemoved().
+                        // We keep this (and possibly other) exceptions as they are
+                        // and let the execution complete with failure.
+                        .orElse(notFoundException);
+
             }
             finalizeExecution(error);
         }
@@ -747,7 +744,7 @@ public class MasterJobContext {
                         setFinalResult(new CancellationException());
                     } else {
                         mc.coordinationService()
-                          .completeJob(mc, failure, completionTime, userInitiatedTermination)
+                          .completeJob(mc, failure, completionTime, isUserInitiatedTermination())
                           .whenComplete(withTryCatch(logger, (r, f) -> {
                               if (f != null) {
                                   logger.warning("Completion of " + mc.jobIdString() + " failed", f);
@@ -759,7 +756,7 @@ public class MasterJobContext {
                     nonSynchronizedAction = NO_OP;
                 }
                 // reset the state for the next execution
-                clearTerminationRequest();
+                terminationRequest = null;
                 executionFailureCallback = null;
             } finally {
                 mc.unlock();
@@ -1009,6 +1006,39 @@ public class MasterJobContext {
         @Override
         public int getPriority() {
             return SNAPSHOT_RESTORE_EDGE_PRIORITY;
+        }
+    }
+
+    public static class TerminationRequest {
+        /**
+         * Null initially. When a job termination is requested, it is assigned a
+         * termination mode. It's reset back to null when execute operations
+         * complete.
+         */
+        private final TerminationMode requestedTerminationMode;
+        /**
+         * When a job termination is requested, stores information if the
+         * termination was initiated by the user. It is reset back to false when
+         * execute operations complete.
+         * <p>
+         * Note that at present this information is trustworthy only for
+         * cancellations. For other modes of termination we may not have enough
+         * information about what initiated it. In dubious cases we default to false
+         * i.e. not user-initiated action.
+         */
+        private final boolean userInitiatedTermination;
+
+        public TerminationRequest(@Nonnull TerminationMode requestedTerminationMode, boolean userInitiatedTermination) {
+            this.requestedTerminationMode = requestedTerminationMode;
+            this.userInitiatedTermination = userInitiatedTermination;
+        }
+
+        TerminationMode requestedTerminationMode() {
+            return requestedTerminationMode;
+        }
+
+        boolean isUserInitiatedTermination() {
+            return userInitiatedTermination;
         }
     }
 

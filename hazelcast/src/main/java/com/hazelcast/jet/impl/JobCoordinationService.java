@@ -47,6 +47,7 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.metrics.MetricNames;
 import com.hazelcast.jet.core.metrics.MetricTags;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.impl.MasterJobContext.TerminationRequest;
 import com.hazelcast.jet.impl.exception.EnteringPassiveClusterStateException;
 import com.hazelcast.jet.impl.execution.DoneItem;
 import com.hazelcast.jet.impl.metrics.RawJobMetrics;
@@ -82,6 +83,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.Spliterators;
 import java.util.UUID;
@@ -602,20 +604,36 @@ public class JobCoordinationService {
         // Logic of determining job status should be in sync
         // with getJobAndSqlSummary and getJobAndSqlSummaryList.
         return callWithJob(jobId,
-                mc -> {
-                    // When the job finishes running, we write NOT_RUNNING to jobStatus first and then
-                    // write null to requestedTerminationMode (see MasterJobContext.finalizeJob()). We
-                    // have to read them in the opposite order.
-                    TerminationMode terminationMode = mc.jobContext().requestedTerminationMode();
-                    JobStatus jobStatus = mc.jobStatus();
-                    return jobStatus == RUNNING && terminationMode != null
-                            ? COMPLETING
-                            : jobStatus;
-                },
+                JobCoordinationService::determineJobStatusFromMasterContext,
                 JobResult::getJobStatus,
                 jobRecord -> NOT_RUNNING,
                 jobExecutionRecord -> jobExecutionRecord.isSuspended() ? SUSPENDED : NOT_RUNNING
         );
+    }
+
+    private static JobStatus determineJobStatusFromMasterContext(MasterContext mc) {
+        // When the job finishes running, we write NOT_RUNNING to jobStatus first and then
+        // write null to terminationRequest (see MasterJobContext.finalizeJob()). We
+        // have to read them in the opposite order.
+        Optional<TerminationRequest> maybeTerminationRequest = mc.jobContext().getTerminationRequest();
+        JobStatus jobStatus = mc.jobStatus();
+        return jobStatus == RUNNING && maybeTerminationRequest.isPresent()
+                ? COMPLETING
+                : jobStatus;
+    }
+
+    private static boolean determineIsJobUserCancelledFromMasterContext(MasterContext mc) {
+        // order of reads is important, see comment in determineJobStatusFromMasterContext
+        boolean userInitiatedTermination = mc.jobContext().isUserInitiatedTermination();
+        JobStatus jobStatus = mc.jobStatus();
+        switch (jobStatus) {
+            case COMPLETED:
+                return false;
+            case FAILED:
+                return userInitiatedTermination;
+            default:
+                throw new IllegalStateException("Job not finished");
+        }
     }
 
     /**
@@ -654,17 +672,7 @@ public class JobCoordinationService {
         // Logic of determining userCancelled should be in sync
         // with getJobAndSqlSummary and getJobAndSqlSummaryList.
         return callWithJob(jobId,
-                mc -> {
-                    JobStatus jobStatus = mc.jobStatus();
-                    switch (jobStatus) {
-                        case COMPLETED:
-                            return false;
-                        case FAILED:
-                            return mc.jobContext().isUserInitiatedTermination();
-                        default:
-                            throw new IllegalStateException("Job not finished");
-                    }
-                },
+                JobCoordinationService::determineIsJobUserCancelledFromMasterContext,
                 JobResult::isUserCancelled,
                 // If we do not have result, the job has not finished yet so cannot be cancelled.
                 jobRecord -> {
@@ -1290,15 +1298,18 @@ public class JobCoordinationService {
                     ? JobStatus.SUSPENDED : JobStatus.NOT_RUNNING;
             userCancelled = false;
         } else {
-            // order of reads is important, see comment in getJobStatus
-            TerminationMode terminationMode = ctx.jobContext().requestedTerminationMode();
+            // order of reads is important, see comment in determineJobStatusFromMasterContext
+            // for consistent result we must use single instance of TerminationRequest for all checks
+            Optional<TerminationRequest> maybeTerminationRequest = ctx.jobContext().getTerminationRequest();
             JobStatus jobStatus = ctx.jobStatus();
-            status = jobStatus == RUNNING && terminationMode != null
+            status = jobStatus == RUNNING && maybeTerminationRequest.isPresent()
                     ? COMPLETING
                     : jobStatus;
+
             // job is running, so not cancelled
             // or has just ended but MasterContext still exists
-            userCancelled = status == FAILED && ctx.jobContext().isUserInitiatedTermination();
+            userCancelled = status == FAILED &&
+                    maybeTerminationRequest.map(TerminationRequest::isUserInitiatedTermination).orElse(false);
         }
         return new JobAndSqlSummary(false, record.getJobId(), execId, record.getJobNameOrId(), status,
                 record.getCreationTime(), 0, null, null,
