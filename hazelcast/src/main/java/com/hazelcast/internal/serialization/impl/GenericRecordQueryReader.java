@@ -61,8 +61,7 @@ public final class GenericRecordQueryReader implements ValueReader {
     private final boolean useLazyDeserialization;
 
     public GenericRecordQueryReader(InternalGenericRecord rootRecord) {
-        this.rootRecord = rootRecord;
-        this.useLazyDeserialization = false;
+        this(rootRecord, false);
     }
 
     public GenericRecordQueryReader(InternalGenericRecord rootRecord, boolean useLazyDeserialization) {

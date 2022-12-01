@@ -28,10 +28,13 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.junit.experimental.categories.Category;
 
 import java.io.IOException;
 
@@ -52,15 +55,16 @@ import static org.mockito.Mockito.anyInt;
  * we start.
  */
 @RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class SqlLazyDeserializationTest {
 
-    private static final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
+    private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
-    HazelcastInstance instance;
-    HazelcastInstance client;
+    private HazelcastInstance instance;
+    private HazelcastInstance client;
 
-    CompactStreamSerializer spyCompactStreamSerializer;
-    PortableSerializer spyPortableSerializer;
+    private CompactStreamSerializer spyCompactStreamSerializer;
+    private PortableSerializer spyPortableSerializer;
 
     @Before
     public void before() {
