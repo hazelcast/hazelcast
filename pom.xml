@@ -118,7 +118,7 @@
         <parquet.version>1.12.3</parquet.version>
         <picocli.version>4.6.3</picocli.version>
         <postgresql.version>42.5.1</postgresql.version>
-        <prometheus.version>0.17.1</prometheus.version>
+        <prometheus.version>0.17.2</prometheus.version>
 
         <!--
         Protobuf libraries for each language have own major version, but share minor and patch
