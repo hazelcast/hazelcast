@@ -60,7 +60,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     private static HazelcastInstance client;
 
     protected static void initialize(int memberCount, @Nullable Config config) {
-        assertNoRunningInstances();
+        assertTrueEventually(SimpleTestInClusterSupport::assertNoRunningInstances, 30);
 
         assert factory == null : "already initialized";
         factory = new TestHazelcastFactory();
