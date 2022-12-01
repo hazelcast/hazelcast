@@ -89,6 +89,7 @@ public class JetTest extends JetTestSupport {
         JetClientInstanceImpl jet = (JetClientInstanceImpl) client.getJet();
 
         assertThrows(JetDisabledException.class, jet::getJobSummaryList);
+        assertThrows(JetDisabledException.class, jet::getJobAndSqlSummaryList);
     }
 
     @Test

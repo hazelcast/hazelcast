@@ -28,7 +28,6 @@ import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.impl.JetServiceBackend;
-import com.hazelcast.jet.impl.JobSummary;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.Sources;
@@ -40,12 +39,12 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
 
 import static com.hazelcast.jet.core.TestProcessors.streamingDag;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.isOrHasCause;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -165,15 +164,15 @@ public class NonSmartClientTest extends SimpleTestInClusterSupport {
 
     @Test
     public void when_jobSummaryListIsAsked_then_jobSummaryListReturned() {
-        //Given
+        // when
         Job job = startJobAndVerifyItIsRunning();
 
-        //When
-        List<JobSummary> summaryList = ((JetClientInstanceImpl) nonMasterClient.getJet()).getJobSummaryList();
-
-        //Then
-        assertNotNull(summaryList);
-        assertTrue(summaryList.stream().anyMatch(s -> s.getJobId() == job.getId()));
+        // then
+        JetClientInstanceImpl jet = (JetClientInstanceImpl) nonMasterClient.getJet();
+        assertThat(jet.getJobSummaryList())
+                .anyMatch(s -> s.getJobId() == job.getId());
+        assertThat(jet.getJobAndSqlSummaryList())
+                .anyMatch(s -> s.getJobId() == job.getId());
     }
 
     @Test
