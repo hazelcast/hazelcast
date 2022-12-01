@@ -733,7 +733,9 @@ public class JobCoordinationService {
 
     /**
      * Return a summary of all jobs
+     * @deprecated Since 5.3, to be removed in 6.0. Use {@link #getJobAndSqlSummaryList()} instead
      */
+    @Deprecated
     public CompletableFuture<List<JobSummary>> getJobSummaryList() {
         return getJobAndSqlSummaryList().thenApply(jobAndSqlSummaries -> jobAndSqlSummaries.stream()
                 .map(this::toJobSummary)
@@ -743,8 +745,7 @@ public class JobCoordinationService {
     private JobSummary toJobSummary(JobAndSqlSummary jobAndSqlSummary) {
         return new JobSummary(jobAndSqlSummary.isLightJob(), jobAndSqlSummary.getJobId(), jobAndSqlSummary.getExecutionId(),
                 jobAndSqlSummary.getNameOrId(), jobAndSqlSummary.getStatus(), jobAndSqlSummary.getSubmissionTime(),
-                jobAndSqlSummary.getCompletionTime(), jobAndSqlSummary.getFailureText(),
-                jobAndSqlSummary.isUserCancelled());
+                jobAndSqlSummary.getCompletionTime(), jobAndSqlSummary.getFailureText());
     }
 
     /**

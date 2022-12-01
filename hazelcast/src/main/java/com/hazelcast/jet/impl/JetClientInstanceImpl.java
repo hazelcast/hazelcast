@@ -81,8 +81,10 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
     /**
      * Returns a list of jobs and a summary of their details.
+     * @deprecated Since 5.3, to be removed in 6.0. Use {@link #getJobAndSqlSummaryList()} instead
      */
     @Nonnull
+    @Deprecated
     public List<JobSummary> getJobSummaryList() {
         return invokeRequestOnMasterAndDecodeResponse(JetGetJobSummaryListCodec.encodeRequest(),
                 JetGetJobSummaryListCodec::decodeResponse);
