@@ -57,6 +57,7 @@ import junit.framework.AssertionFailedError;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.AssumptionViolatedException;
+import org.junit.ClassRule;
 import org.junit.ComparisonFailure;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
@@ -127,6 +128,9 @@ public abstract class HazelcastTestSupport {
     private static final String COMPAT_HZ_INSTANCE_FACTORY = "com.hazelcast.test.CompatibilityTestHazelcastInstanceFactory";
     private static final boolean EXPECT_DIFFERENT_HASHCODES = (new Object().hashCode() != new Object().hashCode());
     private static final ILogger LOGGER = Logger.getLogger(HazelcastTestSupport.class);
+
+    @ClassRule
+    public static MobyNamingRule mobyNamingRule = new MobyNamingRule();
 
     @Rule
     public JitterRule jitterRule = new JitterRule();
