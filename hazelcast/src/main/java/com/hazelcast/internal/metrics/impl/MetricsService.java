@@ -193,6 +193,10 @@ public class MetricsService implements ManagedService, LiveOperationsTracker {
             if (!slice.isEmpty()) {
                 future.complete(slice);
             }
+        } catch (ConcurrentArrayRingbuffer.SequenceOutOfBoundsException e) {
+            logger.fine("Error reading from metrics journal, sequence: " + sequence + "."
+                    + " In case of persistence-enabled member restart, this error is handled by MC gracefully.", e);
+            future.completeExceptionally(e);
         } catch (Exception e) {
             logger.severe("Error reading from metrics journal, sequence: " + sequence, e);
             future.completeExceptionally(e);

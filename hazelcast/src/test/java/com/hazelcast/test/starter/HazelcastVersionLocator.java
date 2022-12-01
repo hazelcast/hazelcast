@@ -27,6 +27,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
+import java.net.URLConnection;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,7 +44,6 @@ public class HazelcastVersionLocator {
         OS_TEST_JAR("/com/hazelcast/hazelcast/%1$s/hazelcast-%1$s-tests.jar", false, true, "hazelcast"),
         SQL_JAR("/com/hazelcast/hazelcast-sql/%1$s/hazelcast-sql-%1$s.jar", false, false, "hazelcast-sql"),
         EE_JAR("/com/hazelcast/hazelcast-enterprise/%1$s/hazelcast-enterprise-%1$s.jar", true, false, "hazelcast-enterprise"),
-        EE_TEST_JAR("/com/hazelcast/hazelcast-enterprise/%1$s/hazelcast-enterprise-%1$s-tests.jar", true, true, "hazelcast-enterprise"),
         ;
         private final String path;
         private final boolean enterprise;
@@ -79,7 +79,6 @@ public class HazelcastVersionLocator {
         }
         if (enterprise) {
             files.put(Artifact.EE_JAR, locateArtifact(Artifact.EE_JAR, version, target));
-            files.put(Artifact.EE_TEST_JAR, locateArtifact(Artifact.EE_TEST_JAR, version, target));
         }
         return files;
     }
@@ -114,7 +113,12 @@ public class HazelcastVersionLocator {
         FileOutputStream fos = null;
         InputStream is = null;
         try {
-            is = new BufferedInputStream(new URL(url).openStream());
+            URL downloadUrl = new URL(url);
+            URLConnection urlConnection = downloadUrl.openConnection();
+            urlConnection.setConnectTimeout(20_000);
+            urlConnection.setReadTimeout(5_000);
+
+            is = new BufferedInputStream(urlConnection.getInputStream());
             fos = new FileOutputStream(targetFile);
             drainTo(is, fos);
             targetFile.deleteOnExit();
@@ -147,3 +151,4 @@ public class HazelcastVersionLocator {
         LOGGER.warning(sb.toString());
     }
 }
+

@@ -31,6 +31,13 @@ public class HazelcastSqlException extends HazelcastException {
     private final int code;
     private final String suggestion;
 
+    public HazelcastSqlException(String message, Throwable cause) {
+        super(message, cause);
+        originatingMemberId = null;
+        code = 0;
+        suggestion = null;
+    }
+
     @PrivateApi
     public HazelcastSqlException(
             @Nonnull UUID originatingMemberId,
@@ -49,7 +56,6 @@ public class HazelcastSqlException extends HazelcastException {
     /**
      * Gets ID of the member that caused or initiated an error condition.
      */
-    @Nonnull
     public UUID getOriginatingMemberId() {
         return originatingMemberId;
     }

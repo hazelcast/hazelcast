@@ -158,8 +158,8 @@ import static java.util.concurrent.TimeUnit.SECONDS;
  */
 @SuppressWarnings({"checkstyle:methodcount", "checkstyle:classfanoutcomplexity", "checkstyle:classdataabstractioncoupling"})
 public class RaftService implements ManagedService, SnapshotAwareService<MetadataRaftGroupSnapshot>, GracefulShutdownAwareService,
-                                    MembershipAwareService, PreJoinAwareService, RaftNodeLifecycleAwareService,
-                                    MigrationAwareService, DynamicMetricsProvider,
+                                    MembershipAwareService, PreJoinAwareService<RaftServicePreJoinOp>,
+                                    RaftNodeLifecycleAwareService, MigrationAwareService, DynamicMetricsProvider,
                                     EventPublishingService<Object, EventListener> {
 
     public static final String SERVICE_NAME = "hz:core:raft";
@@ -569,7 +569,7 @@ public class RaftService implements ManagedService, SnapshotAwareService<Metadat
     }
 
     @Override
-    public Operation getPreJoinOperation() {
+    public RaftServicePreJoinOp getPreJoinOperation() {
         if (!cpSubsystemEnabled) {
             return null;
         }

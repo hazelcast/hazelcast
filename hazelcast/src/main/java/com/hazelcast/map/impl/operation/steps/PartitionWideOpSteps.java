@@ -39,7 +39,7 @@ import java.util.List;
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
 import static com.hazelcast.map.impl.operation.EntryOperator.operator;
 
-public enum PartitionWideOpSteps implements Step<State> {
+public enum PartitionWideOpSteps implements IMapOpStep {
 
     PROCESS() {
         @Override
@@ -133,13 +133,12 @@ public enum PartitionWideOpSteps implements Step<State> {
             // state from main State object
             List<State> toStore = state.getToStore();
             List<State> toRemove = state.getToRemove();
-            MapEntries responses = state.getMapEntries();
 
             EntryEventType eventType = singleKeyState.getOperator().getEventType();
             if (eventType == null) {
                 Data result = singleKeyState.getOperator().getResult();
                 if (result != null) {
-                    responses.add(singleKeyState.getKey(), result);
+                    ((MapEntries) state.getResult()).add(singleKeyState.getKey(), result);
                 }
             } else {
                 switch (eventType) {
@@ -165,7 +164,7 @@ public enum PartitionWideOpSteps implements Step<State> {
 
     STORE_OR_DELETE() {
         @Override
-        public boolean isOffloadStep() {
+        public boolean isStoreStep() {
             return true;
         }
 

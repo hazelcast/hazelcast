@@ -322,6 +322,11 @@ public class DefaultNodeExtension implements NodeExtension {
     }
 
     @Override
+    public boolean isReady() {
+        return node.getClusterService().isJoined();
+    }
+
+    @Override
     public SecurityContext getSecurityContext() {
         logger.warning("Security features are only available on Hazelcast Enterprise!");
         return null;
@@ -533,6 +538,7 @@ public class DefaultNodeExtension implements NodeExtension {
         if (service != null) {
             service.onMemberListChange();
         }
+        node.clusterTopologyIntentTracker.onMembershipChange();
     }
 
     @Override

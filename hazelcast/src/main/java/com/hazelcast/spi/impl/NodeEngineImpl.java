@@ -159,7 +159,7 @@ public class NodeEngineImpl implements NodeEngine {
             this.transactionManagerService = new TransactionManagerServiceImpl(this);
             this.wanReplicationService = node.getNodeExtension().createService(WanReplicationService.class);
             this.sqlService = new SqlServiceImpl(this);
-            this.externalDataStoreService = new ExternalDataStoreServiceImpl(node.config, configClassLoader);
+            this.externalDataStoreService = new ExternalDataStoreServiceImpl(node, configClassLoader);
             this.packetDispatcher = new PacketDispatcher(
                     logger,
                     operationService.getOperationExecutor(),
@@ -406,6 +406,11 @@ public class NodeEngineImpl implements NodeEngine {
     }
 
     @Override
+    public boolean isStartCompleted() {
+        return node.getNodeExtension().isStartCompleted();
+    }
+
+    @Override
     public HazelcastInstance getHazelcastInstance() {
         return node.hazelcastInstance;
     }
@@ -539,7 +544,7 @@ public class NodeEngineImpl implements NodeEngine {
         operationService.reset();
     }
 
-    @SuppressWarnings("checkstyle:npathcomplexity")
+    @SuppressWarnings({"checkstyle:npathcomplexity", "cyclomaticcomplexity"})
     public void shutdown(boolean terminate) {
         logger.finest("Shutting down services...");
         if (sqlService != null) {
@@ -575,6 +580,9 @@ public class NodeEngineImpl implements NodeEngine {
         }
         if (diagnostics != null) {
             diagnostics.shutdown();
+        }
+        if (externalDataStoreService != null) {
+            externalDataStoreService.close();
         }
     }
 

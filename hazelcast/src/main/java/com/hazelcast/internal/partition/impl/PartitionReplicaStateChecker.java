@@ -80,6 +80,23 @@ public class PartitionReplicaStateChecker {
 
     @SuppressWarnings("checkstyle:npathcomplexity")
     public PartitionServiceState getPartitionServiceState() {
+        PartitionServiceState state = getPartitionTableState();
+
+        if (state != SAFE) {
+            return state;
+        }
+
+        if (!checkAndTriggerReplicaSync()) {
+            return REPLICA_NOT_SYNC;
+        }
+
+        return SAFE;
+    }
+
+    /**
+     * Check for partition table health and return appropriate {@code PartitionServiceState}.
+     */
+    public PartitionServiceState getPartitionTableState() {
         if (partitionService.isFetchMostRecentPartitionTableTaskRequired()) {
             return FETCHING_PARTITION_TABLE;
         }
@@ -102,10 +119,6 @@ public class PartitionReplicaStateChecker {
 
         if (!partitionService.isLocalMemberMaster() && hasOnGoingMigrationMaster(Level.OFF)) {
             return MIGRATION_ON_MASTER;
-        }
-
-        if (!checkAndTriggerReplicaSync()) {
-            return REPLICA_NOT_SYNC;
         }
 
         return SAFE;
@@ -218,7 +231,7 @@ public class PartitionReplicaStateChecker {
         return timeoutInMillis - sleep;
     }
 
-    private boolean checkAndTriggerReplicaSync() {
+    public boolean checkAndTriggerReplicaSync() {
         if (!needsReplicaStateCheck()) {
             return true;
         }

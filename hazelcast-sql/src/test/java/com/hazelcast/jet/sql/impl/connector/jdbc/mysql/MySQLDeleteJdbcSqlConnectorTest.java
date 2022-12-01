@@ -18,12 +18,11 @@ package com.hazelcast.jet.sql.impl.connector.jdbc.mysql;
 
 import com.hazelcast.jet.sql.impl.connector.jdbc.DeleteJdbcSqlConnectorTest;
 import com.hazelcast.test.annotation.NightlyTest;
-import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.jdbc.MySQLDatabaseProvider;
 import org.junit.BeforeClass;
 import org.junit.experimental.categories.Category;
 
-@Category({NightlyTest.class, ParallelJVMTest.class})
+@Category(NightlyTest.class)
 public class MySQLDeleteJdbcSqlConnectorTest extends DeleteJdbcSqlConnectorTest {
 
     @BeforeClass

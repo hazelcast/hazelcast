@@ -18,6 +18,7 @@ package com.hazelcast.security.impl.function;
 
 import com.hazelcast.cache.EventJournalCacheEvent;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.datastore.impl.CloseableDataSource;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
@@ -285,6 +286,13 @@ public final class SecuredFunctions {
             @Override
             public void init(@Nonnull ProcessorSupplier.Context context) {
                 dataSource = newDataSourceFn.apply(context);
+            }
+
+            @Override
+            public void close(Throwable error) throws Exception {
+                if (dataSource instanceof CloseableDataSource) {
+                    ((CloseableDataSource) dataSource).close();
+                }
             }
 
             @Nonnull

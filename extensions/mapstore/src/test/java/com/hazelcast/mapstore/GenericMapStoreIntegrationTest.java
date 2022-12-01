@@ -25,16 +25,28 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.datastore.JdbcDataStoreFactory;
 import com.hazelcast.internal.util.FilteringClassLoader;
 import com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlTestSupport;
+import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
+import com.hazelcast.nio.serialization.HazelcastSerializationException;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
+import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
+import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.example.Person;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.junit.Ignore;
 import org.junit.Test;
+
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.Map;
 
 import static com.hazelcast.mapstore.GenericMapStore.EXTERNAL_REF_ID_PROPERTY;
 import static com.hazelcast.mapstore.GenericMapStore.TYPE_NAME_PROPERTY;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.assertj.core.util.Lists.newArrayList;
 
 public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
@@ -42,7 +54,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
     private String tableName;
 
     @BeforeClass
-    public static void beforeClass() throws Exception {
+    public static void beforeClass() {
         databaseProvider = new H2DatabaseProvider();
         dbConnectionUrl = databaseProvider.createDatabase(JdbcSqlTestSupport.class.getName());
 
@@ -118,7 +130,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void testRemove() throws Exception {
+    public void testRemove() {
         HazelcastInstance client = client();
         IMap<Integer, Person> map = client.getMap(tableName);
 
@@ -128,4 +140,193 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
 
         assertThat(jdbcRowsTable(tableName)).isEmpty();
     }
+
+    @Test
+    public void testDynamicExternalDataStoreConfig() throws Exception {
+        String randomTableName = randomTableName();
+
+        createTable(randomTableName);
+        assertThat(jdbcRowsTable(randomTableName)).isEmpty();
+
+        HazelcastInstance client = client();
+
+        client.getConfig().addExternalDataStoreConfig(
+                new ExternalDataStoreConfig("dynamically-added-datastore")
+                        .setClassName(JdbcDataStoreFactory.class.getName())
+                        .setProperty("jdbcUrl", dbConnectionUrl)
+        );
+
+        MapStoreConfig mapStoreConfig = new MapStoreConfig()
+                .setClassName(GenericMapStore.class.getName())
+                .setProperty(EXTERNAL_REF_ID_PROPERTY, "dynamically-added-datastore")
+                .setProperty("table-name", randomTableName);
+        MapConfig mapConfig = new MapConfig(randomTableName).setMapStoreConfig(mapStoreConfig);
+        client.getConfig().addMapConfig(mapConfig);
+
+        IMap<Integer, Person> someTestMap = client.getMap(randomTableName);
+        someTestMap.put(42, new Person(42, "some-name-42"));
+
+        assertJdbcRowsAnyOrder(randomTableName,
+                new Row(42, "some-name-42")
+        );
+
+    }
+
+    /**
+     * https://github.com/hazelcast/hazelcast/issues/22570
+     */
+    @Test
+    public void testExecuteOnEntries() {
+        HazelcastInstance client = client();
+        IMap<Object, Object> map = client.getMap(tableName);
+        map.loadAll(false);
+
+        map.executeOnEntries((EntryProcessor<Object, Object, Object>) entry -> {
+            GenericRecord rec = (GenericRecord) entry.getValue();
+            GenericRecord modifiedRecord = rec.newBuilderWithClone()
+                    .setString("name", "new-name-" + rec.getInt32("id"))
+                    .build();
+            entry.setValue(modifiedRecord);
+            return null;
+        });
+
+        assertJdbcRowsAnyOrder(tableName,
+                new Row(0, "new-name-0")
+        );
+    }
+
+    @Test
+    public void testMapClear() {
+        HazelcastInstance client = client();
+        IMap<Integer, Person> map = client.getMap(tableName);
+        map.loadAll(false);
+
+        map.clear();
+
+        assertThat(jdbcRowsTable(tableName)).isEmpty();
+    }
+
+    @Test
+    @Ignore("https://github.com/hazelcast/hazelcast/issues/22528")
+    public void testDestroy() {
+        HazelcastInstance client = client();
+        IMap<Integer, Person> map = client.getMap(tableName);
+        map.loadAll(false);
+
+        map.destroy();
+
+        assertTrueEventually(() -> {
+            assertRowsAnyOrder(client, "SHOW MAPPINGS", newArrayList());
+        }, 5);
+    }
+
+    @Test
+    public void testPutWithColumnMismatch() {
+        HazelcastInstance client = client();
+        IMap<Integer, GenericRecord> map = client.getMap(tableName);
+
+        assertThatThrownBy(() -> {
+            map.put(42,
+                    GenericRecordBuilder.compact("org.example.Person")
+                            .setString("id", "42")
+                            .setString("name", "name-42")
+                            .build()
+            );
+        })
+                .isInstanceOf(HazelcastSerializationException.class)
+                .hasMessageContaining("Invalid field kind: 'id for Schema" +
+                        " { className = org.example.Person, numberOfComplexFields = 2," +
+                        " primitivesLength = 0, map = {name=FieldDescriptor{" +
+                        "name='name', kind=STRING, index=1, offset=-1, bitOffset=-1}," +
+                        " id=FieldDescriptor{name='id', kind=STRING, index=0, " +
+                        "offset=-1, bitOffset=-1}}}, valid field kinds : " +
+                        "[INT32, NULLABLE_INT32], found : STRING");
+    }
+
+    @Test
+    public void testRemoveWhenNotExists() {
+        HazelcastInstance client = client();
+        IMap<Integer, Person> map = client.getMap(tableName);
+
+        assertThat(jdbcRowsTable(tableName)).hasSize(1);
+
+        assertThat(map.remove(1)).isNull();
+
+        assertThat(jdbcRowsTable(tableName)).hasSize(1);
+    }
+
+    @Test
+    public void testRemoveWhenExistsInTableOnly() {
+        HazelcastInstance client = client();
+        IMap<Integer, Person> map = client.getMap(tableName);
+
+        map.put(42, new Person(42, "name-42"));
+        map.evictAll();
+
+        assertThat(map.size()).isEqualTo(0);
+        assertThat(jdbcRowsTable(tableName)).hasSize(2);
+
+        Person p = map.remove(0);
+        assertThat(p.getId()).isEqualTo(0);
+        assertThat(p.getName()).isEqualTo("name-0");
+
+        assertThat(jdbcRowsTable(tableName)).hasSize(1);
+    }
+
+    @Test
+    public void testPutAll() {
+        HazelcastInstance client = client();
+        IMap<Integer, Person> map = client.getMap(tableName);
+
+        Map<Integer, Person> putMap = new HashMap<>();
+        putMap.put(42, new Person(42, "name-42"));
+        putMap.put(43, new Person(43, "name-43"));
+        putMap.put(44, new Person(44, "name-44"));
+        map.putAll(putMap);
+
+        assertJdbcRowsAnyOrder(tableName,
+                new Row(0, "name-0"),
+                new Row(42, "name-42"),
+                new Row(43, "name-43"),
+                new Row(44, "name-44")
+        );
+    }
+
+    @Test
+    public void testPutAllWhenExists() {
+        HazelcastInstance client = client();
+        IMap<Integer, Person> map = client.getMap(tableName);
+
+        Map<Integer, Person> putMap = new LinkedHashMap<>();
+        putMap.put(42, new Person(42, "name-42"));
+        putMap.put(0, new Person(0, "updated"));
+        putMap.put(44, new Person(44, "name-44"));
+        map.putAll(putMap);
+
+        assertJdbcRowsAnyOrder(tableName,
+                new Row(0, "updated"),
+                new Row(42, "name-42"),
+                new Row(44, "name-44")
+        );
+    }
+
+    @Test
+    public void testExceptionIsConstructable() {
+        HazelcastInstance client = client();
+        IMap<Integer, Person> map = client.getMap(tableName);
+        map.loadAll(false);
+
+        execute("DROP MAPPING \"__map-store." + tableName + "\"");
+
+        String message = "did you forget to CREATE MAPPING?";
+        Person person = new Person(42, "name-42");
+        assertThatThrownBy(() -> map.put(42, person))
+                .isInstanceOf(HazelcastSqlException.class)
+                .hasMessageContaining(message)
+                .hasCauseInstanceOf(QueryException.class)
+                .hasStackTraceContaining(message);
+
+        assertThat(map.size()).isEqualTo(1);
+    }
+
 }

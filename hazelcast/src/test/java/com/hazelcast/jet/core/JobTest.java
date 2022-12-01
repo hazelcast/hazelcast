@@ -783,6 +783,16 @@ public class JobTest extends SimpleTestInClusterSupport {
         // When
         Job job = useLightJob ? instances()[1].getJet().newLightJob(dag) : instance().getJet().newJob(dag);
         NoOutputSourceP.executionStarted.await();
+
+        // The light job is submitted in JobCoordinationService.submitLightJob. The order of instructions is:
+        // - LightMasterContext.createContext()
+        // - thenComposeAsync -> lightMasterContexts.put(jobId, mc)
+        // As long as the context is not put in the lightMasterContexts we cannot get the job by id. The tasklets are added
+        // to workers in the execution of LightMasterContext.createContext(), so the tasklet may start before the
+        // lightMasterContexts is filled.
+        assertTrueEventually(() -> {
+            assertNotNull(instance.getJet().getJob(job.getId()));
+        });
         Job trackedJob = instance.getJet().getJob(job.getId());
 
         // Then
@@ -932,7 +942,7 @@ public class JobTest extends SimpleTestInClusterSupport {
         allJobs.add(lightBatchJob2);
 
         // Then
-        // getJobs must include all submitted all jobs, except for the light batch jobs that are done
+        // getJobs must include all submitted jobs, except for the light batch jobs that are done
         assertThat(toList(jet.getJobs(), this::jobEqualityString))
                 .containsExactlyInAnyOrderElementsOf(toList(allJobsExceptCompletedLightJobs, this::jobEqualityString));
 

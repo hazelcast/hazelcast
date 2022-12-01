@@ -58,8 +58,8 @@ public class ClientToMemberDiscoveryTest extends HazelcastTestSupport {
 
     @Before
     public void setup() {
-        String serverXmlFileName = "hazelcast-multicast-plugin.xml";
-        String clientXmlFileName = "hazelcast-client-multicast-plugin.xml";
+        String serverXmlFileName = "hazelcast-multicast-plugin-non-default-port.xml";
+        String clientXmlFileName = "hazelcast-client-multicast-plugin-non-default-port.xml";
 
         InputStream xmlResource = MulticastDiscoveryStrategy.class.getClassLoader().getResourceAsStream(serverXmlFileName);
         serverConfig = new XmlConfigBuilder(xmlResource).build();

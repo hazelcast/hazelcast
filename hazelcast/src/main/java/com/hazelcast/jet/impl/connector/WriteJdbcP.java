@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.connector;
 
+import com.hazelcast.datastore.impl.CloseableDataSource;
 import com.hazelcast.function.BiConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.PredicateEx;
@@ -137,12 +138,20 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
                         dataSource = dataSourceSupplier.apply(context);
                     }
 
-                    @Nonnull @Override
+                    @Override
+                    public void close(Throwable error) throws Exception {
+                        if (dataSource instanceof CloseableDataSource) {
+                            ((CloseableDataSource) dataSource).close();
+                        }
+                    }
+
+                    @Nonnull
+                    @Override
                     public Collection<? extends Processor> get(int count) {
                         return IntStream.range(0, count)
-                                        .mapToObj(i -> new WriteJdbcP<>(updateQuery, dataSource, bindFn,
-                                                               exactlyOnce, batchLimit))
-                                        .collect(Collectors.toList());
+                                .mapToObj(i -> new WriteJdbcP<>(updateQuery, dataSource, bindFn,
+                                        exactlyOnce, batchLimit))
+                                .collect(Collectors.toList());
                     }
 
                     @Override
@@ -189,6 +198,12 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
             idleCount = 0;
             inbox.clear();
         } catch (SQLException e) {
+            // Commit failed, we need to execute rollback
+            try {
+                connection.rollback();
+            } catch (SQLException sqlException) {
+                logger.severe("Exception during rollback", sqlException);
+            }
             if (isNonTransientPredicate.test(e) || snapshotUtility.usesTransactionLifecycle()) {
                 throw ExceptionUtil.rethrow(e);
             } else {
@@ -235,8 +250,13 @@ public final class WriteJdbcP<T> extends XaSinkProcessorBase {
                 throw new JetException("The dataSource implements neither " + DataSource.class.getName() + " nor "
                         + XADataSource.class.getName());
             }
-            connection.setAutoCommit(false);
+
             supportsBatch = connection.getMetaData().supportsBatchUpdates();
+
+            // Call setAutoCommit(false) after getting the metadata. Otherwise, Hikari thinks that connection is dirty
+            // See the issue "Connection.getMetaData() causes Hikari to return dirty connections"
+            // https://github.com/brettwooldridge/HikariCP/issues/866
+            connection.setAutoCommit(false);
             statement = connection.prepareStatement(updateQuery);
         } catch (SQLException e) {
             if (isNonTransientPredicate.test(e) || snapshotUtility.usesTransactionLifecycle()) {

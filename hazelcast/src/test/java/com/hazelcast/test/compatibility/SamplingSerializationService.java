@@ -113,8 +113,8 @@ public class SamplingSerializationService implements InternalSerializationServic
     }
 
     @Override
-    public <T> T readObject(ObjectDataInput in) {
-        return (T) delegate.readObject(in);
+    public <T> T readObject(ObjectDataInput in, boolean useBigEndianForReadingTypeId) {
+        return (T) delegate.readObject(in, useBigEndianForReadingTypeId);
     }
 
     @Override

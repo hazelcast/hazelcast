@@ -94,12 +94,12 @@ public class BaseHz3Test extends HazelcastTestSupport {
                 customLibDir.toAbsolutePath().toString());
 
         Files.copy(
-                getJarPath("com.hazelcast", "hazelcast", "3.12.12"),
-                customLibDir.resolve("hazelcast-3.12.12.jar")
+                getJarPath("com.hazelcast", "hazelcast", "3.12.13"),
+                customLibDir.resolve("hazelcast-3.12.13.jar")
         );
         Files.copy(
-                getJarPath("com.hazelcast", "hazelcast-client", "3.12.12"),
-                customLibDir.resolve("hazelcast-client-3.12.12.jar")
+                getJarPath("com.hazelcast", "hazelcast-client", "3.12.13"),
+                customLibDir.resolve("hazelcast-client-3.12.13.jar")
         );
         File file = findConnectorImplJar();
         Files.copy(file.toPath().toAbsolutePath(), customLibDir.resolve("hazelcast-3-connector-impl.jar"));
@@ -140,8 +140,8 @@ public class BaseHz3Test extends HazelcastTestSupport {
     protected JobConfig getJobConfig(String name) {
         JobConfig config = new JobConfig();
         List<String> jars = new ArrayList<>();
-        jars.add("hazelcast-3.12.12.jar");
-        jars.add("hazelcast-client-3.12.12.jar");
+        jars.add("hazelcast-3.12.13.jar");
+        jars.add("hazelcast-client-3.12.13.jar");
         jars.add("hazelcast-3-connector-impl.jar");
         config.addCustomClasspaths(name, jars);
         return config;

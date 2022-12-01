@@ -20,7 +20,7 @@ import com.hazelcast.config.IndexType;
 import com.hazelcast.jet.sql.impl.opt.logical.FullScanLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.SortLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
-import com.hazelcast.jet.sql.impl.opt.physical.SortPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.LimitPhysicalRel;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.support.expressions.ExpressionBiValue;
 import com.hazelcast.map.IMap;
@@ -139,7 +139,7 @@ public class SqlIndexFromSearchFilterTest extends SqlIndexTestSupport {
         assertPlan(
                 optimizePhysical.getPhysical(),
                 plan(
-                        planRow(0, SortPhysicalRel.class),
+                        planRow(0, LimitPhysicalRel.class),
                         planRow(1, IndexScanMapPhysicalRel.class)
                 )
         );

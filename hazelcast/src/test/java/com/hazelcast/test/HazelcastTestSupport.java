@@ -192,14 +192,25 @@ public abstract class HazelcastTestSupport {
         return shrinkInstanceConfig(new Config());
     }
 
-    public static Config shrinkInstanceConfig(Config config) {
+    public static Config smallInstanceConfigWithoutJetAndMetrics() {
+        return smallInstanceConfigWithoutJetAndMetrics(new Config());
+    }
+
+    private static Config smallInstanceConfigWithoutJetAndMetrics(Config config) {
         // make the test instances consume less resources per default
         config.setProperty(ClusterProperty.PARTITION_COUNT.getName(), "11")
                 .setProperty(ClusterProperty.PARTITION_OPERATION_THREAD_COUNT.getName(), "2")
                 .setProperty(ClusterProperty.GENERIC_OPERATION_THREAD_COUNT.getName(), "2")
                 .setProperty(ClusterProperty.EVENT_THREAD_COUNT.getName(), "1");
-        config.getJetConfig().setEnabled(true).setCooperativeThreadCount(2);
+        config.getMetricsConfig().setEnabled(false);
+        config.getJetConfig().setEnabled(false);
+        return config;
+    }
 
+    public static Config shrinkInstanceConfig(Config config) {
+        smallInstanceConfigWithoutJetAndMetrics(config);
+        config.getMetricsConfig().setEnabled(true);
+        config.getJetConfig().setEnabled(true).setCooperativeThreadCount(2);
         return config;
     }
 
@@ -1318,9 +1329,9 @@ public abstract class HazelcastTestSupport {
                         long elapsedMillis = historicProgress.timestamp() - taskStartTimestamp;
                         String elapsedMillisPadded = String.format("%1$5s", elapsedMillis);
                         sb.append("\t")
-                          .append(elapsedMillisPadded).append("ms: ")
-                          .append(historicProgress.getProgressString())
-                          .append("\n");
+                                .append(elapsedMillisPadded).append("ms: ")
+                                .append(historicProgress.getProgressString())
+                                .append("\n");
                     }
                     LOGGER.severe(sb.toString());
                     fail("Stall tolerance " + stallToleranceSeconds
@@ -1619,8 +1630,15 @@ public abstract class HazelcastTestSupport {
         assumeFalse("Zing JDK6 used", JAVA_VERSION.startsWith("1.6.") && JVM_NAME.startsWith("Zing"));
     }
 
-    public static void assumeThatNotIBMJDK17() {
-        assumeFalse("Skipping on IBM JDK 17", JAVA_VERSION.startsWith("17.") && JAVA_VENDOR.contains("IBM"));
+    public static void assumeHadoopSupportsIbmPlatform() {
+        boolean missingIbmLoginModule = true;
+        try {
+            Class.forName("com.ibm.security.auth.module.JAASLoginModule");
+            missingIbmLoginModule = false;
+        } catch (ClassNotFoundException ignored) {
+        }
+        assumeFalse("Skipping due Hadoop authentication issues. See https://github.com/apache/hadoop/pull/4537",
+                JAVA_VENDOR.contains("IBM") && missingIbmLoginModule);
     }
 
     public static void assumeThatNoWindowsOS() {

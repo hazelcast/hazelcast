@@ -174,7 +174,7 @@ public abstract class AbstractSerializationService implements InternalSerializat
             // (like array list of Compact serialized objects).
             obj = toObject(data);
         }
-        byte[] bytes = toBytes(obj, 0, true, globalPartitioningStrategy, getByteOrder(), true);
+        byte[] bytes = toBytes(obj, 0, true, globalPartitioningStrategy, BIG_ENDIAN, true);
         return (B) new HeapData(bytes);
     }
 
@@ -339,9 +339,14 @@ public abstract class AbstractSerializationService implements InternalSerializat
     }
 
     @Override
-    public final <T> T readObject(final ObjectDataInput in) {
+    public final <T> T readObject(final ObjectDataInput in, boolean useBigEndianForReadingTypeId) {
         try {
-            final int typeId = in.readInt();
+            final int typeId;
+            if (useBigEndianForReadingTypeId && in instanceof BufferObjectDataInput) {
+                typeId = ((BufferObjectDataInput) in).readInt(BIG_ENDIAN);
+            } else {
+                typeId = in.readInt();
+            }
             final SerializerAdapter serializer = serializerFor(typeId);
             if (serializer == null) {
                 if (active) {

@@ -20,7 +20,6 @@ import static com.hazelcast.internal.nio.IOUtil.close;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static java.lang.Math.max;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -90,7 +89,14 @@ public class ProtocolNegotiationTest {
     @Test
     public void verifyOnlyTheProtocolHeaderIsSent() {
         Config config = createConfig();
-        assertThrows(IllegalStateException.class, () -> factory.newHazelcastInstance(config));
+        try {
+            factory.newHazelcastInstance(config);
+        } catch (IllegalStateException e) {
+            // just ignore it. Usually the exception happens here, but not always (due to the tight 2s timing).
+            // The result of the newHazelcastInstance operation is not important as this test is focused on bytes sent to the
+            // BytesCountingServer.
+            e.printStackTrace();
+        }
         bcServer.stop();
         assertEquals(3, bcServer.maxBytesReceived.get());
     }

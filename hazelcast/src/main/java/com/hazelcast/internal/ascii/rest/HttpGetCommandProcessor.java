@@ -123,7 +123,7 @@ public class HttpGetCommandProcessor extends HttpCommandProcessor<HttpGetCommand
         Node node = textCommandService.getNode();
 
         if (node.isRunning()
-                && node.getNodeExtension().isStartCompleted()) {
+                && node.getNodeExtension().isReady()) {
             command.send200();
         } else {
             command.send503();
