@@ -94,7 +94,7 @@ public class SqlSTSJoinFaultToleranceStressTest extends SqlTestSupport {
     public void stressTest() {
         SqlResult result = sqlService.execute(query);
         assertEquals(0, result.updateCount());
-        assertTrueEventually(() -> assertEquals(1000, map.size()));
+        assertTrueEventually(() -> assertEquals(10000, map.size()));
     }
 
     private static String createRandomTopic() {
@@ -105,7 +105,7 @@ public class SqlSTSJoinFaultToleranceStressTest extends SqlTestSupport {
 
     private static void createTopicData(SqlService sqlService, String topicName) {
         StringBuilder queryBuilder = new StringBuilder("INSERT INTO " + topicName + " VALUES ");
-        int limit = 1000;
+        int limit = 10000;
         for (int i = 1; i < limit; ++i) {
             queryBuilder.append("(").append(i).append(", 'value-").append(i).append("'), ");
         }
