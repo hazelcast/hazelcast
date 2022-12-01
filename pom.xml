@@ -541,6 +541,23 @@
                         <configuration>
                             <artifact>com.hazelcast:hazelcast:${hazelcast-3.version}</artifact>
                             <artifact>com.hazelcast:hazelcast:${hazelcast-3.version}:jar:tests</artifact>
+
+                            <!-- Below are the jars used in compatibility tests. Install them to local repository -->
+                            <artifact>com.hazelcast:hazelcast:3.12.13</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.12.13:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:4.0</artifact>
+                            <artifact>com.hazelcast:hazelcast:4.0:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:4.0.1</artifact>
+                            <artifact>com.hazelcast:hazelcast:4.0.1:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:4.0.2</artifact>
+                            <artifact>com.hazelcast:hazelcast:4.0.2:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:4.0.3</artifact>
+                            <artifact>com.hazelcast:hazelcast:4.0.3:jar:tests</artifact>
+
                         </configuration>
                     </execution>
                 </executions>
