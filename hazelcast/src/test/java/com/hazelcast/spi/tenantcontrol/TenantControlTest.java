@@ -142,7 +142,7 @@ public class TenantControlTest extends TenantControlTestSupport {
         // these operations don't require tenant control:
         // AddCacheConfigOperation
         // TenantControlReplicationOperation
-        assertEqualsEventually(4, setTenantCount);
+        assertEquals(4, setTenantCount);
         assertEqualsEventually(4, closeTenantCount);
         assertEqualsEventually(1, registerTenantCount);
         assertEqualsEventually(1, unregisterTenantCount);
