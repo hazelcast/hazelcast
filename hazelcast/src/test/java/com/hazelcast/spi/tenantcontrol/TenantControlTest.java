@@ -144,7 +144,7 @@ public class TenantControlTest extends TenantControlTestSupport {
         // TenantControlReplicationOperation
         assertEquals(4, setTenantCount);
         assertEqualsEventually(4, closeTenantCount);
-        assertEqualsEventually(1, registerTenantCount);
+        assertEquals(1, registerTenantCount);
         assertEqualsEventually(1, unregisterTenantCount);
         // thread context should be cleared at least twice.
         // in most cases it would be three times, but there is a case when the structure
