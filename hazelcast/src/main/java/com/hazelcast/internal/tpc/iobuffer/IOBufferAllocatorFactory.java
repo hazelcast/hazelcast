@@ -3,6 +3,8 @@ package com.hazelcast.internal.tpc.iobuffer;
 import static com.hazelcast.internal.tpc.iobuffer.ThreadLocalIOBufferAllocator.INITIAL_POOL_SIZE;
 
 public abstract class IOBufferAllocatorFactory {
+    private static final ConcurrentIOBufferAllocator CONCURRENT_IO_BUFFER_ALLOCATOR = new ConcurrentIOBufferAllocator();
+
     private IOBufferAllocatorFactory() {
     }
 
@@ -18,7 +20,6 @@ public abstract class IOBufferAllocatorFactory {
     }
 
     public static IOBufferAllocator<ThreadLocalIOBuffer> createConcurrentAllocator() {
-        // TODO
-        return null;
+        return CONCURRENT_IO_BUFFER_ALLOCATOR;
     }
 }

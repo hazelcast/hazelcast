@@ -17,7 +17,8 @@ import static org.junit.Assert.assertNull;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ThreadLocalIOBufferTest {
-    private final ThreadLocalIOBufferAllocator allocator = new ThreadLocalIOBufferAllocator();
+    private final ThreadLocalIOBufferAllocator allocator = (ThreadLocalIOBufferAllocator)
+            IOBufferAllocatorFactory.createGrowingThreadLocal();
     private final Random random = new Random();
 
     @Test
