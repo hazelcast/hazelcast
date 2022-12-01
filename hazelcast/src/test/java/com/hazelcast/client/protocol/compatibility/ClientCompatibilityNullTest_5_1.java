@@ -48,12 +48,12 @@ import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ClientCompatibilityTest_2_4 {
+public class ClientCompatibilityNullTest_5_1 {
     private final List<ClientMessage> clientMessages = new ArrayList<>();
 
     @Before
     public void setUp() throws IOException {
-        File file = new File(getClass().getResource("/2.4.protocol.compatibility.binary").getFile());
+        File file = new File(getClass().getResource("/5.1.protocol.compatibility.null.binary").getFile());
         InputStream inputStream = new FileInputStream(file);
         byte[] data = new byte[(int) file.length()];
         inputStream.read(data);
@@ -68,7 +68,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_ClientAuthenticationCodec_encodeRequest() {
         int fileClientMessageIndex = 0;
-        ClientMessage encoded = ClientAuthenticationCodec.encodeRequest(aString, aString, aString, aUUID, aString, aByte, aString, aString, aListOfStrings);
+        ClientMessage encoded = ClientAuthenticationCodec.encodeRequest(aString, null, null, null, aString, aByte, aString, aString, aListOfStrings);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -79,8 +79,8 @@ public class ClientCompatibilityTest_2_4 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         ClientAuthenticationCodec.ResponseParameters parameters = ClientAuthenticationCodec.decodeResponse(fromFile);
         assertTrue(isEqual(aByte, parameters.status));
-        assertTrue(isEqual(anAddress, parameters.address));
-        assertTrue(isEqual(aUUID, parameters.memberUuid));
+        assertTrue(isEqual(null, parameters.address));
+        assertTrue(isEqual(null, parameters.memberUuid));
         assertTrue(isEqual(aByte, parameters.serializationVersion));
         assertTrue(isEqual(aString, parameters.serverHazelcastVersion));
         assertTrue(isEqual(anInt, parameters.partitionCount));
@@ -91,7 +91,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_ClientAuthenticationCustomCodec_encodeRequest() {
         int fileClientMessageIndex = 2;
-        ClientMessage encoded = ClientAuthenticationCustomCodec.encodeRequest(aString, aByteArray, aUUID, aString, aByte, aString, aString, aListOfStrings);
+        ClientMessage encoded = ClientAuthenticationCustomCodec.encodeRequest(aString, aByteArray, null, aString, aByte, aString, aString, aListOfStrings);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -102,8 +102,8 @@ public class ClientCompatibilityTest_2_4 {
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         ClientAuthenticationCustomCodec.ResponseParameters parameters = ClientAuthenticationCustomCodec.decodeResponse(fromFile);
         assertTrue(isEqual(aByte, parameters.status));
-        assertTrue(isEqual(anAddress, parameters.address));
-        assertTrue(isEqual(aUUID, parameters.memberUuid));
+        assertTrue(isEqual(null, parameters.address));
+        assertTrue(isEqual(null, parameters.memberUuid));
         assertTrue(isEqual(aByte, parameters.serializationVersion));
         assertTrue(isEqual(aString, parameters.serverHazelcastVersion));
         assertTrue(isEqual(anInt, parameters.partitionCount));
@@ -199,7 +199,7 @@ public class ClientCompatibilityTest_2_4 {
         public void handlePartitionLostEvent(int partitionId, int lostBackupCount, java.util.UUID source) {
             assertTrue(isEqual(anInt, partitionId));
             assertTrue(isEqual(anInt, lostBackupCount));
-            assertTrue(isEqual(aUUID, source));
+            assertTrue(isEqual(null, source));
         }
     }
 
@@ -410,8 +410,8 @@ public class ClientCompatibilityTest_2_4 {
             assertTrue(isEqual(aMigrationState, migrationState));
             assertTrue(isEqual(anInt, partitionId));
             assertTrue(isEqual(anInt, replicaIndex));
-            assertTrue(isEqual(aUUID, sourceUuid));
-            assertTrue(isEqual(aUUID, destUuid));
+            assertTrue(isEqual(null, sourceUuid));
+            assertTrue(isEqual(null, destUuid));
             assertTrue(isEqual(aBoolean, success));
             assertTrue(isEqual(aLong, elapsedTime));
         }
@@ -460,7 +460,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_MapPutCodec_decodeResponse() {
         int fileClientMessageIndex = 44;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, MapPutCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, MapPutCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -475,7 +475,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_MapGetCodec_decodeResponse() {
         int fileClientMessageIndex = 46;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, MapGetCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, MapGetCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -490,7 +490,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_MapRemoveCodec_decodeResponse() {
         int fileClientMessageIndex = 48;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, MapRemoveCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, MapRemoveCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -505,7 +505,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_MapReplaceCodec_decodeResponse() {
         int fileClientMessageIndex = 50;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, MapReplaceCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, MapReplaceCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -649,7 +649,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_MapPutIfAbsentCodec_decodeResponse() {
         int fileClientMessageIndex = 70;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, MapPutIfAbsentCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, MapPutIfAbsentCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -769,10 +769,10 @@ public class ClientCompatibilityTest_2_4 {
     private static class MapAddEntryListenerToKeyWithPredicateCodecHandler extends MapAddEntryListenerToKeyWithPredicateCodec.AbstractEventHandler {
         @Override
         public void handleEntryEvent(com.hazelcast.internal.serialization.Data key, com.hazelcast.internal.serialization.Data value, com.hazelcast.internal.serialization.Data oldValue, com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries) {
-            assertTrue(isEqual(aData, key));
-            assertTrue(isEqual(aData, value));
-            assertTrue(isEqual(aData, oldValue));
-            assertTrue(isEqual(aData, mergingValue));
+            assertTrue(isEqual(null, key));
+            assertTrue(isEqual(null, value));
+            assertTrue(isEqual(null, oldValue));
+            assertTrue(isEqual(null, mergingValue));
             assertTrue(isEqual(anInt, eventType));
             assertTrue(isEqual(aUUID, uuid));
             assertTrue(isEqual(anInt, numberOfAffectedEntries));
@@ -805,10 +805,10 @@ public class ClientCompatibilityTest_2_4 {
     private static class MapAddEntryListenerWithPredicateCodecHandler extends MapAddEntryListenerWithPredicateCodec.AbstractEventHandler {
         @Override
         public void handleEntryEvent(com.hazelcast.internal.serialization.Data key, com.hazelcast.internal.serialization.Data value, com.hazelcast.internal.serialization.Data oldValue, com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries) {
-            assertTrue(isEqual(aData, key));
-            assertTrue(isEqual(aData, value));
-            assertTrue(isEqual(aData, oldValue));
-            assertTrue(isEqual(aData, mergingValue));
+            assertTrue(isEqual(null, key));
+            assertTrue(isEqual(null, value));
+            assertTrue(isEqual(null, oldValue));
+            assertTrue(isEqual(null, mergingValue));
             assertTrue(isEqual(anInt, eventType));
             assertTrue(isEqual(aUUID, uuid));
             assertTrue(isEqual(anInt, numberOfAffectedEntries));
@@ -841,10 +841,10 @@ public class ClientCompatibilityTest_2_4 {
     private static class MapAddEntryListenerToKeyCodecHandler extends MapAddEntryListenerToKeyCodec.AbstractEventHandler {
         @Override
         public void handleEntryEvent(com.hazelcast.internal.serialization.Data key, com.hazelcast.internal.serialization.Data value, com.hazelcast.internal.serialization.Data oldValue, com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries) {
-            assertTrue(isEqual(aData, key));
-            assertTrue(isEqual(aData, value));
-            assertTrue(isEqual(aData, oldValue));
-            assertTrue(isEqual(aData, mergingValue));
+            assertTrue(isEqual(null, key));
+            assertTrue(isEqual(null, value));
+            assertTrue(isEqual(null, oldValue));
+            assertTrue(isEqual(null, mergingValue));
             assertTrue(isEqual(anInt, eventType));
             assertTrue(isEqual(aUUID, uuid));
             assertTrue(isEqual(anInt, numberOfAffectedEntries));
@@ -877,10 +877,10 @@ public class ClientCompatibilityTest_2_4 {
     private static class MapAddEntryListenerCodecHandler extends MapAddEntryListenerCodec.AbstractEventHandler {
         @Override
         public void handleEntryEvent(com.hazelcast.internal.serialization.Data key, com.hazelcast.internal.serialization.Data value, com.hazelcast.internal.serialization.Data oldValue, com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries) {
-            assertTrue(isEqual(aData, key));
-            assertTrue(isEqual(aData, value));
-            assertTrue(isEqual(aData, oldValue));
-            assertTrue(isEqual(aData, mergingValue));
+            assertTrue(isEqual(null, key));
+            assertTrue(isEqual(null, value));
+            assertTrue(isEqual(null, oldValue));
+            assertTrue(isEqual(null, mergingValue));
             assertTrue(isEqual(anInt, eventType));
             assertTrue(isEqual(aUUID, uuid));
             assertTrue(isEqual(anInt, numberOfAffectedEntries));
@@ -969,7 +969,7 @@ public class ClientCompatibilityTest_2_4 {
         int fileClientMessageIndex = 105;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         MapGetEntryViewCodec.ResponseParameters parameters = MapGetEntryViewCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aSimpleEntryView, parameters.response));
+        assertTrue(isEqual(null, parameters.response));
         assertTrue(isEqual(aLong, parameters.maxIdle));
     }
 
@@ -1213,7 +1213,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_MapExecuteOnKeyCodec_decodeResponse() {
         int fileClientMessageIndex = 139;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, MapExecuteOnKeyCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, MapExecuteOnKeyCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -1228,7 +1228,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_MapSubmitToKeyCodec_decodeResponse() {
         int fileClientMessageIndex = 141;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, MapSubmitToKeyCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, MapSubmitToKeyCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -1386,7 +1386,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_MapAggregateCodec_decodeResponse() {
         int fileClientMessageIndex = 161;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, MapAggregateCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, MapAggregateCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -1401,7 +1401,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_MapAggregateWithPredicateCodec_decodeResponse() {
         int fileClientMessageIndex = 163;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, MapAggregateWithPredicateCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, MapAggregateWithPredicateCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -1482,7 +1482,7 @@ public class ClientCompatibilityTest_2_4 {
     private static class MapAddNearCacheInvalidationListenerCodecHandler extends MapAddNearCacheInvalidationListenerCodec.AbstractEventHandler {
         @Override
         public void handleIMapInvalidationEvent(com.hazelcast.internal.serialization.Data key, java.util.UUID sourceUuid, java.util.UUID partitionUuid, long sequence) {
-            assertTrue(isEqual(aData, key));
+            assertTrue(isEqual(null, key));
             assertTrue(isEqual(aUUID, sourceUuid));
             assertTrue(isEqual(aUUID, partitionUuid));
             assertTrue(isEqual(aLong, sequence));
@@ -1549,7 +1549,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_MapEventJournalReadCodec_encodeRequest() {
         int fileClientMessageIndex = 180;
-        ClientMessage encoded = MapEventJournalReadCodec.encodeRequest(aString, aLong, anInt, anInt, aData, aData);
+        ClientMessage encoded = MapEventJournalReadCodec.encodeRequest(aString, aLong, anInt, anInt, null, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -1561,7 +1561,7 @@ public class ClientCompatibilityTest_2_4 {
         MapEventJournalReadCodec.ResponseParameters parameters = MapEventJournalReadCodec.decodeResponse(fromFile);
         assertTrue(isEqual(anInt, parameters.readCount));
         assertTrue(isEqual(aListOfData, parameters.items));
-        assertTrue(isEqual(aLongArray, parameters.itemSeqs));
+        assertTrue(isEqual(null, parameters.itemSeqs));
         assertTrue(isEqual(aLong, parameters.nextSeq));
     }
 
@@ -1592,7 +1592,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_MapPutWithMaxIdleCodec_decodeResponse() {
         int fileClientMessageIndex = 185;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, MapPutWithMaxIdleCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, MapPutWithMaxIdleCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -1607,7 +1607,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_MapPutTransientWithMaxIdleCodec_decodeResponse() {
         int fileClientMessageIndex = 187;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, MapPutTransientWithMaxIdleCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, MapPutTransientWithMaxIdleCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -1622,7 +1622,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_MapPutIfAbsentWithMaxIdleCodec_decodeResponse() {
         int fileClientMessageIndex = 189;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, MapPutIfAbsentWithMaxIdleCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, MapPutIfAbsentWithMaxIdleCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -1637,7 +1637,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_MapSetWithMaxIdleCodec_decodeResponse() {
         int fileClientMessageIndex = 191;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, MapSetWithMaxIdleCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, MapSetWithMaxIdleCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -1849,10 +1849,10 @@ public class ClientCompatibilityTest_2_4 {
     private static class MultiMapAddEntryListenerToKeyCodecHandler extends MultiMapAddEntryListenerToKeyCodec.AbstractEventHandler {
         @Override
         public void handleEntryEvent(com.hazelcast.internal.serialization.Data key, com.hazelcast.internal.serialization.Data value, com.hazelcast.internal.serialization.Data oldValue, com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries) {
-            assertTrue(isEqual(aData, key));
-            assertTrue(isEqual(aData, value));
-            assertTrue(isEqual(aData, oldValue));
-            assertTrue(isEqual(aData, mergingValue));
+            assertTrue(isEqual(null, key));
+            assertTrue(isEqual(null, value));
+            assertTrue(isEqual(null, oldValue));
+            assertTrue(isEqual(null, mergingValue));
             assertTrue(isEqual(anInt, eventType));
             assertTrue(isEqual(aUUID, uuid));
             assertTrue(isEqual(anInt, numberOfAffectedEntries));
@@ -1885,10 +1885,10 @@ public class ClientCompatibilityTest_2_4 {
     private static class MultiMapAddEntryListenerCodecHandler extends MultiMapAddEntryListenerCodec.AbstractEventHandler {
         @Override
         public void handleEntryEvent(com.hazelcast.internal.serialization.Data key, com.hazelcast.internal.serialization.Data value, com.hazelcast.internal.serialization.Data oldValue, com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries) {
-            assertTrue(isEqual(aData, key));
-            assertTrue(isEqual(aData, value));
-            assertTrue(isEqual(aData, oldValue));
-            assertTrue(isEqual(aData, mergingValue));
+            assertTrue(isEqual(null, key));
+            assertTrue(isEqual(null, value));
+            assertTrue(isEqual(null, oldValue));
+            assertTrue(isEqual(null, mergingValue));
             assertTrue(isEqual(anInt, eventType));
             assertTrue(isEqual(aUUID, uuid));
             assertTrue(isEqual(anInt, numberOfAffectedEntries));
@@ -2098,7 +2098,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_QueuePollCodec_decodeResponse() {
         int fileClientMessageIndex = 251;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, QueuePollCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, QueuePollCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -2113,7 +2113,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_QueueTakeCodec_decodeResponse() {
         int fileClientMessageIndex = 253;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, QueueTakeCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, QueueTakeCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -2128,7 +2128,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_QueuePeekCodec_decodeResponse() {
         int fileClientMessageIndex = 255;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, QueuePeekCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, QueuePeekCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -2282,7 +2282,7 @@ public class ClientCompatibilityTest_2_4 {
     private static class QueueAddListenerCodecHandler extends QueueAddListenerCodec.AbstractEventHandler {
         @Override
         public void handleItemEvent(com.hazelcast.internal.serialization.Data item, java.util.UUID uuid, int eventType) {
-            assertTrue(isEqual(aData, item));
+            assertTrue(isEqual(null, item));
             assertTrue(isEqual(aUUID, uuid));
             assertTrue(isEqual(anInt, eventType));
         }
@@ -2580,7 +2580,7 @@ public class ClientCompatibilityTest_2_4 {
     private static class ListAddListenerCodecHandler extends ListAddListenerCodec.AbstractEventHandler {
         @Override
         public void handleItemEvent(com.hazelcast.internal.serialization.Data item, java.util.UUID uuid, int eventType) {
-            assertTrue(isEqual(aData, item));
+            assertTrue(isEqual(null, item));
             assertTrue(isEqual(aUUID, uuid));
             assertTrue(isEqual(anInt, eventType));
         }
@@ -2651,7 +2651,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_ListGetCodec_decodeResponse() {
         int fileClientMessageIndex = 322;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, ListGetCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, ListGetCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -2666,7 +2666,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_ListSetCodec_decodeResponse() {
         int fileClientMessageIndex = 324;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, ListSetCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, ListSetCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -2694,7 +2694,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_ListRemoveWithIndexCodec_decodeResponse() {
         int fileClientMessageIndex = 328;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, ListRemoveWithIndexCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, ListRemoveWithIndexCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -2938,7 +2938,7 @@ public class ClientCompatibilityTest_2_4 {
     private static class SetAddListenerCodecHandler extends SetAddListenerCodec.AbstractEventHandler {
         @Override
         public void handleItemEvent(com.hazelcast.internal.serialization.Data item, java.util.UUID uuid, int eventType) {
-            assertTrue(isEqual(aData, item));
+            assertTrue(isEqual(null, item));
             assertTrue(isEqual(aUUID, uuid));
             assertTrue(isEqual(anInt, eventType));
         }
@@ -3116,7 +3116,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_ExecutorServiceSubmitToPartitionCodec_decodeResponse() {
         int fileClientMessageIndex = 383;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, ExecutorServiceSubmitToPartitionCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, ExecutorServiceSubmitToPartitionCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -3131,7 +3131,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_ExecutorServiceSubmitToMemberCodec_decodeResponse() {
         int fileClientMessageIndex = 385;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, ExecutorServiceSubmitToMemberCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, ExecutorServiceSubmitToMemberCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -3146,7 +3146,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_AtomicLongApplyCodec_decodeResponse() {
         int fileClientMessageIndex = 387;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, AtomicLongApplyCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, AtomicLongApplyCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -3251,13 +3251,13 @@ public class ClientCompatibilityTest_2_4 {
     public void test_AtomicRefApplyCodec_decodeResponse() {
         int fileClientMessageIndex = 401;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, AtomicRefApplyCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, AtomicRefApplyCodec.decodeResponse(fromFile)));
     }
 
     @Test
     public void test_AtomicRefCompareAndSetCodec_encodeRequest() {
         int fileClientMessageIndex = 402;
-        ClientMessage encoded = AtomicRefCompareAndSetCodec.encodeRequest(aRaftGroupId, aString, aData, aData);
+        ClientMessage encoded = AtomicRefCompareAndSetCodec.encodeRequest(aRaftGroupId, aString, null, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -3272,7 +3272,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_AtomicRefContainsCodec_encodeRequest() {
         int fileClientMessageIndex = 404;
-        ClientMessage encoded = AtomicRefContainsCodec.encodeRequest(aRaftGroupId, aString, aData);
+        ClientMessage encoded = AtomicRefContainsCodec.encodeRequest(aRaftGroupId, aString, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -3296,13 +3296,13 @@ public class ClientCompatibilityTest_2_4 {
     public void test_AtomicRefGetCodec_decodeResponse() {
         int fileClientMessageIndex = 407;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, AtomicRefGetCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, AtomicRefGetCodec.decodeResponse(fromFile)));
     }
 
     @Test
     public void test_AtomicRefSetCodec_encodeRequest() {
         int fileClientMessageIndex = 408;
-        ClientMessage encoded = AtomicRefSetCodec.encodeRequest(aRaftGroupId, aString, aData, aBoolean);
+        ClientMessage encoded = AtomicRefSetCodec.encodeRequest(aRaftGroupId, aString, null, aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -3311,7 +3311,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_AtomicRefSetCodec_decodeResponse() {
         int fileClientMessageIndex = 409;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, AtomicRefSetCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, AtomicRefSetCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -3504,7 +3504,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_ReplicatedMapPutCodec_decodeResponse() {
         int fileClientMessageIndex = 435;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, ReplicatedMapPutCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, ReplicatedMapPutCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -3579,7 +3579,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_ReplicatedMapGetCodec_decodeResponse() {
         int fileClientMessageIndex = 445;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, ReplicatedMapGetCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, ReplicatedMapGetCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -3594,7 +3594,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_ReplicatedMapRemoveCodec_decodeResponse() {
         int fileClientMessageIndex = 447;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, ReplicatedMapRemoveCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, ReplicatedMapRemoveCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -3641,10 +3641,10 @@ public class ClientCompatibilityTest_2_4 {
     private static class ReplicatedMapAddEntryListenerToKeyWithPredicateCodecHandler extends ReplicatedMapAddEntryListenerToKeyWithPredicateCodec.AbstractEventHandler {
         @Override
         public void handleEntryEvent(com.hazelcast.internal.serialization.Data key, com.hazelcast.internal.serialization.Data value, com.hazelcast.internal.serialization.Data oldValue, com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries) {
-            assertTrue(isEqual(aData, key));
-            assertTrue(isEqual(aData, value));
-            assertTrue(isEqual(aData, oldValue));
-            assertTrue(isEqual(aData, mergingValue));
+            assertTrue(isEqual(null, key));
+            assertTrue(isEqual(null, value));
+            assertTrue(isEqual(null, oldValue));
+            assertTrue(isEqual(null, mergingValue));
             assertTrue(isEqual(anInt, eventType));
             assertTrue(isEqual(aUUID, uuid));
             assertTrue(isEqual(anInt, numberOfAffectedEntries));
@@ -3677,10 +3677,10 @@ public class ClientCompatibilityTest_2_4 {
     private static class ReplicatedMapAddEntryListenerWithPredicateCodecHandler extends ReplicatedMapAddEntryListenerWithPredicateCodec.AbstractEventHandler {
         @Override
         public void handleEntryEvent(com.hazelcast.internal.serialization.Data key, com.hazelcast.internal.serialization.Data value, com.hazelcast.internal.serialization.Data oldValue, com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries) {
-            assertTrue(isEqual(aData, key));
-            assertTrue(isEqual(aData, value));
-            assertTrue(isEqual(aData, oldValue));
-            assertTrue(isEqual(aData, mergingValue));
+            assertTrue(isEqual(null, key));
+            assertTrue(isEqual(null, value));
+            assertTrue(isEqual(null, oldValue));
+            assertTrue(isEqual(null, mergingValue));
             assertTrue(isEqual(anInt, eventType));
             assertTrue(isEqual(aUUID, uuid));
             assertTrue(isEqual(anInt, numberOfAffectedEntries));
@@ -3713,10 +3713,10 @@ public class ClientCompatibilityTest_2_4 {
     private static class ReplicatedMapAddEntryListenerToKeyCodecHandler extends ReplicatedMapAddEntryListenerToKeyCodec.AbstractEventHandler {
         @Override
         public void handleEntryEvent(com.hazelcast.internal.serialization.Data key, com.hazelcast.internal.serialization.Data value, com.hazelcast.internal.serialization.Data oldValue, com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries) {
-            assertTrue(isEqual(aData, key));
-            assertTrue(isEqual(aData, value));
-            assertTrue(isEqual(aData, oldValue));
-            assertTrue(isEqual(aData, mergingValue));
+            assertTrue(isEqual(null, key));
+            assertTrue(isEqual(null, value));
+            assertTrue(isEqual(null, oldValue));
+            assertTrue(isEqual(null, mergingValue));
             assertTrue(isEqual(anInt, eventType));
             assertTrue(isEqual(aUUID, uuid));
             assertTrue(isEqual(anInt, numberOfAffectedEntries));
@@ -3749,10 +3749,10 @@ public class ClientCompatibilityTest_2_4 {
     private static class ReplicatedMapAddEntryListenerCodecHandler extends ReplicatedMapAddEntryListenerCodec.AbstractEventHandler {
         @Override
         public void handleEntryEvent(com.hazelcast.internal.serialization.Data key, com.hazelcast.internal.serialization.Data value, com.hazelcast.internal.serialization.Data oldValue, com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries) {
-            assertTrue(isEqual(aData, key));
-            assertTrue(isEqual(aData, value));
-            assertTrue(isEqual(aData, oldValue));
-            assertTrue(isEqual(aData, mergingValue));
+            assertTrue(isEqual(null, key));
+            assertTrue(isEqual(null, value));
+            assertTrue(isEqual(null, oldValue));
+            assertTrue(isEqual(null, mergingValue));
             assertTrue(isEqual(anInt, eventType));
             assertTrue(isEqual(aUUID, uuid));
             assertTrue(isEqual(anInt, numberOfAffectedEntries));
@@ -3845,10 +3845,10 @@ public class ClientCompatibilityTest_2_4 {
     private static class ReplicatedMapAddNearCacheEntryListenerCodecHandler extends ReplicatedMapAddNearCacheEntryListenerCodec.AbstractEventHandler {
         @Override
         public void handleEntryEvent(com.hazelcast.internal.serialization.Data key, com.hazelcast.internal.serialization.Data value, com.hazelcast.internal.serialization.Data oldValue, com.hazelcast.internal.serialization.Data mergingValue, int eventType, java.util.UUID uuid, int numberOfAffectedEntries) {
-            assertTrue(isEqual(aData, key));
-            assertTrue(isEqual(aData, value));
-            assertTrue(isEqual(aData, oldValue));
-            assertTrue(isEqual(aData, mergingValue));
+            assertTrue(isEqual(null, key));
+            assertTrue(isEqual(null, value));
+            assertTrue(isEqual(null, oldValue));
+            assertTrue(isEqual(null, mergingValue));
             assertTrue(isEqual(anInt, eventType));
             assertTrue(isEqual(aUUID, uuid));
             assertTrue(isEqual(anInt, numberOfAffectedEntries));
@@ -3890,7 +3890,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_TransactionalMapGetCodec_decodeResponse() {
         int fileClientMessageIndex = 478;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, TransactionalMapGetCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, TransactionalMapGetCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -3905,7 +3905,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_TransactionalMapGetForUpdateCodec_decodeResponse() {
         int fileClientMessageIndex = 480;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, TransactionalMapGetForUpdateCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, TransactionalMapGetForUpdateCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -3950,7 +3950,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_TransactionalMapPutCodec_decodeResponse() {
         int fileClientMessageIndex = 486;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, TransactionalMapPutCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, TransactionalMapPutCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -3978,7 +3978,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_TransactionalMapPutIfAbsentCodec_decodeResponse() {
         int fileClientMessageIndex = 490;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, TransactionalMapPutIfAbsentCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, TransactionalMapPutIfAbsentCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -3993,7 +3993,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_TransactionalMapReplaceCodec_decodeResponse() {
         int fileClientMessageIndex = 492;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, TransactionalMapReplaceCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, TransactionalMapReplaceCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -4023,7 +4023,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_TransactionalMapRemoveCodec_decodeResponse() {
         int fileClientMessageIndex = 496;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, TransactionalMapRemoveCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, TransactionalMapRemoveCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -4336,7 +4336,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_TransactionalQueueTakeCodec_decodeResponse() {
         int fileClientMessageIndex = 538;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, TransactionalQueueTakeCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, TransactionalQueueTakeCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -4351,7 +4351,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_TransactionalQueuePollCodec_decodeResponse() {
         int fileClientMessageIndex = 540;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, TransactionalQueuePollCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, TransactionalQueuePollCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -4366,7 +4366,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_TransactionalQueuePeekCodec_decodeResponse() {
         int fileClientMessageIndex = 542;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, TransactionalQueuePeekCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, TransactionalQueuePeekCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -4482,7 +4482,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_CacheCreateConfigCodec_decodeResponse() {
         int fileClientMessageIndex = 557;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aCacheConfigHolder, CacheCreateConfigCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, CacheCreateConfigCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -4510,13 +4510,13 @@ public class ClientCompatibilityTest_2_4 {
     public void test_CacheEntryProcessorCodec_decodeResponse() {
         int fileClientMessageIndex = 561;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, CacheEntryProcessorCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, CacheEntryProcessorCodec.decodeResponse(fromFile)));
     }
 
     @Test
     public void test_CacheGetAllCodec_encodeRequest() {
         int fileClientMessageIndex = 562;
-        ClientMessage encoded = CacheGetAllCodec.encodeRequest(aString, aListOfData, aData);
+        ClientMessage encoded = CacheGetAllCodec.encodeRequest(aString, aListOfData, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -4540,13 +4540,13 @@ public class ClientCompatibilityTest_2_4 {
     public void test_CacheGetAndRemoveCodec_decodeResponse() {
         int fileClientMessageIndex = 565;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, CacheGetAndRemoveCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, CacheGetAndRemoveCodec.decodeResponse(fromFile)));
     }
 
     @Test
     public void test_CacheGetAndReplaceCodec_encodeRequest() {
         int fileClientMessageIndex = 566;
-        ClientMessage encoded = CacheGetAndReplaceCodec.encodeRequest(aString, aData, aData, aData, anInt);
+        ClientMessage encoded = CacheGetAndReplaceCodec.encodeRequest(aString, aData, aData, null, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -4555,7 +4555,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_CacheGetAndReplaceCodec_decodeResponse() {
         int fileClientMessageIndex = 567;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, CacheGetAndReplaceCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, CacheGetAndReplaceCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -4570,13 +4570,13 @@ public class ClientCompatibilityTest_2_4 {
     public void test_CacheGetConfigCodec_decodeResponse() {
         int fileClientMessageIndex = 569;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aCacheConfigHolder, CacheGetConfigCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, CacheGetConfigCodec.decodeResponse(fromFile)));
     }
 
     @Test
     public void test_CacheGetCodec_encodeRequest() {
         int fileClientMessageIndex = 570;
-        ClientMessage encoded = CacheGetCodec.encodeRequest(aString, aData, aData);
+        ClientMessage encoded = CacheGetCodec.encodeRequest(aString, aData, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -4585,7 +4585,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_CacheGetCodec_decodeResponse() {
         int fileClientMessageIndex = 571;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, CacheGetCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, CacheGetCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -4647,7 +4647,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_CachePutIfAbsentCodec_encodeRequest() {
         int fileClientMessageIndex = 580;
-        ClientMessage encoded = CachePutIfAbsentCodec.encodeRequest(aString, aData, aData, aData, anInt);
+        ClientMessage encoded = CachePutIfAbsentCodec.encodeRequest(aString, aData, aData, null, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -4662,7 +4662,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_CachePutCodec_encodeRequest() {
         int fileClientMessageIndex = 582;
-        ClientMessage encoded = CachePutCodec.encodeRequest(aString, aData, aData, aData, aBoolean, anInt);
+        ClientMessage encoded = CachePutCodec.encodeRequest(aString, aData, aData, null, aBoolean, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -4671,7 +4671,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_CachePutCodec_decodeResponse() {
         int fileClientMessageIndex = 583;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, CachePutCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, CachePutCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -4707,7 +4707,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_CacheRemoveCodec_encodeRequest() {
         int fileClientMessageIndex = 588;
-        ClientMessage encoded = CacheRemoveCodec.encodeRequest(aString, aData, aData, anInt);
+        ClientMessage encoded = CacheRemoveCodec.encodeRequest(aString, aData, null, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -4722,7 +4722,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_CacheReplaceCodec_encodeRequest() {
         int fileClientMessageIndex = 590;
-        ClientMessage encoded = CacheReplaceCodec.encodeRequest(aString, aData, aData, aData, aData, anInt);
+        ClientMessage encoded = CacheReplaceCodec.encodeRequest(aString, aData, null, aData, null, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -4731,7 +4731,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_CacheReplaceCodec_decodeResponse() {
         int fileClientMessageIndex = 591;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, CacheReplaceCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, CacheReplaceCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -4798,7 +4798,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_CachePutAllCodec_encodeRequest() {
         int fileClientMessageIndex = 599;
-        ClientMessage encoded = CachePutAllCodec.encodeRequest(aString, aListOfDataToData, aData, anInt);
+        ClientMessage encoded = CachePutAllCodec.encodeRequest(aString, aListOfDataToData, null, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -4844,8 +4844,8 @@ public class ClientCompatibilityTest_2_4 {
         @Override
         public void handleCacheInvalidationEvent(java.lang.String name, com.hazelcast.internal.serialization.Data key, java.util.UUID sourceUuid, java.util.UUID partitionUuid, long sequence) {
             assertTrue(isEqual(aString, name));
-            assertTrue(isEqual(aData, key));
-            assertTrue(isEqual(aUUID, sourceUuid));
+            assertTrue(isEqual(null, key));
+            assertTrue(isEqual(null, sourceUuid));
             assertTrue(isEqual(aUUID, partitionUuid));
             assertTrue(isEqual(aLong, sequence));
         }
@@ -4912,7 +4912,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_CacheEventJournalReadCodec_encodeRequest() {
         int fileClientMessageIndex = 611;
-        ClientMessage encoded = CacheEventJournalReadCodec.encodeRequest(aString, aLong, anInt, anInt, aData, aData);
+        ClientMessage encoded = CacheEventJournalReadCodec.encodeRequest(aString, aLong, anInt, anInt, null, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -4924,7 +4924,7 @@ public class ClientCompatibilityTest_2_4 {
         CacheEventJournalReadCodec.ResponseParameters parameters = CacheEventJournalReadCodec.decodeResponse(fromFile);
         assertTrue(isEqual(anInt, parameters.readCount));
         assertTrue(isEqual(aListOfData, parameters.items));
-        assertTrue(isEqual(aLongArray, parameters.itemSeqs));
+        assertTrue(isEqual(null, parameters.itemSeqs));
         assertTrue(isEqual(aLong, parameters.nextSeq));
     }
 
@@ -5300,7 +5300,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_RingbufferReadOneCodec_decodeResponse() {
         int fileClientMessageIndex = 662;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, RingbufferReadOneCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, RingbufferReadOneCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -5321,7 +5321,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_RingbufferReadManyCodec_encodeRequest() {
         int fileClientMessageIndex = 665;
-        ClientMessage encoded = RingbufferReadManyCodec.encodeRequest(aString, aLong, anInt, anInt, aData);
+        ClientMessage encoded = RingbufferReadManyCodec.encodeRequest(aString, aLong, anInt, anInt, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5333,7 +5333,7 @@ public class ClientCompatibilityTest_2_4 {
         RingbufferReadManyCodec.ResponseParameters parameters = RingbufferReadManyCodec.decodeResponse(fromFile);
         assertTrue(isEqual(anInt, parameters.readCount));
         assertTrue(isEqual(aListOfData, parameters.items));
-        assertTrue(isEqual(aLongArray, parameters.itemSeqs));
+        assertTrue(isEqual(null, parameters.itemSeqs));
         assertTrue(isEqual(aLong, parameters.nextSeq));
     }
 
@@ -5392,7 +5392,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_DurableExecutorRetrieveResultCodec_decodeResponse() {
         int fileClientMessageIndex = 674;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, DurableExecutorRetrieveResultCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, DurableExecutorRetrieveResultCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -5420,7 +5420,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_DurableExecutorRetrieveAndDisposeResultCodec_decodeResponse() {
         int fileClientMessageIndex = 678;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, DurableExecutorRetrieveAndDisposeResultCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, DurableExecutorRetrieveAndDisposeResultCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -5677,7 +5677,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_ScheduledExecutorGetResultFromPartitionCodec_decodeResponse() {
         int fileClientMessageIndex = 712;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, ScheduledExecutorGetResultFromPartitionCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, ScheduledExecutorGetResultFromPartitionCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -5692,7 +5692,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_ScheduledExecutorGetResultFromMemberCodec_decodeResponse() {
         int fileClientMessageIndex = 714;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aData, ScheduledExecutorGetResultFromMemberCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, ScheduledExecutorGetResultFromMemberCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -5724,7 +5724,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_DynamicConfigAddMultiMapConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 719;
-        ClientMessage encoded = DynamicConfigAddMultiMapConfigCodec.encodeRequest(aString, aString, aListOfListenerConfigHolders, aBoolean, anInt, anInt, aBoolean, aString, aString, anInt);
+        ClientMessage encoded = DynamicConfigAddMultiMapConfigCodec.encodeRequest(aString, aString, null, aBoolean, anInt, anInt, aBoolean, null, aString, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5737,7 +5737,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_DynamicConfigAddRingbufferConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 721;
-        ClientMessage encoded = DynamicConfigAddRingbufferConfigCodec.encodeRequest(aString, anInt, anInt, anInt, anInt, aString, aRingbufferStoreConfigHolder, aString, aString, anInt);
+        ClientMessage encoded = DynamicConfigAddRingbufferConfigCodec.encodeRequest(aString, anInt, anInt, anInt, anInt, aString, null, null, aString, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5750,7 +5750,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_DynamicConfigAddCardinalityEstimatorConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 723;
-        ClientMessage encoded = DynamicConfigAddCardinalityEstimatorConfigCodec.encodeRequest(aString, anInt, anInt, aString, aString, anInt);
+        ClientMessage encoded = DynamicConfigAddCardinalityEstimatorConfigCodec.encodeRequest(aString, anInt, anInt, null, aString, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5763,7 +5763,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_DynamicConfigAddListConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 725;
-        ClientMessage encoded = DynamicConfigAddListConfigCodec.encodeRequest(aString, aListOfListenerConfigHolders, anInt, anInt, anInt, aBoolean, aString, aString, anInt);
+        ClientMessage encoded = DynamicConfigAddListConfigCodec.encodeRequest(aString, null, anInt, anInt, anInt, aBoolean, null, aString, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5776,7 +5776,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_DynamicConfigAddSetConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 727;
-        ClientMessage encoded = DynamicConfigAddSetConfigCodec.encodeRequest(aString, aListOfListenerConfigHolders, anInt, anInt, anInt, aBoolean, aString, aString, anInt);
+        ClientMessage encoded = DynamicConfigAddSetConfigCodec.encodeRequest(aString, null, anInt, anInt, anInt, aBoolean, null, aString, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5789,7 +5789,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_DynamicConfigAddReplicatedMapConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 729;
-        ClientMessage encoded = DynamicConfigAddReplicatedMapConfigCodec.encodeRequest(aString, aString, aBoolean, aBoolean, aString, aListOfListenerConfigHolders, aString, anInt);
+        ClientMessage encoded = DynamicConfigAddReplicatedMapConfigCodec.encodeRequest(aString, aString, aBoolean, aBoolean, aString, null, null, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5802,7 +5802,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_DynamicConfigAddTopicConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 731;
-        ClientMessage encoded = DynamicConfigAddTopicConfigCodec.encodeRequest(aString, aBoolean, aBoolean, aBoolean, aListOfListenerConfigHolders);
+        ClientMessage encoded = DynamicConfigAddTopicConfigCodec.encodeRequest(aString, aBoolean, aBoolean, aBoolean, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5815,7 +5815,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_DynamicConfigAddExecutorConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 733;
-        ClientMessage encoded = DynamicConfigAddExecutorConfigCodec.encodeRequest(aString, anInt, anInt, aBoolean, aString);
+        ClientMessage encoded = DynamicConfigAddExecutorConfigCodec.encodeRequest(aString, anInt, anInt, aBoolean, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5828,7 +5828,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_DynamicConfigAddDurableExecutorConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 735;
-        ClientMessage encoded = DynamicConfigAddDurableExecutorConfigCodec.encodeRequest(aString, anInt, anInt, anInt, aString, aBoolean);
+        ClientMessage encoded = DynamicConfigAddDurableExecutorConfigCodec.encodeRequest(aString, anInt, anInt, anInt, null, aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5841,7 +5841,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_DynamicConfigAddScheduledExecutorConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 737;
-        ClientMessage encoded = DynamicConfigAddScheduledExecutorConfigCodec.encodeRequest(aString, anInt, anInt, anInt, aString, aString, anInt, aBoolean, aByte);
+        ClientMessage encoded = DynamicConfigAddScheduledExecutorConfigCodec.encodeRequest(aString, anInt, anInt, anInt, null, aString, anInt, aBoolean, aByte);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5854,7 +5854,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_DynamicConfigAddQueueConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 739;
-        ClientMessage encoded = DynamicConfigAddQueueConfigCodec.encodeRequest(aString, aListOfListenerConfigHolders, anInt, anInt, anInt, anInt, aBoolean, aString, aQueueStoreConfigHolder, aString, anInt, aString);
+        ClientMessage encoded = DynamicConfigAddQueueConfigCodec.encodeRequest(aString, null, anInt, anInt, anInt, anInt, aBoolean, null, null, aString, anInt, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5867,7 +5867,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_DynamicConfigAddMapConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 741;
-        ClientMessage encoded = DynamicConfigAddMapConfigCodec.encodeRequest(aString, anInt, anInt, anInt, anInt, anEvictionConfigHolder, aBoolean, aString, aString, anInt, aString, aListOfListenerConfigHolders, aListOfListenerConfigHolders, aBoolean, aString, aMapStoreConfigHolder, aNearCacheConfigHolder, aWanReplicationRef, aListOfIndexConfigs, aListOfAttributeConfigs, aListOfQueryCacheConfigHolders, aString, aData, aHotRestartConfig, anEventJournalConfig, aMerkleTreeConfig, anInt, aBoolean, aDataPersistenceConfig, aTieredStoreConfig);
+        ClientMessage encoded = DynamicConfigAddMapConfigCodec.encodeRequest(aString, anInt, anInt, anInt, anInt, null, aBoolean, aString, aString, anInt, aString, null, null, aBoolean, null, null, null, null, null, null, null, null, null, null, null, null, anInt, aBoolean, aDataPersistenceConfig, aTieredStoreConfig);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5880,7 +5880,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_DynamicConfigAddReliableTopicConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 743;
-        ClientMessage encoded = DynamicConfigAddReliableTopicConfigCodec.encodeRequest(aString, aListOfListenerConfigHolders, anInt, aBoolean, aString, aData);
+        ClientMessage encoded = DynamicConfigAddReliableTopicConfigCodec.encodeRequest(aString, null, anInt, aBoolean, aString, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5893,7 +5893,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_DynamicConfigAddCacheConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 745;
-        ClientMessage encoded = DynamicConfigAddCacheConfigCodec.encodeRequest(aString, aString, aString, aBoolean, aBoolean, aBoolean, aBoolean, aString, aString, aString, aString, anInt, anInt, aString, aString, aString, anInt, aBoolean, aListOfListenerConfigHolders, aString, aTimedExpiryPolicyFactoryConfig, aListOfCacheSimpleEntryListenerConfigs, anEvictionConfigHolder, aWanReplicationRef, anEventJournalConfig, aHotRestartConfig, aMerkleTreeConfig, aDataPersistenceConfig);
+        ClientMessage encoded = DynamicConfigAddCacheConfigCodec.encodeRequest(aString, null, null, aBoolean, aBoolean, aBoolean, aBoolean, null, null, null, null, anInt, anInt, aString, null, null, anInt, aBoolean, null, null, null, null, null, null, null, null, null, aDataPersistenceConfig);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -5919,7 +5919,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_DynamicConfigAddPNCounterConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 749;
-        ClientMessage encoded = DynamicConfigAddPNCounterConfigCodec.encodeRequest(aString, anInt, aBoolean, aString);
+        ClientMessage encoded = DynamicConfigAddPNCounterConfigCodec.encodeRequest(aString, anInt, aBoolean, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6253,7 +6253,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_MCGetTimedMemberStateCodec_decodeResponse() {
         int fileClientMessageIndex = 792;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aString, MCGetTimedMemberStateCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, MCGetTimedMemberStateCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -6299,7 +6299,7 @@ public class ClientCompatibilityTest_2_4 {
         MCGetClusterMetadataCodec.ResponseParameters parameters = MCGetClusterMetadataCodec.decodeResponse(fromFile);
         assertTrue(isEqual(aByte, parameters.currentState));
         assertTrue(isEqual(aString, parameters.memberVersion));
-        assertTrue(isEqual(aString, parameters.jetVersion));
+        assertTrue(isEqual(null, parameters.jetVersion));
         assertTrue(isEqual(aLong, parameters.clusterTime));
         assertFalse(parameters.isClusterIdExists);
     }
@@ -6342,13 +6342,13 @@ public class ClientCompatibilityTest_2_4 {
     public void test_MCRunScriptCodec_decodeResponse() {
         int fileClientMessageIndex = 804;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aString, MCRunScriptCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, MCRunScriptCodec.decodeResponse(fromFile)));
     }
 
     @Test
     public void test_MCRunConsoleCommandCodec_encodeRequest() {
         int fileClientMessageIndex = 805;
-        ClientMessage encoded = MCRunConsoleCommandCodec.encodeRequest(aString, aString);
+        ClientMessage encoded = MCRunConsoleCommandCodec.encodeRequest(null, aString);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6389,7 +6389,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_MCAddWanBatchPublisherConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 811;
-        ClientMessage encoded = MCAddWanBatchPublisherConfigCodec.encodeRequest(aString, aString, aString, aString, anInt, anInt, anInt, anInt, anInt, anInt);
+        ClientMessage encoded = MCAddWanBatchPublisherConfigCodec.encodeRequest(aString, aString, null, aString, anInt, anInt, anInt, anInt, anInt, anInt);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6406,7 +6406,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_MCWanSyncMapCodec_encodeRequest() {
         int fileClientMessageIndex = 813;
-        ClientMessage encoded = MCWanSyncMapCodec.encodeRequest(aString, aString, anInt, aString);
+        ClientMessage encoded = MCWanSyncMapCodec.encodeRequest(aString, aString, anInt, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6421,7 +6421,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_MCCheckWanConsistencyCodec_encodeRequest() {
         int fileClientMessageIndex = 815;
-        ClientMessage encoded = MCCheckWanConsistencyCodec.encodeRequest(aString, aString, aString);
+        ClientMessage encoded = MCCheckWanConsistencyCodec.encodeRequest(aString, aString, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6430,7 +6430,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_MCCheckWanConsistencyCodec_decodeResponse() {
         int fileClientMessageIndex = 816;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aUUID, MCCheckWanConsistencyCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, MCCheckWanConsistencyCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -6614,12 +6614,12 @@ public class ClientCompatibilityTest_2_4 {
         int fileClientMessageIndex = 842;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         SqlExecute_reservedCodec.ResponseParameters parameters = SqlExecute_reservedCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(anSqlQueryId, parameters.queryId));
-        assertTrue(isEqual(aListOfSqlColumnMetadata, parameters.rowMetadata));
-        assertTrue(isEqual(aListOfListOfData, parameters.rowPage));
+        assertTrue(isEqual(null, parameters.queryId));
+        assertTrue(isEqual(null, parameters.rowMetadata));
+        assertTrue(isEqual(null, parameters.rowPage));
         assertTrue(isEqual(aBoolean, parameters.rowPageLast));
         assertTrue(isEqual(aLong, parameters.updateCount));
-        assertTrue(isEqual(anSqlError, parameters.error));
+        assertTrue(isEqual(null, parameters.error));
     }
 
     @Test
@@ -6635,9 +6635,9 @@ public class ClientCompatibilityTest_2_4 {
         int fileClientMessageIndex = 844;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         SqlFetch_reservedCodec.ResponseParameters parameters = SqlFetch_reservedCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfListOfData, parameters.rowPage));
+        assertTrue(isEqual(null, parameters.rowPage));
         assertTrue(isEqual(aBoolean, parameters.rowPageLast));
-        assertTrue(isEqual(anSqlError, parameters.error));
+        assertTrue(isEqual(null, parameters.error));
     }
 
     @Test
@@ -6656,7 +6656,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_SqlExecuteCodec_encodeRequest() {
         int fileClientMessageIndex = 847;
-        ClientMessage encoded = SqlExecuteCodec.encodeRequest(aString, aListOfData, aLong, anInt, aString, aByte, anSqlQueryId, aBoolean);
+        ClientMessage encoded = SqlExecuteCodec.encodeRequest(aString, aListOfData, aLong, anInt, null, aByte, anSqlQueryId, aBoolean);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6666,10 +6666,10 @@ public class ClientCompatibilityTest_2_4 {
         int fileClientMessageIndex = 848;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         SqlExecuteCodec.ResponseParameters parameters = SqlExecuteCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aListOfSqlColumnMetadata, parameters.rowMetadata));
-        assertTrue(isEqual(aSqlPage, parameters.rowPage));
+        assertTrue(isEqual(null, parameters.rowMetadata));
+        assertTrue(isEqual(null, parameters.rowPage));
         assertTrue(isEqual(aLong, parameters.updateCount));
-        assertTrue(isEqual(anSqlError, parameters.error));
+        assertTrue(isEqual(null, parameters.error));
         assertFalse(parameters.isIsInfiniteRowsExists);
     }
 
@@ -6686,8 +6686,8 @@ public class ClientCompatibilityTest_2_4 {
         int fileClientMessageIndex = 850;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         SqlFetchCodec.ResponseParameters parameters = SqlFetchCodec.decodeResponse(fromFile);
-        assertTrue(isEqual(aSqlPage, parameters.rowPage));
-        assertTrue(isEqual(anSqlError, parameters.error));
+        assertTrue(isEqual(null, parameters.rowPage));
+        assertTrue(isEqual(null, parameters.error));
     }
 
     @Test
@@ -6702,7 +6702,7 @@ public class ClientCompatibilityTest_2_4 {
     public void test_SqlMappingDdlCodec_decodeResponse() {
         int fileClientMessageIndex = 852;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aString, SqlMappingDdlCodec.decodeResponse(fromFile)));
+        assertTrue(isEqual(null, SqlMappingDdlCodec.decodeResponse(fromFile)));
     }
 
     @Test
@@ -6801,7 +6801,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_JetSubmitJobCodec_encodeRequest() {
         int fileClientMessageIndex = 863;
-        ClientMessage encoded = JetSubmitJobCodec.encodeRequest(aLong, aData, aData, aUUID);
+        ClientMessage encoded = JetSubmitJobCodec.encodeRequest(aLong, aData, null, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6814,7 +6814,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_JetTerminateJobCodec_encodeRequest() {
         int fileClientMessageIndex = 865;
-        ClientMessage encoded = JetTerminateJobCodec.encodeRequest(aLong, anInt, aUUID);
+        ClientMessage encoded = JetTerminateJobCodec.encodeRequest(aLong, anInt, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6842,7 +6842,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_JetGetJobIdsCodec_encodeRequest() {
         int fileClientMessageIndex = 869;
-        ClientMessage encoded = JetGetJobIdsCodec.encodeRequest(aString, aLong);
+        ClientMessage encoded = JetGetJobIdsCodec.encodeRequest(null, aLong);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6859,7 +6859,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_JetJoinSubmittedJobCodec_encodeRequest() {
         int fileClientMessageIndex = 871;
-        ClientMessage encoded = JetJoinSubmittedJobCodec.encodeRequest(aLong, aUUID);
+        ClientMessage encoded = JetJoinSubmittedJobCodec.encodeRequest(aLong, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6872,7 +6872,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_JetGetJobSubmissionTimeCodec_encodeRequest() {
         int fileClientMessageIndex = 873;
-        ClientMessage encoded = JetGetJobSubmissionTimeCodec.encodeRequest(aLong, aUUID);
+        ClientMessage encoded = JetGetJobSubmissionTimeCodec.encodeRequest(aLong, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
@@ -6887,7 +6887,7 @@ public class ClientCompatibilityTest_2_4 {
     @Test
     public void test_JetGetJobConfigCodec_encodeRequest() {
         int fileClientMessageIndex = 875;
-        ClientMessage encoded = JetGetJobConfigCodec.encodeRequest(aLong, aUUID);
+        ClientMessage encoded = JetGetJobConfigCodec.encodeRequest(aLong, null);
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         compareClientMessages(fromFile, encoded);
     }
