@@ -952,13 +952,17 @@ public class JobCoordinationService {
             // - masterContext is removed from the map
             // We check them in reverse order so that no race is possible.
             //
-            // We check the JobResult after MasterContext for correctness and
-            // optimization. In most cases there will either be MasterContext or
-            // JobResult. Neither of them is present only after master failed
-            // and the new master didn't yet scan jobs. We check the JobResult
-            // again at the end for correctness. In some cases (slow deleteJob
-            // execution) there can exist  JobResult, one of both JobRecord and
-            // JobExecutionRecord, and no MasterContext.
+            // We check the MasterContext before JobResult for optimization. In
+            // most cases there will either be MasterContext or JobResult.
+            // Neither of them is present only after master failed and the new
+            // master didn't yet scan jobs. We check the JobResult again at the
+            // end for correctness to avoid race with job completion.
+            //
+            // We check the JobResult before JobRecord and JobExecutionRecord
+            // because JobResult is more recent and contains more information.
+            // In some cases (slow deleteJob execution) there can exist
+            // JobResult, one or both JobRecord and JobExecutionRecord, and no
+            // MasterContext.
 
             // check masterContext first
             MasterContext mc = masterContexts.get(jobId);
