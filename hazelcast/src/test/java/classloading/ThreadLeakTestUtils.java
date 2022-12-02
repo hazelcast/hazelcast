@@ -45,7 +45,20 @@ public final class ThreadLeakTestUtils {
     });
     private static final List<String> THREAD_NAME_WHITELIST = asList(
             "process reaper",
-            "surefire-forkedjvm-ping-30s"
+            "surefire-forkedjvm-ping-30s",
+            //testcontainers
+            "testcontainers-ryuk",
+            //JNA
+            "JNA Cleaner",
+            //AWS sdk
+            "idle-connection-reaper",
+            //testcontainers
+            "ducttape-0",
+            //mysql
+            "mysql-cj-abandoned-connection-cleanup",
+            //hadoop
+            "org.apache.hadoop.fs.FileSystem$Statistics$StatisticsDataReferenceCleaner"
+
     );
 
     private static final ILogger LOGGER = Logger.getLogger(ThreadLeakTestUtils.class);
