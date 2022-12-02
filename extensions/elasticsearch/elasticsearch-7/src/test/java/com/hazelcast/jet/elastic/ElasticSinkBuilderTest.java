@@ -39,9 +39,6 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ElasticSinkBuilderTest extends PipelineTestSupport {
 
-    // Use static logger to avoid serialization issue with logger from parent class
-    private static final ILogger logger = Logger.getLogger(ElasticSinkBuilderTest.class);
-
     @Test
     public void when_writeToFailingSink_then_shouldCloseClient() {
         ClientHolder.elasticClients.clear();
