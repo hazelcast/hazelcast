@@ -496,13 +496,15 @@ public final class TestProcessors {
         protected void init(@Nonnull Context context) throws InterruptedException {
             LOGGER.info("MockP.init called on " + Thread.currentThread().getName());
             initCount.incrementAndGet();
-            if (initError != null) {
-                throw sneakyThrow(initError);
-            }
 
+            // Block first to allow to control when the exception is thrown
             if (initBlocks) {
                 blockingSemaphore.acquire();
                 Thread.sleep(RANDOM.nextInt(500));
+            }
+
+            if (initError != null) {
+                throw sneakyThrow(initError);
             }
         }
 
