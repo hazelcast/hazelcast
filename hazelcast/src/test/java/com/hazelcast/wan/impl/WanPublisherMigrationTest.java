@@ -138,10 +138,13 @@ public class WanPublisherMigrationTest extends HazelcastTestSupport {
             assertTrue("Expected at least " + partitionsToMigrate
                             + " migration operations to be processed but was " + publisher,
                     publisher.migrationProcess.intValue() >= partitionsToMigrate);
-            assertEquals(exceptionMsg("migrationCommit", publisher),
-                    partitionsToMigrate, publisher.migrationCommit.intValue());
 
             //onMigrationCommit() method of the listener is called asynchronously. So assert eventually
+            assertTrueEventually(() -> assertEquals(exceptionMsg("migrationCommit", publisher),
+                    partitionsToMigrate, publisher.migrationCommit.intValue())
+            );
+
+            //onMigrationRollback() method of the listener is called asynchronously. So assert eventually
             assertTrueEventually(() -> assertEquals(exceptionMsg("migrationRollback", publisher),
                     1,
                     publisher.migrationRollback.intValue())
