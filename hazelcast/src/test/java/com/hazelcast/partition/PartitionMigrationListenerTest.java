@@ -398,6 +398,10 @@ public class PartitionMigrationListenerTest extends HazelcastTestSupport {
         public void reset() {
             migrationStarted.set(0);
             migrationCompleted.set(0);
+            for (int i = 0; i < numberOfPartitions; i++) {
+                replicaMigrationCompleted[i].set(0);
+                replicaMigrationFailed[i].set(0);
+            }
         }
 
         @Override
