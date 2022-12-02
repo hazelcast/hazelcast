@@ -32,15 +32,8 @@ import org.elasticsearch.client.RestClientBuilder;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.Set;
-
 import static java.util.Collections.emptyMap;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -50,7 +43,7 @@ public class ElasticSinkBuilderTest extends PipelineTestSupport {
     private static final ILogger logger = Logger.getLogger(ElasticSinkBuilderTest.class);
 
     @Test
-    public void when_writeToFailingSink_then_shouldCloseClient() throws IOException {
+    public void when_writeToFailingSink_then_shouldCloseClient() {
         ClientHolder.elasticClients.clear();
 
         Sink<String> elasticSink = new ElasticSinkBuilder<>()
@@ -58,8 +51,7 @@ public class ElasticSinkBuilderTest extends PipelineTestSupport {
                     RestClientBuilder builder = spy(RestClient.builder(HttpHost.create("localhost:9200")));
                     when(builder.build()).thenAnswer(invocation -> {
                         Object result = invocation.callRealMethod();
-                        RestClient client = (RestClient) spy(result);
-                        logger.fine("Created client " + client);
+                        RestClient client = (RestClient) result;
                         ClientHolder.elasticClients.add(client);
                         return client;
                     });
@@ -79,14 +71,6 @@ public class ElasticSinkBuilderTest extends PipelineTestSupport {
             // ignore - elastic is not running
         }
 
-        logger.fine("Clients to close: " + ClientHolder.elasticClients.size());
-        for (RestClient client : ClientHolder.elasticClients) {
-            logger.fine("Closing client " + client);
-            verify(client).close();
-        }
-    }
-
-    static class ClientHolder implements Serializable {
-        static Set<RestClient> elasticClients = Collections.synchronizedSet(new HashSet<>());
+        ClientHolder.assertAllClientsNotRunning();
     }
 }
