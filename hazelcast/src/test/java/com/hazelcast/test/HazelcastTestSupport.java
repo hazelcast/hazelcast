@@ -55,8 +55,10 @@ import com.hazelcast.test.jitter.JitterRule;
 import com.hazelcast.test.metrics.MetricsRule;
 import junit.framework.AssertionFailedError;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.Assume;
 import org.junit.AssumptionViolatedException;
+import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.ComparisonFailure;
 import org.junit.Rule;
@@ -87,6 +89,8 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 
+import static classloading.ThreadLeakTestUtils.assertHazelcastThreadShutdown;
+import static classloading.ThreadLeakTestUtils.getThreads;
 import static com.hazelcast.internal.partition.TestPartitionUtils.getPartitionServiceState;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.internal.util.OsHelper.isLinux;
@@ -131,6 +135,7 @@ public abstract class HazelcastTestSupport {
 
     @ClassRule
     public static MobyNamingRule mobyNamingRule = new MobyNamingRule();
+    private static Set<Thread> oldThreads;
 
     @Rule
     public JitterRule jitterRule = new JitterRule();
@@ -154,6 +159,15 @@ public abstract class HazelcastTestSupport {
         ClusterProperty.METRICS_DEBUG.setSystemProperty("true");
     }
 
+    @BeforeClass
+    public static void saveOldThreads() {
+        oldThreads = getThreads();
+    }
+
+    @AfterClass
+    public static void checkThreadLeaks() {
+        assertHazelcastThreadShutdown(oldThreads);
+    }
     protected static <T> boolean containsIn(T item1, Collection<T> collection, Comparator<T> comparator) {
         for (T item2 : collection) {
             if (comparator.compare(item1, item2) == 0) {
