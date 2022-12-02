@@ -86,7 +86,7 @@ public class LocalElasticSourcesTest extends CommonElasticSourcesTest {
                     when(builder.build()).thenAnswer(invocation -> {
                         Object result = invocation.callRealMethod();
                         RestClient elasticClient = (RestClient) result;
-                        com.hazelcast.jet.elastic.ClientHolder.elasticClients.add(elasticClient);
+                        ClientHolder.elasticClients.add(elasticClient);
                         return elasticClient;
                     });
                     return builder;
