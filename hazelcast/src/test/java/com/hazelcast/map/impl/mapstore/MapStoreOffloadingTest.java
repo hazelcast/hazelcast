@@ -36,6 +36,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -46,7 +47,7 @@ public class MapStoreOffloadingTest extends HazelcastTestSupport {
 
     @Override
     protected Config getConfig() {
-        return smallInstanceConfig();
+        return smallInstanceConfigWithoutJetAndMetrics();
     }
 
     @Test
@@ -209,5 +210,46 @@ public class MapStoreOffloadingTest extends HazelcastTestSupport {
         }
 
         assertTrueEventually(() -> assertEquals(keySetSize, fastMap.size()));
+    }
+
+    @Test
+    public void setTtl_on_slow_map_store_does_not_block_other_map_operation() {
+        Config config = getConfig();
+
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
+        mapStoreConfig.setImplementation(new MapStoreAdapter<Integer, Integer>() {
+
+            @Override
+            public Integer load(Integer key) {
+                sleepSeconds(1000);
+                return 11;
+            }
+        });
+        String slowMapName = "slowMap";
+        config.getMapConfig(slowMapName).setMapStoreConfig(mapStoreConfig);
+
+        HazelcastInstance node = createHazelcastInstance(config);
+        IMap<Object, Object> slowMapStoreMap = node.getMap(slowMapName);
+        IMap<Object, Object> noMapStoreMap = node.getMap("noMapStoreMap");
+
+        int keySetSize = 10_000;
+
+        Runnable slowMapStoreMapRunnable = () -> {
+            for (int i = 0; i < keySetSize; i++) {
+                slowMapStoreMap.setTtl(i, 1, TimeUnit.SECONDS);
+            }
+        };
+
+        Thread thread = new Thread(slowMapStoreMapRunnable);
+        thread.start();
+
+        for (int i = 0; i < keySetSize; i++) {
+            noMapStoreMap.set(i, 1);
+        }
+
+        assertEquals(keySetSize, noMapStoreMap.size());
+
     }
 }
