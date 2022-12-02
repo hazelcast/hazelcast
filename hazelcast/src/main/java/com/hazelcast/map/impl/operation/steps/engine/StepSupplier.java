@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.operation.steps.engine;
 
 import com.hazelcast.core.Offloadable;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.steps.UtilSteps;
 import com.hazelcast.memory.NativeOutOfMemoryError;
@@ -141,8 +140,6 @@ public class StepSupplier implements Supplier<Runnable> {
         boolean metWithPreconditions = true;
         try {
             try {
-                log(step, state);
-
                 if (runningOnPartitionThread && state.getThrowable() == null && firstStep) {
                     metWithPreconditions = operationRunner.metWithPreconditions(state.getOperation());
                     if (!metWithPreconditions) {
@@ -188,14 +185,6 @@ public class StepSupplier implements Supplier<Runnable> {
 
     private void rerunWithForcedEviction(Runnable step) {
         runStepWithForcedEvictionStrategies(state.getOperation(), step);
-    }
-
-    private static void log(Step currentStep, State state) {
-        MapOperation operation = state.getOperation();
-        ILogger logger = operation.getNodeEngine().getLogger(operation.getClass());
-        if (logger.isFinestEnabled()) {
-            logger.finest(currentStep.toString() + " ==> " + operation.hashCode());
-        }
     }
 
     public void handleOperationError(Throwable throwable) {
