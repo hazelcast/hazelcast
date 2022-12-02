@@ -635,6 +635,7 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         assertTrue(valueStats().getTotalUpdateLatency() > 0);
         assertTrue(valueStats().getAverageHitLatency() > 0);
 
+        ensureSafeState();
         map.destroy();
         assertNull(valueStats());
 
@@ -675,7 +676,11 @@ public class LocalIndexStatsTest extends HazelcastTestSupport {
         assertTrue(valueStats().getTotalRemoveLatency() > 0);
         assertTrue(valueStats().getTotalUpdateLatency() > 0);
         assertTrue(valueStats().getAverageHitLatency() > 0);
+    }
 
+    // overridden by extension test class
+    protected void ensureSafeState() {
+        waitAllForSafeState(instance);
     }
 
     protected LocalMapStats stats() {
