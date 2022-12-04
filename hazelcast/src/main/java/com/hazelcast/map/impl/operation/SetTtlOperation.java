@@ -73,7 +73,7 @@ public class SetTtlOperation extends LockAwareOperation
     @Override
     public void applyState(State state) {
         super.applyState(state);
-        response = state.getOldValue() == null;
+        response = state.getOldValue() != null;
     }
 
     @Override
