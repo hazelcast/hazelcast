@@ -32,6 +32,7 @@ import java.util.Set;
 
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
+import static java.lang.Thread.currentThread;
 
 /**
  * <lu>
@@ -169,7 +170,7 @@ public class StepRunner extends Offload
             } catch (Throwable throwable) {
                 stepSupplier.handleOperationError(throwable);
             }
-        } while (true);
+        } while (!currentThread().isInterrupted());
     }
 
     /**

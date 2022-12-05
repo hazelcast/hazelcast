@@ -46,17 +46,17 @@ import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import static com.hazelcast.map.impl.mapstore.writebehind.WriteBehindFlushTest.assertWriteBehindQueuesEmpty;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.ONE_PHASE;
 import static com.hazelcast.transaction.TransactionOptions.TransactionType.TWO_PHASE;
-import static java.lang.Thread.currentThread;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.hamcrest.core.Is.isA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -304,42 +304,31 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
 
         AtomicBoolean stop = new AtomicBoolean(false);
         int availableProcessors = Math.min(4, RuntimeAvailableProcessors.get());
-
-        List<Thread> threads = new ArrayList<>();
+        ExecutorService executorService = Executors.newFixedThreadPool(availableProcessors);
 
         for (int i = 0; i < availableProcessors; i++) {
-            threads.add(new Thread(() -> {
+            executorService.submit(() -> {
                 while (!stop.get()) {
-                    if (currentThread().isInterrupted()) {
-                        break;
-                    }
                     OpType[] values = OpType.values();
                     OpType op = values[RandomPicker.getInt(values.length)];
                     op.doOp(mapName, node1, RandomPicker.getInt(2, keySpace));
                 }
-            }));
+            });
         }
 
-        threads.add(new Thread(() -> {
+        executorService.submit(() -> {
             while (!stop.get()) {
-                if (currentThread().isInterrupted()) {
-                    break;
-                }
                 HazelcastInstance node3 = factory.newHazelcastInstance(config);
                 sleepSeconds(2);
                 node3.shutdown();
             }
-        }));
-
-        for (Thread thread : threads) {
-            thread.start();
-        }
+        });
 
         sleepSeconds(30);
         stop.set(true);
-
-        for (Thread thread : threads) {
-            thread.join();
+        executorService.shutdown();
+        if (!executorService.awaitTermination(60, SECONDS)) {
+            executorService.shutdownNow();
         }
 
         node1.getMap(mapName).flush();
@@ -355,7 +344,7 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
                         0, getTotalNumOfTxnReservedCapacity(mapName, node));
                 assertEquals(msg + ", capacity not zero", 0, nodeWideUsedCapacity);
             }
-        }, 30);
+        });
 
     }
 
