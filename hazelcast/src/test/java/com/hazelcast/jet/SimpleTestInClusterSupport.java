@@ -26,7 +26,6 @@ import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.PacketFiltersUtil;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -59,7 +58,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     private static HazelcastInstance client;
 
     protected static void initialize(int memberCount, @Nullable Config config) {
-        assertTrueEventually(HazelcastTestSupport::assertNoRunningInstances, 30);
+        assertNoRunningInstances();
 
         assert factory == null : "already initialized";
         factory = new TestHazelcastFactory();
