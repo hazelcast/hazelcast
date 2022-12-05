@@ -31,7 +31,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
-import static com.hazelcast.spi.properties.ClusterProperty.WAIT_SECONDS_BEFORE_JOIN;
+import static com.hazelcast.spi.properties.ClusterProperty.MAX_WAIT_SECONDS_BEFORE_JOIN;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -49,7 +49,7 @@ public class DiscoveryJoiner
 
     public DiscoveryJoiner(Node node, DiscoveryService discoveryService, boolean usePublicAddress) {
         super(node);
-        this.maximumWaitingTimeBeforeJoinSeconds = node.getProperties().getInteger(WAIT_SECONDS_BEFORE_JOIN);
+        this.maximumWaitingTimeBeforeJoinSeconds = node.getProperties().getInteger(MAX_WAIT_SECONDS_BEFORE_JOIN);
         this.discoveryService = discoveryService;
         this.usePublicAddress = usePublicAddress;
     }
