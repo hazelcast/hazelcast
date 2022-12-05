@@ -55,6 +55,7 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static com.hazelcast.internal.util.CollectionUtil.hasNonEmptyIntersection;
 import static com.hazelcast.jet.Util.entry;
@@ -311,11 +312,9 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         return true;
     }
 
-    @SuppressWarnings({"ResultOfMethodCallIgnored"})
     @Override
     public boolean saveToSnapshot() {
-        // TODO: broadcast-distributed edges.
-        // TODO: guarantee now just equi-join
+        // TODO (if possible): broadcast-distributed edges.
 
         if (snapshotTraverser == null) {
             // Note: in fact, first three collections contain from six to ten objects in total,
@@ -361,23 +360,23 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                 }
             }
 
-            for (JetSqlRow row : buffer[0]) {
-                snapshotList.add(
-                        entry(
-                                ObjectArrayKey.project(row, joinInfo.leftEquiJoinIndices()),
-                                BufferSnapshotValue.bufferValue(row, 0)
-                        ));
-            }
+            Stream<Entry> leftBufferStream = buffer[0].content()
+                    .stream()
+                    .map(row -> entry(
+                            ObjectArrayKey.project(row, joinInfo.leftEquiJoinIndices()),
+                            BufferSnapshotValue.bufferValue(row, 0)
+                    ));
 
-            for (JetSqlRow row : buffer[1]) {
-                snapshotList.add(
-                        entry(
-                                ObjectArrayKey.project(row, joinInfo.rightEquiJoinIndices()),
-                                BufferSnapshotValue.bufferValue(row, 1)
-                        ));
-            }
+            Stream<Entry> rightBufferStream = buffer[1].content()
+                    .stream()
+                    .map(row -> entry(
+                            ObjectArrayKey.project(row, joinInfo.rightEquiJoinIndices()),
+                            BufferSnapshotValue.bufferValue(row, 1)
+                    ));
 
-            snapshotTraverser = Traversers.traverseIterable(snapshotList)
+            snapshotTraverser = Traversers.traverseStream(
+                            Stream.concat(snapshotList.stream(),
+                                    Stream.concat(leftBufferStream, rightBufferStream)))
                     .onFirstNull(() -> snapshotTraverser = null);
         }
 
@@ -637,7 +636,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         private int bufferOrdinal;
 
         @SuppressWarnings("unused")
-        public BufferSnapshotValue() {
+        BufferSnapshotValue() {
         }
 
         private BufferSnapshotValue(JetSqlRow row, int bufferOrdinal) {
@@ -699,10 +698,10 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         private Byte key;
         private Long timestamp;
 
-        public WatermarkValue() {
+        WatermarkValue() {
         }
 
-        public WatermarkValue(Byte key, Long timestamp) {
+        private WatermarkValue(Byte key, Long timestamp) {
             this.key = key;
             this.timestamp = timestamp;
         }
@@ -745,7 +744,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         private Long minBufferTime;
 
         @SuppressWarnings("unused")
-        public MinBufferTimeSnapshotValue() {
+        MinBufferTimeSnapshotValue() {
         }
 
         private MinBufferTimeSnapshotValue(Byte wmKey, Long minBufferTime) {
