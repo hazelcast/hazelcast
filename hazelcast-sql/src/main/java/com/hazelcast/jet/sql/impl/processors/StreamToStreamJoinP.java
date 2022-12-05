@@ -22,9 +22,9 @@ import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.collection.Object2LongHashMap;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.AbstractProcessor;
-import com.hazelcast.jet.core.AppendableTraverser;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
@@ -323,12 +323,12 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             int expectedCapacity = lastReceivedWm.size() + lastEmittedWm.size() + minimumBufferTimes.size()
                     + buffer[0].size() + buffer[1].size();
 
-            snapshotTraverser = new AppendableTraverser<>(expectedCapacity);
+            List<Entry> snapshotList = new ArrayList<>(expectedCapacity);
 
             for (Entry<?, Long> e : lastEmittedWm.entrySet()) {
                 Long timestamp = e.getValue();
                 if (timestamp != WATERMARK_MAP_DEFAULT_VALUE) {
-                    snapshotTraverser.append(
+                    snapshotList.add(
                             entry(
                                     broadcastKey(LAST_EMITTED_KEYED_WM),
                                     WatermarkValue.wmValue((Byte) e.getKey(), timestamp)
@@ -340,7 +340,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             for (Entry<?, Long> e : lastReceivedWm.entrySet()) {
                 Long timestamp = e.getValue();
                 if (timestamp != WATERMARK_MAP_DEFAULT_VALUE) {
-                    snapshotTraverser.append(
+                    snapshotList.add(
                             entry(
                                     broadcastKey(LAST_RECEIVED_KEYED_WM),
                                     WatermarkValue.wmValue((Byte) e.getKey(), timestamp)
@@ -352,7 +352,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             for (Entry<?, Long> e : minimumBufferTimes.entrySet()) {
                 Long timestamp = e.getValue();
                 if (timestamp != MIN_BUFFER_TIME_DEFAULT_VALUE) {
-                    snapshotTraverser.append(
+                    snapshotList.add(
                             entry(
                                     broadcastKey(MIN_BUFFER_TIME),
                                     MinBufferTimeSnapshotValue.minBufferTimeValue((Byte) e.getKey(), timestamp)
@@ -362,7 +362,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             }
 
             for (JetSqlRow row : buffer[0]) {
-                snapshotTraverser.append(
+                snapshotList.add(
                         entry(
                                 ObjectArrayKey.project(row, joinInfo.leftEquiJoinIndices()),
                                 BufferSnapshotValue.bufferValue(row, 0)
@@ -370,14 +370,15 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             }
 
             for (JetSqlRow row : buffer[1]) {
-                snapshotTraverser.append(
+                snapshotList.add(
                         entry(
                                 ObjectArrayKey.project(row, joinInfo.rightEquiJoinIndices()),
                                 BufferSnapshotValue.bufferValue(row, 1)
                         ));
             }
 
-            snapshotTraverser = snapshotTraverser.onFirstNull(() -> snapshotTraverser = null);
+            snapshotTraverser = Traversers.traverseIterable(snapshotList)
+                    .onFirstNull(() -> snapshotTraverser = null);
         }
 
         return emitFromTraverserToSnapshot(snapshotTraverser);
