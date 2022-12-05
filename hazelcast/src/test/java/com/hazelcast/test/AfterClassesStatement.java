@@ -52,6 +52,7 @@ class AfterClassesStatement extends Statement {
         if (!clientInstances.isEmpty()) {
             String message = "Client instances haven't been shut down: " + clientInstances;
             HazelcastClient.shutdownAll();
+            assertTrueEventually(HazelcastTestSupport::assertNoRunningClientInstances, 30);
             throw new IllegalStateException(message);
         }
 

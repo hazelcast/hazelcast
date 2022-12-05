@@ -17,6 +17,7 @@
 package com.hazelcast.test;
 
 import classloading.ThreadLocalLeakTestUtils;
+import com.hazelcast.client.HazelcastClient;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.ClusterState;
@@ -802,6 +803,10 @@ public abstract class HazelcastTestSupport {
 
     public static void assertNoRunningInstances() {
         assertThat(Hazelcast.getAllHazelcastInstances()).as("There should be no running instances").isEmpty();
+    }
+
+    public static void assertNoRunningClientInstances() {
+        assertThat(HazelcastClient.getAllHazelcastClients()).as("There should be no running client instances").isEmpty();
     }
 
     public static void assertNodeStarted(HazelcastInstance instance) {
