@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.processors;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
@@ -28,11 +27,9 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.AppendableTraverser;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.Processor;
-import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
 import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.jet.impl.connector.ReadMapOrCacheP;
 import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
@@ -58,7 +55,6 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
-import java.util.function.Function;
 
 import static com.hazelcast.internal.util.CollectionUtil.hasNonEmptyIntersection;
 import static com.hazelcast.jet.Util.entry;
@@ -110,7 +106,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private JetSqlRow emptyRightRow;
 
     private Traverser<Entry> snapshotTraverser;
-
 
     @SuppressWarnings("checkstyle:ExecutableStatementCount")
     public StreamToStreamJoinP(
@@ -316,22 +311,22 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         return true;
     }
 
-    @SuppressWarnings({"ResultOfMethodCallIgnored", "rawtypes"})
+    @SuppressWarnings({"ResultOfMethodCallIgnored"})
     @Override
     public boolean saveToSnapshot() {
         // TODO: broadcast-distributed edges.
         // TODO: guarantee now just equi-join
 
         if (snapshotTraverser == null) {
-            // Note : in fact, first three collection contains from six to ten's object in total,
-            //   it's not so much, as you may imagine from first reading.
+            // Note: in fact, first three collections contain from six to ten objects in total,
+            //   it's not as much as you may think from first reading.
             int expectedCapacity = lastReceivedWm.size() + lastEmittedWm.size() + minimumBufferTimes.size()
                     + buffer[0].size() + buffer[1].size();
 
             snapshotTraverser = new AppendableTraverser<>(expectedCapacity);
 
-            for (Entry e : lastEmittedWm.entrySet()) {
-                Long timestamp = (Long) e.getValue();
+            for (Entry<?, Long> e : lastEmittedWm.entrySet()) {
+                Long timestamp = e.getValue();
                 if (timestamp != WATERMARK_MAP_DEFAULT_VALUE) {
                     snapshotTraverser.append(
                             entry(
@@ -342,8 +337,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                 }
             }
 
-            for (Entry e : lastReceivedWm.entrySet()) {
-                Long timestamp = (Long) e.getValue();
+            for (Entry<?, Long> e : lastReceivedWm.entrySet()) {
+                Long timestamp = e.getValue();
                 if (timestamp != WATERMARK_MAP_DEFAULT_VALUE) {
                     snapshotTraverser.append(
                             entry(
@@ -354,8 +349,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                 }
             }
 
-            for (Entry e : minimumBufferTimes.entrySet()) {
-                Long timestamp = (Long) e.getValue();
+            for (Entry<?, Long> e : minimumBufferTimes.entrySet()) {
+                Long timestamp = e.getValue();
                 if (timestamp != MIN_BUFFER_TIME_DEFAULT_VALUE) {
                     snapshotTraverser.append(
                             entry(
@@ -595,7 +590,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         public void init(@Nonnull Context context) throws Exception {
             if (!joinInfo.isEquiJoin() && context.processingGuarantee() != ProcessingGuarantee.NONE) {
                 throw new UnsupportedOperationException(
-                        "Non-equi-join fault tolerant stream-to-stream JOIN is not supported");
+                        "Non-equi-join fault-tolerant stream-to-stream JOIN is not supported");
             }
         }
 
