@@ -137,7 +137,7 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     protected Config getConfig() {
-        Config cfg = smallInstanceConfig();
+        Config cfg = smallInstanceConfigWithoutJetAndMetrics();
         cfg.getMapConfig("default")
                 .setStatisticsEnabled(statisticsEnabled)
                 .setPerEntryStatsEnabled(perEntryStatsEnabled);
