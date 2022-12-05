@@ -107,11 +107,13 @@ public abstract class ClearExpiredRecordsTask<T, S> implements Runnable {
 
     @Override
     public void run() {
+        if (!nodeEngine.isStartCompleted()) {
+            return;
+        }
+        if (!singleRunPermit.compareAndSet(false, true)) {
+            return;
+        }
         try {
-            if (!singleRunPermit.compareAndSet(false, true)) {
-                return;
-            }
-
             runInternal();
 
         } finally {
