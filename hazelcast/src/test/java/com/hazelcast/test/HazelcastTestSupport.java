@@ -23,6 +23,7 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -97,6 +98,7 @@ import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -796,6 +798,10 @@ public abstract class HazelcastTestSupport {
         }
 
         assertTrue("Instances not in safe state! " + nonSafeStates, nonSafeStates.isEmpty());
+    }
+
+    public static void assertNoRunningInstances() {
+        assertThat(Hazelcast.getAllHazelcastInstances()).as("There should be no running instances").isEmpty();
     }
 
     public static void assertNodeStarted(HazelcastInstance instance) {

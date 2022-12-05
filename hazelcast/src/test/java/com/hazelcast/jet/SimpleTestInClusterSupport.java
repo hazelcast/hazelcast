@@ -20,13 +20,13 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
-import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.hazelcast.test.HazelcastSerialClassRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.PacketFiltersUtil;
 import org.junit.After;
 import org.junit.AfterClass;
@@ -42,7 +42,6 @@ import java.util.stream.Collectors;
 import static com.hazelcast.jet.Util.idToString;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -60,7 +59,7 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
     private static HazelcastInstance client;
 
     protected static void initialize(int memberCount, @Nullable Config config) {
-        assertTrueEventually(SimpleTestInClusterSupport::assertNoRunningInstances, 30);
+        assertTrueEventually(HazelcastTestSupport::assertNoRunningInstances, 30);
 
         assert factory == null : "already initialized";
         factory = new TestHazelcastFactory();
@@ -194,9 +193,5 @@ public abstract class SimpleTestInClusterSupport extends JetTestSupport {
      */
     protected static HazelcastInstance client() {
         return client;
-    }
-
-    private static void assertNoRunningInstances() {
-        assertThat(Hazelcast.getAllHazelcastInstances()).as("There should be no running instances").isEmpty();
     }
 }
