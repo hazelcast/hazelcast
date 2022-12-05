@@ -24,7 +24,7 @@ import java.util.Collections;
  * Java port of the Moby Project random name generator (https://github.com/moby/moby).
  */
 public final class MobyNames {
-    public static final String MOBY_NAMING_PREFIX = "hazelcast.member.naming.moby.prefix";
+    public static final String MOBY_NAMING_PREFIX = "hazelcast.internal.member.naming.moby.prefix";
 
     private static final String NAME_FORMAT = "%s_%s";
 
