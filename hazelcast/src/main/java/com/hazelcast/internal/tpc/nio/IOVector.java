@@ -104,18 +104,27 @@ public final class IOVector {
         // not everything was written
         int toIndexByteBuffers = 0;
         int initialByteBuffersLength = byteBuffersSize;
+        int chunkOwnerPos = 0;
+
         for (int i = 0; i < initialByteBuffersLength; i++) {
             if (byteBuffers[i].hasRemaining()) {
                 if (i == 0) {
                     // the first one is not empty, we are done
                     break;
                 } else {
-                    byteBuffers[i] = null;
                     byteBuffers[toIndexByteBuffers] = byteBuffers[i];
+                    byteBuffers[i] = null;
                     toIndexByteBuffers++;
                 }
             } else {
                 byteBuffersSize--;
+                if (ioBuffers[chunkOwnerPos] == null) {
+                    System.out.println("dupa");
+                }
+                ioBuffers[chunkOwnerPos].releaseNextChunk(byteBuffers[i]);
+                if (!ioBuffers[chunkOwnerPos].hasRemainingChunks()) {
+                    chunkOwnerPos++;
+                }
                 byteBuffers[i] = null;
             }
         }
@@ -128,12 +137,13 @@ public final class IOVector {
                     // the first one is not empty, we are done
                     break;
                 } else {
-                    ioBuffers[i] = null;
                     ioBuffers[toIndexIoBuffers] = ioBuffers[i];
+                    ioBuffers[i] = null;
                     toIndexIoBuffers++;
                 }
             } else {
                 ioBuffersSize--;
+                ioBuffers[i].release();
                 ioBuffers[i] = null;
             }
         }
