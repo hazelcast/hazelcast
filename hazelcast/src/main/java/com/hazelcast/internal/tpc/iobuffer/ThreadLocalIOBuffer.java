@@ -1,4 +1,4 @@
-    package com.hazelcast.internal.tpc.iobuffer;
+package com.hazelcast.internal.tpc.iobuffer;
 
 import java.nio.ByteBuffer;
 import java.util.Arrays;
@@ -31,7 +31,7 @@ class ThreadLocalIOBuffer implements IOBuffer {
     ThreadLocalIOBuffer(ThreadLocalIOBufferAllocator allocator, int minSize, ConcurrentIOBufferAllocator concurrentAllocator) {
         this.allocator = allocator;
         this.superAllocator = concurrentAllocator;
-        this.chunks = new ByteBuffer[((minSize - 1)/ BUFFER_SIZE) + 1];
+        this.chunks = new ByteBuffer[((minSize - 1) / BUFFER_SIZE) + 1];
 
         for (int i = 0; i < chunks.length; i++) {
             addChunk(allocator.getNextByteBuffer());
@@ -44,7 +44,7 @@ class ThreadLocalIOBuffer implements IOBuffer {
         this.limit = 0;
         this.chunkToRelease = 0;
 
-        for (int i = 0; i < ((minSize - 1)/ BUFFER_SIZE) + 1; i++) {
+        for (int i = 0; i < ((minSize - 1) / BUFFER_SIZE) + 1; i++) {
             addChunk(allocator.getNextByteBuffer());
         }
     }
@@ -121,7 +121,8 @@ class ThreadLocalIOBuffer implements IOBuffer {
         int chunk = pos / BUFFER_SIZE;
         int toWriteRemaining = src.length - arrayPos;
         while (toWriteRemaining > 0) {
-            int toWriteInCurrentChunk = Math.min(chunks[chunk].remaining(), toWriteRemaining);;
+            int toWriteInCurrentChunk = Math.min(chunks[chunk].remaining(), toWriteRemaining);
+            ;
             chunks[chunk++].put(src, arrayPos, toWriteInCurrentChunk);
             arrayPos += toWriteInCurrentChunk;
             toWriteRemaining -= toWriteInCurrentChunk;
@@ -168,13 +169,13 @@ class ThreadLocalIOBuffer implements IOBuffer {
         writeByteUnsafe((byte) ((value >>> 24) & 0xFF));
         writeByteUnsafe((byte) ((value >>> 16) & 0xFF));
         writeByteUnsafe((byte) ((value >>> 8) & 0xFF));
-        writeByteUnsafe((byte) (value  & 0xFF));
+        writeByteUnsafe((byte) (value & 0xFF));
     }
 
     @Override
     public void writeIntL(int value) {
         ensureRemaining(INT_SIZE_IN_BYTES);
-        writeByteUnsafe((byte) (value  & 0xFF));
+        writeByteUnsafe((byte) (value & 0xFF));
         writeByteUnsafe((byte) ((value >>> 8) & 0xFF));
         writeByteUnsafe((byte) ((value >>> 16) & 0xFF));
         writeByteUnsafe((byte) ((value >>> 24) & 0xFF));
@@ -196,7 +197,7 @@ class ThreadLocalIOBuffer implements IOBuffer {
         writeByteUnsafe((byte) ((value >>> 24) & 0xFF));
         writeByteUnsafe((byte) ((value >>> 16) & 0xFF));
         writeByteUnsafe((byte) ((value >>> 8) & 0xFF));
-        writeByteUnsafe((byte) (value  & 0xFF));
+        writeByteUnsafe((byte) (value & 0xFF));
     }
 
     @Override
@@ -207,8 +208,21 @@ class ThreadLocalIOBuffer implements IOBuffer {
     @Override
     public void write(ByteBuffer src, int count) {
         ensureRemaining(count);
-        for (int i = 0; i < count; i++) {
-            writeByteUnsafe(src.get());
+        while (count > 0) {
+            int chunk = pos / BUFFER_SIZE;
+            int currentChunkCapacity = chunks[chunk].remaining();
+            if (currentChunkCapacity >= count) {
+                chunks[chunk].put(src);
+                pos += count;
+                count = 0;
+            } else {
+                int limit = src.limit();
+                src.limit(src.position() + currentChunkCapacity);
+                chunks[chunk].put(src);
+                src.limit(limit);
+                pos += currentChunkCapacity;
+                count -= currentChunkCapacity;
+            }
         }
     }
 
