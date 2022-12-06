@@ -117,7 +117,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
         listRemainingConnections();
         // kill any hanging connection
         /* language=SQL */
-        executeSql("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE pid <> pg_backend_pid()");
+        executeSql("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = current_database() and pid <> pg_backend_pid()");
     }
 
     private static void executeSql(String sql) throws SQLException {
@@ -129,7 +129,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
         try (
                 Connection connection = ((DataSource) createDataSource(false)).getConnection();
                 ResultSet resultSet = connection.createStatement().executeQuery(
-                        "SELECT * FROM pg_stat_activity WHERE pid <> pg_backend_pid()")
+                        "SELECT * FROM pg_stat_activity WHERE datname = current_database() and pid <> pg_backend_pid()")
         ) {
             ResultSetMetaData metaData = resultSet.getMetaData();
             List<String> rows = new ArrayList<>();
