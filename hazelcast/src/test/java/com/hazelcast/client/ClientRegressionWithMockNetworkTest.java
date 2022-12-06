@@ -46,7 +46,7 @@ import com.hazelcast.nio.serialization.PortableReader;
 import com.hazelcast.nio.serialization.PortableWriter;
 import com.hazelcast.security.UsernamePasswordCredentials;
 import com.hazelcast.spi.properties.ClusterProperty;
-import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -58,6 +58,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
+import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 
 import java.io.IOException;
@@ -85,18 +86,23 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
 
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
+    @Rule
+    public TestName name = new TestName();
+
     private final TestHazelcastFactory hazelcastFactory = new TestHazelcastFactory();
 
     @After
     public void cleanup() {
-        hazelcastFactory.shutdownAll();
+        hazelcastFactory.terminateAll();
+
+        checkNoRunningInstances(name.getMethodName());
     }
 
     @Test

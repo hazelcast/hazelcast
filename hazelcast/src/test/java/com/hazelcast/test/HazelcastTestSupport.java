@@ -313,6 +313,22 @@ public abstract class HazelcastTestSupport {
         }
     }
 
+    protected void checkNoRunningInstances(String methodName) {
+        // check for running Hazelcast instances
+        assertTrueEventually(() -> {
+            Set<HazelcastInstance> instances = Hazelcast.getAllHazelcastInstances();
+            if (!instances.isEmpty()) {
+                fail("After " + methodName + " following instances haven't been shut down: " + instances);
+            }
+        });
+        assertTrueEventually(() -> {
+            Collection<HazelcastInstance> clientInstances = HazelcastClient.getAllHazelcastClients();
+            if (!clientInstances.isEmpty()) {
+                fail("After " + methodName + " following client instances haven't been shut down: " + clientInstances);
+            }
+        });
+    }
+
     // ###########################################
     // ########## implementation getter ##########
     // ###########################################
