@@ -350,7 +350,7 @@ public abstract class HazelcastTestSupport {
      * Note: the {@code cancel()} method on the returned future has no effect.
      */
     public static <E> Future<E> spawn(Callable<E> task) {
-        FutureTask<E> futureTask = new FutureTask<E>(task);
+        FutureTask<E> futureTask = new FutureTask<>(task);
         new Thread(futureTask).start();
         return futureTask;
     }
@@ -374,7 +374,7 @@ public abstract class HazelcastTestSupport {
                 sb.append("\tat ").append(aTrace);
             }
         }
-        System.err.println(sb.toString());
+        System.err.println(sb);
     }
 
     // ###########################
@@ -761,19 +761,11 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void waitAllForSafeState(final Collection<HazelcastInstance> instances, int timeoutInSeconds) {
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertAllInSafeState(instances);
-            }
-        }, timeoutInSeconds);
+        assertTrueEventually(() -> assertAllInSafeState(instances), timeoutInSeconds);
     }
 
     public static void waitAllForSafeState(final HazelcastInstance[] nodes, int timeoutInSeconds) {
-        assertTrueEventually(new AssertTask() {
-            public void run() {
-                assertAllInSafeState(asList(nodes));
-            }
-        }, timeoutInSeconds);
+        assertTrueEventually(() -> assertAllInSafeState(asList(nodes)), timeoutInSeconds);
     }
 
     public static void waitAllForSafeState(HazelcastInstance... nodes) {
@@ -787,7 +779,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertAllInSafeState(Collection<HazelcastInstance> nodes) {
-        Map<Address, PartitionServiceState> nonSafeStates = new HashMap<Address, PartitionServiceState>();
+        Map<Address, PartitionServiceState> nonSafeStates = new HashMap<>();
         for (HazelcastInstance node : nodes) {
             if (node == null) {
                 continue;
@@ -815,12 +807,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertNodeStartedEventually(final HazelcastInstance instance) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertNodeStarted(instance);
-            }
-        });
+        assertTrueEventually(() -> assertNodeStarted(instance));
     }
 
     // ################################
@@ -984,7 +971,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertIterableEquals(Iterable actual, Object... expected) {
-        List<Object> actualList = new ArrayList<Object>();
+        List<Object> actualList = new ArrayList<>();
         for (Object object : actual) {
             actualList.add(object);
         }
@@ -1032,12 +1019,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertEqualsEventually(final int expected, final AtomicInteger value) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertEquals(expected, value.get());
-            }
-        });
+        assertTrueEventually(() -> assertEquals(expected, value.get()));
     }
 
     public static void assertClusterSize(int expectedSize, HazelcastInstance... instances) {
@@ -1051,8 +1033,7 @@ public abstract class HazelcastTestSupport {
     }
 
     private static int getClusterSize(HazelcastInstance instance) {
-        Set<Member> members = instance.getCluster().getMembers();
-        return members == null ? 0 : members.size();
+        return instance.getCluster().getMembers().size();
     }
 
     public static void assertClusterSizeEventually(int expectedSize, HazelcastInstance... instances) {
@@ -1104,12 +1085,7 @@ public abstract class HazelcastTestSupport {
     }
 
     public static void assertClusterStateEventually(final ClusterState expectedState, final HazelcastInstance... instances) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertClusterState(expectedState, instances);
-            }
-        });
+        assertTrueEventually(() -> assertClusterState(expectedState, instances));
     }
 
     public static void assertOpenEventually(CountDownLatch latch) {
@@ -1151,10 +1127,10 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    public static void assertCountEventually(final String message, final int expectedCount, final CountDownLatch latch,
-                                             long timeoutInSeconds) {
+    public static void assertCountEventually(final String message, final int expectedCount,
+                                             final CountDownLatch latch, long timeoutInSeconds) {
         assertTrueEventually(() -> {
-            for (int i = 0; i < 2; i++) { // recheck to see if hasn't changed
+            for (int i = 0; i < 2; i++) { // recheck to see if it hasn't changed
                 if (latch.getCount() != expectedCount) {
                     throw new AssertionError("Latch count has not been met. " + message);
                 }
@@ -1163,32 +1139,26 @@ public abstract class HazelcastTestSupport {
         }, timeoutInSeconds);
     }
 
-    public static void assertAtomicEventually(final String message, final int expectedValue, final AtomicInteger atomic,
-                                              int timeoutInSeconds) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (int i = 0; i < 2; i++) { // recheck to see if hasn't changed
-                    if (atomic.get() != expectedValue) {
-                        throw new AssertionError("Atomic value has not been met. " + message);
-                    }
-                    sleepMillis(50);
+    public static void assertAtomicEventually(final String message, final int expectedValue,
+                                              final AtomicInteger atomic, int timeoutInSeconds) {
+        assertTrueEventually(() -> {
+            for (int i = 0; i < 2; i++) { // recheck to see if it hasn't changed
+                if (atomic.get() != expectedValue) {
+                    throw new AssertionError("Atomic value has not been met. " + message);
                 }
+                sleepMillis(50);
             }
         }, timeoutInSeconds);
     }
 
-    public static void assertAtomicEventually(final String message, final boolean expectedValue, final AtomicBoolean atomic,
-                                              int timeoutInSeconds) {
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                for (int i = 0; i < 2; i++) { // recheck to see if hasn't changed
-                    if (atomic.get() != expectedValue) {
-                        throw new AssertionError("Atomic value has not been met. " + message);
-                    }
-                    sleepMillis(50);
+    public static void assertAtomicEventually(final String message, final boolean expectedValue,
+                                              final AtomicBoolean atomic, int timeoutInSeconds) {
+        assertTrueEventually(() -> {
+            for (int i = 0; i < 2; i++) { // recheck to see if it hasn't changed
+                if (atomic.get() != expectedValue) {
+                    throw new AssertionError("Atomic value has not been met. " + message);
                 }
+                sleepMillis(50);
             }
         }, timeoutInSeconds);
     }
@@ -1218,7 +1188,7 @@ public abstract class HazelcastTestSupport {
             } catch (Exception e) {
                 throw rethrow(e);
             }
-            // Don't wait if there is not next iteration
+            // Don't wait if there is no next iteration
             if ((i + 1) <= durationSeconds) {
                 sleepSeconds(1);
             }
@@ -1379,7 +1349,7 @@ public abstract class HazelcastTestSupport {
 
     /**
      * This method executes the normal assertEquals with expected and actual values.
-     * In addition it formats the given string with those values to provide a good assert message.
+     * In addition, it formats the given string with those values to provide a good assert message.
      *
      * @param message  assert message which is formatted with expected and actual values
      * @param expected expected value which is used for assert
@@ -1391,7 +1361,7 @@ public abstract class HazelcastTestSupport {
 
     /**
      * This method executes the normal assertNotEquals with expected and actual values.
-     * In addition it formats the given string with those values to provide a good assert message.
+     * In addition, it formats the given string with those values to provide a good assert message.
      *
      * @param message  assert message which is formatted with expected and actual values
      * @param expected expected value which is used for assert
@@ -1485,9 +1455,7 @@ public abstract class HazelcastTestSupport {
                 field.setAccessible(true);
             }
             return field.get(target);
-        } catch (NoSuchFieldException e) {
-            throw new AssertionError(e);
-        } catch (IllegalAccessException e) {
+        } catch (NoSuchFieldException | IllegalAccessException e) {
             throw new AssertionError(e);
         }
     }
@@ -1665,7 +1633,7 @@ public abstract class HazelcastTestSupport {
     }
 
     /**
-     * Throws {@link AssumptionViolatedException} if two new Objects have the same hashCode (e.g. when running tests
+     * Throws {@link AssumptionViolatedException} if two new Objects have the same hashCode, e.g. when running tests
      * with static hashCode ({@code -XX:hashCode=2}).
      */
     public static void assumeDifferentHashCodes() {
@@ -1689,7 +1657,7 @@ public abstract class HazelcastTestSupport {
     /**
      * Walk the stack trace and execute the provided {@code BiConsumer} on each {@code StackTraceElement}
      * encountered while walking the stack trace.
-     *
+     * <p>
      * The {@code BiConsumer} expects {@code StackTraceElement, List<V>} arguments; any
      * result from the {@code BiConsumer} should be added to the {@code results} list which is
      * returned as the result of this method.

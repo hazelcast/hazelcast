@@ -47,11 +47,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.test.TestEnvironment.isRunningCompatibilityTest;
 import static java.lang.Integer.getInteger;
+import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Base test runner which has base system properties and test repetition logic.
@@ -59,8 +59,8 @@ import static java.lang.Integer.getInteger;
  * The tests are executed in random order.
  */
 public abstract class AbstractHazelcastClassRunner extends AbstractParameterizedHazelcastClassRunner {
-
-    private static final int DEFAULT_TEST_TIMEOUT_IN_SECONDS = getInteger("hazelcast.test.defaultTestTimeoutInSeconds", 300);
+    private static final int DEFAULT_TEST_TIMEOUT_IN_SECONDS
+            = getInteger("hazelcast.test.defaultTestTimeoutInSeconds", 300);
     private static final boolean THREAD_DUMP_ON_FAILURE;
 
     private static final ThreadLocal<String> TEST_NAME_THREAD_LOCAL = new InheritableThreadLocal<String>();
@@ -137,7 +137,8 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         super(clazz);
     }
 
-    public AbstractHazelcastClassRunner(Class<?> clazz, Object[] parameters, String name) throws InitializationError {
+    public AbstractHazelcastClassRunner(Class<?> clazz, Object[] parameters, String name)
+            throws InitializationError {
         super(clazz, parameters, name);
     }
 
@@ -158,7 +159,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     @Override
     protected List<FrameworkMethod> getChildren() {
         List<FrameworkMethod> children = super.getChildren();
-        List<FrameworkMethod> modifiableList = new ArrayList<FrameworkMethod>(children);
+        List<FrameworkMethod> modifiableList = new ArrayList<>(children);
         Collections.shuffle(modifiableList);
         return modifiableList;
     }
@@ -172,7 +173,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
 
     private long getTimeout(Test annotation) {
         if (annotation == null || annotation.timeout() == 0) {
-            return TimeUnit.SECONDS.toMillis(DEFAULT_TEST_TIMEOUT_IN_SECONDS);
+            return SECONDS.toMillis(DEFAULT_TEST_TIMEOUT_IN_SECONDS);
         }
         return annotation.timeout();
     }
@@ -196,20 +197,14 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
         if (THREAD_DUMP_ON_FAILURE) {
             return new ThreadDumpAwareRunAfters(method, nextStatement, afters, target, expectedException);
         }
-        if (afters.isEmpty()) {
-            return nextStatement;
-        } else {
-            return new RunAfters(nextStatement, afters, target);
-        }
+        return afters.isEmpty() ? nextStatement : new RunAfters(nextStatement, afters, target);
     }
 
-    // Override withBefores to accommodate spawning the member bouncing thread after @Before's have been executed and before @Test
-    // when MemberBounceRule is in use
+    // Override withBefores to accommodate spawning the member bouncing thread after
+    // @Before's have been executed and before @Test when MemberBounceRule is in use
     @Override
-    protected Statement withBefores(FrameworkMethod method, Object target,
-                                    Statement statement) {
-        List<FrameworkMethod> befores = getTestClass().getAnnotatedMethods(
-                Before.class);
+    protected Statement withBefores(FrameworkMethod method, Object target, Statement statement) {
+        List<FrameworkMethod> befores = getTestClass().getAnnotatedMethods(Before.class);
         List<TestRule> testRules = getTestRules(target);
         Statement nextStatement = statement;
         if (!testRules.isEmpty()) {
@@ -219,8 +214,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
                 }
             }
         }
-        return befores.isEmpty() ? nextStatement : new RunBefores(nextStatement,
-                befores, target);
+        return befores.isEmpty() ? nextStatement : new RunBefores(nextStatement, befores, target);
     }
 
     @Override
@@ -249,9 +243,7 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     @Override
     protected List<TestRule> getTestRules(Object target) {
         List<TestRule> testRules = super.getTestRules(target);
-
-        Set<Class<? extends TestRule>> testRuleClasses = new HashSet<Class<? extends TestRule>>();
-
+        Set<Class<? extends TestRule>> testRuleClasses = new HashSet<>();
         TestClass testClass = getTestClass();
 
         // find the required test rule classes from test class itself
@@ -342,15 +334,14 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     }
 
     protected class ThreadDumpAwareRunAfters extends Statement {
-
         private final FrameworkMethod method;
         private final Statement next;
         private final Object target;
         private final List<FrameworkMethod> afters;
         private final ExpectedException expectedException;
 
-        ThreadDumpAwareRunAfters(FrameworkMethod method, Statement next, List<FrameworkMethod> afters, Object target,
-                                 ExpectedException expectedException) {
+        ThreadDumpAwareRunAfters(FrameworkMethod method, Statement next, List<FrameworkMethod> afters,
+                                 Object target, ExpectedException expectedException) {
             this.method = method;
             this.next = next;
             this.afters = afters;
@@ -395,13 +386,13 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
             if (expectedException == null) {
                 return false;
             }
-            Object exceptionMatcher = ReflectionUtils.getFieldValueReflectively(expectedException, "matcherBuilder");
+            Object exceptionMatcher = ReflectionUtils.getFieldValueReflectively(expectedException,
+                    "matcherBuilder");
             return ExpectedExceptionMatcherBuilderAccessor.expectsThrowable(exceptionMatcher);
         }
     }
 
-    private class TestRepeater extends Statement {
-
+    private static class TestRepeater extends Statement {
         private final Statement statement;
         private final Method testMethod;
         private final int repeat;
@@ -417,11 +408,10 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
          */
         @Override
         public void evaluate() throws Throwable {
-            for (int i = 0; i < repeat; i++) {
-                if (repeat > 1) {
-                    System.out.println(String.format("---> Repeating test [%s:%s], run count [%d]",
-                            testMethod.getDeclaringClass().getCanonicalName(),
-                            testMethod.getName(), i + 1));
+            for (int i = 1; i <= repeat; i++) {
+                if (i > 1) {
+                    System.out.format("---> Repeating test [%s:%s], run count [%d]\n",
+                            testMethod.getDeclaringClass().getCanonicalName(), testMethod.getName(), i);
                 }
                 statement.evaluate();
             }
