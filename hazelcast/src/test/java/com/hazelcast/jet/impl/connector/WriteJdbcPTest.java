@@ -115,9 +115,6 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
         }
 
         listRemainingConnections();
-        // kill any hanging connection
-        /* language=SQL */
-        executeSql("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = current_database() and pid <> pg_backend_pid()");
     }
 
     private static void executeSql(String sql) throws SQLException {
