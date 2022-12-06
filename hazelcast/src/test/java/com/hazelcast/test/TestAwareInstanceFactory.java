@@ -30,7 +30,6 @@ import com.hazelcast.instance.impl.NodeContext;
 import com.hazelcast.internal.jmx.ManagementService;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
