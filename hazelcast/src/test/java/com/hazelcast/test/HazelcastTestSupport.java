@@ -313,7 +313,7 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    protected void checkNoRunningInstances(String methodName) {
+    protected void assertNoRunningInstancesEventually(String methodName) {
         // check for running Hazelcast instances
         assertTrueEventually(() -> {
             Set<HazelcastInstance> instances = Hazelcast.getAllHazelcastInstances();
