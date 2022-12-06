@@ -49,7 +49,7 @@ public class CompactSchemaReplicationSlowTest extends CompactSchemaReplicationTe
         // First member will always throw retryable exception
         // in the preparation phase, others will work fine.
         int stubbedMemberIndex = 0;
-        setupInstances(index -> index == 0 ? stubbedSchemaService : spy(new MemberSchemaService()));
+        setupInstances(index -> index == stubbedMemberIndex ? stubbedSchemaService : spy(new MemberSchemaService()));
         HazelcastInstance stubbed = instances[stubbedMemberIndex];
 
         assertThrows(HazelcastSerializationException.class, () -> fillMapUsing(instances[1]));
