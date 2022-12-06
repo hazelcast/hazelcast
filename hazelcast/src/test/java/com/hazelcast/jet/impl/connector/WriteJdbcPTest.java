@@ -132,17 +132,24 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
                         "SELECT * FROM pg_stat_activity WHERE pid <> pg_backend_pid()")
         ) {
             ResultSetMetaData metaData = resultSet.getMetaData();
-            List<String> connections = new ArrayList<>();
+            List<String> rows = new ArrayList<>();
+            StringBuilder row = new StringBuilder();
             for (int i = 1; i <= metaData.getColumnCount(); i++) {
-                connections.add(metaData.getColumnName(i) + "|");
+                row.append(metaData.getColumnName(i)).append("\t|");
             }
+            rows.add(row.toString());
+
             while (resultSet.next()) {
+                row = new StringBuilder();
                 for (int i = 1; i <= metaData.getColumnCount(); i++) {
-                    connections.add(resultSet.getObject(i) + "|");
+                    row.append(resultSet.getObject(i) + "\t|\t");
                 }
+                rows.add(row.toString());
+
             }
-            if (!connections.isEmpty()) {
-                logger.warning("Remaining connections: \n" + String.join("\n", connections));
+
+            if (!rows.isEmpty()) {
+                logger.warning("Remaining connections: \n" + String.join("\n", rows));
             }
         }
     }
