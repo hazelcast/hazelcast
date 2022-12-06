@@ -33,6 +33,7 @@ import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.NightlyTest;
+import com.hazelcast.test.annotation.RepeatOnNodeFailure;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -80,6 +81,7 @@ public class TcpIpSplitBrainDiscoveryTest extends HazelcastTestSupport {
     }
 
     @Test
+    @RepeatOnNodeFailure
     public void testSplitBrainRecoveryFromInitialSplit() throws IOException {
         instances.add(Hazelcast.newHazelcastInstance(createConfigWithRestEnabled(5801, 5901)));
         instances.add(Hazelcast.newHazelcastInstance(createConfigWithRestEnabled(5901, 5801)));

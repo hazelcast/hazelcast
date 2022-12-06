@@ -17,7 +17,9 @@
 package com.hazelcast.test;
 
 import com.hazelcast.cache.jsr.JsrTestUtil;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.internal.util.ConcurrencyUtil;
+import com.hazelcast.test.annotation.RepeatOnNodeFailure;
 import com.hazelcast.test.annotation.Repeat;
 import com.hazelcast.test.bounce.BounceMemberRule;
 import com.hazelcast.test.starter.ReflectionUtils;
@@ -220,6 +222,9 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
     @Override
     protected Statement methodBlock(FrameworkMethod method) {
         Statement statement = super.methodBlock(method);
+        if (method.getAnnotation(RepeatOnNodeFailure.class) != null) {
+            statement = new NodeFailureChecker(statement, method.getMethod());
+        }
         Repeat repeatable = getRepeatable(method);
         if (repeatable == null || repeatable.value() < 2) {
             return statement;
@@ -414,6 +419,37 @@ public abstract class AbstractHazelcastClassRunner extends AbstractParameterized
                             testMethod.getDeclaringClass().getCanonicalName(), testMethod.getName(), i);
                 }
                 statement.evaluate();
+            }
+        }
+    }
+
+    private static class NodeFailureChecker extends Statement {
+        private static final int REPEAT_COUNT = 5;
+        private static final int SLEEP_SECONDS = 10;
+        private final Statement statement;
+        private final Method testMethod;
+
+        NodeFailureChecker(Statement statement, Method testMethod) {
+            this.statement = statement;
+            this.testMethod = testMethod;
+        }
+
+        @Override
+        public void evaluate() throws Throwable {
+            for (int i = 1; i <= REPEAT_COUNT; i++) {
+                if (i > 1) {
+                    SECONDS.sleep(SLEEP_SECONDS);
+                    System.out.format("---> Repeating test [%s:%s] due to node failure, run count [%d]\n",
+                            testMethod.getDeclaringClass().getCanonicalName(), testMethod.getName(), i);
+                }
+                try {
+                    statement.evaluate();
+                    return;
+                } catch (Throwable e) {
+                    if (!(e instanceof HazelcastInstanceNotActiveException) || i == REPEAT_COUNT) {
+                        throw e;
+                    }
+                }
             }
         }
     }

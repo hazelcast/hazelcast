@@ -26,6 +26,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
 import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.instance.BuildInfoProvider;
 import com.hazelcast.instance.impl.HazelcastInstanceFactory;
@@ -74,6 +75,7 @@ import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -793,6 +795,19 @@ public abstract class HazelcastTestSupport {
         assertTrue("Instances not in safe state! " + nonSafeStates, nonSafeStates.isEmpty());
     }
 
+    /**
+     * {@link Hazelcast#getAllHazelcastInstances()} does not include failed instances since
+     * {@link Node.NodeShutdownHookThread} eventually calls {@link HazelcastInstanceFactory#remove}.
+     */
+    public static void assertNoFailedInstances(Collection<HazelcastInstance> instances) {
+        Iterator<HazelcastInstance> it = instances.iterator();
+        for (int i = 0; it.hasNext(); i++) {
+            if (!it.next().getLifecycleService().isRunning()) {
+                throw new HazelcastInstanceNotActiveException("Instance at index " + i + " is not active");
+            }
+        }
+    }
+
     public static void assertNoRunningInstances() {
         assertThat(Hazelcast.getAllHazelcastInstances()).as("There should be no running instances").isEmpty();
     }
@@ -1022,9 +1037,10 @@ public abstract class HazelcastTestSupport {
         assertTrueEventually(() -> assertEquals(expected, value.get()));
     }
 
-    public static void assertClusterSize(int expectedSize, HazelcastInstance... instances) {
-        for (int i = 0; i < instances.length; i++) {
-            int clusterSize = getClusterSize(instances[i]);
+    public static void assertClusterSize(int expectedSize, Collection<HazelcastInstance> instances) {
+        Iterator<HazelcastInstance> it = instances.iterator();
+        for (int i = 0; it.hasNext(); i++) {
+            int clusterSize = it.next().getCluster().getMembers().size();
             if (expectedSize != clusterSize) {
                 fail(format("Cluster size is not correct. Expected: %d, actual: %d, instance index: %d",
                         expectedSize, clusterSize, i));
@@ -1032,14 +1048,8 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    private static int getClusterSize(HazelcastInstance instance) {
-        return instance.getCluster().getMembers().size();
-    }
-
-    public static void assertClusterSizeEventually(int expectedSize, HazelcastInstance... instances) {
-        for (HazelcastInstance instance : instances) {
-            assertClusterSizeEventually(expectedSize, instance, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
-        }
+    public static void assertClusterSize(int expectedSize, HazelcastInstance... instances) {
+        assertClusterSize(expectedSize, asList(instances));
     }
 
     public static void assertClusterSizeEventually(
@@ -1047,20 +1057,18 @@ public abstract class HazelcastTestSupport {
             Collection<HazelcastInstance> instances,
             long timeout
     ) {
-        for (HazelcastInstance instance : instances) {
-            assertClusterSizeEventually(expectedSize, instance, timeout);
-        }
+        assertTrueEventually(() -> {
+            assertNoFailedInstances(instances);
+            assertClusterSize(expectedSize, instances);
+        }, timeout);
     }
 
     public static void assertClusterSizeEventually(int expectedSize, Collection<HazelcastInstance> instances) {
-        for (HazelcastInstance instance : instances) {
-            assertClusterSizeEventually(expectedSize, instance, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
-        }
+        assertClusterSizeEventually(expectedSize, instances, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
-    public static void assertClusterSizeEventually(final int expectedSize, final HazelcastInstance instance,
-                                                   long timeoutSeconds) {
-        assertTrueEventually(() -> assertClusterSize(expectedSize, instance), timeoutSeconds);
+    public static void assertClusterSizeEventually(int expectedSize, HazelcastInstance... instances) {
+        assertClusterSizeEventually(expectedSize, asList(instances));
     }
 
     public static void assertMasterAddress(Address masterAddress, HazelcastInstance... instances) {
