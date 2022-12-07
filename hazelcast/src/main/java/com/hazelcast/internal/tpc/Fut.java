@@ -36,17 +36,17 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
  *
  * @param <E>
  */
+@SuppressWarnings("checkstyle:VisibilityModifier")
 public class Fut<E> {
-
-    private final static Object EMPTY = new Object();
-
-    private Object value = EMPTY;
-    private boolean exceptional;
-    private final Eventloop eventloop;
-    private List<BiConsumer<E, Throwable>> consumers = new ArrayList<>();
-    private boolean releaseOnComplete = false;
+    private static final Object EMPTY = new Object();
     public int refCount = 1;
     public FutAllocator allocator;
+
+    private Object value = EMPTY;
+    private final Eventloop eventloop;
+    private final List<BiConsumer<E, Throwable>> consumers = new ArrayList<>();
+    private boolean exceptional;
+    private boolean releaseOnComplete;
 
     public Fut(Eventloop eventloop) {
         this.eventloop = checkNotNull(eventloop);
@@ -95,8 +95,7 @@ public class Fut<E> {
         this.exceptional = true;
 
         int count = consumers.size();
-        for (int k = 0; k < count; k++) {
-            BiConsumer<E, Throwable> consumer = consumers.get(k);
+        for (BiConsumer<E, Throwable> consumer : consumers) {
             try {
                 consumer.accept(null, value);
             } catch (Exception e) {
@@ -123,8 +122,7 @@ public class Fut<E> {
         this.exceptional = false;
 
         int count = consumers.size();
-        for (int k = 0; k < count; k++) {
-            BiConsumer<E, Throwable> consumer = consumers.get(k);
+        for (BiConsumer<E, Throwable> consumer : consumers) {
             try {
                 consumer.accept(value, null);
             } catch (Exception e) {
@@ -137,6 +135,7 @@ public class Fut<E> {
         }
     }
 
+    @SuppressWarnings("rawtypes")
     public <T extends Throwable> Fut then(BiConsumer<E, T> consumer) {
         checkNotNull(consumer, "consumer can't be null");
 

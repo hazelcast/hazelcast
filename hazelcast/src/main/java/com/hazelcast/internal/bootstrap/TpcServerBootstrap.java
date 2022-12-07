@@ -18,15 +18,15 @@ package com.hazelcast.internal.bootstrap;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.InternalSerializationService;
-import com.hazelcast.internal.tpc.TpcEngine;
-import com.hazelcast.logging.ILogger;
-import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.internal.tpc.AsyncServerSocket;
 import com.hazelcast.internal.tpc.Eventloop;
 import com.hazelcast.internal.tpc.ReadHandler;
+import com.hazelcast.internal.tpc.TpcEngine;
 import com.hazelcast.internal.tpc.nio.NioAsyncReadHandler;
 import com.hazelcast.internal.tpc.nio.NioAsyncServerSocket;
 import com.hazelcast.internal.tpc.nio.NioEventloop;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -37,25 +37,29 @@ import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import static java.lang.System.*;
+import static java.lang.System.getProperty;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
+@SuppressWarnings("checkstyle:MagicNumber, checkstyle:")
 public class TpcServerBootstrap {
+    private static final int DEFAULT_HZ_PORT = 5701;
+    private static final int TERMINATE_TIMEOUT_SECONDS = 5;
 
-    public final NodeEngineImpl nodeEngine;
-    public final InternalSerializationService ss;
-    public final ILogger logger;
+    public volatile boolean shutdown;
+
+    private final NodeEngineImpl nodeEngine;
+    private final InternalSerializationService ss;
+    private final ILogger logger;
     private final Address thisAddress;
+    private final TpcEngine tpcEngine;
     private final boolean writeThrough;
     private final boolean regularSchedule;
-    public volatile boolean shutdown = false;
-    private TpcEngine tpcEngine;
-    private final Map<Eventloop, Supplier<? extends ReadHandler>> readHandlerSuppliers = new HashMap<>();
-    private List<AsyncServerSocket> serverSockets = new ArrayList<>();
+    private final boolean tcpNoDelay = true;
     private final boolean enabled;
-    private boolean tcpNoDelay = true;
-    private int receiveBufferSize = 128 * 1024;
-    private int sendBufferSize = 128 * 1024;
+    private final int receiveBufferSize = 128 * 1024;
+    private final int sendBufferSize = 128 * 1024;
+    private final Map<Eventloop, Supplier<? extends ReadHandler>> readHandlerSuppliers = new HashMap<>();
+    private final List<AsyncServerSocket> serverSockets = new ArrayList<>();
     private String tpcPorts;
 
     public TpcServerBootstrap(NodeEngineImpl nodeEngine) {
@@ -154,8 +158,9 @@ public class TpcServerBootstrap {
         }
     }
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     private int toPort(Address address, int socketId) {
-        return (address.getPort() - 5701) * 100 + 11000 + socketId % tpcEngine.eventloopCount();
+        return (address.getPort() - DEFAULT_HZ_PORT) * 100 + 11000 + socketId % tpcEngine.eventloopCount();
     }
 
     public void shutdown() {
@@ -169,7 +174,7 @@ public class TpcServerBootstrap {
         tpcEngine.shutdown();
 
         try {
-            tpcEngine.awaitTermination(5, SECONDS);
+            tpcEngine.awaitTermination(TERMINATE_TIMEOUT_SECONDS, SECONDS);
         } catch (InterruptedException e) {
             logger.warning("TpcEngine failed to terminate.");
             Thread.currentThread().interrupt();

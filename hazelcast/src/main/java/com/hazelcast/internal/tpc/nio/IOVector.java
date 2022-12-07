@@ -28,11 +28,11 @@ import java.util.Queue;
  */
 public final class IOVector {
 
-    private final static int IOV_MAX = 1024;
+    private static final int IOV_MAX = 1024;
 
     private final ByteBuffer[] array = new ByteBuffer[IOV_MAX];
     private final IOBuffer[] bufs = new IOBuffer[IOV_MAX];
-    private int size = 0;
+    private int size;
     private long pending;
 
     public boolean isEmpty() {

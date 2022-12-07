@@ -19,19 +19,19 @@ public abstract class AsyncSocketTest {
     public abstract AsyncSocket createAsyncSocket();
 
     @After
-    public void after(){
+    public void after() {
         closeResources(closeables);
     }
 
     @Test
-    public void close_whenNotActivated(){
+    public void close_whenNotActivated() {
         AsyncSocket socket = createAsyncSocket();
         socket.close();
         assertTrue(socket.isClosed());
     }
 
     @Test
-    public void close_whenNotActivated_andAlreadyClosed(){
+    public void close_whenNotActivated_andAlreadyClosed() {
         AsyncSocket socket = createAsyncSocket();
         socket.close();
         socket.close();
@@ -39,13 +39,13 @@ public abstract class AsyncSocketTest {
     }
 
     @Test(expected = NullPointerException.class)
-    public void activate_whenNull(){
+    public void activate_whenNull() {
         AsyncSocket socket = createAsyncSocket();
         socket.activate(null);
     }
 
     @Test(expected = IllegalStateException.class)
-    public void activate_whenAlreadyActivated(){
+    public void activate_whenAlreadyActivated() {
         Eventloop eventloop1 = createEventloop();
         Eventloop eventloop2 = createEventloop();
 

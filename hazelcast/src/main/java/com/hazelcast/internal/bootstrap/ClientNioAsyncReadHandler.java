@@ -23,8 +23,8 @@ import com.hazelcast.client.impl.protocol.ClientMessageReader;
 import com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.internal.tpc.nio.NioAsyncReadHandler;
-import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 import java.util.UUID;
@@ -34,7 +34,7 @@ public class ClientNioAsyncReadHandler extends NioAsyncReadHandler {
 
     private final ClientEngine clientEngine;
     private final ClientMessageReader clientMessageReader = new ClientMessageReader(0);
-    private boolean protocolBytesReceived = false;
+    private boolean protocolBytesReceived;
     private Connection connection;
 
     public ClientNioAsyncReadHandler(ClientEngine clientEngine) {
@@ -79,10 +79,9 @@ public class ClientNioAsyncReadHandler extends NioAsyncReadHandler {
     }
 
     private void consumeProtocolBytes(ByteBuffer buffer) {
-        StringBuffer sb = new StringBuffer();
-        for (int k = 0; k < 3; k++) {
-            sb.append((char) buffer.get());
-        }
+        // Note(sasha) : AFAIU, it's a trick to reduce garbage production. One object is better than 3.
+        StringBuilder sb = new StringBuilder();
+        sb.append((buffer.get() + buffer.get() + buffer.get()));
         protocolBytesReceived = true;
     }
 

@@ -18,12 +18,12 @@ package com.hazelcast.internal.tpc;
 
 
 import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpc.util.CircularQueue;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.ThreadAffinityHelper;
 import com.hazelcast.internal.util.executor.HazelcastManagedThread;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.internal.tpc.util.CircularQueue;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.Closeable;
@@ -44,10 +44,13 @@ import java.util.concurrent.atomic.AtomicReferenceFieldUpdater;
 import java.util.function.Supplier;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResources;
+import static com.hazelcast.internal.tpc.Eventloop.State.NEW;
+import static com.hazelcast.internal.tpc.Eventloop.State.RUNNING;
+import static com.hazelcast.internal.tpc.Eventloop.State.SHUTDOWN;
+import static com.hazelcast.internal.tpc.Eventloop.State.TERMINATED;
+import static com.hazelcast.internal.tpc.util.Util.epochNanos;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
-import static com.hazelcast.internal.tpc.Eventloop.State.*;
-import static com.hazelcast.internal.tpc.util.Util.epochNanos;
 import static java.lang.System.getProperty;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
 
@@ -58,13 +61,24 @@ import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater
  * <p>
  * A single eventloop can deal with many server ports.
  */
+@SuppressWarnings({"checkstyle:VisibilityModifier", "rawtypes"})
 public abstract class Eventloop implements Executor {
 
+    protected static final AtomicReferenceFieldUpdater<Eventloop, State> STATE
+            = newUpdater(Eventloop.class, State.class, "state");
+
+    private static final int INITIAL_ALLOCATOR_CAPACITY = 1 << 10;
     private static final Runnable SHUTDOWN_TASK = () -> {
     };
 
-    protected final static AtomicReferenceFieldUpdater<Eventloop, State> STATE
-            = newUpdater(Eventloop.class, State.class, "state");
+    /**
+     * Allows for objects to be bound to this Eventloop. Useful for the lookup of services and other dependencies.
+     */
+    public final ConcurrentMap<?, ?> context = new ConcurrentHashMap<>();
+
+    public final CircularQueue<Runnable> localRunQueue;
+
+    protected final PriorityQueue<ScheduledTask> scheduledTaskQueue = new PriorityQueue<>();
 
     protected final ILogger logger = Logger.getLogger(getClass());
     protected final Set<Closeable> resources = new CopyOnWriteArraySet<>();
@@ -72,32 +86,20 @@ public abstract class Eventloop implements Executor {
     protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     protected final MpmcArrayQueue concurrentRunQueue;
 
-    /**
-     * Allows for objects to be bound to this Eventloop. Useful for the lookup of services and other dependencies.
-     */
-    public final ConcurrentMap context = new ConcurrentHashMap();
-
     protected final Scheduler scheduler;
-    public final CircularQueue<Runnable> localRunQueue;
     protected final boolean spin;
-    private final Type type;
-    private final BitSet allowedCpus;
-
-    PriorityQueue<ScheduledTask> scheduledTaskQueue = new PriorityQueue();
-
-    protected volatile State state = NEW;
-
-    private final CountDownLatch terminationLatch = new CountDownLatch(1);
-
-    private final FutAllocator futAllocator;
 
     protected Unsafe unsafe;
-
+    protected final Thread eventloopThread;
+    protected volatile State state = NEW;
     protected long earliestDeadlineEpochNanos = -1;
 
-    protected final Thread eventloopThread;
-
     TpcEngine engine;
+
+    private final FutAllocator futAllocator;
+    private final Type type;
+    private final BitSet allowedCpus;
+    private final CountDownLatch terminationLatch = new CountDownLatch(1);
 
     /**
      * Creates a new {@link Eventloop}.
@@ -118,7 +120,7 @@ public abstract class Eventloop implements Executor {
         }
 
         this.allowedCpus = config.threadAffinity == null ? null : config.threadAffinity.nextAllowedCpus();
-        this.futAllocator = new FutAllocator(this, 1024);
+        this.futAllocator = new FutAllocator(this, INITIAL_ALLOCATOR_CAPACITY);
     }
 
     /**
@@ -322,8 +324,8 @@ public abstract class Eventloop implements Executor {
     @Override
     public void execute(Runnable command) {
         if (!offer(command)) {
-            throw new RejectedExecutionException("Task " + command.toString() +
-                    " rejected from " + this);
+            throw new RejectedExecutionException("Task " + command.toString()
+                    + " rejected from " + this);
         }
     }
 
@@ -421,15 +423,18 @@ public abstract class Eventloop implements Executor {
     /**
      * Contains the Configuration for {@link Eventloop} instances.
      */
-    public static abstract class Configuration {
+    public abstract static class Configuration {
+        private static final int INITIAL_LOCAL_QUEUE_CAPACITY = 1 << 10;
+        private static final int INITIAL_CONCURRENT_QUEUE_CAPACITY = 1 << 12;
+
         protected final Type type;
-        private boolean spin = Boolean.parseBoolean(getProperty("hazelcast.tpc.eventloop.spin", "false"));
         private Supplier<Scheduler> schedulerSupplier = NopScheduler::new;
-        private int localRunQueueCapacity = 1024;
-        private int concurrentRunQueueCapacity = 4096;
         private Supplier<String> threadNameSupplier;
         private ThreadAffinity threadAffinity;
         private ThreadFactory threadFactory = HazelcastManagedThread::new;
+        private boolean spin = Boolean.parseBoolean(getProperty("hazelcast.tpc.eventloop.spin", "false"));
+        private int localRunQueueCapacity = INITIAL_LOCAL_QUEUE_CAPACITY;
+        private int concurrentRunQueueCapacity = INITIAL_CONCURRENT_QUEUE_CAPACITY;
 
         protected Configuration(Type type) {
             this.type = type;
