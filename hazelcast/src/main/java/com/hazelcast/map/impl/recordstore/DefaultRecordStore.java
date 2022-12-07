@@ -206,7 +206,6 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
         Records.copyMetadataFrom(replicatedRecord, newRecord);
         expirySystem.add(dataKey, expiryMetadata, now);
         mutationObserver.onReplicationPutRecord(dataKey, newRecord, indexesMustBePopulated);
-        updateStatsOnPut(replicatedRecord.getHits(), now);
 
         return newRecord;
     }
