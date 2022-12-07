@@ -92,12 +92,14 @@ public class MapIndexJsonTest extends HazelcastTestSupport {
     public void setup() {
         factory = createHazelcastInstanceFactory(3);
         factory.newInstances(getConfig(), 3);
+        assertClusterSizeEventually(3, factory.getAllHazelcastInstances());
+        warmUpPartitions(factory.getAllHazelcastInstances());
         instance = factory.getAllHazelcastInstances().iterator().next();
     }
 
     @Override
     protected Config getConfig() {
-        Config config = super.getConfig();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
         MapConfig mapConfig = new MapConfig("default")
                 .setInMemoryFormat(inMemoryFormat)
                 .setMetadataPolicy(metadataPolicy)
