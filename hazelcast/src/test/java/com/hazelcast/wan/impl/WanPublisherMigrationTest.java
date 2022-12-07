@@ -50,6 +50,7 @@ import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -106,12 +107,10 @@ public class WanPublisherMigrationTest extends HazelcastTestSupport {
             map.put(i, i);
         }
 
-        int partitionsToMigrate = 0;
-        for (IPartition partition : getPartitionService(member1).getPartitions()) {
-            if (partition.isLocal()) {
-                partitionsToMigrate++;
-            }
-        }
+        //Find local partitions of this member
+        final long partitionsToMigrate = Arrays.stream(getPartitionService(member1).getPartitions())
+                .filter(IPartition::isLocal)
+                .count();
 
         member1.shutdown();
         assertClusterSizeEventually(1, member2);
@@ -125,8 +124,12 @@ public class WanPublisherMigrationTest extends HazelcastTestSupport {
             assertTrue("Expected at least " + partitionsToMigrate
                             + " migration operations to be processed but was " + publisher,
                     publisher.migrationProcess.intValue() >= partitionsToMigrate);
-            assertEquals(exceptionMsg("migrationCommit", publisher),
-                    partitionsToMigrate, publisher.migrationCommit.intValue());
+
+            //onMigrationCommit() method of the listener is called asynchronously. So assert eventually
+            assertTrueEventually(() -> assertEquals(exceptionMsg("migrationCommit", publisher),
+                    partitionsToMigrate,
+                    publisher.migrationCommit.intValue())
+            );
         } else {
             assertEquals(exceptionMsg("migrationStart", publisher),
                     partitionsToMigrate + 1, publisher.migrationStart.intValue());
@@ -135,10 +138,17 @@ public class WanPublisherMigrationTest extends HazelcastTestSupport {
             assertTrue("Expected at least " + partitionsToMigrate
                             + " migration operations to be processed but was " + publisher,
                     publisher.migrationProcess.intValue() >= partitionsToMigrate);
-            assertEquals(exceptionMsg("migrationCommit", publisher),
-                    partitionsToMigrate, publisher.migrationCommit.intValue());
-            assertEquals(exceptionMsg("migrationRollback", publisher),
-                    1, publisher.migrationRollback.intValue());
+
+            //onMigrationCommit() method of the listener is called asynchronously. So assert eventually
+            assertTrueEventually(() -> assertEquals(exceptionMsg("migrationCommit", publisher),
+                    partitionsToMigrate, publisher.migrationCommit.intValue())
+            );
+
+            //onMigrationRollback() method of the listener is called asynchronously. So assert eventually
+            assertTrueEventually(() -> assertEquals(exceptionMsg("migrationRollback", publisher),
+                    1,
+                    publisher.migrationRollback.intValue())
+            );
         }
     }
 
