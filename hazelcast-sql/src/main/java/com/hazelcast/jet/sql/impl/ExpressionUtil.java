@@ -153,14 +153,7 @@ public final class ExpressionUtil {
             @Nonnull List<Expression<?>> projections,
             @Nonnull ExpressionEvalContext context
     ) {
-        return row0 -> {
-            Row row = row0.getRow();
-            Object[] result = new Object[projections.size()];
-            for (int i = 0; i < projections.size(); i++) {
-                result[i] = evaluate(projections.get(i), row, context);
-            }
-            return new JetSqlRow(context.getSerializationService(), result);
-        };
+        return row0 -> projection(projections, context, row0.getRow());
     }
 
     public static FunctionEx<JetSqlRow, JetSqlRow> calcFn(
@@ -168,18 +161,7 @@ public final class ExpressionUtil {
             @Nonnull Expression<Boolean> predicate,
             @Nonnull ExpressionEvalContext context
     ) {
-        return row0 -> {
-            Row row = row0.getRow();
-            if (Boolean.TRUE.equals(evaluate(predicate, row, context))) {
-                Object[] result = new Object[projections.size()];
-                for (int i = 0; i < projections.size(); i++) {
-                    result[i] = evaluate(projections.get(i), row, context);
-                }
-                return new JetSqlRow(context.getSerializationService(), result);
-            } else {
-                return null;
-            }
-        };
+        return row0 -> evaluate(predicate, projections, row0.getRow(), context);
     }
 
     /**
@@ -239,11 +221,7 @@ public final class ExpressionUtil {
             return values;
         }
 
-        Object[] result = new Object[projection.size()];
-        for (int i = 0; i < projection.size(); i++) {
-            result[i] = evaluate(projection.get(i), row, context);
-        }
-        return new JetSqlRow(context.getSerializationService(), result);
+        return projection(projection, context, row);
     }
 
     /**
@@ -253,19 +231,14 @@ public final class ExpressionUtil {
     @Nullable
     public static JetSqlRow evaluate(
             @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projection,
+            @Nonnull List<Expression<?>> projection,  //TODO: nullable?
             @Nonnull Row row,
             @Nonnull ExpressionEvalContext context
     ) {
         if (predicate != null && !Boolean.TRUE.equals(evaluate(predicate, row, context))) {
             return null;
         }
-
-        Object[] result = new Object[projection.size()];
-        for (int i = 0; i < projection.size(); i++) {
-            result[i] = evaluate(projection.get(i), row, context);
-        }
-        return new JetSqlRow(context.getSerializationService(), result);
+        return projection(projection, context, row);
     }
 
     public static Object evaluate(
@@ -274,5 +247,16 @@ public final class ExpressionUtil {
             @Nonnull ExpressionEvalContext context
     ) {
         return expression.evalTop(row, context);
+    }
+
+    private static JetSqlRow projection(
+            @Nonnull List<Expression<?>> projections,
+            @Nonnull ExpressionEvalContext context,
+            @Nonnull Row row) {
+        Object[] result = new Object[projections.size()];
+        for (int i = 0; i < projections.size(); i++) {
+            result[i] = evaluate(projections.get(i), row, context);
+        }
+        return new JetSqlRow(context.getSerializationService(), result);
     }
 }

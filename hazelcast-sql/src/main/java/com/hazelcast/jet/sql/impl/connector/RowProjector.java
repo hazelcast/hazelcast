@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.sql.impl.connector;
 
+import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
@@ -28,7 +29,6 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import java.util.List;
 
 import static com.hazelcast.internal.util.Preconditions.checkTrue;
-import static com.hazelcast.jet.sql.impl.ExpressionUtil.evaluate;
 
 public class RowProjector implements Row {
 
@@ -76,15 +76,7 @@ public class RowProjector implements Row {
     public JetSqlRow project(Object object) {
         target.setTarget(object, null);
 
-        if (!Boolean.TRUE.equals(evaluate(predicate, this, evalContext))) {
-            return null;
-        }
-
-        Object[] row = new Object[projection.size()];
-        for (int i = 0; i < projection.size(); i++) {
-            row[i] = evaluate(projection.get(i), this, evalContext);
-        }
-        return new JetSqlRow(evalContext.getSerializationService(), row);
+        return ExpressionUtil.evaluate(predicate, projection, this, evalContext);
     }
 
     @SuppressWarnings("unchecked")
