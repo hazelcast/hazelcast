@@ -62,6 +62,9 @@
     <!-- Suppress maximum line count of a large factory file with lot of javadoc -->
     <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]jet[\\/]aggregate[\\/]AggregateOperations.java"/>
 
+    <!-- Suppress maximum line count of a large JobConfig file with a lot of javadoc -->
+    <suppress checks="FileLength" files="com[\\/]hazelcast[\\/]jet[\\/]config[\\/]JobConfig.java"/>
+
     <!-- Suppress checks for auto-generated client protocol codecs -->
     <suppress checks="UnusedImports|LineLength|VisibilityModifier|AvoidStarImport|RegexpSingleline|ParameterNumber"
     files="src[\\/]main[\\/]java[\\/]com[\\/]hazelcast[\\/]jet[\\/]impl[\\/]client[\\/]protocol[\\/]codec[\\/]"/>

@@ -68,6 +68,17 @@ public class JobConfigTest extends JetTestSupport {
     }
 
     @Test
+    public void when_setDescription_thenReturnsDescription() {
+        // When
+        JobConfig config = new JobConfig();
+        String description = "some description";
+        config.setDescription(description);
+
+        // Then
+        assertEquals(description, config.getDescription());
+    }
+
+    @Test
     public void when_enableSplitBrainProtection_thenReturnsEnabled() {
         // When
         JobConfig config = new JobConfig();
@@ -190,6 +201,12 @@ public class JobConfigTest extends JetTestSupport {
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessageContaining("not supported for light jobs");
 
+        JobConfig configWithDescription = new JobConfig();
+        configWithDescription.setDescription("some description");
+        assertThatThrownBy(() -> inst.getJet().newLightJob(dag, configWithDescription))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("JobConfig.description not supported for light jobs");
+
         JobConfig configWithResource = new JobConfig();
         configWithResource.addClass(JobConfigTest.class);
         assertThatThrownBy(() -> inst.getJet().newLightJob(dag, configWithResource))
@@ -246,6 +263,7 @@ public class JobConfigTest extends JetTestSupport {
 
         List<Supplier> mutatingMethods = Arrays.asList(
                 () -> jobConfig.setName(""),
+                () -> jobConfig.setDescription(""),
                 () -> jobConfig.setSplitBrainProtection(false),
                 () -> jobConfig.setAutoScaling(false),
                 () -> jobConfig.setSuspendOnFailure(false),

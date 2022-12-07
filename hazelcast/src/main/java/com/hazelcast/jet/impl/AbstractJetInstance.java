@@ -147,6 +147,8 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
     protected static void validateConfigForLightJobs(JobConfig config) {
         Preconditions.checkTrue(config.getName() == null,
                 "JobConfig.name not supported for light jobs");
+        Preconditions.checkTrue(config.getDescription() == null,
+                "JobConfig.description not supported for light jobs");
         Preconditions.checkTrue(config.getResourceConfigs().isEmpty(),
                 "Resources (jars, classes, attached files) not supported for light jobs");
         Preconditions.checkTrue(config.getProcessingGuarantee() == ProcessingGuarantee.NONE,
