@@ -62,7 +62,7 @@ public class Indexes {
     public static final int SKIP_PARTITIONS_COUNT_CHECK = -1;
 
     // internal property, only for tests
-    public static final String CUSTOM_INDEXES_CLASS_NAME = System.getProperty("hazelcast.internal.indexes.className");
+    public static final String CUSTOM_INDEXES_CLASS_NAME = "hazelcast.internal.indexes.className";
 
     private static final InternalIndex[] EMPTY_INDEXES = {};
 
@@ -685,14 +685,15 @@ public class Indexes {
          * @return a new instance of Indexes
          */
         public Indexes build() {
-            if (CUSTOM_INDEXES_CLASS_NAME == null) {
+            String customClassName = System.getProperty(CUSTOM_INDEXES_CLASS_NAME);
+            if (customClassName == null) {
                 return new Indexes(node, mapName, serializationService, indexCopyBehavior, extractors,
                         indexProvider, usesCachedQueryableEntries, statsEnabled, global,
                         inMemoryFormat, partitionCount, resultFilterFactory);
             }
             try {
                 Class<? extends Indexes> klass = (Class<? extends Indexes>)
-                        getClass().getClassLoader().loadClass(CUSTOM_INDEXES_CLASS_NAME);
+                        getClass().getClassLoader().loadClass(customClassName);
                 MethodType ctor = MethodType.methodType(void.class, Node.class, String.class, InternalSerializationService.class,
                         IndexCopyBehavior.class, Extractors.class, IndexProvider.class,
                         boolean.class, boolean.class, boolean.class, InMemoryFormat.class, int.class,
