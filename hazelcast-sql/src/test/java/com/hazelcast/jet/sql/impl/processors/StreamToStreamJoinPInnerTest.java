@@ -54,6 +54,7 @@ import static com.hazelcast.jet.core.test.TestSupport.processorAssertion;
 import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
 import static com.hazelcast.sql.impl.type.QueryDataType.BIGINT;
 import static java.util.Arrays.asList;
+import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonList;
 import static java.util.Collections.singletonMap;
@@ -61,8 +62,8 @@ import static org.apache.calcite.rel.core.JoinRelType.INNER;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-@Category({QuickTest.class, ParallelJVMTest.class})
 @RunWith(HazelcastSerialClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class StreamToStreamJoinPInnerTest extends JetTestSupport {
 
     private Map<Byte, ToLongFunctionEx<JetSqlRow>> leftExtractors = singletonMap((byte) 0, l -> l.getRow().get(0));
@@ -86,10 +87,9 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
                         in(1, jetRow(1L)),
                         out(jetRow(1L, 1L)),
                         in(wm(1L, (byte) 0)),
-                        out(wm(0L, (byte) 0)),
-                        in(wm(2L, (byte) 1)),
                         out(wm(1L, (byte) 0)),
-                        out(wm(1L, (byte) 1))
+                        in(wm(2L, (byte) 1)),
+                        out(wm(2L, (byte) 1))
                 );
     }
 
@@ -122,20 +122,19 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
                             assertEquals(jetRow(9L), p.buffer[1].content().iterator().next());
                         }),
                         in(1, wm(15L, (byte) 2)),
-                        out(wm(9L, (byte) 2)),
+                        out(wm(15L, (byte) 2)),
                         processorAssertion((StreamToStreamJoinP p) -> {
                             assertEquals(singletonList(jetRow(12L, 13L)), p.buffer[0].content());
                             assertEquals(jetRow(9L), p.buffer[1].content().iterator().next());
                         }),
                         in(0, wm(12L, (byte) 1)),
                         out(wm(12L, (byte) 1)),
-                        out(wm(15L, (byte) 2)),
                         processorAssertion((StreamToStreamJoinP p) -> {
                             assertEquals(singletonList(jetRow(12L, 13L)), p.buffer[0].content());
                             assertTrue(p.buffer[1].isEmpty());
                         }),
                         in(0, wm(13L, (byte) 0)),
-                        out(wm(12L, (byte) 0)),
+                        out(wm(13L, (byte) 0)),
                         in(1, jetRow(16L)),
                         // out(jetRow(12L, 13L, 16L)), // doesn't satisfy the join condition
                         in(0, wm(13L, (byte) 1)),
@@ -184,13 +183,16 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
                         // wmState: [{0:min, 1:min, 2:13, 3:11]
                         // leftBuffer: [{12, 10}, {12, 13}]
                         // rightBuffer: []
-                        out(wm(12L, (byte) 0)),
+                        out(wm(15L, (byte) 0)),
                         in(1, wm(15L, (byte) 2)),
                         // wmState: [{0:14, 1:min, 2:13, 3:11]
                         // leftBuffer: []
                         // rightBuffer: []
-                        out(wm(15L, (byte) 0)),
                         out(wm(15L, (byte) 2)),
+                        processorAssertion((StreamToStreamJoinP p) -> {
+                            assertEquals(emptyList(), p.buffer[0].content());
+                            assertEquals(emptyList(), p.buffer[1].content());
+                        }),
                         in(0, wm(16L, (byte) 1)),
                         out(wm(16L, (byte) 1))
                 );
@@ -292,7 +294,7 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
                 .expectExactOutput(
                         in(0, jetRow(0L)),
                         in(0, wm(10L, (byte) 0)),
-                        out(wm(0L, (byte) 0)),
+                        out(wm(10L, (byte) 0)),
                         // this item is:
                         // 1. not late
                         // 2. can't possibly match a future row from #0, therefore doesn't go to the buffer

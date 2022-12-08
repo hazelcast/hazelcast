@@ -63,7 +63,6 @@ import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
 import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinBroadcastKeys.LAST_EMITTED_KEYED_WM;
 import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinBroadcastKeys.LAST_RECEIVED_KEYED_WM;
-import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinBroadcastKeys.MIN_BUFFER_TIME;
 
 
 /**
@@ -77,13 +76,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     final Object2LongHashMap<Byte> wmState = new Object2LongHashMap<>(Long.MIN_VALUE);
     final Object2LongHashMap<Byte> lastReceivedWm = new Object2LongHashMap<>(Long.MIN_VALUE);
     final Object2LongHashMap<Byte> lastEmittedWm = new Object2LongHashMap<>(Long.MIN_VALUE);
-
-    /**
-     * Maps wmKey to minimum buffer time for all items in the {@link #buffer}
-     * for that WM. Must be updated when adding and removing anything to/from
-     * the buffer.
-     */
-    final Object2LongHashMap<Byte> minimumBufferTimes = new Object2LongHashMap<>(Long.MIN_VALUE);
 
     // package-visible for tests
     final StreamToStreamJoinBuffer[] buffer;
@@ -141,7 +133,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             wmState.put(wmKey, WATERMARK_MAP_DEFAULT_VALUE);
             lastEmittedWm.put(wmKey, WATERMARK_MAP_DEFAULT_VALUE);
             lastReceivedWm.put(wmKey, WATERMARK_MAP_DEFAULT_VALUE);
-            minimumBufferTimes.put(wmKey, MIN_BUFFER_TIME_DEFAULT_VALUE);
         }
 
         // no key must be on both sides
@@ -216,13 +207,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             currItem = (JetSqlRow) item;
             if (!avoidBuffer) {
                 buffer[ordinal].add(currItem);
-                // update the minimumBufferTimes when adding to buffer
-                for (int i = 0; i < extractors.size(); i++) {
-                    Byte wmKey = extractors.get(i).getKey();
-                    if (times[i] < minimumBufferTimes.get(wmKey)) {
-                        minimumBufferTimes.put(wmKey, times[i]);
-                    }
-                }
             }
             // we'll emit joined rows from currItem and the buffered rows from the opposite side
             iterator = buffer[1 - ordinal].iterator();
@@ -295,12 +279,10 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
         // Note: We can't immediately emit current WM, as it could render items in buffers late.
         for (Byte wmKey : wmState.keySet()) {
-            long minimumBufferTime = minimumBufferTimes.get(wmKey);
             long lastReceivedWm = this.lastReceivedWm.getValue(wmKey);
-            long newWmTime = Math.min(minimumBufferTime, lastReceivedWm);
-            if (newWmTime > lastEmittedWm.getValue(wmKey)) {
-                pendingOutput.add(new Watermark(newWmTime, wmKey));
-                lastEmittedWm.put(wmKey, newWmTime);
+            if (lastReceivedWm > lastEmittedWm.getValue(wmKey)) {
+                pendingOutput.add(new Watermark(lastReceivedWm, wmKey));
+                lastEmittedWm.put(wmKey, lastReceivedWm);
             }
         }
 
@@ -319,7 +301,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         if (snapshotTraverser == null) {
             // Note: in fact, first three collections contain from six to ten objects in total,
             //   it's not as much as you may think from first reading.
-            int expectedCapacity = lastReceivedWm.size() + lastEmittedWm.size() + minimumBufferTimes.size()
+            int expectedCapacity = lastReceivedWm.size() + lastEmittedWm.size()
                     + buffer[0].size() + buffer[1].size();
 
             List<Entry> snapshotList = new ArrayList<>(expectedCapacity);
@@ -348,18 +330,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                 }
             }
 
-            for (Entry<?, Long> e : minimumBufferTimes.entrySet()) {
-                Long timestamp = e.getValue();
-                if (timestamp != MIN_BUFFER_TIME_DEFAULT_VALUE) {
-                    snapshotList.add(
-                            entry(
-                                    broadcastKey(MIN_BUFFER_TIME),
-                                    MinBufferTimeSnapshotValue.minBufferTimeValue((Byte) e.getKey(), timestamp)
-                            )
-                    );
-                }
-            }
-
             Stream<Entry> leftBufferStream = buffer[0].content()
                     .stream()
                     .map(row -> entry(
@@ -383,21 +353,10 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         return emitFromTraverserToSnapshot(snapshotTraverser);
     }
 
-    @SuppressWarnings("unchecked")
     @Override
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         if (key instanceof BroadcastKey) {
             BroadcastKey broadcastKey = (BroadcastKey) key;
-
-            if (value instanceof MinBufferTimeSnapshotValue) {
-                MinBufferTimeSnapshotValue mbtsv = (MinBufferTimeSnapshotValue) value;
-                // We pick minimal available time among all processors' time.
-                if (minimumBufferTimes.get(mbtsv.wmKey()) > mbtsv.minBufferTime()) {
-                    minimumBufferTimes.put(mbtsv.wmKey(), mbtsv.minBufferTime());
-                }
-                return;
-            }
-
             WatermarkValue wmValue = (WatermarkValue) value;
             // We pick minimal available watermark (both emitted/received) among all processors
             if (LAST_EMITTED_KEYED_WM.equals(broadcastKey.key())) {
@@ -440,12 +399,10 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         }
 
         for (Byte wmKey : wmState.keySet()) {
-            long minimumBufferTime = minimumBufferTimes.get(wmKey);
             long lastReceivedWm = this.lastReceivedWm.getValue(wmKey);
-            long newWmTime = Math.min(minimumBufferTime, lastReceivedWm);
-            if (newWmTime > lastEmittedWm.getValue(wmKey)) {
-                pendingOutput.add(new Watermark(newWmTime, wmKey));
-                lastEmittedWm.put(wmKey, newWmTime);
+            if (lastReceivedWm > lastEmittedWm.getValue(wmKey)) {
+                pendingOutput.add(new Watermark(lastReceivedWm, wmKey));
+                lastEmittedWm.put(wmKey, lastReceivedWm);
             }
         }
         return true;
@@ -496,7 +453,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             limits[i] = wmState.getOrDefault(extractors.get(i).getKey(), Long.MIN_VALUE);
         }
 
-        long[] newMinimums = buffer[ordinal].clearExpiredItems(limits, row -> {
+        buffer[ordinal].clearExpiredItems(limits, row -> {
             if (outerJoinSide == ordinal && unusedEventsTracker.remove(row)) {
                 // 5.4 : If doing an outer join, emit events removed from the buffer,
                 // with `null`s for the other side, if the event was never joined.
@@ -506,10 +463,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                 }
             }
         });
-
-        for (int i = 0; i < extractors.size(); i++) {
-            minimumBufferTimes.put(extractors.get(i).getKey(), newMinimums[i]);
-        }
     }
 
     private List<Entry<Byte, ToLongFunctionEx<JetSqlRow>>> timeExtractors(int ordinal) {
@@ -736,52 +689,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
         public static WatermarkValue wmValue(@Nonnull Byte key, @Nonnull Long timestamp) {
             return new WatermarkValue(key, timestamp);
-        }
-    }
-
-    private static final class MinBufferTimeSnapshotValue implements DataSerializable {
-        private Byte wmKey;
-        private Long minBufferTime;
-
-        @SuppressWarnings("unused")
-        MinBufferTimeSnapshotValue() {
-        }
-
-        private MinBufferTimeSnapshotValue(Byte wmKey, Long minBufferTime) {
-            this.wmKey = wmKey;
-            this.minBufferTime = minBufferTime;
-        }
-
-        public Byte wmKey() {
-            return wmKey;
-        }
-
-        public Long minBufferTime() {
-            return minBufferTime;
-        }
-
-        @Override
-        public void writeData(ObjectDataOutput out) throws IOException {
-            out.writeByte(wmKey);
-            out.writeLong(minBufferTime);
-        }
-
-        @Override
-        public void readData(ObjectDataInput in) throws IOException {
-            wmKey = in.readByte();
-            minBufferTime = in.readLong();
-        }
-
-        @Override
-        public String toString() {
-            return "MinBufferTimeSnapshotValue{" +
-                    "wmKey=" + wmKey +
-                    ", minBufferTime=" + minBufferTime +
-                    '}';
-        }
-
-        public static MinBufferTimeSnapshotValue minBufferTimeValue(@Nonnull Byte wmKey, @Nonnull Long minBufferTime) {
-            return new MinBufferTimeSnapshotValue(wmKey, minBufferTime);
         }
     }
 }

@@ -171,7 +171,7 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
                 .expectExactOutput(
                         in(ordinal1, jetRow(0L)),
                         in(ordinal1, wm(10L, ordinal1)),
-                        out(wm(0L, ordinal1)),
+                        out(wm(10L, ordinal1)),
                         // this item is:
                         // 1. not late
                         // 2. can't possibly match a future row from #0, therefore doesn't go to the buffer
@@ -228,8 +228,8 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
                         in(ordinal1, jetRow(42L)),
                         in(ordinal0, jetRow(42L)),
                         out(jetRow(42L, 42L)),
-                        in(ordinal1, wm(52, ordinal1)),
-                        out(wm(42, ordinal1))
+                        in(ordinal1, wm(43, ordinal1)),
+                        out(wm(43, ordinal1))
                 );
     }
 
