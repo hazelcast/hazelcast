@@ -33,12 +33,16 @@ import java.util.Map;
 
 import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.nio.IOUtil.drainTo;
+import static com.hazelcast.spi.utils.RetryUtils.retry;
 import static com.hazelcast.test.JenkinsDetector.isOnJenkins;
 import static com.hazelcast.test.starter.HazelcastStarterUtils.rethrowGuardianException;
 import static java.io.File.separator;
 import static java.lang.String.format;
 
 public class HazelcastVersionLocator {
+
+    private static final int MAX_DOWNLOAD_RETRIES = 3;
+
     public enum Artifact {
         OS_JAR("/com/hazelcast/hazelcast/%1$s/hazelcast-%1$s.jar", false, false, "hazelcast"),
         OS_TEST_JAR("/com/hazelcast/hazelcast/%1$s/hazelcast-%1$s-tests.jar", false, true, "hazelcast"),
@@ -87,6 +91,7 @@ public class HazelcastVersionLocator {
         String path = format(artifact.path, version);
         File localCopy = new File(LOCAL_M2_REPOSITORY_PREFIX + path);
         if (localCopy.exists()) {
+            LOGGER.info("Returning local copy of " + artifact);
             return localCopy;
         } else {
             return downloadArtifact(artifact, version, target, path);
@@ -97,7 +102,7 @@ public class HazelcastVersionLocator {
         String url = (artifact.enterprise ? HAZELCAST_REPOSITORY_PREFIX : MAVEN_CENTRAL_PREFIX) + path;
         String filename = extractFilenameFromUrl(url);
         logWarningForArtifactDownload(artifact, version);
-        return downloadFile(url, target, filename);
+        return retry(() -> downloadFile(url, target, filename), MAX_DOWNLOAD_RETRIES);
     }
 
     private static String extractFilenameFromUrl(String url) {
@@ -106,6 +111,7 @@ public class HazelcastVersionLocator {
     }
 
     private static File downloadFile(String url, File targetDirectory, String filename) {
+        LOGGER.info("Downloading " + url + " into " + targetDirectory);
         File targetFile = new File(targetDirectory, filename);
         if (targetFile.isFile() && targetFile.exists()) {
             return targetFile;
