@@ -98,18 +98,18 @@ public class HazelcastVersionLocator {
         if (isOnJenkins()) {
             return;
         }
-        LOGGER.warning("Hazelcast binaries for version " + version +
-                (artifact.enterprise ? " EE " : " ") +
-                "will be downloaded from a remote repository. You can speed up the compatibility tests by "
+        LOGGER.warning("Hazelcast binaries for version " + version
+                + (artifact.enterprise ? " EE " : " ")
+                + "will be downloaded from a remote repository. You can speed up the compatibility tests by "
                 + "installing the missing artifacts in your local maven repository so they don't have to be "
                 + "downloaded each time:\n $ " + buildMavenCommand(artifact, version));
     }
 
     private static String buildMavenCommand(Artifact artifact, String version) {
-        return "mvn dependency:get -Dartifact=com.hazelcast:" +
-                artifact.mavenProject + ":" + version +
-                (artifact.test ? ":jar:tests" : "") +
-                (artifact.enterprise ? " -DremoteRepositories=https://repository.hazelcast.com/release" : "");
+        return "mvn dependency:get -Dartifact=com.hazelcast:"
+                + artifact.mavenProject + ":" + version
+                + (artifact.test ? ":jar:tests" : "")
+                + (artifact.enterprise ? " -DremoteRepositories=https://repository.hazelcast.com/release" : "");
     }
 }
 
