@@ -323,6 +323,8 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
                 .expectExactOutput(
                         in(0, wm(10, (byte) 0)),
                         out(wm(10, (byte) 0)),
+                        in(1, wm(10, (byte) 1)),
+                        out(wm(10, (byte) 1)),
                         in(0, jetRow(8L)),
                         processorAssertion((StreamToStreamJoinP p) -> {
                             assertEquals(0, p.buffer[0].size());

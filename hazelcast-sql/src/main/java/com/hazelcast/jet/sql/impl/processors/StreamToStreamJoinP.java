@@ -61,8 +61,7 @@ import static com.hazelcast.internal.util.CollectionUtil.hasNonEmptyIntersection
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
-import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinBroadcastKeys.LAST_EMITTED_KEYED_WM;
-import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinBroadcastKeys.LAST_RECEIVED_KEYED_WM;
+import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinBroadcastKeys.WM_STATE_KEY;
 
 
 /**
@@ -70,7 +69,6 @@ import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamTo
  */
 public class StreamToStreamJoinP extends AbstractProcessor {
     private static final long WATERMARK_MAP_DEFAULT_VALUE = Long.MIN_VALUE + 1;
-    private static final long MIN_BUFFER_TIME_DEFAULT_VALUE = Long.MAX_VALUE;
 
     // package-visible for tests
     final Object2LongHashMap<Byte> wmState = new Object2LongHashMap<>(Long.MIN_VALUE);
@@ -299,32 +297,15 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         // TODO (if possible): broadcast-distributed edges.
 
         if (snapshotTraverser == null) {
-            // Note: in fact, first three collections contain from six to ten objects in total,
-            //   it's not as much as you may think from first reading.
-            int expectedCapacity = lastReceivedWm.size() + lastEmittedWm.size()
-                    + buffer[0].size() + buffer[1].size();
+            List<Entry> snapshotList = new ArrayList<>();
 
-            List<Entry> snapshotList = new ArrayList<>(expectedCapacity);
-
-            for (Entry<?, Long> e : lastEmittedWm.entrySet()) {
+            for (Entry<Byte, Long> e : wmState.entrySet()) {
                 Long timestamp = e.getValue();
                 if (timestamp != WATERMARK_MAP_DEFAULT_VALUE) {
                     snapshotList.add(
                             entry(
-                                    broadcastKey(LAST_EMITTED_KEYED_WM),
-                                    WatermarkValue.wmValue((Byte) e.getKey(), timestamp)
-                            )
-                    );
-                }
-            }
-
-            for (Entry<?, Long> e : lastReceivedWm.entrySet()) {
-                Long timestamp = e.getValue();
-                if (timestamp != WATERMARK_MAP_DEFAULT_VALUE) {
-                    snapshotList.add(
-                            entry(
-                                    broadcastKey(LAST_RECEIVED_KEYED_WM),
-                                    WatermarkValue.wmValue((Byte) e.getKey(), timestamp)
+                                    broadcastKey(WM_STATE_KEY),
+                                    WatermarkStateValue.wmValue(e.getKey(), timestamp)
                             )
                     );
                 }
@@ -357,19 +338,13 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         if (key instanceof BroadcastKey) {
             BroadcastKey broadcastKey = (BroadcastKey) key;
-            WatermarkValue wmValue = (WatermarkValue) value;
+            WatermarkStateValue wmValue = (WatermarkStateValue) value;
             // We pick minimal available watermark (both emitted/received) among all processors
-            if (LAST_EMITTED_KEYED_WM.equals(broadcastKey.key())) {
-                Long lastEmittedWmTime = lastEmittedWm.get(wmValue.key());
-                if (lastEmittedWmTime <= Long.MIN_VALUE + 1 ||
-                        lastEmittedWmTime > wmValue.timestamp()) {
-                    lastEmittedWm.put(wmValue.key(), wmValue.timestamp());
-                }
-            } else if (LAST_RECEIVED_KEYED_WM.equals(broadcastKey.key())) {
-                Long lastReceivedWmTime = lastReceivedWm.get(wmValue.key());
-                if (lastReceivedWmTime <= Long.MIN_VALUE + 1 ||
-                        lastReceivedWmTime > wmValue.timestamp()) {
-                    lastReceivedWm.put(wmValue.key(), wmValue.timestamp());
+            if (WM_STATE_KEY.equals(broadcastKey.key())) {
+                Long currentState = wmState.get(wmValue.key());
+                if (currentState <= Long.MIN_VALUE + 1 ||
+                        currentState > wmValue.timestamp()) {
+                    wmState.put(wmValue.key(), wmValue.timestamp());
                 }
             } else {
                 throw new JetException("Unexpected broadcast key: " + broadcastKey.key());
@@ -383,29 +358,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                 throw new AssertionError("Unreachable");
             }
         }
-    }
-
-    @Override
-    public boolean finishSnapshotRestore() {
-        // Note: buffer won't be cleaned up, because late and/or unmatched items
-        //  won't be even added during normal processor work (line 211).
-
-        // Process missing watermarks, see STSJPITest$test_equalTimes_singleWmKeyPerInput as a good example.
-        for (Entry<Byte, Long> entry : lastReceivedWm.entrySet()) {
-            if (entry.getValue() >= 0L) {
-                Watermark wmToRestore = new Watermark(entry.getValue(), entry.getKey());
-                applyToWmState(wmToRestore);
-            }
-        }
-
-        for (Byte wmKey : wmState.keySet()) {
-            long lastReceivedWm = this.lastReceivedWm.getValue(wmKey);
-            if (lastReceivedWm > lastEmittedWm.getValue(wmKey)) {
-                pendingOutput.add(new Watermark(lastReceivedWm, wmKey));
-                lastEmittedWm.put(wmKey, lastReceivedWm);
-            }
-        }
-        return true;
     }
 
     @Override
@@ -505,9 +457,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     }
 
     enum StreamToStreamJoinBroadcastKeys {
-        LAST_EMITTED_KEYED_WM,
-        LAST_RECEIVED_KEYED_WM,
-        MIN_BUFFER_TIME
+        WM_STATE_KEY
     }
 
     public static final class StreamToStreamJoinProcessorSupplier implements ProcessorSupplier, DataSerializable {
@@ -642,19 +592,19 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                     '}';
         }
 
-        public static BufferSnapshotValue bufferValue(@Nonnull JetSqlRow row, @Nonnull int bufferOrdinal) {
+        public static BufferSnapshotValue bufferValue(@Nonnull JetSqlRow row, int bufferOrdinal) {
             return new BufferSnapshotValue(row, bufferOrdinal);
         }
     }
 
-    private static final class WatermarkValue implements DataSerializable {
+    private static final class WatermarkStateValue implements DataSerializable {
         private Byte key;
         private Long timestamp;
 
-        WatermarkValue() {
+        WatermarkStateValue() {
         }
 
-        private WatermarkValue(Byte key, Long timestamp) {
+        private WatermarkStateValue(Byte key, Long timestamp) {
             this.key = key;
             this.timestamp = timestamp;
         }
@@ -687,8 +637,28 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                     '}';
         }
 
-        public static WatermarkValue wmValue(@Nonnull Byte key, @Nonnull Long timestamp) {
-            return new WatermarkValue(key, timestamp);
+        public static WatermarkStateValue wmValue(@Nonnull Byte key, @Nonnull Long timestamp) {
+            return new WatermarkStateValue(key, timestamp);
         }
     }
 }
+
+/*
+### Running the test, mode=snapshots disabled, inboxLimit=1024
+15:03:21.030545 Input-0: [[0]]
+15:03:21.030715 Input-0: [Watermark{ts=03:00:00.010, key=0}]
+15:03:21.030934 Output-0: Watermark{ts=03:00:00.010, key=0}
+15:03:21.031079 Input-1: [[0]]
+15:03:21.031195 Output-0: [0, 0]
+15:03:21.031484 Input processed, calling complete()
+
+### Running the test, mode=snapshots enabled, restoring every snapshot
+15:03:21.041067 Saving & restoring snapshot
+15:03:21.057202 Input-0: [[0]]
+15:03:21.057337 Saving & restoring snapshot
+15:03:21.082409 Input-0: [Watermark{ts=03:00:00.010, key=0}]
+15:03:21.082687 Output-0: Watermark{ts=03:00:00.010, key=0}
+15:03:21.082842 Saving & restoring snapshot
+15:03:21.095627 Input-1: [[0]]
+
+ */
