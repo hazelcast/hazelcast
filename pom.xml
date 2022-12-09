@@ -573,6 +573,9 @@
                             <artifact>com.hazelcast:hazelcast:4.0.3</artifact>
                             <artifact>com.hazelcast:hazelcast:4.0.3:jar:tests</artifact>
 
+                            <artifact>com.hazelcast:hazelcast:5.2.0</artifact>
+                            <artifact>com.hazelcast:hazelcast:5.2.0:jar:tests</artifact>
+
                         </configuration>
                     </execution>
                 </executions>
