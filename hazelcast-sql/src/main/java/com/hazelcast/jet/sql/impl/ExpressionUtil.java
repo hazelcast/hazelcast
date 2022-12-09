@@ -161,7 +161,7 @@ public final class ExpressionUtil {
             @Nonnull Expression<Boolean> predicate,
             @Nonnull ExpressionEvalContext context
     ) {
-        return row0 -> evaluate(predicate, projections, row0.getRow(), context);
+        return row0 -> projection(predicate, projections, row0.getRow(), context);
     }
 
     /**
@@ -225,13 +225,13 @@ public final class ExpressionUtil {
     }
 
     /**
-     * Evaluate projection&predicate for a single row. Returns {@code null} if
+     * Projection with optional filter predicate for a single row. Returns {@code null} if
      * the row is rejected by the predicate.
      */
     @Nullable
-    public static JetSqlRow evaluate(
+    public static JetSqlRow projection(
             @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projection,  //TODO: nullable?
+            @Nonnull List<Expression<?>> projection,
             @Nonnull Row row,
             @Nonnull ExpressionEvalContext context
     ) {
@@ -239,14 +239,6 @@ public final class ExpressionUtil {
             return null;
         }
         return projection(projection, context, row);
-    }
-
-    public static Object evaluate(
-            @Nonnull Expression<?> expression,
-            @Nonnull Row row,
-            @Nonnull ExpressionEvalContext context
-    ) {
-        return expression.evalTop(row, context);
     }
 
     private static JetSqlRow projection(
@@ -258,5 +250,13 @@ public final class ExpressionUtil {
             result[i] = evaluate(projections.get(i), row, context);
         }
         return new JetSqlRow(context.getSerializationService(), result);
+    }
+
+    public static Object evaluate(
+            @Nonnull Expression<?> expression,
+            @Nonnull Row row,
+            @Nonnull ExpressionEvalContext context
+    ) {
+        return expression.evalTop(row, context);
     }
 }

@@ -76,7 +76,7 @@ public class RowProjector implements Row {
     public JetSqlRow project(Object object) {
         target.setTarget(object, null);
 
-        return ExpressionUtil.evaluate(predicate, projection, this, evalContext);
+        return ExpressionUtil.projection(predicate, projection, this, evalContext);
     }
 
     @SuppressWarnings("unchecked")

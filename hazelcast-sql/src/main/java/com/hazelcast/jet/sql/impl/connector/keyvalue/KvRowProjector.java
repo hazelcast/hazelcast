@@ -108,7 +108,7 @@ public class KvRowProjector implements Row {
         keyTarget.setTarget(key, keyData);
         valueTarget.setTarget(value, valueData);
 
-        return ExpressionUtil.evaluate(predicate, projections, this, evalContext);
+        return ExpressionUtil.projection(predicate, projections, this, evalContext);
     }
 
     @Override
