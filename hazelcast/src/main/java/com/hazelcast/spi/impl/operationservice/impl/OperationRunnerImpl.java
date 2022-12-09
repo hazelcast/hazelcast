@@ -230,6 +230,18 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
     }
 
     /**
+     * Like {@link #metWithPreconditions} but without timeout checks.
+     * <p>
+     * Includes checks related to node and cluster health
+     * before execution of an operation.
+     */
+    public void ensureNodeAndClusterHealth(Operation op) {
+        checkNodeState(op);
+        ensureNoPartitionProblems(op);
+        ensureNoSplitBrain(op);
+    }
+
+    /**
      * Runs the provided operation.
      *
      * @param op         the operation to execute
@@ -354,7 +366,7 @@ public class OperationRunnerImpl extends OperationRunner implements StaticMetric
         splitBrainProtectionService.ensureNoSplitBrain(op);
     }
 
-    private boolean timeout(Operation op) {
+    public boolean timeout(Operation op) {
         if (!operationService.isCallTimedOut(op)) {
             return false;
         }
