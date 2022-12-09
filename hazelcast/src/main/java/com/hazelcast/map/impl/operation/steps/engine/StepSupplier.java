@@ -140,11 +140,8 @@ public class StepSupplier implements Supplier<Runnable> {
         boolean metWithPreconditions = true;
         try {
             try {
-                if (runningOnPartitionThread && state.getThrowable() == null && firstStep) {
-                    metWithPreconditions = operationRunner.metWithPreconditions(state.getOperation());
-                    if (!metWithPreconditions) {
-                        return;
-                    }
+                if (runningOnPartitionThread && state.getThrowable() == null) {
+                    metWithPreconditions = metWithPreconditions();
                 }
                 step.runStep(state);
             } catch (NativeOutOfMemoryError e) {
@@ -168,6 +165,20 @@ public class StepSupplier implements Supplier<Runnable> {
                 currentRunnable = null;
             }
         }
+    }
+
+    private boolean metWithPreconditions() {
+        assert isRunningOnPartitionThread();
+
+        // check node and cluster health before running each step
+        operationRunner.ensureNodeAndClusterHealth(state.getOperation());
+
+        // check timeout for only first step, as in no-offload flows
+        if (firstStep && operationRunner.timeout(state.getOperation())) {
+            return false;
+        }
+
+        return true;
     }
 
     /**
