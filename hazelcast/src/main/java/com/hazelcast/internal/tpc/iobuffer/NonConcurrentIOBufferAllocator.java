@@ -24,13 +24,11 @@ import java.nio.ByteBuffer;
  * {@link #allocate()} should be done by the same thread as {@link #free(IOBuffer)}.
  */
 public final class NonConcurrentIOBufferAllocator implements IOBufferAllocator {
-    private static final int DEFAULT_BUFFERS_COUNT = 2 << 12;
-
     private final int minSize;
     private final boolean direct;
-    private long newAllocateCnt;
-    private long allocateCnt;
-    private IOBuffer[] bufs = new IOBuffer[DEFAULT_BUFFERS_COUNT];
+    private long newAllocateCnt = 0;
+    private long allocateCnt = 0;
+    private IOBuffer[] bufs = new IOBuffer[4096];
     private int index = -1;
 
     public NonConcurrentIOBufferAllocator(int minSize, boolean direct) {

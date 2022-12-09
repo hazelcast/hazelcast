@@ -29,26 +29,20 @@ import java.util.concurrent.atomic.AtomicLong;
  * It also allows the {@link #allocate()} of a {@link IOBuffer} to be done by a different
  * thread than {@link #free(IOBuffer)}.
  */
-@SuppressWarnings("checkstyle:ConstantName")
 public class ConcurrentIOBufferAllocator implements IOBufferAllocator {
-    private static final int BUFFERS_POOL_SIZE = 2 << 7;
+
+    private final MpmcArrayQueue<IOBuffer> queue = new MpmcArrayQueue<>(4096);
 
     private static final AtomicLong newAllocations = new AtomicLong(0);
     private static final AtomicLong pooledAllocations = new AtomicLong(0);
     private static final AtomicLong allocateCalls = new AtomicLong();
     private static final AtomicLong releaseCalls = new AtomicLong();
-
-    private static final ThreadLocal<Pool> POOL = new ThreadLocal<>();
-
-    private final MpmcArrayQueue<IOBuffer> queue = new MpmcArrayQueue<>(4096);
-
     private final boolean direct;
-    private final int minSize;
 
     static class Pool {
-        private long newAllocateCnt;
-        private long allocateCnt;
-        private IOBuffer[] bufs = new IOBuffer[BUFFERS_POOL_SIZE];
+        private long newAllocateCnt = 0;
+        private long allocateCnt = 0;
+        private IOBuffer[] bufs = new IOBuffer[128];
         private int index = -1;
         private final MessagePassingQueue.Consumer<IOBuffer> consumer = buf -> {
             index++;
@@ -56,6 +50,8 @@ public class ConcurrentIOBufferAllocator implements IOBufferAllocator {
         };
     }
 
+    private final static ThreadLocal<Pool> POOL = new ThreadLocal<>();
+    private final int minSize;
 
     public ConcurrentIOBufferAllocator(int minSize, boolean direct) {
         this.minSize = minSize;

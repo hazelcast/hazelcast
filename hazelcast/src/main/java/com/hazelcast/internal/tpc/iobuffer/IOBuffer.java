@@ -17,7 +17,6 @@
 package com.hazelcast.internal.tpc.iobuffer;
 
 import com.hazelcast.internal.tpc.AsyncSocket;
-import com.hazelcast.internal.util.QuickMath;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -55,29 +54,25 @@ import static com.hazelcast.internal.util.QuickMath.nextPowerOfTwo;
  * E.g. in case of the buffer pool (application specific page cache) we just want to take a pointer to
  * some memory in the bufferpool and pass it to the IOBuffer for reading/writing that page to disk.
  */
-@SuppressWarnings({"checkstyle:MethodCount", "checkstyle:VisibilityModifier"})
 public class IOBuffer {
 
     public IOBuffer next;
     public AsyncSocket socket;
 
     public boolean trackRelease;
+    private ByteBuffer buff;
     public IOBufferAllocator allocator;
-    public boolean concurrent;
-
+    public boolean concurrent = false;
     // make field?
     protected AtomicInteger refCount = new AtomicInteger();
-
-    private ByteBuffer buff;
 
     public IOBuffer(int size) {
         this(size, false);
     }
 
     public IOBuffer(int size, boolean direct) {
-        //todo: better name for it :)
-        int sizePowerOfTwo = QuickMath.nextPowerOfTwo(size);
-        this.buff = direct ? ByteBuffer.allocateDirect(sizePowerOfTwo) : ByteBuffer.allocate(sizePowerOfTwo);
+        //todo: allocate power of 2.
+        this.buff = direct ? ByteBuffer.allocateDirect(size) : ByteBuffer.allocate(size);
     }
 
     public IOBuffer(ByteBuffer buffer) {
@@ -163,7 +158,6 @@ public class IOBuffer {
         buff.putChar(value);
     }
 
-    @SuppressWarnings("checkstyle:MagicNumber")
     public void writeShortL(short v) {
         ensureRemaining(BYTES_INT);
         buff.put((byte) ((v) & 0xFF));
@@ -187,7 +181,6 @@ public class IOBuffer {
         buff.putInt(value);
     }
 
-    @SuppressWarnings("checkstyle:MagicNumber")
     public void writeIntL(int v) {
         ensureRemaining(BYTES_INT);
         buff.put((byte) ((v) & 0xFF));
@@ -251,7 +244,7 @@ public class IOBuffer {
     }
 
     public String readString() {
-        StringBuilder sb = new StringBuilder();
+        StringBuffer sb = new StringBuffer();
         int size = buff.getInt();
         for (int k = 0; k < size; k++) {
             sb.append(buff.getChar());
@@ -284,7 +277,6 @@ public class IOBuffer {
         return refCount.get();
     }
 
-    @SuppressWarnings("checkstyle:NestedIfDepth")
     public void release() {
         if (allocator == null) {
             return;
