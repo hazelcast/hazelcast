@@ -59,6 +59,14 @@ public class SqlFilterProjectTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_valuesSelectUdf() {
+        assertRowsAnyOrder(
+                "SELECT myfun(x) as c FROM (VALUES ('a'), ('b')) AS t (x)",
+                asList(new Row("a/a"), new Row("b/b"))
+        );
+    }
+
+    @Test
     public void test_valuesSelectExpression() {
         assertRowsAnyOrder(
                 "SELECT * FROM (VALUES (1), (1 + 2), (CAST ('5' AS TINYINT)))",

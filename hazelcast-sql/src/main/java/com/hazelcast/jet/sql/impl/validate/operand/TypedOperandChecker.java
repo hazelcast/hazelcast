@@ -70,6 +70,10 @@ public class TypedOperandChecker extends AbstractOperandChecker {
         return new TypedOperandChecker(type);
     }
 
+    public static TypedOperandChecker forType(SqlTypeName type) {
+        return new TypedOperandChecker(type);
+    }
+
     @Override
     protected boolean matchesTargetType(RelDataType operandType) {
         if (type != null && type.getSqlTypeName().equals(SqlTypeName.OTHER)) {
