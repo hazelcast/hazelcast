@@ -90,7 +90,7 @@ public class HazelcastVersionLocator {
         try {
             Process process = builder.start();
             boolean successful = process.waitFor(120, TimeUnit.SECONDS);
-            checkState(successful, "Maven dependency:get failed");
+            checkState(successful, "Maven dependency:get timed out");
             checkState(process.exitValue() == 0, "Maven dependency:get failed");
         } catch (InterruptedException | IOException e) {
             throw new RuntimeException("Problem in invoking Maven dependency:get " + artifact + ":" + version , e);
