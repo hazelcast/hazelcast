@@ -87,7 +87,7 @@ public class HazelcastVersionLocator {
         ProcessBuilder builder = new ProcessBuilder(buildMavenCommand(artifact, version).split(" "))
                 .inheritIO();
         try {
-            int code = builder.start().waitFor();
+            int code = builder.start().waitFor(120, TimeUnit.SECONDS);
             checkState(code == 0, "Maven dependency:get failed");
         } catch (InterruptedException | IOException e) {
             throw new RuntimeException("Problem in invoking Maven dependency:get", e);
