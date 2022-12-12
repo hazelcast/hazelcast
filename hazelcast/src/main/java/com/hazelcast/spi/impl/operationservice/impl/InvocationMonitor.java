@@ -343,7 +343,7 @@ public class InvocationMonitor implements Consumer<Packet>, StaticMetricsProvide
 
         private void log(int invocationCount, int backupTimeouts, int invocationTimeouts, int memberLeft) {
             Level logLevel = null;
-            if (backupTimeouts > 0 || invocationTimeouts > 0 || memberLeft > 0) {
+            if (backupTimeouts > 0 || invocationTimeouts > 0) {
                 logLevel = INFO;
             } else if (logger.isFineEnabled()) {
                 logLevel = FINE;
