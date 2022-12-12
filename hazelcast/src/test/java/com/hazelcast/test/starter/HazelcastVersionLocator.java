@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.test.JenkinsDetector.isOnJenkins;
@@ -87,8 +88,8 @@ public class HazelcastVersionLocator {
         ProcessBuilder builder = new ProcessBuilder(buildMavenCommand(artifact, version).split(" "))
                 .inheritIO();
         try {
-            int code = builder.start().waitFor(120, TimeUnit.SECONDS);
-            checkState(code == 0, "Maven dependency:get failed");
+            boolean successful = builder.start().waitFor(120, TimeUnit.SECONDS);
+            checkState(successful, "Maven dependency:get failed");
         } catch (InterruptedException | IOException e) {
             throw new RuntimeException("Problem in invoking Maven dependency:get " + artifact + ":" + version , e);
         }
