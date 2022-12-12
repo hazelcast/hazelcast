@@ -265,7 +265,6 @@ class ClusterDiscoveryServiceBuilder {
         if (isAutoDetectionEnabled && isEmptyDiscoveryStrategies(discoveryService)) {
             return null;
         }
-        discoveryService.start();
         return discoveryService;
     }
 

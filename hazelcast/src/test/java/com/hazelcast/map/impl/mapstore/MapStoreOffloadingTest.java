@@ -36,9 +36,12 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -46,7 +49,7 @@ public class MapStoreOffloadingTest extends HazelcastTestSupport {
 
     @Override
     protected Config getConfig() {
-        return smallInstanceConfig();
+        return smallInstanceConfigWithoutJetAndMetrics();
     }
 
     @Test
@@ -209,5 +212,93 @@ public class MapStoreOffloadingTest extends HazelcastTestSupport {
         }
 
         assertTrueEventually(() -> assertEquals(keySetSize, fastMap.size()));
+    }
+
+    @Test
+    public void setTtl_on_slow_map_store_does_not_block_other_map_operation() {
+        Config config = getConfig();
+
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setInitialLoadMode(MapStoreConfig.InitialLoadMode.EAGER);
+        mapStoreConfig.setImplementation(new MapStoreAdapter<Integer, Integer>() {
+
+            @Override
+            public Integer load(Integer key) {
+                sleepSeconds(1000);
+                return 11;
+            }
+        });
+        String slowMapName = "slowMap";
+        config.getMapConfig(slowMapName).setMapStoreConfig(mapStoreConfig);
+
+        HazelcastInstance node = createHazelcastInstance(config);
+        IMap<Object, Object> slowMapStoreMap = node.getMap(slowMapName);
+        IMap<Object, Object> noMapStoreMap = node.getMap("noMapStoreMap");
+
+        int keySetSize = 10_000;
+
+        Runnable slowMapStoreMapRunnable = () -> {
+            for (int i = 0; i < keySetSize; i++) {
+                slowMapStoreMap.setTtl(i, 1, TimeUnit.SECONDS);
+            }
+        };
+
+        Thread thread = new Thread(slowMapStoreMapRunnable);
+        thread.start();
+
+        for (int i = 0; i < keySetSize; i++) {
+            noMapStoreMap.set(i, 1);
+        }
+
+        assertEquals(keySetSize, noMapStoreMap.size());
+    }
+
+    @Test
+    public void setTtl_on_map_store_backed_map_returns_true_when_old_value_exists() {
+        String mapName = "mapName";
+
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(new MapStoreAdapter<Integer, Integer>() {
+            @Override
+            public Integer load(Integer key) {
+                return (int) System.nanoTime();
+            }
+        });
+
+        Config config = getConfig();
+        config.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
+
+        HazelcastInstance node = createHazelcastInstance(config);
+        IMap<Integer, Integer> map = node.getMap(mapName);
+
+        int keySetSize = 1_000;
+
+        for (int i = 0; i < keySetSize; i++) {
+            assertTrue(map.setTtl(i, 100, TimeUnit.SECONDS));
+        }
+    }
+
+    @Test
+    public void setTtl_on_map_store_backed_map_returns_false_when_no_old_value() {
+        String mapName = "mapName";
+
+        MapStoreConfig mapStoreConfig = new MapStoreConfig();
+        mapStoreConfig.setEnabled(true);
+        mapStoreConfig.setImplementation(new MapStoreAdapter<Integer, Integer>() {
+        });
+
+        Config config = getConfig();
+        config.getMapConfig(mapName).setMapStoreConfig(mapStoreConfig);
+
+        HazelcastInstance node = createHazelcastInstance(config);
+        IMap<Integer, Integer> map = node.getMap(mapName);
+
+        int keySetSize = 1_000;
+
+        for (int i = 0; i < keySetSize; i++) {
+            assertFalse(map.setTtl(i, 100, TimeUnit.SECONDS));
+        }
     }
 }

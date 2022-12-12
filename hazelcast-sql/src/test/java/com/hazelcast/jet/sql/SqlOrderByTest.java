@@ -30,6 +30,7 @@ import com.hazelcast.sql.SqlRow;
 import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -79,6 +80,7 @@ import static com.hazelcast.jet.sql.SqlBasicTest.SerializationMode;
 import static com.hazelcast.jet.sql.SqlBasicTest.SerializationMode.IDENTIFIED_DATA_SERIALIZABLE;
 import static com.hazelcast.jet.sql.SqlBasicTest.SerializationMode.SERIALIZABLE;
 import static com.hazelcast.jet.sql.SqlBasicTest.serializationConfig;
+import static com.hazelcast.jet.sql.SqlTestSupport.createMapping;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.Assert.assertEquals;
@@ -93,7 +95,7 @@ import static org.junit.runners.Parameterized.UseParametersRunnerFactory;
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 @SuppressWarnings("checkstyle:RedundantModifier")
-public class SqlOrderByTest extends SqlTestSupport {
+public class SqlOrderByTest extends HazelcastTestSupport {
 
     private static final String MAP_OBJECT = "map_object";
     private static final String MAP_BINARY = "map_binary";

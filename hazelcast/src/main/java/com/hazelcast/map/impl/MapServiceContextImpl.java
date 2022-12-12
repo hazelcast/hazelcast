@@ -151,6 +151,7 @@ class MapServiceContextImpl implements MapServiceContext {
      */
     private final Semaphore nodeWideLoadedKeyLimiter;
     private final boolean forceOffloadEnabled;
+    private final long maxSuccessiveOffloadedOpRunNanos;
 
     private MapService mapService;
 
@@ -182,6 +183,8 @@ class MapServiceContextImpl implements MapServiceContext {
         this.logger = nodeEngine.getLogger(getClass());
         this.forceOffloadEnabled = nodeEngine.getProperties()
                 .getBoolean(FORCE_OFFLOAD_ALL_OPERATIONS);
+        this.maxSuccessiveOffloadedOpRunNanos = nodeEngine.getProperties()
+                .getNanos(MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS);
         if (this.forceOffloadEnabled) {
             logger.info("Force offload is enabled for all maps. This "
                     + "means all map operations will run as if they have map-store configured. "
@@ -192,6 +195,11 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public boolean isForceOffloadEnabled() {
         return forceOffloadEnabled;
+    }
+
+    @Override
+    public long getMaxSuccessiveOffloadedOpRunNanos() {
+        return maxSuccessiveOffloadedOpRunNanos;
     }
 
     @Override

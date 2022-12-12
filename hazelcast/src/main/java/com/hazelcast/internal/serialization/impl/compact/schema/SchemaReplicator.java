@@ -328,7 +328,7 @@ public class SchemaReplicator {
 
     // Not private for tests
     InternalCompletableFuture<Collection<UUID>> sendRequestForPreparation(Schema schema) {
-        return InvocationUtil.invokeOnStableClusterParallel(
+        return InvocationUtil.invokeOnStableClusterParallelExcludeLocal(
                 nodeEngine,
                 new PrepareSchemaReplicationOperationSupplier(schema, nodeEngine),
                 MAX_RETRIES_FOR_REQUESTS
@@ -337,7 +337,7 @@ public class SchemaReplicator {
 
     // Not private for tests
     InternalCompletableFuture<Collection<UUID>> sendRequestForAcknowledgment(long schemaId) {
-        return InvocationUtil.invokeOnStableClusterParallel(
+        return InvocationUtil.invokeOnStableClusterParallelExcludeLocal(
                 nodeEngine,
                 new AckSchemaReplicationOperationSupplier(schemaId, nodeEngine),
                 MAX_RETRIES_FOR_REQUESTS

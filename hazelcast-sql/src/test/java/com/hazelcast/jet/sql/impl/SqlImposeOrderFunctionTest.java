@@ -276,22 +276,22 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
     @Test
     public void test_lateItemsDropping() {
         String name = createTable(
-                row(timestampTz(28), "Alice"),
-                row(timestampTz(27), "Bob"),
-                row(timestampTz(30), "Caitlyn"),
-                row(timestampTz(30), "Dorian"),
-                row(timestampTz(31), "Elijah"),
+                row(timestampTz(280), "Alice"),
+                row(timestampTz(270), "Bob"),
+                row(timestampTz(300), "Caitlyn"),
+                row(timestampTz(300), "Dorian"),
+                row(timestampTz(310), "Elijah"),
                 row(timestampTz(29), "Zedd")
         );
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.001' SECONDS))",
                 asList(
-                        new Row(timestampTz(28), "Alice"),
-                        new Row(timestampTz(27), "Bob"),
-                        new Row(timestampTz(30), "Caitlyn"),
-                        new Row(timestampTz(30), "Dorian"),
-                        new Row(timestampTz(31), "Elijah")
+                        new Row(timestampTz(280), "Alice"),
+                        new Row(timestampTz(270), "Bob"),
+                        new Row(timestampTz(300), "Caitlyn"),
+                        new Row(timestampTz(300), "Dorian"),
+                        new Row(timestampTz(310), "Elijah")
                         // Zedd is dropped because this event is late
                 )
         );
@@ -300,46 +300,46 @@ public class SqlImposeOrderFunctionTest extends SqlTestSupport {
     @Test
     public void test_lateItemsDidNotDropWithAllowedLag() {
         String name = createTable(
-                row(timestampTz(28), "Alice"),
-                row(timestampTz(29), "Bob"),
-                row(timestampTz(30), "Caitlyn"),
-                row(timestampTz(30), "Dorian"),
-                row(timestampTz(31), "Elijah"),
-                row(timestampTz(27), "Zedd")
+                row(timestampTz(280), "Alice"),
+                row(timestampTz(290), "Bob"),
+                row(timestampTz(300), "Caitlyn"),
+                row(timestampTz(300), "Dorian"),
+                row(timestampTz(310), "Elijah"),
+                row(timestampTz(280), "Zedd")
         );
 
         assertRowsEventuallyInAnyOrder(
-                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.005' SECONDS))",
+                "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.05' SECONDS))",
                 asList(
-                        new Row(timestampTz(28), "Alice"),
-                        new Row(timestampTz(29), "Bob"),
-                        new Row(timestampTz(30), "Caitlyn"),
-                        new Row(timestampTz(30), "Dorian"),
-                        new Row(timestampTz(31), "Elijah"),
+                        new Row(timestampTz(280), "Alice"),
+                        new Row(timestampTz(290), "Bob"),
+                        new Row(timestampTz(300), "Caitlyn"),
+                        new Row(timestampTz(300), "Dorian"),
+                        new Row(timestampTz(310), "Elijah"),
                         // Zedd was not dropped due to allowed lag
-                        new Row(timestampTz(27), "Zedd"))
+                        new Row(timestampTz(280), "Zedd"))
         );
     }
 
     @Test
     public void test_lateItemsDropWithAllowedLag() {
         String name = createTable(
-                row(timestampTz(28), "Alice"),
-                row(timestampTz(29), "Bob"),
-                row(timestampTz(30), "Caitlyn"),
-                row(timestampTz(30), "Dorian"),
-                row(timestampTz(31), "Elijah"),
-                row(timestampTz(15), "Zedd")
+                row(timestampTz(280), "Alice"),
+                row(timestampTz(290), "Bob"),
+                row(timestampTz(300), "Caitlyn"),
+                row(timestampTz(300), "Dorian"),
+                row(timestampTz(310), "Elijah"),
+                row(timestampTz(150), "Zedd")
         );
 
         assertRowsEventuallyInAnyOrder(
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + name + ", DESCRIPTOR(ts), INTERVAL '0.005' SECONDS))",
                 asList(
-                        new Row(timestampTz(28), "Alice"),
-                        new Row(timestampTz(29), "Bob"),
-                        new Row(timestampTz(30), "Caitlyn"),
-                        new Row(timestampTz(30), "Dorian"),
-                        new Row(timestampTz(31), "Elijah")
+                        new Row(timestampTz(280), "Alice"),
+                        new Row(timestampTz(290), "Bob"),
+                        new Row(timestampTz(300), "Caitlyn"),
+                        new Row(timestampTz(300), "Dorian"),
+                        new Row(timestampTz(310), "Elijah")
                         // Zedd is dropped because this event is late desp
                 )
         );

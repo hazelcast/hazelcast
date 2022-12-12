@@ -167,7 +167,7 @@ public class JdbcSqlConnector implements SqlConnector {
             }
             return fields;
         } catch (Exception e) {
-            throw new HazelcastException("Could not read column metadata for table " + externalDataStoreRef, e);
+            throw new HazelcastException("Could not read column metadata for table " + externalTableName, e);
         } finally {
             closeDataSource(dataSource);
         }

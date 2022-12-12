@@ -36,11 +36,11 @@ import java.util.List;
 import static java.util.concurrent.TimeUnit.MICROSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
-class StreamTable extends JetTable {
+public class StreamTable extends JetTable {
 
     private final List<Expression<?>> argumentExpressions;
 
-    StreamTable(
+    public StreamTable(
             SqlConnector sqlConnector,
             List<TableField> fields,
             String schemaName,
@@ -119,7 +119,7 @@ class StreamTable extends JetTable {
             long emitValuesUpTo = (now - startTime) / NANOS_PER_MICRO * rate / MICROS_PER_SECOND;
             for (int i = 0; i < MAX_BATCH_SIZE && sequence < emitValuesUpTo; i++) {
                 JetSqlRow row = ExpressionUtil.evaluate(predicate, projections,
-                                new JetSqlRow(evalContext.getSerializationService(), new Object[]{sequence}), evalContext);
+                        new JetSqlRow(evalContext.getSerializationService(), new Object[]{sequence}), evalContext);
                 if (row != null) {
                     buffer.add(row);
                 }

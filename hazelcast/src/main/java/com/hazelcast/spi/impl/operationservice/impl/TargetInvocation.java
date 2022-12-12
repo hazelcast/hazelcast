@@ -16,9 +16,9 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.core.MemberLeftException;
-import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.spi.impl.operationservice.ExceptionAction;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -26,7 +26,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import static com.hazelcast.spi.impl.operationservice.ExceptionAction.THROW_EXCEPTION;
 
 /**
- * A {@link Invocation} evaluates a Operation Invocation for a particular target running on top of the
+ * An {@link Invocation} evaluates an Operation Invocation for a particular target running on top of the
  * {@link OperationServiceImpl}.
  */
 final class TargetInvocation extends Invocation<Address> {

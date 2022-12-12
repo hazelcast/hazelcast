@@ -85,12 +85,19 @@ public class JobLifecycleMetricsTest extends JetTestSupport {
         DAG dag = new DAG();
         Throwable e = new AssertionError("mock error");
         Vertex source = dag.newVertex("source", ListSource.supplier(singletonList(1)));
+
         Vertex process = dag.newVertex("faulty",
-                new MockPMS(() -> new MockPS(() -> new MockP().setProcessError(e), MEMBER_COUNT)));
+                new MockPMS(() -> new MockPS(() -> new MockP().initBlocks().setProcessError(e), MEMBER_COUNT)))
+                            .localParallelism(1);
         dag.edge(between(source, process));
 
         //when
         Job job2 = hzInstances[0].getJet().newJob(dag);
+
+        for (int i = 0; i < MEMBER_COUNT; i++) {
+            MockP.unblock();
+        }
+
         try {
             job2.join();
             fail("Expected exception not thrown!");

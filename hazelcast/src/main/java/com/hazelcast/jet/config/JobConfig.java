@@ -1295,10 +1295,11 @@ public class JobConfig implements IdentifiedDataSerializable {
 
     /**
      * Returns whether metrics should be stored in the cluster after the job
-     * completes. Needs both {@link MetricsConfig#isEnabled()} and
+     * completes successfully. Needs both {@link MetricsConfig#isEnabled()} and
      * {@link #isMetricsEnabled()} to be on in order to function.
      * <p>
-     * If enabled, metrics can be retrieved by calling {@link Job#getMetrics()}.
+     * If enabled, metrics can be retrieved by calling {@link
+     * Job#getMetrics()}.
      * <p>
      * It's disabled by default.
      *
@@ -1309,15 +1310,16 @@ public class JobConfig implements IdentifiedDataSerializable {
     }
 
     /**
-     * Sets whether metrics should be stored in the cluster after the job completes.
-     * If enabled, metrics can be retrieved for the configured job even if it's no
-     * longer running (has completed successfully, has failed, has been cancelled or
-     * suspended) by calling {@link Job#getMetrics()}.
+     * Sets whether metrics should be stored in the cluster after the job
+     * completes. If enabled, metrics can be retrieved for the configured job
+     * after it has completed successfully and it is no longer running by
+     * calling {@link Job#getMetrics()}.
      * <p>
-     * If disabled, once the configured job stops running {@link Job#getMetrics()}
-     * will always return empty metrics for it, regardless of the settings for
-     * {@link MetricsConfig#setEnabled global metrics collection} or
-     * {@link JobConfig#isMetricsEnabled() per job metrics collection}.
+     * If disabled, once the configured job stops running {@link
+     * Job#getMetrics()} will always return empty metrics for it, regardless of
+     * the settings for {@link MetricsConfig#setEnabled global metrics
+     * collection} or {@link JobConfig#isMetricsEnabled() per job metrics
+     * collection}.
      * <p>
      * It's disabled by default. Ignored for {@linkplain
      * JetService#newLightJob(Pipeline) light jobs}.
