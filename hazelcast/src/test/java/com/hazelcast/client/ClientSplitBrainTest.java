@@ -239,12 +239,9 @@ public class ClientSplitBrainTest extends ClientTestSupport {
         blockCommunicationBetween(instance2, instance4);
 
         // make sure that each member quickly drops the other from their member list
-        suspectMember(instance1, instance2);
-        suspectMember(instance2, instance1);
-        suspectMember(instance3, instance2);
-        suspectMember(instance2, instance3);
-        suspectMember(instance4, instance2);
-        suspectMember(instance2, instance4);
+        closeConnectionBetween(instance1, instance2);
+        closeConnectionBetween(instance3, instance2);
+        closeConnectionBetween(instance4, instance2);
 
         assertClusterSizeEventually(3, instance1, instance3, instance4);
         assertClusterSizeEventually(1, instance2);
