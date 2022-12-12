@@ -230,6 +230,41 @@ public class NearCacheTest extends NearCacheTestSupport {
     }
 
     @Test
+    public void testNearCacheStatsWithReadOnlyProcessor() {
+        int mapSize = 1000;
+        String mapName = randomMapName();
+
+        Config config = getConfig();
+        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig().setInvalidateOnChange(false));
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance[] instances = factory.newInstances(config);
+
+        // populate map
+        IMap<Integer, Integer> map = instances[0].getMap(mapName);
+        populateMap(map, mapSize);
+
+        // populate Near Cache
+        populateNearCache(map, mapSize);
+
+        NearCacheStats stats = getNearCacheStats(map);
+        long ownedEntryCount = stats.getOwnedEntryCount();
+        long misses = stats.getMisses();
+        assertTrue(format("Near Cache  entry count should be > %d but were %d", 400, ownedEntryCount), ownedEntryCount > 400);
+        assertEquals(format("Near Cache misses should be %d but were %d", mapSize, misses), mapSize, misses);
+
+        // make some hits
+        populateNearCache(map, mapSize);
+
+        long hitsBefore = stats.getHits();
+        for (int i = 0; i < mapSize; i++) {
+            map.executeOnKey(i, new TestReadOnlyProcessor());
+        }
+        long hitsAfter = stats.getHits();
+        assertEquals("No Invalidation after getting keys from read only entry processor ", hitsBefore, hitsAfter);
+    }
+
+    @Test
     public void testNearCacheStats() {
         int mapSize = 1000;
         String mapName = randomMapName();
@@ -345,7 +380,7 @@ public class NearCacheTest extends NearCacheTestSupport {
         map.setAll(invalidationMap);
 
         assertTrueEventually(
-            () -> assertEquals("Invalidation is not working on setAll()", 0, getNearCacheSize(map))
+                () -> assertEquals("Invalidation is not working on setAll()", 0, getNearCacheSize(map))
         );
     }
 
@@ -579,13 +614,13 @@ public class NearCacheTest extends NearCacheTestSupport {
         final CountDownLatch latch = new CountDownLatch(10);
         int randomKey = random.nextInt(mapSize);
         map.submitToKey(randomKey,
-                entry -> {
-                    int currentValue = entry.getValue();
-                    int newValue = currentValue + 1;
-                    entry.setValue(newValue);
-                    return newValue;
-                })
-            .thenRunAsync(latch::countDown);
+                        entry -> {
+                            int currentValue = entry.getValue();
+                            int newValue = currentValue + 1;
+                            entry.setValue(newValue);
+                            return newValue;
+                        })
+                .thenRunAsync(latch::countDown);
 
         latch.await(3, TimeUnit.SECONDS);
 
