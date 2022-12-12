@@ -287,7 +287,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
                 // then it means a member left.
                 throw new MemberLeftException(previousTargetMember);
             }
-            if (invocationShouldHaveTargetMember()) {
+            if (requiresTargetAsClusterMember()) {
                 throw new TargetNotMemberException(target, op.getPartitionId(), op.getClass().getName(), op.getServiceName());
             }
         }
@@ -297,7 +297,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
         }
     }
 
-    private boolean invocationShouldHaveTargetMember() {
+    private boolean requiresTargetAsClusterMember() {
         return !(isJoinOperation(op) || isWanReplicationOperation(op));
     }
 
@@ -454,7 +454,7 @@ public abstract class Invocation<T> extends BaseInvocation implements OperationR
     }
 
     boolean detectAndHandleLeftMember() {
-        if (invocationShouldHaveTargetMember()
+        if (requiresTargetAsClusterMember()
                 // if target member is null, error is already notified
                 && targetMember != null
                 && context.clusterService.getMember(targetAddress, targetMember.getUuid()) == null) {
