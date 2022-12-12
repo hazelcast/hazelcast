@@ -295,8 +295,8 @@ public class HazelcastStarter {
             Method newHazelcastInstanceMethod = hazelcastInstanceFactoryClass.getMethod("newHazelcastInstance", configClass,
                     String.class, nodeContextClass);
             return newHazelcastInstanceMethod.invoke(null, config, instanceName, nodeContext);
-        } catch (ClassNotFoundException | IllegalAccessException | NoSuchMethodException | InvocationTargetException |
-                 InstantiationException e) {
+        } catch (ClassNotFoundException | IllegalAccessException | NoSuchMethodException | InvocationTargetException
+                 | InstantiationException e) {
             debug("Could not create HazelcastInstance via HazelcastInstanceFactory: " + e.getMessage());
         }
         return null;
@@ -313,8 +313,8 @@ public class HazelcastStarter {
 
             Method newHazelcastInstanceMethod = hazelcastClass.getMethod("newHazelcastInstance", configClass);
             return newHazelcastInstanceMethod.invoke(null, config);
-        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException |
-                 InstantiationException e) {
+        } catch (ClassNotFoundException | NoSuchMethodException | IllegalAccessException | InvocationTargetException
+                 | InstantiationException e) {
             throw rethrowGuardianException(e);
         }
     }
