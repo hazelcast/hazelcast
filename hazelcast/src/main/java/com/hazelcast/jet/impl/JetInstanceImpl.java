@@ -31,7 +31,6 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.nio.file.Path;
@@ -69,7 +68,8 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
     }
 
     @Override
-    public void uploadJob(@NotNull Path jarPath, String snapshotName, String jobName, String mainClass, List<String> jobParameters) {
+    public void uploadJob(@Nonnull Path jarPath, String snapshotName, String jobName, String mainClass,
+                          List<String> jobParameters) {
 
     }
 

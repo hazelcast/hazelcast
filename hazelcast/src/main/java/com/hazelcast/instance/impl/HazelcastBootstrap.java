@@ -69,7 +69,6 @@ import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -130,7 +129,8 @@ public final class HazelcastBootstrap {
 
     public static synchronized void executeJar(@Nonnull Supplier<HazelcastInstance> supplierOfInstance,
                                                @Nonnull String jar, @Nullable String snapshotName,
-                                               @Nullable String jobName, @Nullable String mainClass, @Nonnull List<String> args
+                                               @Nullable String jobName, @Nullable String mainClass, @Nonnull List<String> args,
+                                               boolean closeHazelcastInstance
     ) throws Exception {
         if (supplier != null) {
             throw new IllegalStateException(
@@ -172,16 +172,18 @@ public final class HazelcastBootstrap {
             main.invoke(null, (Object) jobArgs);
             awaitJobsStarted();
         } finally {
-            HazelcastInstance remembered = HazelcastBootstrap.supplier.remembered();
-            if (remembered != null) {
-                try {
-                    remembered.shutdown();
-                } catch (Throwable t) {
-                    System.err.println("Shutdown failed with:");
-                    t.printStackTrace();
+            if (closeHazelcastInstance) {
+                HazelcastInstance remembered = HazelcastBootstrap.supplier.remembered();
+                if (remembered != null) {
+                    try {
+                        remembered.shutdown();
+                    } catch (Throwable t) {
+                        System.err.println("Shutdown failed with:");
+                        t.printStackTrace();
+                    }
                 }
+                HazelcastBootstrap.supplier = null;
             }
-            HazelcastBootstrap.supplier = null;
         }
     }
 
@@ -622,8 +624,9 @@ public final class HazelcastBootstrap {
         }
 
         @Override
-        public void uploadJob(@NotNull Path jarPath, String snapshotName, String jobName, String mainClass, List<String> jobParameters) {
-            jet.uploadJob(jarPath,snapshotName,jobName,mainClass,jobParameters);
+        public void uploadJob(@Nonnull Path jarPath, String snapshotName, String jobName, String mainClass,
+                              List<String> jobParameters) {
+            jet.uploadJob(jarPath, snapshotName, jobName, mainClass, jobParameters);
         }
 
         @Nonnull @Override

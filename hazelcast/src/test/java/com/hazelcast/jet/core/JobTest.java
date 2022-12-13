@@ -1036,15 +1036,19 @@ public class JobTest extends SimpleTestInClusterSupport {
 
     @Test
     public void test_jarUploadToNonMaster() {
-        HazelcastInstance hazelcastInstance = createHazelcastInstance();
-        HazelcastInstance client = createHazelcastClient();
-        JetService jetService = client.getJet();
-        List<String> jobParameters = emptyList();
-        jetService.uploadJob(Paths.get("D:\\hztutorial\\simplejob\\target\\simplejob-1.0.0.jar"),
-                null,
-                null,
-                null,
-                jobParameters);
+        try {
+            HazelcastInstance hazelcastInstance = createHazelcastInstance();
+            HazelcastInstance client = createHazelcastClient();
+            JetService jetService = client.getJet();
+            List<String> jobParameters = emptyList();
+            jetService.uploadJob(Paths.get("D:\\hztutorial\\simplejob\\target\\simplejob-1.0.0.jar"),
+                    null,
+                    null,
+                    null,
+                    jobParameters);
+        } catch (Exception exception) {
+            exception.printStackTrace();
+        }
 
 
     }

@@ -191,7 +191,7 @@ public class HazelcastCommandLine implements Runnable {
 
         HazelcastBootstrap.executeJar(
                 () -> getHazelcastClient(false),
-                file.getAbsolutePath(), snapshotName, name, mainClass, params);
+                file.getAbsolutePath(), snapshotName, name, mainClass, params, true);
     }
 
     @Command(
