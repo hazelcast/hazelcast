@@ -163,7 +163,7 @@ public class JobCoordinationService {
     private final ConcurrentMap<Long, ScheduledFuture<?>> scheduledJobTimeouts = new ConcurrentHashMap<>();
     /**
      * Map of {memberUuid; removeTime}.
-     *
+     * <p>
      * A collection of UUIDs of members which left the cluster and for which we
      * didn't receive {@link NotifyMemberShutdownOperation}.
      */
@@ -298,7 +298,7 @@ public class JobCoordinationService {
                 logger.info("Starting job " + idToString(masterContext.jobId()) + " based on submit request");
             } catch (Throwable e) {
                 jetServiceBackend.getJobClassLoaderService()
-                                 .tryRemoveClassloadersForJob(jobId, COORDINATOR);
+                        .tryRemoveClassloadersForJob(jobId, COORDINATOR);
 
                 res.completeExceptionally(e);
                 throw e;
@@ -346,11 +346,11 @@ public class JobCoordinationService {
                     scheduleJobTimeout(jobId, jobConfig.getTimeoutMillis());
 
                     return mc.getCompletionFuture()
-                      .whenComplete((r, t) -> {
-                          Object removed = lightMasterContexts.remove(jobId);
-                          assert removed instanceof LightMasterContext : "LMC not found: " + removed;
-                          unscheduleJobTimeout(jobId);
-                      });
+                            .whenComplete((r, t) -> {
+                                Object removed = lightMasterContexts.remove(jobId);
+                                assert removed instanceof LightMasterContext : "LMC not found: " + removed;
+                                unscheduleJobTimeout(jobId);
+                            });
                 }, coordinationExecutor());
     }
 
@@ -386,7 +386,8 @@ public class JobCoordinationService {
                 .collect(Collectors.toSet());
     }
 
-    @SuppressWarnings("WeakerAccess") // used by jet-enterprise
+    @SuppressWarnings("WeakerAccess")
+        // used by jet-enterprise
     MasterContext createMasterContext(JobRecord jobRecord, JobExecutionRecord jobExecutionRecord) {
         return new MasterContext(nodeEngine, this, jobRecord, jobExecutionRecord);
     }
@@ -401,8 +402,8 @@ public class JobCoordinationService {
         }
 
         return masterContexts.values()
-                             .stream()
-                             .anyMatch(ctx -> jobName.equals(ctx.jobConfig().getName()));
+                .stream()
+                .anyMatch(ctx -> jobName.equals(ctx.jobConfig().getName()));
     }
 
     public CompletableFuture<Void> prepareForPassiveClusterState() {
@@ -574,12 +575,12 @@ public class JobCoordinationService {
                     }
 
                     jobs.entrySet().stream()
-                        .sorted(
-                                comparing(Entry<Long, Long>::getValue)
-                                        .thenComparing(Entry::getKey)
-                                        .reversed()
-                        )
-                        .forEach(entry -> result.add(tuple2(entry.getKey(), false)));
+                            .sorted(
+                                    comparing(Entry<Long, Long>::getValue)
+                                            .thenComparing(Entry::getKey)
+                                            .reversed()
+                            )
+                            .forEach(entry -> result.add(tuple2(entry.getKey(), false)));
                 } else {
                     for (Long jobId : jobRepository.getAllJobIds()) {
                         result.add(tuple2(jobId, false));
@@ -721,9 +722,16 @@ public class JobCoordinationService {
 
                 // completed jobs
                 jobRepository.getJobResults().stream()
-                        .map(r -> new JobAndSqlSummary(
-                                false, r.getJobId(), 0, r.getJobNameOrId(), r.getJobStatus(), r.getCreationTime(),
-                                r.getCompletionTime(), r.getFailureText(), null))
+                        .map(r -> {
+                            // Pre-review note : volatile read at supplier, should not read under lock path.
+                            // Q: Any other better way to get executionRecord?
+                            JobExecutionRecord executionRecord = jobRepository.getJobExecutionRecord(r.getJobId());
+                            return new JobAndSqlSummary(
+                                    false, r.getJobId(), 0, r.getJobNameOrId(), r.getJobStatus(), r.getCreationTime(),
+                                    r.getCompletionTime(), r.getFailureText(), null,
+                                    executionRecord.getSuspensionCause() == null ? null :
+                                            executionRecord.getSuspensionCause().description());
+                        })
                         .forEach(s -> jobs.put(s.getJobId(), s));
             }
 
@@ -743,9 +751,10 @@ public class JobCoordinationService {
         Object unbounded = lmc.getJobConfig().getArgument(JobConfigArguments.KEY_SQL_UNBOUNDED);
         SqlSummary sqlSummary = query != null && unbounded != null ?
                 new SqlSummary(query, Boolean.TRUE.equals(unbounded)) : null;
+        // Note: suspensionCause is not supported for light jobs.
         return new JobAndSqlSummary(
                 true, lmc.getJobId(), lmc.getJobId(), idToString(lmc.getJobId()),
-                RUNNING, lmc.getStartTime(), 0, null, sqlSummary);
+                RUNNING, lmc.getStartTime(), 0, null, sqlSummary, null);
     }
 
     /**
@@ -771,11 +780,11 @@ public class JobCoordinationService {
         }
         logFine(logger, "Added a shutting-down member: %s", uuid);
         CompletableFuture[] futures = masterContexts.values().stream()
-                                                    .map(mc -> mc.jobContext().onParticipantGracefulShutdown(uuid))
-                                                    .toArray(CompletableFuture[]::new);
+                .map(mc -> mc.jobContext().onParticipantGracefulShutdown(uuid))
+                .toArray(CompletableFuture[]::new);
         // Need to do this even if futures.length == 0, we need to perform the action in whenComplete
         CompletableFuture.allOf(futures)
-                         .whenComplete(withTryCatch(logger, (r, e) -> future.complete(null)));
+                .whenComplete(withTryCatch(logger, (r, e) -> future.complete(null)));
         return future;
     }
 
@@ -834,7 +843,7 @@ public class JobCoordinationService {
             return false;
         }
         if (nodeEngine.getNode().isClusterStateManagementAutomatic()
-            && !nodeEngine.getNode().isManagedClusterStable()) {
+                && !nodeEngine.getNode().isManagedClusterStable()) {
             LoggingUtil.logFine(logger, "Not starting jobs because cluster is running in managed context "
                             + "and is not yet stable. Current cluster topology intentL %s, "
                             + "expected cluster size: %d, current: %d.",
@@ -1215,16 +1224,18 @@ public class JobCoordinationService {
     private JobAndSqlSummary getJobAndSqlSummary(JobRecord record) {
         MasterContext ctx = masterContexts.get(record.getJobId());
         long execId = ctx == null ? 0 : ctx.executionId();
+        JobExecutionRecord executionRecord = jobRepository.getJobExecutionRecord(record.getJobId());
+        String suspensionCause = executionRecord != null && executionRecord.getSuspensionCause() != null
+                ? executionRecord.getSuspensionCause().description() : null;
         JobStatus status;
         if (ctx == null) {
-            JobExecutionRecord executionRecord = jobRepository.getJobExecutionRecord(record.getJobId());
             status = executionRecord != null && executionRecord.isSuspended()
                     ? JobStatus.SUSPENDED : JobStatus.NOT_RUNNING;
         } else {
             status = ctx.jobStatus();
         }
         return new JobAndSqlSummary(false, record.getJobId(), execId, record.getJobNameOrId(), status,
-                record.getCreationTime(), 0, null, null);
+                record.getCreationTime(), 0, null, null, suspensionCause);
     }
 
     private InternalPartitionServiceImpl getInternalPartitionService() {
@@ -1281,7 +1292,7 @@ public class JobCoordinationService {
     }
 
     @SuppressWarnings("WeakerAccess")
-    // used by jet-enterprise
+        // used by jet-enterprise
     void assertIsMaster(String error) {
         if (!isMaster()) {
             throw new JetException(error + ". Master address: " + nodeEngine.getClusterService().getMasterAddress());
@@ -1292,7 +1303,8 @@ public class JobCoordinationService {
         return nodeEngine.getClusterService().isMaster();
     }
 
-    @SuppressWarnings("unused") // used in jet-enterprise
+    @SuppressWarnings("unused")
+        // used in jet-enterprise
     NodeEngineImpl nodeEngine() {
         return nodeEngine;
     }

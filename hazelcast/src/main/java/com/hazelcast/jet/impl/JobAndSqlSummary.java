@@ -31,6 +31,7 @@ public class JobAndSqlSummary {
     private final long completionTime;
     private final String failureText;
     private final SqlSummary sqlSummary;
+    private final String suspensionCause;
 
     public JobAndSqlSummary(
             boolean isLightJob,
@@ -41,7 +42,8 @@ public class JobAndSqlSummary {
             long submissionTime,
             long completionTime,
             String failureText,
-            SqlSummary sqlSummary) {
+            SqlSummary sqlSummary,
+            String suspensionCause) {
         this.isLightJob = isLightJob;
         this.jobId = jobId;
         this.executionId = executionId;
@@ -51,6 +53,7 @@ public class JobAndSqlSummary {
         this.completionTime = completionTime;
         this.failureText = failureText;
         this.sqlSummary = sqlSummary;
+        this.suspensionCause = suspensionCause;
     }
 
     public boolean isLightJob() {
@@ -89,6 +92,10 @@ public class JobAndSqlSummary {
         return sqlSummary;
     }
 
+    public String getSuspensionCause() {
+        return suspensionCause;
+    }
+
     @Override
     public String toString() {
         return "JobAndSqlSummary{" +
@@ -101,6 +108,7 @@ public class JobAndSqlSummary {
                 ", completionTime=" + completionTime +
                 ", failureText='" + failureText + '\'' +
                 ", sqlSummary=" + sqlSummary +
+                ", suspensionCause=" + suspensionCause +
                 '}';
     }
 
@@ -113,15 +121,21 @@ public class JobAndSqlSummary {
             return false;
         }
         JobAndSqlSummary that = (JobAndSqlSummary) o;
+        boolean suspensionCauseEquals = true;
+        if (suspensionCause != null) {
+            suspensionCauseEquals = Objects.equals(suspensionCause, that.suspensionCause);
+        }
         return isLightJob == that.isLightJob && jobId == that.jobId && executionId == that.executionId
                 && submissionTime == that.submissionTime && completionTime == that.completionTime
                 && Objects.equals(nameOrId, that.nameOrId) && status == that.status
-                && Objects.equals(failureText, that.failureText) && Objects.equals(sqlSummary, that.sqlSummary);
+                && Objects.equals(failureText, that.failureText)
+                && Objects.equals(sqlSummary, that.sqlSummary)
+                && suspensionCauseEquals;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(isLightJob, jobId, executionId, nameOrId, status, submissionTime, completionTime, failureText,
-                sqlSummary);
+        return Objects.hash(isLightJob, jobId, executionId, nameOrId, status, submissionTime,
+                completionTime, failureText, sqlSummary, suspensionCause);
     }
 }

@@ -18,13 +18,24 @@ package com.hazelcast.client.impl.protocol.codec.custom;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.Generated;
-import com.hazelcast.client.impl.protocol.codec.builtin.*;
+import com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil;
+import com.hazelcast.client.impl.protocol.codec.builtin.CustomTypeFactory;
+import com.hazelcast.client.impl.protocol.codec.builtin.StringCodec;
 
+import static com.hazelcast.client.impl.protocol.ClientMessage.BEGIN_FRAME;
+import static com.hazelcast.client.impl.protocol.ClientMessage.END_FRAME;
 import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastForwardToEndFrame;
-import static com.hazelcast.client.impl.protocol.ClientMessage.*;
-import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.BOOLEAN_SIZE_IN_BYTES;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.INT_SIZE_IN_BYTES;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.LONG_SIZE_IN_BYTES;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeBoolean;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeInt;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.decodeLong;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeBoolean;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeInt;
+import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.encodeLong;
 
-@Generated("f72f9519f4421f68df71aac788a94253")
+@Generated("3ddacaee990cdca86a20bb57803e1e62")
 public final class JobAndSqlSummaryCodec {
     private static final int LIGHT_JOB_FIELD_OFFSET = 0;
     private static final int JOB_ID_FIELD_OFFSET = LIGHT_JOB_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -52,6 +63,7 @@ public final class JobAndSqlSummaryCodec {
         StringCodec.encode(clientMessage, jobAndSqlSummary.getNameOrId());
         CodecUtil.encodeNullable(clientMessage, jobAndSqlSummary.getFailureText(), StringCodec::encode);
         CodecUtil.encodeNullable(clientMessage, jobAndSqlSummary.getSqlSummary(), SqlSummaryCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, jobAndSqlSummary.getSuspensionCause(), StringCodec::encode);
 
         clientMessage.add(END_FRAME.copy());
     }
@@ -71,9 +83,15 @@ public final class JobAndSqlSummaryCodec {
         java.lang.String nameOrId = StringCodec.decode(iterator);
         java.lang.String failureText = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         com.hazelcast.jet.impl.SqlSummary sqlSummary = CodecUtil.decodeNullable(iterator, SqlSummaryCodec::decode);
+        boolean isSuspensionCauseExists = false;
+        java.lang.String suspensionCause = null;
+        if (!iterator.peekNext().isEndFrame()) {
+            suspensionCause = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+            isSuspensionCauseExists = true;
+        }
 
         fastForwardToEndFrame(iterator);
 
-        return CustomTypeFactory.createJobAndSqlSummary(lightJob, jobId, executionId, nameOrId, status, submissionTime, completionTime, failureText, sqlSummary);
+        return CustomTypeFactory.createJobAndSqlSummary(lightJob, jobId, executionId, nameOrId, status, submissionTime, completionTime, failureText, sqlSummary, isSuspensionCauseExists, suspensionCause);
     }
 }
