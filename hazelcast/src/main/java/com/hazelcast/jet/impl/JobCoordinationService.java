@@ -729,7 +729,7 @@ public class JobCoordinationService {
                             return new JobAndSqlSummary(
                                     false, r.getJobId(), 0, r.getJobNameOrId(), r.getJobStatus(), r.getCreationTime(),
                                     r.getCompletionTime(), r.getFailureText(), null,
-                                    executionRecord.getSuspensionCause() == null ? null :
+                                    executionRecord == null || executionRecord.getSuspensionCause() == null ? null :
                                             executionRecord.getSuspensionCause().description());
                         })
                         .forEach(s -> jobs.put(s.getJobId(), s));

@@ -922,7 +922,7 @@ public class ReferenceObjects {
     public static SqlColumnMetadata anSqlColumnMetadata = CustomTypeFactory.createSqlColumnMetadata(aString, SqlColumnType.BOOLEAN.getId(), aBoolean, aBoolean);
     public static List<SqlColumnMetadata> aListOfSqlColumnMetadata = Collections.singletonList(anSqlColumnMetadata);
     public static SqlSummary aSqlSummary = CustomTypeFactory.createSqlSummary(aString, aBoolean);
-    public static JobAndSqlSummary aJobAndSqlSummary = CustomTypeFactory.createJobAndSqlSummary(aBoolean, aLong, aLong, aString, 2, aLong, aLong, aString, aSqlSummary, aBoolean, aString);
+    public static JobAndSqlSummary aJobAndSqlSummary = CustomTypeFactory.createJobAndSqlSummary(aBoolean, aLong, aLong, aString, 2, aLong, aLong, aString, aSqlSummary, true, aString);
     public static List<JobAndSqlSummary> aListJobAndSqlSummary = Collections.singletonList(aJobAndSqlSummary);
     public static SqlError anSqlError = new SqlError(anInt, aString, aUUID, aBoolean, aString);
     public static SqlPage aSqlPage = SqlPage.fromColumns(Collections.singletonList(SqlColumnType.INTEGER), Collections.singletonList(Arrays.asList(1, 2, 3, 4)), true);

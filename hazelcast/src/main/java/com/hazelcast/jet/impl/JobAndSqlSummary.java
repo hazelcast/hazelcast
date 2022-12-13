@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.jet.core.JobStatus;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Objects;
 
 public class JobAndSqlSummary {
@@ -43,7 +44,7 @@ public class JobAndSqlSummary {
             long completionTime,
             String failureText,
             SqlSummary sqlSummary,
-            String suspensionCause) {
+            @Nullable String suspensionCause) {
         this.isLightJob = isLightJob;
         this.jobId = jobId;
         this.executionId = executionId;
@@ -122,9 +123,10 @@ public class JobAndSqlSummary {
         }
         JobAndSqlSummary that = (JobAndSqlSummary) o;
         boolean suspensionCauseEquals = true;
-        if (suspensionCause != null) {
+        if (suspensionCause != null && that.suspensionCause != null) {
             suspensionCauseEquals = Objects.equals(suspensionCause, that.suspensionCause);
         }
+
         return isLightJob == that.isLightJob && jobId == that.jobId && executionId == that.executionId
                 && submissionTime == that.submissionTime && completionTime == that.completionTime
                 && Objects.equals(nameOrId, that.nameOrId) && status == that.status
