@@ -81,15 +81,8 @@ public class ClientScheduledFutureProxy<V>
         String schedulerName = handler.getSchedulerName();
         String taskName = handler.getTaskName();
         int partitionId = handler.getPartitionId();
-        if (uuid != null) {
-            ClientMessage request = ScheduledExecutorGetStatsFromMemberCodec.encodeRequest(schedulerName, taskName, uuid);
-            ClientMessage response = invokeOnMember(request, uuid);
-            ScheduledExecutorGetStatsFromMemberCodec.ResponseParameters responseParameters =
-                    ScheduledExecutorGetStatsFromMemberCodec.decodeResponse(response);
-            return new ScheduledTaskStatisticsImpl(responseParameters.totalRuns, responseParameters.lastIdleTimeNanos,
-                    responseParameters.totalRunTimeNanos, responseParameters.totalIdleTimeNanos,
-                    responseParameters.lastRunDurationNanos);
-        } else {
+
+        if (partitionId != -1) {
             ClientMessage request = ScheduledExecutorGetStatsFromPartitionCodec.encodeRequest(schedulerName, taskName);
             ClientMessage response = invokeOnPartition(request, partitionId);
             ScheduledExecutorGetStatsFromMemberCodec.ResponseParameters responseParameters =
@@ -97,8 +90,15 @@ public class ClientScheduledFutureProxy<V>
             return new ScheduledTaskStatisticsImpl(responseParameters.totalRuns, responseParameters.lastIdleTimeNanos,
                     responseParameters.totalRunTimeNanos, responseParameters.totalIdleTimeNanos,
                     responseParameters.lastRunDurationNanos);
+        } else {
+            ClientMessage request = ScheduledExecutorGetStatsFromMemberCodec.encodeRequest(schedulerName, taskName, uuid);
+            ClientMessage response = invokeOnMember(request, uuid);
+            ScheduledExecutorGetStatsFromMemberCodec.ResponseParameters responseParameters =
+                    ScheduledExecutorGetStatsFromMemberCodec.decodeResponse(response);
+            return new ScheduledTaskStatisticsImpl(responseParameters.totalRuns, responseParameters.lastIdleTimeNanos,
+                    responseParameters.totalRunTimeNanos, responseParameters.totalIdleTimeNanos,
+                    responseParameters.lastRunDurationNanos);
         }
-
     }
 
     @Override
@@ -109,15 +109,16 @@ public class ClientScheduledFutureProxy<V>
         String schedulerName = handler.getSchedulerName();
         String taskName = handler.getTaskName();
         int partitionId = handler.getPartitionId();
-        if (uuid != null) {
-            ClientMessage request = ScheduledExecutorGetDelayFromMemberCodec.encodeRequest(schedulerName, taskName, uuid);
-            ClientMessage response = invokeOnMember(request, uuid);
-            long nanos = ScheduledExecutorGetDelayFromMemberCodec.decodeResponse(response);
-            return unit.convert(nanos, TimeUnit.NANOSECONDS);
-        } else {
+
+        if (partitionId != -1) {
             ClientMessage request = ScheduledExecutorGetDelayFromPartitionCodec.encodeRequest(schedulerName, taskName);
             ClientMessage response = invokeOnPartition(request, partitionId);
             long nanos = ScheduledExecutorGetDelayFromPartitionCodec.decodeResponse(response);
+            return unit.convert(nanos, TimeUnit.NANOSECONDS);
+        } else {
+            ClientMessage request = ScheduledExecutorGetDelayFromMemberCodec.encodeRequest(schedulerName, taskName, uuid);
+            ClientMessage response = invokeOnMember(request, uuid);
+            long nanos = ScheduledExecutorGetDelayFromMemberCodec.decodeResponse(response);
             return unit.convert(nanos, TimeUnit.NANOSECONDS);
         }
     }
@@ -142,16 +143,17 @@ public class ClientScheduledFutureProxy<V>
         String schedulerName = handler.getSchedulerName();
         String taskName = handler.getTaskName();
         int partitionId = handler.getPartitionId();
-        if (uuid != null) {
-            ClientMessage request = ScheduledExecutorCancelFromMemberCodec.encodeRequest(schedulerName, taskName,
-                    uuid, false);
-            ClientMessage response = invokeOnMember(request, uuid);
-            return ScheduledExecutorCancelFromMemberCodec.decodeResponse(response);
-        } else {
+
+        if (partitionId != -1) {
             ClientMessage request = ScheduledExecutorCancelFromPartitionCodec.encodeRequest(schedulerName,
                     taskName, false);
             ClientMessage response = invokeOnPartition(request, partitionId);
             return ScheduledExecutorCancelFromPartitionCodec.decodeResponse(response);
+        } else {
+            ClientMessage request = ScheduledExecutorCancelFromMemberCodec.encodeRequest(schedulerName, taskName,
+                    uuid, false);
+            ClientMessage response = invokeOnMember(request, uuid);
+            return ScheduledExecutorCancelFromMemberCodec.decodeResponse(response);
         }
     }
 
@@ -162,15 +164,16 @@ public class ClientScheduledFutureProxy<V>
         String schedulerName = handler.getSchedulerName();
         String taskName = handler.getTaskName();
         int partitionId = handler.getPartitionId();
-        if (uuid != null) {
+
+        if (partitionId != -1) {
+            ClientMessage request = ScheduledExecutorIsCancelledFromPartitionCodec.encodeRequest(schedulerName, taskName);
+            ClientMessage response = invokeOnPartition(request, partitionId);
+            return ScheduledExecutorIsCancelledFromPartitionCodec.decodeResponse(response);
+        } else {
             ClientMessage request = ScheduledExecutorIsCancelledFromMemberCodec.encodeRequest(schedulerName,
                     taskName, uuid);
             ClientMessage response = invokeOnMember(request, uuid);
             return ScheduledExecutorIsCancelledFromMemberCodec.decodeResponse(response);
-        } else {
-            ClientMessage request = ScheduledExecutorIsCancelledFromPartitionCodec.encodeRequest(schedulerName, taskName);
-            ClientMessage response = invokeOnPartition(request, partitionId);
-            return ScheduledExecutorIsCancelledFromPartitionCodec.decodeResponse(response);
         }
     }
 
@@ -181,14 +184,15 @@ public class ClientScheduledFutureProxy<V>
         String schedulerName = handler.getSchedulerName();
         String taskName = handler.getTaskName();
         int partitionId = handler.getPartitionId();
-        if (uuid != null) {
-            ClientMessage request = ScheduledExecutorIsDoneFromMemberCodec.encodeRequest(schedulerName, taskName, uuid);
-            ClientMessage response = invokeOnMember(request, uuid);
-            return ScheduledExecutorIsDoneFromMemberCodec.decodeResponse(response);
-        } else {
+
+        if (partitionId != -1) {
             ClientMessage request = ScheduledExecutorIsDoneFromPartitionCodec.encodeRequest(schedulerName, taskName);
             ClientMessage response = invokeOnPartition(request, partitionId);
             return ScheduledExecutorIsDoneFromPartitionCodec.decodeResponse(response);
+        } else {
+            ClientMessage request = ScheduledExecutorIsDoneFromMemberCodec.encodeRequest(schedulerName, taskName, uuid);
+            ClientMessage response = invokeOnMember(request, uuid);
+            return ScheduledExecutorIsDoneFromMemberCodec.decodeResponse(response);
         }
     }
 
@@ -198,17 +202,18 @@ public class ClientScheduledFutureProxy<V>
         String schedulerName = handler.getSchedulerName();
         String taskName = handler.getTaskName();
         int partitionId = handler.getPartitionId();
-        if (uuid != null) {
-            ClientMessage request = ScheduledExecutorGetResultFromMemberCodec.encodeRequest(schedulerName, taskName, uuid);
-            ClientInvocationFuture future = new ClientInvocation(getClient(), request, schedulerName, uuid).invoke();
-            ClientMessage response = future.get(timeout, unit);
-            Data data = ScheduledExecutorGetResultFromMemberCodec.decodeResponse(response);
-            return toObject(data);
-        } else {
+
+        if (partitionId != -1) {
             ClientMessage request = ScheduledExecutorGetResultFromPartitionCodec.encodeRequest(schedulerName, taskName);
             ClientInvocationFuture future = new ClientInvocation(getClient(), request, schedulerName, partitionId).invoke();
             ClientMessage response = future.get(timeout, unit);
             Data data = ScheduledExecutorGetResultFromPartitionCodec.decodeResponse(response);
+            return toObject(data);
+        } else {
+            ClientMessage request = ScheduledExecutorGetResultFromMemberCodec.encodeRequest(schedulerName, taskName, uuid);
+            ClientInvocationFuture future = new ClientInvocation(getClient(), request, schedulerName, uuid).invoke();
+            ClientMessage response = future.get(timeout, unit);
+            Data data = ScheduledExecutorGetResultFromMemberCodec.decodeResponse(response);
             return toObject(data);
         }
     }
@@ -236,15 +241,16 @@ public class ClientScheduledFutureProxy<V>
         String schedulerName = handler.getSchedulerName();
         String taskName = handler.getTaskName();
         int partitionId = handler.getPartitionId();
-        if (uuid != null) {
-            ClientMessage request = ScheduledExecutorDisposeFromMemberCodec.encodeRequest(schedulerName, taskName, uuid);
-            invokeOnMember(request, uuid);
-        } else {
+
+        if (partitionId != -1) {
             ClientMessage request = ScheduledExecutorDisposeFromPartitionCodec.encodeRequest(schedulerName, taskName);
             invokeOnPartition(request, partitionId);
+        } else {
+            ClientMessage request = ScheduledExecutorDisposeFromMemberCodec.encodeRequest(schedulerName, taskName, uuid);
+            invokeOnMember(request, uuid);
         }
-        handler = null;
 
+        handler = null;
     }
 
     private void checkAccessibleHandler() {
