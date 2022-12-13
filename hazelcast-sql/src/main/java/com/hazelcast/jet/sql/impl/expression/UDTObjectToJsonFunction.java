@@ -30,23 +30,23 @@ import com.hazelcast.sql.impl.expression.UniExpressionWithType;
 import com.hazelcast.sql.impl.row.Row;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.IdentityHashMap;
-import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 import static java.util.Collections.newSetFromMap;
 
-public class ToRowJsonFunction extends UniExpressionWithType<HazelcastJsonValue> implements IdentifiedDataSerializable {
+public class UDTObjectToJsonFunction extends UniExpressionWithType<HazelcastJsonValue> implements IdentifiedDataSerializable {
 
-    public ToRowJsonFunction() { }
+    public UDTObjectToJsonFunction() { }
 
-    private ToRowJsonFunction(Expression<?> operand) {
-        super(operand, QueryDataType.ROW);
+    private UDTObjectToJsonFunction(Expression<?> operand) {
+        super(operand, QueryDataType.JSON);
     }
 
-    public static ToRowJsonFunction create(Expression<?> operand) {
-        return new ToRowJsonFunction(operand);
+    public static UDTObjectToJsonFunction create(Expression<?> operand) {
+        return new UDTObjectToJsonFunction(operand);
     }
 
     @Override
@@ -55,19 +55,20 @@ public class ToRowJsonFunction extends UniExpressionWithType<HazelcastJsonValue>
         final QueryDataType queryDataType = operand.getType();
 
         if (obj == null) {
-            return new HazelcastJsonValue("");
+            return null;
         }
 
         if (obj instanceof GenericRecord) {
-            throw QueryException.error("TO_ROW_JSON function is only supported for Java Types");
+            throw QueryException.error("CAST(object AS JSON) is only supported for Java Types");
         }
-        final List<Object> values = new ArrayList<>(queryDataType.getObjectFields().size());
-        convert(obj, values, queryDataType, newSetFromMap(new IdentityHashMap<>()));
 
-        return new HazelcastJsonValue(JsonCreationUtil.serializeValue(values));
+        final Map<String, Object> value = new HashMap<>();
+        convert(obj, value, queryDataType, newSetFromMap(new IdentityHashMap<>()));
+
+        return new HazelcastJsonValue(JsonCreationUtil.serializeValue(value));
     }
 
-    private void convert(Object source, List<Object> values, QueryDataType dataType, final Set<Object> seenObjects) {
+    private void convert(Object source, Map<String, Object> values, QueryDataType dataType, final Set<Object> seenObjects) {
         if (!seenObjects.add(source)) {
             throw QueryException.error(SqlErrorCode.DATA_EXCEPTION, "Cycle detected in row value");
         }
@@ -75,11 +76,11 @@ public class ToRowJsonFunction extends UniExpressionWithType<HazelcastJsonValue>
         for (final QueryDataType.QueryDataTypeField field : dataType.getObjectFields()) {
             final Object fieldValue = ReflectionUtils.getFieldValue(field.getName(), source);
             if (!field.getDataType().isCustomType() || fieldValue == null) {
-                values.add(fieldValue);
+                values.put(field.getName(), fieldValue);
             } else {
-                final List<Object> subRowValues = new ArrayList<>();
-                values.add(subRowValues);
-                convert(fieldValue, subRowValues, field.getDataType(), seenObjects);
+                final Map<String, Object> subFieldValue = new HashMap<>();
+                values.put(field.getName(), subFieldValue);
+                convert(fieldValue, subFieldValue, field.getDataType(), seenObjects);
             }
         }
     }
@@ -91,7 +92,7 @@ public class ToRowJsonFunction extends UniExpressionWithType<HazelcastJsonValue>
 
     @Override
     public int getClassId() {
-        return JetSqlSerializerHook.TO_ROW_JSON;
+        return JetSqlSerializerHook.UDT_OBJECT_TO_JSON;
     }
 
     @Override
