@@ -256,7 +256,7 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
     }
 
     private Config getConfig(String mapName, long maxWbqCapacity) {
-        Config config = smallInstanceConfig();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
         config.setProperty(ClusterProperty.MAP_WRITE_BEHIND_QUEUE_CAPACITY.toString(),
                 String.valueOf(maxWbqCapacity));
         config.getMapConfig(mapName)
@@ -290,7 +290,7 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
 
     }
 
-    @Test
+    @Test(timeout = 5 * 60 * 1000)
     public void stress() throws InterruptedException {
         final String mapName = "map-name";
         final long maxWbqCapacity = 50;
@@ -327,8 +327,8 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
         sleepSeconds(30);
         stop.set(true);
         executorService.shutdown();
-        if (!executorService.awaitTermination(30, SECONDS)) {
-            throw new IllegalStateException("Not terminated yet...");
+        if (!executorService.awaitTermination(60, SECONDS)) {
+            executorService.shutdownNow();
         }
 
         node1.getMap(mapName).flush();
@@ -344,7 +344,7 @@ public class TransactionsWithWriteBehind_whenNoCoalescingQueueIsFullTest extends
                         0, getTotalNumOfTxnReservedCapacity(mapName, node));
                 assertEquals(msg + ", capacity not zero", 0, nodeWideUsedCapacity);
             }
-        }, 30);
+        });
 
     }
 

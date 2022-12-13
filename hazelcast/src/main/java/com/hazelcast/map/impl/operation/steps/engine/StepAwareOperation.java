@@ -29,9 +29,13 @@ public interface StepAwareOperation<S> {
     S createState();
 
     /**
-     * @param state state to be applied to operation
+     * @param state state to be applied to
+     * operation after execution of all step chain
      */
-    void applyState(S state);
+    default void applyState(S state) {
+        // No need to implement, if there
+        // is no state to apply after run.
+    }
 
     /**
      * @return starting {@link Step} for this operation

@@ -31,6 +31,7 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecordBuilder;
 import com.hazelcast.sql.HazelcastSqlException;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.test.jdbc.H2DatabaseProvider;
 import org.example.Person;
 import org.junit.Before;
@@ -38,7 +39,6 @@ import org.junit.BeforeClass;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -54,7 +54,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
     private String tableName;
 
     @BeforeClass
-    public static void beforeClass() throws Exception {
+    public static void beforeClass() {
         databaseProvider = new H2DatabaseProvider();
         dbConnectionUrl = databaseProvider.createDatabase(JdbcSqlTestSupport.class.getName());
 
@@ -130,7 +130,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void testRemove() throws Exception {
+    public void testRemove() {
         HazelcastInstance client = client();
         IMap<Integer, Person> map = client.getMap(tableName);
 
@@ -256,7 +256,7 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    public void testRemoveWhenExistsInTableOnly() throws SQLException {
+    public void testRemoveWhenExistsInTableOnly() {
         HazelcastInstance client = client();
         IMap<Integer, Person> map = client.getMap(tableName);
 
@@ -311,16 +311,22 @@ public class GenericMapStoreIntegrationTest extends JdbcSqlTestSupport {
     }
 
     @Test
-    @Ignore("https://github.com/hazelcast/hazelcast/issues/22740")
-    public void testPutWhenInternalMappingDropped() {
+    public void testExceptionIsConstructable() {
         HazelcastInstance client = client();
         IMap<Integer, Person> map = client.getMap(tableName);
         map.loadAll(false);
 
         execute("DROP MAPPING \"__map-store." + tableName + "\"");
-        assertThatThrownBy(() -> map.put(42, new Person(42, "name-42")))
+
+        String message = "did you forget to CREATE MAPPING?";
+        Person person = new Person(42, "name-42");
+        assertThatThrownBy(() -> map.put(42, person))
                 .isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("did you forget to CREATE MAPPING?");
+                .hasMessageContaining(message)
+                .hasCauseInstanceOf(QueryException.class)
+                .hasStackTraceContaining(message);
+
         assertThat(map.size()).isEqualTo(1);
     }
+
 }
