@@ -69,6 +69,7 @@ import com.hazelcast.transaction.TransactionContext;
 import com.hazelcast.transaction.TransactionException;
 import com.hazelcast.transaction.TransactionOptions;
 import com.hazelcast.transaction.TransactionalTask;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -76,6 +77,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -617,6 +619,11 @@ public final class HazelcastBootstrap {
         @Nonnull @Override
         public Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
             return remember(jet.newJobIfAbsent(pipeline, updateJobConfig(config)));
+        }
+
+        @Override
+        public void uploadJob(@NotNull Path jarPath, String snapshotName, String jobName, String mainClass, List<String> jobParameters) {
+            jet.uploadJob(jarPath,snapshotName,jobName,mainClass,jobParameters);
         }
 
         @Nonnull @Override

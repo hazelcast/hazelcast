@@ -27,6 +27,7 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 
@@ -207,6 +208,11 @@ public interface JetService {
      * See {@link #newLightJob(Pipeline, JobConfig)} for more information.
      */
     Job newLightJob(@Nonnull DAG dag, @Nonnull JobConfig config);
+
+    /**
+     * Uploads the jar and runs the main method to start the job
+     */
+    void uploadJob(@Nonnull Path jarPath, String snapshotName, String jobName, String mainClass, List<String> jobParameters);
 
     /**
      * Returns all submitted jobs. The result includes completed normal jobs,

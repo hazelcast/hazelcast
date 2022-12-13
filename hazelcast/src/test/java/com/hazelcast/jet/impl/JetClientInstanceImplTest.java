@@ -57,5 +57,11 @@ public class JetClientInstanceImplTest extends JetTestSupport {
         assertEquals(MapService.SERVICE_NAME, info.getServiceName());
     }
 
-
+    @Test
+    public void calculateTotalParts() {
+        long jarSize = 10_000_000;
+        int partSize = 10_000_000;
+        int totalParts = JetClientInstanceImpl.calculateTotalParts(jarSize, partSize);
+        assertEquals(1,totalParts);
+    }
 }
