@@ -765,7 +765,7 @@ public class ClusterJoinManager {
     /**
      * Starts join process on master member.
      *
-     * @param preJoinOperation
+     * @param preJoinOperation joining member's preJoinOperation, not master's
      */
     private void startJoin(OnJoinOp preJoinOperation) {
         logger.fine("Starting join...");
@@ -790,6 +790,8 @@ public class ClusterJoinManager {
                 if (!clusterService.updateMembers(newMembersView, node.getThisAddress(), thisUuid, thisUuid)) {
                     return;
                 }
+
+                OnJoinOp preJoinOp = preparePreJoinOps();
 
                 if (preJoinOperation != null) {
                     nodeEngine.getOperationService().run(preJoinOperation);
