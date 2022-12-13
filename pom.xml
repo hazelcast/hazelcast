@@ -171,7 +171,7 @@
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
 
         <!-- The path to relocated external dependencies. -->
-        <relocation.root>com.hazelcast</relocation.root>
+        <relocation.root>com.hazelcast.shaded</relocation.root>
 
         <!-- Additional JVM system arguments -->
         <extraVmArgs/>
