@@ -17,6 +17,8 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.metrics.MetricDescriptor;
+import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
@@ -38,7 +40,6 @@ import org.apache.calcite.rel.core.TableModify.Operation;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -50,6 +51,7 @@ import static java.util.Collections.emptyList;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.emptySet;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.BDDMockito.given;
@@ -57,8 +59,6 @@ import static org.mockito.Mockito.verify;
 
 @RunWith(JUnitParamsRunner.class)
 public class PlanExecutorTest {
-
-    @InjectMocks
     private PlanExecutor planExecutor;
 
     @Mock
@@ -69,6 +69,12 @@ public class PlanExecutorTest {
 
     @Mock
     private JetService jet;
+
+    @Mock()
+    private MetricsRegistry registry;
+
+    @Mock
+    private MetricDescriptor metricDescriptor;
 
     @Mock
     private Map<String, QueryResultProducer> resultConsumerRegistry;
@@ -83,6 +89,9 @@ public class PlanExecutorTest {
     public void setUp() {
         MockitoAnnotations.openMocks(this);
         given(job.getFuture()).willReturn(new CompletableFuture<>());
+        given(registry.newMetricDescriptor()).willReturn(metricDescriptor).getMock();
+        given(metricDescriptor.withTag(anyString(), anyString())).willReturn(metricDescriptor);
+        planExecutor = new PlanExecutor(catalog, hazelcastInstance, null, registry);
     }
 
     @Test
