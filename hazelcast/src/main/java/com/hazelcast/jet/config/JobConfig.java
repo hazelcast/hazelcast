@@ -73,7 +73,7 @@ public class JobConfig implements IdentifiedDataSerializable {
     private ProcessingGuarantee processingGuarantee = ProcessingGuarantee.NONE;
     private long snapshotIntervalMillis = SNAPSHOT_INTERVAL_MILLIS_DEFAULT;
     private boolean autoScaling = true;
-    private boolean suspendOnFailure;
+    private boolean suspendOnFailure = true;
     private boolean splitBrainProtectionEnabled;
     private boolean enableMetrics = true;
     private boolean storeMetricsAfterJobCompletion;
@@ -204,7 +204,7 @@ public class JobConfig implements IdentifiedDataSerializable {
      *     deleted.
      * </ul>
      * <p>
-     * By default it's disabled. Ignored for {@linkplain
+     * By default, it's enabled. Ignored for {@linkplain
      * JetService#newLightJob(Pipeline) light jobs}.
      *
      * @return {@code this} instance for fluent API

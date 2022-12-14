@@ -55,7 +55,7 @@ public class SuspendExecutionOnFailureTest extends TestInClusterSupport {
 
     @Before
     public void before() {
-        jobConfig = new JobConfig().setSuspendOnFailure(true);
+        jobConfig = new JobConfig();
         TestProcessors.reset(0);
     }
 

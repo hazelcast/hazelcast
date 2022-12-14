@@ -150,12 +150,13 @@ public interface JetService {
     Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config);
 
     /**
-     * Submits a new light job with a default config. See {@link
-     * #newLightJob(Pipeline, JobConfig)}.
+     * Submits a new light job. Config is overridden to disable job
+     * suspension on failure, since it is not supported for light jobs.
+     * See {@link #newLightJob(Pipeline, JobConfig)}.
      */
     @Nonnull
     default Job newLightJob(@Nonnull Pipeline p) {
-        return newLightJob(p, new JobConfig());
+        return newLightJob(p, new JobConfig().setSuspendOnFailure(false));
     }
 
     /**
