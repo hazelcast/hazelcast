@@ -17,7 +17,6 @@
 package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.impl.JetServiceBackend;
-import com.hazelcast.jet.impl.RunJarParameterObject;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 
 import java.util.List;
@@ -28,13 +27,13 @@ import java.util.concurrent.CompletableFuture;
  */
 public class UploadJobOperation extends AsyncJobOperation {
 
-    RunJarParameterObject parameterObject;
+    //RunJarParameterObject parameterObject;
 
     public UploadJobOperation() {
     }
 
     public UploadJobOperation(String snapshotName, String jobName, String mainClass, List<String> jobParameters, byte[] jarData) {
-        parameterObject = new RunJarParameterObject(snapshotName, jobName, mainClass, jobParameters, jarData);
+        //parameterObject = new RunJarParameterObject(snapshotName, jobName, mainClass, jobParameters, jarData);
     }
 
 
@@ -42,7 +41,8 @@ public class UploadJobOperation extends AsyncJobOperation {
     public CompletableFuture<Boolean> doRun() {
         return CompletableFuture.supplyAsync(() -> {
             JetServiceBackend jetServiceBackend = getJetServiceBackend();
-            return jetServiceBackend.runJar(parameterObject);
+            //return jetServiceBackend.runJar(parameterObject);
+            return true;
         });
     }
 

@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.impl;
+package com.hazelcast.jet.impl.jobupload;
 
+import java.nio.file.Path;
 import java.util.List;
 
 /**
@@ -23,41 +24,52 @@ import java.util.List;
  */
 public class RunJarParameterObject {
 
-    private final String snapshotName;
-    private final String jobName;
+    private String snapshotName;
+    private String jobName;
 
-    private final String mainClass;
+    private String mainClass;
 
-    private final List<String> jobParameters;
+    private List<String> jobParameters;
 
-    private final byte[] jarData;
-
-    public RunJarParameterObject(String snapshotName, String jobName, String mainClass, List<String> jobParameters,
-                                 byte[] jarData) {
-        this.snapshotName = snapshotName;
-        this.jobName = jobName;
-        this.mainClass = mainClass;
-        this.jobParameters = jobParameters;
-        this.jarData = jarData;
-    }
+    private Path jarPath;
 
     public String getSnapshotName() {
         return snapshotName;
+    }
+
+    public void setSnapshotName(String snapshotName) {
+        this.snapshotName = snapshotName;
     }
 
     public String getJobName() {
         return jobName;
     }
 
+    public void setJobName(String jobName) {
+        this.jobName = jobName;
+    }
+
     public String getMainClass() {
         return mainClass;
+    }
+
+    public void setMainClass(String mainClass) {
+        this.mainClass = mainClass;
     }
 
     public List<String> getJobParameters() {
         return jobParameters;
     }
 
-    public byte[] getJarData() {
-        return jarData;
+    public void setJobParameters(List<String> jobParameters) {
+        this.jobParameters = jobParameters;
+    }
+
+    public Path getJarPath() {
+        return jarPath;
+    }
+
+    public void setJarPath(Path jarPath) {
+        this.jarPath = jarPath;
     }
 }

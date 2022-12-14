@@ -25,6 +25,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.datamodel.Tuple2;
+import com.hazelcast.jet.impl.jobupload.RunJarParameterObject;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
@@ -34,7 +35,6 @@ import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -75,11 +75,18 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
                           List<String> jobParameters) {
 
         try {
-            byte[] jarData = Files.readAllBytes(jarPath);
-            RunJarParameterObject parameterObject = new RunJarParameterObject(snapshotName, jobName, mainClass, jobParameters,
-                    jarData);
+            RunJarParameterObject parameterObject = new RunJarParameterObject();
+            parameterObject.setSnapshotName(snapshotName);
+            parameterObject.setJobName(jobName);
+            parameterObject.setMainClass(mainClass);
+            parameterObject.setJobParameters(jobParameters);
+            parameterObject.setJarPath(jarPath);
+
             JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
+
+            jetServiceBackend.checkIfCanRunJar();
             jetServiceBackend.runJar(parameterObject);
+
         } catch (Exception exception) {
             ExceptionUtil.sneakyThrow(exception);
         }

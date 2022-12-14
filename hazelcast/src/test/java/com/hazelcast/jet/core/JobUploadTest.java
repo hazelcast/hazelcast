@@ -20,6 +20,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetService;
+import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -32,6 +33,8 @@ import java.nio.file.Paths;
 import java.util.List;
 
 import static java.util.Collections.emptyList;
+import static junit.framework.TestCase.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -98,31 +101,43 @@ public class JobUploadTest extends JetTestSupport {
         JetService jetService = client.getJet();
         List<String> jobParameters = emptyList();
 
+        String job1 = "job1";
         jetService.uploadJob(getJarPath(),
                 null,
-                "job1",
+                job1,
                 null,
                 jobParameters);
 
+        String job2 = "job2";
         jetService.uploadJob(getJarPath(),
                 null,
-                "job2",
+                job2,
                 null,
                 jobParameters);
 
-        assertEqualsEventually(() -> jetService.getJobs().size(), 2);
+        assertTrueEventually(() -> {
+            List<Job> jobs = jetService.getJobs();
+            assertEquals (2, jobs.size());
+            assertTrue(containsName(jobs, job1));
+            assertTrue(containsName(jobs, job2));
+        });
+
         hazelcastInstance.shutdown();
+    }
+
+    private boolean containsName(final List<Job> list, final String name){
+        return list.stream().filter(o -> o.getName().equals(name)).findFirst().isPresent();
     }
 
     private Path getJarPath() {
         ClassLoader classLoader = getClass().getClassLoader();
         URL resource = classLoader.getResource("simplejob.jar");
+        Path result = null;
         try {
-            return Paths.get(resource.toURI());
+            result = Paths.get(resource.toURI());
         } catch (Exception exception) {
-            exception.printStackTrace();
             fail("Unable to get jar path from :" + resource);
-            return null;
         }
+        return result;
     }
 }

@@ -41,6 +41,8 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.impl.execution.TaskletExecutionService;
+import com.hazelcast.jet.impl.jobupload.JobUploadStore;
+import com.hazelcast.jet.impl.jobupload.RunJarParameterObject;
 import com.hazelcast.jet.impl.metrics.JobMetricsPublisher;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
 import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
@@ -58,10 +60,9 @@ import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.Map;
 import java.util.Properties;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -107,10 +108,13 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     private final AtomicInteger numConcurrentAsyncOps = new AtomicInteger();
     private final Supplier<int[]> sharedPartitionKeys = memoizeConcurrent(this::computeSharedPartitionKeys);
 
+    private JobUploadStore jobUploadStore = new JobUploadStore();
+
     public JetServiceBackend(Node node) {
         this.logger = node.getLogger(getClass());
         this.liveOperationRegistry = new LiveOperationRegistry();
         this.jetConfig = node.getConfig().getJetConfig();
+        this.jobUploadStore.setLogger(this.logger);
     }
 
     // ManagedService
@@ -384,22 +388,33 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         jobCoordinationService.startScanningForJobs();
     }
 
+    public void storeJarMetaData(UUID sessionId, RunJarParameterObject parameterObject) {
+        jobUploadStore.processJarMetaData(sessionId, parameterObject);
+    }
+
+    public boolean storeJarData(UUID sessionId, int currentPart, int totalPart, byte[] jarData) {
+        boolean partsComplete = false;
+        try {
+            partsComplete = jobUploadStore.processJarData(sessionId, currentPart, totalPart, jarData);
+        } catch (Exception exception) {
+            jobUploadStore.cancel(sessionId);
+            sneakyThrow(exception);
+        }
+        return partsComplete;
+    }
+
+    public void checkIfCanRunJar() {
+        if (!jetConfig.isResourceUploadEnabled()) {
+            throw new JetException("Resource upload is not enabled");
+        }
+    }
+
     // Run the given jar as Jet job
     public boolean runJar(RunJarParameterObject parameterObject) {
 
-        Path tempFile = null;
         try {
-            if (!jetConfig.isResourceUploadEnabled()) {
-                throw new JetException("Resource upload is not enabled");
-            }
-            // Create a temporary file path
-            tempFile = Files.createTempFile("runjob", ".jar");
-
-            // Save the jar to that path. We can not delete the jar because the class within is jar is being used
-            Files.write(tempFile, parameterObject.getJarData(), StandardOpenOption.TRUNCATE_EXISTING);
-
             HazelcastBootstrap.executeJar(this::getHazelcastClient,
-                    tempFile.toString(),
+                    parameterObject.getJarPath().toString(),
                     parameterObject.getSnapshotName(),
                     parameterObject.getJobName(),
                     parameterObject.getMainClass(),
@@ -407,13 +422,11 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
                     false
             );
         } catch (Exception exception) {
-
-            if (tempFile != null) {
-                try {
-                    Files.delete(tempFile);
-                } catch (IOException ignored) {
-                    logger.severe("There was an exception deleting the jar :" + tempFile);
-                }
+            // Exception happened during run. Try to delete the jar file
+            try {
+                Files.delete(parameterObject.getJarPath());
+            } catch (IOException ignored) {
+                logger.severe("There was an exception deleting the jar :" + parameterObject.getJarPath());
             }
             sneakyThrow(exception);
         }
