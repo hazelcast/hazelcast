@@ -132,15 +132,21 @@ public final class HazelcastBootstrap {
                                                @Nullable String jobName, @Nullable String mainClass, @Nonnull List<String> args,
                                                boolean closeHazelcastInstance
     ) throws Exception {
-        if (supplier != null) {
-            throw new IllegalStateException(
-                    "Supplier of HazelcastInstance was already set. This method should not"
-                            + " be called outside the Hazelcast command line.");
-        }
 
-        supplier = new ConcurrentMemoizingSupplier<>(() ->
-                new BootstrappedInstanceProxy(supplierOfInstance.get(), jar, snapshotName, jobName)
-        );
+        // Method is synchronized, so it is safe to do null check
+        if (supplier == null) {
+            supplier = new ConcurrentMemoizingSupplier<>(() ->
+                    new BootstrappedInstanceProxy(supplierOfInstance.get(), jar, snapshotName, jobName));
+        }
+        // Change the properties of cached JetService within cached BootstrappedInstanceProxy
+        BootstrappedInstanceProxy bootstrappedInstanceProxy = supplier.get();
+        BootstrappedJetProxy jetProxy = (BootstrappedJetProxy) bootstrappedInstanceProxy.getJet();
+        jetProxy.setJarName(jar);
+        jetProxy.setSnapshotName(snapshotName);
+        jetProxy.setJobName(jobName);
+
+
+
         try (JarFile jarFile = new JarFile(jar)) {
             checkHazelcastCodebasePresence(jarFile);
             if (StringUtil.isNullOrEmpty(mainClass)) {
@@ -570,9 +576,9 @@ public final class HazelcastBootstrap {
 
     private static class BootstrappedJetProxy<M> extends AbstractJetInstance<M> {
         private final AbstractJetInstance<M> jet;
-        private final String jar;
-        private final String snapshotName;
-        private final String jobName;
+        private String jar;
+        private String snapshotName;
+        private String jobName;
         private final Collection<Job> submittedJobs = new CopyOnWriteArrayList<>();
 
         BootstrappedJetProxy(
@@ -724,6 +730,17 @@ public final class HazelcastBootstrap {
         @Override
         public Map<M, GetJobIdsResult> getJobsInt(String onlyName, Long onlyJobId) {
             return jet.getJobsInt(onlyName, onlyJobId);
+        }
+
+        public void setJarName(String jar) {
+            this.jar = jar;
+        }
+
+        public void setSnapshotName(String snapshotName) {
+            this.snapshotName = snapshotName;
+        }
+        public void setJobName(String jobName) {
+            this.jobName = jobName;
         }
     }
 }
