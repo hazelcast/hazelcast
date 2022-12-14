@@ -41,6 +41,7 @@ import com.hazelcast.spi.impl.eventservice.EventFilter;
 import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.impl.eventservice.impl.operations.OnJoinRegistrationOperation;
+import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import javax.annotation.Nonnull;
@@ -330,6 +331,11 @@ public class MockServerContext implements ServerContext {
 
             @Override
             public void close(EventRegistration eventRegistration) {
+            }
+
+            @Override
+            public Operation getPostJoinOperation() {
+                return null;
             }
 
             @Override

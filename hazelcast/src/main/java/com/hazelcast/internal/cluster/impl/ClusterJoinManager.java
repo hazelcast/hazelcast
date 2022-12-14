@@ -799,7 +799,6 @@ public class ClusterJoinManager {
 
                 // post join operations must be lock free, that means no locks at all:
                 // no partition locks, no key-based locks, no service level locks!
-                OnJoinOp preJoinOp = preparePreJoinOps();
                 OnJoinOp postJoinOp = preparePostJoinOp();
 
                 // this is the current partition assignment state, not taking into account the

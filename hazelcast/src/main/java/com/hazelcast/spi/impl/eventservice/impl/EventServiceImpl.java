@@ -681,6 +681,15 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
         return getOnJoinRegistrationOperation();
     }
 
+    @Override
+    public Operation getPostJoinOperation() {
+        // The post join operation can reach another member with some delay.
+        // This could lead to an issue (for example, the proxy creation on a secondary member) if it was used for the
+        // event registration (see https://github.com/hazelcast/hazelcast/issues/18381#issuecomment-952843577)
+
+        return null;
+    }
+
     /**
      * Collects all non-local registrations and returns them as a {@link OnJoinRegistrationOperation}.
      *
