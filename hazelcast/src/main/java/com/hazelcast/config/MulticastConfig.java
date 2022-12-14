@@ -314,7 +314,7 @@ public class MulticastConfig implements TrustedInterfacesConfigurable<MulticastC
         result = 31 * result + multicastTimeoutSeconds;
         result = 31 * result + multicastTimeToLive;
         result = 31 * result + trustedInterfaces.hashCode();
-        result = 31 * result + (loopbackModeEnabled ? 1 : 0);
+        result = 31 * result + (Boolean.TRUE.equals(loopbackModeEnabled) ? 1 : 0);
         return result;
     }
 
