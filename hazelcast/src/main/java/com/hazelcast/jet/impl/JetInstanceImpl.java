@@ -27,12 +27,14 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
+import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
 import javax.annotation.Nonnull;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -62,7 +64,8 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
         this.config = config;
     }
 
-    @Nonnull @Override
+    @Nonnull
+    @Override
     public JetConfig getConfig() {
         return config;
     }
@@ -71,6 +74,15 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
     public void uploadJob(@Nonnull Path jarPath, String snapshotName, String jobName, String mainClass,
                           List<String> jobParameters) {
 
+        try {
+            byte[] jarData = Files.readAllBytes(jarPath);
+            RunJarParameterObject parameterObject = new RunJarParameterObject(snapshotName, jobName, mainClass, jobParameters,
+                    jarData);
+            JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
+            jetServiceBackend.runJar(parameterObject);
+        } catch (Exception exception) {
+            ExceptionUtil.sneakyThrow(exception);
+        }
     }
 
     @Override

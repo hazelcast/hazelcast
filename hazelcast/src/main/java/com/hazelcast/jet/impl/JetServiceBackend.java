@@ -23,6 +23,8 @@ import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MergePolicyConfig;
+import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.HazelcastBootstrap;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.instance.impl.NodeState;
 import com.hazelcast.internal.cluster.ClusterStateListener;
@@ -33,6 +35,7 @@ import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.services.MembershipAwareService;
 import com.hazelcast.internal.services.MembershipServiceEvent;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
@@ -54,6 +57,9 @@ import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
@@ -132,10 +138,10 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
             ExceptionUtil.registerJetExceptions(clientExceptionFactory);
         } else {
             logger.fine("Jet exceptions are not registered to the ClientExceptionFactory" +
-                    " since the ClientExceptionFactory is not accessible.");
+                        " since the ClientExceptionFactory is not accessible.");
         }
         logger.info("Setting number of cooperative threads and default parallelism to "
-                + jetConfig.getCooperativeThreadCount());
+                    + jetConfig.getCooperativeThreadCount());
     }
 
     public void configureJetInternalObjects(Config config, HazelcastProperties properties) {
@@ -199,24 +205,24 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     private void notifyMasterWeAreShuttingDown(CompletableFuture<Void> future) {
         Operation op = new NotifyMemberShutdownOperation();
         nodeEngine.getOperationService()
-                  .invokeOnTarget(JetServiceBackend.SERVICE_NAME, op, nodeEngine.getClusterService().getMasterAddress())
-                  .whenCompleteAsync((response, throwable) -> {
-                      // if there is an error and the node is still ACTIVE, try again. If the node isn't ACTIVE, log & ignore.
-                      NodeState nodeState = nodeEngine.getNode().getState();
-                      if (throwable != null && nodeState == NodeState.ACTIVE) {
-                          logger.warning("Failed to notify master member that this member is shutting down," +
-                                  " will retry in " + NOTIFY_MEMBER_SHUTDOWN_DELAY + " seconds", throwable);
-                          // recursive call
-                          nodeEngine.getExecutionService().schedule(
-                                  () -> notifyMasterWeAreShuttingDown(future), NOTIFY_MEMBER_SHUTDOWN_DELAY, SECONDS);
-                      } else {
-                          if (throwable != null) {
-                              logger.warning("Failed to notify master member that this member is shutting down," +
-                                      " but this member is " + nodeState + ", so not retrying", throwable);
-                          }
-                          future.complete(null);
-                      }
-                  });
+                .invokeOnTarget(JetServiceBackend.SERVICE_NAME, op, nodeEngine.getClusterService().getMasterAddress())
+                .whenCompleteAsync((response, throwable) -> {
+                    // if there is an error and the node is still ACTIVE, try again. If the node isn't ACTIVE, log & ignore.
+                    NodeState nodeState = nodeEngine.getNode().getState();
+                    if (throwable != null && nodeState == NodeState.ACTIVE) {
+                        logger.warning("Failed to notify master member that this member is shutting down," +
+                                       " will retry in " + NOTIFY_MEMBER_SHUTDOWN_DELAY + " seconds", throwable);
+                        // recursive call
+                        nodeEngine.getExecutionService().schedule(
+                                () -> notifyMasterWeAreShuttingDown(future), NOTIFY_MEMBER_SHUTDOWN_DELAY, SECONDS);
+                    } else {
+                        if (throwable != null) {
+                            logger.warning("Failed to notify master member that this member is shutting down," +
+                                           " but this member is " + nodeState + ", so not retrying", throwable);
+                        }
+                        future.complete(null);
+                    }
+                });
     }
 
     @Override
@@ -366,7 +372,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         if (requestedState == PASSIVE) {
             try {
                 nodeEngine.getOperationService().createInvocationBuilder(JetServiceBackend.SERVICE_NAME,
-                        new PrepareForPassiveClusterOperation(), nodeEngine.getMasterAddress())
+                                new PrepareForPassiveClusterOperation(), nodeEngine.getMasterAddress())
                         .invoke().get();
             } catch (InterruptedException | ExecutionException e) {
                 throw rethrow(e);
@@ -376,6 +382,47 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
 
     public void startScanningForJobs() {
         jobCoordinationService.startScanningForJobs();
+    }
+
+    // Run the given jar as Jet job
+    public boolean runJar(RunJarParameterObject parameterObject) {
+
+        Path tempFile = null;
+        try {
+            if (!jetConfig.isResourceUploadEnabled()) {
+                throw new JetException("Resource upload is not enabled");
+            }
+            // Create a temporary file path
+            tempFile = Files.createTempFile("runjob", ".jar");
+
+            // Save the jar to that path. We can not delete the jar because the class within is jar is being used
+            Files.write(tempFile, parameterObject.getJarData(), StandardOpenOption.TRUNCATE_EXISTING);
+
+            HazelcastBootstrap.executeJar(this::getHazelcastClient,
+                    tempFile.toString(),
+                    parameterObject.getSnapshotName(),
+                    parameterObject.getJobName(),
+                    parameterObject.getMainClass(),
+                    parameterObject.getJobParameters(),
+                    false
+            );
+        } catch (Exception exception) {
+
+            if (tempFile != null) {
+                try {
+                    Files.delete(tempFile);
+                } catch (IOException ignored) {
+                    logger.severe("There was an exception deleting the jar :" + tempFile);
+                }
+            }
+            sneakyThrow(exception);
+        }
+        return true;
+
+    }
+
+    private HazelcastInstance getHazelcastClient() {
+        return getNodeEngine().getHazelcastInstance();
     }
 
 }

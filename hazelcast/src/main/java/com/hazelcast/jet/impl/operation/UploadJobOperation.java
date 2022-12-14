@@ -16,85 +16,36 @@
 
 package com.hazelcast.jet.impl.operation;
 
-import com.hazelcast.config.Config;
-import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.instance.impl.HazelcastBootstrap;
-import com.hazelcast.jet.JetException;
-import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.impl.JetServiceBackend;
+import com.hazelcast.jet.impl.RunJarParameterObject;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
-
-import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
-import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 
 /**
  * Resumes the execution of a suspended job.
  */
 public class UploadJobOperation extends AsyncJobOperation {
 
-    private String snapshotName;
-    private String jobName;
-
-    private String mainClass;
-
-    private List<String> jobParameters;
-
-    private byte[] jarData;
+    RunJarParameterObject parameterObject;
 
     public UploadJobOperation() {
     }
 
     public UploadJobOperation(String snapshotName, String jobName, String mainClass, List<String> jobParameters, byte[] jarData) {
-        this.snapshotName = snapshotName;
-        this.jobName = jobName;
-        this.mainClass = mainClass;
-        this.jobParameters = jobParameters;
-        this.jarData = jarData;
-
+        parameterObject = new RunJarParameterObject(snapshotName, jobName, mainClass, jobParameters, jarData);
     }
 
 
     @Override
     public CompletableFuture<Boolean> doRun() {
-
         return CompletableFuture.supplyAsync(() -> {
-            try {
-
-                Config config = getNodeEngine().getConfig();
-                JetConfig jetConfig = config.getJetConfig();
-                if (!jetConfig.isResourceUploadEnabled()) {
-                    throw new JetException("Resource upload is not enabled");
-                }
-                Path tempFile = Files.createTempFile("runjob", ".jar");
-
-                Files.write(tempFile, jarData, StandardOpenOption.TRUNCATE_EXISTING);
-
-                HazelcastBootstrap.executeJar(this::getHazelcastClient,
-                        tempFile.toString(),
-                        snapshotName,
-                        jobName,
-                        mainClass,
-                        jobParameters,
-                        false
-                );
-
-            } catch (Exception exception) {
-                Throwable peel = peel(exception);
-                sneakyThrow(peel);
-            }
-            return true;
+            JetServiceBackend jetServiceBackend = getJetServiceBackend();
+            return jetServiceBackend.runJar(parameterObject);
         });
     }
 
-
-    private HazelcastInstance getHazelcastClient() {
-        return getNodeEngine().getHazelcastInstance();
-    }
 
     @Override
     public int getClassId() {
