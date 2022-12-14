@@ -81,6 +81,8 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
     private static final int ENTRIES = 10000;
     private static final String MAP_NAME = "map";
 
+    private static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT = 10;
+
     @Parameterized.Parameters(name = "format:{0}")
     public static Collection<Object[]> parameters() {
         return asList(new Object[][]{{InMemoryFormat.OBJECT}, {InMemoryFormat.BINARY}});
@@ -217,7 +219,7 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
      * and processed. We should give MapMigrationAwareService some time to process all partition migration events.
      */
     private static void assertPartitionsIndexedCorrectlyEventually(int expectedPartitions, IMap... maps) {
-        assertTrueEventually(() -> assertPartitionsIndexedCorrectly(expectedPartitions, maps), 10);
+        assertTrueEventually(() -> assertPartitionsIndexedCorrectly(expectedPartitions, maps), ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
 
     private static void assertPartitionsIndexedCorrectly(int expectedPartitions, IMap... maps) {
