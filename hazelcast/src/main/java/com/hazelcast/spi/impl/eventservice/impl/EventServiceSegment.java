@@ -148,7 +148,6 @@ public class EventServiceSegment<S> {
         return registrationIdMap;
     }
 
-    // this method is only used for testing purposes
     public ConcurrentMap<String, Collection<Registration>> getRegistrations() {
         return registrations;
     }
