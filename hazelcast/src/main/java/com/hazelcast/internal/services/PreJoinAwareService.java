@@ -39,7 +39,7 @@ public interface PreJoinAwareService<T extends Operation & AllowedDuringPassiveS
      * locks, no database interaction are allowed. Additionally, a pre-join operation is executed while the cluster
      * lock is being held on the joining member, so it is important that the operation finishes quickly and does not
      * interact with other locks.
-     *
+     * <p>
      * The {@link Operation#getPartitionId()} method should return a negative value.
      * This means that the operations should not implement {@link PartitionAwareOperation}.
      * <p>
