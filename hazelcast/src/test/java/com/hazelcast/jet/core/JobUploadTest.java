@@ -31,6 +31,7 @@ import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
+import java.util.Objects;
 
 import static java.util.Collections.emptyList;
 import static junit.framework.TestCase.assertEquals;
@@ -125,8 +126,8 @@ public class JobUploadTest extends JetTestSupport {
         hazelcastInstance.shutdown();
     }
 
-    private boolean containsName(final List<Job> list, final String name){
-        return list.stream().filter(o -> o.getName().equals(name)).findFirst().isPresent();
+    private boolean containsName(List<Job> list, String name){
+        return list.stream().anyMatch(job -> Objects.equals(job.getName(), name));
     }
 
     private Path getJarPath() {
@@ -134,6 +135,7 @@ public class JobUploadTest extends JetTestSupport {
         URL resource = classLoader.getResource("simplejob.jar");
         Path result = null;
         try {
+            assert resource != null;
             result = Paths.get(resource.toURI());
         } catch (Exception exception) {
             fail("Unable to get jar path from :" + resource);

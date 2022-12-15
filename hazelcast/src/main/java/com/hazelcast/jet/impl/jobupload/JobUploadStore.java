@@ -2,51 +2,50 @@ package com.hazelcast.jet.impl.jobupload;
 
 import com.hazelcast.jet.JetException;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.time.Instant;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class JobUploadStore {
 
-    private ILogger logger;
+    private static ILogger logger = Logger.getLogger(JobUploadStore.class);
 
-    protected ConcurrentHashMap<UUID, JobUploadStatus> jobStore = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<UUID, JobUploadStatus> jobMap = new ConcurrentHashMap<>();
 
-    public void setLogger(ILogger logger) {
-        this.logger = logger;
+    // Iterate over entries and remove expired ones
+    public void cleanExpiredUploads() {
+        jobMap.forEach((key, value) -> {
+            if (value.isExpired()) {
+                remove(key);
+            }
+        });
     }
 
-    public void cancel(UUID sessionId) {
-        JobUploadStatus jobUploadStatus = jobStore.remove(sessionId);
+    public void remove(UUID sessionId) {
+        JobUploadStatus jobUploadStatus = jobMap.remove(sessionId);
 
         if (jobUploadStatus != null) {
-            RunJarParameterObject parameterObject = jobUploadStatus.getParameterObject();
-            try {
-                Files.delete(parameterObject.getJarPath());
-            } catch (IOException exception) {
-                logger.severe("Enable to delete file : " + parameterObject.getJarPath());
-            }
+            jobUploadStatus.onRemove();
         }
     }
 
     public void processJarMetaData(UUID sessionId, RunJarParameterObject parameterObject) {
 
-        jobStore.computeIfAbsent(sessionId, (key) -> {
-            JobUploadStatus jobUploadStatus = new JobUploadStatus();
-            jobUploadStatus.setLastUpdatedTime(Instant.now());
-            jobUploadStatus.setParameterObject(parameterObject);
-            return jobUploadStatus;
-        });
+        // Create a new JobUploadStatus object and save parameters
+        jobMap.computeIfAbsent(sessionId, key -> new JobUploadStatus(sessionId, parameterObject));
+
     }
 
     public boolean processJarData(UUID sessionId, int currentPart, int totalPart, byte[] jarData) throws IOException {
-        JobUploadStatus jobUploadStatus = jobStore.get(sessionId);
+        JobUploadStatus jobUploadStatus = jobMap.get(sessionId);
         if (jobUploadStatus == null) {
-            throw new JetException("Unknown session id " + sessionId);
+            throw new JetException("Unknown session id : " + sessionId);
         }
+        String message = String.format("Session : %s Received : %d of %d", sessionId, currentPart, totalPart);
+        logger.info(message);
+
         return jobUploadStatus.processJarData(currentPart, totalPart, jarData);
     }
 

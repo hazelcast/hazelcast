@@ -65,6 +65,7 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -108,13 +109,14 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     private final AtomicInteger numConcurrentAsyncOps = new AtomicInteger();
     private final Supplier<int[]> sharedPartitionKeys = memoizeConcurrent(this::computeSharedPartitionKeys);
 
-    private JobUploadStore jobUploadStore = new JobUploadStore();
+    private final JobUploadStore jobUploadStore = new JobUploadStore();
+
+    private ScheduledFuture<?> jobUploadStoreCheckerFuture;
 
     public JetServiceBackend(Node node) {
         this.logger = node.getLogger(getClass());
         this.liveOperationRegistry = new LiveOperationRegistry();
         this.jetConfig = node.getConfig().getJetConfig();
-        this.jobUploadStore.setLogger(this.logger);
     }
 
     // ManagedService
@@ -146,6 +148,14 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         }
         logger.info("Setting number of cooperative threads and default parallelism to "
                     + jetConfig.getCooperativeThreadCount());
+
+        // Run periodically to clean expired jar uploads
+        this.jobUploadStoreCheckerFuture = nodeEngine.getExecutionService().scheduleWithRepetition(
+                this::checkJobUploadStore, 0, 30, SECONDS);
+    }
+
+    private void checkJobUploadStore() {
+        jobUploadStore.cleanExpiredUploads();
     }
 
     public void configureJetInternalObjects(Config config, HazelcastProperties properties) {
@@ -231,6 +241,9 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
 
     @Override
     public void shutdown(boolean forceful) {
+        // Cancel timer
+        jobUploadStoreCheckerFuture.cancel(true);
+
         jobExecutionService.shutdown();
         taskletExecutionService.shutdown();
         taskletExecutionService.awaitWorkerTermination();
@@ -397,7 +410,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         try {
             partsComplete = jobUploadStore.processJarData(sessionId, currentPart, totalPart, jarData);
         } catch (Exception exception) {
-            jobUploadStore.cancel(sessionId);
+            jobUploadStore.remove(sessionId);
             sneakyThrow(exception);
         }
         return partsComplete;
