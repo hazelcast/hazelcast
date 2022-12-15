@@ -23,7 +23,7 @@ import java.util.UUID;
 /**
  * The wrapper for all parameters to run an uploaded jar as Jet job
  */
-public class RunJarParameterObject {
+public class JobMetaDataParameterObject {
 
     private UUID sessionId;
 

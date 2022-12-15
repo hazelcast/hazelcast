@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.jet.impl.jobupload;
 
 import com.hazelcast.jet.JetException;
@@ -13,18 +29,19 @@ import java.time.Instant;
 
 public class JobUploadStatus {
 
-    private static final ILogger logger = Logger.getLogger(JobUploadStatus.class);
+    private static ILogger logger = Logger.getLogger(JobUploadStatus.class);
+
+    private static final long EXPIRATION_MINUTES = 1;
 
     private Instant lastUpdatedTime = Instant.now();
 
-    protected static final long EXPIRATION_MINUTES = 1;
     private int currentPart;
     private int totalPart;
 
-    private final RunJarParameterObject parameterObject;
+    private final JobMetaDataParameterObject jobMetaDataParameterObject;
 
-    public JobUploadStatus(RunJarParameterObject parameterObject) {
-        this.parameterObject = parameterObject;
+    public JobUploadStatus(JobMetaDataParameterObject parameterObject) {
+        this.jobMetaDataParameterObject = parameterObject;
     }
 
     public boolean isExpired() {
@@ -37,36 +54,36 @@ public class JobUploadStatus {
 
     public void onRemove() {
         try {
-            if (parameterObject.getJarPath() != null) {
-                Files.delete(parameterObject.getJarPath());
+            if (jobMetaDataParameterObject.getJarPath() != null) {
+                Files.delete(jobMetaDataParameterObject.getJarPath());
             }
         } catch (IOException exception) {
-            logger.severe("Error while deleting file : " + parameterObject.getJarPath(), exception);
+            logger.severe("Error while deleting file : " + jobMetaDataParameterObject.getJarPath(), exception);
         }
     }
 
-    public RunJarParameterObject processJarData(int receivedCurrentPart, int receivedTotalPart, byte[] jarData, int length) throws IOException {
+    public JobMetaDataParameterObject processJarData(JobMultiPartParameterObject parameterObject) throws IOException {
 
-        ensureReceivedPartNumbersAreValid(receivedCurrentPart, receivedTotalPart);
+        ensureReceivedPartNumbersAreValid(parameterObject);
 
-        ensureReceivedPartNumbersAreExpected(receivedCurrentPart, receivedTotalPart);
+        ensureReceivedPartNumbersAreExpected(parameterObject);
 
         // Parts numbers are good. Save them
-        currentPart = receivedCurrentPart;
-        totalPart = receivedTotalPart;
+        currentPart = parameterObject.getCurrentPartNumber();
+        totalPart = parameterObject.getTotalPartNumber();
 
-        Path jarPath = parameterObject.getJarPath();
+        Path jarPath = jobMetaDataParameterObject.getJarPath();
 
         // If the first part
         if (currentPart == 1) {
             //Create a new temporary file
             jarPath = Files.createTempFile("runjob", ".jar");
-            parameterObject.setJarPath(jarPath);
+            jobMetaDataParameterObject.setJarPath(jarPath);
         }
 
         // Append data to file
         try (FileOutputStream outputStream = new FileOutputStream(jarPath.toFile(), true)) {
-            outputStream.write(jarData, 0, length);
+            outputStream.write(parameterObject.getPartData(), 0, parameterObject.getPartSize());
         }
 
         String message = String.format("Session : %s total file size %d", parameterObject.getSessionId(), Files.size(jarPath));
@@ -74,15 +91,18 @@ public class JobUploadStatus {
 
         changeLastUpdatedTime();
 
-        RunJarParameterObject result = null;
+        JobMetaDataParameterObject result = null;
         //Return if parts are complete
         if (currentPart == totalPart) {
-            result = parameterObject;
+            result = jobMetaDataParameterObject;
         }
         return result;
     }
 
-    private static void ensureReceivedPartNumbersAreValid(int receivedCurrentPart, int receivedTotalPart) {
+    private static void ensureReceivedPartNumbersAreValid(JobMultiPartParameterObject parameterObject) {
+        int receivedCurrentPart = parameterObject.getCurrentPartNumber();
+        int receivedTotalPart = parameterObject.getTotalPartNumber();
+
         //Ensure positive number
         if (receivedCurrentPart <= 0) {
             String errorMessage = String.format("receivedPart : %d is incorrect", receivedCurrentPart);
@@ -102,7 +122,10 @@ public class JobUploadStatus {
         }
     }
 
-    private void ensureReceivedPartNumbersAreExpected(int receivedCurrentPart, int receivedTotalPart) {
+    private void ensureReceivedPartNumbersAreExpected(JobMultiPartParameterObject parameterObject) {
+        int receivedCurrentPart = parameterObject.getCurrentPartNumber();
+        int receivedTotalPart = parameterObject.getTotalPartNumber();
+
         if (currentPart >= receivedCurrentPart) {
             String errorMessage = String.format("Received an old order part. currentPart : %d receivedPart : %d",
                     currentPart, receivedCurrentPart);

@@ -18,7 +18,7 @@ package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.jet.impl.jobupload.RunJarParameterObject;
+import com.hazelcast.jet.impl.jobupload.JobMetaDataParameterObject;
 
 import java.util.List;
 import java.util.UUID;
@@ -29,20 +29,20 @@ import java.util.concurrent.CompletableFuture;
  */
 public class UploadJobMetaDataOperation extends AsyncJobOperation {
 
-    RunJarParameterObject parameterObject;
+    JobMetaDataParameterObject jobMetaDataParameterObject;
 
     public UploadJobMetaDataOperation() {
     }
 
     public UploadJobMetaDataOperation(UUID sessionId, long jarSize, String snapshotName, String jobName, String mainClass,
                                       List<String> jobParameters) {
-        parameterObject = new RunJarParameterObject();
-        parameterObject.setSessionId(sessionId);
-        parameterObject.setJarSize(jarSize);
-        parameterObject.setSnapshotName(snapshotName);
-        parameterObject.setJobName(jobName);
-        parameterObject.setMainClass(mainClass);
-        parameterObject.setJobParameters(jobParameters);
+        jobMetaDataParameterObject = new JobMetaDataParameterObject();
+        jobMetaDataParameterObject.setSessionId(sessionId);
+        jobMetaDataParameterObject.setJarSize(jarSize);
+        jobMetaDataParameterObject.setSnapshotName(snapshotName);
+        jobMetaDataParameterObject.setJobName(jobName);
+        jobMetaDataParameterObject.setMainClass(mainClass);
+        jobMetaDataParameterObject.setJobParameters(jobParameters);
     }
 
 
@@ -51,7 +51,7 @@ public class UploadJobMetaDataOperation extends AsyncJobOperation {
         return CompletableFuture.supplyAsync(() -> {
             JetServiceBackend jetServiceBackend = getJetServiceBackend();
             jetServiceBackend.checkIfCanRunJar();
-            jetServiceBackend.storeJarMetaData(parameterObject);
+            jetServiceBackend.storeJobMetaData(jobMetaDataParameterObject);
             return true;
         });
     }

@@ -41,8 +41,9 @@ import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.impl.execution.TaskletExecutionService;
+import com.hazelcast.jet.impl.jobupload.JobMetaDataParameterObject;
+import com.hazelcast.jet.impl.jobupload.JobMultiPartParameterObject;
 import com.hazelcast.jet.impl.jobupload.JobUploadStore;
-import com.hazelcast.jet.impl.jobupload.RunJarParameterObject;
 import com.hazelcast.jet.impl.metrics.JobMetricsPublisher;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
 import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
@@ -62,7 +63,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Map;
 import java.util.Properties;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledFuture;
@@ -92,6 +92,8 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     private static final int NOTIFY_MEMBER_SHUTDOWN_DELAY = 5;
     private static final int SHUTDOWN_JOBS_MAX_WAIT_SECONDS = 10;
 
+    private static final int JOB_UPLOAD_STORE_PERIOD = 30;
+
     private NodeEngineImpl nodeEngine;
     private final ILogger logger;
     private final LiveOperationRegistry liveOperationRegistry;
@@ -112,6 +114,8 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     private final JobUploadStore jobUploadStore = new JobUploadStore();
 
     private ScheduledFuture<?> jobUploadStoreCheckerFuture;
+
+
 
     public JetServiceBackend(Node node) {
         this.logger = node.getLogger(getClass());
@@ -151,7 +155,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
 
         // Run periodically to clean expired jar uploads
         this.jobUploadStoreCheckerFuture = nodeEngine.getExecutionService().scheduleWithRepetition(
-                this::checkJobUploadStore, 0, 30, SECONDS);
+                this::checkJobUploadStore, 0, JOB_UPLOAD_STORE_PERIOD, SECONDS);
     }
 
     private void checkJobUploadStore() {
@@ -401,16 +405,18 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         jobCoordinationService.startScanningForJobs();
     }
 
-    public void storeJarMetaData(RunJarParameterObject parameterObject) {
+    // Store the metadata about the job jar that is uploaded
+    public void storeJobMetaData(JobMetaDataParameterObject parameterObject) {
         jobUploadStore.processJarMetaData(parameterObject);
     }
 
-    public RunJarParameterObject storeJarData(UUID sessionId, int currentPart, int totalPart, byte[] jarData, int length) {
-        RunJarParameterObject result = null;
+    // Store a part of job jar that is uploaded
+    public JobMetaDataParameterObject storeJobMultiPart(JobMultiPartParameterObject parameterObject) {
+        JobMetaDataParameterObject result = null;
         try {
-            result = jobUploadStore.processJarData(sessionId, currentPart, totalPart, jarData, length);
+            result = jobUploadStore.processJobMultipart(parameterObject);
         } catch (Exception exception) {
-            jobUploadStore.remove(sessionId);
+            jobUploadStore.remove(parameterObject.getSessionId());
             sneakyThrow(exception);
         }
         return result;
@@ -423,7 +429,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     }
 
     // Run the given jar as Jet job
-    public boolean runJar(RunJarParameterObject parameterObject) {
+    public boolean runJar(JobMetaDataParameterObject parameterObject) {
 
         try {
             HazelcastBootstrap.executeJar(this::getHazelcastClient,

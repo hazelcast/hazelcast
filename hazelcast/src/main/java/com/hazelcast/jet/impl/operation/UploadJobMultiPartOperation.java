@@ -18,7 +18,8 @@ package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.jet.impl.jobupload.RunJarParameterObject;
+import com.hazelcast.jet.impl.jobupload.JobMultiPartParameterObject;
+import com.hazelcast.jet.impl.jobupload.JobMetaDataParameterObject;
 
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -26,23 +27,17 @@ import java.util.concurrent.CompletableFuture;
 /**
  * Resumes the execution of a suspended job.
  */
-public class UploadJobDataOperation extends AsyncJobOperation {
+public class UploadJobMultiPartOperation extends AsyncJobOperation {
 
-    private UUID sessionId;
-    private int currentPartNumber;
-    private int totalPartNumber;
-    byte[] partData;
-    int partSize;
+    JobMultiPartParameterObject jobMultiPartParameterObject;
 
-    public UploadJobDataOperation() {
+    public UploadJobMultiPartOperation() {
     }
 
-    public UploadJobDataOperation(UUID sessionId, int currentPartNumber, int totalPartNumber, byte[] partData, int partSize) {
-        this.sessionId = sessionId;
-        this.currentPartNumber = currentPartNumber;
-        this.totalPartNumber = totalPartNumber;
-        this.partData = partData;
-        this.partSize = partSize;
+    public UploadJobMultiPartOperation(UUID sessionId, int currentPartNumber, int totalPartNumber, byte[] partData,
+                                       int partSize) {
+        jobMultiPartParameterObject = new JobMultiPartParameterObject(sessionId, currentPartNumber, totalPartNumber,
+                partData, partSize);
     }
 
 
@@ -50,7 +45,7 @@ public class UploadJobDataOperation extends AsyncJobOperation {
     public CompletableFuture<Boolean> doRun() {
         return CompletableFuture.supplyAsync(() -> {
             JetServiceBackend jetServiceBackend = getJetServiceBackend();
-            RunJarParameterObject partsComplete = jetServiceBackend.storeJarData(sessionId, currentPartNumber, totalPartNumber, partData, partSize);
+            JobMetaDataParameterObject partsComplete = jetServiceBackend.storeJobMultiPart(jobMultiPartParameterObject);
             if (partsComplete != null) {
                 jetServiceBackend.runJar(partsComplete);
             }
@@ -61,6 +56,6 @@ public class UploadJobDataOperation extends AsyncJobOperation {
 
     @Override
     public int getClassId() {
-        return JetInitDataSerializerHook.UPLOAD_JOB_DATA_OP;
+        return JetInitDataSerializerHook.UPLOAD_JOB_MULTIPART_OP;
     }
 }

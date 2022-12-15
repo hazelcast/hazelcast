@@ -29,13 +29,13 @@ import com.hazelcast.client.impl.protocol.codec.JetUploadJobMetaDataCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
-import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -137,10 +137,11 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     }
 
     @Override
-    public void uploadJob(@NotNull Path jarPath, String snapshotName, String jobName, String mainClass, @NotNull List<String> jobParameters) {
+    public void uploadJob(@Nonnull Path jarPath, String snapshotName, String jobName, String mainClass,
+                          @Nonnull List<String> jobParameters) {
 
         try {
-            UUID sessionId = UUID.randomUUID();
+            UUID sessionId = UuidUtil.newSecureUUID();
             long jarSize = Files.size(jarPath);
 
             // Send job meta data
@@ -177,13 +178,14 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
                 int bytesRead = fileInputStream.read(data);
 
                 //Send the part
-                ClientMessage jobDataRequest = JetUploadJobDataCodec.encodeRequest(sessionId, currentPartNumber, totalParts, data, bytesRead);
+                ClientMessage jobDataRequest = JetUploadJobDataCodec.encodeRequest(sessionId, currentPartNumber, totalParts,
+                        data, bytesRead);
                 invokeRequestOnMasterAndDecodeResponse(jobDataRequest, JetUploadJobDataCodec::decodeResponse);
             }
         }
     }
 
-    protected static int calculateTotalParts (long jarSize, int partSize) {
+    protected static int calculateTotalParts(long jarSize, int partSize) {
         return (int) Math.ceil(jarSize / (double) partSize);
     }
 

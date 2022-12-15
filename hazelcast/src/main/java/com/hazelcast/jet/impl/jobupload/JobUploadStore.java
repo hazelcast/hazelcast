@@ -1,3 +1,19 @@
+/*
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.jet.impl.jobupload;
 
 import com.hazelcast.jet.JetException;
@@ -31,22 +47,26 @@ public class JobUploadStore {
         }
     }
 
-    public void processJarMetaData(RunJarParameterObject parameterObject) {
+    public void processJarMetaData(JobMetaDataParameterObject parameterObject) {
         // Create a new JobUploadStatus object and save parameters
         jobMap.computeIfAbsent(parameterObject.getSessionId(), key -> new JobUploadStatus(parameterObject));
 
     }
 
-    public RunJarParameterObject processJarData(UUID sessionId, int currentPart, int totalPart, byte[] jarData, int length)
+    public JobMetaDataParameterObject processJobMultipart(JobMultiPartParameterObject parameterObject)
             throws IOException {
+        UUID sessionId = parameterObject.getSessionId();
+
         JobUploadStatus jobUploadStatus = jobMap.get(sessionId);
         if (jobUploadStatus == null) {
             throw new JetException("Unknown session id : " + sessionId);
         }
+        int currentPart = parameterObject.getCurrentPartNumber();
+        int totalPart = parameterObject.getTotalPartNumber();
         String message = String.format("Session : %s Received : %d of %d", sessionId, currentPart, totalPart);
         logger.info(message);
 
-        return jobUploadStatus.processJarData(currentPart, totalPart, jarData, length);
+        return jobUploadStatus.processJarData(parameterObject);
     }
 
 

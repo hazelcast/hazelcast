@@ -20,13 +20,13 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.codec.JetUploadJobDataCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.jet.impl.operation.UploadJobDataOperation;
+import com.hazelcast.jet.impl.operation.UploadJobMultiPartOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
-public class JetUploadJobDataTask extends
+public class JetUploadJobMultipartTask extends
         AbstractJetMessageTask<JetUploadJobDataCodec.RequestParameters, Boolean> {
 
-    protected JetUploadJobDataTask(ClientMessage clientMessage, Node node, Connection connection) {
+    protected JetUploadJobMultipartTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection,
                 JetUploadJobDataCodec::decodeRequest,
                 JetUploadJobDataCodec::encodeResponse);
@@ -34,7 +34,7 @@ public class JetUploadJobDataTask extends
 
     @Override
     protected Operation prepareOperation() {
-        return new UploadJobDataOperation(parameters.sessionId,
+        return new UploadJobMultiPartOperation(parameters.sessionId,
                 parameters.currentPartNumber,
                 parameters.totalPartNumber,
                 parameters.partData,

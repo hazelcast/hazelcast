@@ -118,7 +118,7 @@ public class JobUploadTest extends JetTestSupport {
 
         assertTrueEventually(() -> {
             List<Job> jobs = jetService.getJobs();
-            assertEquals (2, jobs.size());
+            assertEquals(2, jobs.size());
             assertTrue(containsName(jobs, job1));
             assertTrue(containsName(jobs, job2));
         });
@@ -126,7 +126,7 @@ public class JobUploadTest extends JetTestSupport {
         hazelcastInstance.shutdown();
     }
 
-    private boolean containsName(List<Job> list, String name){
+    private boolean containsName(List<Job> list, String name) {
         return list.stream().anyMatch(job -> Objects.equals(job.getName(), name));
     }
 

@@ -69,7 +69,7 @@ public class JetMessageTaskFactoryProvider implements MessageTaskFactoryProvider
         factories.put(JetExistsDistributedObjectCodec.REQUEST_MESSAGE_TYPE,
                 toFactory(JetExistsDistributedObjectMessageTask::new));
         factories.put(JetUploadJobMetaDataCodec.REQUEST_MESSAGE_TYPE, toFactory(JetUploadJobMetaDataTask::new));
-        factories.put(JetUploadJobDataCodec.REQUEST_MESSAGE_TYPE, toFactory(JetUploadJobDataTask::new));
+        factories.put(JetUploadJobDataCodec.REQUEST_MESSAGE_TYPE, toFactory(JetUploadJobMultipartTask::new));
     }
 
     @Override

@@ -25,7 +25,7 @@ import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.datamodel.Tuple2;
-import com.hazelcast.jet.impl.jobupload.RunJarParameterObject;
+import com.hazelcast.jet.impl.jobupload.JobMetaDataParameterObject;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
@@ -75,7 +75,7 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
                           List<String> jobParameters) {
 
         try {
-            RunJarParameterObject parameterObject = new RunJarParameterObject();
+            JobMetaDataParameterObject parameterObject = new JobMetaDataParameterObject();
             parameterObject.setSnapshotName(snapshotName);
             parameterObject.setJobName(jobName);
             parameterObject.setMainClass(mainClass);
