@@ -70,6 +70,8 @@ public class ClientMapLoadAllTest extends AbstractMapStoreTest {
         hazelcastFactory.newHazelcastInstance(config);
         hazelcastFactory.newHazelcastInstance(config);
 
+        waitForSafeState();
+
         try {
             final IMap<Object, Object> map = server.getMap(mapName);
             populateMap(map, itemCount);
@@ -85,12 +87,14 @@ public class ClientMapLoadAllTest extends AbstractMapStoreTest {
     }
 
     @Test
-    public void testLoadAll_givenKeys() throws Exception {
+    public void testLoadAll_givenKeys() {
         final String mapName = randomMapName();
         final Config config = createNewConfig(mapName);
         hazelcastFactory.newHazelcastInstance(config);
         hazelcastFactory.newHazelcastInstance(config);
         hazelcastFactory.newHazelcastInstance(config);
+
+        waitForSafeState();
 
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());
         final IMap<Object, Object> map = client.getMap(mapName);
@@ -138,6 +142,9 @@ public class ClientMapLoadAllTest extends AbstractMapStoreTest {
         hazelcastFactory.newHazelcastInstance(config);
         hazelcastFactory.newHazelcastInstance(config);
         hazelcastFactory.newHazelcastInstance(config);
+
+        waitForSafeState();
+
         final HazelcastInstance client = hazelcastFactory.newHazelcastClient(getClientConfig());
         final IMap<Object, Object> map = client.getMap(mapName);
         populateMap(map, 1000);
@@ -145,6 +152,12 @@ public class ClientMapLoadAllTest extends AbstractMapStoreTest {
         map.loadAll(true);
 
         assertEquals(1000, map.size());
+    }
+
+    private void waitForSafeState() {
+        Collection<HazelcastInstance> instances = hazelcastFactory.getAllHazelcastInstances();
+        warmUpPartitions(instances);
+        waitAllForSafeState(instances);
     }
 
     protected ClientConfig getClientConfig() {
