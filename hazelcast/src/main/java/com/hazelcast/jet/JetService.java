@@ -29,6 +29,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Jet is a component of Hazelcast to execute streaming or batch
@@ -299,4 +300,18 @@ public interface JetService {
      */
     @Nonnull
     Collection<Observable<?>> getObservables();
+
+    /**
+     * Associates the given listener with the given jobIds.
+     *
+     * @since Jet 5.3
+     */
+    void addJobStatusListener(Set<Long> jobIds, JobListener listener);
+
+    /**
+     * Stops delivering all events to the given listener.
+     *
+     * @since Jet 5.3
+     */
+    void removeJobStatusListener(JobListener listener);
 }

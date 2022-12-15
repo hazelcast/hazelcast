@@ -43,6 +43,7 @@ import com.hazelcast.internal.partition.InternalPartitionService;
 import com.hazelcast.internal.services.ConfigurableService;
 import com.hazelcast.internal.services.ManagedService;
 import com.hazelcast.internal.util.ServiceLoader;
+import com.hazelcast.jet.impl.JobService;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.multimap.impl.MultiMapService;
@@ -163,6 +164,7 @@ public final class ServiceManagerImpl implements ServiceManager {
         registerService(CRDTReplicationMigrationService.SERVICE_NAME, new CRDTReplicationMigrationService());
         registerService(DistributedScheduledExecutorService.SERVICE_NAME, new DistributedScheduledExecutorService());
         registerService(MetricsService.SERVICE_NAME, new MetricsService(nodeEngine));
+        registerService(JobService.SERVICE_NAME, new JobService(nodeEngine));
         registerCacheServiceIfAvailable();
         readServiceDescriptors();
     }

@@ -25,6 +25,7 @@ import com.hazelcast.jet.JetCacheManager;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobAlreadyExistsException;
+import com.hazelcast.jet.JobListener;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.Observable;
 import com.hazelcast.jet.config.JobConfig;
@@ -42,6 +43,7 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.security.permission.JobPermission;
+import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
 
@@ -51,6 +53,9 @@ import java.security.AccessControlException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -85,15 +90,19 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
             "\\(\"com.hazelcast.security.permission.MapPermission\" \"__jet\\.resources\\..*\" \"create\"\\) denied!";
 
     private final HazelcastInstance hazelcastInstance;
+    private final EventService eventService;
     private final JetCacheManagerImpl cacheManager;
     private final Supplier<JobRepository> jobRepository;
     private final Map<String, Observable> observables;
+    private final Map<JobListener, Map<String, UUID>> jobListeners;
 
     public AbstractJetInstance(HazelcastInstance hazelcastInstance) {
         this.hazelcastInstance = hazelcastInstance;
+        this.eventService = Util.getNodeEngine(hazelcastInstance).getEventService();
         this.cacheManager = new JetCacheManagerImpl(this);
         this.jobRepository = Util.memoizeConcurrent(() -> new JobRepository(hazelcastInstance));
         this.observables = new ConcurrentHashMap<>();
+        this.jobListeners = new ConcurrentHashMap<>();
     }
 
     public long newJobId() {
@@ -326,6 +335,25 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
                                 .map(o -> o.getName().substring(ObservableImpl.JET_OBSERVABLE_NAME_PREFIX.length()))
                                 .map(this::getObservable)
                                 .collect(Collectors.toList());
+    }
+
+    @Override
+    public void addJobStatusListener(Set<Long> jobIds, JobListener listener) {
+        Map<String, UUID> registrations = jobListeners.computeIfAbsent(listener, k -> new ConcurrentHashMap<>());
+        for (long jobId : jobIds) {
+            registrations.computeIfAbsent(String.valueOf(jobId), topic -> eventService.registerListener(
+                    JobService.SERVICE_NAME, topic, listener).getId());
+        }
+    }
+
+    @Override
+    public void removeJobStatusListener(JobListener listener) {
+        Map<String, UUID> registrations = jobListeners.remove(listener);
+        if (registrations != null) {
+            for (Entry<String, UUID> e : registrations.entrySet()) {
+                eventService.deregisterListener(JobService.SERVICE_NAME, e.getKey(), e.getValue());
+            }
+        }
     }
 
     @Override

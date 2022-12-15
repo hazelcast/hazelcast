@@ -18,6 +18,7 @@ package com.hazelcast.jet.impl.execution.init;
 
 import com.hazelcast.internal.serialization.DataSerializerHook;
 import com.hazelcast.internal.serialization.impl.FactoryIdHelper;
+import com.hazelcast.jet.impl.JobEvent;
 import com.hazelcast.jet.impl.JobExecutionRecord;
 import com.hazelcast.jet.impl.JobExecutionRecord.SnapshotStats;
 import com.hazelcast.jet.impl.JobRecord;
@@ -73,6 +74,7 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int JOB_RESULT = 4;
     public static final int INIT_EXECUTION_OP = 5;
     public static final int START_EXECUTION_OP = 6;
+    public static final int JOB_EVENT = 7;
     public static final int SUBMIT_JOB_OP = 8;
     public static final int GET_JOB_STATUS_OP = 9;
     public static final int SNAPSHOT_PHASE1_OPERATION = 10;
@@ -145,6 +147,8 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new InitExecutionOperation();
                 case START_EXECUTION_OP:
                     return new StartExecutionOperation();
+                case JOB_EVENT:
+                    return new JobEvent();
                 case SUBMIT_JOB_OP:
                     return new SubmitJobOperation();
                 case GET_JOB_STATUS_OP:
