@@ -18,22 +18,31 @@ package com.hazelcast.jet.impl.operation;
 
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
+import com.hazelcast.jet.impl.jobupload.RunJarParameterObject;
 
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
- * Resumes the execution of a suspended job.
+ * Uploads the metadata of a job to be executed by a jar
  */
-public class UploadJobOperation extends AsyncJobOperation {
+public class UploadJobMetaDataOperation extends AsyncJobOperation {
 
-    //RunJarParameterObject parameterObject;
+    RunJarParameterObject parameterObject;
 
-    public UploadJobOperation() {
+    public UploadJobMetaDataOperation() {
     }
 
-    public UploadJobOperation(String snapshotName, String jobName, String mainClass, List<String> jobParameters, byte[] jarData) {
-        //parameterObject = new RunJarParameterObject(snapshotName, jobName, mainClass, jobParameters, jarData);
+    public UploadJobMetaDataOperation(UUID sessionId, long jarSize, String snapshotName, String jobName, String mainClass,
+                                      List<String> jobParameters) {
+        parameterObject = new RunJarParameterObject();
+        parameterObject.setSessionId(sessionId);
+        parameterObject.setJarSize(jarSize);
+        parameterObject.setSnapshotName(snapshotName);
+        parameterObject.setJobName(jobName);
+        parameterObject.setMainClass(mainClass);
+        parameterObject.setJobParameters(jobParameters);
     }
 
 
@@ -41,7 +50,8 @@ public class UploadJobOperation extends AsyncJobOperation {
     public CompletableFuture<Boolean> doRun() {
         return CompletableFuture.supplyAsync(() -> {
             JetServiceBackend jetServiceBackend = getJetServiceBackend();
-            //return jetServiceBackend.runJar(parameterObject);
+            jetServiceBackend.checkIfCanRunJar();
+            jetServiceBackend.storeJarMetaData(parameterObject);
             return true;
         });
     }
@@ -49,6 +59,6 @@ public class UploadJobOperation extends AsyncJobOperation {
 
     @Override
     public int getClassId() {
-        return JetInitDataSerializerHook.UPLOAD_JOB_OP;
+        return JetInitDataSerializerHook.UPLOAD_JOB_METADATA_OP;
     }
 }

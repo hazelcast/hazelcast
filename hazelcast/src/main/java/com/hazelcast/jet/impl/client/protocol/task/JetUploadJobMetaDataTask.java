@@ -17,33 +17,34 @@
 package com.hazelcast.jet.impl.client.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.JetUploadJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetUploadJobMetaDataCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.jet.impl.operation.UploadJobOperation;
+import com.hazelcast.jet.impl.operation.UploadJobMetaDataOperation;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
-public class JetUploadJobMessageTask extends
-        AbstractJetMessageTask<JetUploadJobCodec.RequestParameters, Boolean> {
+public class JetUploadJobMetaDataTask extends
+        AbstractJetMessageTask<JetUploadJobMetaDataCodec.RequestParameters, Boolean> {
 
-    protected JetUploadJobMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    protected JetUploadJobMetaDataTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection,
-                JetUploadJobCodec::decodeRequest,
-                JetUploadJobCodec::encodeResponse);
+                JetUploadJobMetaDataCodec::decodeRequest,
+                JetUploadJobMetaDataCodec::encodeResponse);
     }
 
     @Override
     protected Operation prepareOperation() {
-        return new UploadJobOperation(parameters.snapshotName,
+        return new UploadJobMetaDataOperation(parameters.sessionId,
+                parameters.jarSize,
+                parameters.snapshotName,
                 parameters.jobName,
                 parameters.mainClass,
-                parameters.jobParameters,
-                parameters.jarData);
+                parameters.jobParameters);
     }
 
     @Override
     public String getMethodName() {
-        return "uploadJob";
+        return "uploadJobMetaData";
     }
 
     @Override

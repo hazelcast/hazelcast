@@ -401,19 +401,19 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         jobCoordinationService.startScanningForJobs();
     }
 
-    public void storeJarMetaData(UUID sessionId, RunJarParameterObject parameterObject) {
-        jobUploadStore.processJarMetaData(sessionId, parameterObject);
+    public void storeJarMetaData(RunJarParameterObject parameterObject) {
+        jobUploadStore.processJarMetaData(parameterObject);
     }
 
-    public boolean storeJarData(UUID sessionId, int currentPart, int totalPart, byte[] jarData) {
-        boolean partsComplete = false;
+    public RunJarParameterObject storeJarData(UUID sessionId, int currentPart, int totalPart, byte[] jarData, int length) {
+        RunJarParameterObject result = null;
         try {
-            partsComplete = jobUploadStore.processJarData(sessionId, currentPart, totalPart, jarData);
+            result = jobUploadStore.processJarData(sessionId, currentPart, totalPart, jarData, length);
         } catch (Exception exception) {
             jobUploadStore.remove(sessionId);
             sneakyThrow(exception);
         }
-        return partsComplete;
+        return result;
     }
 
     public void checkIfCanRunJar() {

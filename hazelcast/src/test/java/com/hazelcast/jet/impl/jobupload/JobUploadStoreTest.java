@@ -3,18 +3,25 @@ package com.hazelcast.jet.impl.jobupload;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
+import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
 import java.nio.file.Files;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 public class JobUploadStoreTest {
     @Spy
@@ -30,13 +37,24 @@ public class JobUploadStoreTest {
     @Test
     public void testCleanExpiredUploads() {
         UUID sessionID = UUID.randomUUID();
-        JobUploadStatus jobUploadStatus = new JobUploadStatus(sessionID, new RunJarParameterObject());
-        jobUploadStatus.lastUpdatedTime = System.nanoTime() - TimeUnit.MINUTES.toNanos(JobUploadStatus.EXPIRATION_MINUTES);
+        JobUploadStatus jobUploadStatus;
+
+        //Mock static method of Instant.now() to return an expired time
+        Instant expiredTime = Instant.now().minus(1, ChronoUnit.MINUTES);
+        try (MockedStatic<Instant> mocked = mockStatic(Instant.class)) {
+            Instant Instant = mock(Instant.class);
+            when(Instant.now()).thenReturn(expiredTime);
+
+            RunJarParameterObject runJarParameterObject = new RunJarParameterObject();
+            jobUploadStatus = new JobUploadStatus(runJarParameterObject);
+        }
 
         jobMap.put(sessionID, jobUploadStatus);
         jobUploadStore.cleanExpiredUploads();
 
         assertEquals(0, jobMap.size());
+
+
     }
 
     @Test
@@ -53,7 +71,8 @@ public class JobUploadStoreTest {
     public void testProcessJarMetaData() {
         UUID sessionID = UUID.randomUUID();
         RunJarParameterObject parameterObject = new RunJarParameterObject();
-        jobUploadStore.processJarMetaData(sessionID, parameterObject);
+        parameterObject.setSessionId(sessionID);
+        jobUploadStore.processJarMetaData(parameterObject);
 
         assertEquals(1, jobMap.size());
 
@@ -63,13 +82,15 @@ public class JobUploadStoreTest {
     public void testProcessJarData() throws Exception {
         UUID sessionID = UUID.randomUUID();
         RunJarParameterObject parameterObject = new RunJarParameterObject();
-        jobUploadStore.processJarMetaData(sessionID, parameterObject);
+        parameterObject.setSessionId(sessionID);
+        jobUploadStore.processJarMetaData(parameterObject);
 
-        boolean result = jobUploadStore.processJarData(sessionID, 1, 2, new byte[]{(byte) 0});
-        assertFalse(result);
+        byte[] jarData = {(byte) 0};
+        RunJarParameterObject result = jobUploadStore.processJarData(sessionID, 1, 2, jarData, jarData.length);
+        assertNull(result);
 
-        result = jobUploadStore.processJarData(sessionID, 2, 2, new byte[]{(byte) 0});
-        assertTrue(result);
+        result = jobUploadStore.processJarData(sessionID, 2, 2, jarData, jarData.length);
+        assertNotNull(result);
         assertTrue(Files.exists(parameterObject.getJarPath()));
 
         jobUploadStore.remove(sessionID);

@@ -31,14 +31,14 @@ public class JobUploadStore {
         }
     }
 
-    public void processJarMetaData(UUID sessionId, RunJarParameterObject parameterObject) {
-
+    public void processJarMetaData(RunJarParameterObject parameterObject) {
         // Create a new JobUploadStatus object and save parameters
-        jobMap.computeIfAbsent(sessionId, key -> new JobUploadStatus(sessionId, parameterObject));
+        jobMap.computeIfAbsent(parameterObject.getSessionId(), key -> new JobUploadStatus(parameterObject));
 
     }
 
-    public boolean processJarData(UUID sessionId, int currentPart, int totalPart, byte[] jarData) throws IOException {
+    public RunJarParameterObject processJarData(UUID sessionId, int currentPart, int totalPart, byte[] jarData, int length)
+            throws IOException {
         JobUploadStatus jobUploadStatus = jobMap.get(sessionId);
         if (jobUploadStatus == null) {
             throw new JetException("Unknown session id : " + sessionId);
@@ -46,7 +46,7 @@ public class JobUploadStore {
         String message = String.format("Session : %s Received : %d of %d", sessionId, currentPart, totalPart);
         logger.info(message);
 
-        return jobUploadStatus.processJarData(currentPart, totalPart, jarData);
+        return jobUploadStatus.processJarData(currentPart, totalPart, jarData, length);
     }
 
 

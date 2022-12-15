@@ -51,7 +51,8 @@ import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.jet.impl.operation.SubmitJobOperation;
 import com.hazelcast.jet.impl.operation.TerminateExecutionOperation;
 import com.hazelcast.jet.impl.operation.TerminateJobOperation;
-import com.hazelcast.jet.impl.operation.UploadJobOperation;
+import com.hazelcast.jet.impl.operation.UploadJobDataOperation;
+import com.hazelcast.jet.impl.operation.UploadJobMetaDataOperation;
 import com.hazelcast.jet.impl.processor.NoopP;
 import com.hazelcast.jet.impl.processor.ProcessorSupplierFromSimpleSupplier;
 import com.hazelcast.jet.impl.processor.SessionWindowP;
@@ -114,7 +115,8 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int SQL_SUMMARY = 48;
     public static final int WRAPPING_PROCESSOR_META_SUPPLIER = 49;
     public static final int WRAPPING_PROCESSOR_SUPPLIER = 50;
-    public static final int UPLOAD_JOB_OP = 51;
+    public static final int UPLOAD_JOB_METADATA_OP = 51;
+    public static final int UPLOAD_JOB_DATA_OP = 52;
 
     public static final int FACTORY_ID = FactoryIdHelper.getFactoryId(JET_IMPL_DS_FACTORY, JET_IMPL_DS_FACTORY_ID);
 
@@ -221,8 +223,10 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new WrappingProcessorMetaSupplier();
                 case WRAPPING_PROCESSOR_SUPPLIER:
                     return new WrappingProcessorSupplier();
-                case  UPLOAD_JOB_OP:
-                    return new UploadJobOperation();
+                case UPLOAD_JOB_METADATA_OP:
+                    return new UploadJobMetaDataOperation();
+                case UPLOAD_JOB_DATA_OP:
+                    return new UploadJobDataOperation();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

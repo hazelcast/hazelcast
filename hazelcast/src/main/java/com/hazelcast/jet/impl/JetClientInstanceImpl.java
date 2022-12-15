@@ -24,7 +24,8 @@ import com.hazelcast.client.impl.protocol.codec.JetExistsDistributedObjectCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobAndSqlSummaryListCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSummaryListCodec;
-import com.hazelcast.client.impl.protocol.codec.JetUploadJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetUploadJobDataCodec;
+import com.hazelcast.client.impl.protocol.codec.JetUploadJobMetaDataCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -34,8 +35,12 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
@@ -132,21 +137,54 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     }
 
     @Override
-    public void uploadJob(@Nonnull Path jarPath, String snapshotName, String jobName, String mainClass,
-                          @Nonnull List<String> jobParameters) {
+    public void uploadJob(@NotNull Path jarPath, String snapshotName, String jobName, String mainClass, @NotNull List<String> jobParameters) {
+
         try {
-            byte[] jarData = Files.readAllBytes(jarPath);
-            sendJobData(snapshotName, jobName, mainClass, jobParameters, jarData);
-        } catch (Exception exception) {
+            UUID sessionId = UUID.randomUUID();
+            long jarSize = Files.size(jarPath);
+
+            // Send job meta data
+            sendJobMetaData(sessionId, jarSize, snapshotName, jobName, mainClass, jobParameters);
+
+            sendJobData(jarPath, sessionId, jarSize);
+
+        } catch (IOException exception) {
             sneakyThrow(exception);
         }
     }
 
-    private void sendJobData(String snapshotName, String jobName, String mainClass, List<String> jobParameters,
-                             byte[] jarData) {
-        ClientMessage jobMetaDataRequest = JetUploadJobCodec.encodeRequest(snapshotName, jobName, mainClass,
-                jobParameters, jarData);
-        invokeRequestOnMasterAndDecodeResponse(jobMetaDataRequest, JetUploadJobCodec::decodeResponse);
+    private void sendJobMetaData(UUID sessionId, long jarSize, String snapshotName, String jobName,
+                                 String mainClass, List<String> jobParameters) {
+
+        ClientMessage jobMetaDataRequest = JetUploadJobMetaDataCodec.encodeRequest(sessionId, jarSize, snapshotName,
+                jobName, mainClass, jobParameters);
+        invokeRequestOnMasterAndDecodeResponse(jobMetaDataRequest, JetUploadJobMetaDataCodec::decodeResponse);
+    }
+
+    private void sendJobData(Path jarPath, UUID sessionId, long jarSize) throws IOException {
+        final int partSize = 10_000_000;
+        int totalParts = calculateTotalParts(jarSize, partSize);
+
+        File file = jarPath.toFile();
+
+        byte[] data = new byte[partSize];
+
+        try (FileInputStream fileInputStream = new FileInputStream(file)) {
+
+            for (int currentPartNumber = 1; currentPartNumber <= totalParts; currentPartNumber++) {
+
+                // Read data
+                int bytesRead = fileInputStream.read(data);
+
+                //Send the part
+                ClientMessage jobDataRequest = JetUploadJobDataCodec.encodeRequest(sessionId, currentPartNumber, totalParts, data, bytesRead);
+                invokeRequestOnMasterAndDecodeResponse(jobDataRequest, JetUploadJobDataCodec::decodeResponse);
+            }
+        }
+    }
+
+    protected static int calculateTotalParts (long jarSize, int partSize) {
+        return (int) Math.ceil(jarSize / (double) partSize);
     }
 
     @Override

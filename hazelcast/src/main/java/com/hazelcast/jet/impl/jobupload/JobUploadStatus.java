@@ -4,20 +4,18 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
-import java.util.UUID;
-
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import java.time.Duration;
+import java.time.Instant;
 
 public class JobUploadStatus {
 
     private static final ILogger logger = Logger.getLogger(JobUploadStatus.class);
 
-    private final UUID sessionId;
-    protected long lastUpdatedTime = System.nanoTime();
+    private Instant lastUpdatedTime = Instant.now();
 
     protected static final long EXPIRATION_MINUTES = 1;
     private int currentPart;
@@ -25,15 +23,16 @@ public class JobUploadStatus {
 
     private final RunJarParameterObject parameterObject;
 
-    public JobUploadStatus(UUID sessionId, RunJarParameterObject parameterObject) {
-        this.sessionId = sessionId;
+    public JobUploadStatus(RunJarParameterObject parameterObject) {
         this.parameterObject = parameterObject;
     }
 
     public boolean isExpired() {
-        long elapsedTime = NANOSECONDS.toMinutes(System.nanoTime() - lastUpdatedTime);
-
-        return elapsedTime >= EXPIRATION_MINUTES;
+        Instant now = Instant.now();
+        Duration between = Duration.between(lastUpdatedTime, now);
+        // Check if total number of minutes is bigger
+        long minutes = between.toMinutes();
+        return minutes >= EXPIRATION_MINUTES;
     }
 
     public void onRemove() {
@@ -46,7 +45,7 @@ public class JobUploadStatus {
         }
     }
 
-    public boolean processJarData(int receivedCurrentPart, int receivedTotalPart, byte[] jarData) throws IOException {
+    public RunJarParameterObject processJarData(int receivedCurrentPart, int receivedTotalPart, byte[] jarData, int length) throws IOException {
 
         ensureReceivedPartNumbersAreValid(receivedCurrentPart, receivedTotalPart);
 
@@ -66,15 +65,21 @@ public class JobUploadStatus {
         }
 
         // Append data to file
-        Files.write(jarPath, jarData, StandardOpenOption.APPEND);
+        try (FileOutputStream outputStream = new FileOutputStream(jarPath.toFile(), true)) {
+            outputStream.write(jarData, 0, length);
+        }
 
-        String message = String.format("Session : %s total file size %d", sessionId, Files.size(jarPath));
+        String message = String.format("Session : %s total file size %d", parameterObject.getSessionId(), Files.size(jarPath));
         logger.info(message);
 
         changeLastUpdatedTime();
 
+        RunJarParameterObject result = null;
         //Return if parts are complete
-        return currentPart == totalPart;
+        if (currentPart == totalPart) {
+            result = parameterObject;
+        }
+        return result;
     }
 
     private static void ensureReceivedPartNumbersAreValid(int receivedCurrentPart, int receivedTotalPart) {
@@ -118,6 +123,6 @@ public class JobUploadStatus {
     }
 
     protected void changeLastUpdatedTime() {
-        this.lastUpdatedTime = System.nanoTime();
+        this.lastUpdatedTime = Instant.now();
     }
 }

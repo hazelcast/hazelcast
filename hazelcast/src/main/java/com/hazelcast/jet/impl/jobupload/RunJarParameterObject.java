@@ -18,12 +18,16 @@ package com.hazelcast.jet.impl.jobupload;
 
 import java.nio.file.Path;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * The wrapper for all parameters to run an uploaded jar as Jet job
  */
 public class RunJarParameterObject {
 
+    private UUID sessionId;
+
+    private long jarSize;
     private String snapshotName;
     private String jobName;
 
@@ -32,6 +36,22 @@ public class RunJarParameterObject {
     private List<String> jobParameters;
 
     private Path jarPath;
+
+    public UUID getSessionId() {
+        return sessionId;
+    }
+
+    public void setSessionId(UUID sessionId) {
+        this.sessionId = sessionId;
+    }
+
+    public long getJarSize() {
+        return jarSize;
+    }
+
+    public void setJarSize(long jarSize) {
+        this.jarSize = jarSize;
+    }
 
     public String getSnapshotName() {
         return snapshotName;
