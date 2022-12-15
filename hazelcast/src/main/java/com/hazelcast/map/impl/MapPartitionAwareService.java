@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.cluster.Address;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.internal.partition.PartitionAwareService;
 import com.hazelcast.spi.impl.eventservice.impl.EventServiceImpl;
@@ -37,13 +36,11 @@ class MapPartitionAwareService implements PartitionAwareService {
     private final MapServiceContext mapServiceContext;
     private final NodeEngine nodeEngine;
     private final EventServiceImpl eventService;
-    private final ILogger logger;
 
     MapPartitionAwareService(MapServiceContext mapServiceContext) {
         this.mapServiceContext = mapServiceContext;
         this.nodeEngine = mapServiceContext.getNodeEngine();
         this.eventService = (EventServiceImpl) this.nodeEngine.getEventService();
-        this.logger = nodeEngine.getLogger(MapPartitionAwareService.class.getName());
     }
 
     @Override
@@ -53,7 +50,6 @@ class MapPartitionAwareService implements PartitionAwareService {
 
         EventServiceSegment eventServiceSegment = eventService.getSegment(MapService.SERVICE_NAME, false);
         if (eventServiceSegment == null) {
-            logger.warning("No service registration found for " + MapService.SERVICE_NAME);
             return;
         }
         Set<String> maps = eventServiceSegment.getRegistrations().keySet();
