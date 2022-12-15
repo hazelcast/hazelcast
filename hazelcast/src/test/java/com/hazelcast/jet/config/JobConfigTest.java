@@ -148,12 +148,12 @@ public class JobConfigTest extends JetTestSupport {
     }
 
     @Test
-    public void when_default_then_suspendOnFailureEnabled() {
+    public void when_default_then_suspendOnFailureDisabled() {
         // Given
         JobConfig config = new JobConfig();
 
         // Then
-        assertThat(config.isSuspendOnFailure()).isEqualTo(TRUE);
+        assertThat(config.isSuspendOnFailure()).isEqualTo(FALSE);
     }
 
     @Test
@@ -162,10 +162,10 @@ public class JobConfigTest extends JetTestSupport {
         JobConfig config = new JobConfig();
 
         // When
-        config.setSuspendOnFailure(false);
+        config.setSuspendOnFailure(true);
 
         // Then
-        assertThat(config.isSuspendOnFailure()).isEqualTo(FALSE);
+        assertThat(config.isSuspendOnFailure()).isEqualTo(TRUE);
     }
 
     @Test
