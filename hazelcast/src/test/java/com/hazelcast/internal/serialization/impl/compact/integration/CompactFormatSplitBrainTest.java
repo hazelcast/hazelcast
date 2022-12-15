@@ -205,6 +205,7 @@ public class CompactFormatSplitBrainTest extends HazelcastTestSupport {
         // make sure that cluster is split
         assertClusterSizeEventually(largerBrain.instances.size(), largerBrain.instances);
         assertClusterSizeEventually(smallerBrain.instances.size(), smallerBrain.instances);
+        waitAllForSafeState(allInstances);
     }
 
     private void mergeCluster() {

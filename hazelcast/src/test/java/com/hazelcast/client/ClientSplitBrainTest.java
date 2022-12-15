@@ -220,8 +220,7 @@ public class ClientSplitBrainTest extends ClientTestSupport {
 
     @Test
     public void testMemberList_afterConnectingToOtherHalf() {
-        Config config = smallInstanceConfig();
-        config.getJetConfig().setEnabled(false);
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
 
         // Client now has the cluster view listener registered to instance1
