@@ -24,8 +24,8 @@ import com.hazelcast.client.impl.protocol.codec.JetExistsDistributedObjectCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobAndSqlSummaryListCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobIdsCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSummaryListCodec;
-import com.hazelcast.client.impl.protocol.codec.JetUploadJobDataCodec;
 import com.hazelcast.client.impl.protocol.codec.JetUploadJobMetaDataCodec;
+import com.hazelcast.client.impl.protocol.codec.JetUploadJobMultipartCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
@@ -178,9 +178,9 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
                 int bytesRead = fileInputStream.read(data);
 
                 //Send the part
-                ClientMessage jobDataRequest = JetUploadJobDataCodec.encodeRequest(sessionId, currentPartNumber, totalParts,
+                ClientMessage jobDataRequest = JetUploadJobMultipartCodec.encodeRequest(sessionId, currentPartNumber, totalParts,
                         data, bytesRead);
-                invokeRequestOnMasterAndDecodeResponse(jobDataRequest, JetUploadJobDataCodec::decodeResponse);
+                invokeRequestOnMasterAndDecodeResponse(jobDataRequest, JetUploadJobMultipartCodec::decodeResponse);
             }
         }
     }

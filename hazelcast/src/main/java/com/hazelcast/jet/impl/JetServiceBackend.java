@@ -431,6 +431,8 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     // Run the given jar as Jet job
     public boolean runJar(JobMetaDataParameterObject parameterObject) {
 
+        logger.info("runJar Starting job for session id :" + parameterObject.getSessionId());
+
         try {
             HazelcastBootstrap.executeJar(this::getHazelcastClient,
                     parameterObject.getJarPath().toString(),
@@ -441,16 +443,15 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
                     false
             );
         } catch (Exception exception) {
+            logger.severe("runJar caught exception when running the jar", exception);
             // Exception happened during run. Try to delete the jar file
             try {
                 Files.delete(parameterObject.getJarPath());
             } catch (IOException ignored) {
-                logger.severe("There was an exception deleting the jar :" + parameterObject.getJarPath());
+                logger.severe("runJar There was an exception deleting the jar :" + parameterObject.getJarPath());
             }
-            sneakyThrow(exception);
         }
         return true;
-
     }
 
     private HazelcastInstance getHazelcastClient() {

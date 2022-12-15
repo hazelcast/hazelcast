@@ -48,6 +48,10 @@ public class JobUploadStore {
     }
 
     public void processJarMetaData(JobMetaDataParameterObject parameterObject) {
+        UUID sessionId = parameterObject.getSessionId();
+        String message = String.format("processJarMetaData : Session : %s ",sessionId);
+        logger.info(message);
+
         // Create a new JobUploadStatus object and save parameters
         jobMap.computeIfAbsent(parameterObject.getSessionId(), key -> new JobUploadStatus(parameterObject));
 
@@ -55,19 +59,29 @@ public class JobUploadStore {
 
     public JobMetaDataParameterObject processJobMultipart(JobMultiPartParameterObject parameterObject)
             throws IOException {
+        // Log parameterObject
         UUID sessionId = parameterObject.getSessionId();
+        int currentPart = parameterObject.getCurrentPartNumber();
+        int totalPart = parameterObject.getTotalPartNumber();
+        String message = String.format("processJobMultipart : Session : %s Received : %d of %d", sessionId, currentPart, totalPart);
+        logger.info(message);
 
         JobUploadStatus jobUploadStatus = jobMap.get(sessionId);
         if (jobUploadStatus == null) {
             throw new JetException("Unknown session id : " + sessionId);
         }
-        int currentPart = parameterObject.getCurrentPartNumber();
-        int totalPart = parameterObject.getTotalPartNumber();
-        String message = String.format("Session : %s Received : %d of %d", sessionId, currentPart, totalPart);
-        logger.info(message);
 
-        return jobUploadStatus.processJarData(parameterObject);
+
+        JobMetaDataParameterObject partsComplete = jobUploadStatus.processJarData(parameterObject);
+
+        // If job upload is complete, remote from the map
+        if(partsComplete != null) {
+
+            message = String.format("Session : %s is complete. It will be removed from the map", sessionId);
+            logger.info(message);
+
+            jobMap.remove(partsComplete.getSessionId());
+        }
+        return partsComplete;
     }
-
-
 }
