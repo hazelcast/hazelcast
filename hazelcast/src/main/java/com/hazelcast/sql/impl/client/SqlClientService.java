@@ -379,6 +379,11 @@ public class SqlClientService implements SqlService {
     public ClientConnection getQueryConnection(int partitionId) {
         try {
             final UUID nodeId = client.getClientPartitionService().getPartitionOwner(partitionId);
+            if (nodeId == null) {
+                // TODO: do something else here?
+                return getQueryConnection();
+            }
+
             ClientConnection connection = client.getConnectionManager().getConnection(nodeId);
 
             if (connection == null) {
