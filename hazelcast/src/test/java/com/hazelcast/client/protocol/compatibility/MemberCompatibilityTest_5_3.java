@@ -47,12 +47,12 @@ import static org.junit.Assert.assertFalse;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MemberCompatibilityTest_2_6 {
+public class MemberCompatibilityTest_5_3 {
     private final List<ClientMessage> clientMessages = new ArrayList<>();
 
     @Before
     public void setUp() throws IOException {
-        File file = new File(getClass().getResource("/2.6.protocol.compatibility.binary").getFile());
+        File file = new File(getClass().getResource("/5.3.protocol.compatibility.binary").getFile());
         InputStream inputStream = new FileInputStream(file);
         byte[] data = new byte[(int) file.length()];
         inputStream.read(data);

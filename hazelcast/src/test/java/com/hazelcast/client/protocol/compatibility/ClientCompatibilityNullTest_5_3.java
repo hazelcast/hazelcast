@@ -43,15 +43,17 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class ClientCompatibilityNullTest_2_6 {
+public class ClientCompatibilityNullTest_5_3 {
     private final List<ClientMessage> clientMessages = new ArrayList<>();
 
     @Before
     public void setUp() throws IOException {
-        File file = new File(getClass().getResource("/2.6.protocol.compatibility.null.binary").getFile());
+        File file = new File(getClass().getResource("/5.3.protocol.compatibility.null.binary").getFile());
         InputStream inputStream = new FileInputStream(file);
         byte[] data = new byte[(int) file.length()];
         inputStream.read(data);
@@ -128,9 +130,8 @@ public class ClientCompatibilityNullTest_2_6 {
             assertTrue(isEqual(anInt, version));
             assertTrue(isEqual(aListOfMemberInfos, memberInfos));
         }
-
         @Override
-        public void handlePartitionsViewEvent(int version, java.util.Collection<java.util.Map.Entry<java.util.UUID, List<Integer>>> partitions) {
+        public void handlePartitionsViewEvent(int version, java.util.Collection<java.util.Map.Entry<java.util.UUID, java.util.List<java.lang.Integer>>> partitions) {
             assertTrue(isEqual(anInt, version));
             assertTrue(isEqual(aListOfUUIDToListOfIntegers, partitions));
         }
@@ -257,7 +258,7 @@ public class ClientCompatibilityNullTest_2_6 {
 
     private static class ClientAddDistributedObjectListenerCodecHandler extends ClientAddDistributedObjectListenerCodec.AbstractEventHandler {
         @Override
-        public void handleDistributedObjectEvent(String name, String serviceName, String eventType, java.util.UUID source) {
+        public void handleDistributedObjectEvent(java.lang.String name, java.lang.String serviceName, java.lang.String eventType, java.util.UUID source) {
             assertTrue(isEqual(aString, name));
             assertTrue(isEqual(aString, serviceName));
             assertTrue(isEqual(aString, eventType));
@@ -404,7 +405,6 @@ public class ClientCompatibilityNullTest_2_6 {
             assertTrue(isEqual(aMigrationState, migrationState));
             assertTrue(isEqual(anInt, type));
         }
-
         @Override
         public void handleReplicaMigrationEvent(com.hazelcast.partition.MigrationState migrationState, int partitionId, int replicaIndex, java.util.UUID sourceUuid, java.util.UUID destUuid, boolean success, long elapsedTime) {
             assertTrue(isEqual(aMigrationState, migrationState));
@@ -1530,9 +1530,8 @@ public class ClientCompatibilityNullTest_2_6 {
             assertTrue(isEqual(aUUID, partitionUuid));
             assertTrue(isEqual(aLong, sequence));
         }
-
         @Override
-        public void handleIMapBatchInvalidationEvent(java.util.Collection<com.hazelcast.internal.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<Long> sequences) {
+        public void handleIMapBatchInvalidationEvent(java.util.Collection<com.hazelcast.internal.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences) {
             assertTrue(isEqual(aListOfData, keys));
             assertTrue(isEqual(aListOfUUIDs, sourceUuids));
             assertTrue(isEqual(aListOfUUIDs, partitionUuids));
@@ -4886,16 +4885,15 @@ public class ClientCompatibilityNullTest_2_6 {
 
     private static class CacheAddNearCacheInvalidationListenerCodecHandler extends CacheAddNearCacheInvalidationListenerCodec.AbstractEventHandler {
         @Override
-        public void handleCacheInvalidationEvent(String name, com.hazelcast.internal.serialization.Data key, java.util.UUID sourceUuid, java.util.UUID partitionUuid, long sequence) {
+        public void handleCacheInvalidationEvent(java.lang.String name, com.hazelcast.internal.serialization.Data key, java.util.UUID sourceUuid, java.util.UUID partitionUuid, long sequence) {
             assertTrue(isEqual(aString, name));
             assertTrue(isEqual(null, key));
             assertTrue(isEqual(null, sourceUuid));
             assertTrue(isEqual(aUUID, partitionUuid));
             assertTrue(isEqual(aLong, sequence));
         }
-
         @Override
-        public void handleCacheBatchInvalidationEvent(String name, java.util.Collection<com.hazelcast.internal.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<Long> sequences) {
+        public void handleCacheBatchInvalidationEvent(java.lang.String name, java.util.Collection<com.hazelcast.internal.serialization.Data> keys, java.util.Collection<java.util.UUID> sourceUuids, java.util.Collection<java.util.UUID> partitionUuids, java.util.Collection<java.lang.Long> sequences) {
             assertTrue(isEqual(aString, name));
             assertTrue(isEqual(aListOfData, keys));
             assertTrue(isEqual(aListOfUUIDs, sourceUuids));
@@ -5189,9 +5187,8 @@ public class ClientCompatibilityNullTest_2_6 {
         public void handleQueryCacheSingleEvent(com.hazelcast.map.impl.querycache.event.QueryCacheEventData data) {
             assertTrue(isEqual(aQueryCacheEventData, data));
         }
-
         @Override
-        public void handleQueryCacheBatchEvent(java.util.Collection<com.hazelcast.map.impl.querycache.event.QueryCacheEventData> events, String source, int partitionId) {
+        public void handleQueryCacheBatchEvent(java.util.Collection<com.hazelcast.map.impl.querycache.event.QueryCacheEventData> events, java.lang.String source, int partitionId) {
             assertTrue(isEqual(aListOfQueryCacheEventData, events));
             assertTrue(isEqual(aString, source));
             assertTrue(isEqual(anInt, partitionId));
