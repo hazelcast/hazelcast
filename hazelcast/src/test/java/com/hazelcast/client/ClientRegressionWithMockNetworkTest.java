@@ -102,7 +102,7 @@ public class ClientRegressionWithMockNetworkTest extends HazelcastTestSupport {
     public void cleanup() {
         hazelcastFactory.terminateAll();
 
-        assertNoRunningInstancesEventually(name.getMethodName());
+        assertNoRunningInstancesEventually(name.getMethodName(), hazelcastFactory);
     }
 
     @Test
