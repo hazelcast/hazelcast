@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("0f801cab02ae9ecd4d42a0767e91d51f")
+@Generated("b6ddb42cf87c3d26d72592bf16807eda")
 public final class JobAndSqlSummaryCodec {
     private static final int LIGHT_JOB_FIELD_OFFSET = 0;
     private static final int JOB_ID_FIELD_OFFSET = LIGHT_JOB_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -54,6 +54,7 @@ public final class JobAndSqlSummaryCodec {
         StringCodec.encode(clientMessage, jobAndSqlSummary.getNameOrId());
         CodecUtil.encodeNullable(clientMessage, jobAndSqlSummary.getFailureText(), StringCodec::encode);
         CodecUtil.encodeNullable(clientMessage, jobAndSqlSummary.getSqlSummary(), SqlSummaryCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, jobAndSqlSummary.getSuspensionCause(), StringCodec::encode);
 
         clientMessage.add(END_FRAME.copy());
     }
@@ -79,9 +80,15 @@ public final class JobAndSqlSummaryCodec {
         java.lang.String nameOrId = StringCodec.decode(iterator);
         java.lang.String failureText = CodecUtil.decodeNullable(iterator, StringCodec::decode);
         com.hazelcast.jet.impl.SqlSummary sqlSummary = CodecUtil.decodeNullable(iterator, SqlSummaryCodec::decode);
+        boolean isSuspensionCauseExists = false;
+        java.lang.String suspensionCause = null;
+        if (!iterator.peekNext().isEndFrame()) {
+            suspensionCause = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+            isSuspensionCauseExists = true;
+        }
 
         fastForwardToEndFrame(iterator);
 
-        return CustomTypeFactory.createJobAndSqlSummary(lightJob, jobId, executionId, nameOrId, status, submissionTime, completionTime, failureText, sqlSummary, isUserCancelledExists, userCancelled);
+        return CustomTypeFactory.createJobAndSqlSummary(lightJob, jobId, executionId, nameOrId, status, submissionTime, completionTime, failureText, sqlSummary, isSuspensionCauseExists, suspensionCause, isUserCancelledExists, userCancelled);
     }
 }

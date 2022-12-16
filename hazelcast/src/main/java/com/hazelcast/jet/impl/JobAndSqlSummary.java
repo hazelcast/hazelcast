@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.jet.core.JobStatus;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.Objects;
 
 public class JobAndSqlSummary {
@@ -31,6 +32,7 @@ public class JobAndSqlSummary {
     private final long completionTime;
     private final String failureText;
     private final SqlSummary sqlSummary;
+    private final String suspensionCause;
     /**
      * True, if the job has been cancelled based on a user request, false
      * otherwise (also while the job is running).
@@ -47,6 +49,7 @@ public class JobAndSqlSummary {
             long completionTime,
             String failureText,
             SqlSummary sqlSummary,
+            @Nullable String suspensionCause,
             boolean userCancelled) {
         this.isLightJob = isLightJob;
         this.jobId = jobId;
@@ -57,6 +60,7 @@ public class JobAndSqlSummary {
         this.completionTime = completionTime;
         this.failureText = failureText;
         this.sqlSummary = sqlSummary;
+        this.suspensionCause = suspensionCause;
         this.userCancelled = userCancelled;
     }
 
@@ -96,6 +100,10 @@ public class JobAndSqlSummary {
         return sqlSummary;
     }
 
+    public String getSuspensionCause() {
+        return suspensionCause;
+    }
+
     /**
      * @return True, if the job has been cancelled based on a user request,
      * false otherwise (also while the job is running).
@@ -116,6 +124,7 @@ public class JobAndSqlSummary {
                 ", completionTime=" + completionTime +
                 ", failureText='" + failureText + '\'' +
                 ", sqlSummary=" + sqlSummary +
+                ", suspensionCause=" + suspensionCause +
                 ", userCancelled=" + userCancelled +
                 '}';
     }
@@ -129,16 +138,23 @@ public class JobAndSqlSummary {
             return false;
         }
         JobAndSqlSummary that = (JobAndSqlSummary) o;
+        boolean suspensionCauseEquals = true;
+        if (suspensionCause != null && that.suspensionCause != null) {
+            suspensionCauseEquals = Objects.equals(suspensionCause, that.suspensionCause);
+        }
+
         return isLightJob == that.isLightJob && jobId == that.jobId && executionId == that.executionId
                 && submissionTime == that.submissionTime && completionTime == that.completionTime
                 && Objects.equals(nameOrId, that.nameOrId) && status == that.status
-                && Objects.equals(failureText, that.failureText) && Objects.equals(sqlSummary, that.sqlSummary)
+                && Objects.equals(failureText, that.failureText)
+                && Objects.equals(sqlSummary, that.sqlSummary)
+                && suspensionCauseEquals
                 && userCancelled == that.userCancelled;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(isLightJob, jobId, executionId, nameOrId, status, submissionTime, completionTime, failureText,
-                sqlSummary, userCancelled);
+        return Objects.hash(isLightJob, jobId, executionId, nameOrId, status, submissionTime,
+                completionTime, failureText, sqlSummary, suspensionCause, userCancelled);
     }
 }

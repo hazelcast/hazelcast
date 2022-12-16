@@ -123,4 +123,13 @@ public class JitterRule implements TestRule {
             }
         };
     }
+
+    public static long getPausesBetween(long startTime, long stopTime) {
+        Iterable<Slot> slots = JitterMonitor.getSlotsBetween(startTime, stopTime);
+        long totalPauses = 0;
+        for (Slot slot : slots) {
+            totalPauses += slot.getAccumulatedHiccupsNanos();
+        }
+        return totalPauses;
+    }
 }

@@ -115,9 +115,6 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
         }
 
         listRemainingConnections();
-        // kill any hanging connection
-        /* language=SQL */
-        executeSql("SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE pid <> pg_backend_pid()");
     }
 
     private static void executeSql(String sql) throws SQLException {
@@ -129,20 +126,27 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
         try (
                 Connection connection = ((DataSource) createDataSource(false)).getConnection();
                 ResultSet resultSet = connection.createStatement().executeQuery(
-                        "SELECT * FROM pg_stat_activity WHERE pid <> pg_backend_pid()")
+                        "SELECT * FROM pg_stat_activity WHERE datname = current_database() and pid <> pg_backend_pid()")
         ) {
             ResultSetMetaData metaData = resultSet.getMetaData();
-            List<String> connections = new ArrayList<>();
-            for (int i = 0; i < metaData.getColumnCount(); i++) {
-                connections.add(metaData.getColumnName(i) + "|");
+            List<String> rows = new ArrayList<>();
+            StringBuilder row = new StringBuilder();
+            for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                row.append(metaData.getColumnName(i)).append("\t|");
             }
+            rows.add(row.toString());
+
             while (resultSet.next()) {
-                for (int i = 0; i < metaData.getColumnCount(); i++) {
-                    connections.add(resultSet.getObject(i) + "|");
+                row = new StringBuilder();
+                for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                    row.append(resultSet.getObject(i) + "\t|\t");
                 }
+                rows.add(row.toString());
+
             }
-            if (!connections.isEmpty()) {
-                logger.warning("Remaining connections: \n" + String.join("\n", connections));
+
+            if (!rows.isEmpty()) {
+                logger.warning("Remaining connections: \n" + String.join("\n", rows));
             }
         }
     }

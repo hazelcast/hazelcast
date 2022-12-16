@@ -81,6 +81,8 @@ import com.hazelcast.sql.impl.client.SqlError;
 import com.hazelcast.sql.impl.client.SqlPage;
 import com.hazelcast.transaction.impl.xa.SerializableXID;
 import com.hazelcast.version.MemberVersion;
+
+import javax.transaction.xa.Xid;
 import java.lang.reflect.Array;
 import java.net.UnknownHostException;
 import java.util.AbstractMap;
@@ -95,7 +97,6 @@ import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
-import javax.transaction.xa.Xid;
 
 public class ReferenceObjects {
 
@@ -921,7 +922,7 @@ public class ReferenceObjects {
     public static SqlColumnMetadata anSqlColumnMetadata = CustomTypeFactory.createSqlColumnMetadata(aString, SqlColumnType.BOOLEAN.getId(), aBoolean, aBoolean);
     public static List<SqlColumnMetadata> aListOfSqlColumnMetadata = Collections.singletonList(anSqlColumnMetadata);
     public static SqlSummary aSqlSummary = CustomTypeFactory.createSqlSummary(aString, aBoolean);
-    public static JobAndSqlSummary aJobAndSqlSummary = CustomTypeFactory.createJobAndSqlSummary(aBoolean, aLong, aLong, aString, 2, aLong, aLong, aString, aSqlSummary, true, false);
+    public static JobAndSqlSummary aJobAndSqlSummary = CustomTypeFactory.createJobAndSqlSummary(aBoolean, aLong, aLong, aString, 2, aLong, aLong, aString, aSqlSummary, true, aString, true, false);
     public static List<JobAndSqlSummary> aListJobAndSqlSummary = Collections.singletonList(aJobAndSqlSummary);
     public static SqlError anSqlError = new SqlError(anInt, aString, aUUID, aBoolean, aString);
     public static SqlPage aSqlPage = SqlPage.fromColumns(Collections.singletonList(SqlColumnType.INTEGER), Collections.singletonList(Arrays.asList(1, 2, 3, 4)), true);

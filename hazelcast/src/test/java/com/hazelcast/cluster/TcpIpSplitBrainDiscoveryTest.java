@@ -83,14 +83,14 @@ public class TcpIpSplitBrainDiscoveryTest extends HazelcastTestSupport {
     public void testSplitBrainRecoveryFromInitialSplit() throws IOException {
         instances.add(Hazelcast.newHazelcastInstance(createConfigWithRestEnabled(5801, 5901)));
         instances.add(Hazelcast.newHazelcastInstance(createConfigWithRestEnabled(5901, 5801)));
-        assertClusterSizeEventually(2, Arrays.asList(instances.get(0), instances.get(1)), 10);
+        assertClusterSizeEventually(2, Arrays.asList(instances.get(0), instances.get(1)));
 
 
         instances.add(Hazelcast.newHazelcastInstance(createConfigWithRestEnabled(6001, 6101)));
         instances.add(Hazelcast.newHazelcastInstance(createConfigWithRestEnabled(6101, 6001)));
-        assertClusterSizeEventually(2, Arrays.asList(instances.get(2), instances.get(3)), 10);
+        assertClusterSizeEventually(2, Arrays.asList(instances.get(2), instances.get(3)));
         updateMemberList();
-        assertClusterSizeEventually(4, instances, 10);
+        assertClusterSizeEventually(4, instances);
     }
 
     protected static Config createConfigWithRestEnabled(int port, int... otherMembersPorts) {

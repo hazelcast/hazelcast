@@ -331,6 +331,7 @@ public class JobSummaryTest extends JetTestSupport {
                             jobAndSqlSummary.getCompletionTime(),
                             jobAndSqlSummary.getFailureText(),
                             null,
+                            null,
                             false))
                     .collect(Collectors.toList());
         } else {

@@ -764,9 +764,17 @@ public class JobCoordinationService {
                 // (can overwrite entries created from JobRecords but that is fine and in fact desired
                 // because JobResult is always more recent than JobRecord for given job)
                 jobRepository.getJobResults().stream()
-                        .map(r -> new JobAndSqlSummary(
-                                false, r.getJobId(), 0, r.getJobNameOrId(), r.getJobStatus(), r.getCreationTime(),
-                                r.getCompletionTime(), r.getFailureText(), null, r.isUserCancelled()))
+                        .map(r -> {
+                            // Pre-review note : volatile read at supplier, should not read under lock path.
+                            // Q: Any other better way to get executionRecord?
+                            JobExecutionRecord executionRecord = jobRepository.getJobExecutionRecord(r.getJobId());
+                            return new JobAndSqlSummary(
+                                    false, r.getJobId(), 0, r.getJobNameOrId(), r.getJobStatus(), r.getCreationTime(),
+                                    r.getCompletionTime(), r.getFailureText(), null,
+                                    executionRecord == null || executionRecord.getSuspensionCause() == null ? null :
+                                            executionRecord.getSuspensionCause().description(),
+                                    r.isUserCancelled());
+                        })
                         .forEach(s -> jobs.put(s.getJobId(), s));
             }
 
@@ -808,9 +816,11 @@ public class JobCoordinationService {
         // 5. user asks for jobs list and the job is reported as running
         //
         // In such scenario finished job will be reported as running.
+        //
+        // Note: suspensionCause is not supported for light jobs.
         return new JobAndSqlSummary(
                 true, lmc.getJobId(), lmc.getJobId(), idToString(lmc.getJobId()),
-                RUNNING, lmc.getStartTime(), 0, null, sqlSummary,
+                RUNNING, lmc.getStartTime(), 0, null, sqlSummary, null,
                 false);
     }
 
@@ -1289,6 +1299,9 @@ public class JobCoordinationService {
     private JobAndSqlSummary getJobAndSqlSummary(JobRecord record) {
         MasterContext ctx = masterContexts.get(record.getJobId());
         long execId = ctx == null ? 0 : ctx.executionId();
+        JobExecutionRecord executionRecord = jobRepository.getJobExecutionRecord(record.getJobId());
+        String suspensionCause = executionRecord != null && executionRecord.getSuspensionCause() != null
+                ? executionRecord.getSuspensionCause().description() : null;
         JobStatus status;
         boolean userCancelled;
         if (ctx == null) {
@@ -1298,7 +1311,6 @@ public class JobCoordinationService {
             // 3) job has already ended but JobRecord has not yet been deleted =>
             //    do not care, result will be overwritten by the one obtained from JobResult
             //    which is guaranteed to exist in this case
-            JobExecutionRecord executionRecord = jobRepository.getJobExecutionRecord(record.getJobId());
             status = executionRecord != null && executionRecord.isSuspended()
                     ? JobStatus.SUSPENDED : JobStatus.NOT_RUNNING;
             userCancelled = false;
@@ -1317,7 +1329,7 @@ public class JobCoordinationService {
                     maybeTerminationRequest.map(TerminationRequest::isUserInitiatedTermination).orElse(false);
         }
         return new JobAndSqlSummary(false, record.getJobId(), execId, record.getJobNameOrId(), status,
-                record.getCreationTime(), 0, null, null,
+                record.getCreationTime(), 0, null, null, suspensionCause,
                 userCancelled);
     }
 
