@@ -57,6 +57,8 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
  */
 public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
+    public static final String PART_SIZE = "hazelcast.jobupload.partsize";
+
     private static final int DEFAULT_PART_SIZE = 10_000_000;
     private final HazelcastClientInstanceImpl client;
     private final SerializationService serializationService;
@@ -217,7 +219,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     protected static int calculatePartBufferSize() {
         int partSize = 0;
         try {
-            partSize = Integer.getInteger("hazelcast.jobupload.partsize", DEFAULT_PART_SIZE);
+            partSize = Integer.getInteger(PART_SIZE, DEFAULT_PART_SIZE);
         } catch (Exception ignored) {
         }
         return partSize;
