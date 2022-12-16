@@ -451,7 +451,9 @@ public class TestHazelcastInstanceFactory {
         config.setProperty(ClusterProperty.WAIT_SECONDS_BEFORE_JOIN.getName(), "0");
         String gracefulShutdownMaxWaitValue = System.getProperty(ClusterProperty.GRACEFUL_SHUTDOWN_MAX_WAIT.getName(), "120");
         config.setProperty(ClusterProperty.GRACEFUL_SHUTDOWN_MAX_WAIT.getName(), gracefulShutdownMaxWaitValue);
-        config.setProperty(ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "1");
+        if (config.getProperty(ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName()) == null) {
+            config.setProperty(ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "1");
+        }
         config.getNetworkConfig().getJoin().getAutoDetectionConfig().setEnabled(false);
         return config;
     }

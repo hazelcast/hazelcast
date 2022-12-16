@@ -386,7 +386,7 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeInt(partitionKey);
             out.writeLong(snapshotId);
-            out.writeUTF(vertexName);
+            out.writeString(vertexName);
             out.writeInt(sequence);
         }
 
@@ -394,7 +394,7 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
         public void readData(ObjectDataInput in) throws IOException {
             partitionKey = in.readInt();
             snapshotId = in.readLong();
-            vertexName = in.readUTF();
+            vertexName = in.readString();
             sequence = in.readInt();
         }
 

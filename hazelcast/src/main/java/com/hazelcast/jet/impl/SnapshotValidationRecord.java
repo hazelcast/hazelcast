@@ -95,8 +95,8 @@ public class SnapshotValidationRecord implements IdentifiedDataSerializable {
         out.writeLong(numBytes);
         out.writeLong(creationTime);
         out.writeLong(jobId);
-        out.writeUTF(jobName);
-        out.writeUTF(dagJsonString);
+        out.writeString(jobName);
+        out.writeString(dagJsonString);
     }
 
     @Override
@@ -106,8 +106,21 @@ public class SnapshotValidationRecord implements IdentifiedDataSerializable {
         numBytes = in.readLong();
         creationTime = in.readLong();
         jobId = in.readLong();
-        jobName = in.readUTF();
-        dagJsonString = in.readUTF();
+        jobName = in.readString();
+        dagJsonString = in.readString();
+    }
+
+    @Override
+    public String toString() {
+        return "SnapshotValidationRecord{" +
+                "snapshotId=" + snapshotId +
+                ", numChunks=" + numChunks +
+                ", numBytes=" + numBytes +
+                ", creationTime=" + creationTime +
+                ", jobId=" + jobId +
+                ", jobName='" + jobName + '\'' +
+                // dagJsonString may be long and does not bring much value in toString
+                '}';
     }
 
     enum SnapshotValidationKey {

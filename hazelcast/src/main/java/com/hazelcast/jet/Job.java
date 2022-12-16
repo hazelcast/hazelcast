@@ -302,7 +302,7 @@ public interface Job {
      * start a new job using the exported state using {@link
      * JobConfig#setInitialSnapshotName(String)}. Not supported for light jobs.
      * <p>
-     * The snapshot will be independent from the job that created it. Jet won't
+     * The snapshot will be independent of the job that created it. Jet won't
      * automatically delete the IMap it is exported into. You must manually
      * call {@linkplain JobStateSnapshot#destroy() snapshot.destroy()} to
      * delete it. If your state is large, make sure you have enough memory to
