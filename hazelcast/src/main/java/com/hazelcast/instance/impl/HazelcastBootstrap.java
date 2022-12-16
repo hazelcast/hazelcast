@@ -127,6 +127,9 @@ public final class HazelcastBootstrap {
     private HazelcastBootstrap() {
     }
 
+    public static void resetSupplier() {
+        supplier = null;
+    }
     public static synchronized void executeJar(@Nonnull Supplier<HazelcastInstance> supplierOfInstance,
                                                @Nonnull String jar, @Nullable String snapshotName,
                                                @Nullable String jobName, @Nullable String mainClass, @Nonnull List<String> args,

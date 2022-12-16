@@ -49,7 +49,7 @@ public class JobUploadStore {
 
     public void processJarMetaData(JobMetaDataParameterObject parameterObject) {
         UUID sessionId = parameterObject.getSessionId();
-        String message = String.format("processJarMetaData : Session : %s ",sessionId);
+        String message = String.format("processJarMetaData : Session : %s ", sessionId);
         logger.info(message);
 
         // Create a new JobUploadStatus object and save parameters
@@ -63,7 +63,8 @@ public class JobUploadStore {
         UUID sessionId = parameterObject.getSessionId();
         int currentPart = parameterObject.getCurrentPartNumber();
         int totalPart = parameterObject.getTotalPartNumber();
-        String message = String.format("processJobMultipart : Session : %s Received : %d of %d", sessionId, currentPart, totalPart);
+        String message = String.format("processJobMultipart : Session : %s Received : %d of %d", sessionId, currentPart,
+                totalPart);
         logger.info(message);
 
         JobUploadStatus jobUploadStatus = jobMap.get(sessionId);
@@ -72,10 +73,10 @@ public class JobUploadStore {
         }
 
 
-        JobMetaDataParameterObject partsComplete = jobUploadStatus.processJarData(parameterObject);
+        JobMetaDataParameterObject partsComplete = jobUploadStatus.processJobMultipart(parameterObject);
 
         // If job upload is complete, remote from the map
-        if(partsComplete != null) {
+        if (partsComplete != null) {
 
             message = String.format("Session : %s is complete. It will be removed from the map", sessionId);
             logger.info(message);

@@ -60,7 +60,6 @@ import com.hazelcast.spi.merge.LatestUpdateMergePolicy;
 import com.hazelcast.spi.properties.HazelcastProperties;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
@@ -444,12 +443,11 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
             );
         } catch (Exception exception) {
             logger.severe("runJar caught exception when running the jar", exception);
-            // Exception happened during run. Try to delete the jar file
-            try {
-                Files.delete(parameterObject.getJarPath());
-            } catch (IOException ignored) {
-                logger.severe("runJar There was an exception deleting the jar :" + parameterObject.getJarPath());
-            }
+            // We can not delete the job jar because it is already loaded. If we try to delete it
+            // we will get "java.nio.file.FileSystemException"
+
+            // But rethrow the exception back to client to notify  that job did not run
+            sneakyThrow(exception);
         }
         return true;
     }

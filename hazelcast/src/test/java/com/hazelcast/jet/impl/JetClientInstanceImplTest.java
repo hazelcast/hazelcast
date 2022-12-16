@@ -31,6 +31,7 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -55,6 +56,28 @@ public class JetClientInstanceImplTest extends JetTestSupport {
                                             .findFirst()
                                             .orElseThrow(AssertionError::new);
         assertEquals(MapService.SERVICE_NAME, info.getServiceName());
+    }
+
+    @Test
+    public void calculateTotalParts() {
+        long jarSize = 10_000_000;
+        int partSize = 10_000_000;
+        int totalParts = JetClientInstanceImpl.calculateTotalParts(jarSize, partSize);
+        assertEquals(1, totalParts);
+    }
+
+    @Test
+    public void calculatePartSize_when_vvalidProperty() {
+        System.setProperty("hazelcast.jobupload.partsize", "1000");
+        int partSize = JetClientInstanceImpl.calculatePartBufferSize();
+        assertEquals(1_000, partSize);
+    }
+
+    @Test
+    public void calculatePartSize_when_invalidProperty() {
+        System.setProperty("hazelcast.jobupload.partsize", "e");
+        int partSize = JetClientInstanceImpl.calculatePartBufferSize();
+        assertTrue(partSize > 0);
     }
 
 }

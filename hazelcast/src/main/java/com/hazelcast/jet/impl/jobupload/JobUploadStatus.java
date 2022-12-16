@@ -62,9 +62,9 @@ public class JobUploadStatus {
         }
     }
 
-    public JobMetaDataParameterObject processJarData(JobMultiPartParameterObject parameterObject) throws IOException {
+    public JobMetaDataParameterObject processJobMultipart(JobMultiPartParameterObject parameterObject) throws IOException {
 
-        ensureReceivedPartNumbersAreValid(parameterObject);
+        ensureReceivedParametersAreValid(parameterObject);
 
         ensureReceivedPartNumbersAreExpected(parameterObject);
 
@@ -99,7 +99,7 @@ public class JobUploadStatus {
         return result;
     }
 
-    private static void ensureReceivedPartNumbersAreValid(JobMultiPartParameterObject parameterObject) {
+    private static void ensureReceivedParametersAreValid(JobMultiPartParameterObject parameterObject) {
         int receivedCurrentPart = parameterObject.getCurrentPartNumber();
         int receivedTotalPart = parameterObject.getTotalPartNumber();
 
@@ -118,6 +118,33 @@ public class JobUploadStatus {
         if (receivedCurrentPart > receivedTotalPart) {
             String errorMessage = String.format("receivedPart : %d is bigger than receivedTotalPart : %d ",
                     receivedCurrentPart, receivedTotalPart);
+            throw new JetException(errorMessage);
+        }
+
+        //Ensure part data is not null
+        byte[] partData = parameterObject.getPartData();
+        if (partData == null) {
+            String errorMessage = "receivedPartData is null";
+            throw new JetException(errorMessage);
+        }
+
+        //Ensure part data size is positive
+        if (partData.length == 0) {
+            String errorMessage = "receivedPartData size is 0";
+            throw new JetException(errorMessage);
+        }
+
+        //Ensure part size is positive
+        int partSize = parameterObject.getPartSize();
+        if (partSize == 0) {
+            String errorMessage = "receivedPartSize is 0";
+            throw new JetException(errorMessage);
+        }
+
+        //Ensure part size is valid
+        if (partSize > partData.length) {
+            String errorMessage = String.format("receivedPartSize: %d is bigger than receivedPartLength : %d ", partSize,
+                    partData.length);
             throw new JetException(errorMessage);
         }
     }

@@ -57,6 +57,7 @@ import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
  */
 public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
+    private static final int DEFAULT_PART_SIZE = 10_000_000;
     private final HazelcastClientInstanceImpl client;
     private final SerializationService serializationService;
 
@@ -147,7 +148,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
             // Send job meta data
             sendJobMetaData(sessionId, jarSize, snapshotName, jobName, mainClass, jobParameters);
 
-            sendJobData(jarPath, sessionId, jarSize);
+            sendJobMultipart(jarPath, sessionId, jarSize);
 
         } catch (IOException exception) {
             sneakyThrow(exception);
@@ -162,8 +163,9 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         invokeRequestOnMasterAndDecodeResponse(jobMetaDataRequest, JetUploadJobMetaDataCodec::decodeResponse);
     }
 
-    private void sendJobData(Path jarPath, UUID sessionId, long jarSize) throws IOException {
-        final int partSize = 10_000_000;
+    private void sendJobMultipart(Path jarPath, UUID sessionId, long jarSize) throws IOException {
+        int partSize = calculatePartBufferSize();
+
         int totalParts = calculateTotalParts(jarSize, partSize);
 
         File file = jarPath.toFile();
@@ -183,10 +185,6 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
                 invokeRequestOnMasterAndDecodeResponse(jobDataRequest, JetUploadJobMultipartCodec::decodeResponse);
             }
         }
-    }
-
-    protected static int calculateTotalParts(long jarSize, int partSize) {
-        return (int) Math.ceil(jarSize / (double) partSize);
     }
 
     @Override
@@ -213,5 +211,19 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         } catch (Throwable t) {
             throw rethrow(t);
         }
+    }
+
+    // Calculate the buffer size from System.properties is defined, otherwise use default value
+    protected static int calculatePartBufferSize() {
+        int partSize = 0;
+        try {
+            partSize = Integer.getInteger("hazelcast.jobupload.partsize", DEFAULT_PART_SIZE);
+        } catch (Exception ignored) {
+        }
+        return partSize;
+    }
+
+    protected static int calculateTotalParts(long jarSize, int partSize) {
+        return (int) Math.ceil(jarSize / (double) partSize);
     }
 }

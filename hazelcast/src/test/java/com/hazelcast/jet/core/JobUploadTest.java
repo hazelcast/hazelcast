@@ -18,6 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.impl.HazelcastBootstrap;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
@@ -69,29 +70,36 @@ public class JobUploadTest extends JetTestSupport {
         );
     }
 
-//    @Test
-//    public void test_jarUpload_whenResourceUploadIsEnabled() {
-//        Config config = smallInstanceConfig();
-//        JetConfig jetConfig = config.getJetConfig();
-//        jetConfig.setResourceUploadEnabled(true);
-//
-//        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
-//        HazelcastInstance client = createHazelcastClient();
-//        JetService jetService = client.getJet();
-//        List<String> jobParameters = emptyList();
-//
-//        jetService.uploadJob(getJarPath(),
-//                null,
-//                null,
-//                null,
-//                jobParameters);
-//
-//        assertEqualsEventually(() -> jetService.getJobs().size(), 1);
-//        hazelcastInstance.shutdown();
-//    }
+    @Test
+    public void test_jarUpload_whenResourceUploadIsEnabled() {
+        // Reset the singleton for the test
+        HazelcastBootstrap.resetSupplier();
+
+        Config config = smallInstanceConfig();
+        JetConfig jetConfig = config.getJetConfig();
+        jetConfig.setResourceUploadEnabled(true);
+
+        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+        HazelcastInstance client = createHazelcastClient();
+        JetService jetService = client.getJet();
+        List<String> jobParameters = emptyList();
+
+        jetService.uploadJob(getJarPath(),
+                null,
+                null,
+                null,
+                jobParameters);
+
+        assertEqualsEventually(() -> jetService.getJobs().size(), 1);
+        hazelcastInstance.shutdown();
+    }
 
     @Test
     public void test_multipleJarUploads_whenResourceUploadIsEnabled() {
+
+        // Reset the singleton for the test
+        HazelcastBootstrap.resetSupplier();
+
         Config config = smallInstanceConfig();
         JetConfig jetConfig = config.getJetConfig();
         jetConfig.setResourceUploadEnabled(true);
@@ -123,7 +131,7 @@ public class JobUploadTest extends JetTestSupport {
         });
 
         // Let the jobs run
-        sleepAtLeastSeconds(20);
+        sleepAtLeastSeconds(5);
 
         hazelcastInstance.shutdown();
     }
