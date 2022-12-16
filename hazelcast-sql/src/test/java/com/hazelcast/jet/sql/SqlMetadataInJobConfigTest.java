@@ -108,6 +108,7 @@ public class SqlMetadataInJobConfigTest extends SqlTestSupport {
         assertEquals(Boolean.FALSE, config.getArgument(KEY_SQL_UNBOUNDED));
         assertEquals(Boolean.FALSE, config.isSuspendOnFailure());
     }
+
     @Test
     @SuppressWarnings("resource")
     public void test_createStreamingJobMetadata() {
