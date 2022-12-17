@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-
 package com.hazelcast.jet.sql.impl.connector.generator;
 
 import com.hazelcast.sql.impl.row.Row;
@@ -22,7 +21,7 @@ import com.hazelcast.sql.impl.row.Row;
 import java.util.Objects;
 
 /**
- * Row with single long field
+ * A row with a single long field.
  */
 class LongCounterRow implements Row {
 
@@ -34,7 +33,7 @@ class LongCounterRow implements Row {
 
     @Override
     public <T> T get(int index) {
-        if (index > 0) {
+        if (index != 0) {
             throw new IndexOutOfBoundsException("CounterRow has one column");
         }
         return (T) Long.valueOf(value);

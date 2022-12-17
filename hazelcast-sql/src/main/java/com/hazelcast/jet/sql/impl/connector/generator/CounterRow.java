@@ -21,7 +21,7 @@ import com.hazelcast.sql.impl.row.Row;
 import java.util.Objects;
 
 /**
- * Row with single integer field
+ * A row with a single integer field.
  */
 class CounterRow implements Row {
 
@@ -33,7 +33,7 @@ class CounterRow implements Row {
 
     @Override
     public <T> T get(int index) {
-        if (index > 0) {
+        if (index != 0) {
             throw new IndexOutOfBoundsException("CounterRow has one column");
         }
         return (T) Integer.valueOf(value);

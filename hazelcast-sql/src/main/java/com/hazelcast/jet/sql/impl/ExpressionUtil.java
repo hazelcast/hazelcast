@@ -231,20 +231,21 @@ public final class ExpressionUtil {
     @Nullable
     public static JetSqlRow projection(
             @Nullable Expression<Boolean> predicate,
-            @Nonnull List<Expression<?>> projection,
+            @Nonnull List<Expression<?>> projections,
             @Nonnull Row row,
             @Nonnull ExpressionEvalContext context
     ) {
         if (predicate != null && !Boolean.TRUE.equals(evaluate(predicate, row, context))) {
             return null;
         }
-        return projection(projection, context, row);
+        return projection(projections, context, row);
     }
 
     private static JetSqlRow projection(
             @Nonnull List<Expression<?>> projections,
             @Nonnull ExpressionEvalContext context,
-            @Nonnull Row row) {
+            @Nonnull Row row
+    ) {
         Object[] result = new Object[projections.size()];
         for (int i = 0; i < projections.size(); i++) {
             result[i] = evaluate(projections.get(i), row, context);
