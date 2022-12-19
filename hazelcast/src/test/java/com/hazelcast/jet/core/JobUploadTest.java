@@ -101,7 +101,7 @@ public class JobUploadTest extends JetTestSupport {
     public void test_jarUpload_whenResourceUploadIsEnabled_withSmallBuffer() {
 
         // Change the part buffer size
-        System.setProperty(JetClientInstanceImpl.PART_SIZE,"100");
+        System.setProperty(JetClientInstanceImpl.PART_SIZE, "100");
 
         // Reset the singleton for the test
         HazelcastBootstrap.resetSupplier();
@@ -140,7 +140,7 @@ public class JobUploadTest extends JetTestSupport {
 
         int jobLimit = 50;
         for (int index = 0; index < jobLimit; index++) {
-            executorService.submit(()-> {
+            executorService.submit(() -> {
                 HazelcastInstance client = createHazelcastClient();
                 JetService jetService = client.getJet();
                 List<String> jobParameters = emptyList();
@@ -151,7 +151,7 @@ public class JobUploadTest extends JetTestSupport {
                         null,
                         jobParameters);
                 client.shutdown();
-            })   ;
+            });
         }
 
         HazelcastInstance client = createHazelcastClient();
