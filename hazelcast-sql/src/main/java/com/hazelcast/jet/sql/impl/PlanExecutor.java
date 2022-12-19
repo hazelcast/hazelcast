@@ -193,9 +193,7 @@ public class PlanExecutor {
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
                 .setArgument(KEY_SQL_QUERY_TEXT, plan.getQuery())
                 .setArgument(KEY_SQL_UNBOUNDED, isStreamingJob);
-        if (isStreamingJob) {
-            jobConfig.setSuspendOnFailure(true);
-        }
+        jobConfig.setSuspendOnFailure(isStreamingJob);
         if (plan.isIfNotExists()) {
             hazelcastInstance.getJet().newJobIfAbsent(plan.getExecutionPlan().getDag(), jobConfig);
         } else {
