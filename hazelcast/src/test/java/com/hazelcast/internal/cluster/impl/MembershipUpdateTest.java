@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.ConfigAccessor;
+import com.hazelcast.config.EntryListenerConfig;
 import com.hazelcast.config.ServiceConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.StaticMemberNodeContext;
@@ -32,6 +33,8 @@ import com.hazelcast.internal.nio.ConnectionListener;
 import com.hazelcast.internal.server.ServerConnectionManager;
 import com.hazelcast.internal.services.PostJoinAwareService;
 import com.hazelcast.internal.services.PreJoinAwareService;
+import com.hazelcast.map.IMap;
+import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.spi.impl.AllowedDuringPassiveState;
 import com.hazelcast.spi.impl.NodeEngineImpl;
@@ -733,6 +736,28 @@ public class MembershipUpdateTest extends HazelcastTestSupport {
         assertClusterSize(2, instance2);
         assertFalse(service.otherOpExecutedBeforePreJoin.get());
         assertTrue(service.preJoinOpExecutionCompleted.get());
+    }
+
+    @Test
+    public void testListenerRegistrationWhileANewMemberJoining() {
+        CountDownLatch latch = new CountDownLatch(1);
+        Config config = getConfigWithService(new PostJoinAwareServiceImpl(latch), PostJoinAwareServiceImpl.SERVICE_NAME);
+
+        EntryListenerConfig listenerConfig = new EntryListenerConfig();
+        CountDownLatch entryAddedLatch = new CountDownLatch(2);
+        listenerConfig.setImplementation((EntryAddedListener) event -> entryAddedLatch.countDown());
+        config.getMapConfig("test").addEntryListenerConfig(listenerConfig);
+
+        HazelcastInstance hz1 = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+
+        IMap<Object, Object> map = hz1.getMap("test");
+
+        map.put(1, 1);
+
+        //Let post join continue only after put happened
+        latch.countDown();
+        assertOpenEventually(entryAddedLatch);
     }
 
     @Test
