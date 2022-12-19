@@ -106,7 +106,7 @@ class ThreadLocalIOBuffer implements IOBuffer {
     public void flip() {
         limit = pos;
         pos = 0;
-        for (int i = 0; i < chunks.length; i++) {
+        for (int i = 0; i < chunksPos; i++) {
             chunks[i].flip();
         }
     }

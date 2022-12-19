@@ -5,6 +5,7 @@ import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 
+import java.nio.ByteBuffer;
 import java.util.Random;
 
 import static com.hazelcast.internal.nio.Bits.INT_SIZE_IN_BYTES;
@@ -95,5 +96,41 @@ public class ThreadLocalIOBufferTest {
 
         assertNotNull(allocator.ioBufferPool[0]);
         assertNotNull(allocator.byteBufferPool[0]);
+    }
+
+    @Test
+    public void when_fillingBuffersWithRandomArrays_then_sameDataIsRead() {
+        byte[][] data = new byte[BUFFER_SIZE][];
+        for (int i = 0; i < data.length; i++) {
+            int size = random.nextInt(10)  + 1;
+            data[i] = new byte[size];
+            random.nextBytes(data[i]);
+        }
+
+        ThreadLocalIOBuffer buffer = allocator.allocate();
+        for (int i = 0; i < data.length; i++) {
+            buffer.writeBytes(data[i]);
+        }
+
+        int pos = 0;
+        for (int i = 0; i < data.length; i++) {
+            for (int j = 0; j < data[i].length; j++) {
+                assertEquals(data[i][j], buffer.getByte(pos++));
+            }
+        }
+
+        buffer.flip();
+        ByteBuffer[] chunks = buffer.getChunks();
+        ByteBuffer chunk = chunks[0];
+        int nextChunkPos = 1;
+
+        for (int i = 0; i < data.length; i++) {
+            for (int j = 0; j < data[i].length; j++) {
+                if (!chunk.hasRemaining() && nextChunkPos < chunks.length) {
+                    chunk = chunks[nextChunkPos++];
+                }
+                assertEquals(data[i][j], chunk.get());
+            }
+        }
     }
 }
