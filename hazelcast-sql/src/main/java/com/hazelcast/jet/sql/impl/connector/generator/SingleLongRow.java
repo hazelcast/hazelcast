@@ -23,18 +23,18 @@ import java.util.Objects;
 /**
  * A row with a single long field.
  */
-class LongCounterRow implements Row {
+class SingleLongRow implements Row {
 
     private final long value;
 
-    LongCounterRow(long value) {
+    SingleLongRow(long value) {
         this.value = value;
     }
 
     @Override
     public <T> T get(int index) {
         if (index != 0) {
-            throw new IndexOutOfBoundsException("CounterRow has one column");
+            throw new IndexOutOfBoundsException("SingleLongRow has one column");
         }
         return (T) Long.valueOf(value);
     }
@@ -52,7 +52,7 @@ class LongCounterRow implements Row {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        LongCounterRow that = (LongCounterRow) o;
+        SingleLongRow that = (SingleLongRow) o;
         return value == that.value;
     }
 

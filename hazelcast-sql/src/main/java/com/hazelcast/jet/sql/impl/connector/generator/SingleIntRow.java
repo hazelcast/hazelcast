@@ -23,18 +23,18 @@ import java.util.Objects;
 /**
  * A row with a single integer field.
  */
-class CounterRow implements Row {
+class SingleIntRow implements Row {
 
     private final int value;
 
-    CounterRow(int value) {
+    SingleIntRow(int value) {
         this.value = value;
     }
 
     @Override
     public <T> T get(int index) {
         if (index != 0) {
-            throw new IndexOutOfBoundsException("CounterRow has one column");
+            throw new IndexOutOfBoundsException("SingleIntRow has one column");
         }
         return (T) Integer.valueOf(value);
     }
@@ -52,7 +52,7 @@ class CounterRow implements Row {
         if (o == null || getClass() != o.getClass()) {
             return false;
         }
-        CounterRow that = (CounterRow) o;
+        SingleIntRow that = (SingleIntRow) o;
         return value == that.value;
     }
 
