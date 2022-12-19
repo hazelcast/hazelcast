@@ -118,9 +118,6 @@ public final class IOVector {
                 }
             } else {
                 byteBuffersSize--;
-                if (ioBuffers[chunkOwnerPos] == null) {
-                    System.out.println("dupa");
-                }
                 ioBuffers[chunkOwnerPos].releaseNextChunk(byteBuffers[i]);
                 if (!ioBuffers[chunkOwnerPos].hasRemainingChunks()) {
                     chunkOwnerPos++;
