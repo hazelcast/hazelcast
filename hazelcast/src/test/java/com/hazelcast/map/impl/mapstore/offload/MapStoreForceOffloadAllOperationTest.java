@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.map.impl.mapstore;
+package com.hazelcast.map.impl.mapstore.offload;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.collectors.MetricsCollector;
 import com.hazelcast.internal.util.MutableLong;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.MapStoreAdapter;
+import com.hazelcast.map.impl.MapServiceContext;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
@@ -41,19 +40,16 @@ import java.util.concurrent.Future;
 
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.MAP_METRIC_MAP_STORE_WAITING_TO_BE_PROCESSED_COUNT;
 import static com.hazelcast.test.Accessors.getNode;
-import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class MapStoreOffloadedOperationMetricsTest extends HazelcastTestSupport {
+public class MapStoreForceOffloadAllOperationTest extends HazelcastTestSupport {
 
-    private static final String MAP_WITH_MAP_STORE_NAME = "map-with-map-store";
-    private static final String MAP_WITHOUT_MAP_STORE_NAME = "no-map-store-map";
+    private static final String MAP_NAME = "default-map";
     private static final int INSTANCE_COUNT = 1;
 
-    private IMap<String, String> mapWithMapStore;
-    private IMap<String, String> mapWithoutMapStore;
+    private IMap<String, String> map;
     private MetricsRegistry registry;
 
     @Before
@@ -62,73 +58,23 @@ public class MapStoreOffloadedOperationMetricsTest extends HazelcastTestSupport 
         Config config = getConfig();
         HazelcastInstance instance = factory.newHazelcastInstance(config);
         registry = getNode(instance).nodeEngine.getMetricsRegistry();
-        mapWithMapStore = instance.getMap(MAP_WITH_MAP_STORE_NAME);
-        mapWithoutMapStore = instance.getMap(MAP_WITHOUT_MAP_STORE_NAME);
+        map = instance.getMap(MAP_NAME);
     }
 
     protected Config getConfig() {
-        Config config = super.smallInstanceConfig();
-        MapStoreConfig mapStoreConfig = new MapStoreConfig();
-        mapStoreConfig.setEnabled(true);
-        mapStoreConfig.setOffload(true);
-        mapStoreConfig.setImplementation(new MapStoreAdapter<String, String>() {
-
-            @Override
-            public String load(String key) {
-                // mimic a slow map loader
-                sleepMillis(100);
-                return randomString();
-            }
-
-            @Override
-            public void store(String key, String value) {
-                // mimic a slow store operation
-                sleepMillis(100);
-                super.store(key, value);
-            }
-        });
-        config.getMapConfig(MAP_WITH_MAP_STORE_NAME)
-                .setMapStoreConfig(mapStoreConfig);
-        return config;
+        return super.smallInstanceConfig()
+                .setProperty(MapServiceContext.FORCE_OFFLOAD_ALL_OPERATIONS.getName(), "true");
     }
 
     @Test
-    public void metrics_show_zero_offloaded_operation_count_after_methods_return() {
-        int opCount = 1_000;
-
-        List<Future> futures = new ArrayList<>(opCount * 2);
-        for (int i = 0; i < opCount; i++) {
-            futures.add(mapWithMapStore.setAsync(Integer.toString(i),
-                    Integer.toString(i)).toCompletableFuture());
-            futures.add(mapWithoutMapStore.setAsync(Integer.toString(i),
-                    Integer.toString(i)).toCompletableFuture());
-        }
-
-        sleepSeconds(2);
-
-        assertTrueEventually(() -> {
-            ProbeCatcher mapWithMapStore = new ProbeCatcher();
-            ProbeCatcher mapWithoutMapStore = new ProbeCatcher();
-
-            registry.collect(mapWithMapStore);
-            registry.collect(mapWithoutMapStore);
-
-            assertEquals(0L, mapWithMapStore.length);
-            assertEquals(0L, mapWithoutMapStore.length);
-        });
-    }
-
-    @Test
-    public void metrics_show_offloaded_operation_count_when_offload_is_configured() {
-        int opCount = 1_000;
+    public void metrics_show_offloaded_operation_count_when_forced_offload_enabled() {
+        int opCount = 10_000;
 
         List<Future> futures = new ArrayList<>(opCount);
         for (int i = 0; i < opCount; i++) {
-            futures.add(mapWithMapStore.setAsync(Integer.toString(i),
+            futures.add(map.setAsync(Integer.toString(i),
                     Integer.toString(i)).toCompletableFuture());
         }
-
-        sleepSeconds(2);
 
         MutableLong observedOffloadedOpCount = new MutableLong();
 
@@ -139,29 +85,6 @@ public class MapStoreOffloadedOperationMetricsTest extends HazelcastTestSupport 
 
             assertTrue(observedOffloadedOpCount.addAndGet(mapWithMapStore.length) > 0);
         });
-    }
-
-    @Test
-    public void metrics_show_zero_offloaded_operation_count_when_no_map_store_configured() {
-        int opCount = 1_000;
-
-        List<Future> futures = new ArrayList<>(opCount);
-        for (int i = 0; i < opCount; i++) {
-            futures.add(mapWithoutMapStore.setAsync(Integer.toString(i),
-                    Integer.toString(i)).toCompletableFuture());
-        }
-
-        sleepSeconds(2);
-
-        MutableLong observedOffloadedOpCount = new MutableLong();
-
-        assertTrueAllTheTime(() -> {
-            ProbeCatcher mapWithoutMapStore = new ProbeCatcher();
-
-            registry.collect(mapWithoutMapStore);
-
-            assertEquals(0, observedOffloadedOpCount.addAndGet(mapWithoutMapStore.length));
-        }, 5);
     }
 
     static class ProbeCatcher implements MetricsCollector {
