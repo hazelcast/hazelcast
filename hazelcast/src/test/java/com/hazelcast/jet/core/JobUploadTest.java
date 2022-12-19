@@ -23,6 +23,7 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
+import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -32,6 +33,8 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import static java.util.Collections.emptyList;
 import static junit.framework.TestCase.assertEquals;
@@ -91,6 +94,69 @@ public class JobUploadTest extends JetTestSupport {
                 jobParameters);
 
         assertEqualsEventually(() -> jetService.getJobs().size(), 1);
+        hazelcastInstance.shutdown();
+    }
+
+    @Test
+    public void test_jarUpload_whenResourceUploadIsEnabled_withSmallBuffer() {
+
+        // Change the part buffer size
+        System.setProperty(JetClientInstanceImpl.PART_SIZE,"100");
+
+        // Reset the singleton for the test
+        HazelcastBootstrap.resetSupplier();
+
+        Config config = smallInstanceConfig();
+        JetConfig jetConfig = config.getJetConfig();
+        jetConfig.setResourceUploadEnabled(true);
+
+        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+        HazelcastInstance client = createHazelcastClient();
+        JetService jetService = client.getJet();
+        List<String> jobParameters = emptyList();
+
+        jetService.uploadJob(getJarPath(),
+                null,
+                null,
+                null,
+                jobParameters);
+
+        assertEqualsEventually(() -> jetService.getJobs().size(), 1);
+        hazelcastInstance.shutdown();
+    }
+
+    @Test
+    public void test_stress_jarUpload_whenResourceUploadIsEnabled() throws InterruptedException {
+
+        // Reset the singleton for the test
+        HazelcastBootstrap.resetSupplier();
+
+        Config config = smallInstanceConfig();
+        JetConfig jetConfig = config.getJetConfig();
+        jetConfig.setResourceUploadEnabled(true);
+
+        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+        ExecutorService executorService = Executors.newFixedThreadPool(10);
+
+        int jobLimit = 50;
+        for (int index = 0; index < jobLimit; index++) {
+            executorService.submit(()-> {
+                HazelcastInstance client = createHazelcastClient();
+                JetService jetService = client.getJet();
+                List<String> jobParameters = emptyList();
+
+                jetService.uploadJob(getJarPath(),
+                        null,
+                        null,
+                        null,
+                        jobParameters);
+                client.shutdown();
+            })   ;
+        }
+
+        HazelcastInstance client = createHazelcastClient();
+        JetService jetService = client.getJet();
+        assertEqualsEventually(() -> jetService.getJobs().size(), jobLimit);
         hazelcastInstance.shutdown();
     }
 
