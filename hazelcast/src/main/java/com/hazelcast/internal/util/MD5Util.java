@@ -67,10 +67,12 @@ public final class MD5Util {
      * @throws NoSuchAlgorithmException in case of MessageDigest error
      */
     public static String calculateMd5Hex(Path jarPath) throws IOException, NoSuchAlgorithmException {
-        try(ReadableByteChannel in = Channels.newChannel(Files.newInputStream(jarPath))) {
+        try (ReadableByteChannel in = Channels.newChannel(Files.newInputStream(jarPath))) {
             MessageDigest md5Digest = MessageDigest.getInstance("MD5");
 
-            ByteBuffer buffer = ByteBuffer.allocate(1024 * 1024);  // 1 MB
+            // 1 MB
+            final int oneMB = 1024 * 1024;
+            ByteBuffer buffer = ByteBuffer.allocate(oneMB);
 
             while (in.read(buffer) != -1) {
                 buffer.flip();
@@ -79,7 +81,8 @@ public final class MD5Util {
             }
 
             BigInteger md5Actual = new BigInteger(1, md5Digest.digest());
-            return md5Actual.toString(16);
+            final int radix = 16;
+            return md5Actual.toString(radix);
         }
     }
 }

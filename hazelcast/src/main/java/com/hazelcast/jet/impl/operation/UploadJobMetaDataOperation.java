@@ -34,8 +34,8 @@ public class UploadJobMetaDataOperation extends AsyncJobOperation {
     public UploadJobMetaDataOperation() {
     }
 
-    public UploadJobMetaDataOperation(UUID sessionId, String md5Hex, long jarSize, String snapshotName, String jobName, String mainClass,
-                                      List<String> jobParameters) {
+    public UploadJobMetaDataOperation(UUID sessionId, String md5Hex, long jarSize, String snapshotName, String jobName,
+                                      String mainClass, List<String> jobParameters) {
         jobMetaDataParameterObject = new JobMetaDataParameterObject();
         jobMetaDataParameterObject.setSessionId(sessionId);
         jobMetaDataParameterObject.setMd5Hex(md5Hex);
