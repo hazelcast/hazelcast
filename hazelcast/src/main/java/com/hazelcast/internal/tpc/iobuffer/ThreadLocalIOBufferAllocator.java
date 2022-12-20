@@ -51,7 +51,7 @@ class ThreadLocalIOBufferAllocator implements IOBufferAllocator<ThreadLocalIOBuf
 
     @Override
     public void free(ThreadLocalIOBuffer ioBuffer) {
-        for (int i = ioBuffer.chunkToRelease; i < ioBuffer.chunks.length; i++) {
+        for (int i = ioBuffer.chunkToRelease; i < ioBuffer.chunksPos; i++) {
             ByteBuffer chunk = ioBuffer.chunks[i];
             reclaim(chunk);
         }

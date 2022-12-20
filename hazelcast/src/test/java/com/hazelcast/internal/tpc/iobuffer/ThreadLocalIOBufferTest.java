@@ -18,6 +18,7 @@ import static org.junit.Assert.assertNull;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class ThreadLocalIOBufferTest {
+    public static final int ITERATION_COUNT = 100;
     private final ThreadLocalIOBufferAllocator allocator = (ThreadLocalIOBufferAllocator)
             IOBufferAllocatorFactory.createGrowingThreadLocal();
     private final Random random = new Random();
@@ -102,7 +103,7 @@ public class ThreadLocalIOBufferTest {
     public void when_fillingBuffersWithRandomArrays_then_sameDataIsRead() {
         byte[][] data = new byte[BUFFER_SIZE][];
         for (int i = 0; i < data.length; i++) {
-            int size = random.nextInt(10)  + 1;
+            int size = random.nextInt(10) + 1;
             data[i] = new byte[size];
             random.nextBytes(data[i]);
         }
@@ -131,6 +132,19 @@ public class ThreadLocalIOBufferTest {
                 }
                 assertEquals(data[i][j], chunk.get());
             }
+        }
+    }
+
+    @Test
+    public void when_reclaimingBuffer_then_canWrite() {
+        byte[] randomBytes = new byte[1024];
+        random.nextBytes(randomBytes);
+        for (int j = 0; j < ITERATION_COUNT; j++) {
+            ThreadLocalIOBuffer buffer = allocator.allocate();
+            for (int i = 0; i < ITERATION_COUNT; i++) {
+                buffer.writeBytes(randomBytes);
+            }
+            allocator.free(buffer);
         }
     }
 }

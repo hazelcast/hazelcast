@@ -33,7 +33,7 @@ class ThreadLocalIOBuffer implements IOBuffer {
     /**
      * Position of a last chunk in.
      */
-    private int chunksPos;
+    int chunksPos;
 
     /**
      * Position of a last byte in a buffer.
