@@ -60,3 +60,18 @@ public static void main(String[] args) throws RunnerException {
     new Runner(opt).run();
 }
 ```
+# Running all the benchmarks
+
+You need to build the project with maven profile ```benchmark```:
+
+```shell
+mvn -Dquick -Pbenchmark clean package
+```
+
+And run:
+
+```shell
+java -cp "$HOME/.m2/repository/org/openjdk/jmh/jmh-generator-annprocess/1.34/jmh-generator-annprocess-1.34.jar:$HOME/.m2/repository/org/openjdk/jmh/jmh-core/1.34/jmh-core-1.34.jar:hazelcast-perf-tests/target/hazelcast-perf-tests-5.3.0-SNAPSHOT-tests.jar:hazelcast/target/hazelcast-5.3.0-SNAPSHOT.jar" com.hazelcast.internal.perf.BenchmarkRunner
+```
+
+In later stage we can modify the ```BenchmarkRunner``` class to run just a set of benchmarks. 

@@ -43,37 +43,17 @@
     <profiles>
         <profile>
             <id>benchmark</id>
-            <properties>
-                <skipTests>true</skipTests>
-                <benchmark>org.apache</benchmark>
-            </properties>
             <build>
                 <plugins>
                     <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>exec-maven-plugin</artifactId>
-                        <version>3.1.0</version>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-jar-plugin</artifactId>
+                        <version>3.3.0</version>
                         <executions>
                             <execution>
-                                <id>benchmark</id>
-                                <phase>test</phase>
                                 <goals>
-                                    <goal>exec</goal>
+                                    <goal>test-jar</goal>
                                 </goals>
-                                <configuration>
-                                    <classpathScope>test</classpathScope>
-                                    <executable>java</executable>
-                                    <arguments>
-                                        <argument>-classpath</argument>
-                                        <classpath/>
-                                        <argument>org.openjdk.jmh.Main</argument>
-                                        <argument>-rf</argument>
-                                        <argument>json</argument>
-                                        <argument>-rff</argument>
-                                        <argument>target/jmh-result.${benchmark}.json</argument>
-                                        <argument>${benchmark}</argument>
-                                    </arguments>
-                                </configuration>
                             </execution>
                         </executions>
                     </plugin>
