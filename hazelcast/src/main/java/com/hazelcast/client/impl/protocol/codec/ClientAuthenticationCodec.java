@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Makes an authentication request to the cluster.
  */
-@Generated("4810af7ba706d3e92c2e946752d5b273")
+@Generated("8d0c6ba411e282e843aba33b2b3079c9")
 public final class ClientAuthenticationCodec {
     //hex: 0x000100
     public static final int REQUEST_MESSAGE_TYPE = 256;
@@ -190,10 +190,16 @@ public final class ClientAuthenticationCodec {
         /**
          * Returns a list of TPC ports (comma seperated). Null if TPC not enabled
          */
-        public String tpcPorts;
+        public @Nullable java.lang.String tpcPorts;
+
+        /**
+         * True if the tpcPorts is received from the member, false otherwise.
+         * If this is false, tpcPorts has the default value for its type.
+         */
+        public boolean isTpcPortsExists;
     }
 
-    public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported, String tpcPorts) {
+    public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported, @Nullable java.lang.String tpcPorts) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
@@ -223,7 +229,12 @@ public final class ClientAuthenticationCodec {
         response.failoverSupported = decodeBoolean(initialFrame.content, RESPONSE_FAILOVER_SUPPORTED_FIELD_OFFSET);
         response.address = CodecUtil.decodeNullable(iterator, AddressCodec::decode);
         response.serverHazelcastVersion = StringCodec.decode(iterator);
-        response.tpcPorts = StringCodec.decode(iterator);
+        if (iterator.hasNext()) {
+            response.tpcPorts = CodecUtil.decodeNullable(iterator, StringCodec::decode);
+            response.isTpcPortsExists = true;
+        } else {
+            response.isTpcPortsExists = false;
+        }
         return response;
     }
 }
