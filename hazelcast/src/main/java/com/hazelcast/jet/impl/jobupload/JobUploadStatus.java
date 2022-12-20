@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.jobupload;
 
+import com.hazelcast.internal.util.MD5Util;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -24,6 +25,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -62,11 +64,12 @@ public class JobUploadStatus {
         }
     }
 
-    public JobMetaDataParameterObject processJobMultipart(JobMultiPartParameterObject parameterObject) throws IOException {
+    public JobMetaDataParameterObject processJobMultipart(JobMultiPartParameterObject parameterObject)
+            throws IOException, NoSuchAlgorithmException {
 
-        ensureReceivedParametersAreValid(parameterObject);
+        validateReceivedParameters(parameterObject);
 
-        ensureReceivedPartNumbersAreExpected(parameterObject);
+        validateReceivedPartNumbersAreExpected(parameterObject);
 
         // Parts numbers are good. Save them
         currentPart = parameterObject.getCurrentPartNumber();
@@ -92,14 +95,17 @@ public class JobUploadStatus {
         changeLastUpdatedTime();
 
         JobMetaDataParameterObject result = null;
-        //Return if parts are complete
+        // If parts are complete
         if (currentPart == totalPart) {
+
+            validateChecksum();
+
             result = jobMetaDataParameterObject;
         }
         return result;
     }
 
-    private static void ensureReceivedParametersAreValid(JobMultiPartParameterObject parameterObject) {
+    private static void validateReceivedParameters(JobMultiPartParameterObject parameterObject) {
         int receivedCurrentPart = parameterObject.getCurrentPartNumber();
         int receivedTotalPart = parameterObject.getTotalPartNumber();
 
@@ -149,7 +155,7 @@ public class JobUploadStatus {
         }
     }
 
-    private void ensureReceivedPartNumbersAreExpected(JobMultiPartParameterObject parameterObject) {
+    private void validateReceivedPartNumbersAreExpected(JobMultiPartParameterObject parameterObject) {
         int receivedCurrentPart = parameterObject.getCurrentPartNumber();
         int receivedTotalPart = parameterObject.getTotalPartNumber();
 
@@ -168,6 +174,16 @@ public class JobUploadStatus {
         if (totalPart != 0 && totalPart != receivedTotalPart) {
             String errorMessage = String.format("Received a different totalPart. totalPart : %d receivedTotalPart : %d",
                     totalPart, receivedTotalPart);
+            throw new JetException(errorMessage);
+        }
+    }
+
+    private void validateChecksum() throws IOException, NoSuchAlgorithmException {
+        String calculateMd5Hex = MD5Util.calculateMd5Hex(jobMetaDataParameterObject.getJarPath());
+        String receivedMd5Hex = jobMetaDataParameterObject.getMd5Hex();
+        if (!calculateMd5Hex.equals(receivedMd5Hex)) {
+            String errorMessage = String.format("Checksum is different!. Calculated MD5 : %s. Received MD5 : %s",
+                    calculateMd5Hex, receivedMd5Hex);
             throw new JetException(errorMessage);
         }
     }

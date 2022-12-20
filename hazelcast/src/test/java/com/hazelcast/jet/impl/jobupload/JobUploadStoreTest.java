@@ -23,14 +23,15 @@ import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
+import java.math.BigInteger;
 import java.nio.file.Files;
+import java.security.MessageDigest;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
@@ -100,24 +101,39 @@ public class JobUploadStoreTest {
     public void testProcessJarData() throws Exception {
         UUID sessionID = UUID.randomUUID();
         JobMetaDataParameterObject parameterObject = new JobMetaDataParameterObject();
+        // Set
         parameterObject.setSessionId(sessionID);
+
+        // Set
+        byte[] jarData = {(byte) 0};
+        MessageDigest md = MessageDigest.getInstance("MD5");
+        md.update(jarData);
+        md.update(jarData);
+        byte[] digest = md.digest();
+        BigInteger md5Actual = new BigInteger(1, digest);
+        String md5Hex = md5Actual.toString(16);
+        parameterObject.setMd5Hex(md5Hex);
+
+        // Send meta data
         jobUploadStore.processJarMetaData(parameterObject);
 
-        byte[] jarData = {(byte) 0};
+
+        // Send part 1
         JobMultiPartParameterObject parameterObject1 = new JobMultiPartParameterObject(sessionID, 1, 2,
                 jarData, jarData.length);
         JobMetaDataParameterObject result = jobUploadStore.processJobMultipart(parameterObject1);
         assertNull(result);
 
+        // Send part 2
         JobMultiPartParameterObject parameterObject2 = new JobMultiPartParameterObject(sessionID, 2, 2,
                 jarData, jarData.length);
         result = jobUploadStore.processJobMultipart(parameterObject2);
+
+        // Assert result
         assertNotNull(result);
         assertTrue(Files.exists(parameterObject.getJarPath()));
 
         jobUploadStore.remove(sessionID);
-
-        assertFalse(Files.exists(parameterObject.getJarPath()));
 
     }
 }

@@ -21,6 +21,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
 import java.io.IOException;
+import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -58,7 +59,7 @@ public class JobUploadStore {
     }
 
     public JobMetaDataParameterObject processJobMultipart(JobMultiPartParameterObject parameterObject)
-            throws IOException {
+            throws IOException, NoSuchAlgorithmException {
         // Log parameterObject
         UUID sessionId = parameterObject.getSessionId();
         int currentPart = parameterObject.getCurrentPartNumber();

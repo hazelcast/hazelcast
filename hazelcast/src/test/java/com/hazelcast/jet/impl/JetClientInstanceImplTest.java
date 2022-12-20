@@ -62,21 +62,32 @@ public class JetClientInstanceImplTest extends JetTestSupport {
     public void calculateTotalParts() {
         long jarSize = 10_000_000;
         int partSize = 10_000_000;
-        int totalParts = JetClientInstanceImpl.calculateTotalParts(jarSize, partSize);
+
+        HazelcastInstance member = createHazelcastInstance();
+        JetClientInstanceImpl client = (JetClientInstanceImpl) createHazelcastClient().getJet();
+
+        int totalParts = client.calculateTotalParts(jarSize, partSize);
         assertEquals(1, totalParts);
     }
 
     @Test
     public void calculatePartSize_when_vvalidProperty() {
         System.setProperty("hazelcast.jobupload.partsize", "1000");
-        int partSize = JetClientInstanceImpl.calculatePartBufferSize();
+        HazelcastInstance member = createHazelcastInstance();
+        JetClientInstanceImpl client = (JetClientInstanceImpl) createHazelcastClient().getJet();
+
+        int partSize = client.calculatePartBufferSize();
         assertEquals(1_000, partSize);
     }
 
     @Test
     public void calculatePartSize_when_invalidProperty() {
         System.setProperty("hazelcast.jobupload.partsize", "e");
-        int partSize = JetClientInstanceImpl.calculatePartBufferSize();
+
+        HazelcastInstance member = createHazelcastInstance();
+        JetClientInstanceImpl client = (JetClientInstanceImpl) createHazelcastClient().getJet();
+
+        int partSize = client.calculatePartBufferSize();
         assertTrue(partSize > 0);
     }
 

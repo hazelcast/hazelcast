@@ -34,7 +34,9 @@ public class JetUploadJobMetaDataTask extends
 
     @Override
     protected Operation prepareOperation() {
-        return new UploadJobMetaDataOperation(parameters.sessionId,
+        return new UploadJobMetaDataOperation(
+                parameters.sessionId,
+                parameters.md5Hex,
                 parameters.jarSize,
                 parameters.snapshotName,
                 parameters.jobName,

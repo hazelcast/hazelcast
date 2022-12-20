@@ -19,6 +19,7 @@ package com.hazelcast.jet.core;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastBootstrap;
+import com.hazelcast.internal.util.MD5Util;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
@@ -27,10 +28,14 @@ import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.mockito.MockedStatic;
+import org.mockito.Mockito;
 
+import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.ExecutorService;
@@ -40,13 +45,16 @@ import static java.util.Collections.emptyList;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
 @Category({QuickTest.class})
 public class JobUploadTest extends JetTestSupport {
 
     @Test
     public void test_client_jarUpload_whenResourceUploadIsNotEnabled() {
-        createHazelcastInstance();
+        HazelcastInstance hazelcastInstance = createHazelcastInstance();
         HazelcastInstance client = createHazelcastClient();
         JetService jetService = client.getJet();
         List<String> jobParameters = emptyList();
@@ -57,6 +65,9 @@ public class JobUploadTest extends JetTestSupport {
                         null,
                         jobParameters)
         );
+
+        assertEqualsEventually(() -> jetService.getJobs().size(), 0);
+        hazelcastInstance.shutdown();
     }
 
     @Test
@@ -71,6 +82,9 @@ public class JobUploadTest extends JetTestSupport {
                         null,
                         jobParameters)
         );
+
+        assertEqualsEventually(() -> jetService.getJobs().size(), 0);
+        hazelcastInstance.shutdown();
     }
 
     @Test
@@ -95,6 +109,36 @@ public class JobUploadTest extends JetTestSupport {
 
         assertEqualsEventually(() -> jetService.getJobs().size(), 1);
         hazelcastInstance.shutdown();
+    }
+
+    @Test
+    public void test_jarUpload_WithIncorrectChecksum() throws IOException, NoSuchAlgorithmException {
+        // Reset the singleton for the test
+        HazelcastBootstrap.resetSupplier();
+
+        Config config = smallInstanceConfig();
+        JetConfig jetConfig = config.getJetConfig();
+        jetConfig.setResourceUploadEnabled(true);
+
+        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+        HazelcastInstance client = createHazelcastClient();
+        JetService jetService = client.getJet();
+        List<String> jobParameters = emptyList();
+
+        try (MockedStatic<MD5Util> mocked = mockStatic(MD5Util.class)) {
+            MD5Util mockMD5Util = mock(MD5Util.class);
+            when(mockMD5Util.calculateMd5Hex(Mockito.any())).thenReturn("1");
+
+            assertThrows(JetException.class, () ->
+                    jetService.uploadJob(getJarPath(),
+                            null,
+                            null,
+                            null,
+                            jobParameters));
+
+            assertEqualsEventually(() -> jetService.getJobs().size(), 0);
+            hazelcastInstance.shutdown();
+        }
     }
 
     @Test

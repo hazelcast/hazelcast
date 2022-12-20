@@ -43,11 +43,13 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.NoSuchAlgorithmException;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
+import static com.hazelcast.internal.util.MD5Util.calculateMd5Hex;
 import static com.hazelcast.jet.impl.operation.GetJobIdsOperation.ALL_JOBS;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
@@ -146,21 +148,22 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         try {
             UUID sessionId = UuidUtil.newSecureUUID();
             long jarSize = Files.size(jarPath);
+            String md5Hex = calculateMd5Hex(jarPath);
 
             // Send job meta data
-            sendJobMetaData(sessionId, jarSize, snapshotName, jobName, mainClass, jobParameters);
+            sendJobMetaData(sessionId, md5Hex, jarSize, snapshotName, jobName, mainClass, jobParameters);
 
             sendJobMultipart(jarPath, sessionId, jarSize);
 
-        } catch (IOException exception) {
+        } catch (IOException | NoSuchAlgorithmException exception) {
             sneakyThrow(exception);
         }
     }
 
-    private void sendJobMetaData(UUID sessionId, long jarSize, String snapshotName, String jobName,
+    private void sendJobMetaData(UUID sessionId, String md5Hex, long jarSize, String snapshotName, String jobName,
                                  String mainClass, List<String> jobParameters) {
 
-        ClientMessage jobMetaDataRequest = JetUploadJobMetaDataCodec.encodeRequest(sessionId, jarSize, snapshotName,
+        ClientMessage jobMetaDataRequest = JetUploadJobMetaDataCodec.encodeRequest(sessionId, md5Hex, jarSize, snapshotName,
                 jobName, mainClass, jobParameters);
         invokeRequestOnMasterAndDecodeResponse(jobMetaDataRequest, JetUploadJobMetaDataCodec::decodeResponse);
     }
@@ -215,17 +218,21 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         }
     }
 
-    // Calculate the buffer size from System.properties is defined, otherwise use default value
-    protected static int calculatePartBufferSize() {
+    // Calculate the buffer size from System.properties if defined, otherwise use default value
+    protected int calculatePartBufferSize() {
         int partSize = 0;
         try {
             partSize = Integer.getInteger(PART_SIZE, DEFAULT_PART_SIZE);
         } catch (Exception ignored) {
+            //ignore the exception
         }
         return partSize;
     }
 
-    protected static int calculateTotalParts(long jarSize, int partSize) {
+    protected int calculateTotalParts(long jarSize, int partSize) {
         return (int) Math.ceil(jarSize / (double) partSize);
     }
+
+    // Calculate the MD5 of given file
+
 }
