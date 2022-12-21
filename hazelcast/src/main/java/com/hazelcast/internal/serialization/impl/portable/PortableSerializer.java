@@ -36,7 +36,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public final class PortableSerializer implements StreamSerializer<Object> {
+public class PortableSerializer implements StreamSerializer<Object> {
 
     private final PortableContextImpl context;
     private final Map<Integer, PortableFactory> factories = new HashMap<>();
