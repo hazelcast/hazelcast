@@ -36,7 +36,8 @@ public abstract class AsyncServerSocket implements Closeable {
     /**
      * Allows for objects to be bound to this AsyncServerSocket. Useful for the lookup of services and other dependencies.
      */
-    public final ConcurrentMap context = new ConcurrentHashMap();
+    @SuppressWarnings("checkstyle:VisibilityModifier")
+    public final ConcurrentMap<?, ?> context = new ConcurrentHashMap<>();
 
     protected final ILogger logger = Logger.getLogger(getClass());
     protected final AtomicBoolean closed = new AtomicBoolean(false);
@@ -106,7 +107,7 @@ public abstract class AsyncServerSocket implements Closeable {
      *
      * @param size the receivebuffer size in bytes.
      * @throws IllegalArgumentException when the size isn't positive.
-     * @throws UncheckedIOException if something failed with configuring the socket
+     * @throws UncheckedIOException     if something failed with configuring the socket
      */
     public abstract void receiveBufferSize(int size);
 

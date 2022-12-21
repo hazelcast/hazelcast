@@ -27,8 +27,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * This is the TPC version of the {@link PartitionOperationThreadImpl}.
  */
 public class AltoEventloopThread extends HazelcastManagedThread implements PartitionOperationThread {
-
-    private final static AtomicInteger THREAD_ID = new AtomicInteger();
+    private static final AtomicInteger THREAD_ID = new AtomicInteger();
 
     private final int threadId;
 

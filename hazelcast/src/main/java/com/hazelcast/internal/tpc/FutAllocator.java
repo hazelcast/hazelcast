@@ -18,10 +18,11 @@ package com.hazelcast.internal.tpc;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 
+@SuppressWarnings("rawtypes")
 public final class FutAllocator {
 
     private final Eventloop eventloop;
-    private Fut[] array;
+    private final Fut[] array;
     private int index = -1;
 
     public FutAllocator(Eventloop eventloop, int capacity) {

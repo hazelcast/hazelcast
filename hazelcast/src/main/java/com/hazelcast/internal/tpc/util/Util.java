@@ -20,6 +20,7 @@ import java.nio.ByteBuffer;
 import java.time.Instant;
 
 public class Util {
+    private static final long NANOS_MULTIPLIER = 1_000_000_000;
 
     /**
      * Gets the number of nanoseconds from the Java epoch of 1970-01-01T00:00:00Z.
@@ -33,7 +34,7 @@ public class Util {
         long seconds = now.getEpochSecond();
         long nanosFromSecond = now.getNano();
 
-        return (seconds * 1_000_000_000) + nanosFromSecond;
+        return (seconds * NANOS_MULTIPLIER) + nanosFromSecond;
     }
 
     public static void put(ByteBuffer dst, ByteBuffer src) {
