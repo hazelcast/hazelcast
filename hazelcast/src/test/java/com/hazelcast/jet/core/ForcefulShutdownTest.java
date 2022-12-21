@@ -40,6 +40,7 @@ import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -48,6 +49,7 @@ import org.junit.runner.RunWith;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
@@ -83,21 +85,35 @@ public class ForcefulShutdownTest extends JetTestSupport {
 
     private static final int NODE_COUNT = 5;
     private static final int BASE_PORT = 5701;
+    // increase number of chunks in snapshot by setting greater parallelism
+    private static final int LOCAL_PARALLELISM = 10;
 
     private HazelcastInstance[] instances;
+
+    // SnapshotVerificationKey
+    private int masterKeyPartitionInstanceIdx;
+    private int backupKeyPartitionInstanceIdx;
+    private final CountDownLatch snapshotDone = new CountDownLatch(NODE_COUNT * LOCAL_PARALLELISM);
+    // Job
+    private Integer masterJobPartitionInstanceIdx;
+    private Integer backupJobPartitionInstanceIdx;
+
+    private final CompletableFuture<Integer> failingInstanceFuture = new CompletableFuture<>();
 
     @Override
     public Config getConfig() {
         Config config = smallInstanceConfig();
-        // slow down anti-entropy process so it does not kick in during test
-        config.setProperty(ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "60");
-        SnapshotInstrumentationP.reset();
+        // slow down anti-entropy process, so it does not kick in during test
+        config.setProperty(ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "120");
+        // TODO: uncomment to test workaround
+//        config.setProperty(ClusterProperty.FAIL_ON_INDETERMINATE_OPERATION_STATE.getName(), "true");
         return config;
     }
 
     @Before
     public void setup() {
         instances = createHazelcastInstances(getConfig(), NODE_COUNT);
+        SnapshotInstrumentationP.reset();
     }
 
     // This test checks if our way to simulate map replication failure is reliable
@@ -176,6 +192,24 @@ public class ForcefulShutdownTest extends JetTestSupport {
         when_shutDown(true, 3);
     }
 
+    private void setupJetTests(int allowedSnapshotsCount) {
+        InternalPartition partitionForKey = getPartitionForKey(SnapshotValidationRecord.KEY);
+        logger.info("SVR KEY partition id:" + partitionForKey.getPartitionId());
+        for (int i = 0; i < 3; ++i) {
+            logger.info("SVR KEY partition addr:" + partitionForKey.getReplica(i));
+        }
+        masterKeyPartitionInstanceIdx = partitionForKey.getReplica(0).address().getPort() - BASE_PORT;
+        backupKeyPartitionInstanceIdx = partitionForKey.getReplica(1).address().getPort() - BASE_PORT;
+
+        SnapshotInstrumentationP.allowedSnapshotsCount = allowedSnapshotsCount;
+        SnapshotInstrumentationP.snapshotCommitFinishConsumer = success -> {
+            // allow normal snapshot after job restart
+            SnapshotInstrumentationP.saveSnapshotConsumer = null;
+            SnapshotInstrumentationP.snapshotCommitPrepareConsumer = null;
+            snapshotDone.countDown();
+        };
+    }
+
     private <K> InternalPartition getPartitionForKey(K key) {
         // to determine partition we can use any instance (let's pick the first one)
         HazelcastInstance instance = instances[0];
@@ -193,6 +227,8 @@ public class ForcefulShutdownTest extends JetTestSupport {
         // (JobExecutionRecord and SnapshotValidationRecord.KEY).
         assertTrue(NODE_COUNT >= 5);
 
+        setupJetTests(allowedSnapshotsCount);
+
         // Scenario:
         // - start job normally
         // - when first job snapshot is started:
@@ -200,44 +236,17 @@ public class ForcefulShutdownTest extends JetTestSupport {
         //   - break anti-entropy executed on replica versions mismatch
         //     (REPLICA_SYNC_REQUEST_OFFLOADABLE) related to failingInstance
         // - wait for snapshot completion
-        // - disconnect and terminante victim node (should not matter if it is Jet master or not)
+        // - disconnect and terminate victim node (should not matter if it is Jet master or not)
         // - job should be restarted, but should not use broken snapshot
-
-        InternalPartition partitionForKey = getPartitionForKey(SnapshotValidationRecord.KEY);
-        logger.info("SVR KEY partition id:" + partitionForKey.getPartitionId());
-        for (int i = 0; i < 3; ++i) {
-            logger.info("SVR KEY partition addr:" + partitionForKey.getReplica(i));
-        }
-        int masterPartitionInstanceIdx = partitionForKey.getReplica(0).address().getPort() - BASE_PORT;
-        int backupPartitionInstanceIdx = partitionForKey.getReplica(1).address().getPort() - BASE_PORT;
-
-        // dummy job
-        DAG dag = new DAG();
         final int numItems = allowedSnapshotsCount + 5;
-        // increase number of chunks in snapshot by setting greater parallelism
-        final int localParallelism = 10;
-        Vertex source = dag.newVertex("source", throttle(() -> new SnapshotInstrumentationP(numItems), 1)).localParallelism(localParallelism);
-        Vertex sink = dag.newVertex("sink", DiagnosticProcessors.writeLoggerP()).localParallelism(1);
-        dag.edge(between(source, sink));
 
-        CompletableFuture<Integer> failingInstanceFuture = new CompletableFuture<>();
         AtomicBoolean networkBroken = new AtomicBoolean(false);
-        CountDownLatch snapshotDone = new CountDownLatch(NODE_COUNT * localParallelism);
-
-        SnapshotInstrumentationP.allowedSnapshotsCount = allowedSnapshotsCount;
         SnapshotInstrumentationP.saveSnapshotConsumer = (idx) -> {
             // synchronize so all snapshot chunk operations have broken replication
             synchronized (networkBroken) {
                 if (networkBroken.compareAndSet(false, true)) {
                     logger.info("Breaking replication in snapshot for " + idx);
-                    for (int i = 0; i < NODE_COUNT; ++i) {
-                        try {
-                            Integer failingInstanceIdx = failingInstanceFuture.get();
-                            setBackupPacketDropFilter(instances[i], i != failingInstanceIdx ? 0f : 1f, instances[failingInstanceIdx]);
-                        } catch (InterruptedException | ExecutionException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
+                    breakFailingInstance();
                     logger.finest("Proceeding with snapshot idx " + idx + " after breaking replication");
                 } else {
                     logger.finest("Proceeding with snapshot idx " + idx);
@@ -245,60 +254,30 @@ public class ForcefulShutdownTest extends JetTestSupport {
             }
         };
 
-        SnapshotInstrumentationP.snapshotCommitFinishConsumer = success -> {
-            // allow normal snapshot after job restart
-            SnapshotInstrumentationP.saveSnapshotConsumer = (i) -> { };
-            snapshotDone.countDown();
-        };
-
-        // start job after processors setup
-        Job job = instances[0].getJet().newJob(dag, new JobConfig()
-                .setProcessingGuarantee(snapshotted ? EXACTLY_ONCE : NONE)
-                // trigger snapshot often to speed up test
-                .setSnapshotIntervalMillis(1000));
+        // dummy job
+        // start job after SnapshotInstrumentationP setup to avoid race
+        Job job = createJob(snapshotted, numItems);
 
         // choose failing node
-        Long jobId = job.getId();
-        InternalPartition partitionForJob = getPartitionForKey(jobId);
-        logger.info("Job partition id:" + partitionForJob.getPartitionId());
-        for (int i = 0; i < 3; ++i) {
-            logger.info("Job partition addr:" + partitionForJob.getReplica(i));
-        }
-        int masterJobPartitionInstanceIdx = partitionForJob.getReplica(0).address().getPort() - BASE_PORT;
-        int backupJobPartitionInstanceIdx = partitionForJob.getReplica(1).address().getPort() - BASE_PORT;
-
-        Set<Integer> nodes = IntStream.range(0, NODE_COUNT).boxed().collect(Collectors.toSet());
-        Arrays.asList(masterPartitionInstanceIdx, backupPartitionInstanceIdx,
-                        masterJobPartitionInstanceIdx, backupJobPartitionInstanceIdx)
-                .forEach(nodes::remove);
-        logger.info("Replicas that can be broken: " + nodes);
-        assertThat(nodes).isNotEmpty();
-        int failingInstance = nodes.stream().findAny().get();
-        int liveInstance = masterPartitionInstanceIdx;
-        logger.info("Failing instance selected: " + failingInstance);
-        failingInstanceFuture.complete(failingInstance);
+        int failingInstance = chooseFailingInstance(masterKeyPartitionInstanceIdx, backupKeyPartitionInstanceIdx,
+                masterJobPartitionInstanceIdx, backupJobPartitionInstanceIdx);
+        int liveInstance = masterKeyPartitionInstanceIdx;
 
         // ensure that job started
         assertJobStatusEventually(job, JobStatus.RUNNING);
 
-        logger.info("Waiting for corrupted snapshot");
-        assertTrue(snapshotDone.await(30, TimeUnit.SECONDS));
-        logger.info("Got corrupted snapshot");
+        waitForCorruptedSnapshot();
         sleepMillis(500);
 
         logger.info("Shutting down instance... " + failingInstance);
         instances[failingInstance].getLifecycleService().terminate();
         logger.info("Removed instance " + failingInstance + " from cluster");
         // restore network between remaining nodes
-        for (int i = 0; i < NODE_COUNT; ++i) {
-            if (i != failingInstance) {
-                resetPacketFiltersFrom(instances[i]);
-            }
-        }
+        restoreNetwork();
 
         logger.info("Joining job...");
         // TODO: in reproducer job.join() fails, after fix should not throw but complete normally
-//         instances[liveInstance].getJet().getJob(job.getId()).join();
+//        instances[liveInstance].getJet().getJob(job.getId()).join();
         assertThatThrownBy(() -> instances[liveInstance].getJet().getJob(job.getId()).join())
                 .hasMessageContainingAll("State for job", "is corrupted: it should have");
         logger.info("Joined");
@@ -314,6 +293,165 @@ public class ForcefulShutdownTest extends JetTestSupport {
         }
     }
 
+    @Test
+    public void whenFirstSnapshotPossiblyCorruptedAfter1stPhase_thenRestartWithoutSnapshot() throws InterruptedException {
+        when_shutDownAfter1stPhase(true, 0);
+    }
+
+    @Test
+    public void whenNextSnapshotPossiblyCorruptedAfter1stPhase_thenRestartFromLastGoodSnapshot() throws InterruptedException {
+        when_shutDownAfter1stPhase(true, 3);
+    }
+
+    private void when_shutDownAfter1stPhase(boolean snapshotted, int allowedSnapshotsCount) throws InterruptedException {
+
+        setupJetTests(allowedSnapshotsCount);
+
+        // Scenario:
+        // - start job normally
+        // - when first job snapshot is started:
+        //   - wait for completion of 1st phase of snapshot
+        //   - break synchronous IMap backup on one node (failingInstance)
+        //   - break anti-entropy executed on replica versions mismatch
+        //     (REPLICA_SYNC_REQUEST_OFFLOADABLE) related to failingInstance
+        // - disconnect and terminate victim node (should not matter if it is Jet master or not)
+        // - job should be restarted, but should not use broken snapshot
+        final int numItems = allowedSnapshotsCount + 5;
+
+        AtomicBoolean networkBroken = new AtomicBoolean(false);
+        SnapshotInstrumentationP.snapshotCommitPrepareConsumer = (idx) -> {
+            if (networkBroken.compareAndSet(false, true)) {
+                logger.info("Breaking replication in snapshot commit prepare for " + idx);
+                breakFailingInstance();
+                logger.finest("Proceeding with snapshot commit prepare idx " + idx + " after breaking replication");
+            } else {
+                logger.finest("Proceeding with snapshot commit prepare idx " + idx);
+            }
+        };
+
+        // dummy job
+        // start job after SnapshotInstrumentationP setup to avoid race
+        Job job = createJob(snapshotted, numItems);
+
+        // choose failing node
+        // TODO: due to these constraints this test cannot be executed 2 times out of NODE_COUNT times.
+        // they are necessary for the test to be more deterministic but jobId is random.
+        assertThat(masterKeyPartitionInstanceIdx)
+                // Keep job data, in particular JobExecutionRecord safe
+                .as("Should not damage job data").isNotEqualTo(masterJobPartitionInstanceIdx)
+                // To not restart Jet master (TODO: this could be another test)
+                .as("Should not restart Jet master").isNotEqualTo(0);
+        int failingInstance = chooseConstantFailingNode(masterKeyPartitionInstanceIdx);
+        int liveInstance = backupKeyPartitionInstanceIdx;
+
+        // ensure that job started
+        assertJobStatusEventually(job, JobStatus.RUNNING);
+
+        waitForCorruptedSnapshot();
+        sleepMillis(500);
+
+        logger.info("Shutting down instance... " + failingInstance);
+        instances[failingInstance].getLifecycleService().terminate();
+        logger.info("Removed instance " + failingInstance + " from cluster");
+        // restore network between remaining nodes
+        restoreNetwork();
+
+        logger.info("Joining job...");
+        // TODO: in reproducer job.join() fails, after fix should not throw but complete normally
+//         instances[liveInstance].getJet().getJob(job.getId()).join();
+        assertThatThrownBy(() -> instances[liveInstance].getJet().getJob(job.getId()).join())
+                .hasMessageContainingAll("snapshot with ID", "is damaged. Unable to restore the state for job");
+        logger.info("Joined");
+
+        // TODO: this check will make sense after fix
+        if (allowedSnapshotsCount > 0) {
+            assertTrue("Should be restored from snapshot", SnapshotInstrumentationP.restoredFromSnapshot);
+            assertThat(SnapshotInstrumentationP.restoredCounters.values())
+                    .as("Should restore from last known good snapshot")
+                    .containsOnly(allowedSnapshotsCount - 1);
+        } else {
+            assertFalse("Should not be restored from snapshot", SnapshotInstrumentationP.restoredFromSnapshot);
+        }
+    }
+
+    @NotNull
+    private Job createJob(boolean snapshotted, int numItems) {
+        DAG dag = new DAG();
+        Vertex source = dag.newVertex("source", throttle(() -> new SnapshotInstrumentationP(numItems), 1)).localParallelism(LOCAL_PARALLELISM);
+        Vertex sink = dag.newVertex("sink", DiagnosticProcessors.writeLoggerP()).localParallelism(1);
+        dag.edge(between(source, sink));
+
+        Job job = instances[0].getJet().newJob(dag, new JobConfig()
+                .setProcessingGuarantee(snapshotted ? EXACTLY_ONCE : NONE)
+                // trigger snapshot often to speed up test
+                .setSnapshotIntervalMillis(1000));
+
+        Long jobId = job.getId();
+        InternalPartition partitionForJob = getPartitionForKey(jobId);
+        logger.info("Job partition id:" + partitionForJob.getPartitionId());
+        for (int i = 0; i < 3; ++i) {
+            logger.info("Job partition addr:" + partitionForJob.getReplica(i));
+        }
+        masterJobPartitionInstanceIdx = partitionForJob.getReplica(0).address().getPort() - BASE_PORT;
+        backupJobPartitionInstanceIdx = partitionForJob.getReplica(1).address().getPort() - BASE_PORT;
+
+        return job;
+    }
+
+    /**
+     * Choose one of the instances except given ones and mark it as destined to fail.
+     * @param safeNodes Nodes that should not be terminated
+     * @return chosen failing instance
+     */
+    private int chooseFailingInstance(Integer... safeNodes) {
+        Set<Integer> nodes = IntStream.range(0, NODE_COUNT).boxed().collect(Collectors.toCollection(HashSet::new));
+        // note that `safeNodes` must be `Integer` not `int` so asList does not return List<int[]>
+        Arrays.asList(safeNodes).forEach(nodes::remove);
+        logger.info("Replicas that can be broken: " + nodes);
+        assertThat(nodes).isNotEmpty();
+        int failingInstance = nodes.stream().findAny().get();
+        return chooseConstantFailingNode(failingInstance);
+    }
+
+    private int chooseConstantFailingNode(int failingInstance) {
+        logger.info("Failing instance selected: " + failingInstance);
+        failingInstanceFuture.complete(failingInstance);
+        return failingInstance;
+    }
+
+    /**
+     * Breaks backups that should be stored on failing instance.
+     */
+    private void breakFailingInstance() {
+        try {
+            Integer failingInstanceIdx = failingInstanceFuture.get();
+            for (int i = 0; i < NODE_COUNT; ++i) {
+                setBackupPacketDropFilter(instances[i], i != failingInstanceIdx ? 0f : 1f, instances[failingInstanceIdx]);
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void restoreNetwork() {
+        int failingInstanceIdx;
+        try {
+            failingInstanceIdx = failingInstanceFuture.get();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new RuntimeException(e);
+        }
+        for (int i = 0; i < NODE_COUNT; ++i) {
+            if (i != failingInstanceIdx) {
+                resetPacketFiltersFrom(instances[i]);
+            }
+        }
+    }
+
+    private void waitForCorruptedSnapshot() throws InterruptedException {
+        logger.info("Waiting for corrupted snapshot");
+        assertTrue(snapshotDone.await(30, TimeUnit.SECONDS));
+        logger.info("Got corrupted snapshot");
+    }
 
     public static void setBackupPacketDropFilter(HazelcastInstance instance, float blockRatio, HazelcastInstance... blockSync) {
         setBackupPacketDropFilter(instance, blockRatio, Arrays.stream(blockSync).map(Accessors::getAddress).collect(Collectors.toSet()));
@@ -380,6 +518,8 @@ public class ForcefulShutdownTest extends JetTestSupport {
         static volatile int allowedSnapshotsCount = 0;
         @Nullable
         static volatile Consumer<Integer> saveSnapshotConsumer;
+        @Nullable
+        static volatile Consumer<Integer> snapshotCommitPrepareConsumer;
         static volatile Consumer<Boolean> snapshotCommitFinishConsumer = b -> { };
         static volatile boolean restoredFromSnapshot = false;
 
@@ -396,6 +536,7 @@ public class ForcefulShutdownTest extends JetTestSupport {
 
             allowedSnapshotsCount = 0;
             saveSnapshotConsumer = null;
+            snapshotCommitPrepareConsumer = null;
             snapshotCommitFinishConsumer = b -> { };
             restoredFromSnapshot = false;
         }
@@ -421,6 +562,16 @@ public class ForcefulShutdownTest extends JetTestSupport {
             }
             savedCounters.put(globalIndex, snapshotCounter);
             return tryEmitToSnapshot(broadcastKey(globalIndex), snapshotCounter);
+        }
+
+        @Override
+        public boolean snapshotCommitPrepare() {
+            if (snapshotCommitPrepareConsumer != null) {
+                if (snapshotCounter >= allowedSnapshotsCount) {
+                    snapshotCommitPrepareConsumer.accept(globalIndex);
+                }
+            }
+            return true;
         }
 
         @Override
