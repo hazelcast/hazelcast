@@ -126,6 +126,15 @@ The upload process continues with this message. It contains jar's bytes. This me
 For optimization, it is assumed that partData is allocated only once on the client side. So we need another field to indicate the number of bytes to be read in this buffer 
 
 Upon reception of uploadJobMultipart, various checks are performed on the message and current session. If any of them fail, a **JetException** is thrown. If all is well, message is processed.
+Some checks are
+- Validate partData.length is positive
+- Validate partSize field is positive
+- Validate partSize == partData.length
+- Validate currentPart is not >= receivedCurrentPart
+- Validate currentPart + 1 is not different from receivedCurrentPart
+- Validate totalPart != 0 && totalPart != receivedTotalPart
+- Validate checksum 
+- 
 If it is the first message a new temporary file is created. Then the partSize bytes of partData byte[] is appended to this file
 When all the parts are complete, a new job is started using HazelcastBootstrap.executeJar() call. When the job starts, the jar is loaded into memory and it is not possible to delete it anymore, because it is in use.
 
