@@ -32,9 +32,7 @@ public final class ElasticSupport {
     public static final String TEST_ELASTIC_VERSION = System.getProperty("test.elastic.version", "7.17.7");
 
     public static final DockerImageName ELASTICSEARCH_IMAGE = DockerImageName
-            .parse("elasticsearch:" + TEST_ELASTIC_VERSION)
-            .asCompatibleSubstituteFor("docker.elastic.co/elasticsearch/elasticsearch");
-
+            .parse("docker.elastic.co/elasticsearch/elasticsearch:" + TEST_ELASTIC_VERSION);
     public static final int PORT = 9200;
 
     // Elastic container takes long time to start up, reusing the container for speedup
