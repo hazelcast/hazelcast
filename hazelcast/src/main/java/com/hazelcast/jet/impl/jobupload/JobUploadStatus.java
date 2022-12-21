@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.impl.jobupload;
 
-import com.hazelcast.internal.util.MD5Util;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -28,6 +27,8 @@ import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
+
+import static com.hazelcast.internal.util.Sha256Util.calculateSha256Hex;
 
 public class JobUploadStatus {
 
@@ -179,11 +180,11 @@ public class JobUploadStatus {
     }
 
     private void validateChecksum() throws IOException, NoSuchAlgorithmException {
-        String calculateMd5Hex = MD5Util.calculateMd5Hex(jobMetaDataParameterObject.getJarPath());
-        String receivedMd5Hex = jobMetaDataParameterObject.getMd5Hex();
-        if (!calculateMd5Hex.equals(receivedMd5Hex)) {
-            String errorMessage = String.format("Checksum is different!. Calculated MD5 : %s. Received MD5 : %s",
-                    calculateMd5Hex, receivedMd5Hex);
+        String calculateSha256HexMd5Hex = calculateSha256Hex(jobMetaDataParameterObject.getJarPath());
+        String receivedSha256Hex = jobMetaDataParameterObject.getSha256Hex();
+        if (!calculateSha256HexMd5Hex.equals(receivedSha256Hex)) {
+            String errorMessage = String.format("Checksum is different!. Calculated SHA256 : %s. Received MD5 : %s",
+                    calculateSha256HexMd5Hex, receivedSha256Hex);
             throw new JetException(errorMessage);
         }
     }

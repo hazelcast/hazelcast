@@ -27,7 +27,7 @@ public class JobMetaDataParameterObject {
 
     private UUID sessionId;
 
-    private String md5Hex;
+    private String sha256Hex;
 
     private long jarSize;
     private String snapshotName;
@@ -47,12 +47,12 @@ public class JobMetaDataParameterObject {
         this.sessionId = sessionId;
     }
 
-    public String getMd5Hex() {
-        return md5Hex;
+    public String getSha256Hex() {
+        return sha256Hex;
     }
 
-    public void setMd5Hex(String md5Hex) {
-        this.md5Hex = md5Hex;
+    public void setSha256Hex(String sha256Hex) {
+        this.sha256Hex = sha256Hex;
     }
 
     public long getJarSize() {

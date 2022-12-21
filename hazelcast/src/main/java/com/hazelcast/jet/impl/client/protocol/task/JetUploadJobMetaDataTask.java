@@ -36,7 +36,7 @@ public class JetUploadJobMetaDataTask extends
     protected Operation prepareOperation() {
         return new UploadJobMetaDataOperation(
                 parameters.sessionId,
-                parameters.md5Hex,
+                parameters.sha256Hex,
                 parameters.jarSize,
                 parameters.snapshotName,
                 parameters.jobName,

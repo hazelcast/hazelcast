@@ -49,7 +49,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
-import static com.hazelcast.internal.util.MD5Util.calculateMd5Hex;
+import static com.hazelcast.internal.util.Sha256Util.calculateSha256Hex;
 import static com.hazelcast.jet.impl.operation.GetJobIdsOperation.ALL_JOBS;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
@@ -148,10 +148,10 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         try {
             UUID sessionId = UuidUtil.newSecureUUID();
             long jarSize = Files.size(jarPath);
-            String md5Hex = calculateMd5Hex(jarPath);
+            String sha256Hex = calculateSha256Hex(jarPath);
 
             // Send job meta data
-            sendJobMetaData(sessionId, md5Hex, jarSize, snapshotName, jobName, mainClass, jobParameters);
+            sendJobMetaData(sessionId, sha256Hex, jarSize, snapshotName, jobName, mainClass, jobParameters);
 
             sendJobMultipart(jarPath, sessionId, jarSize);
 

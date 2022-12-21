@@ -16,14 +16,7 @@
 
 package com.hazelcast.internal.util;
 
-import java.io.IOException;
-import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -56,33 +49,6 @@ public final class MD5Util {
             return sb.toString();
         } catch (NoSuchAlgorithmException ignored) {
             return null;
-        }
-    }
-
-    /**
-     * Calculate the MD5 of given file
-     * @param jarPath specifies the path to file
-     * @return MD5 as hexadecimal string
-     * @throws IOException in case of IO error
-     * @throws NoSuchAlgorithmException in case of MessageDigest error
-     */
-    public static String calculateMd5Hex(Path jarPath) throws IOException, NoSuchAlgorithmException {
-        try (ReadableByteChannel in = Channels.newChannel(Files.newInputStream(jarPath))) {
-            MessageDigest md5Digest = MessageDigest.getInstance("MD5");
-
-            // 1 MB
-            final int oneMB = 1024 * 1024;
-            ByteBuffer buffer = ByteBuffer.allocate(oneMB);
-
-            while (in.read(buffer) != -1) {
-                buffer.flip();
-                md5Digest.update(buffer.asReadOnlyBuffer());
-                buffer.clear();
-            }
-
-            BigInteger md5Actual = new BigInteger(1, md5Digest.digest());
-            final int radix = 16;
-            return md5Actual.toString(radix);
         }
     }
 }

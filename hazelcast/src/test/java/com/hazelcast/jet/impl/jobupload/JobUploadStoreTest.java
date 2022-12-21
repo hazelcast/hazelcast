@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.jobupload;
 
+import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InjectMocks;
@@ -26,6 +27,7 @@ import org.mockito.Spy;
 import java.math.BigInteger;
 import java.nio.file.Files;
 import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
@@ -106,13 +108,8 @@ public class JobUploadStoreTest {
 
         // Set
         byte[] jarData = {(byte) 0};
-        MessageDigest md = MessageDigest.getInstance("MD5");
-        md.update(jarData);
-        md.update(jarData);
-        byte[] digest = md.digest();
-        BigInteger md5Actual = new BigInteger(1, digest);
-        String md5Hex = md5Actual.toString(16);
-        parameterObject.setMd5Hex(md5Hex);
+        String sha256Hex = getSha256Hex(jarData);
+        parameterObject.setSha256Hex(sha256Hex);
 
         // Send meta data
         jobUploadStore.processJarMetaData(parameterObject);
@@ -135,5 +132,16 @@ public class JobUploadStoreTest {
 
         jobUploadStore.remove(sessionID);
 
+    }
+
+    @NotNull
+    private String getSha256Hex(byte[] jarData) throws NoSuchAlgorithmException {
+        MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+        // Two times because we are sending two times
+        messageDigest.update(jarData);
+        messageDigest.update(jarData);
+        byte[] digest = messageDigest.digest();
+        BigInteger bigInteger = new BigInteger(1, digest);
+        return bigInteger.toString(16);
     }
 }

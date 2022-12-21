@@ -19,7 +19,7 @@ package com.hazelcast.jet.core;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastBootstrap;
-import com.hazelcast.internal.util.MD5Util;
+import com.hazelcast.internal.util.Sha256Util;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
@@ -125,9 +125,9 @@ public class JobUploadTest extends JetTestSupport {
         JetService jetService = client.getJet();
         List<String> jobParameters = emptyList();
 
-        try (MockedStatic<MD5Util> mocked = mockStatic(MD5Util.class)) {
-            MD5Util mockMD5Util = mock(MD5Util.class);
-            when(mockMD5Util.calculateMd5Hex(Mockito.any())).thenReturn("1");
+        try (MockedStatic<Sha256Util> mocked = mockStatic(Sha256Util.class)) {
+            Sha256Util mockMD5Util = mock(Sha256Util.class);
+            when(mockMD5Util.calculateSha256Hex(Mockito.any())).thenReturn("1");
 
             assertThrows(JetException.class, () ->
                     jetService.uploadJob(getJarPath(),
@@ -170,7 +170,7 @@ public class JobUploadTest extends JetTestSupport {
     }
 
     @Test
-    public void test_stress_jarUpload_whenResourceUploadIsEnabled() throws InterruptedException {
+    public void test_stress_jarUpload_whenResourceUploadIsEnabled() {
 
         // Reset the singleton for the test
         HazelcastBootstrap.resetSupplier();
