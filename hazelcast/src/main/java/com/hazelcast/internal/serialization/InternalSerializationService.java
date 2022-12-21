@@ -181,19 +181,12 @@ public interface InternalSerializationService extends SerializationService, Disp
     byte getVersion();
 
     /**
-     * Used by tests for mocking
+     * Used by tests
      */
     CompactStreamSerializer getCompactStreamSerializer();
 
     /**
-     * Used by tests for mocking
+     * Used by tests
      */
-    void setCompactStreamSerializer(CompactStreamSerializer serializer);
-
     PortableSerializer getPortableSerializer();
-
-    /**
-     * Used by tests for mocking
-     */
-    void setPortableSerializer(PortableSerializer serializer);
 }

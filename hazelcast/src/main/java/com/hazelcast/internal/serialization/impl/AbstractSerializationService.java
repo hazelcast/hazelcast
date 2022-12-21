@@ -724,10 +724,6 @@ public abstract class AbstractSerializationService implements InternalSerializat
         return this.compactStreamSerializer;
     }
 
-    public void setCompactStreamSerializer(CompactStreamSerializer serializer) {
-        this.compactStreamSerializer = serializer;
-    }
-
     public abstract static class Builder<T extends Builder<T>> {
         private InputOutputFactory inputOutputFactory;
         private byte version;

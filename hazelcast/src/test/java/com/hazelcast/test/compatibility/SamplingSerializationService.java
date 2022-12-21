@@ -252,18 +252,8 @@ public class SamplingSerializationService implements InternalSerializationServic
     }
 
     @Override
-    public void setCompactStreamSerializer(CompactStreamSerializer serializer) {
-        delegate.setCompactStreamSerializer(serializer);
-    }
-
-    @Override
     public PortableSerializer getPortableSerializer() {
         return delegate.getPortableSerializer();
-    }
-
-    @Override
-    public void setPortableSerializer(PortableSerializer serializer) {
-        delegate.setPortableSerializer(serializer);
     }
 
     @Override

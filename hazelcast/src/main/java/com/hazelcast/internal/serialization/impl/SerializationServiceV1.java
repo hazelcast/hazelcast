@@ -145,8 +145,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
     private static final int EE_BYTE_LENGTH = 2;
 
     private final PortableContextImpl portableContext;
-    // Not final for testing
-    private PortableSerializer portableSerializer;
+    private final PortableSerializer portableSerializer;
 
     SerializationServiceV1(AbstractBuilder<?> builder) {
         super(builder);
@@ -368,10 +367,6 @@ public class SerializationServiceV1 extends AbstractSerializationService {
 
     public PortableSerializer getPortableSerializer() {
         return portableSerializer;
-    }
-
-    public void setPortableSerializer(PortableSerializer serializer) {
-        this.portableSerializer = serializer;
     }
 
     /**

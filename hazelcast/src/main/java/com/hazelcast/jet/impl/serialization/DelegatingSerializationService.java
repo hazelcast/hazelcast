@@ -134,11 +134,6 @@ public class DelegatingSerializationService extends AbstractSerializationService
     }
 
     @Override
-    public void setPortableSerializer(PortableSerializer serializer) {
-        delegate.setPortableSerializer(serializer);
-    }
-
-    @Override
     public SerializerAdapter serializerFor(Object object, boolean includeSchema) {
         Class<?> clazz = object == null ? null : object.getClass();
 
