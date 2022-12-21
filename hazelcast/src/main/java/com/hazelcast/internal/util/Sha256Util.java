@@ -43,10 +43,18 @@ public final class Sha256Util {
      */
     public static String calculateSha256Hex(Path jarPath) throws IOException, NoSuchAlgorithmException {
         MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
-        try (InputStream is = Files.newInputStream(jarPath);
-             DigestInputStream dis = new DigestInputStream(is, messageDigest)) {
+        try (InputStream inputStream = Files.newInputStream(jarPath);
+             DigestInputStream digestInputStream = new DigestInputStream(inputStream, messageDigest)) {
 
-            while (dis.read() != -1);
+            // 1 MB
+            final int oneMB = 1024 * 1024;
+            byte[] buffer = new byte[oneMB];
+            while (true) {
+                int readCount = digestInputStream.read(buffer);
+                if (readCount < 0) {
+                    break;
+                }
+            }
         }
         BigInteger md5Actual = new BigInteger(1, messageDigest.digest());
         final int radix = 16;
