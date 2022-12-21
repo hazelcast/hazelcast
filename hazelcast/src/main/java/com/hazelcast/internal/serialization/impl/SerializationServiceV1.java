@@ -365,7 +365,7 @@ public class SerializationServiceV1 extends AbstractSerializationService {
         portableContext.registerClassDefinition(cd);
     }
 
-    public PortableSerializer getPortableSerializer() {
+    public final PortableSerializer getPortableSerializer() {
         return portableSerializer;
     }
 

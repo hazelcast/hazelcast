@@ -36,7 +36,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public class PortableSerializer implements StreamSerializer<Object> {
+public final class PortableSerializer implements StreamSerializer<Object> {
 
     private final PortableContextImpl context;
     private final Map<Integer, PortableFactory> factories = new HashMap<>();
@@ -314,8 +314,7 @@ public class PortableSerializer implements StreamSerializer<Object> {
         return (T) genericRecord;
     }
 
-    // Public for testing
-    public <T> T readAsInternalGenericRecord(BufferObjectDataInput in, int factoryId, int classId) throws IOException {
+    <T> T readAsInternalGenericRecord(BufferObjectDataInput in, int factoryId, int classId) throws IOException {
         int version = in.readInt();
         ClassDefinition cd = setupPositionAndDefinition(in, factoryId, classId, version);
         PortableInternalGenericRecord reader = new PortableInternalGenericRecord(this, in, cd);

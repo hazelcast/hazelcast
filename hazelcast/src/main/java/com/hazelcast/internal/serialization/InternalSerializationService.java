@@ -21,10 +21,8 @@ import com.hazelcast.internal.nio.BufferObjectDataInput;
 import com.hazelcast.internal.nio.BufferObjectDataOutput;
 import com.hazelcast.internal.nio.Disposable;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
-import com.hazelcast.internal.serialization.impl.compact.CompactStreamSerializer;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
-import com.hazelcast.internal.serialization.impl.portable.PortableSerializer;
 import com.hazelcast.jet.impl.ExplodeSnapshotP;
 import com.hazelcast.jet.impl.util.AsyncSnapshotWriterImpl;
 import com.hazelcast.nio.ObjectDataInput;
@@ -179,14 +177,4 @@ public interface InternalSerializationService extends SerializationService, Disp
     ByteOrder getByteOrder();
 
     byte getVersion();
-
-    /**
-     * Used by tests
-     */
-    CompactStreamSerializer getCompactStreamSerializer();
-
-    /**
-     * Used by tests
-     */
-    PortableSerializer getPortableSerializer();
 }

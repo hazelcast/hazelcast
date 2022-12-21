@@ -16,16 +16,30 @@
 
 package com.hazelcast.jet.sql.impl.type;
 
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.AddressPicker;
+import com.hazelcast.instance.impl.DefaultNodeContext;
+import com.hazelcast.instance.impl.DefaultNodeExtension;
+import com.hazelcast.instance.impl.HazelcastInstanceFactory;
+import com.hazelcast.instance.impl.Node;
+import com.hazelcast.instance.impl.NodeContext;
+import com.hazelcast.instance.impl.NodeExtension;
+import com.hazelcast.internal.cluster.Joiner;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
+import com.hazelcast.internal.server.Server;
+import com.hazelcast.internal.server.tcp.LocalAddressRegistry;
+import com.hazelcast.internal.server.tcp.ServerSocketRegistry;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 
+import com.hazelcast.test.TestEnvironment;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.After;
@@ -33,6 +47,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.experimental.categories.Category;
+import org.mockito.invocation.InvocationOnMock;
+import org.mockito.stubbing.Answer;
 
 import java.io.IOException;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -45,10 +61,9 @@ import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENAB
 import static org.junit.Assert.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static com.hazelcast.jet.sql.impl.type.SqlLazyDeserializationTestUtil.ResultCaptor;
-import static com.hazelcast.jet.sql.impl.type.SqlLazyDeserializationTestUtil.SqlLazyDeserializationTestInstanceFactory;
 
 /**
  * This test tests if nested field access for compact and portable uses lazy deserialization or not.
@@ -73,21 +88,17 @@ public class SqlLazyDeserializationTest {
         config.getJetConfig().setEnabled(true);
         config.setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
 
-        instance = mockInstanceFactory.newHazelcastInstance(config);
-        serializationService = Util.getHazelcastInstanceImpl(instance).getSerializationService();
-
+        SerializationConfig serializationConfig = config.getSerializationConfig();
         ClassDefinition officeType = new ClassDefinitionBuilder(1, 3)
                 .addLongField("id")
                 .addStringField("name")
                 .build();
-        serializationService.getPortableContext().registerClassDefinition(officeType);
 
         ClassDefinition organizationType = new ClassDefinitionBuilder(1, 2)
                 .addLongField("id")
                 .addStringField("name")
                 .addPortableField("office", officeType)
                 .build();
-        serializationService.getPortableContext().registerClassDefinition(organizationType);
 
         ClassDefinition userType = new ClassDefinitionBuilder(1, 1)
                 .addLongField("id")
@@ -95,7 +106,12 @@ public class SqlLazyDeserializationTest {
                 .addPortableField("organization", organizationType)
                 .build();
 
-        serializationService.getPortableContext().registerClassDefinition(userType);
+        serializationConfig.addClassDefinition(officeType);
+        serializationConfig.addClassDefinition(organizationType);
+        serializationConfig.addClassDefinition(userType);
+
+        instance = mockInstanceFactory.newHazelcastInstance(config);
+        serializationService = Util.getHazelcastInstanceImpl(instance).getSerializationService();
 
         client = mockInstanceFactory.newHazelcastClient();
     }
@@ -147,5 +163,76 @@ public class SqlLazyDeserializationTest {
         verify(results.get(0), times(1)).getInternalGenericRecord("organization");
         // 3. FieldAccessExpression uses getInternalGenericRecord to get office
         verify(results.get(1), times(1)).getInternalGenericRecord("office");
+    }
+
+    private static class SqlLazyDeserializationTestInstanceFactory extends TestHazelcastFactory {
+        public HazelcastInstance newHazelcastInstance(Config config) {
+            String instanceName = config != null ? config.getInstanceName() : null;
+            NodeContext nodeContext;
+            if (TestEnvironment.isMockNetwork()) {
+                config = initOrCreateConfig(config);
+                nodeContext = this.registry.createNodeContext(this.nextAddress(config.getNetworkConfig().getPort()));
+            } else {
+                nodeContext = new DefaultNodeContext();
+            }
+            return HazelcastInstanceFactory.newHazelcastInstance(config, instanceName,
+                    new SerializationServiceMockingNodeContext(nodeContext));
+        }
+    }
+
+    private static class SerializationServiceMockingNodeContext implements NodeContext {
+
+        private final NodeContext delegate;
+
+        private SerializationServiceMockingNodeContext(NodeContext delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public NodeExtension createNodeExtension(Node node) {
+            return new SerializationServiceMockingNodeExtension(node);
+        }
+
+        @Override
+        public AddressPicker createAddressPicker(Node node) {
+            return delegate.createAddressPicker(node);
+        }
+
+        @Override
+        public Joiner createJoiner(Node node) {
+            return delegate.createJoiner(node);
+        }
+
+        @Override
+        public Server createServer(Node node, ServerSocketRegistry serverSocketRegistry, LocalAddressRegistry addressRegistry) {
+            return delegate.createServer(node, serverSocketRegistry, addressRegistry);
+        }
+    }
+
+    private static class SerializationServiceMockingNodeExtension extends DefaultNodeExtension {
+
+        SerializationServiceMockingNodeExtension(Node node) {
+            super(node);
+        }
+
+        @Override
+        public InternalSerializationService createSerializationService() {
+            return spy(super.createSerializationService());
+        }
+    }
+
+    private static class ResultCaptor implements Answer<InternalGenericRecord> {
+        private CopyOnWriteArrayList<InternalGenericRecord> results = new CopyOnWriteArrayList<>();
+        public CopyOnWriteArrayList<InternalGenericRecord> getResults() {
+            return results;
+        }
+
+        @Override
+        public InternalGenericRecord answer(InvocationOnMock invocationOnMock) throws Throwable {
+            InternalGenericRecord spiedResult = spy((InternalGenericRecord) invocationOnMock.callRealMethod());
+            doAnswer(this).when(spiedResult).getInternalGenericRecord(any(String.class));
+            results.add(spiedResult);
+            return spiedResult;
+        }
     }
 }

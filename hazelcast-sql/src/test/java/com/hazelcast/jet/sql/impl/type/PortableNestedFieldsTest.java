@@ -17,9 +17,8 @@
 package com.hazelcast.jet.sql.impl.type;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.config.SerializationConfig;
 import com.hazelcast.internal.serialization.impl.portable.DeserializedPortableGenericRecord;
-import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
@@ -39,56 +38,49 @@ import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
 public class PortableNestedFieldsTest extends SqlTestSupport {
-
-    private static InternalSerializationService serializationService;
-    private static ClassDefinition userType;
-    private static ClassDefinition userType2;
-    private static ClassDefinition organizationType;
-    private static ClassDefinition organizationAndLongType;
-    private static ClassDefinition officeType;
-
     @BeforeClass
     public static void beforeClass() {
         Config config = smallInstanceConfig()
                 .setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
 
-        initialize(2, config);
-        serializationService = Util.getSerializationService(instance());
-        officeType = new ClassDefinitionBuilder(1, 3)
+        SerializationConfig serializationConfig = config.getSerializationConfig();
+
+        ClassDefinition officeType = new ClassDefinitionBuilder(1, 3)
                 .addLongField("id")
                 .addStringField("name")
                 .build();
-        serializationService.getPortableContext().registerClassDefinition(officeType);
+        serializationConfig.addClassDefinition(officeType);
 
-        organizationType = new ClassDefinitionBuilder(1, 2)
+        ClassDefinition organizationType = new ClassDefinitionBuilder(1, 2)
                 .addLongField("id")
                 .addStringField("name")
                 .addPortableField("office", officeType)
                 .build();
-        serializationService.getPortableContext().registerClassDefinition(organizationType);
+        serializationConfig.addClassDefinition(organizationType);
 
-        organizationAndLongType = new ClassDefinitionBuilder(1, 4)
+        ClassDefinition organizationAndLongType = new ClassDefinitionBuilder(1, 4)
                 .addLongField("id")
                 .addLongField("l")
                 .addPortableField("organization", organizationType)
                 .build();
-        serializationService.getPortableContext().registerClassDefinition(organizationAndLongType);
+        serializationConfig.addClassDefinition(organizationAndLongType);
 
-        userType = new ClassDefinitionBuilder(1, 1)
+        ClassDefinition userType = new ClassDefinitionBuilder(1, 1)
                 .addLongField("id")
                 .addStringField("name")
                 .addPortableField("organization", organizationType)
                 .build();
 
-        serializationService.getPortableContext().registerClassDefinition(userType);
+        serializationConfig.addClassDefinition(userType);
 
-        userType2 = new ClassDefinitionBuilder(1, 5)
+        ClassDefinition userType2 = new ClassDefinitionBuilder(1, 5)
                 .addLongField("id")
                 .addStringField("name")
                 .addPortableField("organizationAndLong", organizationAndLongType)
                 .build();
 
-        serializationService.getPortableContext().registerClassDefinition(userType2);
+        serializationConfig.addClassDefinition(userType2);
+        initialize(2, config);
     }
 
     @Test
