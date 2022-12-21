@@ -35,15 +35,17 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.counters.SwCounter.newSwCounter;
 
 /**
- * A Socket that is asynchronous. So reads and writes do not block, but are executed
- * on an {@link Eventloop}.
+ * A Socket that is asynchronous. So reads and writes do not block,
+ * but are executed on an {@link Eventloop}.
  */
+@SuppressWarnings({"checkstyle:MethodCount", "checkstyle:VisibilityModifier"})
 public abstract class AsyncSocket implements Closeable {
 
     /**
      * Allows for objects to be bound to this AsyncSocket. Useful for the lookup of services and other dependencies.
      */
-    public final ConcurrentMap context = new ConcurrentHashMap();
+    @SuppressWarnings("")
+    public final ConcurrentMap<?, ?> context = new ConcurrentHashMap<>();
 
     protected final ILogger logger = Logger.getLogger(getClass());
     protected final AtomicBoolean closed = new AtomicBoolean();
@@ -51,20 +53,16 @@ public abstract class AsyncSocket implements Closeable {
     protected volatile SocketAddress remoteAddress;
     protected volatile SocketAddress localAddress;
     protected boolean clientSide;
-    private CloseListener closeListener;
-    private Executor closeExecutor;
 
     protected final SwCounter ioBuffersWritten = newSwCounter();
-
     protected final SwCounter bytesRead = newSwCounter();
-
     protected final SwCounter bytesWritten = newSwCounter();
-
     protected final SwCounter ioBuffersRead = newSwCounter();
-
     protected final SwCounter handleWriteCnt = newSwCounter();
-
     protected final SwCounter readEvents = newSwCounter();
+
+    private CloseListener closeListener;
+    private Executor closeExecutor;
 
     public final long ioBuffersWritten() {
         return ioBuffersWritten.get();
