@@ -16,10 +16,11 @@
 
 package com.hazelcast.jet.sql.impl.type;
 
-import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.nio.serialization.ClassDefinition;
 import com.hazelcast.nio.serialization.ClassDefinitionBuilder;
@@ -33,15 +34,20 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.junit.experimental.categories.Category;
 
+import java.io.IOException;
+import java.util.concurrent.CopyOnWriteArrayList;
+
 import static com.hazelcast.jet.sql.SqlTestSupport.assertRowsAnyOrder;
 import static com.hazelcast.jet.sql.SqlTestSupport.setupCompactTypesForNestedQuery;
 import static com.hazelcast.jet.sql.SqlTestSupport.rows;
 import static com.hazelcast.jet.sql.SqlTestSupport.setupPortableTypesForNestedQuery;
 import static com.hazelcast.spi.properties.ClusterProperty.SQL_CUSTOM_TYPES_ENABLED;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static com.hazelcast.jet.sql.impl.type.SqlLazyDeserializationTestUtil.MockSerializationService;
+import static com.hazelcast.jet.sql.impl.type.SqlLazyDeserializationTestUtil.ResultCaptor;
 import static com.hazelcast.jet.sql.impl.type.SqlLazyDeserializationTestUtil.SqlLazyDeserializationTestInstanceFactory;
 
 /**
@@ -59,7 +65,7 @@ public class SqlLazyDeserializationTest {
     private HazelcastInstance instance;
     private HazelcastInstance client;
 
-    private MockSerializationService mockSerializationService;
+    private InternalSerializationService serializationService;
 
     @Before
     public void before() {
@@ -68,8 +74,7 @@ public class SqlLazyDeserializationTest {
         config.setProperty(SQL_CUSTOM_TYPES_ENABLED.getName(), "true");
 
         instance = mockInstanceFactory.newHazelcastInstance(config);
-        InternalSerializationService serializationService = Util.getHazelcastInstanceImpl(instance).getSerializationService();
-        mockSerializationService = (MockSerializationService) serializationService;
+        serializationService = Util.getHazelcastInstanceImpl(instance).getSerializationService();
 
         ClassDefinition officeType = new ClassDefinitionBuilder(1, 3)
                 .addLongField("id")
@@ -101,35 +106,46 @@ public class SqlLazyDeserializationTest {
     }
 
     @Test
-    public void test_compactNestedQueryLazyDeserialization() {
+    public void test_compactNestedQueryLazyDeserialization() throws IOException {
         setupCompactTypesForNestedQuery(client);
+        ResultCaptor resultCaptor = new ResultCaptor();
+        doAnswer(resultCaptor).when(serializationService).readAsInternalGenericRecord(any(Data.class));
+
         client.getSql().execute("INSERT INTO test VALUES (1, 1, 'user1', (1, 'organization1', (1, 'office1')))");
         assertRowsAnyOrder(instance, "SELECT (organization).office.name FROM test", rows(1, "office1"));
 
         // 1. ColumnExpression uses readAsInternalGenericRecord to get the user type.
-        // mockSerializationService.spyCompactInternalGenericRecord being not null is enough to prove that
-        // SerializationServiceV1.readAsInternalGenericRecord is called for the user type.
-        assertNotNull(mockSerializationService.spyCompactInternalGenericRecord);
+        verify(serializationService, times(1)).readAsInternalGenericRecord(any(Data.class));
+        // There should be three InternalGenericRecords in results:
+        // 1. UserType that is accessed using readAsInternalGenericRecord
+        // 2,3. Organization and office types that are accessed using getInternalGenericRecord.
+        CopyOnWriteArrayList<InternalGenericRecord> results = resultCaptor.getResults();
+        assertEquals(results.size(), 3);
         // 2. FieldAccessExpression uses getInternalGenericRecord to get the organization
-        verify(mockSerializationService.spyCompactInternalGenericRecord, times(1)).getInternalGenericRecord("organization");
+        verify(results.get(0), times(1)).getInternalGenericRecord("organization");
         // 3. FieldAccessExpression uses getInternalGenericRecord to get office
-        verify(mockSerializationService.spyCompactInternalGenericRecord, times(1)).getInternalGenericRecord("office");
+        verify(results.get(1), times(1)).getInternalGenericRecord("office");
     }
 
     @Test
-    public void test_portableNestedQueryLazyDeserialization() {
+    public void test_portableNestedQueryLazyDeserialization() throws IOException {
         setupPortableTypesForNestedQuery(client);
-        client.getSql().execute("INSERT INTO test VALUES (1, 1, 'user1', (1, 'organization1', (1, 'office1')))");
+        ResultCaptor resultCaptor = new ResultCaptor();
+        doAnswer(resultCaptor).when(serializationService).readAsInternalGenericRecord(any(Data.class));
 
+        client.getSql().execute("INSERT INTO test VALUES (1, 1, 'user1', (1, 'organization1', (1, 'office1')))");
         assertRowsAnyOrder(instance, "SELECT (organization).office.name FROM test", rows(1, "office1"));
 
         // 1. ColumnExpression uses readAsInternalGenericRecord to get the user type.
-        // mockSerializationService.spyPortableInternalGenericRecord being not null is enough to prove that
-        // SerializationServiceV1.readAsInternalGenericRecord is called for the user type.
-        assertNotNull(mockSerializationService.spyPortableInternalGenericRecord);
+        verify(serializationService, times(1)).readAsInternalGenericRecord(any(Data.class));
+        CopyOnWriteArrayList<InternalGenericRecord> results = resultCaptor.getResults();
+        // There should be three InternalGenericRecords in results:
+        // 1. UserType that is accessed using readAsInternalGenericRecord
+        // 2,3. Organization and office types that are accessed using getInternalGenericRecord.
+        assertEquals(results.size(), 3);
         // 2. FieldAccessExpression uses getInternalGenericRecord to get the organization
-        verify(mockSerializationService.spyPortableInternalGenericRecord, times(1)).getInternalGenericRecord("organization");
+        verify(results.get(0), times(1)).getInternalGenericRecord("organization");
         // 3. FieldAccessExpression uses getInternalGenericRecord to get office
-        verify(mockSerializationService.spyPortableInternalGenericRecord, times(1)).getInternalGenericRecord("office");
+        verify(results.get(1), times(1)).getInternalGenericRecord("office");
     }
 }
