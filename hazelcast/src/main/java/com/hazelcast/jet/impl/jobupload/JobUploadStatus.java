@@ -180,11 +180,11 @@ public class JobUploadStatus {
     }
 
     private void validateChecksum() throws IOException, NoSuchAlgorithmException {
-        String calculateSha256HexMd5Hex = calculateSha256Hex(jobMetaDataParameterObject.getJarPath());
+        String calculatedSha256Hex = calculateSha256Hex(jobMetaDataParameterObject.getJarPath());
         String receivedSha256Hex = jobMetaDataParameterObject.getSha256Hex();
-        if (!calculateSha256HexMd5Hex.equals(receivedSha256Hex)) {
-            String errorMessage = String.format("Checksum is different!. Calculated SHA256 : %s. Received MD5 : %s",
-                    calculateSha256HexMd5Hex, receivedSha256Hex);
+        if (!calculatedSha256Hex.equals(receivedSha256Hex)) {
+            String errorMessage = String.format("Checksum is different!. Calculated SHA256 : %s. Received SHA256 : %s",
+                    calculatedSha256Hex, receivedSha256Hex);
             throw new JetException(errorMessage);
         }
     }
