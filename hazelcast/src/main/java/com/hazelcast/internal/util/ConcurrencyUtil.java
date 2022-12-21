@@ -16,6 +16,9 @@
 
 package com.hazelcast.internal.util;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
@@ -50,9 +53,14 @@ public final class ConcurrencyUtil {
     private static Executor defaultAsyncExecutor;
 
     static {
+        ILogger logger = Logger.getLogger(ConcurrencyUtil.class);
         Executor asyncExecutor;
         if (ForkJoinPool.getCommonPoolParallelism() > 1) {
-            asyncExecutor = ForkJoinPool.commonPool();
+            asyncExecutor = command -> {
+                String stackTrace = getStackTrace();
+                logger.info(stackTrace);
+                ForkJoinPool.commonPool().execute(command);
+            };
         } else {
             asyncExecutor = command -> new Thread(command).start();
         }
@@ -156,6 +164,18 @@ public final class ConcurrencyUtil {
             value = current == null ? value : current;
         }
         return value;
+    }
+
+    private static String getStackTrace() {
+        StackTraceElement[] stackTraceElements = Thread.currentThread().getStackTrace();
+        String prefix = "";
+        StringBuilder builder = new StringBuilder();
+        for (StackTraceElement stackTraceElement : stackTraceElements) {
+            builder.append(prefix).append(stackTraceElement.toString());
+            prefix = "\n\t";
+        }
+
+        return builder.toString();
     }
 
 }
