@@ -56,9 +56,9 @@ public final class Sha256Util {
                 }
             }
         }
-        BigInteger md5Actual = new BigInteger(1, messageDigest.digest());
+        BigInteger bigInteger = new BigInteger(1, messageDigest.digest());
         final int radix = 16;
-        return md5Actual.toString(radix);
+        return bigInteger.toString(radix);
 
     }
 }
