@@ -5,7 +5,7 @@ This document describes how tpc should be configured.
 ## Description
 
 All tpc related config should be in a separate node called `tpc` because
-having all related configuration one place is cleaner.
+having all related configuration in one place is cleaner.
 
 Regarding port configuration user will only be able to configure an
 integer. Server will create `eventloop-count` ports starting from that
