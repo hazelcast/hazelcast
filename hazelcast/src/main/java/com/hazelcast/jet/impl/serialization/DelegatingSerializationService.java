@@ -26,7 +26,6 @@ import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.SerializerAdapter;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
-import com.hazelcast.internal.serialization.impl.portable.PortableSerializer;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import com.hazelcast.nio.serialization.Serializer;

@@ -27,7 +27,6 @@ import com.hazelcast.internal.serialization.impl.InternalGenericRecord;
 import com.hazelcast.internal.serialization.impl.compact.CompactGenericRecord;
 import com.hazelcast.internal.serialization.impl.compact.Schema;
 import com.hazelcast.internal.serialization.impl.portable.PortableContext;
-import com.hazelcast.internal.serialization.impl.portable.PortableSerializer;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.JobRecord;
 import com.hazelcast.jet.impl.JobSummary;
