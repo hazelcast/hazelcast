@@ -41,9 +41,10 @@ import static java.nio.channels.SelectionKey.OP_ACCEPT;
  * Nio version of the {@link AsyncServerSocket}.
  */
 public final class NioAsyncServerSocket extends AsyncServerSocket {
+    private static final int DEFAULT_LATCH_TIMEOUT_SECONDS = 10;
 
     // This option is available since Java 9, so we need to use reflection.
-    private final static SocketOption SO_REUSEPORT;
+    private static final SocketOption SO_REUSEPORT;
 
     static {
         SocketOption value = null;
@@ -60,10 +61,6 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     private final NioEventloop eventloop;
     private final Thread eventloopThread;
 
-    public static NioAsyncServerSocket open(NioEventloop eventloop) {
-        return new NioAsyncServerSocket(eventloop);
-    }
-
     private NioAsyncServerSocket(NioEventloop eventloop) {
         try {
             this.serverSocketChannel = ServerSocketChannel.open();
@@ -78,6 +75,10 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
+    }
+
+    public static NioAsyncServerSocket open(NioEventloop eventloop) {
+        return new NioAsyncServerSocket(eventloop);
     }
 
     @Override
@@ -213,13 +214,13 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         }
 
         try {
-            latch.await(10, TimeUnit.SECONDS);
+            latch.await(DEFAULT_LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
             throw new RuntimeException(e);
         }
     }
 
-    private class AcceptHandler implements NioSelectedKeyListener {
+    private final class AcceptHandler implements NioSelectedKeyListener {
 
         private final Consumer<NioAsyncSocket> consumer;
 

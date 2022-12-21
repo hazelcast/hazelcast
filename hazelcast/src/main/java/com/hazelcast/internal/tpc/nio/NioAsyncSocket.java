@@ -20,7 +20,6 @@ import com.hazelcast.internal.tpc.AsyncSocket;
 import com.hazelcast.internal.tpc.Eventloop;
 import com.hazelcast.internal.tpc.ReadHandler;
 import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
-import com.hazelcast.internal.util.Preconditions;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.IOException;
@@ -39,8 +38,8 @@ import static com.hazelcast.internal.nio.IOUtil.closeResource;
 import static com.hazelcast.internal.nio.IOUtil.compactOrClear;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
-import static java.net.StandardSocketOptions.*;
 import static java.net.StandardSocketOptions.SO_KEEPALIVE;
+import static java.net.StandardSocketOptions.SO_LINGER;
 import static java.net.StandardSocketOptions.SO_RCVBUF;
 import static java.net.StandardSocketOptions.SO_SNDBUF;
 import static java.net.StandardSocketOptions.TCP_NODELAY;
@@ -51,13 +50,21 @@ import static java.nio.channels.SelectionKey.OP_WRITE;
 /**
  * Nio version of the {@link AsyncSocket}.
  */
+@SuppressWarnings({"checkstyle:DeclarationOrder", "checkstyle:VisibilityOrder"})
 public final class NioAsyncSocket extends AsyncSocket {
+    private static final int DEFAULT_UNFLUSHED_BUFS_CAPACITY = 2 << 16;
 
     public static NioAsyncSocket open() {
         return new NioAsyncSocket();
     }
 
-    private int unflushedBufsCapacity = 65536;
+    private int unflushedBufsCapacity = DEFAULT_UNFLUSHED_BUFS_CAPACITY;
+
+    // concurrent
+    private final AtomicReference<Thread> flushThread = new AtomicReference<>();
+    private MpmcArrayQueue<IOBuffer> unflushedBufs;
+    private final EventLoopHandler eventLoopHandler = new EventLoopHandler();
+    private CompletableFuture<AsyncSocket> connectFuture;
 
     // immutable state
     private final SocketChannel socketChannel;
@@ -75,15 +82,9 @@ public final class NioAsyncSocket extends AsyncSocket {
     // ======================================================
     // writing side of the socket.
     // ======================================================
-    public final IOVector ioVector = new IOVector();
+    private final IOVector ioVector = new IOVector();
     private boolean regularSchedule = true;
     private boolean writeThrough;
-
-    //  concurrent
-    public final AtomicReference<Thread> flushThread = new AtomicReference<>();
-    public MpmcArrayQueue<IOBuffer> unflushedBufs;
-    private CompletableFuture<AsyncSocket> connectFuture;
-    private final EventLoopHandler eventLoopHandler = new EventLoopHandler();
 
     private NioAsyncSocket() {
         try {
@@ -226,7 +227,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     @Override
     public void activate(Eventloop l) {
-        NioEventloop eventloop = (NioEventloop) checkNotNull(l,"l can't be null");
+        NioEventloop eventloop = (NioEventloop) checkNotNull(l, "l can't be null");
 
         if (this.eventloop != null) {
             throw new IllegalStateException("Can't activate an already activated NioAsynSocket");

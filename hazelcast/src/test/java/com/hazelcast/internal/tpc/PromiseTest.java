@@ -1,11 +1,24 @@
+/*
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ * http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package com.hazelcast.internal.tpc;
 
-
-import com.hazelcast.internal.tpc.Fut;
-import com.hazelcast.internal.tpc.FutAllocator;
+import com.hazelcast.internal.tpc.nio.NioEventloop;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.hazelcast.internal.tpc.nio.NioEventloop;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -48,7 +61,7 @@ public class PromiseTest {
     }
 
     @Test
-    public void test_pooling(){
+    public void test_pooling() {
         Fut fut = new Fut(eventloop);
 
         fut.allocator = futAllocator;
@@ -70,7 +83,7 @@ public class PromiseTest {
     }
 
     @Test
-    public void test_thenOnCompletedFuture(){
+    public void test_thenOnCompletedFuture() {
         Fut fut = new Fut(eventloop);
 
         String result = "foobar";
@@ -92,14 +105,14 @@ public class PromiseTest {
     }
 
     @Test(expected = NullPointerException.class)
-    public void test_completeExceptionallyWhenNull(){
+    public void test_completeExceptionallyWhenNull() {
         Fut future = new Fut(eventloop);
 
         future.completeExceptionally(null);
     }
 
     @Test
-    public void test_completeExceptionally(){
+    public void test_completeExceptionally() {
         Fut fut = new Fut(eventloop);
 
         CountDownLatch executed = new CountDownLatch(1);
@@ -121,7 +134,7 @@ public class PromiseTest {
 
 
     @Test(expected = IllegalStateException.class)
-    public void test_completeExceptionally_whenAlreadyCompleted(){
+    public void test_completeExceptionally_whenAlreadyCompleted() {
         Fut fut = new Fut(eventloop);
 
         fut.completeExceptionally(new Throwable());
@@ -129,7 +142,7 @@ public class PromiseTest {
     }
 
     @Test
-    public void test_complete(){
+    public void test_complete() {
         Fut fut = new Fut(eventloop);
 
         CountDownLatch executed = new CountDownLatch(1);
@@ -150,7 +163,7 @@ public class PromiseTest {
     }
 
     @Test(expected = IllegalStateException.class)
-    public void test_complete_whenAlreadyCompleted(){
+    public void test_complete_whenAlreadyCompleted() {
         Fut fut = new Fut(eventloop);
 
         fut.complete("first");

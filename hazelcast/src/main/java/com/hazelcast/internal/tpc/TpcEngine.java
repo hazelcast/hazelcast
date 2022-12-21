@@ -24,11 +24,11 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.tpc.TpcEngine.State.NEW;
 import static com.hazelcast.internal.tpc.TpcEngine.State.RUNNING;
 import static com.hazelcast.internal.tpc.TpcEngine.State.SHUTDOWN;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 import static java.lang.System.getProperty;
 
 /**
@@ -39,11 +39,11 @@ import static java.lang.System.getProperty;
  */
 public final class TpcEngine {
 
+    final CountDownLatch terminationLatch;
     private final ILogger logger = Logger.getLogger(getClass());
     private final int eventloopCount;
     private final Eventloop[] eventloops;
     private final AtomicReference<State> state = new AtomicReference<>(NEW);
-    final CountDownLatch terminationLatch;
     private final Configuration engineCfg;
 
     /**
@@ -156,17 +156,12 @@ public final class TpcEngine {
             State oldState = state.get();
             switch (oldState) {
                 case NEW:
-                    if (!state.compareAndSet(oldState, SHUTDOWN)) {
-                        continue;
-                    }
-                    break;
                 case RUNNING:
                     if (!state.compareAndSet(oldState, SHUTDOWN)) {
                         continue;
                     }
                     break;
                 case SHUTDOWN:
-                    return;
                 case TERMINATED:
                     return;
                 default:
@@ -206,7 +201,8 @@ public final class TpcEngine {
      * Contains the configuration of the {@link TpcEngine}.
      */
     public static class Configuration {
-        private int eventloopCount = Integer.parseInt(getProperty("hazelcast.tpc.eventloop.count", "" + Runtime.getRuntime().availableProcessors()));
+        private int eventloopCount = Integer.parseInt(
+                getProperty("hazelcast.tpc.eventloop.count", "" + Runtime.getRuntime().availableProcessors()));
         private Eventloop.Configuration eventloopConfiguration = new NioConfiguration();
 
         public void setEventloopConfiguration(Eventloop.Configuration eventloopConfiguration) {
