@@ -41,6 +41,7 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
+import static com.hazelcast.internal.util.Sha256Util.calculateSha256Hex;
 import static java.util.Collections.emptyList;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -51,6 +52,14 @@ import static org.mockito.Mockito.when;
 
 @Category({QuickTest.class})
 public class JobUploadTest extends JetTestSupport {
+
+    @Test
+    public void sha256() throws IOException, NoSuchAlgorithmException {
+        Path jarPath = getJarPath();
+        String sha256Hex = calculateSha256Hex(jarPath);
+        assertEquals("cc88240eeacd1bd8bad0c70008db77a49accfbd46a38e0fa86a32023e2a3f15b", sha256Hex);
+
+    }
 
     @Test
     public void test_client_jarUpload_whenResourceUploadIsNotEnabled() {
@@ -127,7 +136,7 @@ public class JobUploadTest extends JetTestSupport {
 
         try (MockedStatic<Sha256Util> mocked = mockStatic(Sha256Util.class)) {
             Sha256Util mockMD5Util = mock(Sha256Util.class);
-            when(mockMD5Util.calculateSha256Hex(Mockito.any())).thenReturn("1");
+            when(calculateSha256Hex(Mockito.any())).thenReturn("1");
 
             assertThrows(JetException.class, () ->
                     jetService.uploadJob(getJarPath(),

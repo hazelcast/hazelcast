@@ -17,12 +17,11 @@
 package com.hazelcast.internal.util;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.math.BigInteger;
-import java.nio.ByteBuffer;
-import java.nio.channels.Channels;
-import java.nio.channels.ReadableByteChannel;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -36,28 +35,22 @@ public final class Sha256Util {
 
     /**
      * Calculate the SHA256 of given file
+     *
      * @param jarPath specifies the path to file
      * @return SHA256 as hexadecimal string
-     * @throws IOException in case of IO error
+     * @throws IOException              in case of IO error
      * @throws NoSuchAlgorithmException in case of MessageDigest error
      */
     public static String calculateSha256Hex(Path jarPath) throws IOException, NoSuchAlgorithmException {
-        try (ReadableByteChannel in = Channels.newChannel(Files.newInputStream(jarPath))) {
-            MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+        MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+        try (InputStream is = Files.newInputStream(jarPath);
+             DigestInputStream dis = new DigestInputStream(is, messageDigest)) {
 
-            // 1 MB
-            final int oneMB = 1024 * 1024;
-            ByteBuffer buffer = ByteBuffer.allocate(oneMB);
-
-            while (in.read(buffer) != -1) {
-                buffer.flip();
-                messageDigest.update(buffer.asReadOnlyBuffer());
-                buffer.clear();
-            }
-
-            BigInteger md5Actual = new BigInteger(1, messageDigest.digest());
-            final int radix = 16;
-            return md5Actual.toString(radix);
+            while (dis.read() != -1);
         }
+        BigInteger md5Actual = new BigInteger(1, messageDigest.digest());
+        final int radix = 16;
+        return md5Actual.toString(radix);
+
     }
 }
