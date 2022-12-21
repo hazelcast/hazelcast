@@ -229,6 +229,7 @@ public class ExecutionContext implements DynamicMetricsProvider {
                 if (cl == null) {
                     cl = nodeEngine.getConfigClassLoader();
                 }
+                startTime.set(System.currentTimeMillis());
                 executionFuture = taskletExecService
                         .beginExecute(tasklets, cancellationFuture, cl)
                         .whenComplete(withTryCatch(logger, (r, t) -> setCompletionTime()))
@@ -241,7 +242,6 @@ public class ExecutionContext implements DynamicMetricsProvider {
                             }
                             return res;
                         });
-                startTime.set(System.currentTimeMillis());
             }
             return executionFuture;
         }

@@ -17,12 +17,15 @@
 package com.hazelcast.test;
 
 import classloading.ThreadLocalLeakTestUtils;
+import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.ClusterState;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.DistributedObject;
+import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.cp.ICountDownLatch;
 import com.hazelcast.instance.BuildInfoProvider;
@@ -57,6 +60,7 @@ import junit.framework.AssertionFailedError;
 import org.junit.After;
 import org.junit.Assume;
 import org.junit.AssumptionViolatedException;
+import org.junit.ClassRule;
 import org.junit.ComparisonFailure;
 import org.junit.Rule;
 import org.junit.experimental.categories.Category;
@@ -96,6 +100,7 @@ import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -127,6 +132,9 @@ public abstract class HazelcastTestSupport {
     private static final String COMPAT_HZ_INSTANCE_FACTORY = "com.hazelcast.test.CompatibilityTestHazelcastInstanceFactory";
     private static final boolean EXPECT_DIFFERENT_HASHCODES = (new Object().hashCode() != new Object().hashCode());
     private static final ILogger LOGGER = Logger.getLogger(HazelcastTestSupport.class);
+
+    @ClassRule
+    public static MobyNamingRule mobyNamingRule = new MobyNamingRule();
 
     @Rule
     public JitterRule jitterRule = new JitterRule();
@@ -304,6 +312,16 @@ public abstract class HazelcastTestSupport {
         } else {
             return nodeCount == null ? new TestHazelcastInstanceFactory() : new TestHazelcastInstanceFactory(nodeCount);
         }
+    }
+
+    protected void assertNoRunningInstancesEventually(String methodName, TestHazelcastFactory hazelcastFactory) {
+        // check for running Hazelcast instances
+        assertTrueEventually(() -> {
+            Collection<HazelcastInstance> instances = hazelcastFactory.getAllHazelcastInstances();
+            if (!instances.isEmpty()) {
+                fail("After " + methodName + " following instances haven't been shut down: " + instances);
+            }
+        });
     }
 
     // ###########################################
@@ -792,6 +810,14 @@ public abstract class HazelcastTestSupport {
         }
 
         assertTrue("Instances not in safe state! " + nonSafeStates, nonSafeStates.isEmpty());
+    }
+
+    public static void assertNoRunningInstances() {
+        assertThat(Hazelcast.getAllHazelcastInstances()).as("There should be no running instances").isEmpty();
+    }
+
+    public static void assertNoRunningClientInstances() {
+        assertThat(HazelcastClient.getAllHazelcastClients()).as("There should be no running client instances").isEmpty();
     }
 
     public static void assertNodeStarted(HazelcastInstance instance) {

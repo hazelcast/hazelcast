@@ -17,7 +17,6 @@
 package com.hazelcast.map.impl.operation.steps.engine;
 
 import com.hazelcast.core.Offloadable;
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.impl.operation.MapOperation;
 import com.hazelcast.map.impl.operation.steps.UtilSteps;
 import com.hazelcast.memory.NativeOutOfMemoryError;
@@ -141,13 +140,8 @@ public class StepSupplier implements Supplier<Runnable> {
         boolean metWithPreconditions = true;
         try {
             try {
-                log(step, state);
-
-                if (runningOnPartitionThread && state.getThrowable() == null && firstStep) {
-                    metWithPreconditions = operationRunner.metWithPreconditions(state.getOperation());
-                    if (!metWithPreconditions) {
-                        return;
-                    }
+                if (runningOnPartitionThread && state.getThrowable() == null) {
+                    metWithPreconditions = metWithPreconditions();
                 }
                 step.runStep(state);
             } catch (NativeOutOfMemoryError e) {
@@ -173,6 +167,20 @@ public class StepSupplier implements Supplier<Runnable> {
         }
     }
 
+    private boolean metWithPreconditions() {
+        assert isRunningOnPartitionThread();
+
+        // check node and cluster health before running each step
+        operationRunner.ensureNodeAndClusterHealth(state.getOperation());
+
+        // check timeout for only first step, as in no-offload flows
+        if (firstStep && operationRunner.timeout(state.getOperation())) {
+            return false;
+        }
+
+        return true;
+    }
+
     /**
      * In case of exception, sets next step as {@link UtilSteps#HANDLE_ERROR},
      * otherwise finds next step by calling {@link Step#nextStep}
@@ -188,14 +196,6 @@ public class StepSupplier implements Supplier<Runnable> {
 
     private void rerunWithForcedEviction(Runnable step) {
         runStepWithForcedEvictionStrategies(state.getOperation(), step);
-    }
-
-    private static void log(Step currentStep, State state) {
-        MapOperation operation = state.getOperation();
-        ILogger logger = operation.getNodeEngine().getLogger(operation.getClass());
-        if (logger.isFinestEnabled()) {
-            logger.finest(currentStep.toString() + " ==> " + operation.hashCode());
-        }
     }
 
     public void handleOperationError(Throwable throwable) {

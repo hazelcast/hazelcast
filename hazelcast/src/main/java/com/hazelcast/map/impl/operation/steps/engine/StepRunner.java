@@ -26,14 +26,13 @@ import com.hazelcast.spi.impl.operationservice.Offload;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationResponseHandler;
 import com.hazelcast.spi.impl.operationservice.impl.OperationServiceImpl;
-import com.hazelcast.spi.properties.HazelcastProperty;
 
 import javax.annotation.Nullable;
 import java.util.Set;
 
 import static com.hazelcast.internal.util.ThreadUtil.assertRunningOnPartitionThread;
 import static com.hazelcast.internal.util.ThreadUtil.isRunningOnPartitionThread;
-import static java.util.concurrent.TimeUnit.NANOSECONDS;
+import static java.lang.Thread.currentThread;
 
 /**
  * <lu>
@@ -59,13 +58,6 @@ public class StepRunner extends Offload
     public static final ThreadLocal<Boolean> CURRENTLY_EXECUTING_ON_PARTITION_THREAD
             = ThreadLocal.withInitial(() -> false);
 
-    private static final long DEFAULT_MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS = 0;
-    private static final String PROP_MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS
-            = "hazelcast.internal.map.mapstore.max.successive.offloaded.operation.run.nanos";
-    private static final HazelcastProperty MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS
-            = new HazelcastProperty(PROP_MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS,
-            DEFAULT_MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS, NANOSECONDS);
-
     private final int partitionId;
     private final long maxRunNanos;
     private final Set<MapOperation> offloadedOperations;
@@ -74,6 +66,7 @@ public class StepRunner extends Offload
 
     private volatile StepSupplier stepSupplier;
 
+    // Acts as a local variable.
     private String currentExecutorName;
 
     public StepRunner(MapOperation mapOperation) {
@@ -81,15 +74,17 @@ public class StepRunner extends Offload
         this.offloadedOperations = getOffloadedOperations(mapOperation);
         this.partitionId = mapOperation.getPartitionId();
         NodeEngine nodeEngine = mapOperation.getNodeEngine();
-        this.operationExecutor = ((OperationServiceImpl) nodeEngine.getOperationService()).getOperationExecutor();
+        this.operationExecutor = ((OperationServiceImpl) nodeEngine
+                .getOperationService()).getOperationExecutor();
         this.executionService = nodeEngine.getExecutionService();
-        this.maxRunNanos = nodeEngine.getProperties().getNanos(MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS);
+        this.maxRunNanos = mapOperation.getMapContainer()
+                .getMapServiceContext().getMaxSuccessiveOffloadedOpRunNanos();
     }
 
     @Override
     public void start() throws Exception {
-        Operation op = offloadedOperation();
-        addOpToOffloadedOps(((MapOperation) op));
+        Operation thisOp = offloadedOperation();
+        addOpToOffloadedOps(((MapOperation) thisOp));
 
         if (isHeadOp()) {
             run();
@@ -114,21 +109,18 @@ public class StepRunner extends Offload
         return offloadedOperations.size() == 1;
     }
 
-    @Override
-    public void run() {
-        boolean runningOnPartitionThread = isRunningOnPartitionThread();
-        run0(runningOnPartitionThread);
-    }
-
     /**
      * Runs all queued operations one by one.
      * <p>
      * For fair usage of partition thread, it
      * has a {@link #maxRunNanos} upper limit.
      */
+    @Override
     @SuppressWarnings("checkstyle:innerassignment")
-    private void run0(boolean runningOnPartitionThread) {
-        long start = System.nanoTime();
+    public void run() {
+        final boolean runningOnPartitionThread = isRunningOnPartitionThread();
+        final long start = System.nanoTime();
+
         Runnable step;
         do {
             try {
@@ -178,7 +170,7 @@ public class StepRunner extends Offload
             } catch (Throwable throwable) {
                 stepSupplier.handleOperationError(throwable);
             }
-        } while (true);
+        } while (!currentThread().isInterrupted());
     }
 
     /**

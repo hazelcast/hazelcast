@@ -383,7 +383,7 @@ final class MapIndexScanP extends AbstractProcessor {
                     entry.getKeyIfPresent(), entry.getKeyDataIfPresent(),
                     entry.getValueIfPresent(), entry.getValueDataIfPresent()
             );
-            return ExpressionUtil.evaluate(metadata.getRemainingFilter(), metadata.getProjection(), row, evalContext);
+            return ExpressionUtil.projection(metadata.getRemainingFilter(), metadata.getProjection(), row, evalContext);
         }
 
         private void remove() {

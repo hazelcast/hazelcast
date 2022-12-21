@@ -998,6 +998,8 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         assertEquals(newMetadataGroupId.getSeed(), getRaftService(newInstance1).getMetadataGroupId().getSeed());
         assertEquals(newMetadataGroupId.getSeed(), getRaftService(newInstance2).getMetadataGroupId().getSeed());
 
+        waitUntilCPDiscoveryCompleted(instances[0], newInstance1, newInstance2);
+
         for (int i = 0; i < commitIndexAdvanceCountToSnapshot; i++) {
             getRaftInvocationManager(instances[0]).invoke(getMetadataGroupId(instances[0]), new GetActiveCPMembersOp()).get();
         }
