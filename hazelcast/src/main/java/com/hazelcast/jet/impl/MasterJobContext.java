@@ -695,7 +695,11 @@ public class MasterJobContext {
                     mc.setJobStatus(SUSPENDED);
                     mc.jobExecutionRecord().setSuspended(null);
                     nonSynchronizedAction = () -> mc.writeJobExecutionRecord(false);
-                } else if (failure != null && !isCancelled() && mc.jobConfig().isSuspendOnFailure()) {
+                } else if (failure != null
+                        && !isCancelled()
+                        && requestedTerminationMode != CANCEL_GRACEFUL
+                        && mc.jobConfig().isSuspendOnFailure()
+                ) {
                     mc.setJobStatus(SUSPENDED);
                     mc.jobExecutionRecord().setSuspended("Execution failure:\n" +
                             ExceptionUtil.stackTraceToString(failure));
