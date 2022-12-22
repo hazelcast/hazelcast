@@ -61,6 +61,7 @@ import static com.hazelcast.internal.util.CollectionUtil.hasNonEmptyIntersection
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
+import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinBroadcastKeys.LAST_RECEIVED_WM_KEY;
 import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinBroadcastKeys.WM_STATE_KEY;
 
 
@@ -71,6 +72,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private static final long WATERMARK_MAP_DEFAULT_VALUE = Long.MIN_VALUE + 1;
 
     // package-visible for tests
+    // tracks the current minimum event time for each watermark
     final Object2LongHashMap<Byte> wmState = new Object2LongHashMap<>(Long.MIN_VALUE);
     final Object2LongHashMap<Byte> lastReceivedWm = new Object2LongHashMap<>(Long.MIN_VALUE);
     final Object2LongHashMap<Byte> lastEmittedWm = new Object2LongHashMap<>(Long.MIN_VALUE);
@@ -261,11 +263,12 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             return processPendingOutput();
         }
 
-        assert wmState.containsKey(watermark.key()) : "unexpected watermark key: " + watermark.key();
-        assert lastReceivedWm.get(watermark.key()) < watermark.timestamp() : "non-monotonic watermark: " + watermark
-                + " when state is " + lastReceivedWm.get(watermark.key());
+        Byte receivedWmKey = watermark.key();
+        assert wmState.containsKey(receivedWmKey) : "unexpected watermark key: " + receivedWmKey;
+        assert lastReceivedWm.get(receivedWmKey) < watermark.timestamp() : "non-monotonic watermark: " + watermark
+                + " when state is " + lastReceivedWm.get(receivedWmKey);
 
-        lastReceivedWm.put((Byte) watermark.key(), watermark.timestamp());
+        lastReceivedWm.put(receivedWmKey, watermark.timestamp());
 
         // 5.1 : update wm state
         boolean modified = applyToWmState(watermark);
@@ -277,10 +280,11 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
         // Note: We can't immediately emit current WM, as it could render items in buffers late.
         for (Byte wmKey : wmState.keySet()) {
-            long lastReceivedWm = this.lastReceivedWm.getValue(wmKey);
-            if (lastReceivedWm > lastEmittedWm.getValue(wmKey)) {
-                pendingOutput.add(new Watermark(lastReceivedWm, wmKey));
-                lastEmittedWm.put(wmKey, lastReceivedWm);
+            long lastReceivedWatermark = lastReceivedWm.getValue(wmKey);
+            long state = Math.min(wmState.get(wmKey), lastReceivedWatermark);
+            if (state > lastEmittedWm.getValue(wmKey)) {
+                pendingOutput.add(new Watermark(state, wmKey));
+                lastEmittedWm.put(wmKey, state);
             }
         }
 
@@ -306,6 +310,18 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                             entry(
                                     broadcastKey(WM_STATE_KEY),
                                     WatermarkStateValue.wmValue(e.getKey(), timestamp)
+                            )
+                    );
+                }
+            }
+
+            for (Entry<?, Long> e : lastReceivedWm.entrySet()) {
+                Long timestamp = e.getValue();
+                if (timestamp != WATERMARK_MAP_DEFAULT_VALUE) {
+                    snapshotList.add(
+                            entry(
+                                    broadcastKey(LAST_RECEIVED_WM_KEY),
+                                    WatermarkStateValue.wmValue((Byte) e.getKey(), timestamp)
                             )
                     );
                 }
@@ -342,9 +358,15 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             // We pick minimal available watermark (both emitted/received) among all processors
             if (WM_STATE_KEY.equals(broadcastKey.key())) {
                 Long currentState = wmState.get(wmValue.key());
-                if (currentState <= Long.MIN_VALUE + 1 ||
+                if (currentState <= WATERMARK_MAP_DEFAULT_VALUE ||
                         currentState > wmValue.timestamp()) {
                     wmState.put(wmValue.key(), wmValue.timestamp());
+                }
+            } else if (LAST_RECEIVED_WM_KEY.equals(broadcastKey.key())) {
+                Long currentState = lastReceivedWm.get(wmValue.key());
+                if (currentState <= WATERMARK_MAP_DEFAULT_VALUE ||
+                        currentState > wmValue.timestamp()) {
+                    lastReceivedWm.put(wmValue.key(), wmValue.timestamp());
                 }
             } else {
                 throw new JetException("Unexpected broadcast key: " + broadcastKey.key());
@@ -457,7 +479,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     }
 
     enum StreamToStreamJoinBroadcastKeys {
-        WM_STATE_KEY
+        WM_STATE_KEY,
+        LAST_RECEIVED_WM_KEY
     }
 
     public static final class StreamToStreamJoinProcessorSupplier implements ProcessorSupplier, DataSerializable {
@@ -642,23 +665,3 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         }
     }
 }
-
-/*
-### Running the test, mode=snapshots disabled, inboxLimit=1024
-15:03:21.030545 Input-0: [[0]]
-15:03:21.030715 Input-0: [Watermark{ts=03:00:00.010, key=0}]
-15:03:21.030934 Output-0: Watermark{ts=03:00:00.010, key=0}
-15:03:21.031079 Input-1: [[0]]
-15:03:21.031195 Output-0: [0, 0]
-15:03:21.031484 Input processed, calling complete()
-
-### Running the test, mode=snapshots enabled, restoring every snapshot
-15:03:21.041067 Saving & restoring snapshot
-15:03:21.057202 Input-0: [[0]]
-15:03:21.057337 Saving & restoring snapshot
-15:03:21.082409 Input-0: [Watermark{ts=03:00:00.010, key=0}]
-15:03:21.082687 Output-0: Watermark{ts=03:00:00.010, key=0}
-15:03:21.082842 Saving & restoring snapshot
-15:03:21.095627 Input-1: [[0]]
-
- */
