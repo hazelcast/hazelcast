@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.internal.cluster.Versions;
 import com.hazelcast.internal.config.ConfigDataSerializerHook;
 import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
 import com.hazelcast.internal.partition.IPartition;
@@ -114,6 +115,60 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
     private boolean perEntryStatsEnabled = DEFAULT_ENTRY_STATS_ENABLED;
     private int backupCount = DEFAULT_BACKUP_COUNT;
     private int asyncBackupCount = MIN_BACKUP_COUNT;
+    private SyncBackupTimeoutPolicy syncBackupTimeoutPolicy = SyncBackupTimeoutPolicy.GLOBAL;
+
+    /**
+     * Specifies action takes when {@link
+     * com.hazelcast.spi.properties.ClusterProperty#OPERATION_BACKUP_TIMEOUT_MILLIS}
+     * elapses when waiting for completion of synchronous backups.
+     */
+    //TODO: add to EnumCompatibilityTest and client protocol
+    public enum SyncBackupTimeoutPolicy {
+        /**
+         * Use behavior configured by global property:
+         * {@link com.hazelcast.spi.properties.ClusterProperty#FAIL_ON_INDETERMINATE_OPERATION_STATE} or
+         * {@link com.hazelcast.client.properties.ClientProperty#FAIL_ON_INDETERMINATE_OPERATION_STATE}
+         */
+        GLOBAL(0),
+        /**
+         * In case of timeout for sync backup return success
+         */
+        SUCCESS(1),
+        /**
+         * In case of timeout for sync backup throw {@link com.hazelcast.core.IndeterminateOperationStateException}
+         */
+        INDETERMINATE(2);
+
+        private final int id;
+
+        SyncBackupTimeoutPolicy(int id) {
+            this.id = id;
+        }
+
+        /**
+         * Gets the ID for the given {@link SyncBackupTimeoutPolicy}.
+         *
+         * @return the ID
+         */
+        public int getId() {
+            return id;
+        }
+
+        /**
+         * Returns the {@link SyncBackupTimeoutPolicy} as an enum.
+         *
+         * @return the {@link SyncBackupTimeoutPolicy} as an enum
+         */
+        public static SyncBackupTimeoutPolicy getById(final int id) {
+            for (SyncBackupTimeoutPolicy type : values()) {
+                if (type.id == id) {
+                    return type;
+                }
+            }
+            return null;
+        }
+    }
+
     private int timeToLiveSeconds = DEFAULT_TTL_SECONDS;
     private int maxIdleSeconds = DEFAULT_MAX_IDLE_SECONDS;
     private String name;
@@ -152,6 +207,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         this.name = config.name;
         this.backupCount = config.backupCount;
         this.asyncBackupCount = config.asyncBackupCount;
+        this.syncBackupTimeoutPolicy = config.syncBackupTimeoutPolicy;
         this.timeToLiveSeconds = config.timeToLiveSeconds;
         this.maxIdleSeconds = config.maxIdleSeconds;
         this.metadataPolicy = config.metadataPolicy;
@@ -265,6 +321,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
      * 0 means no sync backup.
      *
      * @param backupCount the number of synchronous backups to set for this {@link IMap}
+     * @return the updated MapConfig
      * @see #setAsyncBackupCount(int)
      */
     public MapConfig setBackupCount(final int backupCount) {
@@ -286,7 +343,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
      * Sets the number of asynchronous backups. 0 means no backups.
      *
      * @param asyncBackupCount the number of asynchronous synchronous backups to set
-     * @return the updated CacheConfig
+     * @return the updated MapConfig
      * @throws IllegalArgumentException if asyncBackupCount smaller than
      *                                  0, or larger than the maximum number of backup or the sum of the
      *                                  backups and async backups is larger than the maximum number of backups
@@ -305,6 +362,36 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
      */
     public int getTotalBackupCount() {
         return backupCount + asyncBackupCount;
+    }
+
+    /**
+     * Gets action to be taken when {@link
+     * com.hazelcast.spi.properties.ClusterProperty#OPERATION_BACKUP_TIMEOUT_MILLIS}
+     * elapses when waiting for completion of synchronous backups.
+     *
+     * @return action to be taken on backup timeout
+     * @see #setSyncBackupTimeoutPolicy(SyncBackupTimeoutPolicy)
+     */
+    public SyncBackupTimeoutPolicy getSyncBackupTimeoutPolicy() {
+        return syncBackupTimeoutPolicy;
+    }
+
+    /**
+     * Sets action to be taken when {@link
+     * com.hazelcast.spi.properties.ClusterProperty#OPERATION_BACKUP_TIMEOUT_MILLIS}
+     * elapses when waiting for completion of synchronous backups.
+     * <p>
+     * This setting applies only to sync and asynch operations on single key
+     * (eg. {@link IMap#put(Object, Object)}. It does not affect multi-entry
+     * operations (eg. {@link IMap#clear()}, {@link IMap#putAll}).
+     *
+     * @param syncBackupTimeoutPolicy action to be taken on backup timeout
+     * @return the updated MapConfig
+     * @see #setBackupCount(int)
+     */
+    public MapConfig setSyncBackupTimeoutPolicy(SyncBackupTimeoutPolicy syncBackupTimeoutPolicy) {
+        this.syncBackupTimeoutPolicy = syncBackupTimeoutPolicy;
+        return this;
     }
 
     /**
@@ -824,6 +911,9 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         if (asyncBackupCount != that.asyncBackupCount) {
             return false;
         }
+        if (syncBackupTimeoutPolicy != that.syncBackupTimeoutPolicy) {
+            return false;
+        }
         if (timeToLiveSeconds != that.timeToLiveSeconds) {
             return false;
         }
@@ -908,6 +998,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         int result = (name != null ? name.hashCode() : 0);
         result = 31 * result + backupCount;
         result = 31 * result + asyncBackupCount;
+        result = 31 * result + syncBackupTimeoutPolicy.hashCode();
         result = 31 * result + timeToLiveSeconds;
         result = 31 * result + maxIdleSeconds;
         result = 31 * result + evictionConfig.hashCode();
@@ -944,6 +1035,7 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
                 + ", metadataPolicy=" + metadataPolicy
                 + ", backupCount=" + backupCount
                 + ", asyncBackupCount=" + asyncBackupCount
+                + ", syncBackupTimeoutPolicy=" + syncBackupTimeoutPolicy
                 + ", timeToLiveSeconds=" + timeToLiveSeconds
                 + ", maxIdleSeconds=" + maxIdleSeconds
                 + ", readBackupData=" + readBackupData
@@ -1008,6 +1100,12 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         out.writeBoolean(perEntryStatsEnabled);
         out.writeObject(dataPersistenceConfig);
         out.writeObject(tieredStoreConfig);
+
+        // RU_COMPAT 5.2
+        if (out.getVersion().isGreaterOrEqual(Versions.V5_3)) {
+            out.writeInt(syncBackupTimeoutPolicy.getId());
+        }
+
     }
 
     @Override
@@ -1040,5 +1138,10 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
         perEntryStatsEnabled = in.readBoolean();
         setDataPersistenceConfig(in.readObject());
         setTieredStoreConfig(in.readObject());
+
+        // RU_COMPAT 5.2
+        if (in.getVersion().isGreaterOrEqual(Versions.V5_3)) {
+            syncBackupTimeoutPolicy = SyncBackupTimeoutPolicy.getById(in.readInt());
+        }
     }
 }

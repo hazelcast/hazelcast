@@ -272,6 +272,11 @@ public class MapConfigReadOnly extends MapConfig {
     }
 
     @Override
+    public MapConfig setSyncBackupTimeoutPolicy(SyncBackupTimeoutPolicy syncBackupTimeoutPolicy) {
+        throw throwReadOnly();
+    }
+
+    @Override
     public MapConfig setTimeToLiveSeconds(int timeToLiveSeconds) {
         throw throwReadOnly();
     }
