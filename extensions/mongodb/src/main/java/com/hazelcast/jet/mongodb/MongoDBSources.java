@@ -18,18 +18,14 @@ package com.hazelcast.jet.mongodb;
 
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.StreamSource;
-import com.mongodb.client.ChangeStreamIterable;
-import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
-import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
+import org.bson.BsonDocument;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
 
 import static com.hazelcast.function.FunctionEx.identity;
 
@@ -82,15 +78,15 @@ public final class MongoDBSources {
             @Nonnull String connectionString,
             @Nonnull String database,
             @Nonnull String collection,
-            @Nullable Document filter,
-            @Nullable Document projection
+            @Nullable Bson filter,
+            @Nullable Bson projection
     ) {
         return MongoDBSourceBuilder
                 .batch(name, () -> MongoClients.create(connectionString))
-                .databaseFn(client -> client.getDatabase(database))
-                .collectionFn(db -> db.getCollection(collection))
-                .destroyFn(MongoClient::close)
-                .searchFn(col -> col.find().filter(filter).projection(projection))
+                .database(database)
+                .collection(collection, Document.class) // todo change type
+                .project(projection)
+                .filter(filter)
                 .mapFn(identity())
                 .build();
     }
@@ -148,27 +144,8 @@ public final class MongoDBSources {
     ) {
         return MongoDBSourceBuilder
                 .stream(name, () -> MongoClients.create(connectionString))
-                .databaseFn(client -> client.getDatabase(database))
-                .collectionFn(db -> db.getCollection(collection))
-                .destroyFn(MongoClient::close)
-                .searchFn(
-                        col -> {
-                            List<Bson> aggregates = new ArrayList<>();
-                            if (filter != null) {
-                                aggregates.add(Aggregates.match(filter));
-                            }
-                            if (projection != null) {
-                                aggregates.add(Aggregates.project(projection));
-                            }
-                            ChangeStreamIterable<? extends Document> watch;
-                            if (aggregates.isEmpty()) {
-                                watch = col.watch();
-                            } else {
-                                watch = col.watch(aggregates);
-                            }
-                            return watch;
-                        }
-                )
+                .database(database)
+                .collection(collection, Document.class)
                 .mapFn(ChangeStreamDocument::getFullDocument)
                 .build();
     }
