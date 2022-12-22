@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.jet.JobEvent;
 import com.hazelcast.jet.JobListener;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -36,8 +37,7 @@ public class JobService implements EventPublishingService<JobEvent, JobListener>
 
     @Override
     public void dispatchEvent(JobEvent event, JobListener listener) {
-        listener.jobStatusChanged(event.getJobId(), event.getOldStatus(), event.getNewStatus(),
-                event.getDescription(), event.isUserRequested());
+        listener.jobStatusChanged(event);
     }
 
     public void publishEvent(long jobId, JobStatus oldStatus, JobStatus newStatus,

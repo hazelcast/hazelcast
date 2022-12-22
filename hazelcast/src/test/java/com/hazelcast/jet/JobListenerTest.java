@@ -18,7 +18,6 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -204,10 +203,10 @@ public class JobListenerTest extends HazelcastTestSupport {
         }
 
         @Override
-        public void jobStatusChanged(long jobId, JobStatus oldStatus, JobStatus newStatus,
-                                     String description, boolean userRequested) {
-            log.add(String.format("%s: %s -> %s%s", userRequested ? "User" : "Jet", oldStatus, newStatus,
-                    description == null ? "" : " (" + description + ")"));
+        public void jobStatusChanged(JobEvent e) {
+            log.add(String.format("%s: %s -> %s%s",
+                    e.isUserRequested() ? "User" : "Jet", e.getOldStatus(), e.getNewStatus(),
+                    e.getDescription() == null ? "" : " (" + e.getDescription() + ")"));
         }
     }
 }

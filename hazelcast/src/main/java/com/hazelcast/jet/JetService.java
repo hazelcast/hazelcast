@@ -304,14 +304,14 @@ public interface JetService {
     /**
      * Associates the given listener with the given jobIds.
      *
-     * @since Jet 5.3
+     * @since 5.3
      */
     void addJobStatusListener(Set<Long> jobIds, JobListener listener);
 
     /**
      * Stops delivering all events to the given listener.
      *
-     * @since Jet 5.3
+     * @since 5.3
      */
     void removeJobStatusListener(JobListener listener);
 }
