@@ -19,6 +19,7 @@ package com.hazelcast.jet.impl;
 import com.hazelcast.client.impl.clientside.HazelcastClientInstanceImpl;
 import com.hazelcast.client.impl.connection.ClientConnection;
 import com.hazelcast.client.impl.protocol.ClientMessage;
+import com.hazelcast.client.impl.protocol.codec.JetAddJobStatusListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.JetExportSnapshotCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobMetricsCodec;
@@ -26,15 +27,20 @@ import com.hazelcast.client.impl.protocol.codec.JetGetJobStatusCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSubmissionTimeCodec;
 import com.hazelcast.client.impl.protocol.codec.JetGetJobSuspensionCauseCodec;
 import com.hazelcast.client.impl.protocol.codec.JetJoinSubmittedJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetRemoveJobStatusListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.JetResumeJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetTerminateJobCodec;
+import com.hazelcast.client.impl.spi.EventHandler;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
+import com.hazelcast.client.impl.spi.impl.ListenerMessageCodec;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.JobEvent;
+import com.hazelcast.jet.JobListener;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobStatus;
@@ -44,6 +50,7 @@ import com.hazelcast.logging.LoggingService;
 import com.hazelcast.spi.exception.TargetNotMemberException;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.UUID;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CompletableFuture;
@@ -219,6 +226,61 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     @Override
     protected boolean isRunning() {
         return container().getLifecycleService().isRunning();
+    }
+
+    @Override
+    public UUID addStatusListener(JobListener listener) {
+        return container().getListenerService().registerListener(
+                createJobStatusListenerCodec(getId()), new ClientJobEventHandler(listener));
+    }
+
+    @Override
+    public boolean removeStatusListener(UUID id) {
+        return container().getListenerService().deregisterListener(id);
+    }
+
+    private ListenerMessageCodec createJobStatusListenerCodec(final long jobId) {
+        return new ListenerMessageCodec() {
+            @Override
+            public ClientMessage encodeAddRequest(boolean localOnly) {
+                return JetAddJobStatusListenerCodec.encodeRequest(jobId, localOnly);
+            }
+
+            @Override
+            public UUID decodeAddResponse(ClientMessage clientMessage) {
+                return JetAddJobStatusListenerCodec.decodeResponse(clientMessage);
+            }
+
+            @Override
+            public ClientMessage encodeRemoveRequest(UUID registrationId) {
+                return JetRemoveJobStatusListenerCodec.encodeRequest(jobId, registrationId);
+            }
+
+            @Override
+            public boolean decodeRemoveResponse(ClientMessage clientMessage) {
+                return JetRemoveJobStatusListenerCodec.decodeResponse(clientMessage);
+            }
+        };
+    }
+
+    private static class ClientJobEventHandler implements EventHandler<ClientMessage> {
+        final JetAddJobStatusListenerCodec.AbstractEventHandler handler;
+
+        ClientJobEventHandler(final JobListener listener) {
+            handler = new JetAddJobStatusListenerCodec.AbstractEventHandler() {
+                @Override
+                public void handleJobEvent(long jobId, int oldStatus, int newStatus,
+                                           @Nullable String description, boolean userRequested) {
+                    listener.jobStatusChanged(new JobEvent(jobId, JobStatus.getById(oldStatus),
+                            JobStatus.getById(newStatus), description, userRequested));
+                }
+            };
+        }
+
+        @Override
+        public void handle(ClientMessage event) {
+            handler.handle(event);
+        }
     }
 
     private ClientInvocation invocation(ClientMessage request, UUID invocationUuid) {

@@ -28,6 +28,7 @@ import com.hazelcast.jet.pipeline.Pipeline;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 
@@ -349,4 +350,20 @@ public interface Job {
      * @throws UnsupportedOperationException if called for a light job
      */
     JobStateSnapshot exportSnapshot(String name);
+
+    /**
+     * Associates the given listener to this job.
+     * @return The registration id
+     *
+     * @since 5.3
+     */
+    UUID addStatusListener(JobListener listener);
+
+    /**
+     * Stops delivering all events to the listener with the given registration id.
+     * @return Whether the specified registration was removed
+     *
+     * @since 5.3
+     */
+    boolean removeStatusListener(UUID id);
 }

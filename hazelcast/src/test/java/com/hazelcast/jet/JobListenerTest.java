@@ -18,18 +18,22 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.test.TestSources;
-import com.hazelcast.test.HazelcastParallelClassRunner;
-import com.hazelcast.test.HazelcastTestSupport;
+import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
+import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -46,14 +50,33 @@ import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
-@RunWith(HazelcastParallelClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
+@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class JobListenerTest extends HazelcastTestSupport {
+public class JobListenerTest extends JetTestSupport {
     private static final Function<String, String> SIMPLIFY = log -> log.replaceAll("(?<=\\().*: ", "");
+
+    @Parameters(name = "{0}")
+    public static Iterable<Object[]> parameters() {
+        return asList(
+                method("onMaster", JobListenerTest::onMaster),
+                method("onNonMaster", JobListenerTest::onNonMaster),
+                method("onClient", JobListenerTest::onClient));
+    }
+
+    static Object[] method(String name, Function<JobListenerTest, HazelcastInstance> function) {
+        return new Object[] {name, function};
+    }
+
+    @Parameter(0)
+    public String mode;
+
+    @Parameter(1)
+    public Function<JobListenerTest, HazelcastInstance> init;
 
     @Test
     public void testListener_waitForCompletion() {
-        testListener(2, TestSources.items(1), Job::join,
+        testListener(TestSources.items(1), Job::join,
                 "Jet: NOT_RUNNING -> STARTING",
                 "Jet: STARTING -> RUNNING",
                 "Jet: RUNNING -> COMPLETED");
@@ -61,7 +84,7 @@ public class JobListenerTest extends HazelcastTestSupport {
 
     @Test
     public void testListener_suspend_resume_restart_cancelJob() {
-        testListener(2, TestSources.itemStream(1),
+        testListener(TestSources.itemStream(1),
                 job -> {
                     sleepSeconds(2);
                     job.suspend();
@@ -87,7 +110,7 @@ public class JobListenerTest extends HazelcastTestSupport {
 
     @Test
     public void testListener_jobFails() {
-        testListener(2, TestSources.itemStream(1, (t, s) -> 1 / (2 - s)),
+        testListener(TestSources.itemStream(1, (t, s) -> 1 / (2 - s)),
                 (job, listener) -> {
                     Throwable failure = null;
                     try {
@@ -106,7 +129,7 @@ public class JobListenerTest extends HazelcastTestSupport {
     @Test
     public void testListener_restartOnException() {
         AtomicBoolean restarted = new AtomicBoolean();
-        testListener(2, new JobConfig().setAutoScaling(true),
+        testListener(new JobConfig().setAutoScaling(true),
                 TestSources.itemStream(1,
                         (t, s) -> {
                             if (s == 2 && !restarted.get()) {
@@ -131,7 +154,7 @@ public class JobListenerTest extends HazelcastTestSupport {
 
     @Test
     public void testListener_suspendOnFailure() {
-        testListener(2, new JobConfig().setSuspendOnFailure(true),
+        testListener(new JobConfig().setSuspendOnFailure(true),
                 TestSources.itemStream(1, (t, s) -> 1 / (2 - s)),
                 (job, listener) -> {
                     sleepSeconds(4);
@@ -148,7 +171,7 @@ public class JobListenerTest extends HazelcastTestSupport {
 
     @Test
     public void testListenerDeregistration() {
-        testListener(2, TestSources.itemStream(1),
+        testListener(TestSources.itemStream(1),
                 (job, listener) -> {
                     sleepSeconds(2);
                     listener.jet.removeJobStatusListener(listener);
@@ -160,28 +183,39 @@ public class JobListenerTest extends HazelcastTestSupport {
                 });
     }
 
-    void testListener(int nodeCount, JobConfig config, Object source, BiConsumer<Job, JobStatusLogger> test) {
-        HazelcastInstance hz = createHazelcastInstances(nodeCount)[0];
+    static HazelcastInstance onMaster(JobListenerTest test) {
+        return test.createHazelcastInstances(2)[0];
+    }
 
+    static HazelcastInstance onNonMaster(JobListenerTest test) {
+        return test.createHazelcastInstances(2)[1];
+    }
+
+    static HazelcastInstance onClient(JobListenerTest test) {
+        test.createHazelcastInstances(2);
+        return test.createHazelcastClient();
+    }
+
+    void testListener(JobConfig config, Object source, BiConsumer<Job, JobStatusLogger> test) {
         Pipeline p = Pipeline.create();
         (source instanceof BatchSource
                     ? p.readFrom((BatchSource<?>) source)
                     : p.readFrom((StreamSource<?>) source).withoutTimestamps())
                 .writeTo(Sinks.noop());
 
-        JetService jet = hz.getJet();
+        JetService jet = init.apply(this).getJet();
         JobStatusLogger listener = new JobStatusLogger(jet);
         Job job = jet.newJob(p, config);
         jet.addJobStatusListener(set(job.getId()), listener);
         test.accept(job, listener);
     }
 
-    void testListener(int nodeCount, Object source, BiConsumer<Job, JobStatusLogger> test) {
-        testListener(nodeCount, new JobConfig(), source, test);
+    void testListener(Object source, BiConsumer<Job, JobStatusLogger> test) {
+        testListener(new JobConfig(), source, test);
     }
 
-    void testListener(int nodeCount, Object source, Consumer<Job> test, String... log) {
-        testListener(nodeCount, source, (job, listener) -> {
+    void testListener(Object source, Consumer<Job> test, String... log) {
+        testListener(source, (job, listener) -> {
             test.accept(job);
             assertTailEquals(listener.log, log);
         });
@@ -189,7 +223,7 @@ public class JobListenerTest extends HazelcastTestSupport {
 
     @SafeVarargs
     static <T> void assertTailEquals(List<T> actual, T... expected) {
-        assertGreaterOrEquals("length", expected.length, actual.size());
+        assertBetween("length", actual.size(), expected.length - 2, expected.length);
         List<T> tail = asList(expected).subList(expected.length - actual.size(), expected.length);
         assertEquals(tail, actual);
     }

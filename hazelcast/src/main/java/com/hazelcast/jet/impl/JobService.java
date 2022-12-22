@@ -25,6 +25,10 @@ import com.hazelcast.spi.impl.eventservice.EventRegistration;
 import com.hazelcast.spi.impl.eventservice.EventService;
 
 import java.util.Collection;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
 
 public class JobService implements EventPublishingService<JobEvent, JobListener> {
     public static final String SERVICE_NAME = "hz:impl:jobService";
@@ -48,5 +52,26 @@ public class JobService implements EventPublishingService<JobEvent, JobListener>
             eventService.publishEvent(SERVICE_NAME, registrations, new JobEvent(
                     jobId, oldStatus, newStatus, description, userRequested), (int) jobId);
         }
+    }
+
+    public UUID addLocalEventListener(long jobId, JobListener listener) {
+        return eventService.registerLocalListener(SERVICE_NAME, String.valueOf(jobId), listener).getId();
+    }
+
+    public UUID addEventListener(long jobId, JobListener listener) {
+        return eventService.registerListener(SERVICE_NAME, String.valueOf(jobId), listener).getId();
+    }
+
+    public CompletableFuture<UUID> addEventListenerAsync(long jobId, JobListener listener) {
+        return eventService.registerListenerAsync(SERVICE_NAME, String.valueOf(jobId), listener)
+                .thenApplyAsync(EventRegistration::getId, CALLER_RUNS);
+    }
+
+    public boolean removeEventListener(long jobId, UUID id) {
+        return eventService.deregisterListener(SERVICE_NAME, String.valueOf(jobId), id);
+    }
+
+    public CompletableFuture<Boolean> removeEventListenerAsync(long jobId, UUID id) {
+        return eventService.deregisterListenerAsync(SERVICE_NAME, String.valueOf(jobId), id);
     }
 }

@@ -43,7 +43,6 @@ import com.hazelcast.map.impl.MapService;
 import com.hazelcast.replicatedmap.ReplicatedMap;
 import com.hazelcast.ringbuffer.impl.RingbufferService;
 import com.hazelcast.security.permission.JobPermission;
-import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.topic.ITopic;
 
@@ -90,15 +89,13 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
             "\\(\"com.hazelcast.security.permission.MapPermission\" \"__jet\\.resources\\..*\" \"create\"\\) denied!";
 
     private final HazelcastInstance hazelcastInstance;
-    private final EventService eventService;
     private final JetCacheManagerImpl cacheManager;
     private final Supplier<JobRepository> jobRepository;
     private final Map<String, Observable> observables;
-    private final Map<JobListener, Map<String, UUID>> jobListeners;
+    private final Map<JobListener, Map<Job, UUID>> jobListeners;
 
     public AbstractJetInstance(HazelcastInstance hazelcastInstance) {
         this.hazelcastInstance = hazelcastInstance;
-        this.eventService = Util.getNodeEngine(hazelcastInstance).getEventService();
         this.cacheManager = new JetCacheManagerImpl(this);
         this.jobRepository = Util.memoizeConcurrent(() -> new JobRepository(hazelcastInstance));
         this.observables = new ConcurrentHashMap<>();
@@ -339,19 +336,21 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
 
     @Override
     public void addJobStatusListener(Set<Long> jobIds, JobListener listener) {
-        Map<String, UUID> registrations = jobListeners.computeIfAbsent(listener, k -> new ConcurrentHashMap<>());
+        Map<Job, UUID> registrations = jobListeners.computeIfAbsent(listener, k -> new ConcurrentHashMap<>());
         for (long jobId : jobIds) {
-            registrations.computeIfAbsent(String.valueOf(jobId), topic -> eventService.registerListener(
-                    JobService.SERVICE_NAME, topic, listener).getId());
+            Job job = getJob(jobId);
+            if (job != null) {
+                registrations.computeIfAbsent(job, k -> job.addStatusListener(listener));
+            }
         }
     }
 
     @Override
     public void removeJobStatusListener(JobListener listener) {
-        Map<String, UUID> registrations = jobListeners.remove(listener);
+        Map<Job, UUID> registrations = jobListeners.remove(listener);
         if (registrations != null) {
-            for (Entry<String, UUID> e : registrations.entrySet()) {
-                eventService.deregisterListener(JobService.SERVICE_NAME, e.getKey(), e.getValue());
+            for (Entry<Job, UUID> e : registrations.entrySet()) {
+                e.getKey().removeStatusListener(e.getValue());
             }
         }
     }

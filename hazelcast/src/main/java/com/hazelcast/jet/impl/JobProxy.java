@@ -20,6 +20,7 @@ import com.hazelcast.cluster.Address;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.JobListener;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
@@ -42,6 +43,7 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.impl.JobMetricsUtil.toJobMetrics;
@@ -208,5 +210,17 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
             throw new IllegalStateException("Master address unknown: instance is not yet initialized or is shut down");
         }
         return masterAddress;
+    }
+
+    @Override
+    public UUID addStatusListener(JobListener listener) {
+        JobService jobService = container().getService(JobService.SERVICE_NAME);
+        return jobService.addEventListener(getId(), listener);
+    }
+
+    @Override
+    public boolean removeStatusListener(UUID id) {
+        JobService jobService = container().getService(JobService.SERVICE_NAME);
+        return jobService.removeEventListener(getId(), id);
     }
 }
