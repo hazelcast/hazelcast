@@ -439,7 +439,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
                     parameterObject.getJobName(),
                     parameterObject.getMainClass(),
                     parameterObject.getJobParameters(),
-                    false
+                    true
             );
         } catch (Exception exception) {
             logger.severe("runJar caught exception when running the jar", exception);

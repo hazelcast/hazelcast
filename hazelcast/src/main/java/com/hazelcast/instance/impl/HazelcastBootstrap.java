@@ -130,10 +130,11 @@ public final class HazelcastBootstrap {
     public static void resetSupplier() {
         supplier = null;
     }
+
     public static synchronized void executeJar(@Nonnull Supplier<HazelcastInstance> supplierOfInstance,
                                                @Nonnull String jar, @Nullable String snapshotName,
                                                @Nullable String jobName, @Nullable String mainClass, @Nonnull List<String> args,
-                                               boolean closeHazelcastInstance
+                                               boolean calledByMember
     ) throws Exception {
 
         // Method is synchronized, so it is safe to do null check
@@ -141,12 +142,16 @@ public final class HazelcastBootstrap {
             supplier = new ConcurrentMemoizingSupplier<>(() ->
                     new BootstrappedInstanceProxy(supplierOfInstance.get(), jar, snapshotName, jobName));
         }
-        // Change the properties of cached JetService within cached BootstrappedInstanceProxy
-        BootstrappedInstanceProxy bootstrappedInstanceProxy = supplier.get();
-        BootstrappedJetProxy jetProxy = (BootstrappedJetProxy) bootstrappedInstanceProxy.getJet();
-        jetProxy.setJarName(jar);
-        jetProxy.setSnapshotName(snapshotName);
-        jetProxy.setJobName(jobName);
+        if (calledByMember) {
+            // BootstrappedInstanceProxy has a HazelcastInstance and BootstrappedJetProxy
+            // BootstrappedJetProxy has a Jet instance and jarName,snapshotName,jobName parameters
+            // Change the properties of cached JetService within cached BootstrappedInstanceProxy
+            BootstrappedInstanceProxy bootstrappedInstanceProxy = supplier.get();
+            BootstrappedJetProxy bootstrappedJetProxy = bootstrappedInstanceProxy.getJet();
+            bootstrappedJetProxy.setJarName(jar);
+            bootstrappedJetProxy.setSnapshotName(snapshotName);
+            bootstrappedJetProxy.setJobName(jobName);
+        }
 
 
 
@@ -181,7 +186,9 @@ public final class HazelcastBootstrap {
             main.invoke(null, (Object) jobArgs);
             awaitJobsStarted();
         } finally {
-            if (closeHazelcastInstance) {
+            // HazelcastInstance should be closed if called by client
+            // HazelcastInstance should not be closed if called by member
+            if (!calledByMember) {
                 HazelcastInstance remembered = HazelcastBootstrap.supplier.remembered();
                 if (remembered != null) {
                     try {
@@ -191,7 +198,7 @@ public final class HazelcastBootstrap {
                         t.printStackTrace();
                     }
                 }
-                HazelcastBootstrap.supplier = null;
+                resetSupplier();
             }
         }
     }
@@ -331,10 +338,11 @@ public final class HazelcastBootstrap {
         }
     }
 
+    // A special HazelcastInstance that has a BootstrappedJetProxy
     @SuppressWarnings({"checkstyle:methodcount"})
     private static class BootstrappedInstanceProxy implements HazelcastInstance {
         private final HazelcastInstance instance;
-        private final JetService jetProxy;
+        private final BootstrappedJetProxy jetProxy;
 
         BootstrappedInstanceProxy(@Nonnull HazelcastInstance instance) {
             this(instance, null, null, null);
@@ -567,7 +575,7 @@ public final class HazelcastBootstrap {
 
         @Nonnull
         @Override
-        public JetService getJet() {
+        public BootstrappedJetProxy getJet() {
             return jetProxy;
         }
 
