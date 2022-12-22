@@ -98,7 +98,7 @@ public class JobUploadTest extends JetTestSupport {
 
     @Test
     public void test_jarUpload_whenResourceUploadIsEnabled() {
-        // Reset the singleton for the test
+        // Reset the singleton because a new HazelcastInstance will be created for the test
         HazelcastBootstrap.resetSupplier();
 
         Config config = smallInstanceConfig();
@@ -122,7 +122,7 @@ public class JobUploadTest extends JetTestSupport {
 
     @Test
     public void test_jarUpload_WithIncorrectChecksum() throws IOException, NoSuchAlgorithmException {
-        // Reset the singleton for the test
+        // Reset the singleton because a new HazelcastInstance will be created for the test
         HazelcastBootstrap.resetSupplier();
 
         Config config = smallInstanceConfig();
@@ -156,7 +156,7 @@ public class JobUploadTest extends JetTestSupport {
         // Change the part buffer size
         System.setProperty(JetClientInstanceImpl.PART_SIZE, "100");
 
-        // Reset the singleton for the test
+        // Reset the singleton because a new HazelcastInstance will be created for the test
         HazelcastBootstrap.resetSupplier();
 
         Config config = smallInstanceConfig();
@@ -181,7 +181,7 @@ public class JobUploadTest extends JetTestSupport {
     @Test
     public void test_stress_jarUpload_whenResourceUploadIsEnabled() {
 
-        // Reset the singleton for the test
+        // Reset the singleton because a new HazelcastInstance will be created for the test
         HazelcastBootstrap.resetSupplier();
 
         Config config = smallInstanceConfig();
@@ -216,7 +216,7 @@ public class JobUploadTest extends JetTestSupport {
     @Test
     public void test_multipleJarUploads_whenResourceUploadIsEnabled() {
 
-        // Reset the singleton for the test
+        // Reset the singleton because a new HazelcastInstance will be created for the test
         HazelcastBootstrap.resetSupplier();
 
         Config config = smallInstanceConfig();
