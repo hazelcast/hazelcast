@@ -142,17 +142,8 @@ public final class HazelcastBootstrap {
             supplier = new ConcurrentMemoizingSupplier<>(() ->
                     new BootstrappedInstanceProxy(supplierOfInstance.get(), jar, snapshotName, jobName));
         }
-        if (calledByMember) {
-            // BootstrappedInstanceProxy has a HazelcastInstance and BootstrappedJetProxy
-            // BootstrappedJetProxy has a Jet instance and jarName,snapshotName,jobName parameters
-            // Change the properties of cached JetService within cached BootstrappedInstanceProxy
-            BootstrappedInstanceProxy bootstrappedInstanceProxy = supplier.get();
-            BootstrappedJetProxy bootstrappedJetProxy = bootstrappedInstanceProxy.getJet();
-            bootstrappedJetProxy.setJarName(jar);
-            bootstrappedJetProxy.setSnapshotName(snapshotName);
-            bootstrappedJetProxy.setJobName(jobName);
-        }
 
+        resetJetParametersIfNecessary(jar, snapshotName, jobName, calledByMember);
 
 
         try (JarFile jarFile = new JarFile(jar)) {
@@ -200,6 +191,19 @@ public final class HazelcastBootstrap {
                 }
                 resetSupplier();
             }
+        }
+    }
+
+    private static void resetJetParametersIfNecessary(String jar, String snapshotName, String jobName, boolean calledByMember) {
+        if (calledByMember) {
+            // BootstrappedInstanceProxy has a HazelcastInstance and BootstrappedJetProxy
+            // BootstrappedJetProxy has a Jet instance and jarName,snapshotName,jobName parameters
+            // Change cached jarName,snapshotName,jobName properties
+            BootstrappedInstanceProxy bootstrappedInstanceProxy = supplier.get();
+            BootstrappedJetProxy bootstrappedJetProxy = bootstrappedInstanceProxy.getJet();
+            bootstrappedJetProxy.setJarName(jar);
+            bootstrappedJetProxy.setSnapshotName(snapshotName);
+            bootstrappedJetProxy.setJobName(jobName);
         }
     }
 
