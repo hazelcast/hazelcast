@@ -52,7 +52,7 @@
                     <relocations>
                         <relocation>
                             <pattern>com.amazonaws</pattern>
-                            <shadedPattern>com.hazelcast.com.amazonaws</shadedPattern>
+                            <shadedPattern>${relocation.root}.com.amazonaws</shadedPattern>
                         </relocation>
                     </relocations>
                 </configuration>

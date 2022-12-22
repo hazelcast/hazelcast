@@ -81,6 +81,7 @@ public class JetSqlRow implements IdentifiedDataSerializable {
         return ss;
     }
 
+    @Nonnull
     public Row getRow() {
         return new Row() {
 

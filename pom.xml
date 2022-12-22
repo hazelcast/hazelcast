@@ -49,6 +49,7 @@
         <hazelcast.distribution>Hazelcast</hazelcast.distribution>
         <hazelcast.serialization.version>1</hazelcast.serialization.version>
         <hazelcast.serverMainClass>com.hazelcast.core.server.HazelcastMemberStarter</hazelcast.serverMainClass>
+        <hazelcast.previous.version>5.2.0</hazelcast.previous.version>
 
         <maven.compiler.plugin.version>3.10.0</maven.compiler.plugin.version>
         <maven.jar.plugin.version>3.2.2</maven.jar.plugin.version>
@@ -133,6 +134,7 @@
         <spring.version>4.3.0.RELEASE</spring.version>
         <snakeyaml.version>1.32</snakeyaml.version>
         <snakeyaml.engine.version>2.3</snakeyaml.engine.version>
+        <mongodb.version>4.7.2</mongodb.version>
 
         <!-- test dependencies -->
         <activemq-artemis.version>2.11.0</activemq-artemis.version>
@@ -169,7 +171,7 @@
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
 
         <!-- The path to relocated external dependencies. -->
-        <relocation.root>com.hazelcast</relocation.root>
+        <relocation.root>com.hazelcast.shaded</relocation.root>
 
         <!-- Additional JVM system arguments -->
         <extraVmArgs/>
@@ -572,6 +574,9 @@
 
                             <artifact>com.hazelcast:hazelcast:4.0.3</artifact>
                             <artifact>com.hazelcast:hazelcast:4.0.3:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:${hazelcast.previous.version}</artifact>
+                            <artifact>com.hazelcast:hazelcast:${hazelcast.previous.version}:jar:tests</artifact>
 
                         </configuration>
                     </execution>

@@ -44,7 +44,6 @@ import org.junit.experimental.categories.Category;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -66,7 +65,6 @@ import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.TestProcessors.streamingDag;
 import static com.hazelcast.jet.impl.util.Util.toList;
 import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -1032,25 +1030,6 @@ public class JobTest extends SimpleTestInClusterSupport {
             assertJobVisible(client, job, "streaming job");
             cancelAndJoin(job);
         }
-    }
-
-    @Test
-    public void test_jarUploadToNonMaster() {
-        try {
-            HazelcastInstance hazelcastInstance = createHazelcastInstance();
-            HazelcastInstance client = createHazelcastClient();
-            JetService jetService = client.getJet();
-            List<String> jobParameters = emptyList();
-            jetService.uploadJob(Paths.get("D:\\hztutorial\\simplejob\\target\\simplejob-1.0.0.jar"),
-                    null,
-                    null,
-                    null,
-                    jobParameters);
-        } catch (Exception exception) {
-            exception.printStackTrace();
-        }
-
-
     }
 
     private void joinAndExpectCancellation(Job job) {

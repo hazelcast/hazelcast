@@ -57,7 +57,7 @@ public class JobUploadTest extends JetTestSupport {
     public void sha256() throws IOException, NoSuchAlgorithmException {
         Path jarPath = getJarPath();
         String sha256Hex = calculateSha256Hex(jarPath);
-        assertEquals("cc88240eeacd1bd8bad0c70008db77a49accfbd46a38e0fa86a32023e2a3f15b", sha256Hex);
+        assertEquals("bba07be19c71bfe5fd51dc681f807ab212efd4d6e7c3f6380dbfcbdcb5deb073", sha256Hex);
 
     }
 
@@ -261,7 +261,7 @@ public class JobUploadTest extends JetTestSupport {
 
     private Path getJarPath() {
         ClassLoader classLoader = getClass().getClassLoader();
-        URL resource = classLoader.getResource("simplejob.jar");
+        URL resource = classLoader.getResource("simplejob-1.0.0.jar");
         Path result = null;
         try {
             assert resource != null;
