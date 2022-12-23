@@ -22,7 +22,6 @@ import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.collection.Object2LongHashMap;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Traverser;
-import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
@@ -58,11 +57,13 @@ import java.util.Set;
 import java.util.stream.Stream;
 
 import static com.hazelcast.internal.util.CollectionUtil.hasNonEmptyIntersection;
+import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
 import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinBroadcastKeys.LAST_RECEIVED_WM_KEY;
 import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinBroadcastKeys.WM_STATE_KEY;
+import static java.util.function.Function.identity;
 
 
 /**
@@ -98,7 +99,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private JetSqlRow emptyLeftRow;
     private JetSqlRow emptyRightRow;
 
-    private Traverser<Entry> snapshotTraverser;
+    private Traverser<Entry<?, ?>> snapshotTraverser;
 
     @SuppressWarnings("checkstyle:ExecutableStatementCount")
     public StreamToStreamJoinP(
@@ -281,10 +282,10 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         // Note: We can't immediately emit current WM, as it could render items in buffers late.
         for (Byte wmKey : wmState.keySet()) {
             long lastReceivedWatermark = lastReceivedWm.getValue(wmKey);
-            long state = Math.min(wmState.get(wmKey), lastReceivedWatermark);
-            if (state > lastEmittedWm.getValue(wmKey)) {
-                pendingOutput.add(new Watermark(state, wmKey));
-                lastEmittedWm.put(wmKey, state);
+            long newWm = Math.min(wmState.get(wmKey), lastReceivedWatermark);
+            if (newWm > lastEmittedWm.getValue(wmKey)) {
+                pendingOutput.add(new Watermark(newWm, wmKey));
+                lastEmittedWm.put(wmKey, newWm);
             }
         }
 
@@ -301,7 +302,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         // TODO (if possible): broadcast-distributed edges.
 
         if (snapshotTraverser == null) {
-            List<Entry> snapshotList = new ArrayList<>();
+            List<Entry<?, ?>> snapshotList = new ArrayList<>();
 
             for (Entry<Byte, Long> e : wmState.entrySet()) {
                 Long timestamp = e.getValue();
@@ -327,23 +328,22 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                 }
             }
 
-            Stream<Entry> leftBufferStream = buffer[0].content()
+            Stream<Entry<?, ?>> leftBufferStream = buffer[0].content()
                     .stream()
                     .map(row -> entry(
                             ObjectArrayKey.project(row, joinInfo.leftEquiJoinIndices()),
                             BufferSnapshotValue.bufferValue(row, 0)
                     ));
 
-            Stream<Entry> rightBufferStream = buffer[1].content()
+            Stream<Entry<?, ?>> rightBufferStream = buffer[1].content()
                     .stream()
                     .map(row -> entry(
                             ObjectArrayKey.project(row, joinInfo.rightEquiJoinIndices()),
                             BufferSnapshotValue.bufferValue(row, 1)
                     ));
 
-            snapshotTraverser = Traversers.traverseStream(
-                            Stream.concat(snapshotList.stream(),
-                                    Stream.concat(leftBufferStream, rightBufferStream)))
+            snapshotTraverser =
+                    traverseStream(Stream.of(snapshotList.stream(), leftBufferStream, rightBufferStream).flatMap(identity()))
                     .onFirstNull(() -> snapshotTraverser = null);
         }
 
@@ -353,7 +353,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     @Override
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         if (key instanceof BroadcastKey) {
-            BroadcastKey broadcastKey = (BroadcastKey) key;
+            BroadcastKey<?> broadcastKey = (BroadcastKey<?>) key;
             WatermarkStateValue wmValue = (WatermarkStateValue) value;
             // We pick minimal available watermark (both emitted/received) among all processors
             if (WM_STATE_KEY.equals(broadcastKey.key())) {

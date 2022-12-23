@@ -961,11 +961,11 @@ public final class TestSupport {
         long elapsed = System.nanoTime() - start;
 
         if (isCooperative) {
-//            if (cooperativeTimeout > 0) {
-//                assertTrue(String.format("call to %s() took %.1fms, it should be <%dms", methodName,
-//                                toMillis(elapsed), COOPERATIVE_TIME_LIMIT_MS_FAIL),
-//                        elapsed < MILLISECONDS.toNanos(COOPERATIVE_TIME_LIMIT_MS_FAIL));
-//            }
+            if (cooperativeTimeout > 0) {
+                assertTrue(String.format("call to %s() took %.1fms, it should be <%dms", methodName,
+                                toMillis(elapsed), COOPERATIVE_TIME_LIMIT_MS_FAIL),
+                        elapsed < MILLISECONDS.toNanos(COOPERATIVE_TIME_LIMIT_MS_FAIL));
+            }
             // print warning
             if (elapsed > MILLISECONDS.toNanos(COOPERATIVE_TIME_LIMIT_MS_WARN)) {
                 System.out.printf("Warning: call to %s() took %.2fms, it should be <%dms normally%n",
