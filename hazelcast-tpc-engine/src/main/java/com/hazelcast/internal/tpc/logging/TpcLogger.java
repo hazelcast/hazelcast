@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,20 +14,14 @@
  * limitations under the License.
  */
 
-package com.hazelcast.logging;
+package com.hazelcast.internal.tpc.logging;
 
-import com.hazelcast.internal.tpc.logging.TpcLogger;
+import com.hazelcast.internal.util.ThreadAffinityHelper;
 
 import java.util.logging.Level;
 
-/**
- * The Hazelcast logging interface. It exists because Hazelcast doesn't want any dependencies
- * on concrete logging frameworks, so it creates its own meta logging framework behind which
- * existing frameworks can be placed.
- *
- * @see AbstractLogger
- */
-public interface ILogger extends TpcLogger {
+public interface TpcLogger {
+
 
     /**
      * Logs a message at the {@link Level#FINEST} level.
@@ -194,15 +188,6 @@ public interface ILogger extends TpcLogger {
      * @param thrown  the Throwable associated to the message
      */
     void log(Level level, String message, Throwable thrown);
-
-    /**
-     * Logs a LogEvent.
-     *
-     * @param logEvent the logEvent to log
-     * @deprecated Since 5.1, the method is unused
-     */
-    @Deprecated
-    void log(LogEvent logEvent);
 
     /**
      * Gets the logging level.
