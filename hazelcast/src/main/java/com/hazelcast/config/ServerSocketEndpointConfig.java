@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.tpc.TPCSocketConfig;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -52,6 +53,8 @@ public class ServerSocketEndpointConfig
     private boolean reuseAddress;
 
     private String publicAddress;
+
+    private final TPCSocketConfig tpcSocketConfig = new TPCSocketConfig();
 
     public ServerSocketEndpointConfig() {
         String os = StringUtil.lowerCaseInternal(System.getProperty("os.name"));
@@ -186,6 +189,10 @@ public class ServerSocketEndpointConfig
     public ServerSocketEndpointConfig setReuseAddress(boolean reuseAddress) {
         this.reuseAddress = reuseAddress;
         return this;
+    }
+
+    public TPCSocketConfig getTpcSocketConfig() {
+        return tpcSocketConfig;
     }
 
     @PrivateApi

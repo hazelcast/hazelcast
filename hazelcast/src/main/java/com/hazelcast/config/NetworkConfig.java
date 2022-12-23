@@ -16,8 +16,9 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.security.jsm.HazelcastRuntimePermission;
+import com.hazelcast.config.tpc.TPCSocketConfig;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.security.jsm.HazelcastRuntimePermission;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -69,6 +70,8 @@ public class NetworkConfig {
     private RestApiConfig restApiConfig = new RestApiConfig();
 
     private MemcacheProtocolConfig memcacheProtocolConfig = new MemcacheProtocolConfig();
+
+    private final TPCSocketConfig tpcSocketConfig = new TPCSocketConfig();
 
     public NetworkConfig() {
         String os = StringUtil.lowerCaseInternal(System.getProperty("os.name"));
@@ -400,6 +403,10 @@ public class NetworkConfig {
     public NetworkConfig setMemcacheProtocolConfig(MemcacheProtocolConfig memcacheProtocolConfig) {
         this.memcacheProtocolConfig = memcacheProtocolConfig;
         return this;
+    }
+
+    public TPCSocketConfig getTpcSocketConfig() {
+        return tpcSocketConfig;
     }
 
     @Override

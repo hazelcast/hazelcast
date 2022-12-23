@@ -19,6 +19,7 @@ package com.hazelcast.internal.networking.nio;
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
+import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.nio.Protocols;
@@ -40,6 +41,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.junit.Assert.assertArrayEquals;
@@ -74,6 +76,31 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
         assertWrongProtocolAlert(REST_PORT, Protocols.CLUSTER, "AAA");
         assertWrongProtocolAlert(MEMCACHE_PORT, Protocols.CLIENT_BINARY, "AAA");
         assertWrongProtocolAlert(MEMCACHE_PORT, Protocols.CLUSTER, "AAA");
+    }
+
+    @Test
+    @Category(QuickTest.class)
+    public void testTPCPortsWithAdvancedNetwork() {
+        Config config = smallInstanceConfig();
+        config.getTpcEngineConfig().setEnabled(true).setEventloopCount(4);
+        ServerSocketEndpointConfig clientSSConfig = new ServerSocketEndpointConfig();
+        clientSSConfig.getTpcSocketConfig()
+                .setReceiveBufferSize(1 << 20)
+                .setSendBufferSize(1 << 19)
+                .addPortDefinition("14000-" + (14000 + 4 - 2))
+                .addPortDefinition("15000-16000");
+        config.getAdvancedNetworkConfig().setEnabled(true).setClientEndpointConfig(clientSSConfig);
+
+        HazelcastInstance[] hz = new HazelcastInstance[3];
+        for (int i = 0; i < 3; i++) {
+            hz[i] = newHazelcastInstance(config);
+        }
+
+        for (int i = 0; i < 3; i++) {
+            assertEquals(1 << 20, getNode(hz[i]).getNodeEngine().getTpcServerBootstrap().getClientSocketConfig().getReceiveBufferSize());
+            assertEquals(1 << 19, getNode(hz[i]).getNodeEngine().getTpcServerBootstrap().getClientSocketConfig().getSendBufferSize());
+            assertEquals(4, getNode(hz[i]).getNodeEngine().getTpcServerBootstrap().getClientPorts().size());
+        }
     }
 
     @Test

@@ -19,12 +19,12 @@ package com.hazelcast.internal.tpc.nio;
 import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpc.iobuffer.NonConcurrentIOBufferAllocator;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -227,7 +227,11 @@ public class NioAsyncSocket_LargePayloadTest {
     private NioAsyncServerSocket newServer(SocketAddress serverAddress) {
         serverSocket = NioAsyncServerSocket.open(serverEventloop);
         serverSocket.receiveBufferSize(SOCKET_BUFFER_SIZE);
-        serverSocket.bind(serverAddress);
+        try {
+            serverSocket.bind(serverAddress);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         serverSocket.listen(10);
         serverSocket.accept(socket -> {
             System.out.println("Server side accepted " + socket);

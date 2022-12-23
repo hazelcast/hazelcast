@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpc.logging.TpcLogger;
+import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpc.nio.NioEventloop.NioConfiguration;
 
 import java.util.concurrent.CountDownLatch;
@@ -203,15 +203,16 @@ public final class TpcEngine {
     public static class Configuration {
         private int eventloopCount = Integer.parseInt(
                 getProperty("hazelcast.tpc.eventloop.count", "" + Runtime.getRuntime().availableProcessors()));
-
         private Eventloop.Configuration eventloopConfiguration = new NioConfiguration();
 
-        public void setEventloopConfiguration(Eventloop.Configuration eventloopConfiguration) {
-            this.eventloopConfiguration = checkNotNull(eventloopConfiguration, "eventloopConfiguration");
+        public Configuration setEventloopConfiguration(Eventloop.Configuration eventloopConfiguration) {
+            this.eventloopConfiguration = checkNotNull(eventloopConfiguration, "eventloopConfiguration can't be null");
+            return this;
         }
 
-        public void setEventloopCount(int eventloopCount) {
+        public Configuration setEventloopCount(int eventloopCount) {
             this.eventloopCount = checkPositive("eventloopCount", eventloopCount);
+            return this;
         }
     }
 

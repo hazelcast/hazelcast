@@ -21,6 +21,7 @@ import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
+import com.hazelcast.config.tpc.TPCEngineConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
@@ -221,6 +222,9 @@ public class Config {
 
     // @since 5.2
     private final Map<String, ExternalDataStoreConfig> externalDataStoreConfigs = new ConcurrentHashMap<>();
+
+    // @since 5.3
+    private final TPCEngineConfig tpcEngineConfig = new TPCEngineConfig();
 
     public Config() {
     }
@@ -3216,6 +3220,11 @@ public class Config {
             return new ExternalDataStoreConfigReadOnly(config);
         }
         return new ExternalDataStoreConfigReadOnly(getExternalDataStoreConfig("default"));
+    }
+
+    @Beta
+    public TPCEngineConfig getTpcEngineConfig() {
+        return tpcEngineConfig;
     }
 
     /**

@@ -23,12 +23,12 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
-
 
 import static com.hazelcast.internal.tpc.TpcTestSupport.assertOpenEventually;
 import static com.hazelcast.internal.tpc.util.IOUtil.SIZEOF_INT;
@@ -137,7 +137,11 @@ public class NioAsyncSocket_IntegrationTest {
     private NioAsyncServerSocket newServer(SocketAddress serverAddress) {
         NioAsyncServerSocket serverSocket = NioAsyncServerSocket.open(serverEventloop);
         serverSocket.reuseAddress(true);
-        serverSocket.bind(serverAddress);
+        try {
+            serverSocket.bind(serverAddress);
+        } catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
         serverSocket.listen(10);
         serverSocket.accept(socket -> {
             socket.tcpNoDelay(true);

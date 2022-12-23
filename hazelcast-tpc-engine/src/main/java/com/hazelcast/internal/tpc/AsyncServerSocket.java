@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpc.logging.TpcLogger;
+import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -126,9 +126,9 @@ public abstract class AsyncServerSocket implements Closeable {
      * Binds this AsyncServerSocket to the local.
      *
      * @param local the local SocketAddress.
-     * @throws UncheckedIOException if something failed with configuring the socket
+     * @throws IOException if something failed with configuring the socket
      */
-    public abstract void bind(SocketAddress local);
+    public abstract void bind(SocketAddress local) throws IOException;
 
     public abstract void listen(int backlog);
 
