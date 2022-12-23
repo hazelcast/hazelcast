@@ -29,7 +29,6 @@ import static com.hazelcast.test.OverridePropertyRule.set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.when;
 
 /**
  * Tests the {@link OverridePropertyRule} with multiple instances and the {@link PowerMockRunner}.
@@ -65,7 +64,7 @@ public class OverridePropertyRulePowerMockTest {
     @Test
     public void testCustomPropertyWithPowerMock() {
         try (MockedStatic<OtherClass> mock = Mockito.mockStatic(OtherClass.class)) {
-            when(OtherClass.getName()).thenReturn("mocked-name");
+            mock.when(OtherClass::getName).thenReturn("mocked-name");
             TestClass testClass = new TestClass();
 
             assertEquals("5", testClass.getProperty("hazelcast.custom.system.property"));
@@ -75,7 +74,7 @@ public class OverridePropertyRulePowerMockTest {
     @Test
     public void testHazelcastPropertyWithPowerMock() {
         try (MockedStatic<OtherClass> mock = Mockito.mockStatic(OtherClass.class)) {
-            when(OtherClass.getName()).thenReturn("mocked-name");
+            mock.when(OtherClass::getName).thenReturn("mocked-name");
             TestClass testClass = new TestClass();
 
             assertEquals("true", testClass.getProperty("java.net.preferIPv4Stack"));

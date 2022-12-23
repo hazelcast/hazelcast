@@ -56,7 +56,6 @@ public class OnJoinCacheOperationTest {
 
     @Before
     public void setUp() {
-        Mockito.mockStatic(JCacheDetector.class);
         when(nodeEngine.getConfigClassLoader()).thenReturn(classLoader);
         when(nodeEngine.getLogger(any(Class.class))).thenReturn(logger);
     }
@@ -65,7 +64,7 @@ public class OnJoinCacheOperationTest {
     public void test_cachePostJoinOperationSucceeds_whenJCacheAvailable_noWarningIsLogged() throws Exception {
         // JCacheDetector finds JCache in classpath
         try (MockedStatic<JCacheDetector> mock = Mockito.mockStatic(JCacheDetector.class)) {
-            when(JCacheDetector.isJCacheAvailable(classLoader)).thenReturn(true);
+            mock.when(() -> JCacheDetector.isJCacheAvailable(classLoader)).thenReturn(true);
             // node engine returns mock CacheService
             when(nodeEngine.getService(CacheService.SERVICE_NAME)).thenReturn(mock(ICacheService.class));
 
@@ -84,7 +83,7 @@ public class OnJoinCacheOperationTest {
     @Test
     public void test_cachePostJoinOperationSucceeds_whenJCacheNotAvailable_noCacheConfigs() throws Exception {
         try (MockedStatic<JCacheDetector> mock = Mockito.mockStatic(JCacheDetector.class)) {
-            when(JCacheDetector.isJCacheAvailable(classLoader)).thenReturn(false);
+            mock.when(() -> JCacheDetector.isJCacheAvailable(classLoader)).thenReturn(false);
 
             OnJoinCacheOperation onJoinCacheOperation = new OnJoinCacheOperation();
             onJoinCacheOperation.setNodeEngine(nodeEngine);
@@ -104,7 +103,7 @@ public class OnJoinCacheOperationTest {
 
         try (MockedStatic<JCacheDetector> mock = Mockito.mockStatic(JCacheDetector.class)) {
             // JCache is not available in classpath
-            when(JCacheDetector.isJCacheAvailable(classLoader)).thenReturn(false);
+            mock.when(() -> JCacheDetector.isJCacheAvailable(classLoader)).thenReturn(false);
             // node engine throws HazelcastException due to missing CacheService
             when(nodeEngine.getService(CacheService.SERVICE_NAME)).thenThrow(new HazelcastException("CacheService not found"));
 
