@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Makes an authentication request to the cluster.
  */
-@Generated("4add9bcdd9012e313f6996cf7d4158c0")
+@Generated("0f1cb0bc48c98bdbd3161c1e6ac27e3f")
 public final class ClientAuthenticationCodec {
     //hex: 0x000100
     public static final int REQUEST_MESSAGE_TYPE = 256;
@@ -188,12 +188,18 @@ public final class ClientAuthenticationCodec {
         public boolean failoverSupported;
 
         /**
-         * Returns a list of TPC ports (comma seperated). Null if TPC not enabled
+         * Returns a list of TPC ports. Null if TPC not enabled
          */
-        public String tpcPorts;
+        public @Nullable java.util.List<java.lang.Integer> tpcPorts;
+
+        /**
+         * True if the tpcPorts is received from the member, false otherwise.
+         * If this is false, tpcPorts has the default value for its type.
+         */
+        public boolean isTpcPortsExists;
     }
 
-    public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported, String tpcPorts) {
+    public static ClientMessage encodeResponse(byte status, @Nullable com.hazelcast.cluster.Address address, @Nullable java.util.UUID memberUuid, byte serializationVersion, java.lang.String serverHazelcastVersion, int partitionCount, java.util.UUID clusterId, boolean failoverSupported, @Nullable java.util.Collection<java.lang.Integer> tpcPorts) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         ClientMessage.Frame initialFrame = new ClientMessage.Frame(new byte[RESPONSE_INITIAL_FRAME_SIZE], UNFRAGMENTED_MESSAGE);
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, RESPONSE_MESSAGE_TYPE);
@@ -207,7 +213,7 @@ public final class ClientAuthenticationCodec {
 
         CodecUtil.encodeNullable(clientMessage, address, AddressCodec::encode);
         StringCodec.encode(clientMessage, serverHazelcastVersion);
-        CodecUtil.encodeNullable(clientMessage, tpcPorts, StringCodec::encode);
+        CodecUtil.encodeNullable(clientMessage, tpcPorts, ListIntegerCodec::encode);
         return clientMessage;
     }
 
@@ -223,7 +229,12 @@ public final class ClientAuthenticationCodec {
         response.failoverSupported = decodeBoolean(initialFrame.content, RESPONSE_FAILOVER_SUPPORTED_FIELD_OFFSET);
         response.address = CodecUtil.decodeNullable(iterator, AddressCodec::decode);
         response.serverHazelcastVersion = StringCodec.decode(iterator);
-        response.tpcPorts = StringCodec.decode(iterator);
+        if (iterator.hasNext()) {
+            response.tpcPorts = CodecUtil.decodeNullable(iterator, ListIntegerCodec::decode);
+            response.isTpcPortsExists = true;
+        } else {
+            response.isTpcPortsExists = false;
+        }
         return response;
     }
 }

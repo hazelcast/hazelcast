@@ -32,6 +32,7 @@ import com.hazelcast.security.UsernamePasswordCredentials;
 import javax.security.auth.login.LoginContext;
 import javax.security.auth.login.LoginException;
 import java.security.Permission;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
 
@@ -222,7 +223,7 @@ public abstract class AuthenticationBaseMessageTask<P> extends AbstractMessageTa
     protected abstract ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid,
                                                 byte serializationVersion,
                                                 int partitionCount, UUID clusterId, boolean failoverSupported,
-                                                boolean isAuthenticated, String tpcPorts);
+                                                boolean isAuthenticated, List<Integer> tpcPorts);
 
     protected abstract String getClientType();
 

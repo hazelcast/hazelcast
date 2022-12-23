@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 
 import static java.lang.System.getProperty;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -60,7 +61,7 @@ public class TpcServerBootstrap {
     private final int sendBufferSize = 128 * 1024;
     private final Map<Eventloop, Supplier<? extends ReadHandler>> readHandlerSuppliers = new HashMap<>();
     private final List<AsyncServerSocket> serverSockets = new ArrayList<>();
-    private String tpcPorts;
+    private volatile List<Integer> clientPorts;
 
     public TpcServerBootstrap(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
@@ -82,8 +83,8 @@ public class TpcServerBootstrap {
         return tpcEngine;
     }
 
-    public String getClientPorts() {
-        return tpcPorts;
+    public List<Integer> getClientPorts() {
+        return clientPorts;
     }
 
     private TpcEngine newTpcEngine() {
@@ -115,16 +116,7 @@ public class TpcServerBootstrap {
                 throw new IllegalStateException("Unknown eventloopType:" + eventloopType);
         }
 
-        StringBuffer sb = new StringBuffer();
-        boolean first = true;
-        for (AsyncServerSocket serverSocket : serverSockets) {
-            if (!first) {
-                sb.append(',');
-            }
-            first = false;
-            sb.append(serverSocket.localPort());
-        }
-        tpcPorts = sb.toString();
+        clientPorts = serverSockets.stream().map(AsyncServerSocket::localPort).collect(Collectors.toList());
     }
 
     private void startNio() {
