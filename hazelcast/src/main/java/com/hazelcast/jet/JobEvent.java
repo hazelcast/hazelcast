@@ -23,6 +23,8 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.io.IOException;
 
 @BinaryInterface
@@ -35,8 +37,8 @@ public class JobEvent implements IdentifiedDataSerializable {
 
     public JobEvent() { }
 
-    public JobEvent(long jobId, JobStatus oldStatus, JobStatus newStatus,
-                    String description, boolean userRequested) {
+    public JobEvent(long jobId, @Nonnull JobStatus oldStatus, @Nonnull JobStatus newStatus,
+                    @Nullable String description, boolean userRequested) {
         this.jobId = jobId;
         this.oldStatus = oldStatus;
         this.newStatus = newStatus;
@@ -48,10 +50,12 @@ public class JobEvent implements IdentifiedDataSerializable {
         return jobId;
     }
 
+    @Nonnull
     public JobStatus getOldStatus() {
         return oldStatus;
     }
 
+    @Nonnull
     public JobStatus getNewStatus() {
         return newStatus;
     }
@@ -61,6 +65,7 @@ public class JobEvent implements IdentifiedDataSerializable {
      * of SUSPEND, RESUME, RESTART and CANCEL; if there is a failure, indicates
      * the cause; otherwise, null.
      */
+    @Nullable
     public String getDescription() {
         return description;
     }

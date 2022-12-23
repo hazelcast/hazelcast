@@ -335,7 +335,7 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
     }
 
     @Override
-    public void addJobStatusListener(Set<Long> jobIds, JobListener listener) {
+    public void addJobStatusListener(@Nonnull Set<Long> jobIds, @Nonnull JobListener listener) {
         Map<Job, UUID> registrations = jobListeners.computeIfAbsent(listener, k -> new ConcurrentHashMap<>());
         for (long jobId : jobIds) {
             Job job = getJob(jobId);
@@ -346,7 +346,7 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
     }
 
     @Override
-    public void removeJobStatusListener(JobListener listener) {
+    public void removeJobStatusListener(@Nonnull JobListener listener) {
         Map<Job, UUID> registrations = jobListeners.remove(listener);
         if (registrations != null) {
             for (Entry<Job, UUID> e : registrations.entrySet()) {

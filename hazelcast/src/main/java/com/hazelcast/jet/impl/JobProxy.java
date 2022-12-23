@@ -213,13 +213,13 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
     }
 
     @Override
-    public UUID addStatusListener(JobListener listener) {
+    public UUID addStatusListener(@Nonnull JobListener listener) {
         JobService jobService = container().getService(JobService.SERVICE_NAME);
         return jobService.addEventListener(getId(), listener);
     }
 
     @Override
-    public boolean removeStatusListener(UUID id) {
+    public boolean removeStatusListener(@Nonnull UUID id) {
         JobService jobService = container().getService(JobService.SERVICE_NAME);
         return jobService.removeEventListener(getId(), id);
     }

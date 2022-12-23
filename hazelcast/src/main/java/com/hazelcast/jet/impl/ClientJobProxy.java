@@ -229,13 +229,13 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
     }
 
     @Override
-    public UUID addStatusListener(JobListener listener) {
+    public UUID addStatusListener(@Nonnull JobListener listener) {
         return container().getListenerService().registerListener(
                 createJobStatusListenerCodec(getId()), new ClientJobEventHandler(listener));
     }
 
     @Override
-    public boolean removeStatusListener(UUID id) {
+    public boolean removeStatusListener(@Nonnull UUID id) {
         return container().getListenerService().deregisterListener(id);
     }
 

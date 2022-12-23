@@ -357,7 +357,7 @@ public interface Job {
      *
      * @since 5.3
      */
-    UUID addStatusListener(JobListener listener);
+    UUID addStatusListener(@Nonnull JobListener listener);
 
     /**
      * Stops delivering all events to the listener with the given registration id.
@@ -365,5 +365,5 @@ public interface Job {
      *
      * @since 5.3
      */
-    boolean removeStatusListener(UUID id);
+    boolean removeStatusListener(@Nonnull UUID id);
 }

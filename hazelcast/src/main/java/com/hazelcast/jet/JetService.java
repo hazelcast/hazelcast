@@ -306,12 +306,12 @@ public interface JetService {
      *
      * @since 5.3
      */
-    void addJobStatusListener(Set<Long> jobIds, JobListener listener);
+    void addJobStatusListener(@Nonnull Set<Long> jobIds, @Nonnull JobListener listener);
 
     /**
      * Stops delivering all events to the given listener.
      *
      * @since 5.3
      */
-    void removeJobStatusListener(JobListener listener);
+    void removeJobStatusListener(@Nonnull JobListener listener);
 }
