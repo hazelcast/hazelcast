@@ -30,6 +30,8 @@ import java.security.Permission;
 import java.util.UUID;
 import java.util.concurrent.Future;
 
+import static com.hazelcast.jet.Util.idToString;
+
 public class JetRemoveJobStatusListenerMessageTask extends AbstractRemoveListenerMessageTask<RequestParameters> {
 
     public JetRemoveJobStatusListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
@@ -69,7 +71,7 @@ public class JetRemoveJobStatusListenerMessageTask extends AbstractRemoveListene
 
     @Override
     public String getDistributedObjectName() {
-        return String.valueOf(parameters.jobId);
+        return idToString(parameters.jobId);
     }
 
     @Override
