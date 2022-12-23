@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -86,6 +86,8 @@ public class ClientCompatibilityNullTest_2_6 {
         assertTrue(isEqual(anInt, parameters.partitionCount));
         assertTrue(isEqual(aUUID, parameters.clusterId));
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
+        assertTrue(parameters.isTpcPortsExists);
+        assertTrue(isEqual(null, parameters.tpcPorts));
     }
 
     @Test
@@ -109,6 +111,8 @@ public class ClientCompatibilityNullTest_2_6 {
         assertTrue(isEqual(anInt, parameters.partitionCount));
         assertTrue(isEqual(aUUID, parameters.clusterId));
         assertTrue(isEqual(aBoolean, parameters.failoverSupported));
+        assertTrue(parameters.isTpcPortsExists);
+        assertTrue(isEqual(null, parameters.tpcPorts));
     }
 
     @Test
@@ -7056,21 +7060,6 @@ public class ClientCompatibilityNullTest_2_6 {
         int fileClientMessageIndex = 898;
         ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
         assertTrue(isEqual(aListJobAndSqlSummary, JetGetJobAndSqlSummaryListCodec.decodeResponse(fromFile)));
-    }
-
-    @Test
-    public void test_JetIsJobUserCancelledCodec_encodeRequest() {
-        int fileClientMessageIndex = 899;
-        ClientMessage encoded = JetIsJobUserCancelledCodec.encodeRequest(aLong);
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        compareClientMessages(fromFile, encoded);
-    }
-
-    @Test
-    public void test_JetIsJobUserCancelledCodec_decodeResponse() {
-        int fileClientMessageIndex = 900;
-        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
-        assertTrue(isEqual(aBoolean, JetIsJobUserCancelledCodec.decodeResponse(fromFile)));
     }
 
     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
