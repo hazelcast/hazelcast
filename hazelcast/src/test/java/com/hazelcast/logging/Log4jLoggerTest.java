@@ -39,7 +39,7 @@ import static org.junit.Assert.assertFalse;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -52,6 +52,8 @@ public class Log4jLoggerTest extends AbstractLoggerTest {
     public void setUp() {
         mockLogger = mock(org.apache.log4j.Logger.class);
         hazelcastLogger = new Log4jLogger(mockLogger);
+        // Verify that getLevel() is called
+        verify(mockLogger).getLevel();
     }
 
     @Test
@@ -115,7 +117,7 @@ public class Log4jLoggerTest extends AbstractLoggerTest {
 
         hazelcastLogger.log(LOG_EVENT);
 
-        verifyNoInteractions(mockLogger);
+        verifyNoMoreInteractions(mockLogger);
         trackingAppender.assertNumberOfLoggedEvents(1);
     }
 
@@ -127,7 +129,7 @@ public class Log4jLoggerTest extends AbstractLoggerTest {
 
         hazelcastLogger.log(LOG_EVENT_OFF);
 
-        verifyNoInteractions(mockLogger);
+        verifyNoMoreInteractions(mockLogger);
         trackingAppender.assertNoLoggedEvents();
     }
 }
