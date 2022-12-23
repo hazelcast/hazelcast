@@ -17,8 +17,6 @@
 package com.hazelcast.internal.tpc.logging;
 
 
-import jdk.jfr.internal.LogLevel;
-
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.logging.Level;

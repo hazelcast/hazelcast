@@ -25,6 +25,7 @@ import com.hazelcast.security.SimpleTokenCredentials;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.List;
 import java.util.UUID;
 
 /**
@@ -67,7 +68,7 @@ public class AuthenticationCustomCredentialsMessageTask
     @Override
     protected ClientMessage encodeAuth(byte status, Address thisAddress, UUID uuid, byte version,
                                        int partitionCount, UUID clusterId, boolean clientFailoverSupported,
-                                       boolean isAuthenticated, String tpcPorts) {
+                                       boolean isAuthenticated, List<Integer> tpcPorts) {
         String serverHazelcastVersion = "";
         if (isAuthenticated) {
             serverHazelcastVersion = getMemberBuildInfo().getVersion();
