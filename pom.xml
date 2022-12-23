@@ -49,6 +49,7 @@
         <hazelcast.distribution>Hazelcast</hazelcast.distribution>
         <hazelcast.serialization.version>1</hazelcast.serialization.version>
         <hazelcast.serverMainClass>com.hazelcast.core.server.HazelcastMemberStarter</hazelcast.serverMainClass>
+        <hazelcast.previous.version>5.2.0</hazelcast.previous.version>
 
         <maven.compiler.plugin.version>3.10.0</maven.compiler.plugin.version>
         <maven.jar.plugin.version>3.2.2</maven.jar.plugin.version>
@@ -67,7 +68,7 @@
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
         <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
         <maven.shade.plugin.version>3.2.4</maven.shade.plugin.version>
-        <maven.dependency.plugin.version>3.2.0</maven.dependency.plugin.version>
+        <maven.dependency.plugin.version>3.4.0</maven.dependency.plugin.version>
         <maven.animal.sniffer.plugin.version>1.21</maven.animal.sniffer.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
 
@@ -81,7 +82,7 @@
         <maven.os.plugin.version>1.7.1</maven.os.plugin.version>
         <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
         <maven.resources.plugin.version>3.2.0</maven.resources.plugin.version>
-        <owasp.dependency-check.version>7.2.1</owasp.dependency-check.version>
+        <owasp.dependency-check.version>7.4.0</owasp.dependency-check.version>
         <maven.dependency.plugin.version>3.1.2</maven.dependency.plugin.version>
         <codehause.license.plugin.version>2.0.0</codehause.license.plugin.version>
 
@@ -117,7 +118,7 @@
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.12.3</parquet.version>
         <picocli.version>4.6.3</picocli.version>
-        <postgresql.version>42.4.2</postgresql.version>
+        <postgresql.version>42.5.1</postgresql.version>
         <prometheus.version>0.17.1</prometheus.version>
 
         <!--
@@ -133,6 +134,7 @@
         <spring.version>4.3.0.RELEASE</spring.version>
         <snakeyaml.version>1.32</snakeyaml.version>
         <snakeyaml.engine.version>2.3</snakeyaml.engine.version>
+        <mongodb.version>4.7.2</mongodb.version>
 
         <!-- test dependencies -->
         <activemq-artemis.version>2.11.0</activemq-artemis.version>
@@ -169,7 +171,7 @@
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
 
         <!-- The path to relocated external dependencies. -->
-        <relocation.root>com.hazelcast</relocation.root>
+        <relocation.root>com.hazelcast.shaded</relocation.root>
 
         <!-- Additional JVM system arguments -->
         <extraVmArgs/>
@@ -495,6 +497,7 @@
                                 <includedLicense>MIT License</includedLicense>
                                 <includedLicense>Public Domain</includedLicense>
                                 <includedLicense>EPL 2.0</includedLicense>
+                                <includedLicense>Eclipse Distribution License - v 1.0</includedLicense>
                                 <includedLicense>BSD 3-Clause License</includedLicense>
                                 <includedLicense>BSD 2-Clause License</includedLicense>
                                 <includedLicense>The JSON License</includedLicense>
@@ -555,6 +558,26 @@
                         <configuration>
                             <artifact>com.hazelcast:hazelcast:${hazelcast-3.version}</artifact>
                             <artifact>com.hazelcast:hazelcast:${hazelcast-3.version}:jar:tests</artifact>
+
+                            <!-- Below are the jars used in compatibility tests. Install them to local repository -->
+                            <artifact>com.hazelcast:hazelcast:3.12.13</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.12.13:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:4.0</artifact>
+                            <artifact>com.hazelcast:hazelcast:4.0:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:4.0.1</artifact>
+                            <artifact>com.hazelcast:hazelcast:4.0.1:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:4.0.2</artifact>
+                            <artifact>com.hazelcast:hazelcast:4.0.2:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:4.0.3</artifact>
+                            <artifact>com.hazelcast:hazelcast:4.0.3:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:${hazelcast.previous.version}</artifact>
+                            <artifact>com.hazelcast:hazelcast:${hazelcast.previous.version}:jar:tests</artifact>
+
                         </configuration>
                     </execution>
                 </executions>
@@ -1738,7 +1761,7 @@
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore</artifactId>
-                <version>4.4.15</version>
+                <version>4.4.16</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>

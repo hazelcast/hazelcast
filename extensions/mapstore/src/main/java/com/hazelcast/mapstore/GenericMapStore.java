@@ -16,6 +16,7 @@
 
 package com.hazelcast.mapstore;
 
+import com.google.common.annotations.VisibleForTesting;
 import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
@@ -97,7 +98,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
      * Timeout for initialization of GenericMapStore
      */
     public static final HazelcastProperty MAPSTORE_INIT_TIMEOUT
-            = new HazelcastProperty("hazelcast.mapstore.init.timeout", 5, SECONDS);
+            = new HazelcastProperty("hazelcast.mapstore.init.timeout", 30, SECONDS);
 
     static final String MAPPING_PREFIX = "__map-store.";
 
@@ -155,8 +156,6 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
         // Init can run on partition thread, creating a mapping uses other maps, so it needs to run elsewhere
         asyncExecutor.submit(() -> {
-            // We create the mapping only on the master node
-            // On other members we wait until the mapping has been created
             createMappingForMapStore(mapName);
         });
     }
@@ -196,6 +195,8 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
             }
             queries = new Queries(mapping, properties.idColumn, columnMetadataList);
         } catch (Exception e) {
+            // We create the mapping on the first member initializing the MapStore
+            // Other members trying to concurrently initialize will fail and just read the mapping
             if (e.getMessage() != null && e.getMessage().startsWith("Mapping or view already exists:")) {
                 readExistingMapping();
             } else {
@@ -290,7 +291,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
     @Override
     public void destroy() {
-        awaitSuccessfulInit();
+        awaitInitFinished();
         dropMapping(mapping);
     }
 
@@ -551,6 +552,11 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
         } catch (InterruptedException e) {
             throw new HazelcastException(e);
         }
+    }
+
+    @VisibleForTesting
+    boolean initHasFinished() {
+        return initFinished.getCount() == 0;
     }
 
     private static class GenericMapStoreProperties {

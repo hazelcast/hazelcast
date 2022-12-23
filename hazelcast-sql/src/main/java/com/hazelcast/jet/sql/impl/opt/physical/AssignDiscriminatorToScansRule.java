@@ -41,7 +41,7 @@ public final class AssignDiscriminatorToScansRule extends RelRule<RelRule.Config
                                 .trait(PHYSICAL)
                                 .predicate(scan -> OptUtils.isUnbounded(scan)
                                         && scan.watermarkedColumnIndex() >= 0
-                                        && scan.getDiscriminator() == 0)
+                                        && scan.discriminator() == 0)
                                 .noInputs())
                 .build();
 

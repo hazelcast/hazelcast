@@ -31,6 +31,10 @@ public final class QueryException extends HazelcastException implements Wrappabl
     private final String suggestion;
     private final UUID originatingMemberId;
 
+    public QueryException(String message, Throwable cause) {
+        this(SqlErrorCode.GENERIC, message, cause, null);
+    }
+
     private QueryException(int code, String message, Throwable cause, UUID originatingMemberId) {
         this(code, message, cause, null, originatingMemberId);
     }

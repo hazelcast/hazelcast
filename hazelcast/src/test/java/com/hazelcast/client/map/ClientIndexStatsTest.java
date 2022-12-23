@@ -91,6 +91,11 @@ public class ClientIndexStatsTest extends LocalIndexStatsTest {
         hazelcastFactory.terminateAll();
     }
 
+    @Override
+    protected void ensureSafeState() {
+        waitAllForSafeState(hazelcastFactory.getAllHazelcastInstances());
+    }
+
     @SuppressWarnings("unchecked")
     @Test
     @Override

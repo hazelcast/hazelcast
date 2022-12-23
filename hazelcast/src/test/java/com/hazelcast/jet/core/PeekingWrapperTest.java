@@ -279,6 +279,9 @@ public class PeekingWrapperTest {
         peekP.tryProcessWatermark(wm);
         verify(logger).info("Input coalesced WM: " + wm);
 
+        peekP.tryProcessWatermark(0, wm);
+        verify(logger).info("Input edge WM, ordinal=0, wm=" + wm);
+
         inbox.add(TEST_JET_EVENT);
         peekP.process(0, inbox);
         verify(logger).info("Input from ordinal 0: " + testJetEventString);

@@ -53,6 +53,11 @@ public abstract class AbstractClientMapTest extends HazelcastTestSupport {
         client = hazelcastFactory.newHazelcastClient(clientConfig);
     }
 
+    @Override
+    protected Config getConfig() {
+        return smallInstanceConfigWithoutJetAndMetrics();
+    }
+
     @After
     public final void stopHazelcastInstances() {
         hazelcastFactory.terminateAll();
