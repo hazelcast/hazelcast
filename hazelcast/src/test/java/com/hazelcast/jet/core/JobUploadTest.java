@@ -46,9 +46,7 @@ import static java.util.Collections.emptyList;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.mockStatic;
-import static org.mockito.Mockito.when;
 
 @Category({QuickTest.class})
 public class JobUploadTest extends JetTestSupport {
@@ -121,7 +119,7 @@ public class JobUploadTest extends JetTestSupport {
     }
 
     @Test
-    public void test_jarUpload_WithIncorrectChecksum() throws IOException, NoSuchAlgorithmException {
+    public void test_jarUpload_WithIncorrectChecksum() {
         // Reset the singleton because a new HazelcastInstance will be created for the test
         HazelcastBootstrap.resetSupplier();
 
@@ -135,8 +133,7 @@ public class JobUploadTest extends JetTestSupport {
         List<String> jobParameters = emptyList();
 
         try (MockedStatic<Sha256Util> mocked = mockStatic(Sha256Util.class)) {
-            Sha256Util mockMD5Util = mock(Sha256Util.class);
-            when(calculateSha256Hex(Mockito.any())).thenReturn("1");
+            mocked.when(() -> Sha256Util.calculateSha256Hex(Mockito.any())).thenReturn("1");
 
             assertThrows(JetException.class, () ->
                     jetService.uploadJob(getJarPath(),
