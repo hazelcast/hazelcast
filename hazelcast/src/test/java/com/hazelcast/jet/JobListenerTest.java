@@ -18,7 +18,6 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -28,6 +27,7 @@ import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -43,6 +43,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
 import static com.hazelcast.jet.core.TestUtil.set;
 import static java.util.Arrays.asList;
@@ -53,26 +54,31 @@ import static org.junit.Assert.assertNotNull;
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class JobListenerTest extends JetTestSupport {
+public class JobListenerTest extends SimpleTestInClusterSupport {
     private static final Function<String, String> SIMPLIFY = log -> log.replaceAll("(?<=\\().*: ", "");
 
     @Parameters(name = "{0}")
     public static Iterable<Object[]> parameters() {
         return asList(
-                method("onMaster", JobListenerTest::onMaster),
-                method("onNonMaster", JobListenerTest::onNonMaster),
-                method("onClient", JobListenerTest::onClient));
+                mode("onMaster", () -> instances()[0]),
+                mode("onNonMaster", () -> instances()[1]),
+                mode("onClient", () -> client()));
     }
 
-    static Object[] method(String name, Function<JobListenerTest, HazelcastInstance> function) {
-        return new Object[] {name, function};
+    static Object[] mode(String name, Supplier<HazelcastInstance> supplier) {
+        return new Object[] {name, supplier};
     }
 
     @Parameter(0)
     public String mode;
 
     @Parameter(1)
-    public Function<JobListenerTest, HazelcastInstance> init;
+    public Supplier<HazelcastInstance> instance;
+
+    @BeforeClass
+    public static void setUp() {
+        initializeWithClient(2, null, null);
+    }
 
     @Test
     public void testListener_waitForCompletion() {
@@ -183,17 +189,9 @@ public class JobListenerTest extends JetTestSupport {
                 });
     }
 
-    static HazelcastInstance onMaster(JobListenerTest test) {
-        return test.createHazelcastInstances(2)[0];
-    }
-
-    static HazelcastInstance onNonMaster(JobListenerTest test) {
-        return test.createHazelcastInstances(2)[1];
-    }
-
-    static HazelcastInstance onClient(JobListenerTest test) {
-        test.createHazelcastInstances(2);
-        return test.createHazelcastClient();
+    @Override
+    public void supportAfter() {
+        // Don't clean up jobs
     }
 
     void testListener(JobConfig config, Object source, BiConsumer<Job, JobStatusLogger> test) {
@@ -203,7 +201,7 @@ public class JobListenerTest extends JetTestSupport {
                     : p.readFrom((StreamSource<?>) source).withoutTimestamps())
                 .writeTo(Sinks.noop());
 
-        JetService jet = init.apply(this).getJet();
+        JetService jet = instance.get().getJet();
         JobStatusLogger listener = new JobStatusLogger(jet);
         Job job = jet.newJob(p, config);
         jet.addJobStatusListener(set(job.getId()), listener);
