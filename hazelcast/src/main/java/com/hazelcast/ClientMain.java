@@ -12,7 +12,7 @@ public class ClientMain {
 
     public static void main(String[] args) {
         System.setProperty("hazelcast.tpc.enabled", "true");
-        System.setProperty("hazelcast.tpc.eventloop.count", "" + Runtime.getRuntime().availableProcessors());
+        System.setProperty("hazelcast.tpc.eventloop.count", "" + 10);
         HazelcastInstance server = Hazelcast.newHazelcastInstance();
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
         System.out.println("Client created");

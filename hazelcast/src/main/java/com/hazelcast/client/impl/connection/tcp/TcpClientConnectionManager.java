@@ -944,13 +944,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     private TcpClientConnection onAuthenticated(TcpClientConnection connection,
                                                 ClientAuthenticationCodec.ResponseParameters response,
                                                 boolean switchingToNextCluster) {
-        List<Integer> tpcPorts = new ArrayList<>();
-        if (!StringUtil.isNullOrEmpty(response.tpcPorts)) {
-            String[] ports = response.tpcPorts.split(",");
-            for (int k = 0; k < ports.length; k++) {
-                tpcPorts.add(Integer.parseInt(ports[k]));
-            }
-        }
+        List<Integer> tpcPorts = response.tpcPorts;
 
         synchronized (clientStateMutex) {
             checkAuthenticationResponse(connection, response);
