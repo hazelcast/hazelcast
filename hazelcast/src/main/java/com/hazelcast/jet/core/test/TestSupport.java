@@ -183,6 +183,13 @@ public final class TestSupport {
                 return expectedMap.equals(actualMap);
             };
 
+    /**
+     * A context various methods can probe to find context information about the
+     * current test. For example, the {@link #outputChecker(BiPredicate) output
+     * checker} can check differently in various modes.
+     */
+    public static ThreadLocal<TestContext> TEST_CONTEXT = new ThreadLocal<>();
+
     private static final Address LOCAL_ADDRESS;
 
     // 1ms should be enough for a cooperative call. We warn, when it's more than 5ms and
@@ -645,8 +652,17 @@ public final class TestSupport {
         }
     }
 
-    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
     private void runTest(TestMode testMode) throws Exception {
+        try {
+            TEST_CONTEXT.set(new TestContext(testMode));
+            runTest0(testMode);
+        } finally {
+            TEST_CONTEXT.set(null);
+        }
+    }
+
+    @SuppressWarnings("checkstyle:BooleanExpressionComplexity")
+    private void runTest0(TestMode testMode) throws Exception {
         beforeEachRun.run();
         accumulatedExpectedOutput.clear();
 
@@ -1279,6 +1295,18 @@ public final class TestSupport {
                 throw new IllegalArgumentException("Unknown mode, doSnapshots=" + doSnapshots + ", restoreInterval="
                         + restoreInterval + ", inboxLimit=" + inboxLimit);
             }
+        }
+    }
+
+    public static final class TestContext {
+        private final TestMode testMode;
+
+        private TestContext(TestMode testMode) {
+            this.testMode = testMode;
+        }
+
+        public TestMode getTestMode() {
+            return testMode;
         }
     }
 }
