@@ -82,7 +82,8 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
 
     @Test
     public void testListener_waitForCompletion() {
-        testListener(TestSources.items(1), Job::join,
+        testListener(TestSources.itemsDelayed(1000, 1, 2, 3),
+                Job::join,
                 "Jet: NOT_RUNNING -> STARTING",
                 "Jet: STARTING -> RUNNING",
                 "Jet: RUNNING -> COMPLETED");
