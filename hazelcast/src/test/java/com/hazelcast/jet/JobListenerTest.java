@@ -18,6 +18,7 @@ package com.hazelcast.jet;
 
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -25,6 +26,7 @@ import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.BeforeClass;
@@ -39,12 +41,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.jet.core.TestUtil.set;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
@@ -56,6 +60,7 @@ import static org.junit.Assert.assertNotNull;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JobListenerTest extends SimpleTestInClusterSupport {
     private static final Function<String, String> SIMPLIFY = log -> log.replaceAll("(?<=\\().*: ", "");
+    private static final String MAP_NAME = "runCount";
 
     @Parameters(name = "{0}")
     public static Iterable<Object[]> parameters() {
@@ -69,6 +74,12 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
         return new Object[] {name, supplier};
     }
 
+    /**
+     * Used to generate unique job ids to be used inside jobs, e.g. sinks,
+     * since it is not easy to access the context.
+     */
+    private static AtomicInteger nextJobId;
+
     @Parameter(0)
     public String mode;
 
@@ -78,11 +89,12 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
     @BeforeClass
     public static void setUp() {
         initializeWithClient(2, null, null);
+        nextJobId = new AtomicInteger();
     }
 
     @Test
     public void testListener_waitForCompletion() {
-        testListener(TestSources.itemsDelayed(1000, 1, 2, 3),
+        testListener(TestSources.itemsDelayed(1000, 0L, 1L, 2L),
                 Job::join,
                 "Jet: NOT_RUNNING -> STARTING",
                 "Jet: STARTING -> RUNNING",
@@ -91,28 +103,29 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
 
     @Test
     public void testListener_suspend_resume_restart_cancelJob() {
-        testListener(TestSources.itemStream(1),
-                job -> {
-                    sleepSeconds(2);
+        testListener(TestSources.itemStream(1, (t, s) -> s),
+                (job, listener) -> {
+                    assertJobStatusEventually(job, RUNNING);
                     job.suspend();
-                    sleepSeconds(2);
+                    assertJobStatusEventually(job, SUSPENDED);
                     job.resume();
-                    sleepSeconds(2);
+                    assertJobStatusEventually(job, RUNNING);
                     job.restart();
-                    sleepSeconds(2);
+                    assertEqualsEventually(listener::runCount, 3);
                     job.cancel();
                     assertThrows(CancellationException.class, job::join);
-                },
-                "Jet: NOT_RUNNING -> STARTING",
-                "Jet: STARTING -> RUNNING",
-                "User: RUNNING -> SUSPENDED (SUSPEND)",
-                "User: SUSPENDED -> NOT_RUNNING (RESUME)",
-                "Jet: NOT_RUNNING -> STARTING",
-                "Jet: STARTING -> RUNNING",
-                "User: RUNNING -> NOT_RUNNING (RESTART)",
-                "Jet: NOT_RUNNING -> STARTING",
-                "Jet: STARTING -> RUNNING",
-                "User: RUNNING -> FAILED (CANCEL)");
+                    assertTailEquals(listener.log,
+                            "Jet: NOT_RUNNING -> STARTING",
+                            "Jet: STARTING -> RUNNING",
+                            "User: RUNNING -> SUSPENDED (SUSPEND)",
+                            "User: SUSPENDED -> NOT_RUNNING (RESUME)",
+                            "Jet: NOT_RUNNING -> STARTING",
+                            "Jet: STARTING -> RUNNING",
+                            "User: RUNNING -> NOT_RUNNING (RESTART)",
+                            "Jet: NOT_RUNNING -> STARTING",
+                            "Jet: STARTING -> RUNNING",
+                            "User: RUNNING -> FAILED (CANCEL)");
+                });
     }
 
     @Test
@@ -135,18 +148,16 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
 
     @Test
     public void testListener_restartOnException() {
-        AtomicBoolean restarted = new AtomicBoolean();
         testListener(new JobConfig().setAutoScaling(true),
                 TestSources.itemStream(1,
                         (t, s) -> {
-                            if (s == 2 && !restarted.get()) {
-                                restarted.set(true);
+                            if (s == 2) {
                                 throw new RestartableException();
                             }
                             return s;
                         }),
                 (job, listener) -> {
-                    sleepSeconds(6);
+                    assertEqualsEventually(listener::runCount, 2);
                     job.cancel();
                     assertThrows(CancellationException.class, job::join);
                     assertTailEquals(listener.log.stream().map(SIMPLIFY).collect(toList()),
@@ -164,7 +175,7 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
         testListener(new JobConfig().setSuspendOnFailure(true),
                 TestSources.itemStream(1, (t, s) -> 1 / (2 - s)),
                 (job, listener) -> {
-                    sleepSeconds(4);
+                    assertJobStatusEventually(job, SUSPENDED);
                     String failure = job.getSuspensionCause().errorCause().split("\n", 3)[1];
                     job.cancel();
                     assertThrows(CancellationException.class, job::join);
@@ -178,10 +189,10 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
 
     @Test
     public void testListenerDeregistration() {
-        testListener(TestSources.itemStream(1),
+        testListener(TestSources.itemStream(1, (t, s) -> s),
                 (job, listener) -> {
-                    sleepSeconds(2);
-                    listener.jet.removeJobStatusListener(listener);
+                    assertJobStatusEventually(job, RUNNING);
+                    instance.get().getJet().removeJobStatusListener(listener);
                     job.cancel();
                     assertThrows(CancellationException.class, job::join);
                     assertTailEquals(listener.log,
@@ -195,15 +206,22 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
         // Don't clean up jobs
     }
 
+    /**
+     * @param source A {@link BatchSource BatchSource&lt;Long&gt;} or {@link StreamSource
+     *        StreamSource&lt;Long&gt;} where the first element is {@code 0L}, which is used
+     *        to increment the {@linkplain JobStatusLogger#runCount run count} of the job.
+     */
     void testListener(JobConfig config, Object source, BiConsumer<Job, JobStatusLogger> test) {
         Pipeline p = Pipeline.create();
+        int jobId = nextJobId.getAndIncrement();
         (source instanceof BatchSource
-                    ? p.readFrom((BatchSource<?>) source)
-                    : p.readFrom((StreamSource<?>) source).withoutTimestamps())
-                .writeTo(Sinks.noop());
+                    ? p.readFrom((BatchSource<Long>) source)
+                    : p.readFrom((StreamSource<Long>) source).withoutTimestamps())
+                .writeTo(Sinks.<Long, Integer, Integer>mapWithUpdating(
+                        MAP_NAME, s -> jobId, (i, s) -> s == 0 ? (i == null ? 0 : i) + 1 : i));
 
         JetService jet = instance.get().getJet();
-        JobStatusLogger listener = new JobStatusLogger(jet);
+        JobStatusLogger listener = new JobStatusLogger(jobId);
         Job job = jet.newJob(p, config);
         jet.addJobStatusListener(set(job.getId()), listener);
         test.accept(job, listener);
@@ -227,12 +245,12 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
         assertEquals(tail, actual);
     }
 
-    static class JobStatusLogger implements JobListener {
+    class JobStatusLogger implements JobListener {
         final List<String> log = new ArrayList<>();
-        final JetService jet;
+        final int jobId;
 
-        JobStatusLogger(JetService jet) {
-            this.jet = jet;
+        JobStatusLogger(int jobId) {
+            this.jobId = jobId;
         }
 
         @Override
@@ -240,6 +258,17 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
             log.add(String.format("%s: %s -> %s%s",
                     e.isUserRequested() ? "User" : "Jet", e.getOldStatus(), e.getNewStatus(),
                     e.getDescription() == null ? "" : " (" + e.getDescription() + ")"));
+        }
+
+        /**
+         * {@link JetTestSupport#assertJobStatusEventually assertJobStatusEventually(job, RUNNING)}
+         * is not reliable to wait for RESTART since the initial status is RUNNING. For such cases,
+         * {@link HazelcastTestSupport#assertEqualsEventually assertEqualsEventually(listener::runCount,
+         * lastRunCount + 1)} can be used.
+         */
+        int runCount() {
+            Integer count = (Integer) instance.get().getMap(MAP_NAME).get(jobId);
+            return count == null ? 0 : count;
         }
     }
 }
