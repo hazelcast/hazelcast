@@ -29,8 +29,11 @@ import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletionService;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.ExecutorCompletionService;
 
 public class ClientCacheProxyFactory implements ClientProxyFactory {
 
@@ -54,9 +57,18 @@ public class ClientCacheProxyFactory implements ClientProxyFactory {
         return new ClientCacheProxy(cacheConfig, context);
     }
 
-    public void recreateCachesOnCluster() {
+    public void recreateCachesOnCluster() throws ExecutionException, InterruptedException {
+        CompletionService<Void> completionService = new ExecutorCompletionService<>(client.getTaskScheduler());
+        int numberOfTasks = 0;
         for (CacheConfig cacheConfig : configs.values()) {
-            ClientCacheHelper.createCacheConfig(client, cacheConfig, true);
+            numberOfTasks++;
+            completionService.submit(() -> {
+                ClientCacheHelper.createCacheConfig(client, cacheConfig, true);
+                return null;
+            });
+        }
+        for (int i = 0; i < numberOfTasks; i++) {
+            completionService.poll().get();
         }
     }
 

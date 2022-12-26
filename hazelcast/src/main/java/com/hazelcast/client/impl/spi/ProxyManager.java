@@ -85,6 +85,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
@@ -349,7 +350,7 @@ public final class ProxyManager {
         return client.getListenerService().registerListener(new DistributeObjectListenerMessageCodec(), eventHandler);
     }
 
-    public void createDistributedObjectsOnCluster() {
+    public void createDistributedObjectsOnCluster() throws ExecutionException, InterruptedException {
         List<Map.Entry<String, String>> proxyEntries = new LinkedList<>();
         for (ObjectNamespace objectNamespace : proxies.keySet()) {
             String name = objectNamespace.getObjectName();
@@ -364,7 +365,7 @@ public final class ProxyManager {
         createCachesOnCluster();
     }
 
-    private void createCachesOnCluster() {
+    private void createCachesOnCluster() throws ExecutionException, InterruptedException {
         ClientCacheProxyFactory proxyFactory = (ClientCacheProxyFactory) getClientProxyFactory(ICacheService.SERVICE_NAME);
         if (proxyFactory != null) {
             proxyFactory.recreateCachesOnCluster();

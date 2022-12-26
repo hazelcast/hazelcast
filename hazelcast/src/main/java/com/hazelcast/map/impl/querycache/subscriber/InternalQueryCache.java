@@ -96,7 +96,7 @@ public interface InternalQueryCache<K, V> extends QueryCache<K, V> {
      * </li>
      * <li>
      * Recreate/reset publisher (server) side resources
-     * by using this subscribers'metadata e.g. on server
+     * by using this subscribers' metadata e.g. on server
      * restart we can recreate server side resources.
      * </li>
      * </ul>
