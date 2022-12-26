@@ -205,14 +205,12 @@ public final class TpcEngine {
                 getProperty("hazelcast.tpc.eventloop.count", "" + Runtime.getRuntime().availableProcessors()));
         private Eventloop.Configuration eventloopConfiguration = new NioConfiguration();
 
-        public Configuration setEventloopConfiguration(Eventloop.Configuration eventloopConfiguration) {
+        public void setEventloopConfiguration(Eventloop.Configuration eventloopConfiguration) {
             this.eventloopConfiguration = checkNotNull(eventloopConfiguration, "eventloopConfiguration can't be null");
-            return this;
         }
 
-        public Configuration setEventloopCount(int eventloopCount) {
+        public void setEventloopCount(int eventloopCount) {
             this.eventloopCount = checkPositive("eventloopCount", eventloopCount);
-            return this;
         }
     }
 

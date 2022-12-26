@@ -100,9 +100,8 @@ public class TpcServerBootstrap {
         TpcEngine.Configuration configuration = new TpcEngine.Configuration();
         NioEventloop.NioConfiguration eventloopConfiguration = new NioEventloop.NioConfiguration();
         eventloopConfiguration.setThreadFactory(AltoEventloopThread::new);
-        configuration
-                .setEventloopConfiguration(eventloopConfiguration)
-                .setEventloopCount(nodeEngine.getConfig().getTpcEngineConfig().getEventloopCount());
+        configuration.setEventloopConfiguration(eventloopConfiguration);
+        configuration.setEventloopCount(nodeEngine.getConfig().getTpcEngineConfig().getEventloopCount());
         return new TpcEngine(configuration);
     }
 
