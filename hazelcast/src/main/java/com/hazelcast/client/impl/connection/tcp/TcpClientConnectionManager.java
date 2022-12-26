@@ -952,7 +952,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             connection.setRemoteUuid(response.memberUuid);
             connection.setClusterUuid(response.clusterId);
 
-            if (tpcPorts.isEmpty()) {
+            if (tpcPorts == null || tpcPorts.isEmpty()) {
                 logger.info("TPC Client: disabled, no TPC ports detected");
             } else {
                 try {
