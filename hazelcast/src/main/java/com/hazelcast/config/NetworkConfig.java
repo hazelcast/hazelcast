@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.tpc.TPCSocketConfig;
+import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.security.jsm.HazelcastRuntimePermission;
 
@@ -71,7 +71,7 @@ public class NetworkConfig {
 
     private MemcacheProtocolConfig memcacheProtocolConfig = new MemcacheProtocolConfig();
 
-    private final TPCSocketConfig tpcSocketConfig = new TPCSocketConfig();
+    private final AltoSocketConfig altoSocketConfig = new AltoSocketConfig();
 
     public NetworkConfig() {
         String os = StringUtil.lowerCaseInternal(System.getProperty("os.name"));
@@ -405,8 +405,8 @@ public class NetworkConfig {
         return this;
     }
 
-    public TPCSocketConfig getTpcSocketConfig() {
-        return tpcSocketConfig;
+    public AltoSocketConfig getAltoSocketConfig() {
+        return altoSocketConfig;
     }
 
     @Override

@@ -1,4 +1,4 @@
-package com.hazelcast.config.tpc;
+package com.hazelcast.config.alto;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
@@ -17,7 +17,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class TPCEngineConfigTest extends HazelcastTestSupport {
+public class AltoConfigTest extends HazelcastTestSupport {
     private final Config config = smallInstanceConfig();
 
     @Test
@@ -28,7 +28,7 @@ public class TPCEngineConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testEventloopCountDefault() {
-        config.getTpcEngineConfig().setEnabled(true);
+        config.getAltoConfig().setEnabled(true);
         HazelcastInstance hz = createHazelcastInstance(config);
         assertTrue(getNode(hz).getNodeEngine().getTpcServerBootstrap().isEnabled());
         assertEquals(
@@ -38,8 +38,8 @@ public class TPCEngineConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testEventloopCount() {
-        config.getTpcEngineConfig().setEnabled(true);
-        config.getTpcEngineConfig().setEventloopCount(7);
+        config.getAltoConfig().setEnabled(true);
+        config.getAltoConfig().setEventloopCount(7);
         HazelcastInstance hz = createHazelcastInstance(config);
         assertTrue(getNode(hz).getNodeEngine().getTpcServerBootstrap().isEnabled());
         assertEquals(

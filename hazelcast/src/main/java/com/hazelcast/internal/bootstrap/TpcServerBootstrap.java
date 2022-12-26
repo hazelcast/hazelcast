@@ -18,7 +18,7 @@ package com.hazelcast.internal.bootstrap;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.ServerSocketEndpointConfig;
-import com.hazelcast.config.tpc.TPCSocketConfig;
+import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.serialization.InternalSerializationService;
@@ -70,7 +70,7 @@ public class TpcServerBootstrap {
         this.logger = nodeEngine.getLogger(TpcServerBootstrap.class);
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
         this.enabled = Boolean.parseBoolean(getProperty("hazelcast.tpc.enabled", "false"))
-                || nodeEngine.getConfig().getTpcEngineConfig().isEnabled();
+                || nodeEngine.getConfig().getAltoConfig().isEnabled();
         logger.info("TPC: " + (enabled ? "enabled" : "disabled"));
         this.writeThrough = Boolean.parseBoolean(getProperty("hazelcast.tpc.write-through", "false"));
         this.regularSchedule = Boolean.parseBoolean(getProperty("hazelcast.tpc.regular-schedule", "true"));
@@ -99,7 +99,7 @@ public class TpcServerBootstrap {
         NioEventloop.NioConfiguration eventloopConfiguration = new NioEventloop.NioConfiguration();
         eventloopConfiguration.setThreadFactory(AltoEventloopThread::new);
         configuration.setEventloopConfiguration(eventloopConfiguration);
-        configuration.setEventloopCount(nodeEngine.getConfig().getTpcEngineConfig().getEventloopCount());
+        configuration.setEventloopCount(nodeEngine.getConfig().getAltoConfig().getEventloopCount());
         return new TpcEngine(configuration);
     }
 
@@ -124,7 +124,7 @@ public class TpcServerBootstrap {
     }
 
     private void startNio() {
-        TPCSocketConfig clientSocketConfig = getClientSocketConfig();
+        AltoSocketConfig clientSocketConfig = getClientSocketConfig();
 
         if (clientSocketConfig == null) {
             // Advanced network is enabled yet there is no configured server socket
@@ -165,7 +165,7 @@ public class TpcServerBootstrap {
     }
 
     // public for testing
-    public TPCSocketConfig getClientSocketConfig() {
+    public AltoSocketConfig getClientSocketConfig() {
         if (nodeEngine.getConfig().getAdvancedNetworkConfig().isEnabled()) {
             ServerSocketEndpointConfig endpointConfig = (ServerSocketEndpointConfig) nodeEngine
                     .getConfig()
@@ -177,11 +177,11 @@ public class TpcServerBootstrap {
                 return null;
             }
 
-            return endpointConfig.getTpcSocketConfig();
+            return endpointConfig.getAltoSocketConfig();
         }
 
         // unified socket
-        return nodeEngine.getConfig().getNetworkConfig().getTpcSocketConfig();
+        return nodeEngine.getConfig().getNetworkConfig().getAltoSocketConfig();
     }
 
     private int bind(NioAsyncServerSocket serverSocket, int port, int limit) {

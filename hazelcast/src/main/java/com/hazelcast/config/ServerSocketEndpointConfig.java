@@ -16,7 +16,7 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.config.tpc.TPCSocketConfig;
+import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -54,7 +54,7 @@ public class ServerSocketEndpointConfig
 
     private String publicAddress;
 
-    private final TPCSocketConfig tpcSocketConfig = new TPCSocketConfig();
+    private final AltoSocketConfig altoSocketConfig = new AltoSocketConfig();
 
     public ServerSocketEndpointConfig() {
         String os = StringUtil.lowerCaseInternal(System.getProperty("os.name"));
@@ -191,8 +191,8 @@ public class ServerSocketEndpointConfig
         return this;
     }
 
-    public TPCSocketConfig getTpcSocketConfig() {
-        return tpcSocketConfig;
+    public AltoSocketConfig getAltoSocketConfig() {
+        return altoSocketConfig;
     }
 
     @PrivateApi

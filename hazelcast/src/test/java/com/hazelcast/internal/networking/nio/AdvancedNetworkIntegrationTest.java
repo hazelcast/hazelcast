@@ -83,9 +83,9 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
     @Category(QuickTest.class)
     public void testTPCPortsWithAdvancedNetwork() {
         Config config = smallInstanceConfig();
-        config.getTpcEngineConfig().setEnabled(true).setEventloopCount(4);
+        config.getAltoConfig().setEnabled(true).setEventloopCount(4);
         ServerSocketEndpointConfig clientSSConfig = new ServerSocketEndpointConfig();
-        clientSSConfig.getTpcSocketConfig()
+        clientSSConfig.getAltoSocketConfig()
                 .setReceiveBufferSize(1 << 20)
                 .setSendBufferSize(1 << 19)
                 .setPortRange("15000-16000");

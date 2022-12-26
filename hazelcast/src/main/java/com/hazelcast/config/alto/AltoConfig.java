@@ -1,8 +1,8 @@
-package com.hazelcast.config.tpc;
+package com.hazelcast.config.alto;
 
 import com.hazelcast.config.InvalidConfigurationException;
 
-public class TPCEngineConfig {
+public class AltoConfig {
     private static final boolean DEFAULT_ENABLED = false;
     private static final int DEFAULT_EVENTLOOP_COUNT = Runtime.getRuntime().availableProcessors();
 
@@ -13,7 +13,7 @@ public class TPCEngineConfig {
         return enabled;
     }
 
-    public TPCEngineConfig setEnabled(boolean enabled) {
+    public AltoConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
         return this;
     }
@@ -22,7 +22,7 @@ public class TPCEngineConfig {
         return eventloopCount;
     }
 
-    public TPCEngineConfig setEventloopCount(int eventloopCount) {
+    public AltoConfig setEventloopCount(int eventloopCount) {
         if (eventloopCount < Bounds.MIN_EVENTLOOP_COUNT || eventloopCount > Bounds.MAX_EVENTLOOP_COUNT) {
             throw new InvalidConfigurationException("Buffer size should be between "
                     + Bounds.MIN_EVENTLOOP_COUNT + " and " + Bounds.MAX_EVENTLOOP_COUNT);

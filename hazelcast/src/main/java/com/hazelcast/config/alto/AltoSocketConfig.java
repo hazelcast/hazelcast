@@ -1,11 +1,11 @@
-package com.hazelcast.config.tpc;
+package com.hazelcast.config.alto;
 
 import com.hazelcast.config.InvalidConfigurationException;
 
 import javax.annotation.Nonnull;
 import java.util.regex.Pattern;
 
-public class TPCSocketConfig {
+public class AltoSocketConfig {
     private static final String DEFAULT_PORT_RANGE = "11000-21000";
     private static final int DEFAULT_RECEIVE_BUFFER_SIZE = 128 * 1024;
     private static final int DEFAULT_SEND_BUFFER_SIZE = 128 * 1024;
@@ -18,7 +18,7 @@ public class TPCSocketConfig {
         return portRange;
     }
 
-    public TPCSocketConfig setPortRange(@Nonnull String portRange) {
+    public AltoSocketConfig setPortRange(@Nonnull String portRange) {
         if (!Bounds.PORT_RANGE_PATTERN.matcher(portRange).matches()) {
             throw new InvalidConfigurationException("Invalid port definition");
         }
@@ -31,7 +31,7 @@ public class TPCSocketConfig {
         return receiveBufferSize;
     }
 
-    public TPCSocketConfig setReceiveBufferSize(int receiveBufferSize) {
+    public AltoSocketConfig setReceiveBufferSize(int receiveBufferSize) {
         if (receiveBufferSize < Bounds.MIN_BUFFER_SIZE || receiveBufferSize > Bounds.MAX_BUFFER_SIZE) {
             throw new InvalidConfigurationException("Buffer size should be between "
                     + Bounds.MIN_BUFFER_SIZE + " and " + Bounds.MAX_BUFFER_SIZE);
@@ -45,7 +45,7 @@ public class TPCSocketConfig {
         return sendBufferSize;
     }
 
-    public TPCSocketConfig setSendBufferSize(int sendBufferSize) {
+    public AltoSocketConfig setSendBufferSize(int sendBufferSize) {
         if (sendBufferSize < Bounds.MIN_BUFFER_SIZE || sendBufferSize > Bounds.MAX_BUFFER_SIZE) {
             throw new InvalidConfigurationException("Buffer size should be between "
                     + Bounds.MIN_BUFFER_SIZE + " and " + Bounds.MAX_BUFFER_SIZE);
