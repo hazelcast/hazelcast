@@ -206,7 +206,7 @@ public final class TpcEngine {
         private Eventloop.Configuration eventloopConfiguration = new NioConfiguration();
 
         public void setEventloopConfiguration(Eventloop.Configuration eventloopConfiguration) {
-            this.eventloopConfiguration = checkNotNull(eventloopConfiguration, "eventloopConfiguration can't be null");
+            this.eventloopConfiguration = checkNotNull(eventloopConfiguration, "eventloopConfiguration");
         }
 
         public void setEventloopCount(int eventloopCount) {
