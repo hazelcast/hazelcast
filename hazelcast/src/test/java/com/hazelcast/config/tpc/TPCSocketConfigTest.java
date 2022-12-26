@@ -1,6 +1,7 @@
 package com.hazelcast.config.tpc;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.bootstrap.TpcServerBootstrap;
@@ -93,6 +94,19 @@ public class TPCSocketConfigTest extends HazelcastTestSupport {
             expectedPorts.set(i, expectedPorts.get(i) + EVENTLOOP_COUNT);
         }
         assertEquals(expectedPorts, getTpcServerBootstrap(hz[2]).getClientPorts());
+    }
+
+    @Test
+    public void testConfigBounds() {
+        TPCSocketConfig tpcSocketConfig = config.getNetworkConfig().getTpcSocketConfig();
+        assertThrows(InvalidConfigurationException.class, () -> tpcSocketConfig.setReceiveBufferSize(1 << 15 - 1));
+        assertThrows(InvalidConfigurationException.class, () -> tpcSocketConfig.setReceiveBufferSize(1 << 30 + 1));
+        assertThrows(InvalidConfigurationException.class, () -> tpcSocketConfig.setSendBufferSize(1 << 15 - 1));
+        assertThrows(InvalidConfigurationException.class, () -> tpcSocketConfig.setSendBufferSize(1 << 30 + 1));
+
+        assertThrows(InvalidConfigurationException.class, () -> tpcSocketConfig.addPortDefinition("alto 4ever"));
+        assertThrows(InvalidConfigurationException.class, () -> tpcSocketConfig.addPortDefinition("5701"));
+        assertThrows(InvalidConfigurationException.class, () -> tpcSocketConfig.addPortDefinition("123123-123124"));
     }
 
     private static TpcServerBootstrap getTpcServerBootstrap(HazelcastInstance hz) {
