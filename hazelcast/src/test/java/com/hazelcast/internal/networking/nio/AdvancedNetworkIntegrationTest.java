@@ -21,6 +21,7 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.bootstrap.TpcServerBootstrap;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.nio.Protocols;
 import com.hazelcast.jet.datamodel.Tuple2;
@@ -97,9 +98,11 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
         }
 
         for (int i = 0; i < 3; i++) {
-            assertEquals(1 << 20, getNode(hz[i]).getNodeEngine().getTpcServerBootstrap().getClientSocketConfig().getReceiveBufferSize());
-            assertEquals(1 << 19, getNode(hz[i]).getNodeEngine().getTpcServerBootstrap().getClientSocketConfig().getSendBufferSize());
-            assertEquals(4, getNode(hz[i]).getNodeEngine().getTpcServerBootstrap().getClientPorts().size());
+            TpcServerBootstrap tpcServerBootstrap = getNode(hz[i]).getNodeEngine().getTpcServerBootstrap();
+
+            assertEquals(1 << 20, tpcServerBootstrap.getClientSocketConfig().getReceiveBufferSize());
+            assertEquals(1 << 19, tpcServerBootstrap.getClientSocketConfig().getSendBufferSize());
+            assertEquals(4, tpcServerBootstrap.getClientPorts().size());
         }
     }
 
