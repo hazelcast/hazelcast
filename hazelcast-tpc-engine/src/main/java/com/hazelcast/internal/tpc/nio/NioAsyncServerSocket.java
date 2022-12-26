@@ -180,11 +180,15 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public void bind(SocketAddress local) throws IOException {
-        if (logger.isInfoEnabled()) {
-            logger.info(eventloopThread.getName() + " Binding to " + local);
+    public void bind(SocketAddress local) {
+        try {
+            if (logger.isInfoEnabled()) {
+                logger.info(eventloopThread.getName() + " Binding to " + local);
+            }
+            serverSocketChannel.bind(local);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to bind to " + local, e);
         }
-        serverSocketChannel.bind(local);
     }
 
     public void accept(Consumer<NioAsyncSocket> consumer) {

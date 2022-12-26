@@ -23,8 +23,6 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
 import java.nio.ByteBuffer;
@@ -227,11 +225,7 @@ public class NioAsyncSocket_LargePayloadTest {
     private NioAsyncServerSocket newServer(SocketAddress serverAddress) {
         serverSocket = NioAsyncServerSocket.open(serverEventloop);
         serverSocket.receiveBufferSize(SOCKET_BUFFER_SIZE);
-        try {
-            serverSocket.bind(serverAddress);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        serverSocket.bind(serverAddress);
         serverSocket.listen(10);
         serverSocket.accept(socket -> {
             System.out.println("Server side accepted " + socket);

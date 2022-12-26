@@ -32,10 +32,10 @@ import com.hazelcast.internal.tpc.nio.NioEventloop;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.BindException;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -187,16 +187,23 @@ public class TpcServerBootstrap {
     }
 
     private int bind(NioAsyncServerSocket serverSocket, List<Integer> allowedPorts, int index) {
-        try {
-            serverSocket.bind(new InetSocketAddress(thisAddress.getInetAddress(), allowedPorts.get(index)));
-            return index + 1;
-        } catch (BindException e) {
-            return bind(serverSocket, allowedPorts, index + tpcEngine.eventloopCount());
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        } catch (IndexOutOfBoundsException e) {
-            throw new HazelcastException("Allowed TPC ports weren't enough.");
+        while (index < allowedPorts.size()) {
+            try {
+                serverSocket.bind(new InetSocketAddress(thisAddress.getInetAddress(), allowedPorts.get(index)));
+                return index + 1;
+            } catch (UncheckedIOException e) {
+                if (e.getCause() instanceof BindException) {
+                    // this port is occupied probably by another hz member, try another one
+                    index += tpcEngine.eventloopCount();
+                } else {
+                    throw e;
+                }
+            } catch (UnknownHostException e) {
+                throw new UncheckedIOException(e);
+            }
         }
+
+        throw new HazelcastException("Allowed TPC ports weren't enough.");
     }
 
     public void shutdown() {

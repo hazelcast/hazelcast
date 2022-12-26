@@ -137,11 +137,7 @@ public class NioAsyncSocket_IntegrationTest {
     private NioAsyncServerSocket newServer(SocketAddress serverAddress) {
         NioAsyncServerSocket serverSocket = NioAsyncServerSocket.open(serverEventloop);
         serverSocket.reuseAddress(true);
-        try {
-            serverSocket.bind(serverAddress);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
+        serverSocket.bind(serverAddress);
         serverSocket.listen(10);
         serverSocket.accept(socket -> {
             socket.tcpNoDelay(true);

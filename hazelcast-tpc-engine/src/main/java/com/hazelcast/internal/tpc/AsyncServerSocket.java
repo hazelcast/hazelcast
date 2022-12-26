@@ -128,7 +128,7 @@ public abstract class AsyncServerSocket implements Closeable {
      * @param local the local SocketAddress.
      * @throws IOException if something failed with configuring the socket
      */
-    public abstract void bind(SocketAddress local) throws IOException;
+    public abstract void bind(SocketAddress local);
 
     public abstract void listen(int backlog);
 
