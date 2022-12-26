@@ -38,13 +38,11 @@ import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
-import static com.hazelcast.internal.util.AddressUtil.transformPortDefinitionsToPorts;
 import static java.lang.System.getProperty;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -135,10 +133,10 @@ public class TpcServerBootstrap {
             return;
         }
 
-        List<Integer> clientAllowedPorts = new ArrayList<>(
-                transformPortDefinitionsToPorts(clientSocketConfig.getPortDefinitions(), new LinkedHashSet<>()));
+        String[] range = clientSocketConfig.getPortRange().split("-");
+        int port = Integer.parseInt(range[0]);
+        int limit = Integer.parseInt(range[1]);
 
-        int clientPortIndex = 0;
         for (int k = 0; k < tpcEngine.eventloopCount(); k++) {
             NioEventloop eventloop = (NioEventloop) tpcEngine.eventloop(k);
 
@@ -152,7 +150,7 @@ public class TpcServerBootstrap {
             int sendBufferSize = clientSocketConfig.getSendBufferSize();
             serverSocket.receiveBufferSize(receiveBufferSize);
             serverSocket.reuseAddress(true);
-            clientPortIndex = bind(serverSocket, clientAllowedPorts, clientPortIndex);
+            port = bind(serverSocket, port, limit);
             serverSocket.accept(socket -> {
                 socket.readHandler(readHandlerSuppliers.get(eventloop).get());
                 socket.setWriteThrough(writeThrough);
@@ -186,15 +184,15 @@ public class TpcServerBootstrap {
         return nodeEngine.getConfig().getNetworkConfig().getTpcSocketConfig();
     }
 
-    private int bind(NioAsyncServerSocket serverSocket, List<Integer> allowedPorts, int index) {
-        while (index < allowedPorts.size()) {
+    private int bind(NioAsyncServerSocket serverSocket, int port, int limit) {
+        while (port < limit) {
             try {
-                serverSocket.bind(new InetSocketAddress(thisAddress.getInetAddress(), allowedPorts.get(index)));
-                return index + 1;
+                serverSocket.bind(new InetSocketAddress(thisAddress.getInetAddress(), port));
+                return port + 1;
             } catch (UncheckedIOException e) {
                 if (e.getCause() instanceof BindException) {
                     // this port is occupied probably by another hz member, try another one
-                    index += tpcEngine.eventloopCount();
+                    port += tpcEngine.eventloopCount();
                 } else {
                     throw e;
                 }

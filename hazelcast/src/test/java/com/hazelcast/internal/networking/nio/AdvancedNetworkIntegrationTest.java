@@ -88,8 +88,7 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
         clientSSConfig.getTpcSocketConfig()
                 .setReceiveBufferSize(1 << 20)
                 .setSendBufferSize(1 << 19)
-                .addPortDefinition("14000-" + (14000 + 4 - 2))
-                .addPortDefinition("15000-16000");
+                .setPortRange("15000-16000");
         config.getAdvancedNetworkConfig().setEnabled(true).setClientEndpointConfig(clientSSConfig);
 
         HazelcastInstance[] hz = new HazelcastInstance[3];

@@ -56,7 +56,7 @@ public class TPCSocketConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testClientPorts() {
-        config.getNetworkConfig().getTpcSocketConfig().addPortDefinition("13000-14000");
+        config.getNetworkConfig().getTpcSocketConfig().setPortRange("13000-14000");
         HazelcastInstance hz = createHazelcastInstance(config);
         ArrayList<Integer> expectedPorts = new ArrayList<>();
         for (int i = 0; i < EVENTLOOP_COUNT; i++) {
@@ -67,13 +67,13 @@ public class TPCSocketConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testClientPortsNotEnough() {
-        config.getNetworkConfig().getTpcSocketConfig().addPortDefinition("13000-" + (13000 + EVENTLOOP_COUNT - 2));
+        config.getNetworkConfig().getTpcSocketConfig().setPortRange("13000-" + (13000 + EVENTLOOP_COUNT - 2));
         assertThrows(HazelcastException.class, () -> createHazelcastInstance(config));
     }
 
     @Test
     public void testClientPortsWith3Members() {
-        config.getNetworkConfig().getTpcSocketConfig().addPortDefinition("13000-14000");
+        config.getNetworkConfig().getTpcSocketConfig().setPortRange("13000-14000");
         HazelcastInstance[] hz = createHazelcastInstances(config, 3);
         ArrayList<Integer> expectedPorts = new ArrayList<>();
 
@@ -104,9 +104,9 @@ public class TPCSocketConfigTest extends HazelcastTestSupport {
         assertThrows(InvalidConfigurationException.class, () -> tpcSocketConfig.setSendBufferSize(1 << 15 - 1));
         assertThrows(InvalidConfigurationException.class, () -> tpcSocketConfig.setSendBufferSize(1 << 30 + 1));
 
-        assertThrows(InvalidConfigurationException.class, () -> tpcSocketConfig.addPortDefinition("alto 4ever"));
-        assertThrows(InvalidConfigurationException.class, () -> tpcSocketConfig.addPortDefinition("5701"));
-        assertThrows(InvalidConfigurationException.class, () -> tpcSocketConfig.addPortDefinition("123123-123124"));
+        assertThrows(InvalidConfigurationException.class, () -> tpcSocketConfig.setPortRange("alto 4ever"));
+        assertThrows(InvalidConfigurationException.class, () -> tpcSocketConfig.setPortRange("5701"));
+        assertThrows(InvalidConfigurationException.class, () -> tpcSocketConfig.setPortRange("123123-123124"));
     }
 
     private static TpcServerBootstrap getTpcServerBootstrap(HazelcastInstance hz) {

@@ -3,36 +3,27 @@ package com.hazelcast.config.tpc;
 import com.hazelcast.config.InvalidConfigurationException;
 
 import javax.annotation.Nonnull;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.regex.Pattern;
 
 public class TPCSocketConfig {
-    private static final Collection<String> DEFAULT_PORT_DEFINITIONS = Collections.singleton("11000-21000");
+    private static final String DEFAULT_PORT_RANGE = "11000-21000";
     private static final int DEFAULT_RECEIVE_BUFFER_SIZE = 128 * 1024;
     private static final int DEFAULT_SEND_BUFFER_SIZE = 128 * 1024;
 
-    private Collection<String> portDefinitions = DEFAULT_PORT_DEFINITIONS;
+    private String portRange = DEFAULT_PORT_RANGE;
     private int receiveBufferSize = DEFAULT_RECEIVE_BUFFER_SIZE;
     private int sendBufferSize = DEFAULT_SEND_BUFFER_SIZE;
 
-    public Collection<String> getPortDefinitions() {
-        return portDefinitions;
+    public String getPortRange() {
+        return portRange;
     }
 
-    public TPCSocketConfig addPortDefinition(@Nonnull String portDefinition) {
-        if (!Bounds.PORT_DEFINITION_PATTERN.matcher(portDefinition).matches()) {
+    public TPCSocketConfig setPortRange(@Nonnull String portRange) {
+        if (!Bounds.PORT_RANGE_PATTERN.matcher(portRange).matches()) {
             throw new InvalidConfigurationException("Invalid port definition");
         }
 
-        try {
-            portDefinitions.add(portDefinition);
-        } catch (UnsupportedOperationException e) {
-            // since user modified port definitions, remove default range
-            portDefinitions = new HashSet<>();
-            portDefinitions.add(portDefinition);
-        }
+        this.portRange = portRange;
         return this;
     }
 
@@ -65,7 +56,7 @@ public class TPCSocketConfig {
     }
 
     private static class Bounds {
-        private static final Pattern PORT_DEFINITION_PATTERN = Pattern.compile("\\d{1,5}-\\d{1,5}");
+        private static final Pattern PORT_RANGE_PATTERN = Pattern.compile("\\d{1,5}-\\d{1,5}");
         private static final int MIN_BUFFER_SIZE = 1 << 15;
         private static final int MAX_BUFFER_SIZE = 1 << 30;
     }
