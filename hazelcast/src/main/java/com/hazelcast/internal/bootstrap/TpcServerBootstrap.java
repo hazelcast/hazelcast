@@ -129,7 +129,9 @@ public class TpcServerBootstrap {
         TPCSocketConfig clientSocketConfig = getClientSocketConfig();
 
         if (clientSocketConfig == null) {
-            // advanced network is enabled yet there is no configured server socket for clients
+            // Advanced network is enabled yet there is no configured server socket
+            // for clients. This means cluster will run but no client ports will be
+            // created, so no clients can connect to the cluster.
             return;
         }
 
