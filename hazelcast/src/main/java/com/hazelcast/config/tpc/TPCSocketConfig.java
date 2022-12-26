@@ -32,7 +32,7 @@ public class TPCSocketConfig {
     }
 
     public TPCSocketConfig setReceiveBufferSize(int receiveBufferSize) {
-        if (receiveBufferSize > Bounds.MAX_BUFFER_SIZE || receiveBufferSize < Bounds.MIN_BUFFER_SIZE) {
+        if (receiveBufferSize < Bounds.MIN_BUFFER_SIZE || receiveBufferSize > Bounds.MAX_BUFFER_SIZE) {
             throw new InvalidConfigurationException("Buffer size should be between "
                     + Bounds.MIN_BUFFER_SIZE + " and " + Bounds.MAX_BUFFER_SIZE);
         }
@@ -46,7 +46,7 @@ public class TPCSocketConfig {
     }
 
     public TPCSocketConfig setSendBufferSize(int sendBufferSize) {
-        if (sendBufferSize > Bounds.MAX_BUFFER_SIZE || sendBufferSize < Bounds.MIN_BUFFER_SIZE) {
+        if (sendBufferSize < Bounds.MIN_BUFFER_SIZE || sendBufferSize > Bounds.MAX_BUFFER_SIZE) {
             throw new InvalidConfigurationException("Buffer size should be between "
                     + Bounds.MIN_BUFFER_SIZE + " and " + Bounds.MAX_BUFFER_SIZE);
         }
