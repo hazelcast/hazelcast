@@ -17,6 +17,7 @@
 package com.hazelcast.internal.bootstrap;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.core.HazelcastException;
@@ -130,7 +131,8 @@ public class TpcServerBootstrap {
             // Advanced network is enabled yet there is no configured server socket
             // for clients. This means cluster will run but no client ports will be
             // created, so no clients can connect to the cluster.
-            return;
+            throw new InvalidConfigurationException("Missing client endpoint configuration. "
+                    + "If you have enabled alto and advanced networking, please configure a client server socket");
         }
 
         String[] range = clientSocketConfig.getPortRange().split("-");
