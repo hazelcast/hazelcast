@@ -77,7 +77,7 @@ public final class JulLoggerFactory implements TpcLoggerFactory {
 
         @Override
         public void warning(String message, Throwable thrown) {
-           logger.log(Level.WARNING, message,thrown);
+           logger.log(Level.WARNING, message, thrown);
         }
 
         @Override
