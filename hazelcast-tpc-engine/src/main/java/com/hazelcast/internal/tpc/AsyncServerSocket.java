@@ -126,7 +126,7 @@ public abstract class AsyncServerSocket implements Closeable {
      * Binds this AsyncServerSocket to the local.
      *
      * @param local the local SocketAddress.
-     * @throws IOException if something failed with configuring the socket
+     * @throws UncheckedIOException if something failed with configuring the socket
      */
     public abstract void bind(SocketAddress local);
 
