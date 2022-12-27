@@ -39,7 +39,7 @@ public final class IOVector {
         return size == 0;
     }
 
-    public void fill(Queue<IOBuffer> queue) {
+    public void populate(Queue<IOBuffer> queue) {
         int count = IOV_MAX - size;
         for (int k = 0; k < count; k++) {
             IOBuffer buf = queue.poll();
@@ -55,7 +55,7 @@ public final class IOVector {
         }
     }
 
-    public boolean add(IOBuffer buf) {
+    public boolean offer(IOBuffer buf) {
         if (size == IOV_MAX) {
             return false;
         } else {
