@@ -291,7 +291,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     @Override
     public boolean write(IOBuffer buf) {
-        return unflushedBufs.add(buf);
+        return unflushedBufs.offer(buf);
     }
 
     @Override
@@ -317,22 +317,22 @@ public final class NioAsyncSocket extends AsyncSocket {
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
                 eventloop.localRunQueue.add(eventLoopHandler);
-                if (ioVector.add(buf)) {
+                if (ioVector.offer(buf)) {
                     result = true;
                 } else {
-                    result = unflushedBufs.add(buf);
+                    result = unflushedBufs.offer(buf);
                 }
             } else {
-                result = unflushedBufs.add(buf);
+                result = unflushedBufs.offer(buf);
             }
         } else if (currentFlushThread == eventloopThread) {
-            if (ioVector.add(buf)) {
+            if (ioVector.offer(buf)) {
                 result = true;
             } else {
-                result = unflushedBufs.add(buf);
+                result = unflushedBufs.offer(buf);
             }
         } else {
-            result = unflushedBufs.add(buf);
+            result = unflushedBufs.offer(buf);
             flush();
         }
         return result;
@@ -422,7 +422,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
             handleWriteCnt.inc();
 
-            ioVector.fill(unflushedBufs);
+            ioVector.populate(unflushedBufs);
             long written = ioVector.write(socketChannel);
 
             bytesWritten.inc(written);
