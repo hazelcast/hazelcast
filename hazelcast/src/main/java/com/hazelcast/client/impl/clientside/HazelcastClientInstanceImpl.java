@@ -934,7 +934,7 @@ public class HazelcastClientInstanceImpl implements HazelcastInstance, Serializa
             completionService.submit(task);
         }
         for (int i = 0; i < tasks.size(); i++) {
-            completionService.poll().get();
+            completionService.take().get();
         }
     }
 

@@ -172,7 +172,7 @@ public class ClientQueryCacheContext implements QueryCacheContext {
             }
         }
         for (int i = 0; i < numberOfTasks; i++) {
-            completionService.poll().get();
+            completionService.take().get();
         }
     }
 }

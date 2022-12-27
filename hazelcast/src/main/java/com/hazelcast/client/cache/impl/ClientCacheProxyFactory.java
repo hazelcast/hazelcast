@@ -68,7 +68,7 @@ public class ClientCacheProxyFactory implements ClientProxyFactory {
             });
         }
         for (int i = 0; i < numberOfTasks; i++) {
-            completionService.poll().get();
+            completionService.take().get();
         }
     }
 
