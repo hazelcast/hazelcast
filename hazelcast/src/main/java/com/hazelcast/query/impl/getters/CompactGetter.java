@@ -30,16 +30,29 @@ public class CompactGetter extends Getter {
         this.serializationService = serializationService;
     }
 
-    @Override
-    public Object getValue(Object target, String fieldPath) throws Exception {
+    private Object getValueInternal(Object target, String fieldPath, boolean useLazyDeserialization) throws Exception {
         InternalGenericRecord record;
         if (target instanceof CompactGenericRecord) {
             record = (InternalGenericRecord) target;
         } else {
             record = serializationService.readAsInternalGenericRecord((Data) target);
         }
-        GenericRecordQueryReader reader = new GenericRecordQueryReader(record);
+        GenericRecordQueryReader reader = new GenericRecordQueryReader(record, useLazyDeserialization);
         return reader.read(fieldPath);
+    }
+
+    @Override
+    public Object getValue(Object target, String fieldPath) throws Exception {
+        return getValueInternal(target, fieldPath, false);
+    }
+
+    @Override
+    public Object getValue(Object obj, String attributePath, Object metadata) throws Exception {
+        if (metadata == null) {
+            return getValue(obj, attributePath);
+        }
+        boolean useLazyDeserialization = (boolean) metadata;
+        return getValueInternal(obj, attributePath, useLazyDeserialization);
     }
 
     @Override

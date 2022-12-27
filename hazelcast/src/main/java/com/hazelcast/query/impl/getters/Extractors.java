@@ -75,11 +75,14 @@ public final class Extractors {
         return extract(target, attributeName, metadata, true);
     }
 
-    public Object extract(Object target, String attributeName, Object metadata, boolean failOnMissingReflectiveAttribute) {
+    public Object extract(Object target, String attributeName, Object metadata,
+                          boolean failOnMissingReflectiveAttribute) {
         Object targetObject = getTargetObject(target);
         if (targetObject != null) {
             Getter getter = getGetter(targetObject, attributeName, failOnMissingReflectiveAttribute);
             try {
+                // For CompactGetter and PortableGetter metadata is a boolean
+                // indicating whether lazy deserialization should be used or not.
                 return getter.getValue(targetObject, attributeName, metadata);
             } catch (Exception ex) {
                 throw new QueryException(ex);

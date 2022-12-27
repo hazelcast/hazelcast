@@ -81,6 +81,12 @@ public class RowProjector implements Row {
 
     @SuppressWarnings("unchecked")
     @Override
+    public <T> T get(int index, boolean useLazyDeserialization) {
+        return (T) extractors[index].get(useLazyDeserialization);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
     public <T> T get(int index) {
         return (T) extractors[index].get();
     }
