@@ -76,6 +76,12 @@ public interface ExpirySystem {
         }
 
         @Override
+        public void add(Data key, long ttl, long maxIdle,
+                        long expiryTime, long lastUpdateTime, long now, boolean disableMaxIdle) {
+            // no-op
+        }
+
+        @Override
         public void add(Data key, long lastUpdateTime, long now) {
             // no-op
         }
@@ -126,6 +132,9 @@ public interface ExpirySystem {
      */
     void add(Data key, long ttl, long maxIdle,
              long expiryTime, long lastUpdateTime, long now);
+
+    void add(Data key, long ttl, long maxIdle,
+             long expiryTime, long lastUpdateTime, long now, boolean disableMaxIdle);
 
     /**
      * Adds key to expiry system.

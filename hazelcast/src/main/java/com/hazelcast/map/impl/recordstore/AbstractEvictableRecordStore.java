@@ -28,11 +28,12 @@ import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryReason;
-import com.hazelcast.map.impl.recordstore.expiry.ExpirySystemImpl;
 import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
+import com.hazelcast.map.impl.recordstore.expiry.ExpirySystemImpl;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
+import com.hazelcast.wan.impl.CallerProvenance;
 
 import javax.annotation.Nonnull;
 import java.util.LinkedList;
@@ -157,6 +158,9 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             // only send expired key to back-up if
             // it is expired according to idleness.
             expirySystem.accumulateOrSendExpiredKey(dataKey, value.hashCode());
+            if (mapContainer.isWanReplicationEnabled()) {
+                mapServiceContext.getMapEventPublisher().publishWanRemove(name, dataKey);
+            }
         }
     }
 
@@ -173,20 +177,20 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     public void mergeRecordExpiration(Data key, Record record,
-                                         MapMergeTypes mergingEntry, long now) {
+                                      MapMergeTypes mergingEntry, long now, CallerProvenance provenance) {
         mergeRecordExpiration(record, mergingEntry.getCreationTime(),
                 mergingEntry.getLastAccessTime(), mergingEntry.getLastUpdateTime());
         // WAN events received from source cluster also carry null maxIdle
         // see com.hazelcast.map.impl.wan.WanMapEntryView.getMaxIdle
         Long maxIdle = mergingEntry.getMaxIdle();
         if (maxIdle != null) {
-            getExpirySystem().add(key, mergingEntry.getTtl(),
-                    maxIdle, mergingEntry.getExpirationTime(), mergingEntry.getLastUpdateTime(), now);
+            getExpirySystem().add(key, mergingEntry.getTtl(), maxIdle, mergingEntry.getExpirationTime(),
+                    mergingEntry.getLastUpdateTime(), now, provenance == CallerProvenance.WAN);
         } else {
             ExpiryMetadata expiryMetadata = getExpirySystem().getExpiryMetadata(key);
             getExpirySystem().add(key, mergingEntry.getTtl(),
                     expiryMetadata.getMaxIdle(), mergingEntry.getExpirationTime(),
-                    mergingEntry.getLastUpdateTime(), now);
+                    mergingEntry.getLastUpdateTime(), now, provenance == CallerProvenance.WAN);
         }
     }
 

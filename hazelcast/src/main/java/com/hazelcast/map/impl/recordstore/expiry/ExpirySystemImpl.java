@@ -160,6 +160,12 @@ public class ExpirySystemImpl implements ExpirySystem {
     @Override
     public final void add(Data key, long ttl, long maxIdle,
                           long expiryTime, long lastUpdateTime, long now) {
+        add(key, ttl, maxIdle, expiryTime, lastUpdateTime, now, false);
+    }
+
+    @Override
+    public final void add(Data key, long ttl, long maxIdle,
+                          long expiryTime, long lastUpdateTime, long now, boolean disableMaxIdle) {
         // If expiry-time <= 0, no expiry-time exists, this is update
         // or first put of the key, hence we need to calculate it.
         // If expiry-time > 0, this means we have a previously
@@ -169,6 +175,10 @@ public class ExpirySystemImpl implements ExpirySystem {
             ttl = pickTTLMillis(mapConfig, ttl);
             maxIdle = pickMaxIdleMillis(mapConfig, maxIdle);
             expiryTime = nextExpirationTime(ttl, maxIdle, now, lastUpdateTime);
+        }
+
+        if (disableMaxIdle) {
+            expiryTime = nextExpirationTime(ttl, Long.MAX_VALUE, now, lastUpdateTime);
         }
 
         storeExpiryMetadata(key, ttl, maxIdle, expiryTime, lastUpdateTime);

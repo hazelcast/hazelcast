@@ -1075,7 +1075,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             boolean persist = persistenceEnabledFor(provenance);
             Record newRecord = putNewRecord(key, null, newValue, UNSET, UNSET, UNSET, now,
                     null, ADDED, persist, false);
-            mergeRecordExpiration(key, newRecord, mergingEntry, now);
+            mergeRecordExpiration(key, newRecord, mergingEntry, now, provenance);
         } else {
             oldValue = record.getValue();
             ExpiryMetadata expiryMetadata = expirySystem.getExpiryMetadata(key);
@@ -1093,7 +1093,7 @@ public class DefaultRecordStore extends AbstractEvictableRecordStore {
             }
 
             if (valueComparator.isEqual(newValue, oldValue, serializationService)) {
-                mergeRecordExpiration(key, record, mergingEntry, now);
+                mergeRecordExpiration(key, record, mergingEntry, now, provenance);
                 return true;
             }
 
