@@ -20,6 +20,7 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.function.Observer;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -302,7 +303,9 @@ public interface JetService {
     Collection<Observable<?>> getObservables();
 
     /**
-     * Associates the given listener with the given jobIds.
+     * Associates the given listener to the specified jobs. The listener is
+     * automatically removed after a {@linkplain JobStatus#isTerminal terminal
+     * event}.
      *
      * @since 5.3
      */

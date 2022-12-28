@@ -352,7 +352,8 @@ public interface Job {
     JobStateSnapshot exportSnapshot(String name);
 
     /**
-     * Associates the given listener to this job.
+     * Associates the given listener to this job. The listener is automatically
+     * removed after a {@linkplain JobStatus#isTerminal terminal event}.
      * @return The registration id
      *
      * @since 5.3

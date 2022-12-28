@@ -153,6 +153,9 @@ public class MasterContext {
         JobStatus oldStatus = this.jobStatus;
         this.jobStatus = jobStatus;
         jobService.publishEvent(jobId, oldStatus, jobStatus, description, userRequested);
+        if (jobStatus.isTerminal()) {
+            jobService.removeAllEventListeners(jobId);
+        }
     }
 
     void setJobStatus(JobStatus jobStatus) {

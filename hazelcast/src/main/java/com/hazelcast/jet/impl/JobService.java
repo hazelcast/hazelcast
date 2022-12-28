@@ -75,4 +75,8 @@ public class JobService implements EventPublishingService<JobEvent, JobListener>
     public CompletableFuture<Boolean> removeEventListenerAsync(long jobId, UUID id) {
         return eventService.deregisterListenerAsync(SERVICE_NAME, idToString(jobId), id);
     }
+
+    public void removeAllEventListeners(long jobId) {
+        eventService.deregisterAllListeners(SERVICE_NAME, idToString(jobId));
+    }
 }

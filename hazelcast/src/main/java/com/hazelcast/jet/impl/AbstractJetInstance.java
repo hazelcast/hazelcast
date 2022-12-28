@@ -25,6 +25,7 @@ import com.hazelcast.jet.JetCacheManager;
 import com.hazelcast.jet.JetInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.JobAlreadyExistsException;
+import com.hazelcast.jet.JobEvent;
 import com.hazelcast.jet.JobListener;
 import com.hazelcast.jet.JobStateSnapshot;
 import com.hazelcast.jet.Observable;
@@ -92,7 +93,7 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
     private final JetCacheManagerImpl cacheManager;
     private final Supplier<JobRepository> jobRepository;
     private final Map<String, Observable> observables;
-    private final Map<JobListener, Map<Job, UUID>> jobListeners;
+    private final Map<JobListener, Map<Long, UUID>> jobListeners;
 
     public AbstractJetInstance(HazelcastInstance hazelcastInstance) {
         this.hazelcastInstance = hazelcastInstance;
@@ -336,21 +337,53 @@ public abstract class AbstractJetInstance<M> implements JetInstance {
 
     @Override
     public void addJobStatusListener(@Nonnull Set<Long> jobIds, @Nonnull JobListener listener) {
-        Map<Job, UUID> registrations = jobListeners.computeIfAbsent(listener, k -> new ConcurrentHashMap<>());
+        Map<Long, UUID> registrations = jobListeners.computeIfAbsent(listener, k -> new ConcurrentHashMap<>());
+        JobEventInterceptor interceptor = new JobEventInterceptor(listener);
         for (long jobId : jobIds) {
             Job job = getJob(jobId);
             if (job != null) {
-                registrations.computeIfAbsent(job, k -> job.addStatusListener(listener));
+                registrations.computeIfAbsent(jobId, k -> job.addStatusListener(interceptor));
             }
         }
     }
 
     @Override
     public void removeJobStatusListener(@Nonnull JobListener listener) {
-        Map<Job, UUID> registrations = jobListeners.remove(listener);
+        Map<Long, UUID> registrations = jobListeners.remove(listener);
         if (registrations != null) {
-            for (Entry<Job, UUID> e : registrations.entrySet()) {
-                e.getKey().removeStatusListener(e.getValue());
+            for (Entry<Long, UUID> e : registrations.entrySet()) {
+                Job job = getJob(e.getKey());
+                if (job != null) {
+                    job.removeStatusListener(e.getValue());
+                }
+            }
+        }
+    }
+
+    /**
+     * The {@link #listener} is automatically deregistered after a {@linkplain
+     * JobStatus#isTerminal terminal event}. However, {@link #jobListeners} must
+     * be manually managed by intercepting the events. This interceptor is
+     * guaranteed to receive a terminal event eventually since the {@link
+     * #listener} cannot be deregistered by other means because it is not
+     * possible to obtain the registration id. <em>(If the event service allows
+     * registering the same listener twice, the second registration will have a
+     * different id; otherwise, the second registration attempt will not expose
+     * the existing registration's id.)</em>
+     */
+    class JobEventInterceptor implements JobListener {
+        final JobListener listener;
+
+        JobEventInterceptor(JobListener listener) {
+            this.listener = listener;
+        }
+
+        @Override
+        public void jobStatusChanged(JobEvent event) {
+            listener.jobStatusChanged(event);
+            if (event.getNewStatus().isTerminal()) {
+                jobListeners.values().forEach(registrations -> registrations.remove(event.getJobId()));
+                jobListeners.values().removeIf(Map::isEmpty);
             }
         }
     }

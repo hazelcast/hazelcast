@@ -19,6 +19,7 @@ package com.hazelcast.jet;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -31,6 +32,7 @@ import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -39,8 +41,10 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
 import java.util.function.BiConsumer;
@@ -55,6 +59,7 @@ import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
@@ -81,6 +86,11 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
      */
     private static int nextJobId;
 
+    /**
+     * Used to test listener deregistration on job completion/failure.
+     */
+    private static Field jobListeners;
+
     @Parameter(0)
     public String mode;
 
@@ -88,8 +98,10 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
     public Supplier<HazelcastInstance> instance;
 
     @BeforeClass
-    public static void setUp() {
+    public static void setUp() throws NoSuchFieldException {
         initializeWithClient(2, null, null);
+        jobListeners = AbstractJetInstance.class.getDeclaredField("jobListeners");
+        jobListeners.setAccessible(true);
     }
 
     @Test
@@ -201,9 +213,9 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
                 });
     }
 
-    @Override
-    public void supportAfter() {
-        // Don't clean up jobs
+    @After
+    public void testListenerDeregistration_onCompletion() throws IllegalAccessException {
+        assertTrue(((Map<?, ?>) jobListeners.get(instance.get().getJet())).isEmpty());
     }
 
     /**
