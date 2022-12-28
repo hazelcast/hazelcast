@@ -27,6 +27,8 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.io.IOException;
 
+import static com.hazelcast.jet.Util.idToString;
+
 @BinaryInterface
 public class JobEvent implements IdentifiedDataSerializable {
     private long jobId;
@@ -105,5 +107,14 @@ public class JobEvent implements IdentifiedDataSerializable {
         newStatus = in.readObject();
         description = in.readString();
         userRequested = in.readBoolean();
+    }
+
+    @Override
+    public String toString() {
+        return "JobEvent{jobId=" + idToString(jobId)
+                + ", oldStatus=" + oldStatus
+                + ", newStatus=" + newStatus
+                + ", description=" + description
+                + ", userRequested=" + userRequested + "}";
     }
 }

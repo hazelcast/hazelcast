@@ -22,10 +22,12 @@ import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.jet.pipeline.SourceBuilder;
+import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer;
 import com.hazelcast.jet.pipeline.StreamSource;
 import com.hazelcast.jet.pipeline.test.TestSources;
-import com.hazelcast.test.HazelcastParallelParametersRunnerFactory;
 import com.hazelcast.test.HazelcastParametrizedRunner;
+import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -41,7 +43,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -56,7 +57,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParametrizedRunner.class)
-@UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
+@UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class JobListenerTest extends SimpleTestInClusterSupport {
     private static final Function<String, String> SIMPLIFY = log -> log.replaceAll("(?<=\\().*: ", "");
@@ -78,7 +79,7 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
      * Used to generate unique job ids to be used inside jobs, e.g. sinks,
      * since it is not easy to access the context.
      */
-    private static AtomicInteger nextJobId;
+    private static int nextJobId;
 
     @Parameter(0)
     public String mode;
@@ -89,12 +90,11 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
     @BeforeClass
     public static void setUp() {
         initializeWithClient(2, null, null);
-        nextJobId = new AtomicInteger();
     }
 
     @Test
     public void testListener_waitForCompletion() {
-        testListener(TestSources.itemsDelayed(1000, 0L, 1L, 2L),
+        testListener(finiteStream(1000, 2),
                 Job::join,
                 "Jet: NOT_RUNNING -> STARTING",
                 "Jet: STARTING -> RUNNING",
@@ -213,7 +213,7 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
      */
     void testListener(JobConfig config, Object source, BiConsumer<Job, JobStatusLogger> test) {
         Pipeline p = Pipeline.create();
-        int jobId = nextJobId.getAndIncrement();
+        int jobId = nextJobId++;
         (source instanceof BatchSource
                     ? p.readFrom((BatchSource<Long>) source)
                     : p.readFrom((StreamSource<Long>) source).withoutTimestamps())
@@ -269,6 +269,36 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
         int runCount() {
             Integer count = (Integer) instance.get().getMap(MAP_NAME).get(jobId);
             return count == null ? 0 : count;
+        }
+    }
+
+    static BatchSource<Long> finiteStream(int delayMillis, long maxSequence) {
+        return SourceBuilder.batch("finiteStream",
+                        ctx -> new FiniteStreamSource(delayMillis, maxSequence))
+                .fillBufferFn(FiniteStreamSource::fillBuffer)
+                .build();
+    }
+
+    static class FiniteStreamSource {
+        final long delayMillis;
+        final long maxSequence;
+        long emitSchedule;
+        long sequence;
+
+        FiniteStreamSource(int delayMillis, long maxSequence) {
+            this.delayMillis = delayMillis;
+            this.maxSequence = maxSequence;
+        }
+
+        void fillBuffer(SourceBuffer<Long> buf) {
+            long nowMillis = System.currentTimeMillis();
+            if (nowMillis >= emitSchedule) {
+                buf.add(sequence++);
+                emitSchedule = nowMillis + delayMillis;
+                if (sequence > maxSequence) {
+                    buf.close();
+                }
+            }
         }
     }
 }

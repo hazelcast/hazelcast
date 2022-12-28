@@ -20,7 +20,6 @@ import com.hazelcast.jet.annotation.EvolvingApi;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.SourceBuilder;
-import com.hazelcast.jet.pipeline.SourceBuilder.SourceBuffer;
 import com.hazelcast.jet.pipeline.SourceBuilder.TimestampedSourceBuffer;
 import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.jet.pipeline.StreamSource;
@@ -29,7 +28,6 @@ import com.hazelcast.jet.pipeline.test.impl.ItemsDistributedFillBufferFn;
 
 import javax.annotation.Nonnull;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
@@ -105,37 +103,6 @@ public final class TestSources {
     }
 
     /**
-     * Returns a batch source which iterates through the supplied iterable by
-     * waiting at least {@code delayMillis} milliseconds between consecutive
-     * items and then terminates.
-     *
-     * @since 5.3
-     */
-    @Nonnull
-    public static <T> BatchSource<T> itemsDelayed(int delayMillis, @Nonnull Iterable<? extends T> items) {
-        Objects.requireNonNull(items, "items");
-        assert items.iterator().hasNext() : "There must be at least one item.";
-
-        return SourceBuilder.batch("items",
-                        ctx -> new ItemsDelayedSource<T>(delayMillis, items))
-                .<T>fillBufferFn(ItemsDelayedSource::fillBuffer)
-                .build();
-    }
-
-    /**
-     * Returns a batch source which iterates through the supplied items by
-     * waiting at least {@code delayMillis} milliseconds between consecutive
-     * items and then terminates.
-     *
-     * @since 5.3
-     */
-    @Nonnull
-    public static <T> BatchSource<T> itemsDelayed(int delayMillis, @Nonnull T... items) {
-        Objects.requireNonNull(items, "items");
-        return itemsDelayed(delayMillis, Arrays.asList(items));
-    }
-
-    /**
      * Returns a streaming source that generates events of type {@link
      * SimpleEvent} at the specified rate.
      * <p>
@@ -192,10 +159,9 @@ public final class TestSources {
         Objects.requireNonNull(generatorFn, "generatorFn");
         checkSerializable(generatorFn, "generatorFn");
 
-        return SourceBuilder.timestampedStream("itemStream",
-                        ctx -> new ItemStreamSource<T>(itemsPerSecond, generatorFn))
-                .<T>fillBufferFn(ItemStreamSource::fillBuffer)
-                .build();
+        return SourceBuilder.timestampedStream("itemStream", ctx -> new ItemStreamSource<T>(itemsPerSecond, generatorFn))
+            .<T>fillBufferFn(ItemStreamSource::fillBuffer)
+            .build();
     }
 
     /**
@@ -270,31 +236,6 @@ public final class TestSources {
                 T item = generator.generate(ts, sequence++);
                 buf.add(item, ts);
                 emitSchedule += periodNanos;
-            }
-        }
-    }
-
-    private static final class ItemsDelayedSource<T> {
-        private final Iterator<? extends T> iterator;
-        private final long delayMillis;
-        private long emitSchedule;
-
-        private ItemsDelayedSource(int delayMillis, Iterable<? extends T> items) {
-            this.delayMillis = delayMillis;
-            this.iterator = items.iterator();
-        }
-
-        void fillBuffer(SourceBuffer<T> buf) {
-            long nowMillis = System.currentTimeMillis();
-            if (emitSchedule == 0) {
-                emitSchedule = nowMillis;
-            }
-            if (nowMillis >= emitSchedule) {
-                buf.add(iterator.next());
-                emitSchedule += delayMillis;
-                if (!iterator.hasNext()) {
-                    buf.close();
-                }
             }
         }
     }

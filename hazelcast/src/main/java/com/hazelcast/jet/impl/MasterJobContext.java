@@ -688,7 +688,7 @@ public class MasterJobContext {
                     nonSynchronizedAction = () -> mc.coordinationService().restartJob(mc.jobId());
                 } else if (!isCancelled() && isRestartableException(failure) && mc.jobConfig().isAutoScaling()) {
                     // if restart is due to a failure, schedule a restart after a delay
-                    scheduleRestart(failure.toString());
+                    scheduleRestart(description);
                     nonSynchronizedAction = NO_OP;
                 } else if (terminationModeAction == SUSPEND
                         || isRestartableException(failure)
