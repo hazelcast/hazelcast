@@ -42,6 +42,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.util.ToHeapDataConverter.toHeapData;
+import static com.hazelcast.map.impl.ExpirationTimeSetter.getExpiryReason;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.nextExpirationTime;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.pickMaxIdleMillis;
 import static com.hazelcast.map.impl.ExpirationTimeSetter.pickTTLMillis;
@@ -279,8 +280,7 @@ public class ExpirySystemImpl implements ExpirySystem {
             return ExpiryReason.NOT_EXPIRED;
         }
 
-        ExpiryReason expiryReason = expiryMetadata.getMaxIdle() <= expiryMetadata.getTtl()
-                ? ExpiryReason.MAX_IDLE_SECONDS : ExpiryReason.TTL;
+        ExpiryReason expiryReason = getExpiryReason(expiryMetadata);
 
         if (backup && canPrimaryDriveExpiration
                 && expiryReason == ExpiryReason.MAX_IDLE_SECONDS) {

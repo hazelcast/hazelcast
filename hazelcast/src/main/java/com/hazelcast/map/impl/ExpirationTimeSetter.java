@@ -17,6 +17,8 @@
 package com.hazelcast.map.impl;
 
 import com.hazelcast.config.MapConfig;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
+import com.hazelcast.map.impl.recordstore.expiry.ExpiryReason;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -34,6 +36,22 @@ public final class ExpirationTimeSetter {
         long nextTtlExpirationTime = nextTtlExpirationTime(ttlMillis, lastUpdateTime);
         long nextMaxIdleExpirationTime = nextMaxIdleExpirationTime(maxIdleMillis, now);
         return Math.min(nextTtlExpirationTime, nextMaxIdleExpirationTime);
+    }
+
+    /**
+     * If expiration time is less than what it needs to be for ttl
+     * expiration, returns {@link ExpiryReason#MAX_IDLE_SECONDS}.
+     * Otherwise returns {@link ExpiryReason#TTL}.
+     *
+     * @param expiryMetadata expiry data of the entry to check
+     * @return reason of expiry
+     * @see ExpirationTimeSetter#nextExpirationTime(long, long, long, long)
+     */
+    public static ExpiryReason getExpiryReason(ExpiryMetadata expiryMetadata) {
+        long ttlExpirationTime = nextTtlExpirationTime(expiryMetadata.getTtl(), expiryMetadata.getLastUpdateTime());
+        return expiryMetadata.getExpirationTime() < ttlExpirationTime
+                ? ExpiryReason.MAX_IDLE_SECONDS
+                : ExpiryReason.TTL;
     }
 
     private static long nextTtlExpirationTime(long ttlMillis, long lastUpdateTime) {
