@@ -98,6 +98,22 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     // TODO we can use more efficient structure: we only remove from the beginning and add to the end
     @SuppressWarnings("unchecked")
     private SortedMap<Long, Integer>[] watermarkCounts = new SortedMap[0];
+    /**
+     * Current inflight items.
+     * <p>
+     * Invariant: sum of all values in {@link #inFlightItems} is equal to
+     * {@link #asyncOpsCounter}
+     * <p>
+     * We keep items with the same key as single entry with counter. This may
+     * lead to starvation of watermarks in a sequence of events like:
+     * {@code item, item, watermark, complete item, item, complete item, item, ...}
+     * when always one instance of given item is being processed
+     * (e.g. if the processing takes 10s but item is emitted every 5s).
+     * <p>
+     * This is {@link IdentityHashMap} but after restoring from snapshot objects
+     * that used single shared instance (e.g. {@link String})
+     * may no longer be the same shared instance.
+     */
     private final Map<T, Integer> inFlightItems = new IdentityHashMap<>();
     private Traverser<Object> currentTraverser = Traversers.empty();
     @SuppressWarnings("rawtypes")
@@ -116,6 +132,16 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     private long[] lastReceivedWms = {};
     private long[] lastEmittedWms = {};
     private long[] minRestoredWms = {};
+    /**
+     * Number of submitted asynchronous operations that have not yet finished.
+     * <p>
+     * Invariants:
+     * <ol>
+     *     <li>asyncOpsCounter >= 0</li>
+     *     <li>asyncOpsCounter <= maxConcurrentOps</li>
+     *     <li>see invariant in {@link #inFlightItems}</li>
+     * </ol>
+     */
     private int asyncOpsCounter;
 
     /** Temporary collection for restored objects during snapshot restore. */
@@ -243,7 +269,10 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
             watermarkCounts = Arrays.copyOf(watermarkCounts, newLength);
             watermarkCounts[wmIndex] = new TreeMap<>();
             if (inFlightItems.size() > 0) {
-                watermarkCounts[wmIndex].put(Long.MIN_VALUE, inFlightItems.size());
+                // Received watermark cannot be reordered with current inflight items
+                // Note that the same item can be processed multiple times
+                // if it appeared many times in the inbox.
+                watermarkCounts[wmIndex].put(Long.MIN_VALUE, asyncOpsCounter);
             }
 
             minRestoredWms = Arrays.copyOf(minRestoredWms, newLength);
@@ -303,6 +332,7 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
         Tuple2<T, Integer> value1 = (Tuple2<T, Integer>) value;
         // we can't apply backpressure here, we have to store the items and execute them later
         assert value1.f0() != null && value1.f1() != null;
+        // replay each item appropriate number of times, order does not matter
         for (int i = 0; i < value1.f1(); i++) {
             restoredObjects.add(value1.f0());
             LoggingUtil.logFinest(getLogger(), "Restored: %s", value1.f0());
@@ -324,8 +354,8 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
             return true;
         } else {
             tryFlushQueue();
+            return false;
         }
-        return false;
     }
 
     /**
@@ -347,8 +377,10 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
             }
             Tuple3<T, long[], Object> tuple = resultQueue.poll();
             if (tuple == null) {
-                return allEmpty(watermarkCounts);
+                // done if there are no ready and no inflight items
+                return asyncOpsCounter == 0;
             }
+            assert asyncOpsCounter > 0;
             asyncOpsCounter--;
             Integer inFlightItemsCount = inFlightItems.merge(tuple.f0(), -1, (o, n) -> o == 1 ? null : o + n);
             assert inFlightItemsCount == null || inFlightItemsCount > 0 : "inFlightItemsCount=" + inFlightItemsCount;

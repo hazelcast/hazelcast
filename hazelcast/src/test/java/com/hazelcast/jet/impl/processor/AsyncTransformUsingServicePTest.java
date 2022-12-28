@@ -192,8 +192,16 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
                 .verifyProcessor(getSupplier((ctx, item) ->  completedFuture(singleton(item + "-1"))))
                 .hazelcastInstance(instance())
                 .input(asList("a", "a", wm(10), "a"))
+                .outputChecker((expected, actual) ->
+                        actual.equals(asList("a-1", "a-1", wm(10), "a-1"))
+                        // last item may be reordered with watermark in current implementation
+                        // but this is not required.
+                        || (!ordered && actual.equals(asList("a-1", "a-1", "a-1", wm(10))))
+                        // after snapshot restore watermark may be duplicated
+                        || (!ordered && actual.equals(asList("a-1", "a-1", wm(10), "a-1", wm(10))))
+                )
                 .disableProgressAssertion()
-                .expectOutput(asList("a-1", "a-1", wm(10), "a-1"));
+                .expectOutput(singletonList("<see code>"));
     }
 
     @Test
