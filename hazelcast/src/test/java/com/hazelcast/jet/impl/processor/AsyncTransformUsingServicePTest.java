@@ -21,6 +21,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.Traversers;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
@@ -46,7 +47,10 @@ import org.junit.runners.Parameterized.Parameters;
 
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.jet.Traversers.singleton;
 import static com.hazelcast.jet.Traversers.traverseItems;
 import static com.hazelcast.jet.impl.util.Util.exceptionallyCompletedFuture;
 import static com.hazelcast.jet.pipeline.GeneralStage.DEFAULT_MAX_CONCURRENT_OPS;
@@ -54,12 +58,15 @@ import static java.util.Arrays.asList;
 import static java.util.Collections.emptyList;
 import static java.util.Collections.singletonList;
 import static java.util.concurrent.CompletableFuture.completedFuture;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @Parameterized.UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class  AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport {
+public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport {
 
     @Rule
     public ExpectedException exception = ExpectedException.none();
@@ -160,9 +167,6 @@ public class  AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport
 
     @Test
     public void test_forwardMultipleWatermarksWithoutItems() {
-        if (ordered) {
-            return;
-        }
         TestSupport
                 .verifyProcessor(getSupplier((ctx, item) -> {
                     throw new UnsupportedOperationException();
@@ -170,6 +174,26 @@ public class  AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport
                 .hazelcastInstance(instance())
                 .input(asList(wm(10, (byte) 0), wm(5, (byte) 1), wm(0, (byte) 2)))
                 .expectOutput(asList(wm(10, (byte) 0), wm(5, (byte) 1), wm(0, (byte) 2)));
+    }
+
+    @Test
+    public void test_completedFutures_sameElement() {
+        TestSupport
+                .verifyProcessor(getSupplier((ctx, item) ->  completedFuture(singleton(item + "-1"))))
+                .hazelcastInstance(instance())
+                .input(asList("a", "a", "a"))
+                .disableProgressAssertion()
+                .expectOutput(asList("a-1", "a-1", "a-1"));
+    }
+
+    @Test
+    public void test_completedFutures_sameElementInterleavedWithWatermark() {
+        TestSupport
+                .verifyProcessor(getSupplier((ctx, item) ->  completedFuture(singleton(item + "-1"))))
+                .hazelcastInstance(instance())
+                .input(asList("a", "a", wm(10), "a"))
+                .disableProgressAssertion()
+                .expectOutput(asList("a-1", "a-1", wm(10), "a-1"));
     }
 
     @Test
@@ -214,7 +238,7 @@ public class  AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport
         assertTrue("wm rejected", processor.tryProcessWatermark(wm(0)));
         inbox.add("bar");
         processor.process(0, inbox);
-        assertTrue("2nd item rejected even though max parallel ops is 1", inbox.isEmpty());
+        assertTrue("2nd item rejected even though max parallel ops is 2", inbox.isEmpty());
     }
 
     @Test
@@ -230,5 +254,101 @@ public class  AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport
         assertTrue("wm rejected", processor.tryProcessWatermark(wm(0)));
         assertTrue("wm rejected", processor.tryProcessWatermark(wm(1)));
         assertTrue("wm rejected", processor.tryProcessWatermark(wm(2)));
+    }
+
+    @Test
+    public void test_allItemsProcessed_withoutWatermarks() throws Exception {
+        CountDownLatch unblockProcess = new CountDownLatch(1);
+        Processor processor = getSupplier(
+                2,
+                (ctx, item) ->
+                        CompletableFuture.supplyAsync(() -> {
+                            try {
+                                assertTrue(unblockProcess.await(10, TimeUnit.SECONDS));
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
+                            return Traversers.singleton(item + "-processed");
+                        })
+                ).get(1).iterator().next();
+        TestOutbox outbox = new TestOutbox(128);
+        processor.init(outbox, new TestProcessorContext());
+        TestInbox inbox = new TestInbox(singletonList("foo"));
+        processor.process(0, inbox);
+        assertFalse("Should not complete when items are being processed", processor.complete());
+        unblockProcess.countDown();
+        assertTrueEventually(() -> assertTrue("Should complete after all items are processed",
+                processor.complete()));
+        assertThat(outbox.queue(0)).containsExactly("foo-processed");
+    }
+
+    @Test
+    public void test_firstWatermarkIsForwardedAfterPreviousItemsComplete() throws Exception {
+        // edge case test for first watermark
+        CountDownLatch unblockProcess = new CountDownLatch(1);
+        Processor processor = getSupplier(
+                2,
+                (ctx, item) ->
+                        CompletableFuture.supplyAsync(() -> {
+                            try {
+                                assertTrue(unblockProcess.await(10, TimeUnit.SECONDS));
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
+                            return Traversers.singleton(item + "-processed");
+                        })
+                ).get(1).iterator().next();
+        TestOutbox outbox = new TestOutbox(128);
+        processor.init(outbox, new TestProcessorContext());
+        TestInbox inbox = new TestInbox(singletonList("foo"));
+        processor.process(0, inbox);
+        assertTrue(processor.tryProcessWatermark(wm(10)));
+        assertEquals("should not forward watermark until previous elements are processed",
+                Long.MIN_VALUE, outbox.lastForwardedWm((byte) 0));
+        assertThat(outbox.queue(0)).isEmpty();
+        unblockProcess.countDown();
+        assertTrueEventually(() -> assertTrue("Should complete after all items are processed",
+                processor.complete()));
+        assertThat(outbox.queue(0)).containsExactly("foo-processed", wm(10));
+        assertEquals(10, outbox.lastForwardedWm((byte) 0));
+    }
+
+    @Test
+    public void test_firstWatermarkIsForwardedAfterPreviousItemsComplete_whenTheSameElementIsProcessed() throws Exception {
+        CountDownLatch unblockProcess = new CountDownLatch(1);
+        Processor processor = getSupplier(
+                10,
+                (ctx, item) ->
+                        CompletableFuture.supplyAsync(() -> {
+                            try {
+                                assertTrue(unblockProcess.await(10, TimeUnit.SECONDS));
+                            } catch (InterruptedException e) {
+                                throw new RuntimeException(e);
+                            }
+                            return Traversers.singleton(item + "-processed");
+                        })
+                ).get(1).iterator().next();
+        TestOutbox outbox = new TestOutbox(128);
+        processor.init(outbox, new TestProcessorContext());
+        TestInbox inbox = new TestInbox(asList("foo", "foo"));
+        processor.process(0, inbox);
+        assertTrue(processor.tryProcessWatermark(wm(10)));
+        assertEquals("should not forward watermark until previous elements are processed",
+                Long.MIN_VALUE, outbox.lastForwardedWm((byte) 0));
+        assertThat(outbox.queue(0)).isEmpty();
+
+        TestInbox inbox2 = new TestInbox(singletonList("foo"));
+        processor.process(0, inbox2);
+        assertEquals("should not forward watermark until previous elements are processed",
+                Long.MIN_VALUE, outbox.lastForwardedWm((byte) 0));
+        assertThat(outbox.queue(0)).isEmpty();
+
+        unblockProcess.countDown();
+
+        assertTrueEventually(null, () -> assertTrue("Should complete after all items are processed",
+                processor.complete()), 10);
+        assertThat(outbox.queue(0)).containsExactly("foo-processed", "foo-processed",
+                wm(10), "foo-processed");
+        assertEquals(10, outbox.lastForwardedWm((byte) 0));
     }
 }
