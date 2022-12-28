@@ -47,6 +47,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ExecutionException;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -213,6 +214,54 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
                 });
     }
 
+    @Test
+    public void testLightListener_waitForCompletion() {
+        testLightListener(finiteStream(1000, 2),
+                job -> {
+                    job.join();
+                    sleepSeconds(1);
+                },
+                "Jet: RUNNING -> COMPLETED");
+    }
+
+    @Test
+    public void testLightListener_cancelJob() {
+        testLightListener(TestSources.itemStream(1, (t, s) -> s),
+                job -> {
+                    job.cancel();
+                    sleepSeconds(1);
+                },
+                "User: RUNNING -> FAILED (CANCEL)");
+    }
+
+    @Test
+    public void testLightListener_jobFails() {
+        testLightListener(TestSources.itemStream(1, (t, s) -> 1 / (2 - s)),
+                (job, listener) -> {
+                    Throwable failure = null;
+                    try {
+                        job.getFuture().get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        failure = e.getCause();
+                    }
+                    assertNotNull(failure);
+                    sleepSeconds(1);
+                    assertIterableEquals(listener.log,
+                            "Jet: RUNNING -> FAILED (" + failure + ")");
+                });
+    }
+
+    @Test
+    public void testLightListenerDeregistration() {
+        testLightListener(TestSources.itemStream(1, (t, s) -> s),
+                (job, listener) -> {
+                    instance.get().getJet().removeJobStatusListener(listener);
+                    job.cancel();
+                    sleepSeconds(1);
+                    assertTrue(listener.log.isEmpty());
+                });
+    }
+
     @After
     public void testListenerDeregistration_onCompletion() throws IllegalAccessException {
         assertTrue(((Map<?, ?>) jobListeners.get(instance.get().getJet())).isEmpty());
@@ -247,6 +296,28 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
         testListener(source, (job, listener) -> {
             test.accept(job);
             assertTailEquals(listener.log, log);
+        });
+    }
+
+    void testLightListener(Object source, BiConsumer<Job, JobStatusLogger> test) {
+        Pipeline p = Pipeline.create();
+        (source instanceof BatchSource
+                    ? p.readFrom((BatchSource<?>) source)
+                    : p.readFrom((StreamSource<?>) source).withoutTimestamps())
+                .writeTo(Sinks.noop());
+
+        JetService jet = instance.get().getJet();
+        JobStatusLogger listener = new JobStatusLogger(-1);
+        Job job = jet.newLightJob(p);
+        sleepSeconds(1);
+        jet.addJobStatusListener(set(job.getId()), listener);
+        test.accept(job, listener);
+    }
+
+    void testLightListener(Object source, Consumer<Job> test, String log) {
+        testLightListener(source, (job, listener) -> {
+            test.accept(job);
+            assertIterableEquals(listener.log, log);
         });
     }
 
