@@ -247,7 +247,7 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
                 2, (ctx, item) -> new CompletableFuture<>()).get(1).iterator().next();
         processor.init(new TestOutbox(128), new TestProcessorContext());
         TestInbox inbox = new TestInbox();
-        // i have to add an item first because otherwise the WMs are forwarded right away
+        // I have to add an item first because otherwise the WMs are forwarded right away
         inbox.add("foo");
         processor.process(0, inbox);
         assertTrue("inbox not empty", inbox.isEmpty());
@@ -258,7 +258,7 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
 
     @Test
     public void test_allItemsProcessed_withoutWatermarks() throws Exception {
-        CompletableFuture processFuture = new CompletableFuture();
+        CompletableFuture<Traverser<String>> processFuture = new CompletableFuture<>();
         Processor processor = getSupplier(2, (ctx, item) -> processFuture)
                 .get(1).iterator().next();
         TestOutbox outbox = new TestOutbox(128);
@@ -275,7 +275,7 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
     @Test
     public void test_firstWatermarkIsForwardedAfterPreviousItemsComplete() throws Exception {
         // edge case test for first watermark
-        CompletableFuture processFuture = new CompletableFuture();
+        CompletableFuture<Traverser<String>> processFuture = new CompletableFuture<>();
         Processor processor = getSupplier(2, (ctx, item) -> processFuture)
                 .get(1).iterator().next();
 
@@ -311,12 +311,12 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
                                                                                                         int third)
             throws Exception {
         // futures can be completed in arbitrary order
-        List<CompletableFuture> futureList = new ArrayList<>(3);
+        List<CompletableFuture<String>> futureList = new ArrayList<>(3);
 
         Processor processor = getSupplier(
                 10,
                 (ctx, item) -> {
-                    CompletableFuture f = new CompletableFuture();
+                    CompletableFuture<String> f = new CompletableFuture<>();
                     futureList.add(f);
                     return f.thenApply(Traversers::singleton);
                 }).get(1).iterator().next();
