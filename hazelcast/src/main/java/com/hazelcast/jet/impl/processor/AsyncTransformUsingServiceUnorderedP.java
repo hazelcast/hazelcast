@@ -86,6 +86,9 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     and decrement when a response is processed. The count is the count of events received _before_ that WM, since
     the previous WM. When the count gets to 0, we know we can emit the watermark, because all the responses
     for events received before it were already sent.
+
+    Snapshot contains inflight elements at the time of taking the snapshot.
+    They are replayed when state is restored from the snapshot, so we get only at-least-once guarantee.
      */
 
     private final BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> callAsyncFn;
@@ -289,7 +292,7 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         if (key instanceof BroadcastKey) {
             assert ((BroadcastKey) key).key().equals(Keys.LAST_RECEIVED_WMS) : "Unexpected key: " + key;
-            // we restart at the oldest WM any instance was at at the time of snapshot
+            // we restart at the oldest WM any instance was at the time of snapshot
             for (Entry<Byte, Long> en : ((Map<Byte, Long>) value).entrySet()) {
                 int wmIndex = getWmIndex(en.getKey());
                 minRestoredWms[wmIndex] = Math.min(minRestoredWms[wmIndex], en.getValue());

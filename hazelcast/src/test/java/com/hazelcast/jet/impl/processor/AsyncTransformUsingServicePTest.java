@@ -45,10 +45,10 @@ import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.jet.Traversers.singleton;
 import static com.hazelcast.jet.Traversers.traverseItems;
@@ -258,25 +258,15 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
 
     @Test
     public void test_allItemsProcessed_withoutWatermarks() throws Exception {
-        CountDownLatch unblockProcess = new CountDownLatch(1);
-        Processor processor = getSupplier(
-                2,
-                (ctx, item) ->
-                        CompletableFuture.supplyAsync(() -> {
-                            try {
-                                assertTrue(unblockProcess.await(10, TimeUnit.SECONDS));
-                            } catch (InterruptedException e) {
-                                throw new RuntimeException(e);
-                            }
-                            return Traversers.singleton(item + "-processed");
-                        })
-                ).get(1).iterator().next();
+        CompletableFuture processFuture = new CompletableFuture();
+        Processor processor = getSupplier(2, (ctx, item) -> processFuture)
+                .get(1).iterator().next();
         TestOutbox outbox = new TestOutbox(128);
         processor.init(outbox, new TestProcessorContext());
         TestInbox inbox = new TestInbox(singletonList("foo"));
         processor.process(0, inbox);
         assertFalse("Should not complete when items are being processed", processor.complete());
-        unblockProcess.countDown();
+        processFuture.complete(Traversers.singleton("foo-processed"));
         assertTrueEventually(() -> assertTrue("Should complete after all items are processed",
                 processor.complete()));
         assertThat(outbox.queue(0)).containsExactly("foo-processed");
@@ -285,28 +275,21 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
     @Test
     public void test_firstWatermarkIsForwardedAfterPreviousItemsComplete() throws Exception {
         // edge case test for first watermark
-        CountDownLatch unblockProcess = new CountDownLatch(1);
-        Processor processor = getSupplier(
-                2,
-                (ctx, item) ->
-                        CompletableFuture.supplyAsync(() -> {
-                            try {
-                                assertTrue(unblockProcess.await(10, TimeUnit.SECONDS));
-                            } catch (InterruptedException e) {
-                                throw new RuntimeException(e);
-                            }
-                            return Traversers.singleton(item + "-processed");
-                        })
-                ).get(1).iterator().next();
+        CompletableFuture processFuture = new CompletableFuture();
+        Processor processor = getSupplier(2, (ctx, item) -> processFuture)
+                .get(1).iterator().next();
+
         TestOutbox outbox = new TestOutbox(128);
         processor.init(outbox, new TestProcessorContext());
         TestInbox inbox = new TestInbox(singletonList("foo"));
         processor.process(0, inbox);
         assertTrue(processor.tryProcessWatermark(wm(10)));
-        assertEquals("should not forward watermark until previous elements are processed",
+        assertEquals("Should not forward watermark until previous elements are processed",
                 Long.MIN_VALUE, outbox.lastForwardedWm((byte) 0));
         assertThat(outbox.queue(0)).isEmpty();
-        unblockProcess.countDown();
+
+        processFuture.complete(Traversers.singleton("foo-processed"));
+
         assertTrueEventually(() -> assertTrue("Should complete after all items are processed",
                 processor.complete()));
         assertThat(outbox.queue(0)).containsExactly("foo-processed", wm(10));
@@ -314,41 +297,64 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
     }
 
     @Test
-    public void test_firstWatermarkIsForwardedAfterPreviousItemsComplete_whenTheSameElementIsProcessed() throws Exception {
-        CountDownLatch unblockProcess = new CountDownLatch(1);
+    public void test_firstWatermarkIsForwardedAfterPreviousItemsComplete_whenTheSameElementIsProcessed_inOrder() throws Exception {
+        test_firstWatermarkIsForwardedAfterPreviousItemsComplete_whenTheSameElementIsProcessed(0, 1, 2);
+    }
+
+    @Test
+    public void test_firstWatermarkIsForwardedAfterPreviousItemsComplete_whenTheSameElementIsProcessed_inReverseOrder() throws Exception {
+        test_firstWatermarkIsForwardedAfterPreviousItemsComplete_whenTheSameElementIsProcessed(2, 1, 0);
+    }
+
+    private void test_firstWatermarkIsForwardedAfterPreviousItemsComplete_whenTheSameElementIsProcessed(int first,
+                                                                                                        int second,
+                                                                                                        int third)
+            throws Exception {
+        // futures can be completed in arbitrary order
+        List<CompletableFuture> futureList = new ArrayList<>(3);
+
         Processor processor = getSupplier(
                 10,
-                (ctx, item) ->
-                        CompletableFuture.supplyAsync(() -> {
-                            try {
-                                assertTrue(unblockProcess.await(10, TimeUnit.SECONDS));
-                            } catch (InterruptedException e) {
-                                throw new RuntimeException(e);
-                            }
-                            return Traversers.singleton(item + "-processed");
-                        })
-                ).get(1).iterator().next();
+                (ctx, item) -> {
+                    CompletableFuture f = new CompletableFuture();
+                    futureList.add(f);
+                    return f.thenApply(Traversers::singleton);
+                }).get(1).iterator().next();
         TestOutbox outbox = new TestOutbox(128);
         processor.init(outbox, new TestProcessorContext());
         TestInbox inbox = new TestInbox(asList("foo", "foo"));
         processor.process(0, inbox);
         assertTrue(processor.tryProcessWatermark(wm(10)));
-        assertEquals("should not forward watermark until previous elements are processed",
+        assertEquals("Should not forward watermark until previous elements are processed",
                 Long.MIN_VALUE, outbox.lastForwardedWm((byte) 0));
         assertThat(outbox.queue(0)).isEmpty();
 
         TestInbox inbox2 = new TestInbox(singletonList("foo"));
         processor.process(0, inbox2);
-        assertEquals("should not forward watermark until previous elements are processed",
+        assertEquals("Should not forward watermark until previous elements are processed",
                 Long.MIN_VALUE, outbox.lastForwardedWm((byte) 0));
         assertThat(outbox.queue(0)).isEmpty();
 
-        unblockProcess.countDown();
+        assertThat(futureList).hasSize(3);
+        futureList.get(first).complete("foo-" + first);
+        futureList.get(second).complete("foo-" + second);
+        futureList.get(third).complete("foo-" + third);
 
         assertTrueEventually(null, () -> assertTrue("Should complete after all items are processed",
                 processor.complete()), 10);
-        assertThat(outbox.queue(0)).containsExactly("foo-processed", "foo-processed",
-                wm(10), "foo-processed");
+        if (ordered) {
+            assertThat(outbox.queue(0))
+                    .as("Items should be emitted in submission order")
+                    .containsExactly("foo-0", "foo-1", wm(10), "foo-2");
+        } else {
+            assertThat(outbox.queue(0))
+                    .as("All items should be emitted")
+                    .containsExactlyInAnyOrder("foo-0", "foo-1", "foo-2", wm(10))
+                    // note that foo-2 can be reordered with watermark but this way it is fine
+                    .as("Items should be emitted in correct order relative to watermark")
+                    .containsSubsequence("foo-0", wm(10))
+                    .containsSubsequence("foo-1", wm(10));
+        }
         assertEquals(10, outbox.lastForwardedWm((byte) 0));
     }
 }
