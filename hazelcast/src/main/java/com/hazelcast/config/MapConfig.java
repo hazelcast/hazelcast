@@ -24,6 +24,7 @@ import com.hazelcast.map.IMap;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;
@@ -42,7 +43,7 @@ import static com.hazelcast.internal.util.Preconditions.isNotNull;
 /**
  * Contains the configuration for an {@link IMap}.
  */
-public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
+public class MapConfig implements IdentifiedDataSerializable, NamedConfig, Versioned {
 
     /**
      * The minimum number of backups
@@ -122,7 +123,6 @@ public class MapConfig implements IdentifiedDataSerializable, NamedConfig {
      * com.hazelcast.spi.properties.ClusterProperty#OPERATION_BACKUP_TIMEOUT_MILLIS}
      * elapses when waiting for completion of synchronous backups.
      */
-    //TODO: add to EnumCompatibilityTest and client protocol
     public enum SyncBackupTimeoutPolicy {
         /**
          * Use behavior configured by global property:

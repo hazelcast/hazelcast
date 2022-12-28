@@ -26,6 +26,7 @@ import com.hazelcast.config.CacheSimpleConfig.ExpiryPolicyFactoryConfig.TimedExp
 import com.hazelcast.config.EvictionPolicy;
 import com.hazelcast.config.InMemoryFormat;
 import com.hazelcast.config.IndexType;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.config.MapStoreConfig;
 import com.hazelcast.config.MaxSizePolicy;
 import com.hazelcast.config.MetadataPolicy;
@@ -511,6 +512,15 @@ public class EnumCompatibilityTest {
         mappings.put(ScheduledExecutorConfig.CapacityPolicy.PER_NODE, (byte) 0);
         mappings.put(ScheduledExecutorConfig.CapacityPolicy.PER_PARTITION, (byte) 1);
         verifyCompatibility(ScheduledExecutorConfig.CapacityPolicy.values(), ScheduledExecutorConfig.CapacityPolicy::getId, mappings);
+    }
+
+    @Test
+    public void testSyncBackupTimeoutPolicy() {
+        Map<MapConfig.SyncBackupTimeoutPolicy, Integer> mappings = new HashMap<>();
+        mappings.put(MapConfig.SyncBackupTimeoutPolicy.GLOBAL, 0);
+        mappings.put(MapConfig.SyncBackupTimeoutPolicy.SUCCESS, 1);
+        mappings.put(MapConfig.SyncBackupTimeoutPolicy.INDETERMINATE, 2);
+        verifyCompatibility(MapConfig.SyncBackupTimeoutPolicy.values(), MapConfig.SyncBackupTimeoutPolicy::getId, mappings);
     }
 
     private <T, V> void verifyCompatibility(T[] values, Function<T, V> toId, Map<T, V> mappings) {
