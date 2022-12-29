@@ -83,8 +83,8 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     In the resultQueue we also store the last received WM value for each key.
 
     Separately, we track watermark counts for each key, which we increment for each WM key when an event is received,
-    and decrement when a response is processed. The count is the count of events received _before_ that WM, since
-    the previous WM. When the count gets to 0, we know we can emit the watermark, because all the responses
+    and decrement when a response is processed. The count is the count of events received _since_ that WM, _before_
+    the next WM. When the count gets to 0, we know we can emit the next watermark, because all the responses
     for events received before it were already sent.
 
     Snapshot contains inflight elements at the time of taking the snapshot.
@@ -95,20 +95,26 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     private final Function<? super T, ? extends K> extractKeyFn;
 
     private ManyToOneConcurrentArrayQueue<Tuple3<T, long[], Object>> resultQueue;
+    /**
+     * Each watermark count map contains:
+     * <ul>
+     *     <li>key: watermark timestamp or {@link Long#MIN_VALUE} for items before first watermark</li>
+     *     <li>value: number of items received _after_ this WM and _before_ next WM (if any)
+     *     that are still being processed.</li>
+     * </ul>
+     */
     // TODO we can use more efficient structure: we only remove from the beginning and add to the end
     @SuppressWarnings("unchecked")
     private SortedMap<Long, Integer>[] watermarkCounts = new SortedMap[0];
     /**
      * Current inflight items.
      * <p>
-     * Invariant: sum of all values in {@link #inFlightItems} is equal to
-     * {@link #asyncOpsCounter}
-     * <p>
-     * We keep items with the same key as single entry with counter. This may
-     * lead to starvation of watermarks in a sequence of events like:
-     * {@code item, item, watermark, complete item, item, complete item, item, ...}
-     * when always one instance of given item is being processed
-     * (e.g. if the processing takes 10s but item is emitted every 5s).
+     * Invariants:
+     * <ol>
+     *     <li>for each key, value > 0. Finished items are immediately removed</li>
+     *     <li>sum of all values in {@link #inFlightItems} is equal to
+     *     {@link #asyncOpsCounter}</li>
+     * </ol>
      * <p>
      * This is {@link IdentityHashMap} but after restoring from snapshot objects
      * that used single shared instance (e.g. {@link String})
@@ -129,6 +135,10 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
      * WM key.
      */
     private byte[] wmKeysInv = {};
+    /**
+     * Last received watermark for given key index (wmIndex).
+     * Copy-on-write.
+     */
     private long[] lastReceivedWms = {};
     private long[] lastEmittedWms = {};
     private long[] minRestoredWms = {};
@@ -223,6 +233,7 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
             return true;
         }
         if (allEmpty(watermarkCounts)) {
+            // Emit watermark eagerly if there are no pending items to wait for.
             if (!tryEmit(watermark)) {
                 return false;
             }
@@ -230,7 +241,7 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
         }
         // We must not mutate lastReceivedWms, because we share the instance in the inFlightItems - we would
         // mutate the instance they have. Instead, we copy and mutate it.
-        lastReceivedWms = Arrays.copyOf(lastReceivedWms, Math.max(wmIndex + 1, lastReceivedWms.length));
+        lastReceivedWms = lastReceivedWms.clone();
         lastReceivedWms[wmIndex] = watermark.timestamp();
         return true;
     }
@@ -268,8 +279,9 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
 
             watermarkCounts = Arrays.copyOf(watermarkCounts, newLength);
             watermarkCounts[wmIndex] = new TreeMap<>();
-            if (inFlightItems.size() > 0) {
-                // Received watermark cannot be reordered with current inflight items
+            if (asyncOpsCounter > 0) {
+                // This is a first time we have seen given watermark key.
+                // Current inflight items were received before any watermark for this key.
                 // Note that the same item can be processed multiple times
                 // if it appeared many times in the inbox.
                 watermarkCounts[wmIndex].put(Long.MIN_VALUE, asyncOpsCounter);
@@ -405,6 +417,9 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
                     continue;
                 }
                 long wmToEmit = Long.MIN_VALUE;
+                // First watermark with non-zero counter is ready to be emitted:
+                // - all items before it have completed (and can be removed from watermarkCount map)
+                // - there are inflight items received after it, so next watermark will not be ready
                 for (Iterator<Entry<Long, Integer>> it = watermarkCount.entrySet().iterator(); it.hasNext(); ) {
                     Entry<Long, Integer> entry = it.next();
                     if (entry.getValue() != 0) {
