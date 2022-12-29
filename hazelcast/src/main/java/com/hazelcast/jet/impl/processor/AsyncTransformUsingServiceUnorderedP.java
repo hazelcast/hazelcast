@@ -88,7 +88,7 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     for events received before it were already sent.
 
     Snapshot contains in-flight elements at the time of taking the snapshot.
-    They are replayed when state is restored from the snapshot, so we get only at-least-once guarantee.
+    They are replayed when state is restored from the snapshot.
      */
 
     private final BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> callAsyncFn;
