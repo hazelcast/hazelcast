@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -71,6 +72,7 @@ public class EndpointConfig implements NamedConfig {
     private int socketSendBufferSizeKb = DEFAULT_SOCKET_SEND_BUFFER_SIZE_KB;
     private int socketRcvBufferSizeKb = DEFAULT_SOCKET_RECEIVE_BUFFER_SIZE_KB;
     private int socketLingerSeconds = DEFAULT_SOCKET_LINGER_SECONDS;
+    private final AltoSocketConfig altoSocketConfig = new AltoSocketConfig();
 
     public ProtocolType getProtocolType() {
         return protocolType;
@@ -270,6 +272,10 @@ public class EndpointConfig implements NamedConfig {
     public EndpointConfig setSSLConfig(SSLConfig sslConfig) {
         this.sslConfig = sslConfig;
         return this;
+    }
+
+    public AltoSocketConfig getAltoSocketConfig() {
+        return altoSocketConfig;
     }
 
     @PrivateApi

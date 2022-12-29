@@ -54,8 +54,6 @@ public class ServerSocketEndpointConfig
 
     private String publicAddress;
 
-    private final AltoSocketConfig altoSocketConfig = new AltoSocketConfig();
-
     public ServerSocketEndpointConfig() {
         String os = StringUtil.lowerCaseInternal(System.getProperty("os.name"));
         reuseAddress = (!os.contains("win"));
@@ -189,10 +187,6 @@ public class ServerSocketEndpointConfig
     public ServerSocketEndpointConfig setReuseAddress(boolean reuseAddress) {
         this.reuseAddress = reuseAddress;
         return this;
-    }
-
-    public AltoSocketConfig getAltoSocketConfig() {
-        return altoSocketConfig;
     }
 
     @PrivateApi
