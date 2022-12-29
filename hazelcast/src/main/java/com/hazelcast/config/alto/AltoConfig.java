@@ -2,6 +2,8 @@ package com.hazelcast.config.alto;
 
 import com.hazelcast.config.InvalidConfigurationException;
 
+import java.util.Objects;
+
 public class AltoConfig {
     private static final boolean DEFAULT_ENABLED = false;
     private static final int DEFAULT_EVENTLOOP_COUNT = Runtime.getRuntime().availableProcessors();
@@ -30,6 +32,32 @@ public class AltoConfig {
 
         this.eventloopCount = eventloopCount;
         return this;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        AltoConfig that = (AltoConfig) o;
+        return enabled == that.enabled
+                && eventloopCount == that.eventloopCount;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(enabled, eventloopCount);
+    }
+
+    @Override
+    public String toString() {
+        return "AltoConfig{"
+                + "enabled=" + enabled
+                + ", eventloopCount=" + eventloopCount
+                + '}';
     }
 
     private static class Bounds {

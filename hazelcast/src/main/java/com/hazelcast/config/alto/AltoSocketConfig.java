@@ -3,6 +3,7 @@ package com.hazelcast.config.alto;
 import com.hazelcast.config.InvalidConfigurationException;
 
 import javax.annotation.Nonnull;
+import java.util.Objects;
 import java.util.regex.Pattern;
 
 public class AltoSocketConfig {
@@ -53,6 +54,34 @@ public class AltoSocketConfig {
 
         this.sendBufferSize = sendBufferSize;
         return this;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (o == null || getClass() != o.getClass()) {
+            return false;
+        }
+        AltoSocketConfig that = (AltoSocketConfig) o;
+        return receiveBufferSize == that.receiveBufferSize
+                && sendBufferSize == that.sendBufferSize
+                && portRange.equals(that.portRange);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(portRange, receiveBufferSize, sendBufferSize);
+    }
+
+    @Override
+    public String toString() {
+        return "AltoSocketConfig{"
+                + "portRange='" + portRange + '\''
+                + ", receiveBufferSize=" + receiveBufferSize
+                + ", sendBufferSize=" + sendBufferSize
+                + '}';
     }
 
     private static class Bounds {

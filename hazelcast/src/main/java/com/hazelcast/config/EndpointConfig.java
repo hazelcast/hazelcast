@@ -303,13 +303,15 @@ public class EndpointConfig implements NamedConfig {
                 && Objects.equals(sslConfig, that.sslConfig)
                 && Objects.equals(symmetricEncryptionConfig, that.symmetricEncryptionConfig)
                 && Objects.equals(outboundPortDefinitions, that.outboundPortDefinitions)
-                && Objects.equals(outboundPorts, that.outboundPorts);
+                && Objects.equals(outboundPorts, that.outboundPorts)
+                && Objects.equals(altoSocketConfig, that.altoSocketConfig);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(name, protocolType, interfaces, socketInterceptorConfig, sslConfig, symmetricEncryptionConfig,
                 outboundPortDefinitions, outboundPorts, socketBufferDirect, socketTcpNoDelay, socketKeepAlive,
-                socketConnectTimeoutSeconds, socketSendBufferSizeKb, socketRcvBufferSizeKb, socketLingerSeconds);
+                socketConnectTimeoutSeconds, socketSendBufferSizeKb, socketRcvBufferSizeKb, socketLingerSeconds,
+                altoSocketConfig);
     }
 }
