@@ -424,6 +424,7 @@ public class NetworkConfig {
                 + ", icmpFailureDetectorConfig=" + icmpFailureDetectorConfig
                 + ", restApiConfig=" + restApiConfig
                 + ", memcacheProtocolConfig=" + memcacheProtocolConfig
+                + ", altoSocketConfig=" + altoSocketConfig
                 + '}';
     }
 
@@ -448,7 +449,8 @@ public class NetworkConfig {
                 && Objects.equals(memberAddressProviderConfig, that.memberAddressProviderConfig)
                 && Objects.equals(icmpFailureDetectorConfig, that.icmpFailureDetectorConfig)
                 && Objects.equals(restApiConfig, that.restApiConfig)
-                && Objects.equals(memcacheProtocolConfig, that.memcacheProtocolConfig);
+                && Objects.equals(memcacheProtocolConfig, that.memcacheProtocolConfig)
+                && Objects.equals(altoSocketConfig, that.altoSocketConfig);
     }
 
     @Override
@@ -457,6 +459,6 @@ public class NetworkConfig {
                 .hash(port, portCount, portAutoIncrement, reuseAddress, publicAddress, outboundPortDefinitions, outboundPorts,
                         interfaces, join, symmetricEncryptionConfig, socketInterceptorConfig, sslConfig,
                         memberAddressProviderConfig,
-                        icmpFailureDetectorConfig, restApiConfig, memcacheProtocolConfig);
+                        icmpFailureDetectorConfig, restApiConfig, memcacheProtocolConfig, altoSocketConfig);
     }
 }
