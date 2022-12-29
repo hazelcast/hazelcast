@@ -2,6 +2,7 @@ package com.hazelcast.config.alto;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.internal.bootstrap.TpcServerBootstrap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -22,28 +23,34 @@ public class AltoConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testTPCDisabledByDefault() {
-        HazelcastInstance hz = createHazelcastInstance();
-        assertFalse(getNode(hz).getNodeEngine().getTpcServerBootstrap().isEnabled());
+        assertFalse(isTpcEnabled(createHazelcastInstance()));
     }
 
     @Test
     public void testEventloopCountDefault() {
         config.getAltoConfig().setEnabled(true);
         HazelcastInstance hz = createHazelcastInstance(config);
-        assertTrue(getNode(hz).getNodeEngine().getTpcServerBootstrap().isEnabled());
-        assertEquals(
-                Runtime.getRuntime().availableProcessors(),
-                getNode(hz).getNodeEngine().getTpcServerBootstrap().getTpcEngine().eventloopCount());
+        assertTrue(isTpcEnabled(hz));
+        assertEquals(Runtime.getRuntime().availableProcessors(), getEventloopCount(hz));
     }
 
     @Test
     public void testEventloopCount() {
-        config.getAltoConfig().setEnabled(true);
-        config.getAltoConfig().setEventloopCount(7);
+        config.getAltoConfig().setEnabled(true).setEventloopCount(7);
         HazelcastInstance hz = createHazelcastInstance(config);
-        assertTrue(getNode(hz).getNodeEngine().getTpcServerBootstrap().isEnabled());
-        assertEquals(
-                7,
-                getNode(hz).getNodeEngine().getTpcServerBootstrap().getTpcEngine().eventloopCount());
+        assertTrue(isTpcEnabled(hz));
+        assertEquals(7, getEventloopCount(hz));
+    }
+
+    private static int getEventloopCount(HazelcastInstance hz) {
+        return getTpcServerBootstrap(hz).getTpcEngine().eventloopCount();
+    }
+
+    private static boolean isTpcEnabled(HazelcastInstance hz) {
+        return getTpcServerBootstrap(hz).isEnabled();
+    }
+
+    private static TpcServerBootstrap getTpcServerBootstrap(HazelcastInstance hz) {
+        return getNode(hz).getNodeEngine().getTpcServerBootstrap();
     }
 }
