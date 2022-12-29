@@ -967,9 +967,9 @@ public final class TestSupport {
                         elapsed < MILLISECONDS.toNanos(cooperativeTimeout));
             }
             // print warning
-            if (elapsed > MILLISECONDS.toNanos(cooperativeTimeout)) {
+            if (elapsed > MILLISECONDS.toNanos(COOPERATIVE_TIME_LIMIT_MS_WARN)) {
                 System.out.printf("Warning: call to %s() took %.2fms, it should be <%dms normally%n",
-                        methodName, toMillis(elapsed), cooperativeTimeout);
+                        methodName, toMillis(elapsed), COOPERATIVE_TIME_LIMIT_MS_WARN);
             }
         } else {
             if (elapsed > MILLISECONDS.toNanos(BLOCKING_TIME_LIMIT_MS_WARN)) {
