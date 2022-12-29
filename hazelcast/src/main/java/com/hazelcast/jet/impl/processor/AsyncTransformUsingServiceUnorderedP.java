@@ -87,7 +87,7 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     the next WM. When the count gets to 0, we know we can emit the next watermark, because all the responses
     for events received before it were already sent.
 
-    Snapshot contains inflight elements at the time of taking the snapshot.
+    Snapshot contains in-flight elements at the time of taking the snapshot.
     They are replayed when state is restored from the snapshot, so we get only at-least-once guarantee.
      */
 
@@ -107,13 +107,14 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     @SuppressWarnings("unchecked")
     private SortedMap<Long, Integer>[] watermarkCounts = new SortedMap[0];
     /**
-     * Current inflight items.
+     * Current in-flight items.
      * <p>
      * Invariants:
      * <ol>
-     *     <li>for each key, value > 0. Finished items are immediately removed</li>
+     *     <li>for each key, value > 0. Finished items are immediately removed
      *     <li>sum of all values in {@link #inFlightItems} is equal to
-     *     {@link #asyncOpsCounter}</li>
+     *     {@link #asyncOpsCounter}, and to the sum of values in every map in the
+     *     {@link #watermarkCounts} array.
      * </ol>
      * <p>
      * This is {@link IdentityHashMap} but after restoring from snapshot objects
@@ -280,8 +281,8 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
             watermarkCounts = Arrays.copyOf(watermarkCounts, newLength);
             watermarkCounts[wmIndex] = new TreeMap<>();
             if (asyncOpsCounter > 0) {
-                // This is a first time we have seen given watermark key.
-                // Current inflight items were received before any watermark for this key.
+                // This is the first time we have seen this watermark key.
+                // Current in-flight items were received before any watermark for this key.
                 // Note that the same item can be processed multiple times
                 // if it appeared many times in the inbox.
                 watermarkCounts[wmIndex].put(Long.MIN_VALUE, asyncOpsCounter);
@@ -389,12 +390,12 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
             }
             Tuple3<T, long[], Object> tuple = resultQueue.poll();
             if (tuple == null) {
-                // done if there are no ready and no inflight items
+                // done if there are no ready and no in-flight items
                 return asyncOpsCounter == 0;
             }
             assert asyncOpsCounter > 0;
             asyncOpsCounter--;
-            Integer inFlightItemsCount = inFlightItems.merge(tuple.f0(), -1, (o, n) -> o == 1 ? null : o + n);
+            Integer inFlightItemsCount = inFlightItems.compute(tuple.f0(), (k, v) -> v == 1 ? null : v - 1);
             assert inFlightItemsCount == null || inFlightItemsCount > 0 : "inFlightItemsCount=" + inFlightItemsCount;
             // the result is either Throwable or Traverser<Object>
             if (tuple.f2() instanceof Throwable) {
@@ -417,9 +418,9 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
                     continue;
                 }
                 long wmToEmit = Long.MIN_VALUE;
-                // First watermark with non-zero counter is ready to be emitted:
+                // The first watermark with non-zero counter is ready to be emitted:
                 // - all items before it have completed (and can be removed from watermarkCount map)
-                // - there are inflight items received after it, so next watermark will not be ready
+                // - there are in-flight items received after it, so the next watermark is not ready
                 for (Iterator<Entry<Long, Integer>> it = watermarkCount.entrySet().iterator(); it.hasNext(); ) {
                     Entry<Long, Integer> entry = it.next();
                     if (entry.getValue() != 0) {
