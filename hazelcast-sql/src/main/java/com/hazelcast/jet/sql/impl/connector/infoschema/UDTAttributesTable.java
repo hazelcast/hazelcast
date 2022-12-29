@@ -94,7 +94,7 @@ public class UDTAttributesTable extends InfoSchemaTable {
                         field.getName(),
                         i + 1,
                         null, // attribute_default
-                        "YES",
+                        "YES", // is_nullable
                         toSqlDataTypeString(field.getQueryDataType()), // data type
                         field.getQueryDataType().getTypeFamily().equals(QueryDataTypeFamily.VARCHAR)
                                 ? Integer.MAX_VALUE
