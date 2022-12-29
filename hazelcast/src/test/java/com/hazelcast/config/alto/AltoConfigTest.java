@@ -1,8 +1,8 @@
 package com.hazelcast.config.alto;
 
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.bootstrap.TpcServerBootstrap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -13,7 +13,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.config.alto.AltoConfigAccessors.getEventloopCount;
+import static com.hazelcast.config.alto.AltoConfigAccessors.isTpcEnabled;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -45,23 +46,18 @@ public class AltoConfigTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testConfigBounds() {
+        AltoConfig altoConfig = config.getAltoConfig();
+        assertThrows(InvalidConfigurationException.class, () -> altoConfig.setEventloopCount(0));
+        assertThrows(InvalidConfigurationException.class, () -> altoConfig.setEventloopCount(256 + 1));
+    }
+
+    @Test
     public void testEqualsAndHashCode() {
         assumeDifferentHashCodes();
         EqualsVerifier.forClass(AltoConfig.class)
                 .usingGetClass()
                 .suppress(Warning.NONFINAL_FIELDS)
                 .verify();
-    }
-
-    private static int getEventloopCount(HazelcastInstance hz) {
-        return getTpcServerBootstrap(hz).getTpcEngine().eventloopCount();
-    }
-
-    private static boolean isTpcEnabled(HazelcastInstance hz) {
-        return getTpcServerBootstrap(hz).isEnabled();
-    }
-
-    private static TpcServerBootstrap getTpcServerBootstrap(HazelcastInstance hz) {
-        return getNode(hz).getNodeEngine().getTpcServerBootstrap();
     }
 }

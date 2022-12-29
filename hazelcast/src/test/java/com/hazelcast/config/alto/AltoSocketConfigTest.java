@@ -4,7 +4,6 @@ import com.hazelcast.config.Config;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.bootstrap.TpcServerBootstrap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
@@ -18,7 +17,8 @@ import org.junit.runner.RunWith;
 
 import java.util.ArrayList;
 
-import static com.hazelcast.test.Accessors.getNode;
+import static com.hazelcast.config.alto.AltoConfigAccessors.getClientPorts;
+import static com.hazelcast.config.alto.AltoConfigAccessors.getClientSocketConfig;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -34,16 +34,16 @@ public class AltoSocketConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testReceiveSize() {
-        config.getNetworkConfig().getAltoSocketConfig().setReceiveBufferSize(1 << 20);
+        getAltoSocketConfig().setReceiveBufferSize(1 << 20);
         HazelcastInstance hz = createHazelcastInstance(config);
-        assertEquals(1 << 20, getTpcServerBootstrap(hz).getClientSocketConfig().getReceiveBufferSize());
+        assertEquals(1 << 20, getClientSocketConfig(hz).getReceiveBufferSize());
     }
 
     @Test
     public void testSendSize() {
-        config.getNetworkConfig().getAltoSocketConfig().setSendBufferSize(1 << 20);
+        getAltoSocketConfig().setSendBufferSize(1 << 20);
         HazelcastInstance hz = createHazelcastInstance(config);
-        assertEquals(1 << 20, getTpcServerBootstrap(hz).getClientSocketConfig().getSendBufferSize());
+        assertEquals(1 << 20, getClientSocketConfig(hz).getSendBufferSize());
     }
 
     @Test
@@ -53,29 +53,29 @@ public class AltoSocketConfigTest extends HazelcastTestSupport {
         for (int i = 0; i < EVENTLOOP_COUNT; i++) {
             expectedPorts.add(11000 + i);
         }
-        assertEquals(expectedPorts, getTpcServerBootstrap(hz).getClientPorts());
+        assertEquals(expectedPorts, getClientPorts(hz));
     }
 
     @Test
     public void testClientPorts() {
-        config.getNetworkConfig().getAltoSocketConfig().setPortRange("13000-14000");
+        getAltoSocketConfig().setPortRange("13000-14000");
         HazelcastInstance hz = createHazelcastInstance(config);
         ArrayList<Integer> expectedPorts = new ArrayList<>();
         for (int i = 0; i < EVENTLOOP_COUNT; i++) {
             expectedPorts.add(13000 + i);
         }
-        assertEquals(expectedPorts, getTpcServerBootstrap(hz).getClientPorts());
+        assertEquals(expectedPorts, getClientPorts(hz));
     }
 
     @Test
     public void testClientPortsNotEnough() {
-        config.getNetworkConfig().getAltoSocketConfig().setPortRange("13000-" + (13000 + EVENTLOOP_COUNT - 2));
+        getAltoSocketConfig().setPortRange("13000-" + (13000 + EVENTLOOP_COUNT - 2));
         assertThrows(HazelcastException.class, () -> createHazelcastInstance(config));
     }
 
     @Test
     public void testClientPortsWith3Members() {
-        config.getNetworkConfig().getAltoSocketConfig().setPortRange("13000-14000");
+        getAltoSocketConfig().setPortRange("13000-14000");
         HazelcastInstance[] hz = createHazelcastInstances(config, 3);
         ArrayList<Integer> expectedPorts = new ArrayList<>();
 
@@ -83,24 +83,24 @@ public class AltoSocketConfigTest extends HazelcastTestSupport {
         for (int i = 0; i < EVENTLOOP_COUNT; i++) {
             expectedPorts.add(13000 + i);
         }
-        assertEquals(expectedPorts, getTpcServerBootstrap(hz[0]).getClientPorts());
+        assertEquals(expectedPorts, getClientPorts(hz[0]));
 
         // ports of hz1
         for (int i = 0; i < EVENTLOOP_COUNT; i++) {
             expectedPorts.set(i, expectedPorts.get(i) + EVENTLOOP_COUNT);
         }
-        assertEquals(expectedPorts, getTpcServerBootstrap(hz[1]).getClientPorts());
+        assertEquals(expectedPorts, getClientPorts(hz[1]));
 
         // ports of hz2
         for (int i = 0; i < EVENTLOOP_COUNT; i++) {
             expectedPorts.set(i, expectedPorts.get(i) + EVENTLOOP_COUNT);
         }
-        assertEquals(expectedPorts, getTpcServerBootstrap(hz[2]).getClientPorts());
+        assertEquals(expectedPorts, getClientPorts(hz[2]));
     }
 
     @Test
     public void testConfigBounds() {
-        AltoSocketConfig altoSocketConfig = config.getNetworkConfig().getAltoSocketConfig();
+        AltoSocketConfig altoSocketConfig = getAltoSocketConfig();
         assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setReceiveBufferSize(1 << 15 - 1));
         assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setReceiveBufferSize(1 << 30 + 1));
         assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setSendBufferSize(1 << 15 - 1));
@@ -120,7 +120,7 @@ public class AltoSocketConfigTest extends HazelcastTestSupport {
                 .verify();
     }
 
-    private static TpcServerBootstrap getTpcServerBootstrap(HazelcastInstance hz) {
-        return getNode(hz).getNodeEngine().getTpcServerBootstrap();
+    private AltoSocketConfig getAltoSocketConfig() {
+        return config.getNetworkConfig().getAltoSocketConfig();
     }
 }

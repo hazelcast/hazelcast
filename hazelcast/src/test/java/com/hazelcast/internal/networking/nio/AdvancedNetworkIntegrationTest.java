@@ -18,10 +18,10 @@ package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.cluster.Member;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.core.HazelcastInstance;
-import com.hazelcast.internal.bootstrap.TpcServerBootstrap;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.nio.Protocols;
 import com.hazelcast.jet.datamodel.Tuple2;
@@ -41,9 +41,11 @@ import java.net.Socket;
 import java.util.Objects;
 import java.util.Set;
 
+import static com.hazelcast.config.alto.AltoConfigAccessors.getClientPorts;
+import static com.hazelcast.config.alto.AltoConfigAccessors.getClientSocketConfig;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.test.Accessors.getNode;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
+import static com.hazelcast.test.HazelcastTestSupport.assertThrows;
 import static com.hazelcast.test.HazelcastTestSupport.smallInstanceConfig;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -97,12 +99,19 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
         }
 
         for (int i = 0; i < 3; i++) {
-            TpcServerBootstrap tpcServerBootstrap = getNode(hz[i]).getNodeEngine().getTpcServerBootstrap();
-
-            assertEquals(1 << 20, tpcServerBootstrap.getClientSocketConfig().getReceiveBufferSize());
-            assertEquals(1 << 19, tpcServerBootstrap.getClientSocketConfig().getSendBufferSize());
-            assertEquals(4, tpcServerBootstrap.getClientPorts().size());
+            assertEquals(1 << 20, getClientSocketConfig(hz[i]).getReceiveBufferSize());
+            assertEquals(1 << 19, getClientSocketConfig(hz[i]).getSendBufferSize());
+            assertEquals(4, getClientPorts(hz[i]).size());
         }
+    }
+
+    @Test
+    @Category(QuickTest.class)
+    public void testAltoWithAdvancedNetworkAndWithoutClientSocketConfigThrows() {
+        Config config = smallInstanceConfig();
+        config.getAltoConfig().setEnabled(true);
+        config.getAdvancedNetworkConfig().setEnabled(true);
+        assertThrows(InvalidConfigurationException.class, () -> newHazelcastInstance(config));
     }
 
     @Test
