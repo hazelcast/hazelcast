@@ -52,13 +52,16 @@ public final class EntryViews {
 
     public static <K, V> WanMapEntryView<K, V> createWanEntryView(Data key, Data value,
                                                                   Record<V> record, ExpiryMetadata expiryMetadata,
-                                                                  SerializationService serializationService) {
+                                                                  SerializationService serializationService,
+                                                                  boolean isPerEntryStatsEnabled) {
         return new WanMapEntryView<K, V>(key, value, serializationService)
                 .withCost(record.getCost())
                 .withVersion(record.getVersion())
                 .withHits(record.getHits())
                 .withLastAccessTime(record.getLastAccessTime())
-                .withLastUpdateTime(expiryMetadata.getLastUpdateTime())
+                .withLastUpdateTime(isPerEntryStatsEnabled
+                        ? record.getLastUpdateTime()
+                        : expiryMetadata.getLastUpdateTime())
                 .withCreationTime(record.getCreationTime())
                 .withLastStoredTime(record.getLastStoredTime())
                 .withTtl(expiryMetadata.getTtl())

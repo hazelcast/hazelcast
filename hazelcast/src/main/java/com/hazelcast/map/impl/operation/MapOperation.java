@@ -420,7 +420,8 @@ public abstract class MapOperation extends AbstractNamedOperation
         ExpiryMetadata expiryMetadata = recordStore.getExpirySystem().getExpiryMetadata(dataKey);
         WanMapEntryView<Object, Object> entryView = createWanEntryView(
                 toHeapData(dataKey), dataValue, record, expiryMetadata,
-                getNodeEngine().getSerializationService());
+                getNodeEngine().getSerializationService(),
+                mapContainer.getMapConfig().isPerEntryStatsEnabled());
 
         mapEventPublisher.publishWanUpdate(name, entryView, hasLoadProvenance);
     }
