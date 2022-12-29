@@ -58,7 +58,7 @@ public final class EntryViews {
                 .withVersion(record.getVersion())
                 .withHits(record.getHits())
                 .withLastAccessTime(record.getLastAccessTime())
-                .withLastUpdateTime(record.getLastUpdateTime())
+                .withLastUpdateTime(expiryMetadata.getLastUpdateTime())
                 .withCreationTime(record.getCreationTime())
                 .withLastStoredTime(record.getLastStoredTime())
                 .withTtl(expiryMetadata.getTtl())
