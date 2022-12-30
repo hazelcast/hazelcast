@@ -19,11 +19,9 @@ package com.hazelcast.internal.tpc.nio;
 import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpc.iobuffer.NonConcurrentIOBufferAllocator;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
-
 
 import java.net.InetSocketAddress;
 import java.net.SocketAddress;
