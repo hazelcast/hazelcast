@@ -27,6 +27,7 @@ import com.hazelcast.core.HazelcastJsonValue;
 import com.hazelcast.internal.json.Json;
 import com.hazelcast.internal.util.Clock;
 import com.hazelcast.map.impl.proxy.MapProxyImpl;
+import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.listener.EntryAddedListener;
 import com.hazelcast.map.listener.EntryExpiredListener;
 import com.hazelcast.query.PagingPredicate;
@@ -887,15 +888,15 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put(1, 1, 10_000, MILLISECONDS);
         EntryView<Integer, Integer> entryView1 = map.getEntryView(1);
 
-        assertNotEquals(-1, entryView1.getLastUpdateTime());
+        assertNotEquals(Record.UNSET, entryView1.getLastUpdateTime());
 
         map.put(2, 2, 0, MILLISECONDS);
         EntryView<Integer, Integer> entryView2 = map.getEntryView(2);
 
         if (perEntryStatsEnabled) {
-            assertNotEquals(-1, entryView1.getLastUpdateTime());
+            assertNotEquals(Record.UNSET, entryView1.getLastUpdateTime());
         } else {
-            assertEquals(-1, entryView2.getLastUpdateTime());
+            assertEquals(Record.UNSET, entryView2.getLastUpdateTime());
         }
     }
 
