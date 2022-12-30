@@ -125,12 +125,11 @@ import java.util.regex.Pattern;
  * <tr><td> {@code TZH}                 <td> time-zone hours (e.g. +3)
  * <tr><td> {@code TZM}                 <td> time-zone minutes (0-59)
  * <tr><td> {@code OF}                  <td> time-zone offset from UTC (e.g. +03:00)
- * <tr><td> {@code FM}                  <td> toggle fill mode
- * <tr><td> {@code TM}                  <td> toggle translate mode
  * </table>
  *
  * <table>
  * <tr><th> Modifier          <th> Description
+ * <tr><td> {@code FM} prefix <td> enable fill mode (suppress padding)
  * <tr><td> {@code TH} suffix <td> uppercase ordinal number suffix (English only)
  * <tr><td> {@code th} suffix <td> lowercase ordinal number suffix (English only)
  * </table>
@@ -151,7 +150,7 @@ import java.util.regex.Pattern;
  * <tr><td> {@code eeee}       <td> lowercase exponent for scientific notation (e.g. e+03, x10^+03)
  * <tr><td> {@code RN}         <td> uppercase Roman numeral for the integer part
  * <tr><td> {@code rn}         <td> lowercase Roman numeral for the integer part
- * <tr><td> {@code FM}         <td> toggle fill mode
+ * <tr><td> {@code FM}         <td> enable fill mode (suppress padding)
  * </table>
  *
  * <table>
@@ -178,47 +177,41 @@ import java.util.regex.Pattern;
  *      they switch to the overflow mode.
  * <li> In an overflow; digit positions print a single hash (#), {@code EEEE} and {@code eeee}
  *      patterns print +## as the exponent, {@code RN} and {@code rn} patterns print 15 hashes, and
- *      {@code TH} and {@code th} patterns print 2 spaces. The other patterns print what they print
- *      when there is no overflow. Note that NaN (non-a-number) is considered positive.
- * <li> In the normal and exponential forms, if there is no negative sign provision, an {@code M}
- *      pattern is prepended to the integer part. Similarly, if only one part has {@code BR} and/or
- *      {@code B} patterns, the latest bracket in the order of processing is inserted to the
- *      opposite part. The inferred sign is inserted so that it encloses all non-fixed patterns in
- *      the part to which it is inserted. </ul>
+ *      {@code TH} and {@code th} patterns print 2 spaces if the number is infinite. The other
+ *      patterns print what they print when there is no overflow. Note that NaN (non-a-number) is
+ *      considered positive.
+ * <li> In the normal and exponential forms, if there is no negative sign provision and there is at
+ *      least one digit position, an {@code M} pattern is prepended to the integer part. Similarly,
+ *      if only one part has {@code BR} and/or {@code B} patterns, the latest bracket in the order
+ *      of processing is inserted to the opposite part. The inferred sign is inserted so that it
+ *      encloses all non-fixed patterns in the part to which it is inserted. </ul>
  *
  * <br><h2> General Notes <ol>
  * <li> <b>Lowercase variants</b> of patterns are also accepted. If there is no special meaning of
  *      the lowercase variant, it has the same effect as its uppercase version.
- * <li> {@code FM} pattern toggles <b><em>the fill mode</em></b> until it is toggled again by
- *      another {@code FM} pattern or the end of the format string is reached. The fill mode is
- *      enabled by default. In date formats: <ol type="a">
- *      <li> In the fill mode, numeric fields are left-padded with zeros and textual fields are
+ * <li> {@code FM} pattern enables <b><em>the fill mode</em></b>, which suppresses padding.
+ *      In date formats: <ol type="a">
+ *      <li> If padding is enabled, numeric fields are left-padded with zeros and textual fields are
  *           left-padded with spaces.
- *      <li> The extra space introduced by the fill mode is printed immediately, i.e. it is not
- *           possible to float the fields to one side.
+ *      <li> The padding space is printed immediately, i.e. it is not possible to float the fields
+ *           to one side.
  *      </ol>
  *      In numeric formats: <ol type="a">
- *      <li> In the fill mode, all patterns with insignificant input print spaces. For example;
- *           {@code 9} pattern prints a single space if it corresponds to a leading/trailing zero,
- *           decimal/grouping separators print a single space if they are not in between digits,
- *           {@code TH} pattern prints 2 spaces if the integer part is 0, {@code EEEE} pattern
- *           prints 4 spaces if the exponent is 0, {@code RN} pattern pads the Roman numeral to
- *           meet 15 characters, {@code BR} pattern prints 2 spaces if the number is non-negative,
- *           and {@code MI}/{@code PL} patterns print a single space if the number is
- *           non-negative/negative respectively.
- *      <li> The extra space introduced by the fill mode is not printed until a <b><em>fixed</em>
- *           </b> pattern or the end of the format string is encountered. As a result, unfixed, or
- *           <b><em>anchored</em></b>, patterns float right within the extra space in the integer
- *           part and float left in the fraction part. Digit positions and decimal/grouping
- *           separators cannot float for obvious reasons, but they are considered "transparent"
- *           while anchoring other patterns.
+ *      <li> If padding is enabled; {@code 9} pattern prints a single space if it corresponds to a
+ *           leading/trailing zero, decimal/grouping separators print a single space if they are
+ *           not in between digits, {@code TH} pattern prints 2 spaces if the number is infinite,
+ *           {@code RN} pattern pads the Roman numeral to meet 15 characters, {@code BR} pattern
+ *           prints 2 spaces if the number is non-negative, and {@code MI}/{@code PL} patterns
+ *           print a single space if the number is non-negative/negative respectively.
+ *      <li> The padding space is not printed until a <b><em>fixed</em></b> pattern or the end of
+ *           the format string is encountered. As a result, unfixed, or <b><em>anchored</em></b>,
+ *           patterns float right within the extra space in the integer part and float left in the
+ *           fraction part. Digit positions and decimal/grouping separators cannot float for
+ *           obvious reasons, but they are considered "transparent" while anchoring other patterns.
  *      <li> Zero-padding and space-padding are completely orthogonal, which makes it possible to
  *           have zero-padded fractions, which are aligned at the decimal separator. However, this
  *           requires the last digit of the fraction part to be {@code '0'} if the Postgres
  *           convention is desired. </ol>
- * <li> {@code TM} pattern toggles <b><em>the translate mode</em></b> until it is toggled again by
- *      another {@code TM} pattern or the end of the format string is reached. The translate mode
- *      is enabled by default and causes textual fields to be localized.
  * <li> Consecutive unrecognized characters are interpreted as a <b><em>literal</em></b>. It is
  *      also possible to specify a literal by enclosing zero or more characters within double
  *      quotes. If the format string ends before an opening quote is paired, a closing quote is
@@ -227,8 +220,9 @@ import java.util.regex.Pattern;
  *      special meaning if any. In numeric formats, literals are anchored by default. To fix its
  *      position, a literal should be prepended with an {@code F} pattern, e.g. F$, F"USD". </ol>
  */
-@SuppressWarnings({"checkstyle:CyclomaticComplexity", "checkstyle:ExecutableStatementCount", "checkstyle:MagicNumber",
-        "checkstyle:MethodLength", "checkstyle:NestedIfDepth", "checkstyle:NPathComplexity"})
+@SuppressWarnings({"checkstyle:BooleanExpressionComplexity", "checkstyle:CyclomaticComplexity",
+        "checkstyle:ExecutableStatementCount", "checkstyle:MagicNumber", "checkstyle:MethodLength",
+        "checkstyle:NestedIfDepth", "checkstyle:NPathComplexity"})
 public abstract class Formatter {
     private static final String ESCAPED = "\\\\.";
     private static final String LITERAL = "\"(?:" + ESCAPED + "|[^\"])*\"?|" + ESCAPED;
@@ -239,7 +233,7 @@ public abstract class Formatter {
     private static final String NUMERIC
             = "[,G.D]|FM|BR?|SG?|MI?|PL?|CR?|V9+|TH|EEEE|RN";
     private static final Pattern DATETIME_TEMPLATE = Pattern.compile(
-            "FM|fm|TM|tm|(" + DATETIME + "|" + DATETIME.toLowerCase() + ")(TH|th)?|" + LITERAL);
+            "((?:FM|fm|TM|tm)*)(" + DATETIME + "|" + DATETIME.toLowerCase() + ")(TH|th)?|" + LITERAL);
     private static final Pattern NUMERIC_TEMPLATE = Pattern.compile(
             "[90]+|" + NUMERIC + "|" + NUMERIC.toLowerCase() + "|[Ff]?" + LITERAL);
     private static final Pattern SIGN = Pattern.compile("[+-]");
@@ -367,34 +361,32 @@ public abstract class Formatter {
         }
 
         static class PatternInstance implements Part {
-            final boolean fill;
-            final boolean translate;
-            final Pattern pattern;
+            final boolean padding;
+            final PatternElement pattern;
             final Ordinal ordinal;
 
-            PatternInstance(boolean fill, boolean translate, Pattern pattern, Ordinal ordinal) {
-                this.fill = fill;
-                this.translate = translate;
+            PatternInstance(boolean padding, PatternElement pattern, Ordinal ordinal) {
+                this.padding = padding;
                 this.pattern = pattern;
                 this.ordinal = ordinal;
             }
 
             @Override
             public void format(StringBuilder s, Temporal input, Locale locale) {
-                Object result = pattern.query.apply(input, translate ? locale : Locale.US);
+                Object result = pattern.query.apply(input, locale);
                 String r = result.toString();
-                if (pattern == Pattern.TZH) {
+                if (pattern == PatternElement.TZH) {
                     s.append((int) result < 0 ? '-' : '+');
                     r = (int) result < 0 ? r.substring(1) : r;
                 }
-                if (fill) {
+                if (padding) {
                     char pad = result instanceof Number ? '0' : ' ';
                     for (int i = r.length(); i < pattern.maxLength; i++) {
                         s.append(pad);
                     }
                 }
                 s.append(r);
-                if (pattern == Pattern.Y_YYY && (fill || r.length() == 4)) {
+                if (pattern == PatternElement.Y_YYY && (padding || r.length() == 4)) {
                     s.insert(s.length() - 3, ',');
                 }
                 if (ordinal != null) {
@@ -410,7 +402,7 @@ public abstract class Formatter {
         }
 
         @SuppressWarnings("checkstyle:MethodParamPad")
-        enum Pattern {
+        enum PatternElement {
             HH12  (ChronoField.CLOCK_HOUR_OF_AMPM, 2), HH(HH12),
             HH24  (ChronoField.HOUR_OF_DAY, 2),
             MI    (ChronoField.MINUTE_OF_HOUR, 2),
@@ -474,24 +466,24 @@ public abstract class Formatter {
             tz    (TZ, LOWERCASE),
             TZH   ((t, l) -> ZoneOffset.from(t).getTotalSeconds() / 3600, 2),
             TZM   ((t, l) -> (ZoneOffset.from(t).getTotalSeconds() % 3600) / 60, 2),
-            OF    ((t, l) -> ZoneOffset.from(t).getId(), 9);
+            OF    ((t, l) -> ZoneOffset.from(t).getId(), 6);
 
             final BiFunction<Temporal, Locale, Object> query;
             final int maxLength;
 
-            Pattern(Pattern pattern) {
+            PatternElement(PatternElement pattern) {
                 this(pattern.query, pattern.maxLength);
             }
-            Pattern(TemporalField field, int maxLength) {
+            PatternElement(TemporalField field, int maxLength) {
                 this((t, l) -> t.get(field), maxLength);
             }
-            Pattern(Pattern pattern, BiFunction<Object, Locale, Object> transform) {
+            PatternElement(PatternElement pattern, BiFunction<Object, Locale, Object> transform) {
                 this(pattern, transform, pattern.maxLength);
             }
-            Pattern(Pattern pattern, BiFunction<Object, Locale, Object> transform, int maxLength) {
+            PatternElement(PatternElement pattern, BiFunction<Object, Locale, Object> transform, int maxLength) {
                 this((t, l) -> transform.apply(pattern.query.apply(t, l), l), maxLength);
             }
-            Pattern(BiFunction<Temporal, Locale, Object> query, int maxLength) {
+            PatternElement(BiFunction<Temporal, Locale, Object> query, int maxLength) {
                 this.query = query;
                 this.maxLength = maxLength;
             }
@@ -500,9 +492,6 @@ public abstract class Formatter {
         enum Ordinal { TH, th }
 
         class DateTimeGroupProcessor implements GroupProcessor {
-            boolean fillMode = true;
-            boolean translateMode = true;
-
             @Override
             public void acceptLiteral(String literal) {
                 parts.add(new Literal(literal));
@@ -510,16 +499,13 @@ public abstract class Formatter {
 
             @Override
             public void acceptGroup(String group, Matcher m) {
-                if (group.equalsIgnoreCase("FM")) {
-                    fillMode = !fillMode;
-                } else if (group.equalsIgnoreCase("TM")) {
-                    translateMode = !translateMode;
-                } else if (group.startsWith("\"")) {
+                if (group.startsWith("\"")) {
                     parts.add(new Literal(group));
                 } else {
-                    String pattern = m.group(1).replace('.', '_').replace(',', '_');
-                    String suffix = m.group(2);
-                    parts.add(new PatternInstance(fillMode, translateMode, valueOf(Pattern.class, pattern),
+                    String prefix = m.group(1).toUpperCase();
+                    String pattern = m.group(2).replace('.', '_').replace(',', '_');
+                    String suffix = m.group(3);
+                    parts.add(new PatternInstance(!prefix.contains("FM"), valueOf(PatternElement.class, pattern),
                             suffix == null ? null : Ordinal.valueOf(suffix)));
                 }
             }
@@ -568,6 +554,7 @@ public abstract class Formatter {
         private final Form form;
         private final Mask integerMask;
         private final Mask fractionMask;
+        private final boolean padding;
         private final boolean currency;
         private final int shift;
 
@@ -577,12 +564,12 @@ public abstract class Formatter {
             boolean isAnchored();
         }
 
-        enum Pattern implements Anchorable {
+        enum PatternElement implements Anchorable {
             BR, B, SG, S, MI, M, PL, P, CR, C, TH, th, EEEE, eeee, RN, rn;
 
-            static final List<Pattern> SIGN = Arrays.asList(BR, B, SG, S, MI, M, PL, P);
-            static final List<Pattern> NEGATIVE = Arrays.asList(BR, B, SG, S, MI, M);
-            static final List<Pattern> ANCHORED = Arrays.asList(B, S, M, P, C, TH, th, EEEE, eeee, RN, rn);
+            static final List<PatternElement> SIGN = Arrays.asList(BR, B, SG, S, MI, M, PL, P);
+            static final List<PatternElement> NEGATIVE = Arrays.asList(BR, B, SG, S, MI, M);
+            static final List<PatternElement> ANCHORED = Arrays.asList(B, S, M, P, C, TH, th, EEEE, eeee, RN, rn);
 
             boolean isSign() {
                 return SIGN.contains(this);
@@ -630,32 +617,26 @@ public abstract class Formatter {
         }
 
         /**
-         * Stores {@link Literal}, {@link Pattern}, {@link Character} and {@link Integer} to
-         * represent arbitrary text, sign/currency/ordinals/exponent/roman numerals,
+         * Stores {@link Literal}, {@link PatternElement}, {@link Character} and {@link Integer}
+         * to represent arbitrary text, sign/currency/ordinals/exponent/roman numerals,
          * decimal/grouping separators, and digit groups respectively.
          */
         class Mask {
             final boolean pre;
             final List<Object> groups;
-            final List<Boolean> fillModes;
             final int digits;
             final int minDigits;
 
-            boolean nextFillMode;
             int offerSign = -1;
             boolean negative;
-            Pattern bracket;
+            PatternElement bracket;
 
-            Mask(boolean pre, List<Object> groups, List<Boolean> fillModes, boolean nextFillMode,
-                    StringBuilder digitMask, int minDigits) {
+            Mask(boolean pre, List<Object> groups, StringBuilder digitMask, int minDigits) {
                 this.pre = pre;
                 this.groups = new ArrayList<>(groups);
-                this.fillModes = new ArrayList<>(fillModes);
-                this.nextFillMode = nextFillMode;
 
                 if (pre) {
                     Collections.reverse(this.groups);
-                    Collections.reverse(this.fillModes);
                     digitMask.reverse();
                 }
                 for (int i = 0; i < this.groups.size(); i++) {
@@ -663,10 +644,10 @@ public abstract class Formatter {
                     if (!(g instanceof Anchorable) || ((Anchorable) g).isAnchored()) {
                         offerSign = i;
                     }
-                    if (g instanceof Pattern && ((Pattern) g).isNegativeSign()) {
+                    if (g instanceof PatternElement && ((PatternElement) g).isNegativeSign()) {
                         negative = true;
-                        if (g == Pattern.BR || g == Pattern.B) {
-                            bracket = (Pattern) g;
+                        if (g == PatternElement.BR || g == PatternElement.B) {
+                            bracket = (PatternElement) g;
                         }
                     }
                 }
@@ -677,20 +658,19 @@ public abstract class Formatter {
 
             /** Ensure matching bracket. Add anchored minus if there is no negative sign provision. */
             void ensureSignProvision(Mask pair) {
-                Pattern inferred = bracket == null && pair.bracket != null ? pair.bracket
-                        : pre && !negative && !pair.negative && form != Form.Roman ? Pattern.M : null;
+                PatternElement inferred = bracket == null && pair.bracket != null ? pair.bracket
+                        : pre && !(negative | pair.negative) && digits + pair.digits > 0
+                                && form != Form.Roman ? PatternElement.M : null;
                 if (inferred != null) {
                     groups.add(offerSign, inferred);
-                    fillModes.add(offerSign, offerSign == fillModes.size() ? nextFillMode
-                            : fillModes.get(offerSign));
                 }
             }
 
             void format(StringBuilder s, boolean negative, String integer, String fraction, int exponent,
-                        DecimalFormatSymbols symbols) {
-                StringBuilder digits = integer == null ? null : pre ? new StringBuilder(integer).reverse()
+                        boolean overflow, DecimalFormatSymbols symbols) {
+                StringBuilder digits = overflow ? null : pre ? new StringBuilder(integer).reverse()
                         : new StringBuilder(fraction);
-                if (digits != null) {
+                if (!overflow) {
                     // Append zeros to meet the minimum number of digits
                     while (digits.length() < minDigits) {
                         digits.append('0');
@@ -704,69 +684,64 @@ public abstract class Formatter {
                 }
                 List<Object> parts = new ArrayList<>();
                 // d: Accumulate the count of processed digits in the mask
-                // f: Accumulate the filler space until a fixed element or the end of the mask is encountered
+                // f: Accumulate the padding space until a fixed element or the end of the mask is encountered
                 for (int i = 0, d = 0, f = 0; i < groups.size();) {
                     Object g = groups.get(i);
-                    boolean fillMode = fillModes.get(i);
                     if (g instanceof Literal) {
                         parts.add(((Literal) g).contents);
-                    } else if (g instanceof Pattern) {
-                        Pattern p = (Pattern) g;
+                    } else if (g instanceof PatternElement) {
+                        PatternElement p = (PatternElement) g;
                         if (p.isSign()) {
                             char c = p.getSign(pre, negative);
                             if (c != ' ') {
                                 parts.add(c);
-                            } else if (fillMode) {
+                            } else if (padding) {
                                 f++;
                             }
-                        } else if (p == Pattern.CR || p == Pattern.C) {
+                        } else if (p == PatternElement.CR || p == PatternElement.C) {
                             parts.add(symbols.getCurrencySymbol());
-                        } else if (p == Pattern.TH || p == Pattern.th) {
+                        } else if (p == PatternElement.TH || p == PatternElement.th) {
                             if (integer != null && !integer.isEmpty()) {
                                 String th = getOrdinal(integer);
-                                parts.add(p == Pattern.TH ? th.toUpperCase() : th);
-                            } else if (fillMode) {
+                                parts.add(p == PatternElement.TH ? th.toUpperCase() : th);
+                            } else if (padding) {
                                 f += 2;
                             }
-                        } else if (p == Pattern.EEEE || p == Pattern.eeee) {
-                            if (digits == null || exponent != 0) {
-                                StringBuilder r = new StringBuilder();
-                                String e = symbols.getExponentSeparator();
-                                r.append(p == Pattern.EEEE ? e : e.toLowerCase());
-                                r.append(exponent < 0 ? '-' : '+');
-                                if (digits == null) {
-                                    r.append("##");
-                                } else {
-                                    exponent = Math.abs(exponent);
-                                    (exponent <= 9 ? r.append('0') : r).append(exponent);
-                                }
-                                parts.add(r);
-                            } else if (fillMode) {
-                                f += symbols.getExponentSeparator().length() + 3;
+                        } else if (p == PatternElement.EEEE || p == PatternElement.eeee) {
+                            StringBuilder r = new StringBuilder();
+                            String e = symbols.getExponentSeparator();
+                            r.append(p == PatternElement.EEEE ? e : e.toLowerCase());
+                            r.append(exponent < 0 ? '-' : '+');
+                            if (overflow) {
+                                r.append("##");
+                            } else {
+                                exponent = Math.abs(exponent);
+                                (exponent <= 9 ? r.append('0') : r).append(exponent);
                             }
-                        } else if (p == Pattern.RN || p == Pattern.rn) {
+                            parts.add(r);
+                        } else if (p == PatternElement.RN || p == PatternElement.rn) {
                             int n = integer == null || integer.length() > 4 ? Integer.MAX_VALUE
                                     : integer.isEmpty() ? 0 : Integer.parseInt(integer);
                             if (form == Form.Roman || n != 0) {
                                 String r = toRoman(form == Form.Roman && (n == 0 || negative)
                                         ? Integer.MAX_VALUE : n);
-                                parts.add(p == Pattern.rn ? r.toLowerCase() : r);
-                                if (fillMode) {
+                                parts.add(p == PatternElement.rn ? r.toLowerCase() : r);
+                                if (padding) {
                                     f += 15 - r.length();
                                 }
-                            } else if (fillMode) {
+                            } else if (padding) {
                                 f += 15;
                             }
                         }
                     } else if (g instanceof Character) {
-                        if (digits == null || d < digits.length()) {
+                        if (overflow || d < digits.length()) {
                             parts.add(g.equals('G') ? symbols.getGroupingSeparator() : g.equals('D') ? (currency
                                     ? symbols.getMonetaryDecimalSeparator() : symbols.getDecimalSeparator()) : g);
-                        } else if (fillMode) {
+                        } else if (padding) {
                             f++;
                         }
                     } else if (g instanceof Integer) {
-                        if (digits == null) {
+                        if (overflow) {
                             StringBuilder r = new StringBuilder();
                             for (int j = 0; j < (int) g; j++) {
                                 r.append('#');
@@ -776,10 +751,10 @@ public abstract class Formatter {
                             int e = Math.min(d + (int) g, digits.length());
                             StringBuilder r = new StringBuilder().append(digits, d, e);
                             parts.add(pre ? r.reverse() : r);
-                            if (fillMode) {
+                            if (padding) {
                                 f += d + (int) g - e;
                             }
-                        } else if (fillMode) {
+                        } else if (padding) {
                             f += (int) g;
                         }
                         d += (int) g;
@@ -813,12 +788,11 @@ public abstract class Formatter {
 
         static class NumericGroupProcessor implements GroupProcessor {
             final List<Object> groups = new ArrayList<>();
-            final List<Boolean> fillModes = new ArrayList<>();
             final StringBuilder integerDigits = new StringBuilder();
             final StringBuilder fractionDigits = new StringBuilder();
-            boolean fillMode = true;
             int decimalSeparator = -1;
             int afterLastDigit = -1;
+            boolean fillMode;
             boolean currency;
             boolean exponential;
             boolean roman;
@@ -833,7 +807,7 @@ public abstract class Formatter {
             public void acceptGroup(String group, Matcher m) {
                 String g = group.toUpperCase();
                 if (g.equals("FM")) {
-                    fillMode = !fillMode;
+                    fillMode = true;
                 } else if (g.startsWith("V")) {
                     shift += group.length() - 1;
                 } else if (g.startsWith("F") || g.startsWith("\"")) {
@@ -848,13 +822,13 @@ public abstract class Formatter {
                     }
                     add(g.charAt(0));
                 } else {
-                    Pattern pattern = valueOf(Pattern.class, group);
+                    PatternElement pattern = valueOf(PatternElement.class, group);
                     add(pattern);
-                    if (pattern == Pattern.CR || pattern == Pattern.C) {
+                    if (pattern == PatternElement.CR || pattern == PatternElement.C) {
                         currency = true;
-                    } else if (pattern == Pattern.EEEE || pattern == Pattern.eeee) {
+                    } else if (pattern == PatternElement.EEEE || pattern == PatternElement.eeee) {
                         exponential = true;
-                    } else if (pattern == Pattern.RN || pattern == Pattern.rn) {
+                    } else if (pattern == PatternElement.RN || pattern == PatternElement.rn) {
                         roman = true;
                     }
                 }
@@ -862,7 +836,6 @@ public abstract class Formatter {
 
             void add(Object group) {
                 groups.add(group);
-                fillModes.add(fillMode);
             }
         }
 
@@ -872,15 +845,14 @@ public abstract class Formatter {
             int split = p.decimalSeparator != -1 ? p.decimalSeparator
                     : p.afterLastDigit != -1 ? p.afterLastDigit : p.groups.size();
             boolean zero = p.integerDigits.indexOf("0") != -1 || p.fractionDigits.indexOf("0") != -1;
-            integerMask = new Mask(true, p.groups.subList(0, split), p.fillModes.subList(0, split),
-                    p.fillModes.isEmpty() ? p.fillMode : p.fillModes.get(0), p.integerDigits,
+            integerMask = new Mask(true, p.groups.subList(0, split), p.integerDigits,
                     !zero && p.integerDigits.length() > 0 ? 1 : 0);
             fractionMask = new Mask(false, p.groups.subList(split, p.groups.size()),
-                    p.fillModes.subList(split, p.fillModes.size()), p.fillMode, p.fractionDigits,
-                    !zero && p.integerDigits.length() == 0 ? 1 : 0);
+                    p.fractionDigits, !zero && p.integerDigits.length() == 0 ? 1 : 0);
 
             form = p.roman && integerMask.digits == 0 && fractionMask.digits == 0 ? Form.Roman
                     : p.exponential ? Form.Exponential : Form.Normal;
+            padding = !p.fillMode;
             currency = p.currency;
             shift = p.shift;
 
@@ -908,8 +880,6 @@ public abstract class Formatter {
          *      will right-shift the number by 1. However, it will not require additional rounding
          *      since the to-be-rounded digit is guaranteed to be zero in that case.
          * <li> Make paddings as needed. If the length of the integer part <ol type="a">
-         *      <li> is greater than the number of integer digits in the pattern, the pattern is
-         *           filled with hashes (#).
          *      <li> is greater than the length of {@code digits}, the floating-point (.)
          *           underflows and the integer part is appended with zeros.
          *      <li> is less than zero, the floating-point (.) overflows and the fraction part is
@@ -918,7 +888,9 @@ public abstract class Formatter {
          *           are split normally by the floating-point (.). </ol>
          *      In all cases, neither the integer nor fraction parts contain excess digits. This is
          *      actually an optimization against very low negative exponents.
-         * <li> Format the integer and fraction masks. </ol>
+         * <li> Format the integer and fraction masks. If the length of the integer part is greater
+         *      than the number of integer digits in the pattern, the pattern is filled with hashes
+         *      (#). </ol>
          * Useful notes: <ol>
          * <li> Floating-point numbers are always stored and represented in the exponential form.
          *      When the exponent is omitted, the floating-point of the number is aligned to the
@@ -938,8 +910,8 @@ public abstract class Formatter {
 
             if (value.equals("NaN") || value.endsWith("Infinity")) {
                 // Value is not formattable; pattern is filled with #'s.
-                integerMask.format(s, negative, null, null, 0, symbols);
-                fractionMask.format(s, negative, null, null, 0, symbols);
+                integerMask.format(s, negative, null, null, 0, true, symbols);
+                fractionMask.format(s, negative, null, null, 0, true, symbols);
             } else {
                 int dot = value.indexOf('.');
                 int exp = value.indexOf('E', dot + 2);
@@ -989,46 +961,42 @@ public abstract class Formatter {
                 }
 
                 // Step 5 - Padding
-                if (form != Form.Roman && integerLength > integerMask.digits) {
-                    // Integer part overflows; pattern is filled with #'s.
-                    integerMask.format(s, negative, null, null, 0, symbols);
-                    fractionMask.format(s, negative, null, null, 0, symbols);
+                if (integerLength > digits.length()) {
+                    // Floating-point underflows; integer part is padded wth 0's.
+                    StringBuilder r = new StringBuilder(integerLength);
+                    r.append(digits);
+                    for (int i = digits.length(); i < integerLength; i++) {
+                        r.append('0');
+                    }
+                    integer = r.toString();
+                    fraction = "";
+                } else if (integerLength < 0) {
+                    // Floating-point overflows; fraction part is padded with 0's.
+                    StringBuilder r = new StringBuilder();
+                    for (int i = 0; i < Math.min(-integerLength, fractionMask.digits); i++) {
+                        r.append('0');
+                    }
+                    if (-integerLength < fractionMask.digits) {
+                        r.append(digits, 0, integerLength + fractionMask.digits);
+                    }
+                    fraction = r.toString();
+                    integer = "";
+                    integerLength = 0;
                 } else {
-                    if (integerLength > digits.length()) {
-                        // Floating-point underflows; integer part is padded wth 0's.
-                        StringBuilder r = new StringBuilder(integerLength);
-                        r.append(digits);
-                        for (int i = digits.length(); i < integerLength; i++) {
-                            r.append('0');
-                        }
-                        integer = r.toString();
-                        fraction = "";
-                    } else if (integerLength < 0) {
-                        // Floating-point overflows; fraction part is padded with 0's.
-                        StringBuilder r = new StringBuilder();
-                        for (int i = 0; i < Math.min(-integerLength, fractionMask.digits); i++) {
-                            r.append('0');
-                        }
-                        if (-integerLength < fractionMask.digits) {
-                            r.append(digits, 0, integerLength + fractionMask.digits);
-                        }
-                        fraction = r.toString();
-                        integer = "";
-//                        integerLength = 0;
-                    } else {
-                        // 0 <= integerLength <= digits.length()
-                        integer = digits.substring(0, integerLength);
-                        fraction = digits.substring(integerLength,
-                                Math.min(integerLength + fractionMask.digits, digits.length()));
-                    }
-
-                    // Step 6 - Format the integer and fraction masks
-                    if (integer.isEmpty() && integerMask.minDigits > 0) {
-                        integer = "0";
-                    }
-                    integerMask.format(s, negative, integer, fraction, exponent, symbols);
-                    fractionMask.format(s, negative, integer, fraction, exponent, symbols);
+                    // 0 <= integerLength <= digits.length()
+                    integer = digits.substring(0, integerLength);
+                    fraction = digits.substring(integerLength,
+                            Math.min(integerLength + fractionMask.digits, digits.length()));
                 }
+
+                // Step 6 - Format the integer and fraction masks
+                if (integer.isEmpty() && integerMask.minDigits > 0) {
+                    integer = "0";
+                }
+                // If integer part overflows; pattern is filled with #'s.
+                boolean overflow = form != Form.Roman && integerLength > integerMask.digits;
+                integerMask.format(s, negative, integer, fraction, exponent, overflow, symbols);
+                fractionMask.format(s, negative, integer, fraction, exponent, overflow, symbols);
             }
             return s.toString();
         }

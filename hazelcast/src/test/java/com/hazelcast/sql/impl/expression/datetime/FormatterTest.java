@@ -59,14 +59,11 @@ public class FormatterTest {
 
     @Test
     public void testDates() {
-        Formatter f = forDates("FMDay, Mon DDth, YYYY");
+        Formatter f = forDates("FMDay, Mon FMDDth, FMYYYY");
         check(LocalDate.of(2022, 9, 26), f, "Monday, Sep 26th, 2022");
 
-        f = forDates("FMDD Month YYYY");
+        f = forDates("FMDD FMMonth FMYYYY");
         check(LocalDate.of(2022, 9, 26), f, "26 Eylül 2022", TR);
-
-        f = forDates("FMTMDD Month YYYY");
-        check(LocalDate.of(2022, 9, 26), f, "26 September 2022", TR);
 
         f = forDates("YYYY-MM-DD FMHH:MI AM OF");
         check(LocalDateTime.of(2022, 9, 26, 14, 53).atOffset(ZoneOffset.ofHours(3)), f,
@@ -80,20 +77,20 @@ public class FormatterTest {
             check(LocalTime.of(14, 53), f, "02:53 Ö.S.", TR);
         }
 
-        f = forDates("At HH24:MI:SS, FMSSSS(=SSSSS) \"seconds are passed from the midnight.\"");
+        f = forDates("At HH24:MI:SS, FMSSSS(=FMSSSSS) \"seconds are passed from the midnight.\"");
         check(LocalTime.of(12, 34, 56), f,
                 "At 12:34:56, 45296(=45296) seconds are passed from the midnight.");
 
-        f = forDates("YYYY-MM-DD \"is the\" FMDDDth \"day of\" YYYY.");
+        f = forDates("YYYY-MM-DD \"is the\" FMDDDth \"day of\" FMYYYY.");
         check(LocalDate.of(2022, 9, 26), f, "2022-09-26 is the 269th day of 2022.");
 
-        f = forDates("Y,YYY YYYY YYY YY Y -FM Y,YYY YYYY YYY YY Y");
+        f = forDates("Y,YYY YYYY YYY YY Y - FMY,YYY FMYYYY FMYYY FMYY FMY");
         check(Year.of(1), f, "0,001 0001 001 01 1 - 1 1 1 1 1");
 
         f = forDates("FF1 FF2 FF3(=MS) FF4 FF5 FF6(=US)");
         check(LocalTime.ofNanoOfDay(123456789), f, "1 12 123(=123) 1234 12345 123456(=123456)");
 
-        f = forDates("\"Quarter\" FMYYYY-\"Q\"Q \"is in the\" CCth \"century.\"");
+        f = forDates("\"Quarter\" FMYYYY-\"Q\"Q \"is in the\" FMCCth \"century.\"");
         check(YearMonth.of(2022, 9), f, "Quarter 2022-Q3 is in the 21st century.");
 
         f = forDates("\"Plato founded the Academy in c.\" FMYYYY AD.");
@@ -105,11 +102,11 @@ public class FormatterTest {
         f = forDates("AD(=BC) A.D.(=B.C.) ad(=bc) a.d.(=b.c.)");
         check(Year.of(0), f, "BC(=BC) B.C.(=B.C.) bc(=bc) b.c.(=b.c.)");
 
-        f = forDates("\"The Halley's closest approach to the Earth was on\" FMDD Month YYYY AD (the Jth \"Julian day\").");
+        f = forDates("\"The Halley's closest approach to the Earth was on\" FMDD FMMonth FMYYYY AD (the FMJth \"Julian day\").");
         check(LocalDate.of(837, 2, 28), f,
                 "The Halley's closest approach to the Earth was on 28 February 837 AD (the 2026827th Julian day).");
 
-        f = forDates("FMRM.RD.RY");
+        f = forDates("FMRM.FMRD.FMRY");
         check(LocalDate.of(2022, 9, 26), f, "IX.XXVI.MMXXII");
     }
 
@@ -119,17 +116,23 @@ public class FormatterTest {
         check(LocalDate.of(2022, 10, 25), f, "2022-W43-2");
         check(LocalDate.of(2019, 12, 30), f, "2020-W01-1");
 
-        f = forDates("YYYY-MM-DD \"is the\" FMIDDDth \"day of week-year\" IYYY.");
+        f = forDates("YYYY-MM-DD \"is the\" FMIDDDth \"day of week-year\" FMIYYY.");
         check(LocalDate.of(2008, 12, 29), f, "2008-12-29 is the 1st day of week-year 2009.");
         check(LocalDate.of(2010, 1, 3), f, "2010-01-03 is the 371st day of week-year 2009.");
 
-        f = forDates("IYYY IYY IY I -FM IYYY IYY IY I");
+        f = forDates("IYYY IYY IY I - FMIYYY FMIYY FMIY FMI");
         check(LocalDate.of(1, 1, 1), f, "0001 001 01 1 - 1 1 1 1");
     }
 
     @Test
     public void testDigitsAndGrouping() {
-        Formatter f = forNumbers("0,909.090");
+        Formatter f = forNumbers("00");
+        check(-5, f, "-05");
+
+        f = forNumbers(".00");
+        check(-0.5, f, "-.50");
+
+        f = forNumbers("0,909.090");
         check(-123.4, f, "-0,123.400");
 
         f = forNumbers("9,090.909");
@@ -191,15 +194,20 @@ public class FormatterTest {
 
     @Test
     public void testMultiplier() {
-        check(4.5,  " 450",  "-450",  "999V99", "999V9V9", "V9FMV9FM999");
+        check(4.5,  " 450",  "-450",  "999V99", "999V9V9");
         check(0.0485,  " 4.9 E-01",  "-4.9 E-01",  "9.9V9 EEEE", "9V9.9 EEEE", "9.9 V9EEEE", "9.9 EEEEV9");
     }
 
     @Test
     public void testExponentialForm() {
+        check(0,   " 0E+00",   "-0E+00",   "9EEEE");
+        check(0,  " .0E+00",  "-.0E+00",  ".9EEEE");
+
         Formatter f = forNumbers("FM9.99EEEE");
+        check(0,         f, "0E+00");
+        check(5e4,       f, "5E+04");
+        check(0.00045,   f, "4.5E-04");
         check(0.0004859, f, "4.86E-04");
-        check(5e4, f, "5E+04");
     }
 
     @Test
@@ -272,12 +280,8 @@ public class FormatterTest {
         check(-1,  f, "-");
         check(NaN, f, "+");
 
-        f = forNumbers("");
-        check(-1,  f, "-");
-        check(NaN, f, " ");
-
         f = forNumbers("9th");
-        check(-10, f, "-#  ");
+        check(-10, f, "-#th");
         check(NaN, f, " #  ");
 
         f = forNumbers("9.9EEEE");
@@ -327,16 +331,11 @@ public class FormatterTest {
 
     @Test
     public void testFillMode() {
-        check(4.5,  "  4.5 ",  " -4.5 ",    "99.99");
-        check(4.5,    "4.5",    "-4.5",   "FM99.99");
-        check(4.5,  "  4.5",   " -4.5",     "99.FM99");
-        check(4.5,    "4.5 ",   "-4.5 ",  "FM99.FM99");
+        check(0,  " 0",  "-0",  "9");
+        check(0,   "0",  "-0",  "FM9");
 
         check(0,  " 0 ",  "<0>",  "B9");
         check(0,   "0",   "<0>",  "FMB9");
-
-        check(0,   " 0    ",   "-0    ",   "9EEEE");
-        check(0,  " .0    ",  "-.0    ",  ".9EEEE");
 
         Formatter f = forNumbers("999 (RN)");
         check(0,   f, "   0 ()               ");
@@ -360,13 +359,19 @@ public class FormatterTest {
 
     @Test
     public void testFeatureOrthogonality() {
-        Formatter f = forNumbers("FM999V99 -> RN");
+        Formatter f = forNumbers("FM999th +.99");
+        check(421.35, f, "421st +.35");
+
+        f = forNumbers("FM999.99th");
+        check(421.35, f, "421.35st");
+
+        f = forNumbers("FM999V99 -> RN");
         check(3.14,  f, "314 -> CCCXIV");
     }
 
     @Test
     public void testLowercasePatterns() {
-        Formatter f = forDates("yyyy-mm-dd fmhh:mi am tztzh");
+        Formatter f = forDates("yyyy-mm-dd fmhh:mi am tzfmtzh");
         check(LocalDateTime.of(2022, 9, 26, 14, 53).atOffset(ZoneOffset.ofHours(3)), f,
                 "2022-09-26 2:53 pm gmt+3");
 
@@ -383,7 +388,7 @@ public class FormatterTest {
     @Test
     public void testEmptyOrIncompatibleFormat() {
         check(LocalDate.MIN, forDates(""), "");
-        check(0, forNumbers(""), " ");
+        check(0, forNumbers(""), "");
 
         assertThrows("Input parameter is expected to be date/time", QueryException.class,
                 () -> forDates("YYYY-MM-DD").format(0, US));
