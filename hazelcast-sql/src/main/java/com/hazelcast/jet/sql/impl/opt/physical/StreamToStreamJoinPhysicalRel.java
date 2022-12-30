@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.function.ToLongFunctionEx;
-import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -119,7 +118,7 @@ public class StreamToStreamJoinPhysicalRel extends JoinPhysicalRel {
     }
 
     @Override
-    public Vertex accept(CreateDagVisitor visitor) {
+    public <V> V accept(CreateDagVisitor<V> visitor) {
         return visitor.onStreamToStreamJoin(this);
     }
 

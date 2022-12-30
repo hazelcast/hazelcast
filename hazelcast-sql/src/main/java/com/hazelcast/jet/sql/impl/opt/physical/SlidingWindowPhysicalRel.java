@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.SlidingWindow;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
@@ -52,7 +51,7 @@ public class SlidingWindowPhysicalRel extends SlidingWindow implements PhysicalR
     }
 
     @Override
-    public Vertex accept(CreateDagVisitor visitor) {
+    public <V> V accept(CreateDagVisitor<V> visitor) {
         return visitor.onSlidingWindow(this);
     }
 
