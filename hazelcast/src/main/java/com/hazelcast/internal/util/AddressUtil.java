@@ -361,7 +361,7 @@ public final class AddressUtil {
         return selectedPorts;
     }
 
-    private static void transformPortDefinitionsToPorts(Collection<String> portDefinitions, Set<Integer> ports) {
+    public static Set<Integer> transformPortDefinitionsToPorts(Collection<String> portDefinitions, Set<Integer> ports) {
         // not checking port ranges...
         for (String portDef : portDefinitions) {
             String[] portDefs = portDef.split("[,; ]");
@@ -382,6 +382,7 @@ public final class AddressUtil {
                 }
             }
         }
+        return ports;
     }
 
     private static void parseIpv4(AddressMatcher matcher, String address) {

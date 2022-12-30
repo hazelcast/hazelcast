@@ -16,8 +16,8 @@
 
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpc.logging.TpcLogger;
+import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
 
 import java.io.Closeable;
 import java.io.IOException;

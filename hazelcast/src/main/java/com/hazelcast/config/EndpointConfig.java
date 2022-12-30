@@ -16,6 +16,7 @@
 
 package com.hazelcast.config;
 
+import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.spi.annotation.PrivateApi;
@@ -71,6 +72,7 @@ public class EndpointConfig implements NamedConfig {
     private int socketSendBufferSizeKb = DEFAULT_SOCKET_SEND_BUFFER_SIZE_KB;
     private int socketRcvBufferSizeKb = DEFAULT_SOCKET_RECEIVE_BUFFER_SIZE_KB;
     private int socketLingerSeconds = DEFAULT_SOCKET_LINGER_SECONDS;
+    private final AltoSocketConfig altoSocketConfig = new AltoSocketConfig();
 
     public ProtocolType getProtocolType() {
         return protocolType;
@@ -272,6 +274,10 @@ public class EndpointConfig implements NamedConfig {
         return this;
     }
 
+    public AltoSocketConfig getAltoSocketConfig() {
+        return altoSocketConfig;
+    }
+
     @PrivateApi
     public EndpointConfig setProtocolType(ProtocolType protocolType) {
         this.protocolType = protocolType;
@@ -297,13 +303,15 @@ public class EndpointConfig implements NamedConfig {
                 && Objects.equals(sslConfig, that.sslConfig)
                 && Objects.equals(symmetricEncryptionConfig, that.symmetricEncryptionConfig)
                 && Objects.equals(outboundPortDefinitions, that.outboundPortDefinitions)
-                && Objects.equals(outboundPorts, that.outboundPorts);
+                && Objects.equals(outboundPorts, that.outboundPorts)
+                && Objects.equals(altoSocketConfig, that.altoSocketConfig);
     }
 
     @Override
     public int hashCode() {
         return Objects.hash(name, protocolType, interfaces, socketInterceptorConfig, sslConfig, symmetricEncryptionConfig,
                 outboundPortDefinitions, outboundPorts, socketBufferDirect, socketTcpNoDelay, socketKeepAlive,
-                socketConnectTimeoutSeconds, socketSendBufferSizeKb, socketRcvBufferSizeKb, socketLingerSeconds);
+                socketConnectTimeoutSeconds, socketSendBufferSizeKb, socketRcvBufferSizeKb, socketLingerSeconds,
+                altoSocketConfig);
     }
 }

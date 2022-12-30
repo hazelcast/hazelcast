@@ -17,6 +17,11 @@
 package com.hazelcast.internal.bootstrap;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.config.InvalidConfigurationException;
+import com.hazelcast.config.ServerSocketEndpointConfig;
+import com.hazelcast.config.alto.AltoSocketConfig;
+import com.hazelcast.core.HazelcastException;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.tpc.AsyncServerSocket;
 import com.hazelcast.internal.tpc.Eventloop;
@@ -28,9 +33,10 @@ import com.hazelcast.internal.tpc.nio.NioEventloop;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
-import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.net.BindException;
 import java.net.InetSocketAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -43,7 +49,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 
 @SuppressWarnings("checkstyle:MagicNumber, checkstyle:")
 public class TpcServerBootstrap {
-    private static final int DEFAULT_HZ_PORT = 5701;
     private static final int TERMINATE_TIMEOUT_SECONDS = 5;
 
     public volatile boolean shutdown;
@@ -57,8 +62,6 @@ public class TpcServerBootstrap {
     private final boolean regularSchedule;
     private final boolean tcpNoDelay = true;
     private final boolean enabled;
-    private final int receiveBufferSize = 128 * 1024;
-    private final int sendBufferSize = 128 * 1024;
     private final Map<Eventloop, Supplier<? extends ReadHandler>> readHandlerSuppliers = new HashMap<>();
     private final List<AsyncServerSocket> serverSockets = new ArrayList<>();
     private volatile List<Integer> clientPorts;
@@ -67,7 +70,8 @@ public class TpcServerBootstrap {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(TpcServerBootstrap.class);
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
-        this.enabled = Boolean.parseBoolean(getProperty("hazelcast.tpc.enabled", "false"));
+        this.enabled = Boolean.parseBoolean(getProperty("hazelcast.tpc.enabled", "false"))
+                || nodeEngine.getConfig().getAltoConfig().isEnabled();
         logger.info("TPC: " + (enabled ? "enabled" : "disabled"));
         this.writeThrough = Boolean.parseBoolean(getProperty("hazelcast.tpc.write-through", "false"));
         this.regularSchedule = Boolean.parseBoolean(getProperty("hazelcast.tpc.regular-schedule", "true"));
@@ -96,6 +100,7 @@ public class TpcServerBootstrap {
         NioEventloop.NioConfiguration eventloopConfiguration = new NioEventloop.NioConfiguration();
         eventloopConfiguration.setThreadFactory(AltoEventloopThread::new);
         configuration.setEventloopConfiguration(eventloopConfiguration);
+        configuration.setEventloopCount(nodeEngine.getConfig().getAltoConfig().getEventloopCount());
         return new TpcEngine(configuration);
     }
 
@@ -120,6 +125,20 @@ public class TpcServerBootstrap {
     }
 
     private void startNio() {
+        AltoSocketConfig clientSocketConfig = getClientSocketConfig();
+
+        if (clientSocketConfig == null) {
+            // Advanced network is enabled yet there is no configured server socket
+            // for clients. This means cluster will run but no client ports will be
+            // created, so no clients can connect to the cluster.
+            throw new InvalidConfigurationException("Missing client endpoint configuration. "
+                    + "If you have enabled alto and advanced networking, please configure a client server socket");
+        }
+
+        String[] range = clientSocketConfig.getPortRange().split("-");
+        int port = Integer.parseInt(range[0]);
+        int limit = Integer.parseInt(range[1]);
+
         for (int k = 0; k < tpcEngine.eventloopCount(); k++) {
             NioEventloop eventloop = (NioEventloop) tpcEngine.eventloop(k);
 
@@ -127,32 +146,64 @@ public class TpcServerBootstrap {
                     () -> new ClientNioAsyncReadHandler(nodeEngine.getNode().clientEngine);
             readHandlerSuppliers.put(eventloop, readHandlerSupplier);
 
-            try {
-                NioAsyncServerSocket serverSocket = NioAsyncServerSocket.open(eventloop);
-                serverSockets.add(serverSocket);
-                serverSocket.receiveBufferSize(receiveBufferSize);
-                serverSocket.reuseAddress(true);
-                int port = toPort(nodeEngine.getThisAddress(), k);
-                serverSocket.bind(new InetSocketAddress(thisAddress.getInetAddress(), port));
-                serverSocket.accept(socket -> {
-                    socket.readHandler(readHandlerSuppliers.get(eventloop).get());
-                    socket.setWriteThrough(writeThrough);
-                    socket.setRegularSchedule(regularSchedule);
-                    socket.sendBufferSize(sendBufferSize);
-                    socket.receiveBufferSize(receiveBufferSize);
-                    socket.tcpNoDelay(tcpNoDelay);
-                    socket.keepAlive(true);
-                    socket.activate(eventloop);
-                });
-            } catch (IOException e) {
-                throw new UncheckedIOException(e);
-            }
+            NioAsyncServerSocket serverSocket = NioAsyncServerSocket.open(eventloop);
+            serverSockets.add(serverSocket);
+            int receiveBufferSize = clientSocketConfig.getReceiveBufferSize();
+            int sendBufferSize = clientSocketConfig.getSendBufferSize();
+            serverSocket.receiveBufferSize(receiveBufferSize);
+            serverSocket.reuseAddress(true);
+            port = bind(serverSocket, port, limit);
+            serverSocket.accept(socket -> {
+                socket.readHandler(readHandlerSuppliers.get(eventloop).get());
+                socket.setWriteThrough(writeThrough);
+                socket.setRegularSchedule(regularSchedule);
+                socket.sendBufferSize(sendBufferSize);
+                socket.receiveBufferSize(receiveBufferSize);
+                socket.tcpNoDelay(tcpNoDelay);
+                socket.keepAlive(true);
+                socket.activate(eventloop);
+            });
         }
     }
 
-    @SuppressWarnings("checkstyle:MagicNumber")
-    private int toPort(Address address, int socketId) {
-        return (address.getPort() - DEFAULT_HZ_PORT) * 100 + 11000 + socketId % tpcEngine.eventloopCount();
+    // public for testing
+    public AltoSocketConfig getClientSocketConfig() {
+        if (nodeEngine.getConfig().getAdvancedNetworkConfig().isEnabled()) {
+            ServerSocketEndpointConfig endpointConfig = (ServerSocketEndpointConfig) nodeEngine
+                    .getConfig()
+                    .getAdvancedNetworkConfig()
+                    .getEndpointConfigs()
+                    .get(EndpointQualifier.CLIENT);
+
+            if (endpointConfig == null) {
+                return null;
+            }
+
+            return endpointConfig.getAltoSocketConfig();
+        }
+
+        // unified socket
+        return nodeEngine.getConfig().getNetworkConfig().getAltoSocketConfig();
+    }
+
+    private int bind(NioAsyncServerSocket serverSocket, int port, int limit) {
+        while (port < limit) {
+            try {
+                serverSocket.bind(new InetSocketAddress(thisAddress.getInetAddress(), port));
+                return port + 1;
+            } catch (UncheckedIOException e) {
+                if (e.getCause() instanceof BindException) {
+                    // this port is occupied probably by another hz member, try another one
+                    port += tpcEngine.eventloopCount();
+                } else {
+                    throw e;
+                }
+            } catch (UnknownHostException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+
+        throw new HazelcastException("Allowed TPC ports weren't enough.");
     }
 
     public void shutdown() {
