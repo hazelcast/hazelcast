@@ -961,7 +961,9 @@ public abstract class Formatter {
                 boolean exponential = form == Form.Exponential;
                 int integerLength = exponential ? integerMask.digits : digits.length() + exponent;
                 int fractionLength = exponential ? fractionMask.digits : -exponent;
-                exponent += digits.length() - integerLength;
+                if (!digits.isEmpty()) {
+                    exponent += digits.length() - integerLength;
+                }
 
                 // Step 4 - Rounding
                 // integerLength + fractionMask.digits < 0 -> floating-point overflows

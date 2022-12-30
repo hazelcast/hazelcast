@@ -332,11 +332,11 @@ public class FormatterTest {
         check(4.5,  "  4.5",   " -4.5",     "99.FM99");
         check(4.5,    "4.5 ",   "-4.5 ",  "FM99.FM99");
 
-        check(5,  " 5 ",  "<5>",  "B9");
-        check(5,   "5",   "<5>",  "FMB9");
+        check(0,  " 0 ",  "<0>",  "B9");
+        check(0,   "0",   "<0>",  "FMB9");
 
-        check(5,     " 5    ",   "-5    ",   "9EEEE");
-        check(0.5,  " .5    ",  "-.5    ",  ".9EEEE");
+        check(0,   " 0    ",   "-0    ",   "9EEEE");
+        check(0,  " .0    ",  "-.0    ",  ".9EEEE");
 
         Formatter f = forNumbers("999 (RN)");
         check(0,   f, "   0 ()               ");
