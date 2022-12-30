@@ -16,8 +16,9 @@
 
 package com.hazelcast.config;
 
-import com.hazelcast.security.jsm.HazelcastRuntimePermission;
+import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.security.jsm.HazelcastRuntimePermission;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -69,6 +70,8 @@ public class NetworkConfig {
     private RestApiConfig restApiConfig = new RestApiConfig();
 
     private MemcacheProtocolConfig memcacheProtocolConfig = new MemcacheProtocolConfig();
+
+    private final AltoSocketConfig altoSocketConfig = new AltoSocketConfig();
 
     public NetworkConfig() {
         String os = StringUtil.lowerCaseInternal(System.getProperty("os.name"));
@@ -402,6 +405,10 @@ public class NetworkConfig {
         return this;
     }
 
+    public AltoSocketConfig getAltoSocketConfig() {
+        return altoSocketConfig;
+    }
+
     @Override
     public String toString() {
         return "NetworkConfig{"
@@ -417,6 +424,7 @@ public class NetworkConfig {
                 + ", icmpFailureDetectorConfig=" + icmpFailureDetectorConfig
                 + ", restApiConfig=" + restApiConfig
                 + ", memcacheProtocolConfig=" + memcacheProtocolConfig
+                + ", altoSocketConfig=" + altoSocketConfig
                 + '}';
     }
 
@@ -441,7 +449,8 @@ public class NetworkConfig {
                 && Objects.equals(memberAddressProviderConfig, that.memberAddressProviderConfig)
                 && Objects.equals(icmpFailureDetectorConfig, that.icmpFailureDetectorConfig)
                 && Objects.equals(restApiConfig, that.restApiConfig)
-                && Objects.equals(memcacheProtocolConfig, that.memcacheProtocolConfig);
+                && Objects.equals(memcacheProtocolConfig, that.memcacheProtocolConfig)
+                && Objects.equals(altoSocketConfig, that.altoSocketConfig);
     }
 
     @Override
@@ -450,6 +459,6 @@ public class NetworkConfig {
                 .hash(port, portCount, portAutoIncrement, reuseAddress, publicAddress, outboundPortDefinitions, outboundPorts,
                         interfaces, join, symmetricEncryptionConfig, socketInterceptorConfig, sslConfig,
                         memberAddressProviderConfig,
-                        icmpFailureDetectorConfig, restApiConfig, memcacheProtocolConfig);
+                        icmpFailureDetectorConfig, restApiConfig, memcacheProtocolConfig, altoSocketConfig);
     }
 }

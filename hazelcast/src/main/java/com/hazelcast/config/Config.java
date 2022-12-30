@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.collection.IList;
 import com.hazelcast.collection.IQueue;
 import com.hazelcast.collection.ISet;
+import com.hazelcast.config.alto.AltoConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.matcher.MatchingPointConfigPatternMatcher;
 import com.hazelcast.core.HazelcastInstance;
@@ -221,6 +222,9 @@ public class Config {
 
     // @since 5.2
     private final Map<String, DataLinkConfig> dataLinkConfigs = new ConcurrentHashMap<>();
+
+    // @since 5.3
+    private final AltoConfig altoConfig = new AltoConfig();
 
     public Config() {
     }
@@ -3218,6 +3222,11 @@ public class Config {
         return new DataLinkConfigReadOnly(getDataLinkConfig("default"));
     }
 
+    @Beta
+    public AltoConfig getAltoConfig() {
+        return altoConfig;
+    }
+
     /**
      * Returns the configuration for the user services managed by this
      * hazelcast instance.
@@ -3282,6 +3291,7 @@ public class Config {
                 + ", deviceConfigs=" + deviceConfigs
                 + ", integrityCheckerConfig=" + integrityCheckerConfig
                 + ", dataLinkConfigs=" + dataLinkConfigs
+                + ", altoConfig=" + altoConfig
                 + '}';
     }
 }
