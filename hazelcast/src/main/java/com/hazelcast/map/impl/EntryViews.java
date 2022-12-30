@@ -35,14 +35,15 @@ public final class EntryViews {
         return new SimpleEntryView<>();
     }
 
-    public static <K, V> EntryView<K, V> createSimpleEntryView(K key, V value, Record record,
-                                                               ExpiryMetadata expiryMetadata) {
+    public static <K, V> EntryView<K, V> createSimpleEntryView(K key, V value, Record<V> record,
+                                                               ExpiryMetadata expiryMetadata,
+                                                               boolean isPerEntryStatsEnabled) {
         return new SimpleEntryView<>(key, value)
                 .withCost(record.getCost())
                 .withVersion(record.getVersion())
                 .withHits(record.getHits())
                 .withLastAccessTime(record.getLastAccessTime())
-                .withLastUpdateTime(record.getLastUpdateTime())
+                .withLastUpdateTime(calculateLastUpdateTime(isPerEntryStatsEnabled, record, expiryMetadata))
                 .withCreationTime(record.getCreationTime())
                 .withLastStoredTime(record.getLastStoredTime())
                 .withTtl(expiryMetadata.getTtl())
@@ -59,13 +60,26 @@ public final class EntryViews {
                 .withVersion(record.getVersion())
                 .withHits(record.getHits())
                 .withLastAccessTime(record.getLastAccessTime())
-                .withLastUpdateTime(isPerEntryStatsEnabled
-                        ? record.getLastUpdateTime()
-                        : expiryMetadata.getLastUpdateTime())
+                .withLastUpdateTime(calculateLastUpdateTime(isPerEntryStatsEnabled, record, expiryMetadata))
                 .withCreationTime(record.getCreationTime())
                 .withLastStoredTime(record.getLastStoredTime())
                 .withTtl(expiryMetadata.getTtl())
                 .withMaxIdle(expiryMetadata.getMaxIdle())
                 .withExpirationTime(expiryMetadata.getExpirationTime());
+    }
+
+    private static <V> long calculateLastUpdateTime(boolean isPerEntryStatsEnabled,
+                                                    Record<V> record,
+                                                    ExpiryMetadata expiryMetadata) {
+        if (isPerEntryStatsEnabled) {
+            return record.getLastUpdateTime();
+        }
+
+        if (expiryMetadata != ExpiryMetadata.NULL) {
+            return expiryMetadata.getLastUpdateTime();
+        }
+
+        // Record.UNSET
+        return -1;
     }
 }
