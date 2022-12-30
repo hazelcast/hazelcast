@@ -91,6 +91,7 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -873,6 +874,29 @@ public class BasicMapTest extends HazelcastTestSupport {
                 MILLISECONDS.toSeconds(time3));
         assertBetween("entryView3.getLastUpdateTime()", MILLISECONDS.toSeconds(entryView3.getLastUpdateTime()),
                 MILLISECONDS.toSeconds(time1), MILLISECONDS.toSeconds(time2));
+    }
+
+    @Test
+    public void testEntryViewLastUpdateTime() {
+        // statisticsEnabled shouldn't change anything, no need to test same scenario twice
+        assumeThat(statisticsEnabled, is(false));
+
+        HazelcastInstance instance = getInstance();
+        IMap<Integer, Integer> map = instance.getMap("testEntryViewLastUpdateTime");
+
+        map.put(1, 1, 10_000, MILLISECONDS);
+        EntryView<Integer, Integer> entryView1 = map.getEntryView(1);
+
+        assertNotEquals(-1, entryView1.getLastUpdateTime());
+
+        map.put(2, 2, 0, MILLISECONDS);
+        EntryView<Integer, Integer> entryView2 = map.getEntryView(2);
+
+        if (perEntryStatsEnabled) {
+            assertNotEquals(-1, entryView1.getLastUpdateTime());
+        } else {
+            assertEquals(-1, entryView2.getLastUpdateTime());
+        }
     }
 
     @Test
