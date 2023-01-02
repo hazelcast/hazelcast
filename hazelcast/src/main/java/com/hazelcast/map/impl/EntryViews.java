@@ -36,14 +36,13 @@ public final class EntryViews {
     }
 
     public static <K, V> EntryView<K, V> createSimpleEntryView(K key, V value, Record<V> record,
-                                                               ExpiryMetadata expiryMetadata,
-                                                               boolean isPerEntryStatsEnabled) {
+                                                               ExpiryMetadata expiryMetadata) {
         return new SimpleEntryView<>(key, value)
                 .withCost(record.getCost())
                 .withVersion(record.getVersion())
                 .withHits(record.getHits())
                 .withLastAccessTime(record.getLastAccessTime())
-                .withLastUpdateTime(calculateLastUpdateTime(isPerEntryStatsEnabled, record, expiryMetadata))
+                .withLastUpdateTime(calculateLastUpdateTime(record, expiryMetadata))
                 .withCreationTime(record.getCreationTime())
                 .withLastStoredTime(record.getLastStoredTime())
                 .withTtl(expiryMetadata.getTtl())
@@ -53,14 +52,13 @@ public final class EntryViews {
 
     public static <K, V> WanMapEntryView<K, V> createWanEntryView(Data key, Data value,
                                                                   Record<V> record, ExpiryMetadata expiryMetadata,
-                                                                  SerializationService serializationService,
-                                                                  boolean isPerEntryStatsEnabled) {
+                                                                  SerializationService serializationService) {
         return new WanMapEntryView<K, V>(key, value, serializationService)
                 .withCost(record.getCost())
                 .withVersion(record.getVersion())
                 .withHits(record.getHits())
                 .withLastAccessTime(record.getLastAccessTime())
-                .withLastUpdateTime(calculateLastUpdateTime(isPerEntryStatsEnabled, record, expiryMetadata))
+                .withLastUpdateTime(calculateLastUpdateTime(record, expiryMetadata))
                 .withCreationTime(record.getCreationTime())
                 .withLastStoredTime(record.getLastStoredTime())
                 .withTtl(expiryMetadata.getTtl())
@@ -68,17 +66,11 @@ public final class EntryViews {
                 .withExpirationTime(expiryMetadata.getExpirationTime());
     }
 
-    private static <V> long calculateLastUpdateTime(boolean isPerEntryStatsEnabled,
-                                                    Record<V> record,
-                                                    ExpiryMetadata expiryMetadata) {
-        if (isPerEntryStatsEnabled) {
-            return record.getLastUpdateTime();
-        }
-
+    private static <V> long calculateLastUpdateTime(Record<V> record, ExpiryMetadata expiryMetadata) {
         if (expiryMetadata != ExpiryMetadata.NULL) {
             return expiryMetadata.getLastUpdateTime();
         }
 
-        return Record.UNSET;
+        return record.getLastUpdateTime();
     }
 }

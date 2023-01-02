@@ -44,8 +44,7 @@ public class GetEntryViewOperation extends ReadonlyKeyBasedMapOperation implemen
         if (record != null) {
             Data value = mapServiceContext.toData(record.getValue());
             ExpiryMetadata expiryMetadata = recordStore.getExpirySystem().getExpiryMetadata(dataKey);
-            result = EntryViews.createSimpleEntryView(dataKey, value, record, expiryMetadata,
-                    mapContainer.getMapConfig().isPerEntryStatsEnabled());
+            result = EntryViews.createSimpleEntryView(dataKey, value, record, expiryMetadata);
         }
     }
 
