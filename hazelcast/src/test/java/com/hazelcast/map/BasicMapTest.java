@@ -892,22 +892,39 @@ public class BasicMapTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testEntryViewLastUpdateTimeSet_dependsOnPerEntryStats_whenEntryIsNotExpirable() {
+    public void testEntryViewLastUpdateTimeSet_whenEntryIsNotExpirable_butPerEntryStatsEnabled() {
         // statisticsEnabled shouldn't change anything, no need to test same scenario twice
         assumeThat(statisticsEnabled, is(false));
 
+        // test condition
+        assumeThat(perEntryStatsEnabled, is(true));
+
         HazelcastInstance instance = getInstance();
         IMap<Integer, Integer> map = instance.getMap(
-                "testEntryViewLastUpdateTimeSet_dependsOnPerEntryStats_whenEntryIsNotExpirable");
+                "testEntryViewLastUpdateTimeSet_whenEntryIsNotExpirable_butPerEntryStatsEnabled");
 
         map.put(1, 1, 0, MILLISECONDS);
         EntryView<Integer, Integer> entryView1 = map.getEntryView(1);
 
-        if (perEntryStatsEnabled) {
-            assertNotEquals(Record.UNSET, entryView1.getLastUpdateTime());
-        } else {
-            assertEquals(Record.UNSET, entryView1.getLastUpdateTime());
-        }
+        assertNotEquals(Record.UNSET, entryView1.getLastUpdateTime());
+    }
+
+    @Test
+    public void testEntryViewLastUpdateTimeIsNotSet_whenEntryIsNotExpirable_andPerEntryStatsDisabled() {
+        // statisticsEnabled shouldn't change anything, no need to test same scenario twice
+        assumeThat(statisticsEnabled, is(false));
+
+        // test condition
+        assumeThat(perEntryStatsEnabled, is(false));
+
+        HazelcastInstance instance = getInstance();
+        IMap<Integer, Integer> map = instance.getMap(
+                "testEntryViewLastUpdateTimeIsNotSet_whenEntryIsNotExpirable_andPerEntryStatsDisabled");
+
+        map.put(1, 1, 0, MILLISECONDS);
+        EntryView<Integer, Integer> entryView1 = map.getEntryView(1);
+
+        assertEquals(Record.UNSET, entryView1.getLastUpdateTime());
     }
 
     @Test
