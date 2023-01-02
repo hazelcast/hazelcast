@@ -217,6 +217,9 @@ abstract class MapProxySupport<K, V>
     // not final for testing purposes
     protected MapOperationProvider operationProvider;
 
+    // can be changed dynamically using internal API
+    private SyncBackupTimeoutPolicy syncBackupTimeoutPolicy = SyncBackupTimeoutPolicy.GLOBAL;
+
     private final int putAllBatchSize;
     private final float putAllInitialSizeFactor;
 
@@ -358,6 +361,34 @@ abstract class MapProxySupport<K, V>
         return mapConfig.getBackupCount() + mapConfig.getAsyncBackupCount();
     }
 
+    /**
+     * Gets action to be taken when {@link
+     * com.hazelcast.spi.properties.ClusterProperty#OPERATION_BACKUP_TIMEOUT_MILLIS}
+     * elapses when waiting for completion of synchronous backups.
+     *
+     * @return action to be taken on backup timeout
+     * @see #setSyncBackupTimeoutPolicy(SyncBackupTimeoutPolicy)
+     */
+    public SyncBackupTimeoutPolicy getSyncBackupTimeoutPolicy() {
+        return syncBackupTimeoutPolicy;
+    }
+
+    /**
+     * Sets action to be taken when {@link
+     * com.hazelcast.spi.properties.ClusterProperty#OPERATION_BACKUP_TIMEOUT_MILLIS}
+     * elapses when waiting for completion of synchronous backups.
+     * <p>
+     * This setting applies only to sync and asynch operations on single key
+     * (eg. {@link IMap#put(Object, Object)}. It does not affect multi-entry
+     * operations (eg. {@link IMap#clear()}, {@link IMap#putAll}).
+     *
+     * @param syncBackupTimeoutPolicy action to be taken on backup timeout
+     * @see MapConfig#setBackupCount(int)
+     */
+    public void setSyncBackupTimeoutPolicy(SyncBackupTimeoutPolicy syncBackupTimeoutPolicy) {
+        this.syncBackupTimeoutPolicy = syncBackupTimeoutPolicy;
+    }
+
     protected QueryEngine getMapQueryEngine() {
         return mapServiceContext.getQueryEngine(name);
     }
@@ -456,7 +487,7 @@ abstract class MapProxySupport<K, V>
     }
 
     private InvocationBuilder overrideFailOnIndeterminateOperationState(InvocationBuilder invocationBuilder) {
-        MapConfig.SyncBackupTimeoutPolicy policy = mapConfig.getSyncBackupTimeoutPolicy();
+        SyncBackupTimeoutPolicy policy = getSyncBackupTimeoutPolicy();
         switch (policy) {
             case GLOBAL:
                 // use value configured by operationService
