@@ -18,9 +18,17 @@ package com.hazelcast.internal.tpc.util;
 
 import java.util.Queue;
 
-import static com.hazelcast.internal.tpc.util.Util.nextPowerOfTwo;
+import static com.hazelcast.internal.tpc.util.BitUtil.nextPowerOfTwo;
+import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.tpc.util.Preconditions.checkPositive;
 
-
+/**
+ * A CircularQueue.
+ * <p/>
+ * This class is not thread-safe.
+ *
+ * @param <E>
+ */
 public final class CircularQueue<E> {
 
     private long head;
@@ -29,12 +37,62 @@ public final class CircularQueue<E> {
     private final int mask;
     private final int capacity;
 
-    // Capacity should be power of 2
+    /**
+     * Creates a CircularQueue with the given capacity.
+     *
+     * @param capacity the capacity.
+     * @throws IllegalArgumentException if capacity not positive.
+     */
     public CircularQueue(int capacity) {
-        int fixedCapacity = nextPowerOfTwo(capacity);
+        int fixedCapacity = nextPowerOfTwo(checkPositive(capacity, "capacity"));
         this.capacity = fixedCapacity;
         this.array = (E[]) new Object[fixedCapacity];
         this.mask = fixedCapacity - 1;
+    }
+
+    /**
+     * Checks if the CircularQueue is full.
+     *
+     * @return true if full.
+     */
+    public boolean isFull() {
+        return tail - head + 1 == capacity;
+    }
+
+    /**
+     * Returns the number of free spots
+     *
+     * @return number of remaining spaces.
+     */
+    public int remaining() {
+        return capacity - size();
+    }
+
+    /**
+     * Returns the capacity of this CircularQueue.
+     *
+     * @return the capacity.
+     */
+    public int capacity() {
+        return capacity;
+    }
+
+    /**
+     * Returns the number of items in this CircularQueue.
+     *
+     * @return the number of items
+     */
+    public int size() {
+        return (int) (tail - head + 1);
+    }
+
+    /**
+     * Checks if this CircularQueue is empty.
+     *
+     * @return true if empty.
+     */
+    public boolean isEmpty() {
+        return tail < head;
     }
 
     public void add(E item) {
@@ -60,63 +118,57 @@ public final class CircularQueue<E> {
         return count;
     }
 
-    public boolean isFull() {
-        return tail - head + 1 == capacity;
-    }
-
     /**
-     * Returns the number of free spots
+     * Peeks
      *
      * @return
      */
-    public int remaining() {
-        return capacity - size();
-    }
-
-    public int capacity() {
-        return capacity;
-    }
-
-    public int size() {
-        return (int) (tail - head + 1);
-    }
-
-    public boolean isEmpty() {
-        return tail < head;
-    }
-
     public E peek() {
         if (tail < head) {
             return null;
+        } else {
+            long h = head;
+            int index = (int) (h & mask);
+            return array[index];
         }
-
-        long h = head;
-        int index = (int) (h & mask);
-        return array[index];
     }
 
+    /**
+     * Offers an item.
+     *
+     * @param item the item to offer.
+     * @return true if the item was accepted, false otherwise.
+     * @throws NullPointerException if item is null.
+     */
     public boolean offer(E item) {
+        checkNotNull(item, "item");
+
         if (tail - head + 1 == capacity) {
             return false;
+        } else {
+            long t = tail + 1;
+            int index = (int) (t & mask);
+            array[index] = item;
+            tail = t;
+            return true;
         }
-
-        long t = tail + 1;
-        int index = (int) (t & mask);
-        array[index] = item;
-        this.tail = t;
-        return true;
     }
 
+    /**
+     * Removes the oldest items or returns null of no such item exists.
+     *
+     * @return the oldest items.
+     */
     public E poll() {
         if (tail < head) {
             return null;
+        } else {
+            long h = head;
+            int index = (int) (h & mask);
+            E item = array[index];
+            array[index] = null;
+            head = h + 1;
+            return item;
         }
-
-        long h = head;
-        int index = (int) (h & mask);
-        E item = array[index];
-        array[index] = null;
-        this.head = h + 1;
-        return item;
     }
 }

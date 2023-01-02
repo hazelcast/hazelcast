@@ -19,57 +19,211 @@ package com.hazelcast.internal.tpc;
 import org.junit.After;
 import org.junit.Test;
 
-import java.io.Closeable;
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.internal.tpc.util.IOUtil.closeResources;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
 
 public abstract class AsyncSocketTest {
 
-    public List<Closeable> closeables = new ArrayList<>();
+    public List<Eventloop> eventloops = new ArrayList<>();
 
     public abstract Eventloop createEventloop();
 
-    public abstract AsyncSocket createAsyncSocket();
-
     @After
-    public void after() {
-        closeResources(closeables);
+    public void after() throws InterruptedException {
+        for (Eventloop eventloop : eventloops) {
+            eventloop.shutdown();
+            eventloop.awaitTermination(5, TimeUnit.SECONDS);
+        }
     }
 
     @Test
-    public void close_whenNotActivated() {
-        AsyncSocket socket = createAsyncSocket();
+    public void test_remoteAddress_whenNotConnected() {
+        Eventloop eventloop = createEventloop();
+        AsyncSocket socket = eventloop.openAsyncSocket();
+        socket.setReadHandler(mock(ReadHandler.class));
+        socket.activate(eventloop);
+
+        SocketAddress remoteAddress = socket.getRemoteAddress();
+        assertNull(remoteAddress);
+    }
+
+    @Test
+    public void test_receiveBufferSize() {
+        Eventloop eventloop = createEventloop();
+        AsyncSocket socket = eventloop.openAsyncSocket();
+
+        int size = 64 * 1024;
+        socket.setReceiveBufferSize(size);
+        assertTrue(socket.getReceiveBufferSize() >= size);
+    }
+
+    @Test
+    public void test_sendBufferSize() {
+        Eventloop eventloop = createEventloop();
+        AsyncSocket socket = eventloop.openAsyncSocket();
+
+        int size = 64 * 1024;
+        socket.setSendBufferSize(size);
+        assertTrue(socket.getSendBufferSize() >= size);
+    }
+
+    @Test
+    public void test_tcpNoDelay() {
+        Eventloop eventloop = createEventloop();
+        AsyncSocket socket = eventloop.openAsyncSocket();
+
+        socket.setTcpNoDelay(false);
+        assertFalse(socket.isTcpNoDelay());
+
+        socket.setTcpNoDelay(true);
+        assertTrue(socket.isTcpNoDelay());
+    }
+
+    @Test
+    public void test_soLinger() {
+        Eventloop eventloop = createEventloop();
+        AsyncSocket socket = eventloop.openAsyncSocket();
+
+        socket.setSoLinger(10);
+        assertEquals(10, socket.getSoLinger());
+    }
+
+
+    @Test
+    public void test_TcpKeepAliveTime() {
+        Eventloop eventloop = createEventloop();
+        AsyncSocket socket = eventloop.openAsyncSocket();
+
+        socket.setTcpKeepAliveTime(100);
+        assertEquals(100, socket.getTcpKeepAliveTime());
+    }
+
+    @Test
+    public void test_sTcpKeepaliveIntvl() {
+        Eventloop eventloop = createEventloop();
+        AsyncSocket socket = eventloop.openAsyncSocket();
+
+        socket.setTcpKeepaliveIntvl(100);
+        assertEquals(100, socket.getTcpKeepaliveIntvl());
+    }
+
+    @Test
+    public void test_TcpKeepAliveProbes() {
+        Eventloop eventloop = createEventloop();
+        AsyncSocket socket = eventloop.openAsyncSocket();
+
+        socket.setTcpKeepAliveProbes(5);
+        assertEquals(5, socket.getTcpKeepaliveProbes());
+    }
+
+//
+//    @Test
+//    public void remoteAddress_whenNotConnected() throws IOException {
+//        AsyncSocket socket = createAsyncSocket();
+//        Eventloop eventloop = createEventloop();
+//        socket.activate(eventloop);
+//
+//         int port = 5000;
+//        ServerSocket serverSocket = new ServerSocket(port);
+//        closeables.add(serverSocket);
+//        CompletableFuture future = new CompletableFuture();
+//        Thread t = new Thread(){
+//            public void run(){
+//                try {
+//                    serverSocket.accept();
+//                    future.complete(null);
+//                } catch (IOException e) {
+//                   future.completeExceptionally(e);
+//                }
+//            }
+//        };
+//        t.start();
+//
+//        socket.connect(new InetSocketAddress(port)).join();
+//
+//        System.out.println("remote address:"+socket.remoteAddress());
+//        //Socket accept = serverSocket.accept();
+//    }
+
+    @Test
+    public void test_connect_whenNotActivated() {
+        Eventloop eventloop = createEventloop();
+        AsyncSocket socket = eventloop.openAsyncSocket();
+        socket.setReadHandler(mock(ReadHandler.class));
+        try {
+            socket.connect(new InetSocketAddress(5000));
+            fail();
+        } catch (IllegalStateException e) {
+
+        }
+    }
+//
+//    @Test
+//    public void remoteAddress_whenConnected() {
+//        AsyncSocket socket = createAsyncSocket();
+//    }
+//
+//    public void remoteAddress_AfterConnectedAndClosed() {
+//
+//    }
+
+    @Test
+    public void test_close_whenNotActivated() {
+        Eventloop eventloop = createEventloop();
+        AsyncSocket socket = eventloop.openAsyncSocket();
         socket.close();
         assertTrue(socket.isClosed());
     }
 
     @Test
-    public void close_whenNotActivated_andAlreadyClosed() {
-        AsyncSocket socket = createAsyncSocket();
+    public void test_close_whenNotActivated_andAlreadyClosed() {
+        Eventloop eventloop = createEventloop();
+        AsyncSocket socket = eventloop.openAsyncSocket();
         socket.close();
         socket.close();
         assertTrue(socket.isClosed());
     }
 
     @Test(expected = NullPointerException.class)
-    public void activate_whenNull() {
-        AsyncSocket socket = createAsyncSocket();
+    public void test_activate_whenNull() {
+        Eventloop eventloop = createEventloop();
+        AsyncSocket socket = eventloop.openAsyncSocket();
+        socket.setReadHandler(mock(ReadHandler.class));
+
         socket.activate(null);
     }
 
     @Test(expected = IllegalStateException.class)
-    public void activate_whenAlreadyActivated() {
+    public void test_activate_whenAlreadyActivated() {
         Eventloop eventloop1 = createEventloop();
         Eventloop eventloop2 = createEventloop();
 
-        AsyncSocket socket = createAsyncSocket();
+        AsyncSocket socket = eventloop1.openAsyncSocket();
+        socket.setReadHandler(mock(ReadHandler.class));
+
         eventloop1.start();
         eventloop2.start();
 
         socket.activate(eventloop1);
         socket.activate(eventloop2);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void test_activate_whenReadHandlerNotConfigured() {
+        Eventloop eventloop = createEventloop();
+        eventloop.start();
+
+        AsyncSocket socket = eventloop.openAsyncSocket();
+        socket.activate(eventloop);
     }
 }

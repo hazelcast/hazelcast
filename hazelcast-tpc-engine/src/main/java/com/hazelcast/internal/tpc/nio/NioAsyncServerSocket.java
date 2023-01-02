@@ -17,6 +17,8 @@
 package com.hazelcast.internal.tpc.nio;
 
 import com.hazelcast.internal.tpc.AsyncServerSocket;
+import com.hazelcast.internal.tpc.AsyncSocket;
+import com.hazelcast.internal.tpc.Eventloop;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -32,13 +34,13 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
-import static com.hazelcast.internal.tpc.util.Util.closeResource;
+import static com.hazelcast.internal.tpc.util.IOUtil.closeResource;
 import static java.net.StandardSocketOptions.SO_RCVBUF;
 import static java.net.StandardSocketOptions.SO_REUSEADDR;
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
 
 /**
- * Nio version of the {@link AsyncServerSocket}.
+ * Nio implementation of the {@link AsyncServerSocket}.
  */
 public final class NioAsyncServerSocket extends AsyncServerSocket {
     private static final int DEFAULT_LATCH_TIMEOUT_SECONDS = 10;
@@ -68,7 +70,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
             this.eventloop = eventloop;
             this.eventloopThread = eventloop.eventloopThread();
             this.selector = eventloop.selector;
-            if (!eventloop.registerResource(this)) {
+            if (!eventloop.registerClosable(this)) {
                 close();
                 throw new IllegalStateException(eventloop + " is not running");
             }
@@ -77,6 +79,14 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         }
     }
 
+    /**
+     * Opens a NioAsyncServerSocket.
+     * <p/>
+     * To prevent coupling, it is better to use the {@link Eventloop#openAsyncServerSocket()}.
+     *
+     * @param eventloop the eventloop this socket will be processed by.
+     * @return the opened NioAsyncServerSocket.
+     */
     public static NioAsyncServerSocket open(NioEventloop eventloop) {
         return new NioAsyncServerSocket(eventloop);
     }
@@ -170,7 +180,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     @Override
     protected void close0() {
         closeResource(serverSocketChannel.socket());
-        eventloop.deregisterResource(this);
+        eventloop.deregisterClosable(this);
     }
 
 
@@ -191,7 +201,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         }
     }
 
-    public void accept(Consumer<NioAsyncSocket> consumer) {
+    public void accept(Consumer<AsyncSocket> consumer) {
         CountDownLatch latch = new CountDownLatch(1);
 
         Runnable acceptTask = () -> {
@@ -222,9 +232,9 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
 
     private final class AcceptHandler implements NioSelectedKeyListener {
 
-        private final Consumer<NioAsyncSocket> consumer;
+        private final Consumer<AsyncSocket> consumer;
 
-        private AcceptHandler(Consumer<NioAsyncSocket> consumer) {
+        private AcceptHandler(Consumer<AsyncSocket> consumer) {
             this.consumer = consumer;
         }
 

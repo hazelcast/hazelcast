@@ -18,7 +18,7 @@ package com.hazelcast.internal.tpc.iobuffer;
 
 import org.junit.Test;
 
-import static com.hazelcast.internal.tpc.util.IOUtil.SIZEOF_INT;
+import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_INT;
 import static org.junit.Assert.assertEquals;
 
 public class IOBufferTest {

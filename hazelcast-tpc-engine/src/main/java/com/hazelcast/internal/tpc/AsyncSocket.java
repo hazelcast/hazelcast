@@ -17,13 +17,13 @@
 package com.hazelcast.internal.tpc;
 
 import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
-import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpc.logging.TpcLogger;
+import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpc.util.LongCounter;
-
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
@@ -63,6 +63,7 @@ public abstract class AsyncSocket implements Closeable {
 
     private CloseListener closeListener;
     private Executor closeExecutor;
+    protected ReadHandler readHandler;
 
     public final long ioBuffersWritten() {
         return ioBuffersWritten.get();
@@ -105,7 +106,7 @@ public abstract class AsyncSocket implements Closeable {
      *
      * @return the remote address.
      */
-    public final SocketAddress remoteAddress() {
+    public final SocketAddress getRemoteAddress() {
         return remoteAddress;
     }
 
@@ -118,32 +119,149 @@ public abstract class AsyncSocket implements Closeable {
      *
      * @return the local address.
      */
-    public final SocketAddress localAddress() {
+    public final SocketAddress getLocalAddress() {
         return localAddress;
     }
 
     // TODO: This option only makes sense for blocking sockets according to StandardSocketOptions.SO_LINGER
-    public abstract void soLinger(int soLinger);
+    public abstract void setSoLinger(int soLinger);
 
-    public abstract int soLinger();
+    public abstract int getSoLinger();
 
-    public abstract void keepAlive(boolean keepAlive);
+    /**
+     * Set the SO_KEEPALIVE option.
+     *
+     * @param keepAlive a boolean indicating whether or not SO_KEEPALIVE is enabled.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
+    public abstract void setKeepAlive(boolean keepAlive);
 
+    /**
+     * Tests if SO_KEEPALIVE is enabled.
+     *
+     * @return a boolean indicating whether or not SO_KEEPALIVE is enabled.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
     public abstract boolean isKeepAlive();
 
-    public abstract void tcpNoDelay(boolean tcpNoDelay);
+    /**
+     * Get the interval in seconds between the last data packet sent (simple ACKs are not considered data) and
+     * the first keepalive probe; after the connection is marked to need keepalive, this counter is not used
+     * any further.
+     *
+     * @param keepAliveTime the keep alive time.
+     * @throws IllegalArgumentException if keepAliveIntvl is smaller than 0.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
+    public abstract void setTcpKeepAliveTime(int keepAliveTime);
 
+    /**
+     * Get the interval in seconds between the last data packet sent (simple ACKs are not considered data) and
+     * the first keepalive probe; after the connection is marked to need keepalive, this counter is not used any
+     * further.
+     *
+     * @return the interval.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
+    public abstract int getTcpKeepAliveTime();
+
+    /**
+     * Sets the interval in seconds between subsequent keepalive probes, regardless of what the connection
+     * has exchanged in the meantime
+     *
+     * @param keepaliveIntvl the interval in seconds.
+     * @throws IllegalArgumentException if keepAliveIntvl is smaller than 0.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
+    public abstract void setTcpKeepaliveIntvl(int keepaliveIntvl);
+
+    /**
+     * Gets the interval in seconds between subsequent keepalive probes, regardless of what the connection
+     * has exchanged in the meantime
+     *
+     * @return the interval.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
+    public abstract int getTcpKeepaliveIntvl();
+
+    /**
+     * Sets the number of unacknowledged probes to send before considering the connection dead and notifying the
+     * application layer.
+     *
+     * @param keepAliveProbes the number of unacknowledged probes.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
+    public abstract void setTcpKeepAliveProbes(int keepAliveProbes);
+
+    /**
+     * Gets the number of unacknowledged probes to send before considering the connection dead and notifying the
+     * application layer.
+     *
+     * @return the number of unacknowledged probes.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
+    public abstract int getTcpKeepaliveProbes();
+
+    /**
+     * Set the TCP_NODELAY option.
+     *
+     * @param tcpNoDelay a boolean indicating whether or not TCP_NODELAY is enabled.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
+    public abstract void setTcpNoDelay(boolean tcpNoDelay);
+
+    /**
+     * Tests if TCP_NODELAY is enabled.
+     *
+     * @return a boolean indicating whether or not TCP_NODELAY is enabled.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
     public abstract boolean isTcpNoDelay();
 
-    public abstract void receiveBufferSize(int size);
+    /**
+     * Sets the receivebuffer size in bytes.
+     *
+     * @param size the receivebuffer size in bytes.
+     * @throws IllegalArgumentException when the size isn't positive.
+     * @throws UncheckedIOException     if something failed with configuring the socket
+     */
+    public abstract void setReceiveBufferSize(int size);
 
-    public abstract int receiveBufferSize();
+    /**
+     * Gets the receivebuffer size in bytes.
+     *
+     * @return the size of the receive buffer.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
+    public abstract int getReceiveBufferSize();
 
-    public abstract void sendBufferSize(int size);
+    /**
+     * Sets the sendbuffer size in bytes.
+     *
+     * @param size the sendbuffer size in bytes.
+     * @throws IllegalArgumentException when the size isn't positive.
+     * @throws UncheckedIOException     if something failed with configuring the socket
+     */
+    public abstract void setSendBufferSize(int size);
 
-    public abstract int sendBufferSize();
+    /**
+     * Gets the sendbuffer size in bytes.
+     *
+     * @return the size of the send buffer.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
+    public abstract int getSendBufferSize();
 
-    public abstract void readHandler(ReadHandler readHandler);
+    /**
+     * Sets  the ReadHandler. Should be called before this AsyncSocket is activated.
+     *
+     * @param readHandler the ReadHandler
+     * @throws NullPointerException if readHandler is null.
+     */
+    public final void setReadHandler(ReadHandler readHandler) {
+        this.readHandler = checkNotNull(readHandler);
+        this.readHandler.init(this);
+    }
 
     /**
      * Configures the CloseListener.
@@ -181,6 +299,8 @@ public abstract class AsyncSocket implements Closeable {
      * to the socket.
      * <p>
      * This method is thread-safe.
+     * <p>
+     * This call is ignored when then AsyncSocket is already closed.
      */
     public abstract void flush();
 
@@ -250,10 +370,13 @@ public abstract class AsyncSocket implements Closeable {
         }
 
         try {
-            doClose();
+            close0();
         } catch (Exception e) {
             logger.warning(e);
         }
+
+        localAddress = null;
+        remoteAddress = null;
 
         if (closeListener != null) {
             try {
@@ -271,9 +394,13 @@ public abstract class AsyncSocket implements Closeable {
     }
 
     /**
-     * Takes care of the actual closing.
+     * Does the actual closing. No guarantee is made on which thread this is called.
+     * <p/>
+     * Is guaranteed to be called at most once.
+     *
+     * @throws IOException
      */
-    protected abstract void doClose() throws IOException;
+    protected abstract void close0() throws IOException;
 
     /**
      * Checks if this AsyncSocket is closed.
