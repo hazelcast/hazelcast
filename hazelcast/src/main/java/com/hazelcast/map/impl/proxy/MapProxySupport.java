@@ -378,7 +378,7 @@ abstract class MapProxySupport<K, V>
      * com.hazelcast.spi.properties.ClusterProperty#OPERATION_BACKUP_TIMEOUT_MILLIS}
      * elapses when waiting for completion of synchronous backups.
      * <p>
-     * This setting applies only to sync and asynch operations on single key
+     * This setting applies only to sync and async operations on single key
      * (eg. {@link IMap#put(Object, Object)}. It does not affect multi-entry
      * operations (eg. {@link IMap#clear()}, {@link IMap#putAll}).
      *
