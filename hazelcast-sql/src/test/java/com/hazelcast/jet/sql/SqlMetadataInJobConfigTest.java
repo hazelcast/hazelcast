@@ -90,7 +90,7 @@ public class SqlMetadataInJobConfigTest extends SqlTestSupport {
 
     @Test
     @SuppressWarnings("resource")
-    public void test_createJobMetadata() {
+    public void test_createBatchJobMetadata() {
         TestBatchSqlConnector.create(instance().getSql(), "src", 3);
         createMapping("dest", Integer.class, String.class);
 
@@ -103,6 +103,24 @@ public class SqlMetadataInJobConfigTest extends SqlTestSupport {
         JobConfig config = completedJobs.get(0).getConfig();
         assertEquals(sql, config.getArgument(KEY_SQL_QUERY_TEXT));
         assertEquals(Boolean.FALSE, config.getArgument(KEY_SQL_UNBOUNDED));
+        assertEquals(Boolean.FALSE, config.isSuspendOnFailure());
+    }
+
+    @Test
+    @SuppressWarnings("resource")
+    public void test_createStreamingJobMetadata() {
+        createMapping("dest", Integer.class, String.class);
+
+        String sql = "CREATE JOB testJob AS INSERT INTO dest SELECT v * 2, 'value-' || v FROM TABLE(generate_stream(1))";
+        instance().getSql().execute(sql);
+        awaitSingleRunningJob(instance());
+
+        List<Job> runningJobs = getJobsByStatus(RUNNING);
+        assertEquals(1, runningJobs.size());
+        JobConfig config = runningJobs.get(0).getConfig();
+        assertEquals(sql, config.getArgument(KEY_SQL_QUERY_TEXT));
+        assertEquals(Boolean.TRUE, config.getArgument(KEY_SQL_UNBOUNDED));
+        assertEquals(Boolean.TRUE, config.isSuspendOnFailure());
     }
 
     @Test

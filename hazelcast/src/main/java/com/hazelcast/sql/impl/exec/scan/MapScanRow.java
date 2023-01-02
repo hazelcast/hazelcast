@@ -89,6 +89,12 @@ public final class MapScanRow implements Row {
         return (T) fieldExtractors[idx].get();
     }
 
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> T get(int idx, boolean useLazyDeserialization) {
+        return (T) fieldExtractors[idx].get(useLazyDeserialization);
+    }
+
     @Override
     public int getColumnCount() {
         return fieldExtractors.length;
