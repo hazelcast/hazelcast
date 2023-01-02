@@ -210,8 +210,10 @@ public final class HazelcastTypeCoercion extends TypeCoercionImpl {
                 || sourceAndTargetAreTemporalAndSourceCanBeConvertedToTarget(targetHzType, sourceHzType)
                 || targetIsTemporalAndSourceIsVarcharLiteral(targetHzType, sourceHzType, rowElement)
                 || sourceHzType.getTypeFamily() == QueryDataTypeFamily.NULL
-                || sourceHzType.getTypeFamily() == QueryDataTypeFamily.VARCHAR
-                        && targetHzType.getTypeFamily() == QueryDataTypeFamily.JSON;
+                || (sourceHzType.getTypeFamily() == QueryDataTypeFamily.VARCHAR
+                        && targetHzType.getTypeFamily() == QueryDataTypeFamily.JSON)
+                || (sourceHzType.getTypeFamily() == QueryDataTypeFamily.JSON
+                        && targetHzType.getTypeFamily() == QueryDataTypeFamily.VARCHAR);
 
         if (!valid) {
             // Types cannot be converted to each other, fail to coerce

@@ -16,30 +16,6 @@
 
 package com.hazelcast.map.impl.proxy;
 
-import static com.hazelcast.core.EntryEventType.CLEAR_ALL;
-import static com.hazelcast.internal.util.CollectionUtil.asIntegerList;
-import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
-import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
-import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
-import static com.hazelcast.internal.util.IterableUtil.nullToEmpty;
-import static com.hazelcast.internal.util.MapUtil.createHashMap;
-import static com.hazelcast.internal.util.MapUtil.toIntSize;
-import static com.hazelcast.internal.util.Preconditions.checkFalse;
-import static com.hazelcast.internal.util.Preconditions.checkNotNull;
-import static com.hazelcast.internal.util.SetUtil.createHashSet;
-import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
-import static com.hazelcast.internal.util.TimeUtil.timeInMsOrOneIfResultIsZero;
-import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
-import static com.hazelcast.map.impl.MapOperationStatsUpdater.incrementOperationStats;
-import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
-import static com.hazelcast.map.impl.query.Target.createPartitionTarget;
-import static com.hazelcast.query.Predicates.alwaysFalse;
-import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
-import static java.lang.Math.ceil;
-import static java.lang.Math.log10;
-import static java.lang.Math.min;
-import static java.util.Collections.singletonMap;
-
 import com.hazelcast.aggregation.Aggregator;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.EntryListenerConfig;
@@ -117,6 +93,9 @@ import com.hazelcast.spi.impl.operationservice.OperationService;
 import com.hazelcast.spi.impl.operationservice.impl.InvocationFuture;
 import com.hazelcast.spi.properties.HazelcastProperties;
 import com.hazelcast.spi.properties.HazelcastProperty;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -135,8 +114,30 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+
+import static com.hazelcast.core.EntryEventType.CLEAR_ALL;
+import static com.hazelcast.internal.util.CollectionUtil.asIntegerList;
+import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
+import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
+import static com.hazelcast.internal.util.InvocationUtil.invokeOnStableClusterSerial;
+import static com.hazelcast.internal.util.IterableUtil.nullToEmpty;
+import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.internal.util.MapUtil.toIntSize;
+import static com.hazelcast.internal.util.Preconditions.checkFalse;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+import static com.hazelcast.internal.util.SetUtil.createHashSet;
+import static com.hazelcast.internal.util.ThreadUtil.getThreadId;
+import static com.hazelcast.internal.util.TimeUtil.timeInMsOrOneIfResultIsZero;
+import static com.hazelcast.map.impl.EntryRemovingProcessor.ENTRY_REMOVING_PROCESSOR;
+import static com.hazelcast.map.impl.MapOperationStatsUpdater.incrementOperationStats;
+import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
+import static com.hazelcast.map.impl.query.Target.createPartitionTarget;
+import static com.hazelcast.query.Predicates.alwaysFalse;
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
+import static java.lang.Math.ceil;
+import static java.lang.Math.log10;
+import static java.lang.Math.min;
+import static java.util.Collections.singletonMap;
 
 abstract class MapProxySupport<K, V>
         extends AbstractDistributedObject<MapService>
@@ -1357,7 +1358,7 @@ abstract class MapProxySupport<K, V>
         try {
             AddIndexOperation addIndexOperation = new AddIndexOperation(name, indexConfig0);
             if (localOnly) {
-                PartitionIdSet ownedPartitions = mapServiceContext.getOrInitCachedMemberPartitions();
+                PartitionIdSet ownedPartitions = mapServiceContext.getCachedOwnedPartitions();
                 operationService.invokeOnPartitions(SERVICE_NAME,
                         new BinaryOperationFactory(addIndexOperation, getNodeEngine()), ownedPartitions);
             } else {

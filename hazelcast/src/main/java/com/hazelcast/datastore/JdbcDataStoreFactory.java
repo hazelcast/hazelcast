@@ -18,11 +18,14 @@ package com.hazelcast.datastore;
 
 import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.datastore.impl.CloseableDataSource;
+import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.spi.annotation.Beta;
 import com.zaxxer.hikari.HikariConfig;
 import com.zaxxer.hikari.HikariDataSource;
 
 import javax.sql.DataSource;
+import java.util.Properties;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Creates a JDBC data store as a {@link DataSource}.
@@ -36,6 +39,9 @@ import javax.sql.DataSource;
  */
 @Beta
 public class JdbcDataStoreFactory implements ExternalDataStoreFactory<DataSource> {
+
+    private static final AtomicInteger DATA_SOURCE_COUNTER = new AtomicInteger();
+
     protected HikariDataSource sharedDataSource;
     protected CloseableDataSource sharedCloseableDataSource;
     protected ExternalDataStoreConfig config;
@@ -55,7 +61,13 @@ public class JdbcDataStoreFactory implements ExternalDataStoreFactory<DataSource
     }
 
     protected HikariDataSource doCreateDataSource() {
-        HikariConfig dataSourceConfig = new HikariConfig(config.getProperties());
+        Properties properties = new Properties();
+        properties.putAll(config.getProperties());
+        if (!properties.containsKey("poolName")) {
+            String suffix = StringUtil.isNullOrEmpty(config.getName()) ? "" : "-" + config.getName();
+            properties.put("poolName", "HikariPool-" + DATA_SOURCE_COUNTER.getAndIncrement() + suffix);
+        }
+        HikariConfig dataSourceConfig = new HikariConfig(properties);
         return new HikariDataSource(dataSourceConfig);
     }
 

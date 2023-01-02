@@ -556,4 +556,47 @@ public class SqlStreamToStreamJoinTest extends SqlTestSupport {
                 "SELECT * FROM s s1 JOIN s s2 ON s1.a=s2.a",
                 singletonList(new Row(timestampTz(42L), timestampTz(42L))));
     }
+
+    @Test
+    public void test_joinWithoutViews() {
+        TestStreamSqlConnector.create(
+                sqlService,
+                "stream1",
+                singletonList("a"),
+                singletonList(TIMESTAMP_WITH_TIME_ZONE),
+                row(timestampTz(42L)));
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM " +
+                        "(SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '1' SECONDS))) s1 " +
+                        "INNER JOIN " +
+                        "(SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '1' SECONDS))) s2 " +
+                        "ON s1.a=s2.a",
+                singletonList(new Row(timestampTz(42L), timestampTz(42L))));
+    }
+
+    @Test
+    public void test_joinWithUsingClause() {
+        TestStreamSqlConnector.create(
+                sqlService,
+                "stream1",
+                singletonList("a"),
+                singletonList(TIMESTAMP_WITH_TIME_ZONE),
+                row(timestampTz(42L)));
+
+        assertRowsEventuallyInAnyOrder(
+                "SELECT * FROM " +
+                        "(SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '1' SECONDS))) s1 " +
+                        "INNER JOIN " +
+                        "(SELECT * FROM TABLE(IMPOSE_ORDER(TABLE stream1, DESCRIPTOR(a), INTERVAL '1' SECONDS))) s2 " +
+                        " USING(a)",
+                singletonList(new Row(timestampTz(42L))));
+    }
+
+    @Test
+    public void test_joinGenerators() {
+        assertThatThrownBy(() ->
+                sqlService.execute("SELECT 1 from TABLE(GENERATE_STREAM(1)) JOIN TABLE(GENERATE_STREAM(3)) on 1=1;"))
+                .hasMessageContaining("For stream-to-stream join, both joined sides must have an order imposed");
+    }
 }

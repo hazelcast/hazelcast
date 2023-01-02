@@ -93,6 +93,11 @@ public abstract class AsyncHazelcastWriterP implements Processor {
         return flush() && asyncCallsDone();
     }
 
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
+
     private boolean flush() {
         checkError();
         try {

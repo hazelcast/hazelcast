@@ -90,6 +90,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Predicate;
 
 import static com.hazelcast.internal.util.ConcurrencyUtil.CALLER_RUNS;
@@ -143,16 +144,16 @@ class MapServiceContextImpl implements MapServiceContext {
     private final ConcurrentMap<String, MapContainer> mapContainers = new ConcurrentHashMap<>();
     private final ExecutorStats offloadedExecutorStats = new ExecutorStats();
     private final EventListenerCounter eventListenerCounter = new EventListenerCounter();
+    private final AtomicReference<PartitionIdSet> cachedOwnedPartitions = new AtomicReference<>();
 
     /**
      * @see {@link MapKeyLoader#DEFAULT_LOADED_KEY_LIMIT_PER_NODE}
      */
     private final Semaphore nodeWideLoadedKeyLimiter;
     private final boolean forceOffloadEnabled;
+    private final long maxSuccessiveOffloadedOpRunNanos;
 
     private MapService mapService;
-
-    private volatile PartitionIdSet ownedPartitions;
 
     @SuppressWarnings("checkstyle:executablestatementcount")
     MapServiceContextImpl(NodeEngine nodeEngine) {
@@ -182,6 +183,8 @@ class MapServiceContextImpl implements MapServiceContext {
         this.logger = nodeEngine.getLogger(getClass());
         this.forceOffloadEnabled = nodeEngine.getProperties()
                 .getBoolean(FORCE_OFFLOAD_ALL_OPERATIONS);
+        this.maxSuccessiveOffloadedOpRunNanos = nodeEngine.getProperties()
+                .getNanos(MAX_SUCCESSIVE_OFFLOADED_OP_RUN_NANOS);
         if (this.forceOffloadEnabled) {
             logger.info("Force offload is enabled for all maps. This "
                     + "means all map operations will run as if they have map-store configured. "
@@ -192,6 +195,11 @@ class MapServiceContextImpl implements MapServiceContext {
     @Override
     public boolean isForceOffloadEnabled() {
         return forceOffloadEnabled;
+    }
+
+    @Override
+    public long getMaxSuccessiveOffloadedOpRunNanos() {
+        return maxSuccessiveOffloadedOpRunNanos;
     }
 
     @Override
@@ -504,28 +512,30 @@ class MapServiceContextImpl implements MapServiceContext {
     }
 
     @Override
-    public PartitionIdSet getOrInitCachedMemberPartitions() {
-        PartitionIdSet ownedPartitionIdSet = ownedPartitions;
-        if (ownedPartitionIdSet != null) {
-            return ownedPartitionIdSet;
+    public PartitionIdSet getCachedOwnedPartitions() {
+        PartitionIdSet ownedSet = cachedOwnedPartitions.get();
+        if (ownedSet == null) {
+            refreshCachedOwnedPartitions();
+            ownedSet = cachedOwnedPartitions.get();
         }
-
-        synchronized (this) {
-            ownedPartitionIdSet = ownedPartitions;
-            if (ownedPartitionIdSet != null) {
-                return ownedPartitionIdSet;
-            }
-            IPartitionService partitionService = nodeEngine.getPartitionService();
-            Collection<Integer> partitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
-            ownedPartitionIdSet = immutablePartitionIdSet(partitionService.getPartitionCount(), partitions);
-            ownedPartitions = ownedPartitionIdSet;
-        }
-        return ownedPartitionIdSet;
+        return ownedSet;
     }
 
+    private PartitionIdSet getOwnedMemberPartitions() {
+        IPartitionService partitionService = nodeEngine.getPartitionService();
+        Collection<Integer> partitions = partitionService.getMemberPartitions(nodeEngine.getThisAddress());
+        return immutablePartitionIdSet(partitionService.getPartitionCount(), partitions);
+    }
+
+    @SuppressWarnings("checkstyle:multiplevariabledeclarations")
     @Override
-    public void nullifyOwnedPartitions() {
-        ownedPartitions = null;
+    // can be called concurrently
+    public void refreshCachedOwnedPartitions() {
+        PartitionIdSet expectedSet, newSet;
+        do {
+            expectedSet = cachedOwnedPartitions.get();
+            newSet = getOwnedMemberPartitions();
+        } while (!cachedOwnedPartitions.compareAndSet(expectedSet, newSet));
     }
 
     @Override

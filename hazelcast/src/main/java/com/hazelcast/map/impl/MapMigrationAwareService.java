@@ -199,7 +199,10 @@ class MapMigrationAwareService
             // has been already started this call will do nothing
             recordStore.startLoading();
         }
-        mapServiceContext.nullifyOwnedPartitions();
+
+        if (event.getCurrentReplicaIndex() == 0 || event.getNewReplicaIndex() == 0) {
+            mapServiceContext.refreshCachedOwnedPartitions();
+        }
 
         removeOrRegenerateNearCacheUuid(event);
 
@@ -259,7 +262,9 @@ class MapMigrationAwareService
             partitionContainer.cleanUpOnMigration(event.getCurrentReplicaIndex());
         }
 
-        mapServiceContext.nullifyOwnedPartitions();
+        if (event.getCurrentReplicaIndex() == 0 || event.getNewReplicaIndex() == 0) {
+            mapServiceContext.refreshCachedOwnedPartitions();
+        }
     }
 
     private void clearNonGlobalIndexes(PartitionMigrationEvent event) {
@@ -350,16 +355,21 @@ class MapMigrationAwareService
             CacheDeserializedValues cacheDeserializedValues = mapContainer.getMapConfig().getCacheDeserializedValues();
             CachedQueryEntry<?, ?> cachedEntry = cacheDeserializedValues == NEVER ? new CachedQueryEntry<>(serializationService,
                     mapContainer.getExtractors()) : null;
-            recordStore.forEach((key, record) -> {
-                Object value = Records.getValueOrCachedValue(record, serializationService);
-                if (value != null) {
-                    QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
-                    queryEntry.setRecord(record);
-                    CachedQueryEntry<?, ?> newEntry =
+            recordStore.beforeOperation();
+            try {
+                recordStore.forEach((key, record) -> {
+                    Object value = Records.getValueOrCachedValue(record, serializationService);
+                    if (value != null) {
+                        QueryableEntry queryEntry = mapContainer.newQueryEntry(key, value);
+                        queryEntry.setRecord(record);
+                        CachedQueryEntry<?, ?> newEntry =
                             cachedEntry == null ? (CachedQueryEntry<?, ?>) queryEntry : cachedEntry.init(key, value);
-                    indexes.putEntry(newEntry, null, queryEntry, Index.OperationSource.SYSTEM);
-                }
-            }, false);
+                        indexes.putEntry(newEntry, null, queryEntry, Index.OperationSource.SYSTEM);
+                    }
+                }, false);
+            } finally {
+                recordStore.afterOperation();
+            }
 
             Indexes.markPartitionAsIndexed(event.getPartitionId(), indexesSnapshot);
         }
@@ -392,11 +402,16 @@ class MapMigrationAwareService
             Indexes.beginPartitionUpdate(indexesSnapshot);
 
             CachedQueryEntry<?, ?> entry = new CachedQueryEntry<>(serializationService, mapContainer.getExtractors());
-            recordStore.forEach((key, record) -> {
-                Object value = Records.getValueOrCachedValue(record, serializationService);
-                entry.init(key, value);
-                indexes.removeEntry(entry, Index.OperationSource.SYSTEM);
-            }, false);
+            recordStore.beforeOperation();
+            try {
+                recordStore.forEach((key, record) -> {
+                    Object value = Records.getValueOrCachedValue(record, serializationService);
+                    entry.init(key, value);
+                    indexes.removeEntry(entry, Index.OperationSource.SYSTEM);
+                }, false);
+            } finally {
+                recordStore.afterOperation();
+            }
 
             Indexes.markPartitionAsUnindexed(event.getPartitionId(), indexesSnapshot);
         }

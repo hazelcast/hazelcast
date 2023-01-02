@@ -143,6 +143,11 @@ public class TransformStatefulP<T, K, S, R> extends AbstractProcessor {
         return tryProcessWatermark(FLUSHING_WATERMARK);
     }
 
+    @Override
+    public boolean closeIsCooperative() {
+        return true;
+    }
+
     private class EvictingTraverser implements Traverser<Traverser<?>> {
         private Iterator<Entry<K, TimestampedItem<S>>> keyToStateIterator;
         private final ResettableSingletonTraverser<Watermark> wmTraverser = new ResettableSingletonTraverser<>();

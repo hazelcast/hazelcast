@@ -131,5 +131,10 @@ final class InfoSchemaConnector implements SqlConnector {
         public boolean complete() {
             return emitFromTraverser(traverser);
         }
+
+        @Override
+        public boolean closeIsCooperative() {
+            return true;
+        }
     }
 }

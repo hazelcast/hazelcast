@@ -30,13 +30,13 @@ import static java.lang.Thread.currentThread;
 public class MulticastDiscoverySender implements Runnable {
 
     private static final int SLEEP_DURATION = 2000;
-    private MulticastSocket multicastSocket;
-    private MulticastMemberInfo multicastMemberInfo;
-    private DatagramPacket datagramPacket;
+    private final MulticastSocket multicastSocket;
     private final ILogger logger;
     private final String group;
     private final int port;
     private final MulticastDiscoverySerializationHelper serializationHelper;
+    private MulticastMemberInfo multicastMemberInfo;
+    private DatagramPacket datagramPacket;
     private volatile boolean stop;
 
     public MulticastDiscoverySender(DiscoveryNode discoveryNode, MulticastSocket multicastSocket, ILogger logger, String group,
