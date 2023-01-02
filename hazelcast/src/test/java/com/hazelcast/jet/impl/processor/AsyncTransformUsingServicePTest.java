@@ -194,10 +194,10 @@ public class AsyncTransformUsingServicePTest extends SimpleTestInClusterSupport 
                 .input(asList("a", "a", wm(10), "a"))
                 .outputChecker((expected, actual) ->
                         actual.equals(asList("a-1", "a-1", wm(10), "a-1"))
-                        // last item may be reordered with watermark in current implementation
-                        // but this is not required.
+                        // this is possible if restoring the processor after every snapshot
                         || (!ordered && actual.equals(asList("a-1", "a-1", "a-1", wm(10))))
-                        // after snapshot restore watermark may be duplicated
+                        // this is possible if restoring the processor after every other snapshot. The
+                        // WM isn't actually duplicated, but is emitted again after a restart
                         || (!ordered && actual.equals(asList("a-1", "a-1", wm(10), "a-1", wm(10))))
                 )
                 .disableProgressAssertion()
