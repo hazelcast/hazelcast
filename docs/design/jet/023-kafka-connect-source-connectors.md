@@ -55,7 +55,7 @@ directly.
 ##### Why
 
 - Reusing existing Kafka Connect ecosystem will give Hazelcast Platform way more broad range of external sources.
-  Currently, there are 130 Source connectors available (e.g. Neo4j, Couchbase, Scylla, Sap, Redis),
+  Currently, there are 130 Kafka Connect Source connectors available (e.g. Neo4j, Couchbase, Scylla, Sap, Redis),
   see https://www.confluent.io/hub.
   Hazelcast officially has 30 dedicated connectors: https://docs.hazelcast.com/hazelcast/5.2/integrate/connectors
 - To take our connectors' maintenance burden off our shoulders.
