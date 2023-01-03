@@ -37,6 +37,7 @@
         <main.basedir>${project.parent.basedir}</main.basedir>
         <checkstyle.headerLocation>${project.parent.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt
         </checkstyle.headerLocation>
+        <jctools.version>3.3.0</jctools.version>
     </properties>
 
     <build>
@@ -100,7 +101,7 @@
         <dependency>
             <groupId>org.jctools</groupId>
             <artifactId>jctools-core</artifactId>
-            <version>3.3.0</version>
+            <version>${jctools.version}</version>
         </dependency>
     </dependencies>
 </project>
