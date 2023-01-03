@@ -46,10 +46,9 @@ public class AltoConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testConfigBounds() {
+    public void testConfigValidation() {
         AltoConfig altoConfig = config.getAltoConfig();
         assertThrows(InvalidConfigurationException.class, () -> altoConfig.setEventloopCount(0));
-        assertThrows(InvalidConfigurationException.class, () -> altoConfig.setEventloopCount(256 + 1));
     }
 
     @Test

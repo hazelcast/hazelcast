@@ -5,11 +5,8 @@ import com.hazelcast.config.InvalidConfigurationException;
 import java.util.Objects;
 
 public class AltoConfig {
-    private static final boolean DEFAULT_ENABLED = false;
-    private static final int DEFAULT_EVENTLOOP_COUNT = Runtime.getRuntime().availableProcessors();
-
-    private boolean enabled = DEFAULT_ENABLED;
-    private int eventloopCount = DEFAULT_EVENTLOOP_COUNT;
+    private boolean enabled = false;
+    private int eventloopCount = Runtime.getRuntime().availableProcessors();
 
     public boolean isEnabled() {
         return enabled;
@@ -25,9 +22,8 @@ public class AltoConfig {
     }
 
     public AltoConfig setEventloopCount(int eventloopCount) {
-        if (eventloopCount < Bounds.MIN_EVENTLOOP_COUNT || eventloopCount > Bounds.MAX_EVENTLOOP_COUNT) {
-            throw new InvalidConfigurationException("Buffer size should be between "
-                    + Bounds.MIN_EVENTLOOP_COUNT + " and " + Bounds.MAX_EVENTLOOP_COUNT);
+        if (eventloopCount < 1) {
+            throw new InvalidConfigurationException("Buffer size should be a positive number");
         }
 
         this.eventloopCount = eventloopCount;
@@ -58,10 +54,5 @@ public class AltoConfig {
                 + "enabled=" + enabled
                 + ", eventloopCount=" + eventloopCount
                 + '}';
-    }
-
-    private static class Bounds {
-        private static final int MIN_EVENTLOOP_COUNT = 1;
-        private static final int MAX_EVENTLOOP_COUNT = 256;
     }
 }

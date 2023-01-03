@@ -4,55 +4,48 @@ import com.hazelcast.config.InvalidConfigurationException;
 
 import javax.annotation.Nonnull;
 import java.util.Objects;
-import java.util.regex.Pattern;
 
 public class AltoSocketConfig {
-    private static final String DEFAULT_PORT_RANGE = "11000-21000";
-    private static final int DEFAULT_RECEIVE_BUFFER_SIZE = 128 * 1024;
-    private static final int DEFAULT_SEND_BUFFER_SIZE = 128 * 1024;
-
-    private String portRange = DEFAULT_PORT_RANGE;
-    private int receiveBufferSize = DEFAULT_RECEIVE_BUFFER_SIZE;
-    private int sendBufferSize = DEFAULT_SEND_BUFFER_SIZE;
+    private String portRange = "11000-21000";
+    private int receiveBufferSizeKb = 128;
+    private int sendBufferSizeKb = 128;
 
     public String getPortRange() {
         return portRange;
     }
 
     public AltoSocketConfig setPortRange(@Nonnull String portRange) {
-        if (!Bounds.PORT_RANGE_PATTERN.matcher(portRange).matches()) {
-            throw new InvalidConfigurationException("Invalid port definition");
+        if (!portRange.matches("\\d{1,5}-\\d{1,5}")) {
+            throw new InvalidConfigurationException("Invalid port range");
         }
 
         this.portRange = portRange;
         return this;
     }
 
-    public int getReceiveBufferSize() {
-        return receiveBufferSize;
+    public int getReceiveBufferSizeKb() {
+        return receiveBufferSizeKb;
     }
 
-    public AltoSocketConfig setReceiveBufferSize(int receiveBufferSize) {
-        if (receiveBufferSize < Bounds.MIN_BUFFER_SIZE || receiveBufferSize > Bounds.MAX_BUFFER_SIZE) {
-            throw new InvalidConfigurationException("Buffer size should be between "
-                    + Bounds.MIN_BUFFER_SIZE + " and " + Bounds.MAX_BUFFER_SIZE);
+    public AltoSocketConfig setReceiveBufferSizeKb(int receiveBufferSizeKb) {
+        if (receiveBufferSizeKb < 32 || receiveBufferSizeKb > 1_048_576) {
+            throw new InvalidConfigurationException("Buffer size should be between " + 32 + " and " + 1_048_576);
         }
 
-        this.receiveBufferSize = receiveBufferSize;
+        this.receiveBufferSizeKb = receiveBufferSizeKb;
         return this;
     }
 
-    public int getSendBufferSize() {
-        return sendBufferSize;
+    public int getSendBufferSizeKb() {
+        return sendBufferSizeKb;
     }
 
-    public AltoSocketConfig setSendBufferSize(int sendBufferSize) {
-        if (sendBufferSize < Bounds.MIN_BUFFER_SIZE || sendBufferSize > Bounds.MAX_BUFFER_SIZE) {
-            throw new InvalidConfigurationException("Buffer size should be between "
-                    + Bounds.MIN_BUFFER_SIZE + " and " + Bounds.MAX_BUFFER_SIZE);
+    public AltoSocketConfig setSendBufferSizeKb(int sendBufferSizeKb) {
+        if (sendBufferSizeKb < 32 || sendBufferSizeKb > 1_048_576) {
+            throw new InvalidConfigurationException("Buffer size should be between " + 32 + " and " + 1_048_576);
         }
 
-        this.sendBufferSize = sendBufferSize;
+        this.sendBufferSizeKb = sendBufferSizeKb;
         return this;
     }
 
@@ -65,28 +58,22 @@ public class AltoSocketConfig {
             return false;
         }
         AltoSocketConfig that = (AltoSocketConfig) o;
-        return receiveBufferSize == that.receiveBufferSize
-                && sendBufferSize == that.sendBufferSize
+        return receiveBufferSizeKb == that.receiveBufferSizeKb
+                && sendBufferSizeKb == that.sendBufferSizeKb
                 && portRange.equals(that.portRange);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(portRange, receiveBufferSize, sendBufferSize);
+        return Objects.hash(portRange, receiveBufferSizeKb, sendBufferSizeKb);
     }
 
     @Override
     public String toString() {
         return "AltoSocketConfig{"
                 + "portRange='" + portRange + '\''
-                + ", receiveBufferSize=" + receiveBufferSize
-                + ", sendBufferSize=" + sendBufferSize
+                + ", receiveBufferSizeKb=" + receiveBufferSizeKb
+                + ", sendBufferSizeKb=" + sendBufferSizeKb
                 + '}';
-    }
-
-    private static class Bounds {
-        private static final Pattern PORT_RANGE_PATTERN = Pattern.compile("\\d{1,5}-\\d{1,5}");
-        private static final int MIN_BUFFER_SIZE = 1 << 15;
-        private static final int MAX_BUFFER_SIZE = 1 << 30;
     }
 }

@@ -88,8 +88,8 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
         config.getAltoConfig().setEnabled(true).setEventloopCount(4);
         ServerSocketEndpointConfig clientSSConfig = new ServerSocketEndpointConfig();
         clientSSConfig.getAltoSocketConfig()
-                .setReceiveBufferSize(1 << 20)
-                .setSendBufferSize(1 << 19)
+                .setReceiveBufferSizeKb(1 << 10)
+                .setSendBufferSizeKb(1 << 9)
                 .setPortRange("15000-16000");
         config.getAdvancedNetworkConfig().setEnabled(true).setClientEndpointConfig(clientSSConfig);
 
@@ -100,8 +100,8 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
 
         assertClientPorts(4, 15000, 16000, hz);
         for (int i = 0; i < 3; i++) {
-            assertEquals(1 << 20, getClientSocketConfig(hz[i]).getReceiveBufferSize());
-            assertEquals(1 << 19, getClientSocketConfig(hz[i]).getSendBufferSize());
+            assertEquals(1 << 10, getClientSocketConfig(hz[i]).getReceiveBufferSizeKb());
+            assertEquals(1 << 9, getClientSocketConfig(hz[i]).getSendBufferSizeKb());
         }
     }
 

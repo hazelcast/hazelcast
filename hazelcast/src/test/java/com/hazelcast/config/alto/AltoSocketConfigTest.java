@@ -32,16 +32,16 @@ public class AltoSocketConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testReceiveSize() {
-        getAltoSocketConfig().setReceiveBufferSize(1 << 20);
+        getAltoSocketConfig().setReceiveBufferSizeKb(1 << 10);
         HazelcastInstance hz = createHazelcastInstance(config);
-        assertEquals(1 << 20, getClientSocketConfig(hz).getReceiveBufferSize());
+        assertEquals(1 << 10, getClientSocketConfig(hz).getReceiveBufferSizeKb());
     }
 
     @Test
     public void testSendSize() {
-        getAltoSocketConfig().setSendBufferSize(1 << 20);
+        getAltoSocketConfig().setSendBufferSizeKb(1 << 10);
         HazelcastInstance hz = createHazelcastInstance(config);
-        assertEquals(1 << 20, getClientSocketConfig(hz).getSendBufferSize());
+        assertEquals(1 << 10, getClientSocketConfig(hz).getSendBufferSizeKb());
     }
 
     @Test
@@ -71,12 +71,12 @@ public class AltoSocketConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testConfigBounds() {
+    public void testConfigValidation() {
         AltoSocketConfig altoSocketConfig = getAltoSocketConfig();
-        assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setReceiveBufferSize(1 << 15 - 1));
-        assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setReceiveBufferSize(1 << 30 + 1));
-        assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setSendBufferSize(1 << 15 - 1));
-        assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setSendBufferSize(1 << 30 + 1));
+        assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setReceiveBufferSizeKb(1 << 5 - 1));
+        assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setReceiveBufferSizeKb(1 << 20 + 1));
+        assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setSendBufferSizeKb(1 << 5 - 1));
+        assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setSendBufferSizeKb(1 << 20 + 1));
 
         assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setPortRange("alto 4ever"));
         assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setPortRange("5701"));
