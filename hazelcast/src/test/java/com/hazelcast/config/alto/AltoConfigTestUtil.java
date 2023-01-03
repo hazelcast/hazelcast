@@ -6,8 +6,9 @@ import com.hazelcast.internal.bootstrap.TpcServerBootstrap;
 import java.util.List;
 
 import static com.hazelcast.test.Accessors.getNode;
+import static org.assertj.core.api.Assertions.assertThat;
 
-public class AltoConfigAccessors {
+public class AltoConfigTestUtil {
     public static TpcServerBootstrap getTpcServerBootstrap(HazelcastInstance hz) {
         return getNode(hz).getNodeEngine().getTpcServerBootstrap();
     }
@@ -26,5 +27,14 @@ public class AltoConfigAccessors {
 
     public static List<Integer> getClientPorts(HazelcastInstance hz) {
         return getTpcServerBootstrap(hz).getClientPorts();
+    }
+
+    public static void assertClientPorts(int eventloopCount, int startInclusive, int endInclusive,
+                                         HazelcastInstance... hz) {
+        for (HazelcastInstance i : hz) {
+            assertThat(getClientPorts(i))
+                    .allSatisfy(port -> assertThat(port).isBetween(startInclusive, endInclusive))
+                    .hasSize(eventloopCount);
+        }
     }
 }
