@@ -25,13 +25,13 @@ import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.jet.test.SerialTest;
-import com.hazelcast.logging.Logger;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.ToxiproxyContainer;
@@ -69,7 +69,7 @@ public class KinesisFailureTest extends AbstractKinesisTest {
     private static ContainerProxy PROXY;
     private static KinesisTestHelper HELPER;
 
-    private static final org.slf4j.Logger LOGGER = LoggerFactory.getLogger(KinesisFailureTest.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(KinesisFailureTest.class);
 
     public KinesisFailureTest() {
         super(AWS_CONFIG, KINESIS, HELPER);
@@ -103,7 +103,7 @@ public class KinesisFailureTest extends AbstractKinesisTest {
                 .withRegion(localStack.getRegion())
                 .withCredentials(localStack.getAccessKey(), localStack.getSecretKey());
         KINESIS = AWS_CONFIG.buildClient();
-        HELPER = new KinesisTestHelper(KINESIS, STREAM, Logger.getLogger(KinesisIntegrationTest.class));
+        HELPER = new KinesisTestHelper(KINESIS, STREAM);
     }
 
     @AfterClass
