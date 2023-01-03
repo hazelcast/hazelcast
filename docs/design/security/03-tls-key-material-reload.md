@@ -21,12 +21,12 @@ in the TLS configuration (`<ssl/>`).
 ## Motivation
 
 Hazelcast Enterprise allows using TLS protocol for data in transit protection.
-We want to allow key material (keyStores and trustStores) rotation without
-necessity of Hazelcast instance restart.
+We want to enable key material (keyStores and trustStores) rotation without
+needing a Hazelcast instance restart.
 
 ## Functional design
 
-New optional property `keyMaterialDuration` will be introduced into the `<ssl>`
+New optional property, `keyMaterialDuration`, will be introduced into the `<ssl>`
 properties config. The value will be a [duration expression in
 ISO 8601 format](https://en.wikipedia.org/wiki/ISO_8601#Durations)
 as supported by Java [`java.time.Duration.parse()`](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-)
@@ -42,23 +42,23 @@ The `Duration.parse()` JavaDoc describes the format as:
 
 A positive `keyMaterialDuration` value (e.g. `PT1H`) says for how long should be the key material cached before it's newly loaded.
 
-A negative `keyMaterialDuration` value (e.g. `PT-1s`) means the key material will be cached indefinetely.
+A negative `keyMaterialDuration` value (e.g. `PT-1s`) means the key material will be cached indefinitely.
 
-A zero-value duration expression (e.g. `PT0s`) means the key material will not be cached and it will be always newly loaded for each TLS protected connection.
+A zero-value duration expression (e.g. `PT0s`) means the key material will not be cached and will always be newly loaded for each TLS-protected connection.
 
-If the new property is not specified (default value), the key material is cached indefinetely.
-This keeps the backward compatible behavior.
+The key material is cached indefinitely if the new property is not specified (default value).
+We keep the behavior backward-compatible.
 
-If the value has a wrong format the Hazelcast instance won't start.
+If the value has a wrong format, the Hazelcast instance won't start.
 
-The `OpenSSLEngineFactory` doesn't cache the the key material when native key
+The `OpenSSLEngineFactory` doesn't cache the key material when native key
 and certificate files are used (`keyFile`, `keyCertChainFile`,
 and `trustCertCollectionFile`). This behavior won't change.
 
 ### Sample configuration
 
 The following configuration example will cache the key material for 10 minutes
-before new reload.
+before the new reload.
 
 ```xml
 <network>
@@ -79,19 +79,18 @@ before new reload.
 
 ### Considered alternative approach
 
-Another approach how to deal with reloads would be to introducing only `true`/`false` flag
-to enable/disable the cache completely. As this approach could have a bigger performance
-impact this alternative won't be implemented.
+Another approach to deal with reloads would be reloading the material for every connection or introducing only the `true`/`false` flag
+to enable/disable a non-expiring cache altogether. As these approaches could impact performance, we won't implement these alternatives.
 
 ## Technical design
 
 The abstract class `com.hazelcast.internal.nio.ssl.SSLEngineFactorySupport`
-in `hazelcast-enterprise` will be extended to support the new property.
-Its implementations will be aligned. 
+in `hazelcast-enterprise` repository will be extended to support the new property.
+We will also align the implementations (i.e. child classes).
 
 Hazelcast sample full configuration will be extended. The property will be added to
 `hazelcast-full-example` and `hazelcast-client-full-example` files.
 
 ## Testing
 
-New tests covering the new functionality will be added into the `hazelcast-enterprise` repository.
+New tests covering the new functionality will be added to the `hazelcast-enterprise` repository.
