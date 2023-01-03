@@ -75,7 +75,6 @@
 
         <maven.surefire.plugin.version>3.0.0-M7</maven.surefire.plugin.version>
         <maven.checkstyle.plugin.version>3.2.0</maven.checkstyle.plugin.version>
-        <maven.sonar.plugin.version>3.6.0.1398</maven.sonar.plugin.version>
         <maven.jacoco.plugin.version>0.8.7</maven.jacoco.plugin.version>
         <maven.failsafe.plugin.version>3.0.0-M7</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.7</maven.cobertura.plugin.version>
@@ -162,12 +161,6 @@
         <errorprone.version>2.15.0</errorprone.version>
         <awaitility.version>4.1.1</awaitility.version>
         <hikari.version>4.0.3</hikari.version>
-
-        <sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar>
-        <!--<sonar.phase>post-integration-test</sonar.phase>-->
-        <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
-        <sonar.language>java</sonar.language>
-        <sonar.verbose>true</sonar.verbose>
 
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
 
@@ -1091,12 +1084,6 @@
                                 </goals>
                             </execution>
                         </executions>
-                    </plugin>
-
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>sonar-maven-plugin</artifactId>
-                        <version>${maven.sonar.plugin.version}</version>
                     </plugin>
                 </plugins>
             </build>
