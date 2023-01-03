@@ -196,8 +196,8 @@ public final class HazelcastBootstrap {
 
     private static void resetJetParametersIfNecessary(String jar, String snapshotName, String jobName, boolean calledByMember) {
         if (calledByMember) {
-            // BootstrappedInstanceProxy has a HazelcastInstance and BootstrappedJetProxy
-            // BootstrappedJetProxy has a Jet instance and jarName,snapshotName,jobName parameters
+            // BootstrappedInstanceProxy has a HazelcastInstance and BootstrappedJetProxy member fields
+            // and BootstrappedJetProxy has a Jet instance and jarName,snapshotName,jobName parameters
             // Change cached jarName,snapshotName,jobName properties
             BootstrappedInstanceProxy bootstrappedInstanceProxy = supplier.get();
             BootstrappedJetProxy bootstrappedJetProxy = bootstrappedInstanceProxy.getJet();
@@ -217,7 +217,7 @@ public final class HazelcastBootstrap {
     }
 
     private static void awaitJobsStarted() {
-        List<Job> submittedJobs = ((BootstrappedJetProxy) HazelcastBootstrap.supplier.get().getJet()).submittedJobs();
+        List<Job> submittedJobs = (HazelcastBootstrap.supplier.get().getJet()).submittedJobs();
         int submittedCount = submittedJobs.size();
         if (submittedCount == 0) {
             System.out.println("The JAR didn't submit any jobs.");

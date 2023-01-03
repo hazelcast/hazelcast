@@ -20,6 +20,7 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -76,14 +77,12 @@ public class JobUploadStatus {
         currentPart = parameterObject.getCurrentPartNumber();
         totalPart = parameterObject.getTotalPartNumber();
 
-        Path jarPath = jobMetaDataParameterObject.getJarPath();
-
         // If the first part
         if (currentPart == 1) {
-            //Create a new temporary file
-            jarPath = Files.createTempFile("runjob", ".jar");
-            jobMetaDataParameterObject.setJarPath(jarPath);
+            createNewTemporaryFile();
         }
+
+        Path jarPath = jobMetaDataParameterObject.getJarPath();
 
         // Append data to file
         try (FileOutputStream outputStream = new FileOutputStream(jarPath.toFile(), true)) {
@@ -104,6 +103,27 @@ public class JobUploadStatus {
             result = jobMetaDataParameterObject;
         }
         return result;
+    }
+
+    private void createNewTemporaryFile() throws IOException {
+        // Create a new temporary file
+        Path jarPath = Files.createTempFile("runjob", ".jar");
+
+        // Make it accessible only by the owner
+        File jarFile = jarPath.toFile();
+        boolean success = jarFile.setReadable(true, true);
+        if (!success) {
+            logger.info("setReadable failed on " + jarFile);
+        }
+        success = jarFile.setWritable(true, true);
+        if (!success) {
+            logger.info("setWritable failed on " + jarFile);
+        }
+        success = jarFile.setExecutable(true, true);
+        if (!success) {
+            logger.info("setExecutable failed on " + jarFile);
+        }
+        jobMetaDataParameterObject.setJarPath(jarPath);
     }
 
     private static void validateReceivedParameters(JobMultiPartParameterObject parameterObject) {
