@@ -720,8 +720,7 @@
         </interfaces>
         <ssl enabled="false">
             <properties>
-                <property name="protocol">TLS</property>
-
+                <property name="protocol">TLSv1.3</property>
                 <property name="mutualAuthentication">REQUIRED</property>
                 <property name="keyStore">/opt/hazelcast.keystore</property>
                 <property name="keyStorePassword">secret.97531</property>
@@ -729,6 +728,7 @@
                 <property name="trustStore">/opt/hazelcast.truststore</property>
                 <property name="trustStorePassword">changeit</property>
                 <property name="trustStoreType">PKCS12</property>
+                <property name="keyMaterialDuration">PT10M</property>
             </properties>
         </ssl>
         <socket-interceptor enabled="false"/>

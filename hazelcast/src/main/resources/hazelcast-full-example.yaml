@@ -700,8 +700,7 @@ hazelcast:
     ssl:
       enabled: false
       properties:
-        protocol: TLS
-
+        protocol: TLSv1.3
         mutualAuthentication: REQUIRED
         keyStore: /opt/hazelcast.keystore
         keyStorePassword: secret.97531
@@ -709,6 +708,7 @@ hazelcast:
         trustStore: /opt/hazelcast.truststore
         trustStorePassword: changeit
         trustStoreType: PKCS12
+        keyMaterialDuration: PT10M
     socket-interceptor:
       enabled: false
     member-address-provider:
