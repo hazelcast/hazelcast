@@ -16,11 +16,9 @@
 
 package com.hazelcast.internal.networking.nio;
 
-import com.hazelcast.internal.networking.Channel;
 import com.hazelcast.internal.networking.ChannelErrorHandler;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
-import com.hazelcast.test.AssertTask;
 import com.hazelcast.test.ExpectedRuntimeException;
 import com.hazelcast.test.HazelcastTestSupport;
 import org.junit.After;
@@ -40,9 +38,9 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.ArgumentMatchers.isNull;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -96,17 +94,12 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
         startThread();
 
         SelectionKey selectionKey = mock(SelectionKey.class);
-        selectionKey.attach(handler);
         when(selectionKey.isValid()).thenReturn(true);
+        when(selectionKey.attachment()).thenReturn(handler);
 
         selector.scheduleSelectAction(selectionKey);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                verify(handler).process();
-            }
-        });
+        assertTrueEventually(() -> verify(handler).process());
         assertEquals(1, thread.getEventCount());
         assertStillRunning();
     }
@@ -116,16 +109,11 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
         startThread();
 
         SelectionKey selectionKey = mock(SelectionKey.class);
-        selectionKey.attach(handler);
         when(selectionKey.isValid()).thenReturn(false);
+        when(selectionKey.attachment()).thenReturn(handler);
         selector.scheduleSelectAction(selectionKey);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                verify(handler).onError(isA(CancelledKeyException.class));
-            }
-        });
+        assertTrueEventually(() -> verify(handler).onError(isA(CancelledKeyException.class)));
         assertStillRunning();
     }
 
@@ -134,18 +122,13 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
         startThread();
 
         SelectionKey selectionKey = mock(SelectionKey.class);
-        selectionKey.attach(handler);
         when(selectionKey.isValid()).thenReturn(true);
+        when(selectionKey.attachment()).thenReturn(handler);
         doThrow(new ExpectedRuntimeException()).when(handler).process();
 
         selector.scheduleSelectAction(selectionKey);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                verify(handler).onError(isA(ExpectedRuntimeException.class));
-            }
-        });
+        assertTrueEventually(() -> verify(handler).onError(isA(ExpectedRuntimeException.class)));
         assertStillRunning();
     }
 
@@ -164,14 +147,9 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
 
         selector.scheduleSelectThrowsOOME();
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() {
-                assertFalse(thread.isAlive());
-            }
-        });
+        assertTrueEventually(() -> assertFalse(thread.isAlive()));
 
-        verify(errorHandler).onError((Channel) isNull(), any(OutOfMemoryError.class));
+        verify(errorHandler).onError(isNull(), any(OutOfMemoryError.class));
     }
 
     @Test
@@ -185,21 +163,16 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
         // handler is being called.
         final NioPipeline handler = mock(NioPipeline.class);
         SelectionKey selectionKey = mock(SelectionKey.class);
-        selectionKey.attach(handler);
         when(selectionKey.isValid()).thenReturn(true);
+        when(selectionKey.attachment()).thenReturn(handler);
 
         selector.scheduleSelectAction(selectionKey);
 
-        assertTrueEventually(new AssertTask() {
-            @Override
-            public void run() throws Exception {
-                verify(handler).process();
-            }
-        });
+        assertTrueEventually(() -> verify(handler).process());
     }
 
-    class MockSelector extends Selector {
-        final BlockingQueue<SelectorAction> actionQueue = new LinkedBlockingQueue<SelectorAction>();
+    static class MockSelector extends Selector {
+        final BlockingQueue<SelectorAction> actionQueue = new LinkedBlockingQueue<>();
         Set<SelectionKey> pendingKeys;
 
         void scheduleSelectAction(SelectionKey selectionKey) {
@@ -292,7 +265,7 @@ public abstract class NioThreadAbstractTest extends HazelcastTestSupport {
 
     static class SelectorAction {
 
-        final Set<SelectionKey> keys = new HashSet<SelectionKey>();
+        final Set<SelectionKey> keys = new HashSet<>();
 
         boolean selectThrowsIOException;
         boolean selectThrowsOOME;
