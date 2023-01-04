@@ -87,9 +87,12 @@ for the Kafka cluster.
 
 #### Terminology
 
-| Term                   | Definition                                                                        |
-|------------------------|-----------------------------------------------------------------------------------|
-| Kafka Source Connector | Kafka Connect component ingesting data from an external system into Kafka topics. |
+| Term                   | Definition                                                                                                                                                                        |
+|------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Kafka Source Connector | Kafka Connect component ingesting data from an external system into Kafka topics.                                                                                                 |
+| Kafka Source Connector | Kafka Connect component writing data from Kafka topics to external systems.                                                                                                       |
+| Kafka Transforms       | Kafka Connect component modifying data from a source connector before it is written to Kafka, and modifying data read from Kafka before it’s written to the sink connector.       |
+| Kafka Converter        | Kafka Connect component serializing the data when storing record from the source connector to the Kafka topic and deserializing from the topic into this internal representation. |
 
 ### Functional Design
 
