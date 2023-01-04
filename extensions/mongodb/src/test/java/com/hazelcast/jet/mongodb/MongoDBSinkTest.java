@@ -28,7 +28,6 @@ import org.junit.Test;
 
 import java.util.concurrent.CompletionException;
 
-import static com.hazelcast.jet.mongodb.MongoDBSourceTest.mongoClient;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -47,7 +46,7 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.list(list))
          .map(i -> new Document("key", i))
-         .writeTo(MongoDBSinks.mongodb(SINK_NAME, connectionString, DB_NAME, COL_NAME));
+         .writeTo(MongoDBSinks.mongodb(SINK_NAME, connectionString, DB_NAME, testName.getMethodName()));
 
         hz.getJet().newJob(p).join();
 
@@ -65,7 +64,7 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
         Sink<Document> sink = MongoDBSinks
                 .<Document>builder(SINK_NAME, () -> mongoClient("non-existing-server", 0))
                 .databaseFn(client -> client.getDatabase(DB_NAME))
-                .collectionFn(db -> db.getCollection(COL_NAME))
+                .collectionFn(db -> db.getCollection(testName.getMethodName()))
                 .destroyFn(MongoClient::close)
                 .build();
 

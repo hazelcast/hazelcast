@@ -16,155 +16,139 @@
 
 package com.hazelcast.jet.mongodb;
 
+import com.google.common.collect.Sets;
 import com.hazelcast.collection.IList;
-import com.hazelcast.collection.ISet;
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
-import com.hazelcast.jet.config.ProcessingGuarantee;
+import com.hazelcast.jet.mongodb.MongoDBSourceBuilder.Batch;
 import com.hazelcast.jet.pipeline.Pipeline;
-import com.hazelcast.jet.pipeline.Sink;
-import com.hazelcast.jet.pipeline.SinkBuilder;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
-import com.hazelcast.test.HazelcastSerialClassRunner;
-import com.hazelcast.test.TestHazelcastInstanceFactory;
+import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.QuickTest;
-import com.mongodb.ConnectionString;
-import com.mongodb.MongoClientSettings;
-import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Filters;
+import com.mongodb.client.model.Sorts;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized.Parameter;
+import org.junit.runners.Parameterized.Parameters;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.HashSet;
 import java.util.Set;
 
-import static com.mongodb.client.model.Filters.gt;
+import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.mongodb.client.model.Filters.gte;
-import static com.mongodb.client.model.Projections.computed;
-import static com.mongodb.client.model.Projections.fields;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static com.mongodb.client.model.Projections.include;
+import static java.util.Arrays.asList;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
-@RunWith(HazelcastSerialClassRunner.class)
+@RunWith(HazelcastParametrizedRunner.class)
 @Category({QuickTest.class})
 public class MongoDBSourceTest extends AbstractMongoDBTest {
 
-    @Test @Ignore
-    public void testStream_whenServerDown() {
-        shutdownNodeFactory();
-        TestHazelcastInstanceFactory instanceFactory = createHazelcastInstanceFactory(2);
-        HazelcastInstance hz = instanceFactory.newHazelcastInstance();
-        HazelcastInstance serverToShutdown = instanceFactory.newHazelcastInstance();
-        int itemCount = 40_000;
-
-        Sink<Integer> setSink = SinkBuilder
-                .sinkBuilder("set", c -> c.hazelcastInstance().getSet("set"))
-                .<Integer>receiveFn(Set::add)
-                .build();
-
-        Pipeline p = Pipeline.create();
-        p.readFrom(streamSource(30))
-         .withNativeTimestamps(0)
-                .setLocalParallelism(2)
-         .map(doc -> doc.getInteger("key"))
-         .writeTo(setSink);
-
-        JobConfig jobConfig = new JobConfig();
-        jobConfig.setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE)
-                 .setSnapshotIntervalMillis(2000);
-        Job job = hz.getJet().newJob(p, jobConfig);
-        ISet<Integer> set = hz.getSet("set");
-
-        spawn(() -> {
-            for (int i = 0; i < itemCount; i++) {
-                collection().insertOne(new Document("key", i));
-            }
-        });
-
-        sleepSeconds(5);
-        serverToShutdown.shutdown();
-
-        assertTrueEventually(() ->
-            assertEquals(itemCount, set.size())
-        );
-
-        job.cancel();
+    @Parameters(name = "filter:{0} | projection: {1} | sort: {2} | map: {3}")
+    public static Object[] filterProjectionSortMatrix() {
+        Set<Boolean> booleans = new HashSet<>(asList(true, false));
+        return Sets.cartesianProduct(booleans, booleans, booleans, booleans).stream()
+                .map(tuple -> tuple.toArray(new Object[0]))
+                .toArray(Object[]::new);
     }
+
+    @Parameter(0)
+    public boolean filter;
+    @Parameter(1)
+    public boolean projection;
+    @Parameter(2)
+    public boolean sort;
+    @Parameter(3)
+    public boolean map;
 
     @Test
     public void testBatch() {
+        IList<Object> list = instance().getList(testName.getMethodName());
 
-        IList<Document> list = instance().getList("testBatch");
+        collection().insertMany(range(0, 100).mapToObj(i -> new Document("key", i).append("val", i)).collect(toList()));
+        assertEquals(collection().countDocuments(), 100L);
 
-        List<Document> documents = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
-            documents.add(new Document("key", i).append("val", i));
-        }
-        collection().insertMany(documents);
-
-
+        Pipeline pipeline = Pipeline.create();
         String connectionString = mongoContainer.getConnectionString();
+        Batch<?> sourceBuilder = MongoDBSourceBuilder.batch(SOURCE_NAME, () -> mongoClient(connectionString))
+                                                            .database(DB_NAME)
+                                                            .collection(testName.getMethodName(), Document.class);
+        if (filter) {
+            sourceBuilder = sourceBuilder.filter(gte("key", 10));
+        }
+        if (projection) {
+            sourceBuilder = sourceBuilder.project(include("val"));
+        }
+        if (sort) {
+            sourceBuilder = sourceBuilder.sort(Sorts.ascending("val"));
+        }
+        if (map) {
+            sourceBuilder = sourceBuilder.mapFn(Mappers.toClass(KV.class));
+        }
+        pipeline.readFrom(sourceBuilder.build())
+                .setLocalParallelism(2)
+                .writeTo(Sinks.list(list));
 
-        Pipeline p = Pipeline.create();
-        p.readFrom(MongoDBSources.batch(SOURCE_NAME, connectionString, DB_NAME, COL_NAME,
-                 gte("val", 10),
-                 fields(computed("val", 1), computed("_id", 0))))
-         .setLocalParallelism(2)
-         .writeTo(Sinks.list(list));
+        instance().getJet().newJob(pipeline, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE)).join();
 
-        instance().getJet().newJob(p).join();
-
-        assertEquals(90, list.size());
-        Document actual = list.get(0);
-        assertNull(actual.get("key"));
-        assertNull(actual.get("_id"));
-        assertNotNull(actual.get("val"));
+        assertEquals(filter ? 90 : 100, list.size());
+        if (map) {
+            KV actual = (KV) list.get(0);
+            if (projection) {
+                assertNull(actual.key);
+            }
+            assertNotNull(actual.val);
+        } else {
+            Document actual = (Document) list.get(0);
+            if (projection) {
+                assertNull(actual.get("key"));
+            }
+            assertNotNull(actual.get("val"));
+        }
     }
 
-    @Test
-    public void testBatchSimple() {
-
-        IList<KV> list = instance().getList("testBatchSimple");
-
-        List<Document> documents = new ArrayList<>();
-        for (int i = 0; i < 100; i++) {
-            documents.add(new Document("key", i).append("val", i));
-        }
-        collection().insertMany(documents);
-
-
-
-        String connectionString = mongoContainer.getConnectionString();
-        Pipeline p = Pipeline.create();
-        p.readFrom(
-                MongoDBSourceBuilder.batch(SOURCE_NAME, () -> MongoClients.create(connectionString))
-                        .database(DB_NAME)
-                        .collection(COL_NAME, Document.class)
-                        .filter(gt("key", -10))
-                        .mapFn(Mappers.toClass(KV.class))
-                        .build()
-         ).setLocalParallelism(4)
-         .writeTo(Sinks.list(list));
-
-        JobConfig jobConfig = new JobConfig().setProcessingGuarantee(ProcessingGuarantee.EXACTLY_ONCE);
-        instance().getJet().newJob(p, jobConfig).join();
-
-        assertEquals(100, list.size());
-        KV actual = list.get(0);
-        assertNotNull(actual.val);
-    }
+//    @Test
+//    public void testBatchSimple() {
+//        IList<KV> list = instance().getList(testName.getMethodName());
+//
+//        List<Document> documents = new ArrayList<>();
+//        for (int i = 0; i < 100; i++) {
+//            documents.add(new Document("key", i).append("val", i));
+//        }
+//        collection().insertMany(documents);
+//
+//        String connectionString = mongoContainer.getConnectionString();
+//        Pipeline p = Pipeline.create();
+//        p.readFrom(
+//                MongoDBSourceBuilder.batch(SOURCE_NAME, () -> MongoClients.create(connectionString))
+//                        .database(DB_NAME)
+//                        .collection(testName.getMethodName(), Document.class)
+//                        .filter(gt("key", -10))
+//                        .mapFn(Mappers.toClass(KV.class))
+//                        .build()
+//         ).setLocalParallelism(4)
+//         .writeTo(Sinks.list(list));
+//
+//        JobConfig jobConfig = new JobConfig().setProcessingGuarantee(EXACTLY_ONCE);
+//        instance().getJet().newJob(p, jobConfig).join();
+//
+//        assertEquals(100, list.size());
+//        KV actual = list.get(0);
+//        assertNotNull(actual.val);
+//    }
 
     @SuppressWarnings("unused") // getters/setters are for Mongo converter
     public static class KV {
@@ -190,17 +174,13 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
     }
 
     @Test
-    public void testStream() {
+    public void testStream_filter_and_projection() {
         IList<Document> list = instance().getList("testStream");
 
         StreamSource<? extends Document> streamSource =
                 streamSource(
-                        null,
-//Filters.and(Filters.gte("fullDocument.val", 10), Filters.eq("operationType", "insert")),
-//                        new Document("fullDocument.val", new Document("$gte", 10)).append("operationType", "insert"),
-//                        Projections.include("fullDocument.val"),
-                        null,
-                        30
+                    Filters.and(gte("fullDocument.val", 10), Filters.eq("operationType", "insert")),
+                        include("fullDocument.val")
                 );
 
         Pipeline p = Pipeline.create();
@@ -221,7 +201,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         }
 
         assertTrueEventually(() -> {
-            assertEquals(2L, list.stream().distinct().count());
+            assertEquals(1L, list.stream().distinct().count());
 //            Document document = list.get(0);
 //            assertEquals(10, document.get("val"));
 //            assertNull(document.get("foo"));
@@ -231,7 +211,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         collection().insertOne(new Document("val", 20).append("foo", "bar"));
 
         assertTrueEventually(() -> {
-            assertEquals(4L, list.stream().distinct().count());
+            assertEquals(2L, list.stream().distinct().count());
 //            Document document = list.get(1);
 //            assertEquals(20, document.get("val"));
 //            assertNull(document.get("foo"));
@@ -363,38 +343,21 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
     }
 
-    private StreamSource<? extends Document> streamSource(int connectionTimeoutSeconds) {
-        return streamSource(null, null, connectionTimeoutSeconds);
-    }
-
     private StreamSource<Document> streamSource(
             Bson filter,
-            Bson projection,
-            int connectionTimeoutSeconds
+            Bson projection
     ) {
-        String connectionString = mongoContainer.getConnectionString();
         long value = startAtOperationTime.getValue();
+        String connectionString = mongoContainer.getConnectionString();
         return MongoDBSourceBuilder
-                .stream(SOURCE_NAME, () -> mongoClient(connectionString, connectionTimeoutSeconds))
+                .stream(SOURCE_NAME, () -> mongoClient(connectionString))
                 .database(DB_NAME)
-                .collection(COL_NAME, Document.class)
+                .collection(testName.getMethodName(), Document.class)
                 .project(projection == null ? null : projection.toBsonDocument())
                 .filter(filter == null ? null : filter.toBsonDocument())
                 .mapFn(ChangeStreamDocument::getFullDocument)
                 .startAtOperationTime(new BsonTimestamp(value))
                 .build();
-    }
-
-    static MongoClient mongoClient(String connectionString, int connectionTimeoutSeconds) {
-        MongoClientSettings settings = MongoClientSettings
-                .builder()
-                .applyConnectionString(new ConnectionString(connectionString))
-                .applyToClusterSettings(b -> {
-                    b.serverSelectionTimeout(connectionTimeoutSeconds, SECONDS);
-                })
-                .build();
-
-        return MongoClients.create(settings);
     }
 
 
