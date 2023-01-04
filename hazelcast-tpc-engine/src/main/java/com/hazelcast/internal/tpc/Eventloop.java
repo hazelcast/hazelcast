@@ -425,8 +425,8 @@ public abstract class Eventloop implements Executor {
      * The configuration should not be modified after it is used to create Eventloops.
      */
     public abstract static class Configuration {
-        private static final int INITIAL_LOCAL_QUEUE_CAPACITY = 1 << 10;
-        private static final int INITIAL_CONCURRENT_QUEUE_CAPACITY = 1 << 12;
+        private static final int INITIAL_LOCAL_QUEUE_CAPACITY = 16384;
+        private static final int INITIAL_CONCURRENT_QUEUE_CAPACITY = 16384;
         protected final Type type;
         private Supplier<Scheduler> schedulerSupplier = NopScheduler::new;
         private Supplier<String> threadNameSupplier;

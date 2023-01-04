@@ -6,7 +6,8 @@ import java.util.Objects;
 
 public class AltoConfig {
     private static final boolean DEFAULT_ENABLED = false;
-    private static final int DEFAULT_EVENTLOOP_COUNT = Runtime.getRuntime().availableProcessors();
+    private static final int DEFAULT_EVENTLOOP_COUNT = Integer.parseInt(
+            System.getProperty("alto.eventloop.count",""+Runtime.getRuntime().availableProcessors()));
 
     private boolean enabled = DEFAULT_ENABLED;
     private int eventloopCount = DEFAULT_EVENTLOOP_COUNT;
