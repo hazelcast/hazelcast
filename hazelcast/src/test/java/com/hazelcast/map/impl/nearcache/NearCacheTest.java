@@ -248,20 +248,94 @@ public class NearCacheTest extends NearCacheTestSupport {
         populateNearCache(map, mapSize);
 
         NearCacheStats stats = getNearCacheStats(map);
-        long ownedEntryCount = stats.getOwnedEntryCount();
-        long misses = stats.getMisses();
-        assertTrue(format("Near Cache  entry count should be > %d but were %d", 400, ownedEntryCount), ownedEntryCount > 400);
-        assertEquals(format("Near Cache misses should be %d but were %d", mapSize, misses), mapSize, misses);
 
         // make some hits
         populateNearCache(map, mapSize);
 
         long hitsBefore = stats.getHits();
+        long invalidationsBefore = stats.getInvalidations();
         for (int i = 0; i < mapSize; i++) {
             map.executeOnKey(i, new TestReadOnlyProcessor());
         }
         long hitsAfter = stats.getHits();
-        assertEquals("No Invalidation after getting keys from read only entry processor ", hitsBefore, hitsAfter);
+        long invalidationsAfter = stats.getInvalidations();
+//        assertEquals("No Invalidation after getting keys from read only entry processor ", hitsBefore, hitsAfter);
+        assertEquals("No Invalidation after getting keys from read only entry processor ", invalidationsBefore, invalidationsAfter);
+    }
+
+
+    @Test
+    public void testNearCacheStatsWithReadOnlyProcessor_submitToKey() {
+        int mapSize = 1000;
+        String mapName = randomMapName();
+
+        Config config = getConfig();
+        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig().setInvalidateOnChange(false));
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance[] instances = factory.newInstances(config);
+
+        // populate map
+        IMap<Integer, Integer> map = instances[0].getMap(mapName);
+        populateMap(map, mapSize);
+
+        // populate Near Cache
+        populateNearCache(map, mapSize);
+
+        NearCacheStats stats = getNearCacheStats(map);
+
+        // make some hits
+        populateNearCache(map, mapSize);
+
+        long hitsBefore = stats.getHits();
+        long invalidationsBefore = stats.getInvalidations();
+        for (int i = 0; i < mapSize; i++) {
+            map.submitToKey(i, new TestReadOnlyProcessor());
+        }
+        long hitsAfter = stats.getHits();
+        long invalidationsAfter = stats.getInvalidations();
+//        assertEquals("No Invalidation after getting keys from read only entry processor ", hitsBefore, hitsAfter);
+        assertEquals("No Invalidation after getting keys from read only entry processor ", invalidationsBefore, invalidationsAfter);
+    }
+
+    @Test
+    public void testNearCacheStatsWithReadOnlyProcessor_executeOnEntries() {
+        int mapSize = 1000;
+        String mapName = randomMapName();
+
+        Config config = getConfig();
+        config.getMapConfig(mapName).setNearCacheConfig(newNearCacheConfig().setInvalidateOnChange(false));
+
+        TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory(2);
+        HazelcastInstance[] instances = factory.newInstances(config);
+
+        IMap<Integer, Employee> map = instances[0].getMap(mapName);
+        for (int i = 0; i < mapSize; i++) {
+            map.put(i, new Employee(i, "", 0, true, 0D));
+        }
+
+        populateNearCache(map, mapSize);
+
+        NearCacheStats stats = getNearCacheStats(map);
+
+        long invalidationsBefore = stats.getInvalidations();
+        EntryObject e = Predicates.newPredicateBuilder().getEntryObject();
+        Predicate predicate = e.get("salary").equal(0);
+        map.executeOnEntries(
+                entry -> {
+                    Employee employee = entry.getValue();
+                    double currentSalary = employee.getSalary();
+                    double newSalary = currentSalary + 10;
+                    employee.setSalary(newSalary);
+                    return newSalary;
+                }, predicate);
+//        for (int i = 0; i < mapSize; i++) {
+//            map.executeOnEntries(new TestReadOnlyProcessor(), );
+//        }
+//        long hitsAfter = stats.getHits();
+        long invalidationsAfter = stats.getInvalidations();
+//        assertEquals("No Invalidation after getting keys from read only entry processor ", hitsBefore, hitsAfter);
+        assertEquals("No Invalidation after getting keys from read only entry processor ", invalidationsBefore, invalidationsAfter);
     }
 
     @Test

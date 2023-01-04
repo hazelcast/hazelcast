@@ -526,7 +526,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
     }
 
     @Override
-    protected <R> Map<K, R> prepareResult(Collection<Entry<Data, Data>> entrySet) {
+    protected <R> Map<K, R> prepareResult(Collection<Entry<Data, Data>> entrySet, boolean shouldInvalidate) {
         if (CollectionUtil.isEmpty(entrySet)) {
             return emptyMap();
         }
@@ -535,8 +535,9 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             Data dataKey = entry.getKey();
             K key = toObject(dataKey);
             R value = toObject(entry.getValue());
-
-            invalidateNearCache(serializeKeys ? dataKey : key);
+            if (shouldInvalidate){
+                invalidateNearCache(serializeKeys ? dataKey : key);
+            }
             result.put(key, value);
         }
         return result;
