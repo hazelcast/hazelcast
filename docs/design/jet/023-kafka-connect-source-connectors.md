@@ -327,3 +327,14 @@ Describe testing approach to developed functionality
 - Security related tests - N/A
 - Create integration tests with some typical/popular Kafka Connect Source connectors
 
+### Resources
+
+- [TDD on GitHub: hazelcast/hazelcast/pull/23303](https://github.com/hazelcast/hazelcast/pull/23303)
+- [Hazelcast: Creating a Custom Streaming Source](https://docs.hazelcast.com/hazelcast/5.2/pipelines/custom-stream-source)
+- [Kafka Connect Concepts | Confluent Documentation](https://docs.confluent.io/platform/current/connect/concepts.html#kconnect-long-concepts)
+- [Kafka Connect | Confluent Documentation](https://docs.confluent.io/platform/current/connect/index.html)
+- [Kafka Connect Deep Dive – Converters and Serialization Explained | Confluent](https://www.confluent.io/blog/kafka-connect-deep-dive-converters-serialization-explained/)
+- [Guide for Kafka Connector Developers | Confluent Documentation](https://docs.confluent.io/platform/current/connect/devguide.html)
+- [GitHub: hazelcast/hazelcast-jet-contrib/kafka-connect](https://github.com/hazelcast/hazelcast-jet-contrib/tree/master/kafka-connect)
+- [GitHub: debezium/debezium/debezium-embedded](https://github.com/debezium/debezium/tree/main/debezium-embedded)
+
