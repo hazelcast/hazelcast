@@ -57,10 +57,10 @@ import static org.junit.Assert.assertNull;
 @Category({QuickTest.class})
 public class MongoDBSourceTest extends AbstractMongoDBTest {
 
-    @Parameters(name = "filter:{0} | projection: {1} | sort: {2} | map: {3}")
+    @Parameters(name = "filter:{0} | projection: {1} | sort: {2} | map: {3} | oneCollection: {4}")
     public static Object[] filterProjectionSortMatrix() {
         Set<Boolean> booleans = new HashSet<>(asList(true, false));
-        return Sets.cartesianProduct(booleans, booleans, booleans, booleans).stream()
+        return Sets.cartesianProduct(booleans, booleans, booleans, booleans, booleans).stream()
                 .map(tuple -> tuple.toArray(new Object[0]))
                 .toArray(Object[]::new);
     }
@@ -73,6 +73,8 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
     public boolean sort;
     @Parameter(3)
     public boolean map;
+    @Parameter(4)
+    public boolean usingOneCollection;
 
     @Test
     public void testBatch() {
@@ -84,8 +86,10 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         Pipeline pipeline = Pipeline.create();
         String connectionString = mongoContainer.getConnectionString();
         Batch<?> sourceBuilder = MongoDBSourceBuilder.batch(SOURCE_NAME, () -> mongoClient(connectionString))
-                                                            .database(DB_NAME)
-                                                            .collection(testName.getMethodName(), Document.class);
+                                                            .database(DB_NAME);
+        if (usingOneCollection) {
+            sourceBuilder = sourceBuilder.collection(testName.getMethodName(), Document.class);
+        }
         if (filter) {
             sourceBuilder = sourceBuilder.filter(gte("key", 10));
         }
@@ -120,36 +124,6 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         }
     }
 
-//    @Test
-//    public void testBatchSimple() {
-//        IList<KV> list = instance().getList(testName.getMethodName());
-//
-//        List<Document> documents = new ArrayList<>();
-//        for (int i = 0; i < 100; i++) {
-//            documents.add(new Document("key", i).append("val", i));
-//        }
-//        collection().insertMany(documents);
-//
-//        String connectionString = mongoContainer.getConnectionString();
-//        Pipeline p = Pipeline.create();
-//        p.readFrom(
-//                MongoDBSourceBuilder.batch(SOURCE_NAME, () -> MongoClients.create(connectionString))
-//                        .database(DB_NAME)
-//                        .collection(testName.getMethodName(), Document.class)
-//                        .filter(gt("key", -10))
-//                        .mapFn(Mappers.toClass(KV.class))
-//                        .build()
-//         ).setLocalParallelism(4)
-//         .writeTo(Sinks.list(list));
-//
-//        JobConfig jobConfig = new JobConfig().setProcessingGuarantee(EXACTLY_ONCE);
-//        instance().getJet().newJob(p, jobConfig).join();
-//
-//        assertEquals(100, list.size());
-//        KV actual = list.get(0);
-//        assertNotNull(actual.val);
-//    }
-
     @SuppressWarnings("unused") // getters/setters are for Mongo converter
     public static class KV {
         private Integer key;
@@ -174,7 +148,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
     }
 
     @Test
-    public void testStream_filter_and_projection() {
+    public void testStream() {
         IList<Document> list = instance().getList("testStream");
 
         StreamSource<? extends Document> streamSource =

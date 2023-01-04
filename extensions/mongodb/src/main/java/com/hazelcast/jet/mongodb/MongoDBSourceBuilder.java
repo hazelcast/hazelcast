@@ -220,7 +220,9 @@ public final class MongoDBSourceBuilder implements Serializable{ // TODO make no
 
         private FunctionEx<Document, T> mapFn;
 
+        @SuppressWarnings("unchecked")
         private Batch() {
+            mapFn = (FunctionEx<Document, T>) toClass(Document.class);
         }
 
         @Nonnull
@@ -269,7 +271,6 @@ public final class MongoDBSourceBuilder implements Serializable{ // TODO make no
         @SuppressWarnings("unchecked")
         @Override @Nonnull
         public <T_NEW> Batch<T_NEW> collection(String collectionName, Class<T_NEW> mongoType) {
-
             Batch<T_NEW> newThis = (Batch<T_NEW>) this;
             newThis.collection(collectionName);
             newThis.mapFn = toClass(mongoType);

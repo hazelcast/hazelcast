@@ -56,7 +56,7 @@ public abstract class AbstractMongoDBTest extends SimpleTestInClusterSupport {
     public MongoDBContainer mongoContainer = new MongoDBContainer(DOCKER_IMAGE_NAME);
 
     @BeforeClass
-    public static void beforeClass() throws IOException {
+    public static void beforeClass() {
         initialize(1, null);
     }
 
@@ -67,11 +67,18 @@ public abstract class AbstractMongoDBTest extends SimpleTestInClusterSupport {
 
         // workaround to obtain a timestamp before starting the test
         // If you pass a timestamp which is not in the oplog, mongodb throws exception
-        MongoCollection<Document> collection = collection("START_AT_OPERATION");
+        MongoCollection<Document> collection = mongo.getDatabase("tech").getCollection("START_AT_OPERATION");
         MongoCursor<ChangeStreamDocument<Document>> cursor = collection.watch().iterator();
         collection.insertOne(new Document("key", "val"));
         startAtOperationTime = cursor.next().getClusterTime();
         cursor.close();
+    }
+
+    @After
+    public void clear() {
+        try (MongoClient mongoClient = MongoClients.create(mongoContainer.getConnectionString())) {
+            mongoClient.getDatabase(DB_NAME).drop();
+        }
     }
 
     MongoCollection<Document> collection() {
