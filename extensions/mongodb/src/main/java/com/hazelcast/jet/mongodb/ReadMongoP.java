@@ -36,7 +36,6 @@ import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import org.bson.BsonDocument;
-import org.bson.BsonReader;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.bson.conversions.Bson;
@@ -47,6 +46,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.jet.Traversers.singleton;
 import static com.hazelcast.jet.Traversers.traverseIterable;
@@ -55,7 +55,6 @@ import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.mongodb.MongoUtilities.partitionAggregate;
 import static com.mongodb.client.model.Aggregates.sort;
 import static com.mongodb.client.model.Sorts.ascending;
-import static java.util.Objects.requireNonNull;
 
 /**
  * Processor for reading from MongoDB
@@ -79,8 +78,6 @@ public class ReadMongoP<I> extends AbstractProcessor {
     private boolean snapshotInProgress;
     private Traverser<? extends Entry<BroadcastKey<Integer>, ?>> snapshotTraverser;
     private int processorIndex;
-    private int localParallelism;
-    private String keyFieldName;
 
     public ReadMongoP(
             SupplierEx<? extends MongoClient> connectionSupplier,
@@ -114,7 +111,6 @@ public class ReadMongoP<I> extends AbstractProcessor {
         logger = context.logger();
         totalParallelism = context.totalParallelism();
         processorIndex = context.globalProcessorIndex();
-        localParallelism = context.localParallelism();
         this.snapshotsEnabled = context.snapshottingEnabled();
 
         reader.reconnectIfNecessary(snapshotsEnabled);
@@ -129,17 +125,11 @@ public class ReadMongoP<I> extends AbstractProcessor {
         if (!emitFromTraverser(traverser)) {
             return false;
         }
+        if (snapshotInProgress) {
+            return false;
+        }
 
         return reader.everCompletes();
-    }
-
-    private int partition(ChangeStreamDocument<Document> changeStreamDocument) {
-        BsonDocument documentKey = requireNonNull(changeStreamDocument.getDocumentKey(), "required document key is missing");
-        try (BsonReader reader = documentKey.asBsonReader()) {
-            return reader.readObjectId().toHexString().hashCode()
-                    % totalParallelism;
-
-        }
     }
 
     @Override
@@ -167,6 +157,12 @@ public class ReadMongoP<I> extends AbstractProcessor {
                     });
         }
         return emitFromTraverserToSnapshot(snapshotTraverser);
+    }
+
+    @Override
+    public boolean snapshotCommitFinish(boolean success) {
+        snapshotInProgress = false;
+        return true;
     }
 
     @Override
@@ -291,6 +287,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
                             return delegateForDb(db, aggregateList);
                         });
             }
+            checkNotNull(this.delegate, "unable to construct Mongo traverser");
         }
 
         private Traverser<Document> delegateForCollection(MongoCollection<Document> collection, List<Bson> aggregateList) {
@@ -421,13 +418,10 @@ public class ReadMongoP<I> extends AbstractProcessor {
                 traverser = Traversers.traverseIterable(chunk)
                                       .onFirstNull(() -> {
                                           traverser = null;
-                                          System.out.println("reset");
                                       })
                                       .flatMap(doc -> {
                                           long eventTime = clusterTime(doc);
                                           I item = mapFn.apply(doc);
-//                                          int partition = partition(doc);
-                                          System.out.println("emit: " + item);
                                           return item == null
                                                   ? Traversers.empty()
                                                   : eventTimeMapper.flatMapEvent(item, 0, eventTime);
@@ -446,19 +440,16 @@ public class ReadMongoP<I> extends AbstractProcessor {
         @Nonnull
         @Override
         public Object snapshot() {
-            System.out.println("snapshot");
             return resumeToken;
         }
 
         @Override
         public void restore(Object value) {
-            System.out.println("restore");
             this.resumeToken = (BsonDocument) value;
         }
 
         @Override
         public void close() {
-            System.out.println("close");
             if (cursor != null) {
                 cursor.close();
                 cursor = null;
