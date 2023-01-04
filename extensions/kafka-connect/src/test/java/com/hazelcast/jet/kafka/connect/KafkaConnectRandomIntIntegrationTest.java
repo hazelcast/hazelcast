@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.contrib.connect;
+package com.hazelcast.jet.kafka.connect;
 
 import com.hazelcast.config.Config;
 import com.hazelcast.jet.Job;

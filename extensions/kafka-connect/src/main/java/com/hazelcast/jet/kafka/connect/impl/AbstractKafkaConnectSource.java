@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.hazelcast.jet.contrib.connect.impl;
+package com.hazelcast.jet.kafka.connect.impl;
 
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import org.apache.kafka.connect.connector.ConnectorContext;
