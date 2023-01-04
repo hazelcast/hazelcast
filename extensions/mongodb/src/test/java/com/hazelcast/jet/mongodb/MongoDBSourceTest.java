@@ -21,6 +21,7 @@ import com.hazelcast.collection.IList;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.mongodb.MongoDBSourceBuilder.Batch;
+import com.hazelcast.jet.mongodb.MongoDBSourceBuilder.Stream;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamSource;
@@ -28,12 +29,10 @@ import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.Filters;
 import com.mongodb.client.model.Sorts;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
-import org.bson.conversions.Bson;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -44,6 +43,9 @@ import java.util.HashSet;
 import java.util.Set;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
+import static com.hazelcast.jet.mongodb.Mappers.streamToClass;
+import static com.mongodb.client.model.Filters.and;
+import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.gte;
 import static com.mongodb.client.model.Projections.include;
 import static java.util.Arrays.asList;
@@ -149,33 +151,41 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
     @Test
     public void testStream() {
-        IList<Document> list = instance().getList("testStream");
-
-        StreamSource<? extends Document> streamSource =
-                streamSource(
-                    Filters.and(gte("fullDocument.val", 10), Filters.eq("operationType", "insert")),
-                        include("fullDocument.val")
-                );
-
-        Pipeline p = Pipeline.create();
-        p.readFrom(streamSource)
-         .withNativeTimestamps(0)
+        IList<Object> list = instance().getList(testName.getMethodName());
+        String connectionString = mongoContainer.getConnectionString();
+        Stream<?> sourceBuilder = MongoDBSourceBuilder.stream(SOURCE_NAME, () -> mongoClient(connectionString))
+                                                      .database(DB_NAME);
+        if (usingOneCollection) {
+            sourceBuilder = sourceBuilder.collection(testName.getMethodName(), Document.class);
+        }
+        if (filter) {
+            sourceBuilder = sourceBuilder.filter(and(
+                    gte("fullDocument.val", 10),
+                    eq("operationType", "insert")
+                    ));
+        } else {
+            sourceBuilder = sourceBuilder.filter(eq("operationType", "insert"));
+        }
+        if (projection) {
+            sourceBuilder = sourceBuilder.project(include("fullDocument.val"));
+        }
+        if (map) {
+            sourceBuilder = sourceBuilder.mapFn(streamToClass(KV.class));
+        }
+        sourceBuilder = sourceBuilder.startAtOperationTime(new BsonTimestamp(System.currentTimeMillis()));
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(sourceBuilder.build())
+                .withNativeTimestamps(0)
                 .setLocalParallelism(1)
-         .writeTo(Sinks.list(list));
+                .writeTo(Sinks.list(list));
 
-        instance().getJet().newJob(p);
-
+        Job job = instance().getJet().newJob(pipeline);
 
         collection().insertOne(new Document("val", 1));
         collection().insertOne(new Document("val", 10).append("foo", "bar"));
 
-        System.out.println("docs:");
-        for (Document document : collection().find()) {
-            System.out.println(document.toJson());
-        }
-
         assertTrueEventually(() -> {
-            assertEquals(1L, list.stream().distinct().count());
+            assertEquals(filter ? 1L : 2L, list.stream().distinct().count());
 //            Document document = list.get(0);
 //            assertEquals(10, document.get("val"));
 //            assertNull(document.get("foo"));
@@ -185,12 +195,12 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         collection().insertOne(new Document("val", 20).append("foo", "bar"));
 
         assertTrueEventually(() -> {
-            assertEquals(2L, list.stream().distinct().count());
+            assertEquals(filter ? 2L : 4L, list.stream().distinct().count());
 //            Document document = list.get(1);
 //            assertEquals(20, document.get("val"));
 //            assertNull(document.get("foo"));
         });
-
+        job.cancel();
     }
 
     @Test
@@ -315,23 +325,6 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
         job.cancel();
 
-    }
-
-    private StreamSource<Document> streamSource(
-            Bson filter,
-            Bson projection
-    ) {
-        long value = startAtOperationTime.getValue();
-        String connectionString = mongoContainer.getConnectionString();
-        return MongoDBSourceBuilder
-                .stream(SOURCE_NAME, () -> mongoClient(connectionString))
-                .database(DB_NAME)
-                .collection(testName.getMethodName(), Document.class)
-                .project(projection == null ? null : projection.toBsonDocument())
-                .filter(filter == null ? null : filter.toBsonDocument())
-                .mapFn(ChangeStreamDocument::getFullDocument)
-                .startAtOperationTime(new BsonTimestamp(value))
-                .build();
     }
 
 

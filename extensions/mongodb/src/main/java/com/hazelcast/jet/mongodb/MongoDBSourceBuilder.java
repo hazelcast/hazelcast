@@ -52,8 +52,6 @@ import static com.hazelcast.jet.mongodb.Mappers.toClass;
  */
 public final class MongoDBSourceBuilder implements Serializable{ // TODO make non serializable
 
-    private static final int BATCH_SIZE = 1024;
-
     private final String name;
     private final SupplierEx<? extends MongoClient> connectionSupplier;
     private final List<Bson> aggregates = new ArrayList<>();
@@ -307,22 +305,15 @@ public final class MongoDBSourceBuilder implements Serializable{ // TODO make no
         FunctionEx<ChangeStreamDocument<Document>, T> mapFn;
         Long startAtOperationTime;
 
+        @SuppressWarnings("unchecked")
         private Stream() {
+            mapFn = (FunctionEx<ChangeStreamDocument<Document>, T>) streamToClass(Document.class);
         }
-
 
         @Nonnull
         public Stream<T> project (@Nullable Bson projection) {
             if (projection != null) {
                 aggregates.add(Aggregates.project(projection).toBsonDocument());
-            }
-            return this;
-        }
-
-        @Nonnull
-        public Stream<T> sort (@Nullable Bson sort) {
-            if (sort != null) {
-                aggregates.add(Aggregates.sort(sort).toBsonDocument());
             }
             return this;
         }
@@ -386,125 +377,11 @@ public final class MongoDBSourceBuilder implements Serializable{ // TODO make no
             SupplierEx<? extends MongoClient> localConnectionSupplier = connectionSupplier;
             FunctionEx<ChangeStreamDocument<Document>, T> localMapFn = mapFn;
 
-            MongoClient mongoClient = connectionSupplier.get();
-
             return Sources.streamFromProcessorWithWatermarks(name, true,
                     eventTimePolicy -> ProcessorMetaSupplier.of(
                         () -> new ReadMongoP<>(localConnectionSupplier, startAtOperationTime, eventTimePolicy, aggregates,
                                 databaseName, collectionName, localMapFn)));
         }
     }
-//
-//    private static class BatchContext<T, U> {
-//
-//        final MongoClient client;
-//        final FunctionEx<? super T, U> mapFn;
-//        final ConsumerEx<? super MongoClient> destroyFn;
-//
-//        final MongoCursor<? extends T> cursor;
-//
-//        BatchContext(
-//                MongoClient client,
-//                MongoCollection<? extends T> collection,
-//                FunctionEx<? super MongoCollection<? extends T>, ? extends FindIterable<? extends T>> searchFn,
-//                FunctionEx<? super T, U> mapFn,
-//                ConsumerEx<? super MongoClient> destroyFn
-//        ) {
-//            this.client = client;
-//            this.mapFn = mapFn;
-//            this.destroyFn = destroyFn;
-//
-//            cursor = searchFn.apply(collection).iterator();
-//        }
-//
-//        void fillBuffer(SourceBuilder.SourceBuffer<U> buffer) {
-//            for (int i = 0; i < BATCH_SIZE; i++) {
-//                if (cursor.hasNext()) {
-//                    U item = mapFn.apply(cursor.next());
-//                    if (item != null) {
-//                        buffer.add(item);
-//                    }
-//                } else {
-//                    buffer.close();
-//                }
-//            }
-//        }
-//
-//        void close() {
-//            cursor.close();
-//            destroyFn.accept(client);
-//        }
-//    }
-//
-//    private static class StreamContext<T, U> {
-//
-//        final MongoClient client;
-//        final FunctionEx<? super ChangeStreamDocument<? extends T>, U> mapFn;
-//        final ConsumerEx<? super MongoClient> destroyFn;
-//        final ChangeStreamIterable<? extends T> changeStreamIterable;
-//        final BsonTimestamp timestamp;
-//
-//        BsonDocument resumeToken;
-//        MongoCursor<? extends ChangeStreamDocument<? extends T>> cursor;
-//
-//        StreamContext(
-//                MongoClient client,
-//                ChangeStreamIterable<? extends T> changeStreamIterable,
-//                FunctionEx<? super ChangeStreamDocument<? extends T>, U> mapFn,
-//                ConsumerEx<? super MongoClient> destroyFn,
-//                FunctionEx<? super MongoClient, ? extends BsonTimestamp> startAtOperationTimeFn
-//        ) {
-//            this.client = client;
-//            this.changeStreamIterable = changeStreamIterable;
-//            this.mapFn = mapFn;
-//            this.destroyFn = destroyFn;
-//
-//            this.timestamp = startAtOperationTimeFn == null ? null : startAtOperationTimeFn.apply(client);
-//        }
-//
-//        void fillBuffer(SourceBuilder.TimestampedSourceBuffer<U> buffer) {
-//            if (cursor == null) {
-//                if (resumeToken != null) {
-//                    changeStreamIterable.resumeAfter(resumeToken);
-//                } else if (timestamp != null) {
-//                    changeStreamIterable.startAtOperationTime(timestamp);
-//                }
-//                cursor = changeStreamIterable.batchSize(BATCH_SIZE).iterator();
-//            }
-//
-//            ChangeStreamDocument<? extends T> changeStreamDocument = null;
-//            for (int i = 0; i < BATCH_SIZE; i++) {
-//                changeStreamDocument = cursor.tryNext();
-//                if (changeStreamDocument == null) {
-//                    // we've exhausted the stream
-//                    break;
-//                }
-//                long clusterTime = clusterTime(changeStreamDocument);
-//                U item = mapFn.apply(changeStreamDocument);
-//                if (item != null) {
-//                    buffer.add(item, clusterTime);
-//                }
-//            }
-//            resumeToken = changeStreamDocument == null ? null : changeStreamDocument.getResumeToken();
-//        }
-//
-//        long clusterTime(ChangeStreamDocument<? extends T> changeStreamDocument) {
-//            BsonTimestamp clusterTime = changeStreamDocument.getClusterTime();
-//            return clusterTime == null ? System.currentTimeMillis() : clusterTime.getValue();
-//        }
-//
-//        void close() {
-//            cursor.close();
-//            destroyFn.accept(client);
-//        }
-//
-//        BsonDocument snapshot() {
-//            return resumeToken;
-//        }
-//
-//        void restore(List<BsonDocument> list) {
-//            resumeToken = list.get(0);
-//        }
-//    }
 
 }
