@@ -34,174 +34,106 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.MongoIterable;
-import com.mongodb.client.model.Aggregates;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import org.bson.BsonDocument;
 import org.bson.BsonReader;
 import org.bson.BsonTimestamp;
-import org.bson.codecs.configuration.CodecProvider;
-import org.bson.codecs.configuration.CodecRegistry;
-import org.bson.codecs.pojo.PojoCodecProvider;
+import org.bson.Document;
 import org.bson.conversions.Bson;
+import org.bson.types.ObjectId;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.jet.Traversers.singleton;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
-import static com.hazelcast.jet.config.ProcessingGuarantee.NONE;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
-import static com.mongodb.MongoClientSettings.getDefaultCodecRegistry;
+import static com.hazelcast.jet.mongodb.MongoUtilities.partitionAggregate;
+import static com.mongodb.client.model.Aggregates.sort;
 import static com.mongodb.client.model.Sorts.ascending;
 import static java.util.Objects.requireNonNull;
-import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
-import static org.bson.codecs.configuration.CodecRegistries.fromRegistries;
 
 /**
  * Processor for reading from MongoDB
  *
  * TODO add more info
- * @param <T> type of elements in collection(s)
  * @param <I> type of emitted item
  */
-public class ReadMongoP<T, I> extends AbstractProcessor {
+public class ReadMongoP<I> extends AbstractProcessor {
 
     private static final long RETRY_INTERVAL = 3_000;
-    private static final int BATCH_SIZE = 1_000;
+    private static final int BATCH_SIZE = 1;
     private ILogger logger;
-    private final SupplierEx<? extends MongoClient> connectionSupplier;
-    private final BsonTimestamp startAtTimestamp;
     private final EventTimeMapper<I> eventTimeMapper;
-    private MongoClient mongoClient;
 
-    private MongoDatabase database;
-    private MongoCollection<T> collection;
-
-    private final List<Bson> aggregates;
-    private final Class<T> mongoType;
-    private final String databaseName;
-    private final String collectionName;
-
-    private RetryTracker connectionRetryTracker;
     private Traverser<?> traverser;
 
     private int totalParallelism;
     private boolean snapshotsEnabled;
-    private final FunctionEx<? super T, I> mapItemFn;
-    private final FunctionEx<ChangeStreamDocument<T>, I> mapStreamFn;
-    private ChunkedReader<I> reader;
+    private final MongoChunkedReader reader;
 
     private boolean snapshotInProgress;
     private Traverser<? extends Entry<BroadcastKey<Integer>, ?>> snapshotTraverser;
     private int processorIndex;
+    private int localParallelism;
+    private String keyFieldName;
 
     public ReadMongoP(
             SupplierEx<? extends MongoClient> connectionSupplier,
             List<Bson> aggregates,
-            Class<T> mongoType,
             String databaseName,
             String collectionName,
-            FunctionEx<? super T, I> mapItemFn
+            FunctionEx<Document, I> mapItemFn
     ) {
-        this.connectionSupplier = connectionSupplier;
-        this.aggregates = aggregates;
-        this.mongoType = mongoType;
-        this.databaseName = databaseName;
-        this.collectionName = collectionName;
-        this.startAtTimestamp = null;
         this.eventTimeMapper = null;
-        this.mapItemFn = mapItemFn;
-        this.mapStreamFn = null;
-        this.kind = Kind.BATCH;
+
+        reader = new BatchMongoTraverser(connectionSupplier, databaseName, collectionName, mapItemFn, aggregates);
     }
 
     public ReadMongoP(
             SupplierEx<? extends MongoClient> connectionSupplier,
-            BsonTimestamp startAtTimestamp,
+            Long startAtTimestamp,
             EventTimePolicy<? super I> eventTimePolicy,
             List<Bson> aggregates,
-            Class<T> mongoType,
             String databaseName,
             String collectionName,
-            FunctionEx<ChangeStreamDocument<T>, I> mapStreamFn
+            FunctionEx<ChangeStreamDocument<Document>, I> mapStreamFn
     ) {
-        this.connectionSupplier = connectionSupplier;
-        this.startAtTimestamp = startAtTimestamp;
         this.eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
-        this.aggregates = aggregates;
-        this.mongoType = mongoType;
-        this.databaseName = databaseName;
-        this.collectionName = collectionName;
-        this.mapStreamFn = mapStreamFn;
-        this.mapItemFn = null;
-        this.kind = Kind.STREAM;
+        eventTimeMapper.addPartitions(1);
+        reader = new StreamMongoTraverser(connectionSupplier, databaseName, collectionName, mapStreamFn,
+                startAtTimestamp, aggregates, eventTimeMapper);
     }
 
     @Override
     protected void init(@Nonnull Context context) {
         logger = context.logger();
-        connectionRetryTracker = new RetryTracker(RetryStrategies.indefinitely(RETRY_INTERVAL));
-        connect();
         totalParallelism = context.totalParallelism();
         processorIndex = context.globalProcessorIndex();
-        this.snapshotsEnabled = context.jobConfig().getProcessingGuarantee() != NONE;
+        localParallelism = context.localParallelism();
+        this.snapshotsEnabled = context.snapshottingEnabled();
 
-        if (snapshotsEnabled) {
-            aggregates.add(Aggregates.sort(ascending("__id")).toBsonDocument());
-        }
-
-        CodecProvider pojoCodecProvider = PojoCodecProvider.builder().automatic(true).build();
-        CodecRegistry pojoCodecRegistry = fromRegistries(getDefaultCodecRegistry(), fromProviders(pojoCodecProvider));
-        if (databaseName != null) {
-            this.database = mongoClient.getDatabase(databaseName).withCodecRegistry(pojoCodecRegistry);
-        }
-        if (this.collectionName != null) {
-            checkState(databaseName != null, "you have to provide database name if collection name" +
-                    " is specified");
-            //noinspection ConstantValue false warn by intellij
-            checkState(database != null, "database " + databaseName + " does not exists");
-            this.collection = database.getCollection(collectionName, mongoType);
-            this.collection = collection.withCodecRegistry(pojoCodecRegistry);
-        }
-
-
-        switch (kind) {
-            case BATCH:
-                reader = new BatchMongoTraverser(mapItemFn);
-                break;
-            case STREAM:
-                reader = new StreamMongoTraverser(mapStreamFn, startAtTimestamp);
-                break;
-        }
-
-        traverser = reader.nextChunkTraverser();
+        reader.reconnectIfNecessary(snapshotsEnabled);
     }
-
-    private enum Kind {
-        BATCH,
-        STREAM
-    }
-
-    private final Kind kind;
 
     @Override
     public boolean complete() {
+        reader.reconnectIfNecessary(snapshotsEnabled);
+        if (traverser == null) {
+            this.traverser = reader.nextChunkTraverser().onFirstNull(() -> traverser = null);
+        }
         if (!emitFromTraverser(traverser)) {
             return false;
         }
-        reconnectIfNecessary();
 
-        this.traverser = reader.nextChunkTraverser();
-
-        return kind == Kind.BATCH;
+        return reader.everCompletes();
     }
 
-    private int partition(ChangeStreamDocument<T> changeStreamDocument) {
+    private int partition(ChangeStreamDocument<Document> changeStreamDocument) {
         BsonDocument documentKey = requireNonNull(changeStreamDocument.getDocumentKey(), "required document key is missing");
         try (BsonReader reader = documentKey.asBsonReader()) {
             return reader.readObjectId().toHexString().hashCode()
@@ -210,40 +142,10 @@ public class ReadMongoP<T, I> extends AbstractProcessor {
         }
     }
 
-    private long clusterTime(ChangeStreamDocument<T> changeStreamDocument) {
-        BsonTimestamp clusterTime = changeStreamDocument.getClusterTime();
-        return clusterTime == null ? System.currentTimeMillis() : clusterTime.getValue();
-    }
-
-    private void reconnectIfNecessary() {
-        if (!isConnectionUp()) {
-            if (connectionRetryTracker.shouldTryAgain()) {
-                connect();
-            } else {
-                throw new JetException("cannot connect to MongoDB");
-            }
-        }
-    }
-
-    private boolean isConnectionUp() {
-        return mongoClient != null;
-    }
-
-    private void connect() {
-        try {
-            mongoClient = connectionSupplier.get();
-
-            connectionRetryTracker.reset();
-        } catch (Exception e) {
-            logger.warning("Could not connect to MongoDB", e);
-            connectionRetryTracker.attemptFailed();
-        }
-    }
-
     @Override
     public void close() {
-        if (mongoClient != null) {
-            mongoClient.close();
+        if (reader != null) {
+            reader.close();
         }
     }
 
@@ -275,116 +177,260 @@ public class ReadMongoP<T, I> extends AbstractProcessor {
         }
     }
 
-    private interface ChunkedReader<I> {
-        @Nonnull
-        Traverser<? extends Object> nextChunkTraverser();
+    private abstract class MongoChunkedReader {
+        private final RetryTracker connectionRetryTracker;
+        private final SupplierEx<? extends MongoClient> connectionSupplier;
+        private final String databaseName;
+        private final String collectionName;
+
+        protected MongoClient mongoClient;
+        protected MongoDatabase database;
+        protected MongoCollection<Document> collection;
+
+        protected MongoChunkedReader(String databaseName, String collectionName, SupplierEx<? extends MongoClient> connectionSupplier) {
+            this.databaseName = databaseName;
+            this.collectionName = collectionName;
+            this.connectionSupplier = connectionSupplier;
+            this.connectionRetryTracker = new RetryTracker(RetryStrategies.indefinitely(RETRY_INTERVAL));
+        }
+
+        void reconnectIfNecessary(boolean snapshotsEnabled) {
+            if (!isConnectionUp()) {
+                if (connectionRetryTracker.shouldTryAgain()) {
+                    connect(snapshotsEnabled);
+                } else {
+                    throw new JetException("cannot connect to MongoDB");
+                }
+            }
+        }
+
+        private boolean isConnectionUp() {
+            return mongoClient != null;
+        }
+
+        void onConnect(MongoClient mongoClient, boolean snapshotsEnabled) {
+        }
+
+        private void connect(boolean snapshotsEnabled) {
+            try {
+                mongoClient = connectionSupplier.get();
+                if (databaseName != null) {
+                    this.database = mongoClient.getDatabase(databaseName);
+                }
+                if (collectionName != null) {
+                    checkState(databaseName != null, "you have to provide database name if collection name" +
+                            " is specified");
+                    //noinspection ConstantValue false warn by intellij
+                    checkState(database != null, "database " + databaseName + " does not exists");
+                    this.collection = database.getCollection(collectionName);
+                }
+
+                onConnect(mongoClient, snapshotsEnabled);
+
+                connectionRetryTracker.reset();
+            } catch (Exception e) {
+                logger.warning("Could not connect to MongoDB", e);
+                connectionRetryTracker.attemptFailed();
+            }
+        }
 
         @Nonnull
-        Object snapshot();
+        abstract Traverser<?> nextChunkTraverser();
 
-        void restore(Object value);
+        @Nonnull
+        abstract Object snapshot();
 
+        abstract void restore(Object value);
+
+        void close() {
+            if (mongoClient != null) {
+                mongoClient.close();
+            }
+        }
+
+        abstract boolean everCompletes();
     }
 
-    private final class BatchMongoTraverser implements ChunkedReader<I> {
-        private final Traverser<T> delegate;
+    private final class BatchMongoTraverser extends MongoChunkedReader {
+        private final FunctionEx<Document, I> mapItemFn;
+        private final List<Bson> aggregates;
+        private Traverser<Document> delegate;
+        private ObjectId lastKey;
 
         private BatchMongoTraverser(
-                FunctionEx<? super T, I> mapFn
-        ) {
+                SupplierEx<? extends MongoClient> connectionSupplier,
+                String databaseName,
+                String collectionName,
+                FunctionEx<Document, I> mapItemFn,
+                List<Bson> aggregates) {
+            super(databaseName, collectionName, connectionSupplier);
+            this.mapItemFn = mapItemFn;
+            this.aggregates = aggregates;
+        }
+
+        @Override
+        void onConnect(MongoClient mongoClient, boolean supportsSnapshots) {
+            List<Bson> aggregateList = new ArrayList<>(aggregates);
+            if (supportsSnapshots) {
+                aggregateList.add(sort(ascending("_id")).toBsonDocument());
+            }
+            if (totalParallelism > 1) {
+                aggregateList.addAll(0, partitionAggregate(totalParallelism, processorIndex));
+            }
             if (collection != null) {
-                this.delegate = delegateForCollection(collection, mapFn);
+                this.delegate = delegateForCollection(collection, aggregateList);
             }
             else if (database != null) {
-                this.delegate = delegateForDb(database, mapFn);
+                this.delegate = delegateForDb(database, aggregateList);
             }
             else {
+                final MongoClient clientLocal = mongoClient;
                 this.delegate = traverseIterable(mongoClient.listDatabaseNames())
                         .flatMap(name -> {
-                            MongoDatabase db = mongoClient.getDatabase(name);
-                            return delegateForDb(db, mapFn);
+                            MongoDatabase db = clientLocal.getDatabase(name);
+                            return delegateForDb(db, aggregateList);
                         });
             }
         }
 
-        private Traverser<T> delegateForCollection(MongoCollection<T> collection, FunctionEx<? super T, I> mapFn) {
-            return traverseIterable(collection.aggregate(aggregates));
+        private Traverser<Document> delegateForCollection(MongoCollection<Document> collection, List<Bson> aggregateList) {
+            return traverseIterable(collection.aggregate(aggregateList));
         }
 
-        private Traverser<T> delegateForDb(MongoDatabase database, FunctionEx<? super T, I> mapFn) {
+        private Traverser<Document> delegateForDb(MongoDatabase database, List<Bson> aggregateList) {
             MongoIterable<String> collectionsIterable = database.listCollectionNames();
 
             return traverseIterable(collectionsIterable)
-                    .flatMap(colName -> delegateForCollection(database.getCollection(colName, mongoType), mapFn));
+                    .flatMap(colName -> delegateForCollection(database.getCollection(colName), aggregateList));
         }
 
         @Nonnull
         @Override
         public Traverser<I> nextChunkTraverser() {
             List<I> chunk = new ArrayList<>(BATCH_SIZE);
-            T item;
-            while ((item = delegate.next()) != null) {
-                chunk.add(mapItemFn.apply(item));
+            Document doc;
+            Document lastItem = null;
+            while ((doc = delegate.next()) != null) {
+                chunk.add(mapItemFn.apply(doc));
+                lastItem = doc;
             }
+            lastKey = lastItem == null ? null : lastItem.getObjectId("__id");
 
             return Traversers.traverseIterable(chunk);
+        }
+
+        @Override
+        boolean everCompletes() {
+            return true;
         }
 
         @Nonnull
         @Override
         public Object snapshot() {
-            return null;
+            return lastKey;
         }
 
         @Override
         public void restore(Object value) {
+            lastKey = (ObjectId) value;
+        }
+
+        @Override
+        public void close() {
 
         }
     }
 
-    private final class StreamMongoTraverser implements ChunkedReader<I> {
-        private final ChangeStreamIterable<T>  changeStream;
-        private final FunctionEx<? super ChangeStreamDocument<T>, I> mapFn;
-        private final BsonTimestamp startTimestamp;
-        private MongoCursor<ChangeStreamDocument<T>> cursor;
+    private final class StreamMongoTraverser extends MongoChunkedReader {
+        private ChangeStreamIterable<Document>  changeStream;
+        private final FunctionEx<ChangeStreamDocument<Document>, I> mapFn;
+        private final Long startTimestamp;
+        private final List<Bson> aggregates;
+        private final EventTimeMapper<I> eventTimeMapper;
+        private MongoCursor<ChangeStreamDocument<Document>> cursor;
         private BsonDocument resumeToken;
 
+        private Traverser<Object> traverser;
+
         private StreamMongoTraverser(
-                FunctionEx<ChangeStreamDocument<T>, I> mapFn,
-                BsonTimestamp startTimestamp) {
+                SupplierEx<? extends MongoClient> connectionSupplier,
+                String databaseName,
+                String collectionName,
+                FunctionEx<ChangeStreamDocument<Document>, I> mapFn,
+                Long startTimestamp,
+                List<Bson> aggregates,
+                EventTimeMapper<I> eventTimeMapper
+        ) {
+            super(databaseName, collectionName, connectionSupplier);
             this.mapFn = mapFn;
             this.startTimestamp = startTimestamp;
-            this.changeStream = mongoClient.watch(aggregates, mongoType);
+            this.aggregates = aggregates;
+            this.eventTimeMapper = eventTimeMapper;
+        }
+
+        @Override
+        public void onConnect(MongoClient mongoClient, boolean snapshotsEnabled) {
+            List<Bson> aggregateList = new ArrayList<>(aggregates);
+            if (totalParallelism > 1) {
+                aggregateList.addAll(partitionAggregate(totalParallelism, processorIndex));
+            }
+            if (collection != null) {
+                this.changeStream = collection.watch(aggregateList);
+            } else if (database != null) {
+                this.changeStream = database.watch(aggregateList);
+            } else {
+                this.changeStream = mongoClient.watch(aggregateList);
+            }
+        }
+
+        @Override
+        boolean everCompletes() {
+            return false;
         }
 
         @Nonnull
         @Override
-        public Traverser<Object> nextChunkTraverser() {
-            Traverser<Object> traverser;
+        public Traverser<?> nextChunkTraverser() {
             try {
                 if (cursor == null) {
                     if (resumeToken != null) {
                         changeStream.resumeAfter(resumeToken);
-                    } else if (startTimestamp != null) {
-                        changeStream.startAtOperationTime(startTimestamp);
+                    }
+                    else if (startTimestamp != null) {
+                        changeStream.startAtOperationTime(new BsonTimestamp(startTimestamp));
                     }
                     cursor = changeStream.batchSize(BATCH_SIZE).iterator();
                 }
 
-                AtomicReference<ChangeStreamDocument<?>> lastDocument = new AtomicReference<>();
-                traverser = Traversers.traverseIterator(cursor)
+                ArrayList<ChangeStreamDocument<Document>> chunk = new ArrayList<>(BATCH_SIZE);
+                ChangeStreamDocument<Document> document = null;
+                int count = 0;
+                boolean eagerEnd = false;
+                while (count < BATCH_SIZE && !eagerEnd) {
+                    ChangeStreamDocument<Document> doc = cursor.tryNext();
+                    if (doc != null) {
+                        document = doc;
+                        chunk.add(document);
+                        count++;
+                    } else {
+                        eagerEnd = true;
+                    }
+                }
+                resumeToken = document == null ? null : document.getResumeToken();
+
+                traverser = Traversers.traverseIterable(chunk)
                                       .onFirstNull(() -> {
-                                          ChangeStreamDocument<?> doc = lastDocument.get();
-                                          resumeToken = doc == null ? null : doc.getResumeToken();
+                                          traverser = null;
+                                          System.out.println("reset");
                                       })
                                       .flatMap(doc -> {
-                                          lastDocument.set(doc);
                                           long eventTime = clusterTime(doc);
                                           I item = mapFn.apply(doc);
-                                          int partition = partition(doc);
+//                                          int partition = partition(doc);
+                                          System.out.println("emit: " + item);
                                           return item == null
                                                   ? Traversers.empty()
-                                                  : eventTimeMapper.flatMapEvent(item, partition, eventTime);
+                                                  : eventTimeMapper.flatMapEvent(item, 0, eventTime);
                                       });
             } catch (MongoException e) {
                 throw new JetException("error while reading from mongodb", e);
@@ -392,15 +438,31 @@ public class ReadMongoP<T, I> extends AbstractProcessor {
             return traverser;
         }
 
+        private long clusterTime(ChangeStreamDocument<Document> changeStreamDocument) {
+            BsonTimestamp clusterTime = changeStreamDocument.getClusterTime();
+            return clusterTime == null ? System.currentTimeMillis() : clusterTime.getValue();
+        }
+
         @Nonnull
         @Override
         public Object snapshot() {
+            System.out.println("snapshot");
             return resumeToken;
         }
 
         @Override
         public void restore(Object value) {
+            System.out.println("restore");
             this.resumeToken = (BsonDocument) value;
+        }
+
+        @Override
+        public void close() {
+            System.out.println("close");
+            if (cursor != null) {
+                cursor.close();
+                cursor = null;
+            }
         }
     }
 }

@@ -17,7 +17,9 @@
 package com.hazelcast.jet.mongodb;
 
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.test.HazelcastTestSupport;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
@@ -27,24 +29,32 @@ import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.utility.DockerImageName;
 
-public abstract class AbstractMongoDBTest extends JetTestSupport {
+import java.io.IOException;
+
+public abstract class AbstractMongoDBTest extends SimpleTestInClusterSupport {
 
     static final String SOURCE_NAME = "source";
     static final String SINK_NAME = "sink";
     static final String DB_NAME = "db";
     static final String COL_NAME = "col";
 
-    private static final DockerImageName DOCKER_IMAGE_NAME = DockerImageName.parse("mongo:4.0.10");
+    private static final DockerImageName DOCKER_IMAGE_NAME = DockerImageName.parse("mongo:6.0.3");
     MongoClient mongo;
     HazelcastInstance hz;
     BsonTimestamp startAtOperationTime;
 
     @Rule
     public MongoDBContainer mongoContainer = new MongoDBContainer(DOCKER_IMAGE_NAME);
+
+    @BeforeClass
+    public static void beforeClass() throws IOException {
+        initialize(1, null);
+    }
 
     @Before
     public void setUp() {
@@ -58,8 +68,6 @@ public abstract class AbstractMongoDBTest extends JetTestSupport {
         collection.insertOne(new Document("key", "val"));
         startAtOperationTime = cursor.next().getClusterTime();
         cursor.close();
-
-        hz = createHazelcastInstance();
     }
 
     MongoCollection<Document> collection() {
