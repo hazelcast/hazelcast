@@ -16,12 +16,9 @@
 
 package com.hazelcast.jet;
 
-import java.util.Set;
 import java.util.UUID;
 
 /**
- * @see JetService#addJobStatusListener(Set, JobListener)
- * @see JetService#removeJobStatusListener(JobListener)
  * @see Job#addStatusListener(JobListener)
  * @see Job#removeStatusListener(UUID)
  *

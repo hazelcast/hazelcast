@@ -19,7 +19,6 @@ package com.hazelcast.jet;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
-import com.hazelcast.jet.impl.AbstractJetInstance;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -41,10 +40,9 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
-import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+import java.util.UUID;
 import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
@@ -55,7 +53,6 @@ import java.util.function.Supplier;
 
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
-import static com.hazelcast.jet.core.TestUtil.set;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
@@ -87,11 +84,6 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
      */
     private static int nextJobId;
 
-    /**
-     * Used to test listener deregistration on job completion/failure.
-     */
-    private static Field jobListeners;
-
     @Parameter(0)
     public String mode;
 
@@ -101,8 +93,6 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
     @BeforeClass
     public static void setUp() throws NoSuchFieldException {
         initializeWithClient(2, null, null);
-        jobListeners = AbstractJetInstance.class.getDeclaredField("jobListeners");
-        jobListeners.setAccessible(true);
     }
 
     @Test
@@ -205,7 +195,7 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
         testListener(TestSources.itemStream(1, (t, s) -> s),
                 (job, listener) -> {
                     assertJobStatusEventually(job, RUNNING);
-                    instance.get().getJet().removeJobStatusListener(listener);
+                    listener.deregister();
                     job.cancel();
                     assertThrows(CancellationException.class, job::join);
                     assertTailEquals(listener.log,
@@ -255,7 +245,7 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
     public void testLightListenerDeregistration() {
         testLightListener(TestSources.itemStream(1, (t, s) -> s),
                 (job, listener) -> {
-                    instance.get().getJet().removeJobStatusListener(listener);
+                    listener.deregister();
                     job.cancel();
                     sleepSeconds(1);
                     assertTrue(listener.log.isEmpty());
@@ -263,8 +253,8 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
     }
 
     @After
-    public void testListenerDeregistration_onCompletion() throws IllegalAccessException {
-        assertTrue(((Map<?, ?>) jobListeners.get(instance.get().getJet())).isEmpty());
+    public void testListenerDeregistration_onCompletion() {
+        // TODO Test server-side
     }
 
     /**
@@ -281,10 +271,8 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
                 .writeTo(Sinks.<Long, Integer, Integer>mapWithUpdating(
                         MAP_NAME, s -> jobId, (i, s) -> s == 0 ? (i == null ? 0 : i) + 1 : i));
 
-        JetService jet = instance.get().getJet();
-        JobStatusLogger listener = new JobStatusLogger(jobId);
-        Job job = jet.newJob(p, config);
-        jet.addJobStatusListener(set(job.getId()), listener);
+        Job job = instance.get().getJet().newJob(p, config);
+        JobStatusLogger listener = new JobStatusLogger(job, jobId);
         test.accept(job, listener);
     }
 
@@ -306,11 +294,8 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
                     : p.readFrom((StreamSource<?>) source).withoutTimestamps())
                 .writeTo(Sinks.noop());
 
-        JetService jet = instance.get().getJet();
-        JobStatusLogger listener = new JobStatusLogger(-1);
-        Job job = jet.newLightJob(p);
-        sleepSeconds(1);
-        jet.addJobStatusListener(set(job.getId()), listener);
+        Job job = instance.get().getJet().newLightJob(p);
+        JobStatusLogger listener = new JobStatusLogger(job, -1);
         test.accept(job, listener);
     }
 
@@ -330,9 +315,13 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
 
     class JobStatusLogger implements JobListener {
         final List<String> log = new ArrayList<>();
+        final Job job;
+        final UUID registrationId;
         final int jobId;
 
-        JobStatusLogger(int jobId) {
+        JobStatusLogger(Job job, int jobId) {
+            this.job = job;
+            registrationId = job.addStatusListener(this);
             this.jobId = jobId;
         }
 
@@ -352,6 +341,10 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
         int runCount() {
             Integer count = (Integer) instance.get().getMap(MAP_NAME).get(jobId);
             return count == null ? 0 : count;
+        }
+
+        void deregister() {
+            job.removeStatusListener(registrationId);
         }
     }
 

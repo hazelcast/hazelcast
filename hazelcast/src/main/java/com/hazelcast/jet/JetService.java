@@ -20,7 +20,6 @@ import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
-import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.function.Observer;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -30,7 +29,6 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 /**
  * Jet is a component of Hazelcast to execute streaming or batch
@@ -301,20 +299,4 @@ public interface JetService {
      */
     @Nonnull
     Collection<Observable<?>> getObservables();
-
-    /**
-     * Associates the given listener to the specified jobs. The listener is
-     * automatically removed after a {@linkplain JobStatus#isTerminal terminal
-     * event}.
-     *
-     * @since 5.3
-     */
-    void addJobStatusListener(@Nonnull Set<Long> jobIds, @Nonnull JobListener listener);
-
-    /**
-     * Stops delivering all events to the given listener.
-     *
-     * @since 5.3
-     */
-    void removeJobStatusListener(@Nonnull JobListener listener);
 }
