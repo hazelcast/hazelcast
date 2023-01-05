@@ -117,7 +117,7 @@ public class JobUploadStatus {
 
     private void createNewTemporaryFile() throws IOException {
         // Create a new temporary file
-        Path jarPath = Files.createTempFile("runjob", ".jar");
+        Path jarPath = Files.createTempFile("runjob", ".jar"); //NOSONAR
 
         // Make it accessible only by the owner
         File jarFile = jarPath.toFile();
