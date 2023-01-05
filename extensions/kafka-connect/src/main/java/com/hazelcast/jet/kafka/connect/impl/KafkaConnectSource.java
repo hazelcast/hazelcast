@@ -83,6 +83,7 @@ public class KafkaConnectSource {
                 }
             }
         } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
             throw rethrow(e);
         }
     }
