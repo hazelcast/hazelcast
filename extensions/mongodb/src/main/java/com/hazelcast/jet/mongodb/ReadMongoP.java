@@ -42,6 +42,8 @@ import org.bson.conversions.Bson;
 import org.bson.types.ObjectId;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -141,13 +143,18 @@ public class ReadMongoP<I> extends AbstractProcessor {
         if (!snapshotsEnabled) {
             return true;
         }
-        if (!emitFromTraverser(traverser)) {
+        if (traverser != null && !emitFromTraverser(traverser)) {
             return false;
         }
         snapshotInProgress = true;
         if (snapshotTraverser == null) {
             int partition = processorIndex % totalParallelism;
-            snapshotTraverser = singleton(entry(broadcastKey(partition), reader.snapshot()))
+            Object snapshot = reader.snapshot();
+            if (snapshot == null) {
+                return true;
+            }
+            System.out.println("will actually save with key " + partition);
+            snapshotTraverser = singleton(entry(broadcastKey(partition), snapshot))
                     .onFirstNull(() -> {
                         snapshotTraverser = null;
                         getLogger().finest("Finished saving snapshot.");
@@ -158,13 +165,17 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
     @Override
     public boolean snapshotCommitFinish(boolean success) {
+        if (logger.isFineEnabled()) {
+            logger.fine("Snapshot commit finished");
+        }
         snapshotInProgress = false;
         return true;
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
-        int keyInteger = (int) key;
+        int keyInteger = ((BroadcastKey<Integer>) key).key();
         if (keyInteger % totalParallelism == processorIndex) {
             reader.restore(value);
         }
@@ -230,7 +241,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
         @Nonnull
         abstract Traverser<?> nextChunkTraverser();
 
-        @Nonnull
+        @Nullable
         abstract Object snapshot();
 
         abstract void restore(Object value);
@@ -397,26 +408,22 @@ public class ReadMongoP<I> extends AbstractProcessor {
                 }
 
                 ArrayList<ChangeStreamDocument<Document>> chunk = new ArrayList<>(BATCH_SIZE);
-                ChangeStreamDocument<Document> document = null;
                 int count = 0;
                 boolean eagerEnd = false;
                 while (count < BATCH_SIZE && !eagerEnd) {
                     ChangeStreamDocument<Document> doc = cursor.tryNext();
                     if (doc != null) {
-                        document = doc;
-                        chunk.add(document);
+                        chunk.add(doc);
                         count++;
                     } else {
                         eagerEnd = true;
                     }
                 }
-                resumeToken = document == null ? null : document.getResumeToken();
 
                 traverser = Traversers.traverseIterable(chunk)
-                                      .onFirstNull(() -> {
-                                          traverser = null;
-                                      })
+                                      .onFirstNull(() -> traverser = null)
                                       .flatMap(doc -> {
+                                          resumeToken = doc.getResumeToken();
                                           long eventTime = clusterTime(doc);
                                           I item = mapFn.apply(doc);
                                           return item == null
@@ -434,7 +441,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
             return clusterTime == null ? System.currentTimeMillis() : clusterTime.getValue();
         }
 
-        @Nonnull
+        @Nullable
         @Override
         public Object snapshot() {
             return resumeToken;
@@ -442,7 +449,11 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
         @Override
         public void restore(Object value) {
-            this.resumeToken = (BsonDocument) value;
+            if (value != null) {
+                if (value instanceof BsonDocument) {
+                    this.resumeToken = (BsonDocument) value;
+                }
+            }
         }
 
         @Override
