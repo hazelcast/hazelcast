@@ -98,9 +98,7 @@ public class MongoDBSourceResilencyTest extends AbstractMongoDBTest {
         MongoClientSettings settings = MongoClientSettings
                 .builder()
                 .applyConnectionString(new ConnectionString(connectionString))
-                .applyToClusterSettings(b -> {
-                    b.serverSelectionTimeout(30, SECONDS);
-                })
+                .applyToClusterSettings(b -> b.serverSelectionTimeout(30, SECONDS))
                 .build();
 
         return MongoClients.create(settings);

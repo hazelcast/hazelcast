@@ -65,20 +65,19 @@ import static com.mongodb.client.model.Sorts.ascending;
 public class ReadMongoP<I> extends AbstractProcessor {
 
     private static final long RETRY_INTERVAL = 3_000;
-    private static final int BATCH_SIZE = 1;
+    private static final int BATCH_SIZE = 1000;
     private ILogger logger;
-    private final EventTimeMapper<I> eventTimeMapper;
-
-    private Traverser<?> traverser;
 
     private int totalParallelism;
-    private boolean snapshotsEnabled;
-    private final MongoChunkedReader reader;
-
-    private boolean snapshotInProgress;
-    private Traverser<? extends Entry<BroadcastKey<Integer>, ?>> snapshotTraverser;
     private int processorIndex;
 
+    private boolean snapshotsEnabled;
+
+    private boolean snapshotInProgress;
+    private final MongoChunkedReader reader;
+
+    private Traverser<?> traverser;
+    private Traverser<? extends Entry<BroadcastKey<Integer>, ?>> snapshotTraverser;
     public ReadMongoP(
             SupplierEx<? extends MongoClient> connectionSupplier,
             List<Bson> aggregates,
@@ -86,8 +85,6 @@ public class ReadMongoP<I> extends AbstractProcessor {
             String collectionName,
             FunctionEx<Document, I> mapItemFn
     ) {
-        this.eventTimeMapper = null;
-
         reader = new BatchMongoTraverser(connectionSupplier, databaseName, collectionName, mapItemFn, aggregates);
     }
 
@@ -100,7 +97,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
             String collectionName,
             FunctionEx<ChangeStreamDocument<Document>, I> mapStreamFn
     ) {
-        this.eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
+        EventTimeMapper<I> eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
         eventTimeMapper.addPartitions(1);
         reader = new StreamMongoTraverser(connectionSupplier, databaseName, collectionName, mapStreamFn,
                 startAtTimestamp, aggregates, eventTimeMapper);
