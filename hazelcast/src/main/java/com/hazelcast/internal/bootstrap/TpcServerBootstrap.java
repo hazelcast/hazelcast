@@ -141,8 +141,8 @@ public class TpcServerBootstrap {
 
             NioAsyncServerSocket serverSocket = NioAsyncServerSocket.open(eventloop);
             serverSockets.add(serverSocket);
-            int receiveBufferSize = clientSocketConfig.getReceiveBufferSizeKb();
-            int sendBufferSize = clientSocketConfig.getSendBufferSizeKb();
+            int receiveBufferSize = clientSocketConfig.getReceiveBufferSizeKb() * 1024;
+            int sendBufferSize = clientSocketConfig.getSendBufferSizeKb() * 1024;
             serverSocket.receiveBufferSize(receiveBufferSize);
             serverSocket.reuseAddress(true);
             port = bind(serverSocket, port, limit);
