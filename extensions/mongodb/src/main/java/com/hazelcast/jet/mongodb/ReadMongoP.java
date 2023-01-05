@@ -189,7 +189,11 @@ public class ReadMongoP<I> extends AbstractProcessor {
         private final String databaseName;
         private final String collectionName;
 
-        protected MongoChunkedReader(String databaseName, String collectionName, SupplierEx<? extends MongoClient> connectionSupplier) {
+        protected MongoChunkedReader(
+                String databaseName,
+                String collectionName,
+                SupplierEx<? extends MongoClient> connectionSupplier
+        ) {
             this.databaseName = databaseName;
             this.collectionName = collectionName;
             this.connectionSupplier = connectionSupplier;

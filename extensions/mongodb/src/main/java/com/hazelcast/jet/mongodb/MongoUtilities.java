@@ -33,6 +33,9 @@ import static java.util.Collections.singletonList;
 
 final class MongoUtilities {
 
+    private MongoUtilities() {
+    }
+
     @Nonnull
     static List<Bson> partitionAggregate(int totalParallelism, int processorIndex, boolean stream) {
         List<Bson> aggregateList = new ArrayList<>(3);

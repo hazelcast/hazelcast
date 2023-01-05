@@ -51,6 +51,9 @@ import static com.hazelcast.jet.mongodb.Mappers.toClass;
  */
 public final class MongoDBSourceBuilder {
 
+    private MongoDBSourceBuilder() {
+    }
+
 
     /**
      * Returns a builder object that offers a step-by-step fluent API to build
@@ -218,11 +221,10 @@ public final class MongoDBSourceBuilder {
             this.name = name;
             this.connectionSupplier = connectionSupplier;
             mapFn = (FunctionEx<Document, T>) toClass(Document.class);
-
         }
 
         @Nonnull
-        public Batch<T> project (@Nullable Bson projection) {
+        public Batch<T> project(@Nullable Bson projection) {
             if (projection != null) {
                 aggregates.add(Aggregates.project(projection).toBsonDocument());
             }
@@ -230,7 +232,7 @@ public final class MongoDBSourceBuilder {
         }
 
         @Nonnull
-        public Batch<T> sort (@Nullable Bson sort) {
+        public Batch<T> sort(@Nullable Bson sort) {
             if (sort != null) {
                 aggregates.add(Aggregates.sort(sort).toBsonDocument());
             }
@@ -238,7 +240,7 @@ public final class MongoDBSourceBuilder {
         }
 
         @Nonnull
-        public Batch<T> filter (@Nullable Bson filter) {
+        public Batch<T> filter(@Nullable Bson filter) {
             if (filter != null) {
                 aggregates.add(Aggregates.match(filter).toBsonDocument());
             }
@@ -293,7 +295,8 @@ public final class MongoDBSourceBuilder {
             FunctionEx<Document, T> localMapFn = mapFn;
 
             return Sources.batchFromProcessor(name, ProcessorMetaSupplier.of(
-                    () -> new ReadMongoP<>(localConnectionSupplier, aggregates, databaseName, collectionName, localMapFn)));
+                    () -> new ReadMongoP<>(localConnectionSupplier, aggregates,
+                            databaseName, collectionName, localMapFn)));
         }
     }
 

@@ -60,14 +60,6 @@ import static org.junit.Assert.assertNull;
 @Category({QuickTest.class})
 public class MongoDBSourceTest extends AbstractMongoDBTest {
 
-    @Parameters(name = "filter:{0} | projection: {1} | sort: {2} | map: {3}")
-    public static Object[] filterProjectionSortMatrix() {
-        Set<Boolean> booleans = new HashSet<>(asList(true, false));
-        return Sets.cartesianProduct(booleans, booleans, booleans, booleans).stream()
-                .map(tuple -> tuple.toArray(new Object[0]))
-                .toArray(Object[]::new);
-    }
-
     @Parameter(0)
     public boolean filter;
     @Parameter(1)
@@ -76,6 +68,14 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
     public boolean sort;
     @Parameter(3)
     public boolean map;
+
+    @Parameters(name = "filter:{0} | projection: {1} | sort: {2} | map: {3}")
+    public static Object[] filterProjectionSortMatrix() {
+        Set<Boolean> booleans = new HashSet<>(asList(true, false));
+        return Sets.cartesianProduct(booleans, booleans, booleans, booleans).stream()
+                   .map(tuple -> tuple.toArray(new Object[0]))
+                   .toArray(Object[]::new);
+    }
 
     @Test
     public void testBatchOneCollection() {

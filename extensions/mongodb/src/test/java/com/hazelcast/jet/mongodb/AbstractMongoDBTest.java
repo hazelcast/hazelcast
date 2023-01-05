@@ -48,20 +48,21 @@ import static org.junit.Assert.assertEquals;
 
 public abstract class AbstractMongoDBTest extends SimpleTestInClusterSupport {
 
-    private static final Map<String, String> TEST_NAME_TO_DEFAULT_DB_NAME = new ConcurrentHashMap<>();
-    private static final AtomicInteger COUNTER = new AtomicInteger();
-
     static final String SOURCE_NAME = "source";
     static final String SINK_NAME = "sink";
 
-    private static final DockerImageName DOCKER_IMAGE_NAME = DockerImageName.parse("mongo:6.0.3");
     static MongoClient mongo;
     static BsonTimestamp startAtOperationTime;
 
-    @Rule
-    public TestName testName = new TestName();
+    private static final Map<String, String> TEST_NAME_TO_DEFAULT_DB_NAME = new ConcurrentHashMap<>();
+    private static final AtomicInteger COUNTER = new AtomicInteger();
+    private static final DockerImageName DOCKER_IMAGE_NAME = DockerImageName.parse("mongo:6.0.3");
+
     @ClassRule
     public static MongoDBContainer mongoContainer = new MongoDBContainer(DOCKER_IMAGE_NAME);
+
+    @Rule
+    public TestName testName = new TestName();
 
     @BeforeClass
     public static void beforeClass() {
