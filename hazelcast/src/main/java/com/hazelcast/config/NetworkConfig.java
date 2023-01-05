@@ -71,7 +71,7 @@ public class NetworkConfig {
 
     private MemcacheProtocolConfig memcacheProtocolConfig = new MemcacheProtocolConfig();
 
-    private final AltoSocketConfig altoSocketConfig = new AltoSocketConfig();
+    private AltoSocketConfig altoSocketConfig = new AltoSocketConfig();
 
     public NetworkConfig() {
         String os = StringUtil.lowerCaseInternal(System.getProperty("os.name"));
@@ -407,6 +407,11 @@ public class NetworkConfig {
 
     public AltoSocketConfig getAltoSocketConfig() {
         return altoSocketConfig;
+    }
+
+    public NetworkConfig setAltoSocketConfig(AltoSocketConfig altoSocketConfig) {
+        this.altoSocketConfig = altoSocketConfig;
+        return this;
     }
 
     @Override

@@ -79,6 +79,7 @@
                 <xs:element name="dynamic-configuration" type="dynamic-configuration" minOccurs="0"/>
                 <xs:element name="integrity-checker" type="integrity-checker" minOccurs="0" maxOccurs="1"/>
                 <xs:element name="external-data-store" type="external-data-store" minOccurs="0" maxOccurs="unbounded"/>
+                <xs:element name="alto" type="alto" minOccurs="0"/>
             </xs:choice>
             <xs:attribute name="id" type="xs:string" default="default"/>
         </xs:complexType>
@@ -1356,6 +1357,7 @@
             <xs:element name="failure-detector" type="failure-detector" minOccurs="0"/>
             <xs:element name="rest-api" type="rest-api" minOccurs="0"/>
             <xs:element name="memcache-protocol" type="memcache-protocol" minOccurs="0"/>
+            <xs:element name="alto-socket" type="alto-socket" minOccurs="0"/>
         </xs:all>
     </xs:complexType>
     <xs:complexType name="tcp-ip">
@@ -4885,6 +4887,7 @@
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0"/>
             <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0"/>
             <xs:element name="socket-options" type="socket-options" minOccurs="0"/>
+            <xs:element name="alto-socket" type="alto-socket" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" default="">
             <xs:annotation>
@@ -4954,6 +4957,7 @@
             <xs:element name="socket-interceptor" type="socket-interceptor" minOccurs="0"/>
             <xs:element name="symmetric-encryption" type="symmetric-encryption" minOccurs="0"/>
             <xs:element name="socket-options" type="socket-options" minOccurs="0"/>
+            <xs:element name="alto-socket" type="alto-socket" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" default="">
             <xs:annotation>
@@ -5049,6 +5053,7 @@
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>
+            <xs:element name="alto-socket" type="alto-socket" minOccurs="0"/>
         </xs:all>
         <xs:attribute name="name" type="xs:string" default="">
             <xs:annotation>
@@ -6052,5 +6057,20 @@
                 </xs:documentation>
             </xs:annotation>
         </xs:attribute>
+    </xs:complexType>
+
+    <xs:complexType name="alto">
+        <xs:all>
+            <xs:element name="eventloop-count" type="xs:integer" minOccurs="0"/>
+        </xs:all>
+        <xs:attribute name="enabled" type="xs:boolean" use="required"/>
+    </xs:complexType>
+
+    <xs:complexType name="alto-socket">
+        <xs:all>
+            <xs:element name="port-range" type="xs:string" minOccurs="0"/>
+            <xs:element name="receive-buffer-size-kb" type="xs:integer" minOccurs="0"/>
+            <xs:element name="send-buffer-size-kb" type="xs:integer" minOccurs="0"/>
+        </xs:all>
     </xs:complexType>
 </xs:schema>

@@ -150,6 +150,9 @@
         },
         "external-data-store": {
           "$ref": "#/definitions/ExternalDataStoreConfig"
+        },
+        "alto": {
+          "$ref": "#/definitions/AltoConfig"
         }
       }
     },
@@ -762,6 +765,9 @@
         },
         "socket-interceptor": {
           "$ref": "#/definitions/SocketInterceptor"
+        },
+        "alto-socket": {
+          "$ref": "#/definitions/AltoSocketConfig"
         }
       }
     },
@@ -832,7 +838,8 @@
                   "ssl",
                   "socket-interceptor",
                   "symmetric-encryption",
-                  "socket-options"
+                  "socket-options",
+                  "alto-socket"
                 ]
               }
             }
@@ -3980,6 +3987,9 @@
         },
         "socket-options": {
           "$ref": "#/definitions/SocketOptions"
+        },
+        "alto-socket": {
+          "$ref": "#/definitions/AltoSocketConfig"
         }
       }
     },
@@ -4987,6 +4997,34 @@
             "description": "The \"properties\" used for configuring external data store",
             "type": "object"
           }
+        }
+      }
+    },
+    "AltoConfig": {
+      "type": "object",
+      "properties": {
+        "enabled": {
+          "type": "boolean"
+        },
+        "eventloop-count": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "enabled"
+      ]
+    },
+    "AltoSocketConfig": {
+      "type": "object",
+      "properties": {
+        "port-range": {
+          "type": "string"
+        },
+        "receive-buffer-size-kb": {
+          "type": "integer"
+        },
+        "send-buffer-size-kb": {
+          "type": "integer"
         }
       }
     }

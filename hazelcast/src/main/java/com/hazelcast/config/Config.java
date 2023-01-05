@@ -224,7 +224,7 @@ public class Config {
     private final Map<String, ExternalDataStoreConfig> externalDataStoreConfigs = new ConcurrentHashMap<>();
 
     // @since 5.3
-    private final AltoConfig altoConfig = new AltoConfig();
+    private AltoConfig altoConfig = new AltoConfig();
 
     public Config() {
     }
@@ -3225,6 +3225,12 @@ public class Config {
     @Beta
     public AltoConfig getAltoConfig() {
         return altoConfig;
+    }
+
+    @Beta
+    public Config setAltoConfig(AltoConfig altoConfig) {
+        this.altoConfig = altoConfig;
+        return this;
     }
 
     /**

@@ -118,6 +118,8 @@ import com.hazelcast.config.WanQueueFullBehavior;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.WanReplicationRef;
 import com.hazelcast.config.WanSyncConfig;
+import com.hazelcast.config.alto.AltoConfig;
+import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -871,6 +873,11 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals(1002, icmpFailureDetectorConfig.getIntervalMilliseconds());
         assertEquals(2, icmpFailureDetectorConfig.getMaxAttempts());
         assertEquals(1, icmpFailureDetectorConfig.getTtl());
+
+        AltoSocketConfig altoSocketConfig = networkConfig.getAltoSocketConfig();
+        assertEquals("14000-16000", altoSocketConfig.getPortRange());
+        assertEquals(256, altoSocketConfig.getReceiveBufferSizeKb());
+        assertEquals(256, altoSocketConfig.getSendBufferSizeKb());
     }
 
     private void assertAwsConfig(AwsConfig aws) {
@@ -1644,5 +1651,13 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
         assertEquals("com.hazelcast.datastore.JdbcDataStoreFactory", externalDataStoreConfig.getClassName());
         assertFalse(externalDataStoreConfig.isShared());
         assertEquals("jdbc:mysql://dummy:3306", externalDataStoreConfig.getProperty("jdbcUrl"));
+    }
+
+    @Test
+    public void testAltoConfig() {
+        AltoConfig altoConfig = config.getAltoConfig();
+
+        assertTrue(altoConfig.isEnabled());
+        assertEquals(12, altoConfig.getEventloopCount());
     }
 }

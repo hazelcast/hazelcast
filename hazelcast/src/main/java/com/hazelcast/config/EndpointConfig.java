@@ -72,7 +72,7 @@ public class EndpointConfig implements NamedConfig {
     private int socketSendBufferSizeKb = DEFAULT_SOCKET_SEND_BUFFER_SIZE_KB;
     private int socketRcvBufferSizeKb = DEFAULT_SOCKET_RECEIVE_BUFFER_SIZE_KB;
     private int socketLingerSeconds = DEFAULT_SOCKET_LINGER_SECONDS;
-    private final AltoSocketConfig altoSocketConfig = new AltoSocketConfig();
+    private AltoSocketConfig altoSocketConfig = new AltoSocketConfig();
 
     public ProtocolType getProtocolType() {
         return protocolType;
@@ -276,6 +276,11 @@ public class EndpointConfig implements NamedConfig {
 
     public AltoSocketConfig getAltoSocketConfig() {
         return altoSocketConfig;
+    }
+
+    public EndpointConfig setAltoSocketConfig(AltoSocketConfig altoSocketConfig) {
+        this.altoSocketConfig = altoSocketConfig;
+        return this;
     }
 
     @PrivateApi

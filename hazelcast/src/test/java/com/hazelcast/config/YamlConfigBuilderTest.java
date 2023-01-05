@@ -18,6 +18,8 @@ package com.hazelcast.config;
 
 import com.google.common.collect.ImmutableSet;
 import com.hazelcast.config.LoginModuleConfig.LoginModuleUsage;
+import com.hazelcast.config.alto.AltoConfig;
+import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
 import com.hazelcast.config.cp.FencedLockConfig;
 import com.hazelcast.config.cp.RaftAlgorithmConfig;
@@ -4582,5 +4584,93 @@ public class YamlConfigBuilderTest extends AbstractConfigBuilderTest {
 
         assertEquals(Integer.MAX_VALUE, mapConfig.getTimeToLiveSeconds());
         assertEquals(Integer.MAX_VALUE, mapConfig.getMaxIdleSeconds());
+    }
+
+    @Override
+    @Test
+    public void testAltoConfig() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  alto:\n"
+                + "    enabled: true\n"
+                + "    eventloop-count: 12\n";
+
+        AltoConfig altoConfig = buildConfig(yaml).getAltoConfig();
+
+        assertThat(altoConfig.isEnabled()).isTrue();
+        assertThat(altoConfig.getEventloopCount()).isEqualTo(12);
+    }
+
+    @Override
+    @Test
+    public void testAltoSocketConfig() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  network:\n"
+                + "    alto-socket:\n"
+                + "      port-range: 14000-16000\n"
+                + "      receive-buffer-size-kb: 256\n"
+                + "      send-buffer-size-kb: 256\n";
+
+        AltoSocketConfig altoConfig = buildConfig(yaml).getNetworkConfig().getAltoSocketConfig();
+
+        assertThat(altoConfig.getPortRange()).isEqualTo("14000-16000");
+        assertThat(altoConfig.getReceiveBufferSizeKb()).isEqualTo(256);
+        assertThat(altoConfig.getSendBufferSizeKb()).isEqualTo(256);
+    }
+
+    @Override
+    @Test
+    public void testAltoSocketConfigAdvanced() {
+        String yaml = ""
+                + "hazelcast:\n"
+                + "  advanced-network:\n"
+                + "    enabled: true\n"
+                + "    member-server-socket-endpoint-config: \n"
+                + "      alto-socket: \n"
+                + "        port-range: 14000-16000\n"
+                + "        receive-buffer-size-kb: 256\n"
+                + "        send-buffer-size-kb: 256\n"
+                + "    client-server-socket-endpoint-config:\n"
+                + "      alto-socket:\n"
+                + "        port-range: 14000-16000\n"
+                + "        receive-buffer-size-kb: 256\n"
+                + "        send-buffer-size-kb: 256\n"
+                + "    memcache-server-socket-endpoint-config:\n"
+                + "      alto-socket:\n"
+                + "        port-range: 14000-16000\n"
+                + "        receive-buffer-size-kb: 256\n"
+                + "        send-buffer-size-kb: 256\n"
+                + "    rest-server-socket-endpoint-config:\n"
+                + "      alto-socket:\n"
+                + "        port-range: 14000-16000\n"
+                + "        receive-buffer-size-kb: 256\n"
+                + "        send-buffer-size-kb: 256\n"
+                + "    wan-endpoint-config: \n"
+                + "      tokyo:\n"
+                + "        alto-socket:\n"
+                + "          port-range: 14000-16000\n"
+                + "          receive-buffer-size-kb: 256\n"
+                + "          send-buffer-size-kb: 256\n"
+                + "    wan-server-socket-endpoint-config: \n"
+                + "      london:\n"
+                + "        alto-socket:\n"
+                + "          port-range: 14000-16000\n"
+                + "          receive-buffer-size-kb: 256\n"
+                + "          send-buffer-size-kb: 256\n";
+
+        Map<EndpointQualifier, EndpointConfig> endpointConfigs = buildConfig(yaml)
+                .getAdvancedNetworkConfig()
+                .getEndpointConfigs();
+
+        assertThat(endpointConfigs).hasSize(6);
+
+        endpointConfigs.forEach((endpointQualifier, endpointConfig) -> {
+            AltoSocketConfig altoSocketConfig = endpointConfig.getAltoSocketConfig();
+
+            assertThat(altoSocketConfig.getPortRange()).isEqualTo("14000-16000");
+            assertThat(altoSocketConfig.getReceiveBufferSizeKb()).isEqualTo(256);
+            assertThat(altoSocketConfig.getSendBufferSizeKb()).isEqualTo(256);
+        });
     }
 }

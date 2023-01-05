@@ -275,6 +275,12 @@ public class ServerSocketEndpointConfig
     }
 
     @Override
+    public ServerSocketEndpointConfig setAltoSocketConfig(AltoSocketConfig altoSocketConfig) {
+        super.setAltoSocketConfig(altoSocketConfig);
+        return this;
+    }
+
+    @Override
     public ServerSocketEndpointConfig setSymmetricEncryptionConfig(SymmetricEncryptionConfig symmetricEncryptionConfig) {
         super.setSymmetricEncryptionConfig(symmetricEncryptionConfig);
         return this;
