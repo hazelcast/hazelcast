@@ -69,7 +69,7 @@ public abstract class AbstractMongoDBTest extends SimpleTestInClusterSupport {
         // If you pass a timestamp which is not in the oplog, mongodb throws exception
         MongoCollection<Document> collection = mongo.getDatabase("tech").getCollection("START_AT_OPERATION");
         MongoCursor<ChangeStreamDocument<Document>> cursor = collection.watch().iterator();
-        collection.insertOne(new Document("key", "val"));
+        collection.insertOne(new Document("key", 1));
         startAtOperationTime = cursor.next().getClusterTime();
         cursor.close();
     }

@@ -271,7 +271,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
                 aggregateList.add(sort(ascending("_id")).toBsonDocument());
             }
             if (totalParallelism > 1) {
-                aggregateList.addAll(0, partitionAggregate(totalParallelism, processorIndex));
+                aggregateList.addAll(0, partitionAggregate(totalParallelism, processorIndex, false));
             }
             if (collection != null) {
                 this.delegate = delegateForCollection(collection, aggregateList);
@@ -369,7 +369,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
         public void onConnect(MongoClient mongoClient, boolean snapshotsEnabled) {
             List<Bson> aggregateList = new ArrayList<>(aggregates);
             if (totalParallelism > 1) {
-                aggregateList.addAll(partitionAggregate(totalParallelism, processorIndex));
+                aggregateList.addAll(0, partitionAggregate(totalParallelism, processorIndex, true));
             }
             if (collection != null) {
                 this.changeStream = collection.watch(aggregateList);

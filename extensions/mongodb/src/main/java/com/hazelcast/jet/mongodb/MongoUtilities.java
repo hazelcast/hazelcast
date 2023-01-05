@@ -34,17 +34,18 @@ import static java.util.Collections.singletonList;
 final class MongoUtilities {
 
     @Nonnull
-    static List<Bson> partitionAggregate(int totalParallelism, int processorIndex) {
+    static List<Bson> partitionAggregate(int totalParallelism, int processorIndex, boolean stream) {
         List<Bson> aggregateList = new ArrayList<>(3);
 
         String code = "function(s) {\n" +
                 "    return s.getTimestamp().getTime() %" + totalParallelism + " == " + processorIndex + ";\n"+
                 "}";
 
+        String idRef = stream ? "$fullDocument._id" : "$_id";
         Document functionInv = new Document("$function",
                 new Document("lang", "js")
                         .append("body", code)
-                        .append("args", new BsonArray(singletonList( new BsonString("$_id")))));
+                        .append("args", new BsonArray(singletonList( new BsonString(idRef)))));
 
         aggregateList.add(addFields(new Field<>("_thisPartition", functionInv)));
         aggregateList.add(match(Filters.eq("_thisPartition", true)));
