@@ -61,10 +61,12 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
             list.add(i);
         }
 
+        String defaultDatabase = defaultDatabase();
+        String collectionName = testName.getMethodName();
         Sink<Document> sink = MongoDBSinks
                 .<Document>builder(SINK_NAME, () -> mongoClient("non-existing-server", 0))
-                .databaseFn(client -> client.getDatabase(defaultDatabase()))
-                .collectionFn(db -> db.getCollection(testName.getMethodName()))
+                .databaseFn(client -> client.getDatabase(defaultDatabase))
+                .collectionFn(db -> db.getCollection(collectionName))
                 .destroyFn(MongoClient::close)
                 .build();
 

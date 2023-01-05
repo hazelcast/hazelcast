@@ -66,7 +66,7 @@ public abstract class AbstractMongoDBTest extends SimpleTestInClusterSupport {
     @BeforeClass
     public static void beforeClass() {
         mongoContainer.start();
-        initialize(1, null);
+        initialize(2, null);
     }
 
     @BeforeClass
