@@ -187,7 +187,7 @@ public class JobUploadTest extends JetTestSupport {
 
         // Change the part buffer size
         ClientConfig clientConfig = new ClientConfig();
-        clientConfig.setProperty(ClientProperty.JOB_UPLOAD_PART_SIZE.getName(),"100");
+        clientConfig.setProperty(ClientProperty.JOB_UPLOAD_PART_SIZE.getName(), "100");
         HazelcastInstance client = createHazelcastClient(clientConfig);
 
         JetService jetService = client.getJet();
