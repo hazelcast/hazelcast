@@ -1305,7 +1305,7 @@ public class JobCoordinationService {
         JobStatus status;
         boolean userCancelled;
         if (ctx == null) {
-            // If we have a JobRecord but not the MasterContext it may mean that:
+            // If we have a JobRecord but not the MasterContext, it may mean that:
             // 1) job has not yet created MasterContext => NOT_RUNNING
             // 2) job is suspended => SUSPENDED
             // 3) job has already ended but JobRecord has not yet been deleted =>

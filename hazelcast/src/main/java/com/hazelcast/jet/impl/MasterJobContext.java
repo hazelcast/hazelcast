@@ -165,7 +165,7 @@ public class MasterJobContext {
     private final NonCompletableFuture jobCompletionFuture = new NonCompletableFuture();
 
     /**
-     * Current execution termination request in progress if any. There can be at
+     * Current execution termination request in progress, if any. There can be at
      * most one active request at any given time. Cleared when execution is
      * terminated.
      * <p>

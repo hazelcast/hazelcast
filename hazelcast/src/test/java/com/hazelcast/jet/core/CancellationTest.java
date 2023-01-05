@@ -101,14 +101,14 @@ public class CancellationTest extends JetTestSupport {
 
         // Then
         assertExecutionTerminated();
-        joinAndExpectCancellation(job);
+        joinAndExpectUserCancellation(job);
     }
 
     private Job newJob(HazelcastInstance instance, DAG dag) {
         return useLightJob ? instance.getJet().newLightJob(dag) : instance.getJet().newJob(dag);
     }
 
-    private static void joinAndExpectCancellation(Job job) {
+    private static void joinAndExpectUserCancellation(Job job) {
         assertThatThrownBy(job::join).isInstanceOf(CancellationByUserException.class);
     }
 
@@ -129,7 +129,7 @@ public class CancellationTest extends JetTestSupport {
 
         // Then
         assertExecutionTerminated();
-        joinAndExpectCancellation(job);
+        joinAndExpectUserCancellation(job);
     }
 
     @Test
@@ -147,7 +147,7 @@ public class CancellationTest extends JetTestSupport {
         job.cancel();
 
         // Then
-        joinAndExpectCancellation(job);
+        joinAndExpectUserCancellation(job);
         assertThat(job.isUserCancelled()).isTrue();
     }
 
@@ -169,7 +169,7 @@ public class CancellationTest extends JetTestSupport {
 
         // Then
         assertExecutionTerminated();
-        joinAndExpectCancellation(job);
+        joinAndExpectUserCancellation(job);
     }
 
     @Test
@@ -189,7 +189,7 @@ public class CancellationTest extends JetTestSupport {
         job.cancel();
 
         // Then
-        joinAndExpectCancellation(job);
+        joinAndExpectUserCancellation(job);
         assertThat(job.isUserCancelled()).isTrue();
     }
 
@@ -213,9 +213,9 @@ public class CancellationTest extends JetTestSupport {
 
         // Then
         assertExecutionTerminated();
-        joinAndExpectCancellation(job);
+        joinAndExpectUserCancellation(job);
         Job tracked = instance2.getJet().getJobs().iterator().next();
-        joinAndExpectCancellation(tracked);
+        joinAndExpectUserCancellation(tracked);
         assertThat(tracked.isUserCancelled()).isTrue();
     }
 

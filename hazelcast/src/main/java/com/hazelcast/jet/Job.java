@@ -152,9 +152,9 @@ public interface Job {
 
     /**
      * Returns true, if the job is user-cancelled. Returns false, if it
-     * completed normally or failed due to another error. Jobs cancelled in
-     * versions older than 5.3 lack this information and will not be reported as
-     * user-cancelled.
+     * completed normally or failed due to another error. Jobs running in
+     * clusters before version 5.3 lack this information and will always return
+     * false.
      *
      * @throws IllegalStateException if the job is not done.
      * @since 5.3
