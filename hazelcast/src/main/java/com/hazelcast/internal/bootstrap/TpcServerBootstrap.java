@@ -17,6 +17,8 @@
 package com.hazelcast.internal.bootstrap;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.config.AdvancedNetworkConfig;
+import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.config.alto.AltoSocketConfig;
@@ -127,14 +129,6 @@ public class TpcServerBootstrap {
     private void startNio() {
         AltoSocketConfig clientSocketConfig = getClientSocketConfig();
 
-        if (clientSocketConfig == null) {
-            // Advanced network is enabled yet there is no configured server socket
-            // for clients. This means cluster will run but no client ports will be
-            // created, so no clients can connect to the cluster.
-            throw new InvalidConfigurationException("Missing client endpoint configuration. "
-                    + "If you have enabled alto and advanced networking, please configure a client server socket");
-        }
-
         String[] range = clientSocketConfig.getPortRange().split("-");
         int port = Integer.parseInt(range[0]);
         int limit = Integer.parseInt(range[1]);
@@ -168,6 +162,8 @@ public class TpcServerBootstrap {
 
     // public for testing
     public AltoSocketConfig getClientSocketConfig() {
+        validateSocketConfig();
+
         if (nodeEngine.getConfig().getAdvancedNetworkConfig().isEnabled()) {
             ServerSocketEndpointConfig endpointConfig = (ServerSocketEndpointConfig) nodeEngine
                     .getConfig()
@@ -175,15 +171,36 @@ public class TpcServerBootstrap {
                     .getEndpointConfigs()
                     .get(EndpointQualifier.CLIENT);
 
-            if (endpointConfig == null) {
-                return null;
-            }
-
             return endpointConfig.getAltoSocketConfig();
         }
 
         // unified socket
         return nodeEngine.getConfig().getNetworkConfig().getAltoSocketConfig();
+    }
+
+    private void validateSocketConfig() {
+        AdvancedNetworkConfig advancedNetworkConfig = nodeEngine.getConfig().getAdvancedNetworkConfig();
+        if (advancedNetworkConfig.isEnabled()) {
+            AltoSocketConfig defaultAltoSocketConfig = new AltoSocketConfig();
+            Map<EndpointQualifier, EndpointConfig> endpointConfigs = advancedNetworkConfig.getEndpointConfigs();
+
+            endpointConfigs.forEach(((endpointQualifier, endpointConfig) -> {
+                if (endpointQualifier != EndpointQualifier.CLIENT
+                        && !endpointConfig.getAltoSocketConfig().equals(defaultAltoSocketConfig)) {
+                    throw new InvalidConfigurationException(
+                            "Alto socket configuration is only available for clients ports for now.");
+                }
+            }));
+
+            if (endpointConfigs.get(EndpointQualifier.CLIENT) == null) {
+                // Advanced network is enabled yet there is no configured server socket
+                // for clients. This means cluster will run but no client ports will be
+                // created, so no clients can connect to the cluster.
+                throw new InvalidConfigurationException("Missing client server socket configuration. "
+                        + "If you have enabled alto and advanced networking, "
+                        + "please configure a client server socket.");
+            }
+        }
     }
 
     private int bind(NioAsyncServerSocket serverSocket, int port, int limit) {

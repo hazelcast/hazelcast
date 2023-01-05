@@ -17,11 +17,13 @@
 package com.hazelcast.internal.networking.nio;
 
 import com.hazelcast.cluster.Member;
+import com.hazelcast.config.AdvancedNetworkConfig;
 import com.hazelcast.config.Config;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.JoinConfig;
 import com.hazelcast.config.ServerSocketEndpointConfig;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.nio.IOUtil;
 import com.hazelcast.internal.nio.Protocols;
 import com.hazelcast.jet.datamodel.Tuple2;
@@ -111,6 +113,18 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
         Config config = smallInstanceConfig();
         config.getAltoConfig().setEnabled(true);
         config.getAdvancedNetworkConfig().setEnabled(true);
+        assertThrows(InvalidConfigurationException.class, () -> newHazelcastInstance(config));
+    }
+
+    @Test
+    @Category(QuickTest.class)
+    public void testAltoWithAdvancedNetworkAndWithNonClientAltoSocketConfigurationThrows() {
+        Config config = smallInstanceConfig();
+        config.getAltoConfig().setEnabled(true);
+        AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
+        advancedNetworkConfig.setEnabled(true);
+        advancedNetworkConfig.setClientEndpointConfig(new ServerSocketEndpointConfig());
+        advancedNetworkConfig.getEndpointConfigs().get(EndpointQualifier.MEMBER).getAltoSocketConfig().setPortRange("12000-16000");
         assertThrows(InvalidConfigurationException.class, () -> newHazelcastInstance(config));
     }
 
