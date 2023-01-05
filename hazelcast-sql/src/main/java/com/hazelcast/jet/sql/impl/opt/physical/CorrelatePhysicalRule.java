@@ -16,26 +16,30 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.jet.sql.impl.connector.SqlConnector;
+import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
-import com.hazelcast.jet.sql.impl.opt.logical.JoinLogicalRel;
+import com.hazelcast.jet.sql.impl.opt.logical.CorrelateLogicalRel;
+import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
 import org.apache.calcite.plan.RelRule;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.JoinRelType;
+import org.apache.calcite.rel.core.TableScan;
 import org.immutables.value.Value;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.PHYSICAL;
 
 @Value.Enclosing
-public final class JoinPhysicalRule extends RelRule<RelRule.Config> {
+public final class CorrelatePhysicalRule extends RelRule<RelRule.Config> {
 
     @Value.Immutable
     public interface Config extends RelRule.Config {
-        Config DEFAULT = ImmutableJoinPhysicalRule.Config.builder()
-                .description(JoinPhysicalRule.class.getSimpleName())
-                .operandSupplier(b0 -> b0.operand(JoinLogicalRel.class)
+        Config DEFAULT = ImmutableCorrelatePhysicalRule.Config.builder()
+                .description(CorrelatePhysicalRule.class.getSimpleName())
+                .operandSupplier(b0 -> b0.operand(CorrelateLogicalRel.class)
                         .trait(LOGICAL)
                         .inputs(
                                 b1 -> b1.operand(RelNode.class).anyInputs(),
@@ -44,20 +48,20 @@ public final class JoinPhysicalRule extends RelRule<RelRule.Config> {
 
         @Override
         default RelOptRule toRule() {
-            return new JoinPhysicalRule(this);
+            return new CorrelatePhysicalRule(this);
         }
     }
 
     @SuppressWarnings("checkstyle:DeclarationOrder")
-    static final RelOptRule INSTANCE = new JoinPhysicalRule(Config.DEFAULT);
+    static final RelOptRule INSTANCE = new CorrelatePhysicalRule(Config.DEFAULT);
 
-    private JoinPhysicalRule(Config config) {
+    private CorrelatePhysicalRule(Config config) {
         super(config);
     }
 
     @Override
     public void onMatch(RelOptRuleCall call) {
-        JoinLogicalRel logicalJoin = call.rel(0);
+        CorrelateLogicalRel logicalJoin = call.rel(0);
 
         JoinRelType joinType = logicalJoin.getJoinType();
         if (OptUtils.isBounded(logicalJoin) && (joinType != JoinRelType.INNER && joinType != JoinRelType.LEFT)) {
@@ -66,6 +70,8 @@ public final class JoinPhysicalRule extends RelRule<RelRule.Config> {
 
         RelNode leftInput = call.rel(1);
         RelNode rightInput = call.rel(2);
+
+        // generate only nested loops join, other types are created in JoinPhysicalRule
 
         if (OptUtils.isUnbounded(rightInput)) {
             // This rule doesn't support joining of streaming data on the right side.
@@ -76,16 +82,34 @@ public final class JoinPhysicalRule extends RelRule<RelRule.Config> {
         RelNode leftInputConverted = RelRule.convert(leftInput, leftInput.getTraitSet().replace(PHYSICAL));
         RelNode rightInputConverted = RelRule.convert(rightInput, rightInput.getTraitSet().replace(PHYSICAL));
 
-        // we don't use hash join for unbounded left input because it doesn't refresh the right side
-        if (OptUtils.isBounded(leftInput)) {
-            RelNode rel = new JoinHashPhysicalRel(
-                    logicalJoin.getCluster(),
-                    logicalJoin.getTraitSet().replace(PHYSICAL),
-                    leftInputConverted,
-                    rightInputConverted,
-                    logicalJoin.getCondition(),
-                    logicalJoin.getJoinType());
-            call.transformTo(rel);
+        if (rightInput instanceof TableScan) {
+            HazelcastTable rightHzTable = rightInput.getTable().unwrap(HazelcastTable.class);
+            SqlConnector connector = SqlConnectorUtil.getJetSqlConnector(rightHzTable.getTarget());
+            if (connector.isNestedLoopReaderSupported()) {
+                RelNode rel2 = new JoinNestedLoopPhysicalRel(
+                        logicalJoin.getCluster(),
+                        OptUtils.toPhysicalConvention(logicalJoin.getTraitSet()),
+                        leftInputConverted,
+                        logicalJoin.getCorrelationId(),
+                        rightInputConverted,
+                        logicalJoin.getCondition(),
+                        logicalJoin.getJoinType()
+                );
+                call.transformTo(rel2);
+            } else {
+                call.transformTo(
+                        fail(logicalJoin, connector.typeName() + " connector doesn't support stream-to-batch JOIN")
+                );
+            }
         }
+    }
+
+    private ShouldNotExecuteRel fail(RelNode node, String message) {
+        return new ShouldNotExecuteRel(
+                node.getCluster(),
+                node.getTraitSet().replace(PHYSICAL),
+                node.getRowType(),
+                message
+        );
     }
 }

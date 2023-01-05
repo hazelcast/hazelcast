@@ -30,6 +30,7 @@ import com.hazelcast.sql.impl.expression.CaseExpression;
 import com.hazelcast.sql.impl.expression.CastExpression;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.CorrelatedAccessExpression;
 import com.hazelcast.sql.impl.expression.FieldAccessExpression;
 import com.hazelcast.sql.impl.expression.ParameterExpression;
 import com.hazelcast.sql.impl.expression.RowExpression;
@@ -179,8 +180,9 @@ public class SqlDataSerializerHook implements DataSerializerHook {
     public static final int EXPRESSION_ROW = 65;
     public static final int ROW_VALUE = 66;
     public static final int QUERY_DATA_TYPE_FIELD = 67;
+    public static final int CORRELATED_FIELD_ACCESS = 68;
 
-    public static final int LEN = QUERY_DATA_TYPE_FIELD + 1;
+    public static final int LEN = CORRELATED_FIELD_ACCESS + 1;
 
     @Override
     public int getFactoryId() {
@@ -273,6 +275,7 @@ public class SqlDataSerializerHook implements DataSerializerHook {
         constructors[EXPRESSION_ROW] = arg -> new RowExpression();
         constructors[ROW_VALUE] = arg -> new RowValue();
         constructors[QUERY_DATA_TYPE_FIELD] = arg -> new QueryDataType.QueryDataTypeField();
+        constructors[CORRELATED_FIELD_ACCESS] = arg -> new CorrelatedAccessExpression<>();
 
         return new ArrayDataSerializableFactory(constructors);
     }

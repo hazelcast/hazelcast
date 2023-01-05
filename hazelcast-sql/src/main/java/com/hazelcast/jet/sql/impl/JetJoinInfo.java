@@ -21,6 +21,7 @@ import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.sql.impl.expression.Expression;
+import org.apache.calcite.rel.core.CorrelationId;
 import org.apache.calcite.rel.core.JoinRelType;
 
 import java.io.IOException;
@@ -49,6 +50,8 @@ public class JetJoinInfo implements DataSerializable {
 
     private Expression<Boolean> condition;
 
+    private CorrelationId correlationId;
+
     @SuppressWarnings("unused")
     private JetJoinInfo() {
     }
@@ -60,6 +63,16 @@ public class JetJoinInfo implements DataSerializable {
             Expression<Boolean> nonEquiCondition,
             Expression<Boolean> condition
     ) {
+        this(joinType, leftEquiJoinIndices, rightEquiJoinIndices, nonEquiCondition, condition, null);
+    }
+
+    public JetJoinInfo(
+            JoinRelType joinType,
+            int[] leftEquiJoinIndices,
+            int[] rightEquiJoinIndices,
+            Expression<Boolean> nonEquiCondition,
+            Expression<Boolean> condition,
+            CorrelationId correlationId) {
         Preconditions.checkTrue(leftEquiJoinIndices.length == rightEquiJoinIndices.length, "indices length mismatch");
 
         this.joinType = joinType;
@@ -69,6 +82,7 @@ public class JetJoinInfo implements DataSerializable {
         this.nonEquiCondition = nonEquiCondition;
 
         this.condition = condition;
+        this.correlationId = correlationId;
     }
 
     /**
@@ -133,6 +147,10 @@ public class JetJoinInfo implements DataSerializable {
         return joinType;
     }
 
+    public CorrelationId getCorrelationId() {
+        return correlationId;
+    }
+
     @Override
     public void writeData(ObjectDataOutput out) throws IOException {
         out.writeString(joinType.name());
@@ -140,6 +158,7 @@ public class JetJoinInfo implements DataSerializable {
         out.writeObject(rightEquiJoinIndices);
         out.writeObject(nonEquiCondition);
         out.writeObject(condition);
+        out.writeInt(correlationId != null ? correlationId.getId() : -1);
     }
 
     @Override
@@ -149,6 +168,10 @@ public class JetJoinInfo implements DataSerializable {
         rightEquiJoinIndices = in.readObject();
         nonEquiCondition = in.readObject();
         condition = in.readObject();
+        int cid = in.readInt();
+        if (cid >= 0) {
+            correlationId = new CorrelationId(cid);
+        }
     }
 
     @Override
@@ -159,6 +182,7 @@ public class JetJoinInfo implements DataSerializable {
                 ", rightEquiJoinIndices=" + Arrays.toString(rightEquiJoinIndices) +
                 ", nonEquiCondition=" + nonEquiCondition +
                 ", condition=" + condition +
+                ", correlationId=" + correlationId +
                 '}';
     }
 }

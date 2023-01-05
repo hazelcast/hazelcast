@@ -20,7 +20,7 @@ import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
-import com.hazelcast.jet.impl.processor.TransformBatchedP;
+import com.hazelcast.jet.impl.processor.TransformP;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
@@ -31,6 +31,7 @@ import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
 import com.hazelcast.projection.Projection;
 import com.hazelcast.security.permission.MapPermission;
+import com.hazelcast.sql.impl.expression.CorrelatedExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.row.JetSqlRow;
@@ -88,7 +89,7 @@ final class JoinScanProcessorSupplier implements ProcessorSupplier, DataSerializ
         List<Processor> processors = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
             Processor processor =
-                    new TransformBatchedP<JetSqlRow, JetSqlRow>(
+                    new TransformP<JetSqlRow, JetSqlRow>(
                             joinFn(joinInfo, map, rightRowProjectorSupplier, evalContext)
                     ) {
                         @Override
@@ -101,22 +102,25 @@ final class JoinScanProcessorSupplier implements ProcessorSupplier, DataSerializ
         return processors;
     }
 
-    private static FunctionEx<Iterable<JetSqlRow>, Traverser<JetSqlRow>> joinFn(
+    private static FunctionEx<JetSqlRow, Traverser<JetSqlRow>> joinFn(
             @Nonnull JetJoinInfo joinInfo,
             @Nonnull IMap<Object, Object> map,
             @Nonnull Supplier rightRowProjectorSupplier,
             @Nonnull ExpressionEvalContext evalContext
     ) {
+        CorrelatedExpressionEvalContext nested = new CorrelatedExpressionEvalContext(evalContext);
         Projection<Entry<Object, Object>, JetSqlRow> projection =
-                QueryUtil.toProjection(rightRowProjectorSupplier, evalContext);
+                QueryUtil.toProjection(rightRowProjectorSupplier, nested);
 
-        return lefts -> {
+        return left -> {
             List<JetSqlRow> rights = new ArrayList<>();
             // TODO it would be nice if we executed the project() with the predicate that the rightRowProjector
             //  uses, maybe the majority of rows are rejected. In general it's good to do filtering as closely to the
             //  source as possible. However, the predicate has state. Without a state the predicate will have to
             //  create QueryTargets and extractors for each row.
+            // TODO: maybe after changes above comment is not relevant anymore?
 
+            nested.setCorrelationVariable(joinInfo.getCorrelationId().getId(), left);
             // current rules pull projects up, hence project() cardinality won't be greater than the source's
             // changing the rules might require revisiting
             for (JetSqlRow right : map.project(projection)) {
@@ -126,11 +130,9 @@ final class JoinScanProcessorSupplier implements ProcessorSupplier, DataSerializ
             }
 
             List<JetSqlRow> rows = new ArrayList<>();
-            for (JetSqlRow left : lefts) {
-                boolean joined = join(rows, left, rights, joinInfo.condition(), evalContext);
-                if (!joined && joinInfo.isLeftOuter()) {
-                    rows.add(left.extendedRow(rightRowProjectorSupplier.columnCount()));
-                }
+            boolean joined = join(rows, left, rights, joinInfo.condition(), evalContext);
+            if (!joined && joinInfo.isLeftOuter()) {
+                rows.add(left.extendedRow(rightRowProjectorSupplier.columnCount()));
             }
             return traverseIterable(rows);
         };

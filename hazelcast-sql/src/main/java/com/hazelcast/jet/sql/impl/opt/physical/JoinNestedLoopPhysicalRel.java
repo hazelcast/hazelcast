@@ -26,6 +26,7 @@ import com.hazelcast.sql.impl.expression.Expression;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.CorrelationId;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rex.RexBuilder;
@@ -42,15 +43,19 @@ import static java.util.Arrays.asList;
 
 public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
 
+    private final CorrelationId correlationId;
+
     JoinNestedLoopPhysicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelNode left,
+            CorrelationId correlationId,
             RelNode right,
             RexNode condition,
             JoinRelType joinType
     ) {
         super(cluster, traitSet, left, right, condition, joinType);
+        this.correlationId = correlationId;
     }
 
     public Expression<Boolean> rightFilter(QueryParameterMetadata parameterMetadata) {
@@ -102,7 +107,8 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
 
         Expression<Boolean> condition = filter(schema(parameterMetadata), getCondition(), parameterMetadata);
 
-        return new JetJoinInfo(getJoinType(), toIntArray(leftKeys), toIntArray(rightKeys), nonEquiCondition, condition);
+        return new JetJoinInfo(getJoinType(), toIntArray(leftKeys), toIntArray(rightKeys), nonEquiCondition, condition,
+                correlationId);
     }
 
     @Override
@@ -119,6 +125,6 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
             JoinRelType joinType,
             boolean semiJoinDone
     ) {
-        return new JoinNestedLoopPhysicalRel(getCluster(), traitSet, left, right, getCondition(), joinType);
+        return new JoinNestedLoopPhysicalRel(getCluster(), traitSet, left, correlationId, right, getCondition(), joinType);
     }
 }

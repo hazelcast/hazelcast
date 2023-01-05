@@ -19,6 +19,7 @@ package com.hazelcast.jet.sql.impl.opt.physical.visitor;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.ColumnExpression;
+import com.hazelcast.sql.impl.expression.CorrelatedAccessExpression;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.FieldAccessExpression;
 import com.hazelcast.sql.impl.expression.ParameterExpression;
@@ -37,6 +38,7 @@ import org.apache.calcite.rex.RexRangeRef;
 import org.apache.calcite.rex.RexSubQuery;
 import org.apache.calcite.rex.RexTableInputRef;
 import org.apache.calcite.rex.RexVisitor;
+import org.apache.calcite.sql.SqlKind;
 
 import java.util.List;
 
@@ -115,12 +117,27 @@ public final class RexToExpressionVisitor implements RexVisitor<Expression<?>> {
 
     @Override
     public Expression<?> visitFieldAccess(RexFieldAccess fieldAccess) {
-        final Expression<?> referenceExpression = fieldAccess.getReferenceExpr().accept(this);
-        return FieldAccessExpression.create(
-                HazelcastTypeUtils.toHazelcastType(fieldAccess.getType()),
-                fieldAccess.getField().getName(),
-                referenceExpression
-        );
+
+        if (fieldAccess.getReferenceExpr().getKind() == SqlKind.CORREL_VARIABLE) {
+            // see RexToLixTranslator
+            int fieldIndex = fieldAccess.getField().getIndex();
+            int corId = ((RexCorrelVariable) fieldAccess.getReferenceExpr()).id.getId();
+            // $corX.Y should reference column Y in a row produced earlier/higher
+            final Expression<?> referenceExpression = ColumnExpression.create(fieldIndex,
+                    HazelcastTypeUtils.toHazelcastType(fieldAccess.getField().getType()));
+            return CorrelatedAccessExpression.create(
+                    HazelcastTypeUtils.toHazelcastType(fieldAccess.getType()),
+                    corId,
+                    referenceExpression
+            );
+        } else {
+            final Expression<?> referenceExpression = fieldAccess.getReferenceExpr().accept(this);
+            return FieldAccessExpression.create(
+                    HazelcastTypeUtils.toHazelcastType(fieldAccess.getType()),
+                    fieldAccess.getField().getName(),
+                    referenceExpression
+            );
+        }
     }
 
     @Override

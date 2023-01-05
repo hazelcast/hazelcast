@@ -457,14 +457,17 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         Table rightTable = rel.getRight().getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(rightTable);
 
-        VertexWithInputConfig vertexWithConfig = getJetSqlConnector(rightTable).nestedLoopReader(
+        CreateDagVisitor<VertexWithInputConfig> nestedVisitor = getJetSqlConnector(rightTable).nestedLoopReader(
                 dag,
                 rightTable,
                 rel.rightFilter(parameterMetadata),
                 rel.rightProjection(parameterMetadata),
                 rel.joinInfo(parameterMetadata)
         );
+        VertexWithInputConfig vertexWithConfig = ((PhysicalRel) rel.getRight()).accept(nestedVisitor);
+
         Vertex vertex = vertexWithConfig.vertex();
+        // execute left normally
         connectInput(rel.getLeft(), vertex, vertexWithConfig.configureEdgeFn());
         return vertex;
     }

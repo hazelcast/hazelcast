@@ -45,6 +45,7 @@ import org.apache.calcite.rex.RexVisitorImpl;
 final class IndexRexVisitor extends RexVisitorImpl<Void> {
 
     private boolean valid = true;
+    private boolean correlated;
 
     private IndexRexVisitor() {
         super(true);
@@ -88,7 +89,7 @@ final class IndexRexVisitor extends RexVisitorImpl<Void> {
 
     @Override
     public Void visitFieldAccess(RexFieldAccess fieldAccess) {
-        return markInvalid();
+        return markCorrelated();
     }
 
     @Override
@@ -108,6 +109,12 @@ final class IndexRexVisitor extends RexVisitorImpl<Void> {
 
     private Void markInvalid() {
         valid = false;
+
+        return null;
+    }
+
+    private Void markCorrelated() {
+        correlated = true;
 
         return null;
     }

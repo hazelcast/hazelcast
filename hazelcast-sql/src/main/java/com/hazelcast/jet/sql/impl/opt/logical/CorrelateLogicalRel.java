@@ -19,28 +19,39 @@ package com.hazelcast.jet.sql.impl.opt.logical;
 import org.apache.calcite.plan.RelOptCluster;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
+import org.apache.calcite.rel.core.CorrelationId;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
 import org.apache.calcite.rex.RexNode;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.emptySet;
+public class CorrelateLogicalRel extends JoinLogicalRel implements LogicalRel {
 
-public class JoinLogicalRel extends Join implements LogicalRel {
+    private final CorrelationId correlationId;
 
-    JoinLogicalRel(
+    CorrelateLogicalRel(
             RelOptCluster cluster,
             RelTraitSet traitSet,
             RelNode left,
+            CorrelationId correlationId,
             RelNode right,
-            RexNode condition,
             JoinRelType joinType
     ) {
-        super(cluster, traitSet, emptyList(), left, right, condition, emptySet(), joinType);
+        super(cluster, traitSet, left, right,
+                // TODO: should Correlate be subclass of Join/JoinLogicalRel? It is not in Calcite.
+                // Correlate does not have condition on Join level.
+                // We have some validations for JoinLogicalRel that should apply to CorrelateLogicalRel
+                // but they match only exact class not the subclass.
+                cluster.getRexBuilder().makeLiteral(true),
+                joinType);
+        this.correlationId = correlationId;
+    }
+
+    public CorrelationId getCorrelationId() {
+        return correlationId;
     }
 
     @Override
-    public Join copy(
+    public final Join copy(
             RelTraitSet traitSet,
             RexNode condition,
             RelNode left,
@@ -48,6 +59,6 @@ public class JoinLogicalRel extends Join implements LogicalRel {
             JoinRelType joinType,
             boolean semiJoinDone
     ) {
-        return new JoinLogicalRel(getCluster(), traitSet, left, right, condition, joinType);
+        return new CorrelateLogicalRel(getCluster(), traitSet, left, correlationId, right, joinType);
     }
 }

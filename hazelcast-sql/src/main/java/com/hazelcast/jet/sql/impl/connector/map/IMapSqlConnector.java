@@ -38,6 +38,10 @@ import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProcessors;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvProjector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.inject.UpsertTargetDescriptor;
+import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
+import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitorBase;
+import com.hazelcast.jet.sql.impl.opt.physical.FullScanPhysicalRel;
+import com.hazelcast.jet.sql.impl.opt.physical.IndexScanMapPhysicalRel;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.map.impl.MapServiceContext;
@@ -256,7 +260,7 @@ public class IMapSqlConnector implements SqlConnector {
 
     @Nonnull
     @Override
-    public VertexWithInputConfig nestedLoopReader(
+    public CreateDagVisitor<VertexWithInputConfig> nestedLoopReader(
             @Nonnull DAG dag,
             @Nonnull Table table0,
             @Nullable Expression<Boolean> predicate,
@@ -264,6 +268,8 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull JetJoinInfo joinInfo
     ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
+        String mapName = table.getMapName();
+        String tableName = toString(table);
 
         KvRowProjector.Supplier rightRowProjectorSupplier = KvRowProjector.supplier(
                 table.paths(),
@@ -274,7 +280,24 @@ public class IMapSqlConnector implements SqlConnector {
                 projections
         );
 
-        return Joiner.join(dag, table.getMapName(), toString(table), joinInfo, rightRowProjectorSupplier);
+//        return Joiner.join(dag, table.getMapName(), toString(table), joinInfo, rightRowProjectorSupplier);
+        return new CreateDagVisitorBase<VertexWithInputConfig>(dag) {
+            // TODO: support index scan and key lookup
+            @Override
+            public VertexWithInputConfig onMapIndexScan(IndexScanMapPhysicalRel rel) {
+                return super.onMapIndexScan(rel);
+            }
+
+            @Override
+            public VertexWithInputConfig onFullScan(FullScanPhysicalRel rel) {
+                return new VertexWithInputConfig(
+                        dag.newUniqueVertex(
+                                "Join(Scan-" + tableName + ")",
+                                new JoinScanProcessorSupplier(joinInfo, mapName, rightRowProjectorSupplier)
+                        )
+                );
+            }
+        };
     }
 
     @Nonnull

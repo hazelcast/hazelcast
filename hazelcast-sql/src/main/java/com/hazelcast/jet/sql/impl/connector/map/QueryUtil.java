@@ -30,13 +30,16 @@ import com.hazelcast.query.PredicateBuilder.EntryObject;
 import com.hazelcast.query.Predicates;
 import com.hazelcast.query.impl.getters.Extractors;
 import com.hazelcast.sql.impl.QueryException;
+import com.hazelcast.sql.impl.expression.CorrelatedExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryPath;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import edu.umd.cs.findbugs.annotations.SuppressFBWarnings;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 
 final class QueryUtil {
@@ -112,6 +115,8 @@ final class QueryUtil {
         private transient ExpressionEvalContext evalContext;
         private transient Extractors extractors;
 
+        private transient Map<Integer, JetSqlRow> tmpVars;
+
         @SuppressWarnings("unused")
         private JoinProjection() {
         }
@@ -129,7 +134,15 @@ final class QueryUtil {
 
         @Override
         public void setSerializationService(SerializationService serializationService) {
-            this.evalContext = new ExpressionEvalContext(arguments, (InternalSerializationService) serializationService);
+            //TODO: this does not make sense
+            //after deserialization we loose original evalContext type
+            this.evalContext =
+                    new ExpressionEvalContext(arguments, (InternalSerializationService) serializationService);
+            if (tmpVars != null) {
+                CorrelatedExpressionEvalContext evalContext1 = new CorrelatedExpressionEvalContext(evalContext);
+                this.evalContext = evalContext1;
+                tmpVars.forEach(evalContext1::setCorrelationVariable);
+            }
             this.extractors = Extractors.newBuilder(evalContext.getSerializationService()).build();
         }
 
@@ -137,12 +150,34 @@ final class QueryUtil {
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeObject(rightRowProjectorSupplier);
             out.writeObject(arguments);
+            if (evalContext instanceof CorrelatedExpressionEvalContext) {
+                out.writeBoolean(true);
+                Map<Integer, JetSqlRow> vars = ((CorrelatedExpressionEvalContext) evalContext).getCorrelationVariables();
+                out.writeInt(vars.size());
+                vars.forEach((k, v) -> {
+                    try {
+                        out.writeInt(k);
+                        out.writeObject(v);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                });
+            } else {
+                out.writeBoolean(false);
+            }
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             rightRowProjectorSupplier = in.readObject();
             arguments = in.readObject();
+            if (in.readBoolean()) {
+                int count = in.readInt();
+                tmpVars = new HashMap<>(count);
+                for (int i = 0; i < count; ++i) {
+                    tmpVars.put(in.readInt(), in.readObject(JetSqlRow.class));
+                }
+            }
         }
     }
 }
