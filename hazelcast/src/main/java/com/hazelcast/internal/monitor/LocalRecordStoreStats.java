@@ -43,20 +43,18 @@ public interface LocalRecordStoreStats {
      */
     long getLastUpdateTime();
 
+    long getEvictionCount();
+
+    long getExpirationCount();
+
+    void increaseEvictions();
+
+    void increaseExpirations();
+
     /**
      * Increases the number of hits of the locally owned entries of this partition.
      */
     void increaseHits();
-
-    /**
-     * Increases the number of hits of the locally owned entries of this partition.
-     */
-    void increaseHits(long hits);
-
-    /**
-     * Decreases the number of hits of the locally owned entries of this partition.
-     */
-    void decreaseHits(long hits);
 
     /**
      * Sets the last access (read) time of the locally owned entries of this partition.

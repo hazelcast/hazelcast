@@ -61,7 +61,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     protected final SerializationService serializationService;
     protected final CompositeMutationObserver<Record> mutationObserver;
     protected final LocalRecordStoreStatsImpl stats = new LocalRecordStoreStatsImpl();
-
     protected Storage<Data, Record> storage;
     protected IndexingMutationObserver<Record> indexingObserver;
 

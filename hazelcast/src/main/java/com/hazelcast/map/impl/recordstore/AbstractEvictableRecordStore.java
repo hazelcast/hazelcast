@@ -147,8 +147,16 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     @Override
     public void doPostEvictionOperations(Data dataKey, Object value,
                                          ExpiryReason expiryReason) {
+        EntryEventType eventType;
+        if (expiryReason != NOT_EXPIRED) {
+            eventType = EXPIRED;
+            stats.increaseExpirations();
+        } else {
+            eventType = EVICTED;
+            stats.increaseEvictions();
+        }
+
         if (eventService.hasEventRegistration(SERVICE_NAME, name)) {
-            EntryEventType eventType = expiryReason != NOT_EXPIRED ? EXPIRED : EVICTED;
             mapEventPublisher.publishEvent(thisAddress, name,
                     eventType, dataKey, value, null);
         }
@@ -173,7 +181,7 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     }
 
     public void mergeRecordExpiration(Data key, Record record,
-                                         MapMergeTypes mergingEntry, long now) {
+                                      MapMergeTypes mergingEntry, long now) {
         mergeRecordExpiration(record, mergingEntry.getCreationTime(),
                 mergingEntry.getLastAccessTime(), mergingEntry.getLastUpdateTime());
         // WAN events received from source cluster also carry null maxIdle
