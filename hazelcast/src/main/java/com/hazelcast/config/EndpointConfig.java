@@ -21,6 +21,7 @@ import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.spi.annotation.PrivateApi;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
@@ -278,7 +279,7 @@ public class EndpointConfig implements NamedConfig {
         return altoSocketConfig;
     }
 
-    public EndpointConfig setAltoSocketConfig(AltoSocketConfig altoSocketConfig) {
+    public EndpointConfig setAltoSocketConfig(@Nonnull AltoSocketConfig altoSocketConfig) {
         this.altoSocketConfig = altoSocketConfig;
         return this;
     }

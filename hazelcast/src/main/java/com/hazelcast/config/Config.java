@@ -3228,7 +3228,7 @@ public class Config {
     }
 
     @Beta
-    public Config setAltoConfig(AltoConfig altoConfig) {
+    public Config setAltoConfig(@Nonnull AltoConfig altoConfig) {
         this.altoConfig = altoConfig;
         return this;
     }

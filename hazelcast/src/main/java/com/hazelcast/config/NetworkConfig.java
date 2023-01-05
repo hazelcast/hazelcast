@@ -20,6 +20,7 @@ import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.security.jsm.HazelcastRuntimePermission;
 
+import javax.annotation.Nonnull;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
@@ -409,7 +410,7 @@ public class NetworkConfig {
         return altoSocketConfig;
     }
 
-    public NetworkConfig setAltoSocketConfig(AltoSocketConfig altoSocketConfig) {
+    public NetworkConfig setAltoSocketConfig(@Nonnull AltoSocketConfig altoSocketConfig) {
         this.altoSocketConfig = altoSocketConfig;
         return this;
     }

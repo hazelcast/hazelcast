@@ -20,6 +20,7 @@ import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.instance.EndpointQualifier;
 
+import javax.annotation.Nonnull;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -228,7 +229,7 @@ public class RestServerEndpointConfig
     }
 
     @Override
-    public RestServerEndpointConfig setAltoSocketConfig(AltoSocketConfig altoSocketConfig) {
+    public RestServerEndpointConfig setAltoSocketConfig(@Nonnull AltoSocketConfig altoSocketConfig) {
         super.setAltoSocketConfig(altoSocketConfig);
         return this;
     }
