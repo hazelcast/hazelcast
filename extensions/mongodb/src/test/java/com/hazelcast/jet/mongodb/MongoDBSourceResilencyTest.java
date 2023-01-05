@@ -63,7 +63,7 @@ public class MongoDBSourceResilencyTest extends AbstractMongoDBTest {
         Pipeline p = Pipeline.create();
         p.readFrom(MongoDBSourceBuilder
                 .stream(SOURCE_NAME, () -> mongoClient(mongoContainer.getConnectionString()))
-                .database(DB_NAME)
+                .database(defaultDatabase())
                 .collection(testName.getMethodName(), Document.class)
                 .mapFn(ChangeStreamDocument::getFullDocument)
                 .build())

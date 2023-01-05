@@ -38,7 +38,7 @@ final class MongoUtilities {
         List<Bson> aggregateList = new ArrayList<>(3);
 
         String code = "function(s) {\n" +
-                "    return s.getTimestamp().getTime() %" + totalParallelism + " == " + processorIndex + ";\n"+
+                "    return s === null ? -1 : s.getTimestamp().getTime() %" + totalParallelism + " == " + processorIndex + ";\n"+
                 "}";
 
         String idRef = stream ? "$fullDocument._id" : "$_id";

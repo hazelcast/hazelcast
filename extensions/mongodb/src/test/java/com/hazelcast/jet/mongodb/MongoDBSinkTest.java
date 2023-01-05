@@ -36,7 +36,7 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
 
     @Test
     public void test() {
-        IList<Integer> list = hz.getList("list");
+        IList<Integer> list = instance().getList("list");
         for (int i = 0; i < 100; i++) {
             list.add(i);
         }
@@ -46,9 +46,9 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
         Pipeline p = Pipeline.create();
         p.readFrom(Sources.list(list))
          .map(i -> new Document("key", i))
-         .writeTo(MongoDBSinks.mongodb(SINK_NAME, connectionString, DB_NAME, testName.getMethodName()));
+         .writeTo(MongoDBSinks.mongodb(SINK_NAME, connectionString, defaultDatabase(), testName.getMethodName()));
 
-        hz.getJet().newJob(p).join();
+        instance().getJet().newJob(p).join();
 
         MongoCollection<Document> collection = collection();
         assertEquals(100, collection.countDocuments());
@@ -56,14 +56,14 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
 
     @Test
     public void test_whenServerNotAvailable() {
-        IList<Integer> list = hz.getList("list");
+        IList<Integer> list = instance().getList("list");
         for (int i = 0; i < 100; i++) {
             list.add(i);
         }
 
         Sink<Document> sink = MongoDBSinks
                 .<Document>builder(SINK_NAME, () -> mongoClient("non-existing-server", 0))
-                .databaseFn(client -> client.getDatabase(DB_NAME))
+                .databaseFn(client -> client.getDatabase(defaultDatabase()))
                 .collectionFn(db -> db.getCollection(testName.getMethodName()))
                 .destroyFn(MongoClient::close)
                 .build();
@@ -74,7 +74,7 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
          .writeTo(sink);
 
         try {
-            hz.getJet().newJob(p).join();
+            instance().getJet().newJob(p).join();
             fail();
         } catch (CompletionException e) {
             assertTrue(e.getCause() instanceof JetException);

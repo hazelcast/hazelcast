@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.mongodb;
 
-import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
@@ -24,52 +23,61 @@ import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoCursor;
+import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.junit.After;
-import org.junit.Before;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
+import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.TestName;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.utility.DockerImageName;
 
-import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
 
+import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static org.junit.Assert.assertEquals;
 
 public abstract class AbstractMongoDBTest extends SimpleTestInClusterSupport {
 
+    private static final Map<String, String> TEST_NAME_TO_DEFAULT_DB_NAME = new ConcurrentHashMap<>();
+    private static final AtomicInteger COUNTER = new AtomicInteger();
+
     static final String SOURCE_NAME = "source";
     static final String SINK_NAME = "sink";
-    static final String DB_NAME = "db";
 
     private static final DockerImageName DOCKER_IMAGE_NAME = DockerImageName.parse("mongo:6.0.3");
-    MongoClient mongo;
-    HazelcastInstance hz;
-    BsonTimestamp startAtOperationTime;
+    static MongoClient mongo;
+    static BsonTimestamp startAtOperationTime;
 
     @Rule
     public TestName testName = new TestName();
-    @Rule
-    public MongoDBContainer mongoContainer = new MongoDBContainer(DOCKER_IMAGE_NAME);
+    @ClassRule
+    public static MongoDBContainer mongoContainer = new MongoDBContainer(DOCKER_IMAGE_NAME);
 
     @BeforeClass
     public static void beforeClass() {
+        mongoContainer.start();
         initialize(1, null);
     }
 
-    @Before
-    public void setUp() {
-        mongoContainer.start();
+    @BeforeClass
+    public static void setUp() {
         mongo = MongoClients.create(mongoContainer.getConnectionString());
 
         // workaround to obtain a timestamp before starting the test
         // If you pass a timestamp which is not in the oplog, mongodb throws exception
         MongoCollection<Document> collection = mongo.getDatabase("tech").getCollection("START_AT_OPERATION");
         MongoCursor<ChangeStreamDocument<Document>> cursor = collection.watch().iterator();
-        collection.insertOne(new Document("key", 1));
+        collection.insertOne(new Document("test", 1));
         startAtOperationTime = cursor.next().getClusterTime();
         cursor.close();
     }
@@ -77,16 +85,40 @@ public abstract class AbstractMongoDBTest extends SimpleTestInClusterSupport {
     @After
     public void clear() {
         try (MongoClient mongoClient = MongoClients.create(mongoContainer.getConnectionString())) {
-            mongoClient.getDatabase(DB_NAME).drop();
+            for (String databaseName : mongoClient.listDatabaseNames()) {
+                if (databaseName.startsWith("test")) {
+                    MongoDatabase database = mongoClient.getDatabase(databaseName);
+                    database.drop();
+                }
+            }
+
+        }
+        try (MongoClient mongoClient = MongoClients.create(mongoContainer.getConnectionString())) {
+            List<String> allowedDatabasesLeft = asList("admin", "local", "config", "tech");
+            assertTrueEventually(() -> {
+                ArrayList<String> databasesLeft = mongoClient.listDatabaseNames().into(new ArrayList<>());
+                assertEquals(allowedDatabasesLeft.size(), databasesLeft.size());
+                assertContainsAll(databasesLeft, allowedDatabasesLeft);
+            });
         }
     }
 
+    @AfterClass
+    public static void tearDown() {
+        mongo.close();
+    }
+
     MongoCollection<Document> collection() {
-        return collection(DB_NAME, testName.getMethodName());
+        return collection(defaultDatabase(), testName.getMethodName());
+    }
+
+    protected String defaultDatabase() {
+        return TEST_NAME_TO_DEFAULT_DB_NAME.computeIfAbsent(testName.getMethodName(),
+                name -> "testDefaultDatabase" + COUNTER.incrementAndGet());
     }
 
     MongoCollection<Document> collection(String collectionName) {
-        return collection(DB_NAME, collectionName);
+        return collection(defaultDatabase(), collectionName);
     }
 
     MongoCollection<Document> collection(String databaseName, String collectionName) {
@@ -107,11 +139,6 @@ public abstract class AbstractMongoDBTest extends SimpleTestInClusterSupport {
                 .build();
 
         return MongoClients.create(settings);
-    }
-
-    @After
-    public void tearDown() {
-        mongo.close();
     }
 
 }

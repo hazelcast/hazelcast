@@ -38,7 +38,9 @@ import org.junit.runners.Parameterized.Parameter;
 import org.junit.runners.Parameterized.Parameters;
 
 import javax.annotation.Nonnull;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
@@ -48,10 +50,10 @@ import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.gte;
 import static com.mongodb.client.model.Projections.include;
 import static java.util.Arrays.asList;
+import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.toList;
 import static java.util.stream.IntStream.range;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -79,13 +81,13 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
     public void testBatchOneCollection() {
         IList<Object> list = instance().getList(testName.getMethodName());
 
-        collection().insertMany(range(0, 30).mapToObj(i -> new Document("key", i).append("val", i)).collect(toList()));
+        collection().insertMany(range(0, 30).mapToObj(i -> newDocument("key", i).append("val", i)).collect(toList()));
         assertEquals(collection().countDocuments(), 30L);
 
         Pipeline pipeline = Pipeline.create();
         String connectionString = mongoContainer.getConnectionString();
         Batch<?> sourceBuilder = MongoDBSourceBuilder.batch(SOURCE_NAME, () -> mongoClient(connectionString))
-                                                     .database(DB_NAME)
+                                                     .database(defaultDatabase())
                                                      .collection(testName.getMethodName(), Document.class);
         sourceBuilder = batchFilters(sourceBuilder);
         pipeline.readFrom(sourceBuilder.build())
@@ -94,60 +96,35 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
         instance().getJet().newJob(pipeline, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE)).join();
 
-        assertEquals(filter ? 20 : 30, list.size());
-        if (map) {
-            KV actual = (KV) list.get(0);
-            if (projection) {
-                assertNull(actual.key);
-            }
-            assertNotNull(actual.val);
-        } else {
-            Document actual = (Document) list.get(0);
-            if (projection) {
-                assertNull(actual.get("key"));
-            }
-            assertNotNull(actual.get("val"));
-        }
+        assertTrueEventually(() -> contentAsserts(list, filter ? 10 : 0, 29, filter ? 20 : 30));
     }
 
     @Test
     public void testBatchDatabase() {
         IList<Object> list = instance().getList(testName.getMethodName());
 
-        collection().insertMany(range(0, 20).mapToObj(i -> new Document("key", i).append("val", i)).collect(toList()));
+        collection().insertMany(range(0, 20).mapToObj(i -> newDocument("key", i).append("val", i)).collect(toList()));
         assertEquals(collection().countDocuments(), 20L);
 
         collection(testName.getMethodName() + "_second")
                 .insertMany(range(0, 20)
-                        .mapToObj(i -> new Document("key", i).append("val", i).append("test", "other"))
+                        .mapToObj(i -> newDocument("key", i).append("val", i).append("test", "other"))
                         .collect(toList()));
         assertEquals(collection().countDocuments(), 20L);
 
         Pipeline pipeline = Pipeline.create();
         String connectionString = mongoContainer.getConnectionString();
         Batch<?> sourceBuilder = MongoDBSourceBuilder.batch(SOURCE_NAME, () -> mongoClient(connectionString))
-                .database(DB_NAME);
+                .database(defaultDatabase());
         sourceBuilder = batchFilters(sourceBuilder);
         pipeline.readFrom(sourceBuilder.build())
                 .setLocalParallelism(2)
+                .peek()
                 .writeTo(Sinks.list(list));
 
         instance().getJet().newJob(pipeline, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE)).join();
 
-        assertEquals(filter ? 20 : 40, list.size());
-        if (map) {
-            KV actual = (KV) list.get(0);
-            if (projection) {
-                assertNull(actual.key);
-            }
-            assertNotNull(actual.val);
-        } else {
-            Document actual = (Document) list.get(0);
-            if (projection) {
-                assertNull(actual.get("key"));
-            }
-            assertNotNull(actual.get("val"));
-        }
+        assertTrueEventually(() -> contentAsserts(list, filter ? 10 : 0, 19, filter ? 20 : 40));
     }
 
     private Batch<?> batchFilters(Batch<?> sourceBuilder) {
@@ -155,7 +132,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
             sourceBuilder = sourceBuilder.filter(gte("key", 10));
         }
         if (projection) {
-            sourceBuilder = sourceBuilder.project(include("val"));
+            sourceBuilder = sourceBuilder.project(include("val", "testName"));
         }
         if (sort) {
             sourceBuilder = sourceBuilder.sort(Sorts.ascending("val"));
@@ -171,7 +148,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         IList<Object> list = instance().getList(testName.getMethodName());
         String connectionString = mongoContainer.getConnectionString();
         Stream<?> sourceBuilder = MongoDBSourceBuilder.stream(SOURCE_NAME, () -> mongoClient(connectionString))
-                                                      .database(DB_NAME)
+                                                      .database(defaultDatabase())
                                                       .collection(testName.getMethodName(), Document.class);
         sourceBuilder = streamFilters(sourceBuilder);
 
@@ -183,26 +160,16 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
         Job job = instance().getJet().newJob(pipeline);
 
-        collection().insertOne(new Document("val", 1));
-        collection().insertOne(new Document("val", 10).append("foo", "bar"));
-        collection("someOther").insertOne(new Document("val", 1000).append("foo", "bar"));
+        collection().insertOne(newDocument("val", 1));
+        collection().insertOne(newDocument("val", 10).append("foo", "bar"));
+        collection("someOther").insertOne(newDocument("val", 1000).append("foo", "bar"));
 
-        assertTrueEventually(() -> {
-            assertEquals(filter ? 1L : 2L, list.size());
-//            Document document = list.get(0);
-//            assertEquals(10, document.get("val"));
-//            assertNull(document.get("foo"));
-        });
+        assertTrueEventually(() -> contentAsserts(list, filter ? 10 : 1, 10, filter ? 1 : 2));
 
-        collection().insertOne(new Document("val", 2));
-        collection().insertOne(new Document("val", 20).append("foo", "bar"));
+        collection().insertOne(newDocument("val", 2));
+        collection().insertOne(newDocument("val", 20).append("foo", "bar"));
 
-        assertTrueEventually(() -> {
-            assertEquals(filter ? 2L : 4L, list.stream().distinct().count());
-//            Document document = list.get(1);
-//            assertEquals(20, document.get("val"));
-//            assertNull(document.get("foo"));
-        });
+        assertTrueEventually(() -> contentAsserts(list, filter ? 10 : 1, 20, filter ? 2 : 4));
         job.cancel();
     }
 
@@ -214,7 +181,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
         Stream<?> builder = MongoDBSourceBuilder
                 .stream(SOURCE_NAME, () -> MongoClients.create(connectionString))
-                .database(DB_NAME);
+                .database(defaultDatabase());
         builder = streamFilters(builder);
 
         Pipeline pipeline = Pipeline.create();
@@ -228,40 +195,28 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         MongoCollection<Document> col1 = collection("col1");
         MongoCollection<Document> col2 = collection("col2");
 
-        col1.insertOne(new Document("val", 1));
-        col1.insertOne(new Document("val", 10).append("foo", "bar"));
+        col1.insertOne(newDocument("val", 1));
+        col1.insertOne(newDocument("val", 10).append("foo", "bar"));
 
-        col2.insertOne(new Document("val", 2));
-        col2.insertOne(new Document("val", 11).append("foo", "bar"));
+        col2.insertOne(newDocument("val", 2));
+        col2.insertOne(newDocument("val", 11).append("foo", "bar"));
 
-        assertTrueEventually(() -> {
-            assertEquals(filter ? 2 : 4, list.size());
-//            list.forEach(document -> assertNull(document.get("foo")));
-//
-//            assertEquals(10, list.get(0).get("val"));
-//            assertEquals(11, list.get(1).get("val"));
+        assertTrueEventually(() -> contentAsserts(list, filter ? 10 : 1, 11, filter ? 2 : 4), 5);
 
-        });
+        col1.insertOne(newDocument("val", 3));
+        col1.insertOne(newDocument("val", 12).append("foo", "bar"));
 
-        col1.insertOne(new Document("val", 3));
-        col1.insertOne(new Document("val", 12).append("foo", "bar"));
+        col2.insertOne(newDocument("val", 4));
+        col2.insertOne(newDocument("val", 13).append("foo", "bar"));
 
-        col2.insertOne(new Document("val", 4));
-        col2.insertOne(new Document("val", 13).append("foo", "bar"));
-
-        assertTrueEventually(() -> {
-            assertEquals(filter ? 4 : 8, list.size());
-//            list.forEach(document -> assertNull(document.get("foo")));
-//
-//            assertEquals(12, list.get(2).get("val"));
-//            assertEquals(13, list.get(3).get("val"));
-        });
+        assertTrueEventually(() -> contentAsserts(list, filter ? 10 : 1, 13, filter ? 4 : 8), 5);
 
     }
 
     @Test
     public void testStream_whenWatchAll() {
-        IList<Object> list = instance().getList("testStream_whenWatchAll");
+        sleepSeconds(1);
+        IList<Object> list = instance().getList(testName.getMethodName());
 
         String connectionString = mongoContainer.getConnectionString();
 
@@ -272,48 +227,38 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         pipeline.readFrom(builder.build())
                 .withNativeTimestamps(0)
                 .setLocalParallelism(2)
+                .peek()
                 .writeTo(Sinks.list(list));
 
         Job job = instance().getJet().newJob(pipeline);
 
-        MongoCollection<Document> col1 = collection("db1", "col1");
-        MongoCollection<Document> col2 = collection("db1", "col2");
-        MongoCollection<Document> col3 = collection("db2", "col3");
+        MongoCollection<Document> col1 = collection("testDb1", "col1");
+        MongoCollection<Document> col2 = collection("testDb1", "col2");
+        MongoCollection<Document> col3 = collection("testDb2", "col3");
 
-        col1.insertOne(new Document("val", 1));
-        col1.insertOne(new Document("val", 11).append("foo", "bar"));
-        col2.insertOne(new Document("val", 2));
-        col2.insertOne(new Document("val", 12).append("foo", "bar"));
-        col3.insertOne(new Document("val", 3));
-        col3.insertOne(new Document("val", 13).append("foo", "bar"));
+        col1.insertOne(newDocument("val", 1));
+        col1.insertOne(newDocument("val", 11).append("foo", "bar").append("testName", testName.getMethodName()));
+        col2.insertOne(newDocument("val", 2));
+        col2.insertOne(newDocument("val", 12).append("foo", "bar").append("testName", testName.getMethodName()));
+        col3.insertOne(newDocument("val", 3).append("testName", testName.getMethodName()));
+        col3.insertOne(newDocument("val", 13).append("foo", "bar").append("testName", testName.getMethodName()));
 
-        assertTrueEventually(() -> {
-            // note 7 here, not 6: it's because we have artificial db used in AbstractMongoDbTest
-            assertEquals(filter ? 3 : 7, list.size());
-//            list.forEach(document -> assertNull(document.get("foo")));
+        assertTrueEventually(() -> contentAsserts(list, filter ? 11 : 1, 13, filter ? 3 : 6), 5);
 
-//            assertEquals(11, list.get(0).get("val"));
-//            assertEquals(12, list.get(1).get("val"));
-//            assertEquals(13, list.get(2).get("val"));
-        });
+        col1.insertOne(newDocument("val", 4).append("testName", testName.getMethodName()));
+        col1.insertOne(newDocument("val", 14).append("foo", "bar").append("testName", testName.getMethodName()));
+        col2.insertOne(newDocument("val", 5).append("test", testName.getMethodName()));
+        col2.insertOne(newDocument("val", 15).append("foo", "bar").append("testName", testName.getMethodName()));
+        col2.insertOne(newDocument("val", 6));
+        col2.insertOne(newDocument("val", 16).append("foo", "bar").append("testName", testName.getMethodName()));
 
-        col1.insertOne(new Document("val", 4));
-        col1.insertOne(new Document("val", 14).append("foo", "bar"));
-        col2.insertOne(new Document("val", 5));
-        col2.insertOne(new Document("val", 15).append("foo", "bar"));
-        col2.insertOne(new Document("val", 6));
-        col2.insertOne(new Document("val", 16).append("foo", "bar"));
-
-        assertTrueEventually(() -> {
-            assertEquals(filter ? 6 : 13, list.size());
-//            list.forEach(document -> assertNull(document.get("foo")));
-
-//            assertEquals(14, list.get(3).get("val"));
-//            assertEquals(15, list.get(4).get("val"));
-//            assertEquals(16, list.get(5).get("val"));
-        });
+        assertTrueEventually(() -> contentAsserts(list, filter ? 11  : 1, 16, filter ? 6 : 12));
 
         job.cancel();
+    }
+
+    private Document newDocument(String key1, Object val1) {
+        return new Document(key1, val1).append("testName", testName.getMethodName());
     }
 
     @Nonnull
@@ -327,7 +272,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
             sourceBuilder = sourceBuilder.filter(eq("operationType", "insert"));
         }
         if (projection) {
-            sourceBuilder = sourceBuilder.project(include("fullDocument.val"));
+            sourceBuilder = sourceBuilder.project(include("fullDocument.val", "fullDocument.testName"));
         }
         if (map) {
             sourceBuilder = sourceBuilder.mapFn(streamToClass(KV.class));
@@ -336,10 +281,42 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         return sourceBuilder;
     }
 
+    private void contentAsserts(IList<Object> list, int expectedFirst, int expectedLast, int expectedSize) {
+        List<Object> local = new ArrayList<>(list);
+        String testName = this.testName.getMethodName();
+        if (map) {
+            local.removeIf(e -> !testName.equals(((KV) e).testName));
+            local.sort(comparingInt(e -> ((KV) e).val));
+
+            assertEquals(expectedSize, local.size());
+            KV actualFirst = (KV) local.get(0);
+            KV actualLast = (KV) local.get(local.size() - 1);
+            if (projection) {
+                assertNull(actualFirst.key);
+            }
+            assertEquals(expectedFirst, actualFirst.val.intValue());
+            assertEquals(expectedLast, actualLast.val.intValue());
+        } else {
+            local.removeIf(e -> !testName.equals(((Document) e).get("testName")));
+            local.sort(comparingInt(e -> ((Document) e).getInteger("val")));
+
+            assertEquals(expectedSize, local.size());
+            Document actualFirst = (Document) local.get(0);
+            Document actualLast = (Document) local.get(local.size() - 1);
+            if (projection) {
+                assertNull(actualFirst.get("key"));
+            }
+            assertEquals(expectedFirst, actualFirst.getInteger("val").intValue());
+            assertEquals(expectedLast, actualLast.getInteger("val").intValue());
+        }
+    }
+
     @SuppressWarnings("unused") // getters/setters are for Mongo converter
     public static class KV {
         private Integer key;
         private Integer val;
+        private String testName;
+
         public KV() {}
 
         public int getKey() {
@@ -356,6 +333,14 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
         public void setVal(int val) {
             this.val = val;
+        }
+
+        public String getTestName() {
+            return testName;
+        }
+
+        public void setTestName(String testName) {
+            this.testName = testName;
         }
     }
 
