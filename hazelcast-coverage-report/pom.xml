@@ -45,8 +45,8 @@
 
 
     <dependencies>
-        <!-- All modules (also inner-modules) must be included here for coverage calculating
-             Use dependencies-list.sh script to collect dependencies
+        <!-- All modules and submodules must be included here for coverage calculating
+             To update use dependencies-list.sh script which prints dependencies list
         -->
         <dependency>
             <groupId>com.hazelcast</groupId>
