@@ -30,8 +30,10 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
-import org.mockito.MockedStatic;
-import org.mockito.Mockito;
+import org.junit.runner.RunWith;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
 
 import static org.mockito.Matchers.any;
 import static org.mockito.Matchers.anyString;
@@ -44,6 +46,8 @@ import static org.mockito.Mockito.when;
  * Test whether OnJoinCacheOperation logs warning, fails or succeeds under different JCache API availability
  * in classpath.
  */
+@RunWith(PowerMockRunner.class)
+@PrepareForTest(JCacheDetector.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class OnJoinCacheOperationTest {
 
@@ -56,6 +60,7 @@ public class OnJoinCacheOperationTest {
 
     @Before
     public void setUp() {
+        PowerMockito.mockStatic(JCacheDetector.class);
         when(nodeEngine.getConfigClassLoader()).thenReturn(classLoader);
         when(nodeEngine.getLogger(any(Class.class))).thenReturn(logger);
     }
@@ -63,61 +68,54 @@ public class OnJoinCacheOperationTest {
     @Test
     public void test_cachePostJoinOperationSucceeds_whenJCacheAvailable_noWarningIsLogged() throws Exception {
         // JCacheDetector finds JCache in classpath
-        try (MockedStatic<JCacheDetector> mock = Mockito.mockStatic(JCacheDetector.class)) {
-            mock.when(() -> JCacheDetector.isJCacheAvailable(classLoader)).thenReturn(true);
-            // node engine returns mock CacheService
-            when(nodeEngine.getService(CacheService.SERVICE_NAME)).thenReturn(mock(ICacheService.class));
+        when(JCacheDetector.isJCacheAvailable(classLoader)).thenReturn(true);
+        // node engine returns mock CacheService
+        when(nodeEngine.getService(CacheService.SERVICE_NAME)).thenReturn(mock(ICacheService.class));
 
-            OnJoinCacheOperation onJoinCacheOperation = new OnJoinCacheOperation();
-            onJoinCacheOperation.setNodeEngine(nodeEngine);
+        OnJoinCacheOperation onJoinCacheOperation = new OnJoinCacheOperation();
+        onJoinCacheOperation.setNodeEngine(nodeEngine);
 
-            onJoinCacheOperation.run();
+        onJoinCacheOperation.run();
 
-            verify(nodeEngine).getConfigClassLoader();
-            verify(nodeEngine).getService(CacheService.SERVICE_NAME);
-            // verify logger was not invoked
-            verify(logger, never()).warning(anyString());
-        }
+        verify(nodeEngine).getConfigClassLoader();
+        verify(nodeEngine).getService(CacheService.SERVICE_NAME);
+        // verify logger was not invoked
+        verify(logger, never()).warning(anyString());
     }
 
     @Test
     public void test_cachePostJoinOperationSucceeds_whenJCacheNotAvailable_noCacheConfigs() throws Exception {
-        try (MockedStatic<JCacheDetector> mock = Mockito.mockStatic(JCacheDetector.class)) {
-            mock.when(() -> JCacheDetector.isJCacheAvailable(classLoader)).thenReturn(false);
+        when(JCacheDetector.isJCacheAvailable(classLoader)).thenReturn(false);
 
-            OnJoinCacheOperation onJoinCacheOperation = new OnJoinCacheOperation();
-            onJoinCacheOperation.setNodeEngine(nodeEngine);
+        OnJoinCacheOperation onJoinCacheOperation = new OnJoinCacheOperation();
+        onJoinCacheOperation.setNodeEngine(nodeEngine);
 
-            onJoinCacheOperation.run();
+        onJoinCacheOperation.run();
 
-            verify(nodeEngine).getConfigClassLoader();
-            // verify a warning was logged
-            verify(logger).warning(anyString());
-            // verify CacheService instance was not requested in OnJoinCacheOperation.run
-            verify(nodeEngine, never()).getService(CacheService.SERVICE_NAME);
-        }
+        verify(nodeEngine).getConfigClassLoader();
+        // verify a warning was logged
+        verify(logger).warning(anyString());
+        // verify CacheService instance was not requested in OnJoinCacheOperation.run
+        verify(nodeEngine, never()).getService(CacheService.SERVICE_NAME);
     }
 
     @Test
     public void test_cachePostJoinOperationFails_whenJCacheNotAvailable_withCacheConfigs() throws Exception {
+        // JCache is not available in classpath
+        when(JCacheDetector.isJCacheAvailable(classLoader)).thenReturn(false);
+        // node engine throws HazelcastException due to missing CacheService
+        when(nodeEngine.getService(CacheService.SERVICE_NAME)).thenThrow(new HazelcastException("CacheService not found"));
 
-        try (MockedStatic<JCacheDetector> mock = Mockito.mockStatic(JCacheDetector.class)) {
-            // JCache is not available in classpath
-            mock.when(() -> JCacheDetector.isJCacheAvailable(classLoader)).thenReturn(false);
-            // node engine throws HazelcastException due to missing CacheService
-            when(nodeEngine.getService(CacheService.SERVICE_NAME)).thenThrow(new HazelcastException("CacheService not found"));
+        // some CacheConfigs are added in the OnJoinCacheOperation (so JCache is actually in use in the rest of the cluster)
+        OnJoinCacheOperation onJoinCacheOperation = new OnJoinCacheOperation();
+        onJoinCacheOperation.addCacheConfig(new CacheConfig("test"));
+        onJoinCacheOperation.setNodeEngine(nodeEngine);
 
-            // some CacheConfigs are added in the OnJoinCacheOperation (so JCache is actually in use in the rest of the cluster)
-            OnJoinCacheOperation onJoinCacheOperation = new OnJoinCacheOperation();
-            onJoinCacheOperation.addCacheConfig(new CacheConfig("test"));
-            onJoinCacheOperation.setNodeEngine(nodeEngine);
+        expectedException.expect(HazelcastException.class);
+        onJoinCacheOperation.run();
 
-            expectedException.expect(HazelcastException.class);
-            onJoinCacheOperation.run();
-
-            verify(nodeEngine).getConfigClassLoader();
-            verify(nodeEngine).getService(CacheService.SERVICE_NAME);
-            verify(logger, never()).warning(anyString());
-        }
+        verify(nodeEngine).getConfigClassLoader();
+        verify(nodeEngine).getService(CacheService.SERVICE_NAME);
+        verify(logger, never()).warning(anyString());
     }
 }

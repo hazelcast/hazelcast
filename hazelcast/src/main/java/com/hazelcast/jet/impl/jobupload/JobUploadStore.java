@@ -48,9 +48,9 @@ public class JobUploadStore {
         }
     }
 
-    public void processJarMetaData(JobMetaDataParameterObject parameterObject) {
+    public void processJobMetaData(JobMetaDataParameterObject parameterObject) {
         UUID sessionId = parameterObject.getSessionId();
-        String message = String.format("processJarMetaData : Session : %s ", sessionId);
+        String message = String.format("processJobMetaData : Session : %s ", sessionId);
         logger.info(message);
 
         // Create a new JobUploadStatus object and save parameters

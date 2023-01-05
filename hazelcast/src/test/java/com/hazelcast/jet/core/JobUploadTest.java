@@ -16,19 +16,20 @@
 
 package com.hazelcast.jet.core;
 
+import com.hazelcast.client.config.ClientConfig;
+import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastBootstrap;
-import com.hazelcast.internal.util.Sha256Util;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.jet.test.SerialTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
-import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import java.io.IOException;
@@ -46,9 +47,9 @@ import static java.util.Collections.emptyList;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Mockito.mockStatic;
+import static org.mockito.Mockito.when;
 
-@Category({QuickTest.class})
+@Category({SlowTest.class, SerialTest.class})
 public class JobUploadTest extends JetTestSupport {
 
     @Test
@@ -56,7 +57,6 @@ public class JobUploadTest extends JetTestSupport {
         Path jarPath = getJarPath();
         String sha256Hex = calculateSha256Hex(jarPath);
         assertEquals("bba07be19c71bfe5fd51dc681f807ab212efd4d6e7c3f6380dbfcbdcb5deb073", sha256Hex);
-
     }
 
     @Test
@@ -66,7 +66,7 @@ public class JobUploadTest extends JetTestSupport {
         JetService jetService = client.getJet();
         List<String> jobParameters = emptyList();
         assertThrows(JetException.class, () ->
-                jetService.uploadJob(getJarPath(),
+                jetService.submitJobJar(getJarPath(),
                         null,
                         null,
                         null,
@@ -83,7 +83,7 @@ public class JobUploadTest extends JetTestSupport {
         JetService jetService = hazelcastInstance.getJet();
         List<String> jobParameters = emptyList();
         assertThrows(JetException.class, () ->
-                jetService.uploadJob(getJarPath(),
+                jetService.submitJobJar(getJarPath(),
                         null,
                         null,
                         null,
@@ -95,7 +95,7 @@ public class JobUploadTest extends JetTestSupport {
     }
 
     @Test
-    public void test_jarUpload_whenResourceUploadIsEnabled() {
+    public void test_jarUploadByClient_whenResourceUploadIsEnabled() {
         // Reset the singleton because a new HazelcastInstance will be created for the test
         HazelcastBootstrap.resetSupplier();
 
@@ -108,7 +108,7 @@ public class JobUploadTest extends JetTestSupport {
         JetService jetService = client.getJet();
         List<String> jobParameters = emptyList();
 
-        jetService.uploadJob(getJarPath(),
+        jetService.submitJobJar(getJarPath(),
                 null,
                 null,
                 null,
@@ -119,7 +119,30 @@ public class JobUploadTest extends JetTestSupport {
     }
 
     @Test
-    public void test_jarUpload_WithIncorrectChecksum() {
+    public void test_jarUploadByMember_whenResourceUploadIsEnabled() {
+        // Reset the singleton because a new HazelcastInstance will be created for the test
+        HazelcastBootstrap.resetSupplier();
+
+        Config config = smallInstanceConfig();
+        JetConfig jetConfig = config.getJetConfig();
+        jetConfig.setResourceUploadEnabled(true);
+
+        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+        JetService jetService = hazelcastInstance.getJet();
+        List<String> jobParameters = emptyList();
+
+        jetService.submitJobJar(getJarPath(),
+                null,
+                null,
+                null,
+                jobParameters);
+
+        assertEqualsEventually(() -> jetService.getJobs().size(), 1);
+        hazelcastInstance.shutdown();
+    }
+
+    @Test
+    public void test_jarUpload_WithIncorrectChecksum() throws IOException, NoSuchAlgorithmException {
         // Reset the singleton because a new HazelcastInstance will be created for the test
         HazelcastBootstrap.resetSupplier();
 
@@ -129,30 +152,30 @@ public class JobUploadTest extends JetTestSupport {
 
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
         HazelcastInstance client = createHazelcastClient();
-        JetService jetService = client.getJet();
+
+        // Mock the JetClientInstanceImpl to return an incorrect checksum
+        JetClientInstanceImpl jetService = (JetClientInstanceImpl) client.getJet();
+        JetClientInstanceImpl spyJetService = Mockito.spy(jetService);
+
+        Path jarPath = getJarPath();
+        when(spyJetService.calculateSha256Hex(jarPath)).thenReturn("1");
         List<String> jobParameters = emptyList();
 
-        try (MockedStatic<Sha256Util> mocked = mockStatic(Sha256Util.class)) {
-            mocked.when(() -> Sha256Util.calculateSha256Hex(Mockito.any())).thenReturn("1");
+        assertThrows(JetException.class, () ->
+                spyJetService.submitJobJar(jarPath,
+                        null,
+                        null,
+                        null,
+                        jobParameters));
 
-            assertThrows(JetException.class, () ->
-                    jetService.uploadJob(getJarPath(),
-                            null,
-                            null,
-                            null,
-                            jobParameters));
+        assertEqualsEventually(() -> jetService.getJobs().size(), 0);
+        hazelcastInstance.shutdown();
 
-            assertEqualsEventually(() -> jetService.getJobs().size(), 0);
-            hazelcastInstance.shutdown();
-        }
     }
 
     @Test
     public void test_jarUpload_whenResourceUploadIsEnabled_withSmallBuffer() {
 
-        // Change the part buffer size
-        System.setProperty(JetClientInstanceImpl.PART_SIZE, "100");
-
         // Reset the singleton because a new HazelcastInstance will be created for the test
         HazelcastBootstrap.resetSupplier();
 
@@ -161,11 +184,16 @@ public class JobUploadTest extends JetTestSupport {
         jetConfig.setResourceUploadEnabled(true);
 
         HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
-        HazelcastInstance client = createHazelcastClient();
+
+        // Change the part buffer size
+        ClientConfig clientConfig = new ClientConfig();
+        clientConfig.setProperty(ClientProperty.JOB_UPLOAD_PART_SIZE.getName(),"100");
+        HazelcastInstance client = createHazelcastClient(clientConfig);
+
         JetService jetService = client.getJet();
         List<String> jobParameters = emptyList();
 
-        jetService.uploadJob(getJarPath(),
+        jetService.submitJobJar(getJarPath(),
                 null,
                 null,
                 null,
@@ -175,6 +203,7 @@ public class JobUploadTest extends JetTestSupport {
         hazelcastInstance.shutdown();
     }
 
+    // This test is slow because it is trying to upload a lot of jobs
     @Test
     public void test_stress_jarUpload_whenResourceUploadIsEnabled() {
 
@@ -195,7 +224,7 @@ public class JobUploadTest extends JetTestSupport {
                 JetService jetService = client.getJet();
                 List<String> jobParameters = emptyList();
 
-                jetService.uploadJob(getJarPath(),
+                jetService.submitJobJar(getJarPath(),
                         null,
                         null,
                         null,
@@ -226,14 +255,14 @@ public class JobUploadTest extends JetTestSupport {
         List<String> jobParameters = emptyList();
 
         String job1 = "job1";
-        jetService.uploadJob(getJarPath(),
+        jetService.submitJobJar(getJarPath(),
                 null,
                 job1,
                 null,
                 jobParameters);
 
         String job2 = "job2";
-        jetService.uploadJob(getJarPath(),
+        jetService.submitJobJar(getJarPath(),
                 null,
                 job2,
                 null,

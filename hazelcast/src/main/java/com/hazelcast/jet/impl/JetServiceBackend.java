@@ -407,7 +407,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
 
     // Store the metadata about the job jar that is uploaded
     public void storeJobMetaData(JobMetaDataParameterObject parameterObject) {
-        jobUploadStore.processJarMetaData(parameterObject);
+        jobUploadStore.processJobMetaData(parameterObject);
     }
 
     // Store a part of job jar that is uploaded
@@ -434,7 +434,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         logger.info("runJar Starting job for session id :" + parameterObject.getSessionId());
 
         try {
-            HazelcastBootstrap.executeJar(this::getHazelcastClient,
+            HazelcastBootstrap.executeJar(this::getHazelcastInstance,
                     parameterObject.getJarPath().toString(),
                     parameterObject.getSnapshotName(),
                     parameterObject.getJobName(),
@@ -453,7 +453,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         return true;
     }
 
-    private HazelcastInstance getHazelcastClient() {
+    private HazelcastInstance getHazelcastInstance() {
         return getNodeEngine().getHazelcastInstance();
     }
 

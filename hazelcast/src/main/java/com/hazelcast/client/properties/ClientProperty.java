@@ -311,6 +311,9 @@ public final class ClientProperty {
     public static final HazelcastProperty METRICS_COLLECTION_FREQUENCY
             = new HazelcastProperty("hazelcast.client.metrics.collection.frequency", 5);
 
+    public static final HazelcastProperty JOB_UPLOAD_PART_SIZE
+            = new HazelcastProperty("hazelcast.jobupload.partsize", 10_000_000);
+
 
     private ClientProperty() {
     }

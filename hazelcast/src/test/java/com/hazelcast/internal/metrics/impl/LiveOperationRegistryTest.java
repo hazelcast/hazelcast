@@ -23,8 +23,10 @@ import com.hazelcast.spi.impl.operationservice.OperationAccessor;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
 
 import java.net.UnknownHostException;
@@ -33,28 +35,28 @@ import java.util.Set;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.mock;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class LiveOperationRegistryTest {
 
-    private final LiveOperationRegistry liveOperationRegistry = new LiveOperationRegistry();
+    @Rule
+    public ExpectedException exception = ExpectedException.none();
+
+    private LiveOperationRegistry r = new LiveOperationRegistry();
 
     @Test
     public void when_registerDuplicateCallId_then_exception() throws UnknownHostException {
-        Operation operation = createOperation("1.2.3.4", 1234, 2222L);
-        liveOperationRegistry.register(operation);
+        r.register(createOperation("1.2.3.4", 1234, 2222L));
 
         // this should not fail
-        liveOperationRegistry.register(createOperation("1.2.3.4", 1234, 2223L));
+        r.register(createOperation("1.2.3.4", 1234, 2223L));
 
         // adding a duplicate, expecting failure
-        assertThrows(IllegalStateException.class,
-                () -> liveOperationRegistry.register(operation));
-
+        exception.expect(IllegalStateException.class);
+        r.register(createOperation("1.2.3.4", 1234, 2222L));
     }
 
     @Test
@@ -62,51 +64,49 @@ public class LiveOperationRegistryTest {
         Operation op1 = createOperation("1.2.3.4", 1234, 2222L);
         Operation op2 = createOperation("1.2.3.4", 1234, 2223L);
 
-        liveOperationRegistry.register(op1);
-        liveOperationRegistry.register(op2);
-        liveOperationRegistry.deregister(op1);
-        liveOperationRegistry.deregister(op2);
+        r.register(op1);
+        r.register(op2);
+        r.deregister(op1);
+        r.deregister(op2);
     }
 
     @Test
     public void when_deregisterNotExistingAddress_then_fail() throws UnknownHostException {
         Operation op1 = createOperation("1.2.3.4", 1234, 2222L);
-        assertThrows(IllegalStateException.class, () -> liveOperationRegistry.deregister(op1));
+        exception.expect(IllegalStateException.class);
+        r.deregister(op1);
     }
 
     @Test
     public void when_deregisterNotExistingCallId_then_fail() throws UnknownHostException {
-        Operation op1 = createOperation("1.2.3.4", 1234, 2222L);
-        Operation op2 = createOperation("1.2.3.4", 1234, 2223L);
-
-        liveOperationRegistry.register(op1);
-        assertThrows(IllegalStateException.class,
-                () -> liveOperationRegistry.deregister(op2));
+        r.register(createOperation("1.2.3.4", 1234, 2222L));
+        exception.expect(IllegalStateException.class);
+        r.deregister(createOperation("1.2.3.4", 1234, 2223L));
     }
 
     @Test
     public void testPopulate() throws UnknownHostException {
-        liveOperationRegistry.register(createOperation("1.2.3.4", 1234, 2223L));
-        liveOperationRegistry.register(createOperation("1.2.3.4", 1234, 2222L));
-        liveOperationRegistry.register(createOperation("1.2.3.3", 1234, 2222L));
+        r.register(createOperation("1.2.3.4", 1234, 2223L));
+        r.register(createOperation("1.2.3.4", 1234, 2222L));
+        r.register(createOperation("1.2.3.3", 1234, 2222L));
 
         CallsPerMember liveOperations = new CallsPerMember(new Address("1.2.3.3", 1234));
-        liveOperationRegistry.populate(liveOperations);
+        r.populate(liveOperations);
 
         Set<Address> addresses = liveOperations.addresses();
-        assertEquals(2, addresses.size());
+        assertEquals(addresses.size(), 2);
         assertTrue(addresses.contains(new Address("1.2.3.4", 1234)));
         assertTrue(addresses.contains(new Address("1.2.3.3", 1234)));
         long[] runningOperations = liveOperations.toOpControl(new Address("1.2.3.4", 1234)).runningOperations();
         assertTrue(Arrays.equals(new long[]{2222, 2223}, runningOperations)
-                   || Arrays.equals(new long[]{2223, 2222}, runningOperations));
+                || Arrays.equals(new long[]{2223, 2222}, runningOperations));
         runningOperations = liveOperations.toOpControl(new Address("1.2.3.3", 1234)).runningOperations();
         assertArrayEquals(new long[]{2222}, runningOperations);
         //callIds.
     }
 
     private Operation createOperation(String host, int port, long callId) throws UnknownHostException {
-        Operation op = spy(Operation.class);
+        Operation op = mock(Operation.class);
         Address address = new Address(host, port);
 
         OperationAccessor.setCallerAddress(op, address);

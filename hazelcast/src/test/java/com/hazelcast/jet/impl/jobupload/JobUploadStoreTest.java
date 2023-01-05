@@ -16,11 +16,15 @@
 
 package com.hazelcast.jet.impl.jobupload;
 
+import com.hazelcast.test.HazelcastParallelClassRunner;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
+import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
-import org.mockito.MockedStatic;
 import org.mockito.MockitoAnnotations;
 import org.mockito.Spy;
 
@@ -28,20 +32,23 @@ import java.math.BigInteger;
 import java.nio.file.Files;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.mockStatic;
 import static org.mockito.Mockito.when;
 
+@RunWith(HazelcastParallelClassRunner.class)
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class JobUploadStoreTest {
     @Spy
     ConcurrentHashMap<UUID, JobUploadStatus> jobMap;
@@ -56,26 +63,21 @@ public class JobUploadStoreTest {
     @Test
     public void testCleanExpiredUploads() {
         UUID sessionID = UUID.randomUUID();
-        JobUploadStatus jobUploadStatus;
 
-        //Mock static method of Instant.now() to return an expired time
-        Instant expiredTime = Instant.now().minus(1, ChronoUnit.MINUTES);
-        try (MockedStatic<Instant> mocked = mockStatic(Instant.class)) {
-            Instant mockInstant = mock(Instant.class);
-            when(mockInstant.now()).thenReturn(expiredTime);
+        Instant now = Instant.now();
+        Instant expiredTime = now.minus(1, ChronoUnit.MINUTES);
 
-            Instant now = Instant.now();
+        JobMetaDataParameterObject jobMetaDataParameterObject = new JobMetaDataParameterObject();
+        //Create a mock clock
+        Clock mock = mock(Clock.class);
+        when(mock.instant()).thenReturn(expiredTime, now);
+        JobUploadStatus jobUploadStatus = new JobUploadStatus(jobMetaDataParameterObject, mock);
 
-            JobMetaDataParameterObject jobMetaDataParameterObject = new JobMetaDataParameterObject();
-            jobUploadStatus = new JobUploadStatus(jobMetaDataParameterObject);
-        }
 
         jobMap.put(sessionID, jobUploadStatus);
         jobUploadStore.cleanExpiredUploads();
 
-        assertEquals(0, jobMap.size());
-
-
+        assertThat(jobMap).hasSize(0);
     }
 
     @Test
@@ -93,7 +95,7 @@ public class JobUploadStoreTest {
         UUID sessionID = UUID.randomUUID();
         JobMetaDataParameterObject parameterObject = new JobMetaDataParameterObject();
         parameterObject.setSessionId(sessionID);
-        jobUploadStore.processJarMetaData(parameterObject);
+        jobUploadStore.processJobMetaData(parameterObject);
 
         assertEquals(1, jobMap.size());
 
@@ -112,7 +114,7 @@ public class JobUploadStoreTest {
         parameterObject.setSha256Hex(sha256Hex);
 
         // Send meta data
-        jobUploadStore.processJarMetaData(parameterObject);
+        jobUploadStore.processJobMetaData(parameterObject);
 
 
         // Send part 1

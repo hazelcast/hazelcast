@@ -29,6 +29,7 @@ import com.hazelcast.client.impl.protocol.codec.JetUploadJobMultipartCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.Sha256Util;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
@@ -36,6 +37,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
 import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.properties.HazelcastProperties;
 
 import javax.annotation.Nonnull;
 import java.io.File;
@@ -49,19 +51,19 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.function.Function;
 
-import static com.hazelcast.internal.util.Sha256Util.calculateSha256Hex;
+import static com.hazelcast.client.properties.ClientProperty.JOB_UPLOAD_PART_SIZE;
 import static com.hazelcast.jet.impl.operation.GetJobIdsOperation.ALL_JOBS;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
+import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 
 /**
  * Client-side {@code JetInstance} implementation
  */
 public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
-    public static final String PART_SIZE = "hazelcast.jobupload.partsize";
+    //public static final String PART_SIZE = "hazelcast.jobupload.partsize";
 
-    private static final int DEFAULT_PART_SIZE = 10_000_000;
     private final HazelcastClientInstanceImpl client;
     private final SerializationService serializationService;
 
@@ -142,8 +144,8 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     }
 
     @Override
-    public void uploadJob(@Nonnull Path jarPath, String snapshotName, String jobName, String mainClass,
-                          @Nonnull List<String> jobParameters) {
+    public void submitJobJar(@Nonnull Path jarPath, String snapshotName, String jobName, String mainClass,
+                             @Nonnull List<String> jobParameters) {
 
         try {
             UUID sessionId = UuidUtil.newSecureUUID();
@@ -151,8 +153,11 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
             String sha256Hex = calculateSha256Hex(jarPath);
 
             // Send job meta data
-            sendJobMetaData(sessionId, sha256Hex, jarSize, snapshotName, jobName, mainClass, jobParameters);
-
+            boolean result = sendJobMetaData(sessionId, sha256Hex, jarSize, snapshotName, jobName, mainClass, jobParameters);
+            if (result) {
+                logFine(getLogger(), "Submitted JobMetaData successfully for jarPath: %s", jarPath);
+            }
+            // Send job parts
             sendJobMultipart(jarPath, sessionId, jarSize);
 
         } catch (IOException | NoSuchAlgorithmException exception) {
@@ -160,12 +165,15 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         }
     }
 
-    private void sendJobMetaData(UUID sessionId, String md5Hex, long jarSize, String snapshotName, String jobName,
+    public String calculateSha256Hex(Path jarPath) throws IOException, NoSuchAlgorithmException {
+        return Sha256Util.calculateSha256Hex(jarPath);
+    }
+    private boolean sendJobMetaData(UUID sessionId, String md5Hex, long jarSize, String snapshotName, String jobName,
                                  String mainClass, List<String> jobParameters) {
 
         ClientMessage jobMetaDataRequest = JetUploadJobMetaDataCodec.encodeRequest(sessionId, md5Hex, jarSize, snapshotName,
                 jobName, mainClass, jobParameters);
-        invokeRequestOnMasterAndDecodeResponse(jobMetaDataRequest, JetUploadJobMetaDataCodec::decodeResponse);
+        return invokeRequestOnMasterAndDecodeResponse(jobMetaDataRequest, JetUploadJobMetaDataCodec::decodeResponse);
     }
 
     private void sendJobMultipart(Path jarPath, UUID sessionId, long jarSize) throws IOException {
@@ -218,21 +226,13 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         }
     }
 
-    // Calculate the buffer size from System.properties if defined, otherwise use default value
+    // Calculate the buffer size from properties if defined, otherwise use default value
     protected int calculatePartBufferSize() {
-        int partSize = 0;
-        try {
-            partSize = Integer.getInteger(PART_SIZE, DEFAULT_PART_SIZE);
-        } catch (Exception ignored) {
-            //ignore the exception
-        }
-        return partSize;
+        HazelcastProperties properties = client.getProperties();
+        return properties.getIntegerOrDefault(JOB_UPLOAD_PART_SIZE);
     }
 
     protected int calculateTotalParts(long jarSize, int partSize) {
         return (int) Math.ceil(jarSize / (double) partSize);
     }
-
-    // Calculate the MD5 of given file
-
 }

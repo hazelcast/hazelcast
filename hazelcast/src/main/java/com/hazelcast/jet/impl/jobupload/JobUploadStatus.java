@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.NoSuchAlgorithmException;
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 
@@ -33,36 +34,45 @@ import static com.hazelcast.internal.util.Sha256Util.calculateSha256Hex;
 
 public class JobUploadStatus {
 
-    private static ILogger logger = Logger.getLogger(JobUploadStatus.class);
+    private static final ILogger LOGGER = Logger.getLogger(JobUploadStatus.class);
 
     private static final long EXPIRATION_MINUTES = 1;
 
-    private Instant lastUpdatedTime = Instant.now();
+    protected Instant lastUpdatedTime;
+    private final Clock clock;
 
     private int currentPart;
     private int totalPart;
 
     private final JobMetaDataParameterObject jobMetaDataParameterObject;
 
+
     public JobUploadStatus(JobMetaDataParameterObject parameterObject) {
+        this(parameterObject, Clock.systemUTC());
+    }
+
+    public JobUploadStatus(JobMetaDataParameterObject parameterObject, Clock clock) {
         this.jobMetaDataParameterObject = parameterObject;
+        this.clock = clock;
+        changeLastUpdatedTime();
     }
 
     public boolean isExpired() {
-        Instant now = Instant.now();
+        Instant now = clock.instant();
         Duration between = Duration.between(lastUpdatedTime, now);
         // Check if total number of minutes is bigger
         long minutes = between.toMinutes();
         return minutes >= EXPIRATION_MINUTES;
     }
 
+    // Called when this object is removed from JobUploadStore
     public void onRemove() {
         try {
             if (jobMetaDataParameterObject.getJarPath() != null) {
                 Files.delete(jobMetaDataParameterObject.getJarPath());
             }
         } catch (IOException exception) {
-            logger.severe("Error while deleting file : " + jobMetaDataParameterObject.getJarPath(), exception);
+            LOGGER.severe("Error while deleting file : " + jobMetaDataParameterObject.getJarPath(), exception);
         }
     }
 
@@ -90,7 +100,7 @@ public class JobUploadStatus {
         }
 
         String message = String.format("Session : %s total file size %d", parameterObject.getSessionId(), Files.size(jarPath));
-        logger.info(message);
+        LOGGER.info(message);
 
         changeLastUpdatedTime();
 
@@ -113,15 +123,15 @@ public class JobUploadStatus {
         File jarFile = jarPath.toFile();
         boolean success = jarFile.setReadable(true, true);
         if (!success) {
-            logger.info("setReadable failed on " + jarFile);
+            LOGGER.info("setReadable failed on " + jarFile);
         }
         success = jarFile.setWritable(true, true);
         if (!success) {
-            logger.info("setWritable failed on " + jarFile);
+            LOGGER.info("setWritable failed on " + jarFile);
         }
         success = jarFile.setExecutable(true, true);
         if (!success) {
-            logger.info("setExecutable failed on " + jarFile);
+            LOGGER.info("setExecutable failed on " + jarFile);
         }
         jobMetaDataParameterObject.setJarPath(jarPath);
     }
@@ -210,6 +220,6 @@ public class JobUploadStatus {
     }
 
     protected void changeLastUpdatedTime() {
-        this.lastUpdatedTime = Instant.now();
+        this.lastUpdatedTime = clock.instant();
     }
 }
