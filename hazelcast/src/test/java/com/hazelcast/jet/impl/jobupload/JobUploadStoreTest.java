@@ -77,7 +77,7 @@ public class JobUploadStoreTest {
         jobMap.put(sessionID, jobUploadStatus);
         jobUploadStore.cleanExpiredUploads();
 
-        assertThat(jobMap).hasSize(0);
+        assertThat(jobMap).isEmpty();
     }
 
     @Test

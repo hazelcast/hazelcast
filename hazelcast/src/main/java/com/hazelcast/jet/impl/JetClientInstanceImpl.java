@@ -62,8 +62,6 @@ import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
  */
 public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
-    //public static final String PART_SIZE = "hazelcast.jobupload.partsize";
-
     private final HazelcastClientInstanceImpl client;
     private final SerializationService serializationService;
 
