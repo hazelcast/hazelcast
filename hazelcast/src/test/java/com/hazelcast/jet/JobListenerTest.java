@@ -19,6 +19,7 @@ package com.hazelcast.jet;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JetTestSupport;
+import com.hazelcast.jet.impl.JobService;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sinks;
@@ -41,6 +42,7 @@ import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CancellationException;
@@ -53,6 +55,7 @@ import java.util.function.Supplier;
 
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
+import static com.hazelcast.spi.impl.eventservice.impl.EventServiceTest.getEventService;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
@@ -89,6 +92,8 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
 
     @Parameter(1)
     public Supplier<HazelcastInstance> instance;
+
+    private String jobIdString;
 
     @BeforeClass
     public static void setUp() throws NoSuchFieldException {
@@ -254,7 +259,8 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
 
     @After
     public void testListenerDeregistration_onCompletion() {
-        // TODO Test server-side
+        assertTrueEventually(() -> assertTrue(Arrays.stream(instances()).allMatch(hz ->
+                getEventService(hz).getRegistrations(JobService.SERVICE_NAME, jobIdString).isEmpty())));
     }
 
     /**
@@ -273,6 +279,7 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
 
         Job job = instance.get().getJet().newJob(p, config);
         JobStatusLogger listener = new JobStatusLogger(job, jobId);
+        jobIdString = job.getIdString();
         test.accept(job, listener);
     }
 
@@ -296,6 +303,7 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
 
         Job job = instance.get().getJet().newLightJob(p);
         JobStatusLogger listener = new JobStatusLogger(job, -1);
+        jobIdString = job.getIdString();
         test.accept(job, listener);
     }
 

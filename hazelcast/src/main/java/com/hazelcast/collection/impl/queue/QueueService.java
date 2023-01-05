@@ -289,7 +289,7 @@ public class QueueService implements ManagedService, MigrationAwareService, Tran
             container.destroy();
         }
         statsMap.remove(name);
-        nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
+        nodeEngine.getEventService().deregisterAllLocalListeners(SERVICE_NAME, name);
         splitBrainProtectionConfigCache.remove(name);
     }
 

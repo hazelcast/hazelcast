@@ -395,11 +395,18 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
     }
 
     @Override
-    public void deregisterAllListeners(@Nonnull String serviceName, @Nonnull String topic) {
+    public void deregisterAllLocalListeners(@Nonnull String serviceName, @Nonnull String topic) {
         EventServiceSegment segment = getSegment(serviceName, false);
         if (segment != null) {
             segment.removeRegistrations(topic);
         }
+    }
+
+    @Override
+    public void deregisterAllListeners(@Nonnull String serviceName, @Nonnull String topic) {
+        deregisterAllLocalListeners(serviceName, topic);
+        invokeOnStableClusterSerial(nodeEngine, new DeregistrationOperationSupplier(
+                serviceName, topic, nodeEngine.getClusterService()), MAX_RETRIES);
     }
 
     public StripedExecutor getEventExecutor() {

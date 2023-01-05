@@ -95,7 +95,7 @@ public abstract class CollectionService implements ManagedService, RemoteService
         if (container != null) {
             container.destroy();
         }
-        nodeEngine.getEventService().deregisterAllListeners(getServiceName(), name);
+        nodeEngine.getEventService().deregisterAllLocalListeners(getServiceName(), name);
     }
 
     public abstract CollectionContainer getOrCreateContainer(String name, boolean backup);

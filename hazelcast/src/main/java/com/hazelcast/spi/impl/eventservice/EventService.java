@@ -171,6 +171,14 @@ public interface EventService extends Consumer<Packet>, PreJoinAwareService<OnJo
                                                        @Nonnull Object id);
 
     /**
+     * Deregisters all local listeners belonging to the given service and topic.
+     *
+     * @param serviceName service name
+     * @param topic       topic name
+     */
+    void deregisterAllLocalListeners(@Nonnull String serviceName, @Nonnull String topic);
+
+    /**
      * Deregisters all listeners belonging to the given service and topic.
      *
      * @param serviceName service name

@@ -125,7 +125,7 @@ public class NodeQueryCacheEventService implements QueryCacheEventService<EventD
         ContextMutexFactory.Mutex mutex = lifecycleMutexFactory.mutexFor(mapName);
         try {
             synchronized (mutex) {
-                eventService.deregisterAllListeners(SERVICE_NAME, cacheId);
+                eventService.deregisterAllLocalListeners(SERVICE_NAME, cacheId);
             }
         } finally {
             closeResource(mutex);

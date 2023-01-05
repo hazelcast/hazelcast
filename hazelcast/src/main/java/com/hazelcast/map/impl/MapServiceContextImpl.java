@@ -436,7 +436,7 @@ class MapServiceContextImpl implements MapServiceContext {
     public void destroyMap(String mapName) {
         // on LiteMembers we don't have a MapContainer, but we may have a Near Cache and listeners
         mapNearCacheManager.destroyNearCache(mapName);
-        nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, mapName);
+        nodeEngine.getEventService().deregisterAllLocalListeners(SERVICE_NAME, mapName);
 
         MapContainer mapContainer = mapContainers.get(mapName);
         if (mapContainer == null) {

@@ -114,7 +114,7 @@ public class EventServiceTest extends HazelcastTestSupport {
         return config;
     }
 
-    private static EventService getEventService(HazelcastInstance hz) {
+    public static EventService getEventService(HazelcastInstance hz) {
         return getNodeEngineImpl(hz).getEventService();
     }
 }

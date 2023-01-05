@@ -290,6 +290,10 @@ public class MockServerContext implements ServerContext {
             }
 
             @Override
+            public void deregisterAllLocalListeners(@Nonnull String serviceName, @Nonnull String topic) {
+            }
+
+            @Override
             public void deregisterAllListeners(@Nonnull String serviceName, @Nonnull String topic) {
             }
 

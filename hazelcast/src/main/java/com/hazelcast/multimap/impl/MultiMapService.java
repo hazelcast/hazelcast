@@ -218,7 +218,7 @@ public class MultiMapService implements ManagedService, RemoteService, ChunkedMi
                 container.destroyMultiMap(name);
             }
         }
-        nodeEngine.getEventService().deregisterAllListeners(SERVICE_NAME, name);
+        nodeEngine.getEventService().deregisterAllLocalListeners(SERVICE_NAME, name);
         splitBrainProtectionConfigCache.remove(name);
     }
 

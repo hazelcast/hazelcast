@@ -110,7 +110,7 @@ public class DestroyQueryCacheOperation extends AbstractNamedOperation {
 
     private void removeAllListeners() {
         EventService eventService = getNodeEngine().getEventService();
-        eventService.deregisterAllListeners(MapService.SERVICE_NAME, cacheId);
+        eventService.deregisterAllLocalListeners(MapService.SERVICE_NAME, cacheId);
     }
 
     private PublisherContext getPublisherContext() {

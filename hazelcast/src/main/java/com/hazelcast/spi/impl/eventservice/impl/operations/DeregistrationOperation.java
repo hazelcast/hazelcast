@@ -45,7 +45,11 @@ public class DeregistrationOperation extends AbstractRegistrationOperation {
         EventServiceImpl eventService = (EventServiceImpl) getNodeEngine().getEventService();
         EventServiceSegment segment = eventService.getSegment(getServiceName(), false);
         if (segment != null) {
-            segment.removeRegistration(topic, id);
+            if (id == null) {
+                segment.removeRegistrations(topic);
+            } else {
+                segment.removeRegistration(topic, id);
+            }
         }
     }
 

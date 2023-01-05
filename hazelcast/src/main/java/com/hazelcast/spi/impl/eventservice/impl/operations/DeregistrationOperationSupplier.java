@@ -20,23 +20,35 @@ import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.eventservice.impl.Registration;
 
+import java.util.UUID;
 import java.util.function.Supplier;
 
 /**
- * Supplier that creates {@link DeregistrationOperation}s for a listener registration.
+ * Supplier that creates {@link DeregistrationOperation}s for a listener registration or topic.
  */
 public class DeregistrationOperationSupplier implements Supplier<Operation> {
-    private final Registration registration;
+    private final String serviceName;
+    private final String topic;
+    private final UUID id;
     private final ClusterService clusterService;
 
     public DeregistrationOperationSupplier(Registration reg, ClusterService clusterService) {
-        registration = reg;
+        serviceName = reg.getServiceName();
+        topic = reg.getTopic();
+        id = reg.getId();
+        this.clusterService = clusterService;
+    }
+
+    public DeregistrationOperationSupplier(String serviceName, String topic, ClusterService clusterService) {
+        this.serviceName = serviceName;
+        this.topic = topic;
+        id = null;
         this.clusterService = clusterService;
     }
 
     @Override
     public Operation get() {
-        return new DeregistrationOperation(registration.getTopic(), registration.getId(), clusterService.getMemberListVersion())
-                .setServiceName(registration.getServiceName());
+        return new DeregistrationOperation(topic, id, clusterService.getMemberListVersion())
+                .setServiceName(serviceName);
     }
 }

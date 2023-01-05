@@ -197,7 +197,7 @@ public class EventServiceSegment<S> {
      *
      * @param topic the topic for which registrations are removed
      */
-    void removeRegistrations(String topic) {
+    public void removeRegistrations(String topic) {
         Collection<Registration> all = registrations.remove(topic);
         if (all == null) {
             return;
