@@ -11,8 +11,8 @@ import com.hazelcast.map.IMap;
 public class ClientMain {
 
     public static void main(String[] args) {
-        System.setProperty("hazelcast.tpc.enabled", "true");
-        System.setProperty("hazelcast.tpc.eventloop.count", "" + Runtime.getRuntime().availableProcessors());
+        System.setProperty("hz.alto.enabled", "true");
+        System.setProperty("hz.alto.eventloop-count", "" + Runtime.getRuntime().availableProcessors());
         HazelcastInstance server = Hazelcast.newHazelcastInstance();
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
         System.out.println("Client created");

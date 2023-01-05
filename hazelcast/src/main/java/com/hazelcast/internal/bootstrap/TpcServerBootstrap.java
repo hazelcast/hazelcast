@@ -72,8 +72,7 @@ public class TpcServerBootstrap {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(TpcServerBootstrap.class);
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
-        this.enabled = Boolean.parseBoolean(getProperty("hazelcast.tpc.enabled", "false"))
-                || nodeEngine.getConfig().getAltoConfig().isEnabled();
+        this.enabled = nodeEngine.getConfig().getAltoConfig().isEnabled();
         logger.info("TPC: " + (enabled ? "enabled" : "disabled"));
         this.writeThrough = Boolean.parseBoolean(getProperty("hazelcast.tpc.write-through", "false"));
         this.regularSchedule = Boolean.parseBoolean(getProperty("hazelcast.tpc.regular-schedule", "true"));
