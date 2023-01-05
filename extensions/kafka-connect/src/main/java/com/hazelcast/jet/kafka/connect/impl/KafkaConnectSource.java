@@ -31,15 +31,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import static com.hazelcast.client.impl.protocol.util.PropertiesUtil.toMap;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
-public abstract class AbstractKafkaConnectSource<T> {
+public class KafkaConnectSource {
 
     private final SourceConnector connector;
     private final SourceTask task;
     private final Map<String, String> taskConfig;
-
-
     /**
      * Key represents the partition which the record originated from. Value
      * represents the offset within that partition. Kafka Connect represents
@@ -50,22 +49,22 @@ public abstract class AbstractKafkaConnectSource<T> {
     private Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new HashMap<>();
     private boolean taskInit;
 
-    public AbstractKafkaConnectSource(Properties properties) {
+    public KafkaConnectSource(Properties properties) {
         try {
             String connectorClazz = properties.getProperty("connector.class");
             Class<?> connectorClass = Thread.currentThread().getContextClassLoader().loadClass(connectorClazz);
-            connector = (SourceConnector) connectorClass.getConstructor().newInstance();
-            connector.initialize(new JetConnectorContext());
-            connector.start((Map) properties);
+            this.connector = (SourceConnector) connectorClass.getConstructor().newInstance();
+            this.connector.initialize(new JetConnectorContext());
+            this.connector.start(toMap(properties));
 
-            taskConfig = connector.taskConfigs(1).get(0);
-            task = (SourceTask) connector.taskClass().getConstructor().newInstance();
+            this.taskConfig = connector.taskConfigs(1).get(0);
+            this.task = (SourceTask) connector.taskClass().getConstructor().newInstance();
         } catch (Exception e) {
             throw rethrow(e);
         }
     }
 
-    public void fillBuffer(SourceBuilder.TimestampedSourceBuffer<T> buf) {
+    public void fillBuffer(SourceBuilder.TimestampedSourceBuffer<SourceRecord> buf) {
         if (!taskInit) {
             task.initialize(new JetSourceTaskContext());
             task.start(taskConfig);
@@ -88,7 +87,11 @@ public abstract class AbstractKafkaConnectSource<T> {
         }
     }
 
-    protected abstract boolean addToBuffer(SourceRecord record, SourceBuilder.TimestampedSourceBuffer<T> buf);
+    protected boolean addToBuffer(SourceRecord record, SourceBuilder.TimestampedSourceBuffer<SourceRecord> buf) {
+        long ts = record.timestamp() == null ? 0 : record.timestamp();
+        buf.add(record, ts);
+        return true;
+    }
 
     public void destroy() {
         try {

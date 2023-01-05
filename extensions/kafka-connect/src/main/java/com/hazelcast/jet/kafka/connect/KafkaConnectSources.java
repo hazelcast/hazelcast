@@ -16,7 +16,7 @@
 
 package com.hazelcast.jet.kafka.connect;
 
-import com.hazelcast.jet.kafka.connect.impl.AbstractKafkaConnectSource;
+import com.hazelcast.jet.kafka.connect.impl.KafkaConnectSource;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.StreamSource;
 import org.apache.kafka.connect.source.SourceRecord;
@@ -67,17 +67,4 @@ public final class KafkaConnectSources {
                 .build();
     }
 
-    private static class KafkaConnectSource extends AbstractKafkaConnectSource<SourceRecord> {
-
-        KafkaConnectSource(Properties properties) {
-            super(properties);
-        }
-
-        @Override
-        protected boolean addToBuffer(SourceRecord record, SourceBuilder.TimestampedSourceBuffer<SourceRecord> buf) {
-            long ts = record.timestamp() == null ? 0 : record.timestamp();
-            buf.add(record, ts);
-            return true;
-        }
-    }
 }
