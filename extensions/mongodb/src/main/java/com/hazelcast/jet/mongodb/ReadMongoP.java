@@ -153,7 +153,6 @@ public class ReadMongoP<I> extends AbstractProcessor {
             if (snapshot == null) {
                 return true;
             }
-            System.out.println("will actually save with key " + partition);
             snapshotTraverser = singleton(entry(broadcastKey(partition), snapshot))
                     .onFirstNull(() -> {
                         snapshotTraverser = null;
