@@ -95,7 +95,7 @@ public class MongoDBSourceResilienceTest extends SimpleTestInClusterSupport {
                 MongoCollection<Document> collection =
                         mongoClient.getDatabase(databaseName).getCollection(collectionName);
 
-                for (int i = 0; i < itemCount/2; i++) {
+                for (int i = 0; i < itemCount / 2; i++) {
                     collection.insertOne(new Document("key", i));
                 }
             }
@@ -108,7 +108,7 @@ public class MongoDBSourceResilienceTest extends SimpleTestInClusterSupport {
                 MongoCollection<Document> collection =
                         mongoClient.getDatabase(databaseName).getCollection(collectionName);
 
-                for (int i = itemCount/2; i < itemCount; i++) {
+                for (int i = itemCount / 2; i < itemCount; i++) {
                     collection.insertOne(new Document("key", i));
                 }
             }

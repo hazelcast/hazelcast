@@ -317,7 +317,8 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         private Integer val;
         private String testName;
 
-        public KV() {}
+        public KV() {
+        }
 
         public int getKey() {
             return key;

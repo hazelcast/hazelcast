@@ -43,7 +43,6 @@ import org.bson.types.ObjectId;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map.Entry;
@@ -181,14 +180,14 @@ public class ReadMongoP<I> extends AbstractProcessor {
     }
 
     private abstract class MongoChunkedReader {
-        private final RetryTracker connectionRetryTracker;
-        private final SupplierEx<? extends MongoClient> connectionSupplier;
-        private final String databaseName;
-        private final String collectionName;
 
         protected MongoClient mongoClient;
         protected MongoDatabase database;
         protected MongoCollection<Document> collection;
+        private final RetryTracker connectionRetryTracker;
+        private final SupplierEx<? extends MongoClient> connectionSupplier;
+        private final String databaseName;
+        private final String collectionName;
 
         protected MongoChunkedReader(String databaseName, String collectionName, SupplierEx<? extends MongoClient> connectionSupplier) {
             this.databaseName = databaseName;
@@ -282,11 +281,9 @@ public class ReadMongoP<I> extends AbstractProcessor {
             }
             if (collection != null) {
                 this.delegate = delegateForCollection(collection, aggregateList);
-            }
-            else if (database != null) {
+            } else if (database != null) {
                 this.delegate = delegateForDb(database, aggregateList);
-            }
-            else {
+            } else {
                 final MongoClient clientLocal = mongoClient;
                 this.delegate = traverseIterable(mongoClient.listDatabaseNames())
                         .flatMap(name -> {
@@ -399,8 +396,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
                 if (cursor == null) {
                     if (resumeToken != null) {
                         changeStream.resumeAfter(resumeToken);
-                    }
-                    else if (startTimestamp != null) {
+                    } else if (startTimestamp != null) {
                         changeStream.startAtOperationTime(new BsonTimestamp(startTimestamp));
                     }
                     cursor = changeStream.batchSize(BATCH_SIZE).iterator();

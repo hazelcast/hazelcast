@@ -31,7 +31,6 @@ import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,20 +49,8 @@ import static com.hazelcast.jet.mongodb.Mappers.toClass;
  * </ul>
  *
  */
-public final class MongoDBSourceBuilder implements Serializable{ // TODO make non serializable
+public final class MongoDBSourceBuilder {
 
-    private final String name;
-    private final SupplierEx<? extends MongoClient> connectionSupplier;
-    private final List<Bson> aggregates = new ArrayList<>();
-
-    private MongoDBSourceBuilder(
-            @Nonnull String name,
-            @Nonnull SupplierEx<? extends MongoClient> connectionSupplier
-    ) {
-        checkSerializable(connectionSupplier, "connectionSupplier");
-        this.name = name;
-        this.connectionSupplier = connectionSupplier;
-    }
 
     /**
      * Returns a builder object that offers a step-by-step fluent API to build
@@ -115,7 +102,7 @@ public final class MongoDBSourceBuilder implements Serializable{ // TODO make no
             @Nonnull String name,
             @Nonnull SupplierEx<? extends MongoClient> connectionSupplier
     ) {
-        return new MongoDBSourceBuilder(name, connectionSupplier).new Batch<>();
+        return new Batch<>(name, connectionSupplier);
     }
 
     /**
@@ -176,14 +163,18 @@ public final class MongoDBSourceBuilder implements Serializable{ // TODO make no
             @Nonnull String name,
             @Nonnull SupplierEx<? extends MongoClient> connectionSupplier
     ) {
-        return new MongoDBSourceBuilder(name, connectionSupplier).new Stream<>();
+        return new Stream<>(name, connectionSupplier);
     }
 
-    private abstract static class Base<T> implements Serializable { // todo later - non serializable!
+    private abstract static class Base<T> {
+
+        protected String name;
+        protected SupplierEx<? extends MongoClient> connectionSupplier;
         protected Class<T> mongoType;
 
         protected String databaseName;
         protected String collectionName;
+        protected final List<Bson> aggregates = new ArrayList<>();
 
         private Base() {
         }
@@ -214,13 +205,20 @@ public final class MongoDBSourceBuilder implements Serializable{ // TODO make no
      *
      * @param <T> type of the emitted objects
      */
-    public final class Batch<T> extends Base<T> {
+    public static final class Batch<T> extends Base<T> {
 
         private FunctionEx<Document, T> mapFn;
 
         @SuppressWarnings("unchecked")
-        private Batch() {
+        private Batch(
+                @Nonnull String name,
+                @Nonnull SupplierEx<? extends MongoClient> connectionSupplier
+        ) {
+            checkSerializable(connectionSupplier, "connectionSupplier");
+            this.name = name;
+            this.connectionSupplier = connectionSupplier;
             mapFn = (FunctionEx<Document, T>) toClass(Document.class);
+
         }
 
         @Nonnull
@@ -288,8 +286,12 @@ public final class MongoDBSourceBuilder implements Serializable{ // TODO make no
             checkNotNull(connectionSupplier, "connectionSupplier must be set");
             checkNotNull(mapFn, "mapFn must be set");
 
+            List<Bson> aggregates = this.aggregates;
+            String databaseName = this.databaseName;
+            String collectionName = this.collectionName;
             SupplierEx<? extends MongoClient> localConnectionSupplier = connectionSupplier;
             FunctionEx<Document, T> localMapFn = mapFn;
+
             return Sources.batchFromProcessor(name, ProcessorMetaSupplier.of(
                     () -> new ReadMongoP<>(localConnectionSupplier, aggregates, databaseName, collectionName, localMapFn)));
         }
@@ -300,18 +302,24 @@ public final class MongoDBSourceBuilder implements Serializable{ // TODO make no
      *
      * @param <T> type of the queried documents
      */
-    public final class Stream<T> extends Base<T> {
+    public static final class Stream<T> extends Base<T> {
 
         FunctionEx<ChangeStreamDocument<Document>, T> mapFn;
         Long startAtOperationTime;
 
         @SuppressWarnings("unchecked")
-        private Stream() {
+        private Stream(
+                @Nonnull String name,
+                @Nonnull SupplierEx<? extends MongoClient> connectionSupplier
+        ) {
+            checkSerializable(connectionSupplier, "connectionSupplier");
+            this.name = name;
+            this.connectionSupplier = connectionSupplier;
             mapFn = (FunctionEx<ChangeStreamDocument<Document>, T>) streamToClass(Document.class);
         }
 
         @Nonnull
-        public Stream<T> project (@Nullable Bson projection) {
+        public Stream<T> project(@Nullable Bson projection) {
             if (projection != null) {
                 aggregates.add(Aggregates.project(projection).toBsonDocument());
             }
@@ -319,7 +327,7 @@ public final class MongoDBSourceBuilder implements Serializable{ // TODO make no
         }
 
         @Nonnull
-        public Stream<T> filter (@Nullable Bson filter) {
+        public Stream<T> filter(@Nullable Bson filter) {
             if (filter != null) {
                 aggregates.add(Aggregates.match(filter).toBsonDocument());
             }
@@ -376,6 +384,10 @@ public final class MongoDBSourceBuilder implements Serializable{ // TODO make no
 
             SupplierEx<? extends MongoClient> localConnectionSupplier = connectionSupplier;
             FunctionEx<ChangeStreamDocument<Document>, T> localMapFn = mapFn;
+            Long startAtOperationTime = this.startAtOperationTime;
+            List<Bson> aggregates = this.aggregates;
+            String databaseName = this.databaseName;
+            String collectionName = this.collectionName;
 
             return Sources.streamFromProcessorWithWatermarks(name, true,
                     eventTimePolicy -> ProcessorMetaSupplier.of(

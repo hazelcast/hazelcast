@@ -37,15 +37,16 @@ final class MongoUtilities {
     static List<Bson> partitionAggregate(int totalParallelism, int processorIndex, boolean stream) {
         List<Bson> aggregateList = new ArrayList<>(3);
 
-        String code = "function(s) {\n" +
-                "    return s === null ? -1 : s.getTimestamp().getTime() %" + totalParallelism + " == " + processorIndex + ";\n"+
-                "}";
+        String code = "function(s) {\n"
+                + "    return s === null ? -1 : s.getTimestamp().getTime() %"
+                        + totalParallelism + " == " + processorIndex + ";\n"
+                + "}";
 
         String idRef = stream ? "$fullDocument._id" : "$_id";
         Document functionInv = new Document("$function",
                 new Document("lang", "js")
                         .append("body", code)
-                        .append("args", new BsonArray(singletonList( new BsonString(idRef)))));
+                        .append("args", new BsonArray(singletonList(new BsonString(idRef)))));
 
         aggregateList.add(addFields(new Field<>("_thisPartition", functionInv)));
         aggregateList.add(match(Filters.eq("_thisPartition", true)));
