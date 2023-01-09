@@ -18,6 +18,7 @@ package com.hazelcast.internal.bootstrap;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.AdvancedNetworkConfig;
+import com.hazelcast.config.Config;
 import com.hazelcast.config.EndpointConfig;
 import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.config.ServerSocketEndpointConfig;
@@ -67,13 +68,15 @@ public class TpcServerBootstrap {
     private final boolean enabled;
     private final Map<Eventloop, Supplier<? extends ReadHandler>> readHandlerSuppliers = new HashMap<>();
     private final List<AsyncServerSocket> serverSockets = new ArrayList<>();
+    private final Config config;
     private volatile List<Integer> clientPorts;
 
     public TpcServerBootstrap(NodeEngineImpl nodeEngine) {
         this.nodeEngine = nodeEngine;
         this.logger = nodeEngine.getLogger(TpcServerBootstrap.class);
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
-        this.enabled = nodeEngine.getConfig().getAltoConfig().isEnabled();
+        this.config = nodeEngine.getConfig();
+        this.enabled = config.getAltoConfig().isEnabled();
         logger.info("TPC: " + (enabled ? "enabled" : "disabled"));
         this.writeThrough = Boolean.parseBoolean(getProperty("hazelcast.tpc.write-through", "false"));
         this.regularSchedule = Boolean.parseBoolean(getProperty("hazelcast.tpc.regular-schedule", "true"));
@@ -102,7 +105,7 @@ public class TpcServerBootstrap {
         NioEventloop.NioConfiguration eventloopConfiguration = new NioEventloop.NioConfiguration();
         eventloopConfiguration.setThreadFactory(AltoEventloopThread::new);
         configuration.setEventloopConfiguration(eventloopConfiguration);
-        configuration.setEventloopCount(nodeEngine.getConfig().getAltoConfig().getEventloopCount());
+        configuration.setEventloopCount(config.getAltoConfig().getEventloopCount());
         return new TpcEngine(configuration);
     }
 
@@ -164,9 +167,8 @@ public class TpcServerBootstrap {
     public AltoSocketConfig getClientSocketConfig() {
         validateSocketConfig();
 
-        if (nodeEngine.getConfig().getAdvancedNetworkConfig().isEnabled()) {
-            ServerSocketEndpointConfig endpointConfig = (ServerSocketEndpointConfig) nodeEngine
-                    .getConfig()
+        if (config.getAdvancedNetworkConfig().isEnabled()) {
+            ServerSocketEndpointConfig endpointConfig = (ServerSocketEndpointConfig) config
                     .getAdvancedNetworkConfig()
                     .getEndpointConfigs()
                     .get(EndpointQualifier.CLIENT);
@@ -175,11 +177,11 @@ public class TpcServerBootstrap {
         }
 
         // unified socket
-        return nodeEngine.getConfig().getNetworkConfig().getAltoSocketConfig();
+        return config.getNetworkConfig().getAltoSocketConfig();
     }
 
     private void validateSocketConfig() {
-        AdvancedNetworkConfig advancedNetworkConfig = nodeEngine.getConfig().getAdvancedNetworkConfig();
+        AdvancedNetworkConfig advancedNetworkConfig = config.getAdvancedNetworkConfig();
         if (advancedNetworkConfig.isEnabled()) {
             AltoSocketConfig defaultAltoSocketConfig = new AltoSocketConfig();
             Map<EndpointQualifier, EndpointConfig> endpointConfigs = advancedNetworkConfig.getEndpointConfigs();
