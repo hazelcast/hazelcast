@@ -4577,8 +4577,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
         AltoSocketConfig altoConfig = buildConfig(xml).getNetworkConfig().getAltoSocketConfig();
 
         assertThat(altoConfig.getPortRange()).isEqualTo("14000-16000");
-        assertThat(altoConfig.getReceiveBufferSizeKb()).isEqualTo(256);
-        assertThat(altoConfig.getSendBufferSizeKb()).isEqualTo(256);
+        assertThat(altoConfig.getReceiveBufferSizeKB()).isEqualTo(256);
+        assertThat(altoConfig.getSendBufferSizeKB()).isEqualTo(256);
     }
 
     @Override
@@ -4641,8 +4641,8 @@ public class XMLConfigBuilderTest extends AbstractConfigBuilderTest {
             AltoSocketConfig altoSocketConfig = endpointConfig.getAltoSocketConfig();
 
             assertThat(altoSocketConfig.getPortRange()).isEqualTo("14000-16000");
-            assertThat(altoSocketConfig.getReceiveBufferSizeKb()).isEqualTo(256);
-            assertThat(altoSocketConfig.getSendBufferSizeKb()).isEqualTo(256);
+            assertThat(altoSocketConfig.getReceiveBufferSizeKB()).isEqualTo(256);
+            assertThat(altoSocketConfig.getSendBufferSizeKB()).isEqualTo(256);
         });
     }
 

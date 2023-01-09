@@ -1152,10 +1152,10 @@ public class MemberDomConfigProcessor extends AbstractDomConfigProcessor {
             if (matches("port-range", nodeName)) {
                 altoSocketConfig.setPortRange(getTextContent(child));
             } else if (matches("receive-buffer-size-kb", nodeName)) {
-                altoSocketConfig.setReceiveBufferSizeKb(
+                altoSocketConfig.setReceiveBufferSizeKB(
                         getIntegerValue("receive-buffer-size-kb", getTextContent(child)));
             } else if (matches("send-buffer-size-kb", nodeName)) {
-                altoSocketConfig.setSendBufferSizeKb(
+                altoSocketConfig.setSendBufferSizeKB(
                         getIntegerValue("send-buffer-size-kb", getTextContent(child)));
             }
         }

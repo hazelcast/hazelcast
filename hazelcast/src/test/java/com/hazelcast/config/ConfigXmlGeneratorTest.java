@@ -347,8 +347,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
         Config expectedConfig = new Config();
         expectedConfig.getNetworkConfig().getAltoSocketConfig()
                 .setPortRange("14000-16000")
-                .setReceiveBufferSizeKb(256)
-                .setSendBufferSizeKb(256);
+                .setReceiveBufferSizeKB(256)
+                .setSendBufferSizeKB(256);
         Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
         assertEquals(expectedConfig.getAltoConfig(), actualConfig.getAltoConfig());
     }
@@ -1348,8 +1348,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
 
         expected.getAltoSocketConfig()
                 .setPortRange("14000-16000")
-                .setReceiveBufferSizeKb(256)
-                .setSendBufferSizeKb(256);
+                .setReceiveBufferSizeKB(256)
+                .setSendBufferSizeKB(256);
 
         cfg.getAdvancedNetworkConfig().setEnabled(true);
         cfg.getAdvancedNetworkConfig().addWanEndpointConfig(expected);

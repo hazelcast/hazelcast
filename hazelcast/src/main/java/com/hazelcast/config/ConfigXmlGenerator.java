@@ -1171,8 +1171,8 @@ public class ConfigXmlGenerator {
     private static void altoSocketConfigXmlGenerator(XmlGenerator gen, AltoSocketConfig altoSocketConfig) {
         gen.open("alto-socket")
                 .node("port-range", altoSocketConfig.getPortRange())
-                .node("receive-buffer-size-kb", altoSocketConfig.getReceiveBufferSizeKb())
-                .node("send-buffer-size-kb", altoSocketConfig.getSendBufferSizeKb())
+                .node("receive-buffer-size-kb", altoSocketConfig.getReceiveBufferSizeKB())
+                .node("send-buffer-size-kb", altoSocketConfig.getSendBufferSizeKB())
                 .close();
     }
 

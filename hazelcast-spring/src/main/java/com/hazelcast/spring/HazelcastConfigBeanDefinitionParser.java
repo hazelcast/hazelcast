@@ -780,10 +780,10 @@ public class HazelcastConfigBeanDefinitionParser extends AbstractHazelcastBeanDe
                 if ("port-range".equals(nodeName)) {
                     altoSocketConfigBuilder.addPropertyValue("portRange", getTextContent(child));
                 } else if ("receive-buffer-size-kb".equals(nodeName)) {
-                    altoSocketConfigBuilder.addPropertyValue("receiveBufferSizeKb",
+                    altoSocketConfigBuilder.addPropertyValue("receiveBufferSizeKB",
                             getIntegerValue("receive-buffer-size-kb", getTextContent(child)));
                 } else if ("send-buffer-size-kb".equals(nodeName)) {
-                    altoSocketConfigBuilder.addPropertyValue("sendBufferSizeKb",
+                    altoSocketConfigBuilder.addPropertyValue("sendBufferSizeKB",
                             getIntegerValue("send-buffer-size-kb", getTextContent(child)));
                 }
             }

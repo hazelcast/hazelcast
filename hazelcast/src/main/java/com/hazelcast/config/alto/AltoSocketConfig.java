@@ -7,8 +7,8 @@ import java.util.Objects;
 
 public class AltoSocketConfig {
     private String portRange = "11000-21000";
-    private int receiveBufferSizeKb = 128;
-    private int sendBufferSizeKb = 128;
+    private int receiveBufferSizeKB = 128;
+    private int sendBufferSizeKB = 128;
 
     public String getPortRange() {
         return portRange;
@@ -23,29 +23,29 @@ public class AltoSocketConfig {
         return this;
     }
 
-    public int getReceiveBufferSizeKb() {
-        return receiveBufferSizeKb;
+    public int getReceiveBufferSizeKB() {
+        return receiveBufferSizeKB;
     }
 
-    public AltoSocketConfig setReceiveBufferSizeKb(int receiveBufferSizeKb) {
-        if (receiveBufferSizeKb < 32 || receiveBufferSizeKb > 1_048_576) {
+    public AltoSocketConfig setReceiveBufferSizeKB(int receiveBufferSizeKB) {
+        if (receiveBufferSizeKB < 32 || receiveBufferSizeKB > 1_048_576) {
             throw new InvalidConfigurationException("Buffer size should be between " + 32 + " and " + 1_048_576);
         }
 
-        this.receiveBufferSizeKb = receiveBufferSizeKb;
+        this.receiveBufferSizeKB = receiveBufferSizeKB;
         return this;
     }
 
-    public int getSendBufferSizeKb() {
-        return sendBufferSizeKb;
+    public int getSendBufferSizeKB() {
+        return sendBufferSizeKB;
     }
 
-    public AltoSocketConfig setSendBufferSizeKb(int sendBufferSizeKb) {
-        if (sendBufferSizeKb < 32 || sendBufferSizeKb > 1_048_576) {
+    public AltoSocketConfig setSendBufferSizeKB(int sendBufferSizeKB) {
+        if (sendBufferSizeKB < 32 || sendBufferSizeKB > 1_048_576) {
             throw new InvalidConfigurationException("Buffer size should be between " + 32 + " and " + 1_048_576);
         }
 
-        this.sendBufferSizeKb = sendBufferSizeKb;
+        this.sendBufferSizeKB = sendBufferSizeKB;
         return this;
     }
 
@@ -58,22 +58,22 @@ public class AltoSocketConfig {
             return false;
         }
         AltoSocketConfig that = (AltoSocketConfig) o;
-        return receiveBufferSizeKb == that.receiveBufferSizeKb
-                && sendBufferSizeKb == that.sendBufferSizeKb
+        return receiveBufferSizeKB == that.receiveBufferSizeKB
+                && sendBufferSizeKB == that.sendBufferSizeKB
                 && portRange.equals(that.portRange);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(portRange, receiveBufferSizeKb, sendBufferSizeKb);
+        return Objects.hash(portRange, receiveBufferSizeKB, sendBufferSizeKB);
     }
 
     @Override
     public String toString() {
         return "AltoSocketConfig{"
                 + "portRange='" + portRange + '\''
-                + ", receiveBufferSizeKb=" + receiveBufferSizeKb
-                + ", sendBufferSizeKb=" + sendBufferSizeKb
+                + ", receiveBufferSizeKB=" + receiveBufferSizeKB
+                + ", sendBufferSizeKB=" + sendBufferSizeKB
                 + '}';
     }
 }

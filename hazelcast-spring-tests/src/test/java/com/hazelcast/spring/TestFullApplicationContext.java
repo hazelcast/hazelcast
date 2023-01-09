@@ -876,8 +876,8 @@ public class TestFullApplicationContext extends HazelcastTestSupport {
 
         AltoSocketConfig altoSocketConfig = networkConfig.getAltoSocketConfig();
         assertEquals("14000-16000", altoSocketConfig.getPortRange());
-        assertEquals(256, altoSocketConfig.getReceiveBufferSizeKb());
-        assertEquals(256, altoSocketConfig.getSendBufferSizeKb());
+        assertEquals(256, altoSocketConfig.getReceiveBufferSizeKB());
+        assertEquals(256, altoSocketConfig.getSendBufferSizeKB());
     }
 
     private void assertAwsConfig(AwsConfig aws) {

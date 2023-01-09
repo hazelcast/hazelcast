@@ -82,8 +82,8 @@ public class TestAdvancedNetworkApplicationContext {
 
         AltoSocketConfig expectedAltoSocketConfig = new AltoSocketConfig()
                 .setPortRange("14000-16000")
-                .setReceiveBufferSizeKb(256)
-                .setSendBufferSizeKb(256);
+                .setReceiveBufferSizeKB(256)
+                .setSendBufferSizeKB(256);
 
         ServerSocketEndpointConfig memberEndpointConfig = (ServerSocketEndpointConfig) advancedNetworkConfig
                 .getEndpointConfigs().get(EndpointQualifier.MEMBER);
