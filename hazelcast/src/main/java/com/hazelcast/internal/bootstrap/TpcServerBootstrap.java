@@ -46,6 +46,7 @@ import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
 import static java.lang.System.getProperty;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -141,8 +142,8 @@ public class TpcServerBootstrap {
 
             NioAsyncServerSocket serverSocket = NioAsyncServerSocket.open(eventloop);
             serverSockets.add(serverSocket);
-            int receiveBufferSize = clientSocketConfig.getReceiveBufferSizeKB() * 1024;
-            int sendBufferSize = clientSocketConfig.getSendBufferSizeKB() * 1024;
+            int receiveBufferSize = clientSocketConfig.getReceiveBufferSizeKB() * KILO_BYTE;
+            int sendBufferSize = clientSocketConfig.getSendBufferSizeKB() * KILO_BYTE;
             serverSocket.receiveBufferSize(receiveBufferSize);
             serverSocket.reuseAddress(true);
             port = bind(serverSocket, port, limit);
