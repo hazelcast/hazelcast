@@ -1,7 +1,6 @@
 package com.hazelcast.config.alto;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
@@ -73,14 +72,12 @@ public class AltoSocketConfigTest extends HazelcastTestSupport {
     @Test
     public void testConfigValidation() {
         AltoSocketConfig altoSocketConfig = getAltoSocketConfig();
-        assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setReceiveBufferSizeKB(1 << 5 - 1));
-        assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setReceiveBufferSizeKB(1 << 20 + 1));
-        assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setSendBufferSizeKB(1 << 5 - 1));
-        assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setSendBufferSizeKB(1 << 20 + 1));
+        assertThrows(IllegalArgumentException.class, () -> altoSocketConfig.setReceiveBufferSizeKB(0));
+        assertThrows(IllegalArgumentException.class, () -> altoSocketConfig.setSendBufferSizeKB(0));
 
-        assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setPortRange("alto 4ever"));
-        assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setPortRange("5701"));
-        assertThrows(InvalidConfigurationException.class, () -> altoSocketConfig.setPortRange("123123-123124"));
+        assertThrows(IllegalArgumentException.class, () -> altoSocketConfig.setPortRange("alto 4ever"));
+        assertThrows(IllegalArgumentException.class, () -> altoSocketConfig.setPortRange("5701"));
+        assertThrows(IllegalArgumentException.class, () -> altoSocketConfig.setPortRange("123123-123124"));
     }
 
     @Test

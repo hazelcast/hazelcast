@@ -1,7 +1,6 @@
 package com.hazelcast.config.alto;
 
 import com.hazelcast.config.Config;
-import com.hazelcast.config.InvalidConfigurationException;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.HazelcastTestSupport;
@@ -48,7 +47,7 @@ public class AltoConfigTest extends HazelcastTestSupport {
     @Test
     public void testConfigValidation() {
         AltoConfig altoConfig = config.getAltoConfig();
-        assertThrows(InvalidConfigurationException.class, () -> altoConfig.setEventloopCount(0));
+        assertThrows(IllegalArgumentException.class, () -> altoConfig.setEventloopCount(0));
     }
 
     @Test

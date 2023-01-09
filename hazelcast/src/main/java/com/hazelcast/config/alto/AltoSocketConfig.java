@@ -1,9 +1,9 @@
 package com.hazelcast.config.alto;
 
-import com.hazelcast.config.InvalidConfigurationException;
-
 import javax.annotation.Nonnull;
 import java.util.Objects;
+
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 public class AltoSocketConfig {
     private String portRange = "11000-21000";
@@ -16,7 +16,7 @@ public class AltoSocketConfig {
 
     public AltoSocketConfig setPortRange(@Nonnull String portRange) {
         if (!portRange.matches("\\d{1,5}-\\d{1,5}")) {
-            throw new InvalidConfigurationException("Invalid port range");
+            throw new IllegalArgumentException("Invalid port range");
         }
 
         this.portRange = portRange;
@@ -28,10 +28,7 @@ public class AltoSocketConfig {
     }
 
     public AltoSocketConfig setReceiveBufferSizeKB(int receiveBufferSizeKB) {
-        if (receiveBufferSizeKB < 32 || receiveBufferSizeKB > 1_048_576) {
-            throw new InvalidConfigurationException("Buffer size should be between " + 32 + " and " + 1_048_576);
-        }
-
+        checkPositive("receiveBufferSizeKB", receiveBufferSizeKB);
         this.receiveBufferSizeKB = receiveBufferSizeKB;
         return this;
     }
@@ -41,10 +38,7 @@ public class AltoSocketConfig {
     }
 
     public AltoSocketConfig setSendBufferSizeKB(int sendBufferSizeKB) {
-        if (sendBufferSizeKB < 32 || sendBufferSizeKB > 1_048_576) {
-            throw new InvalidConfigurationException("Buffer size should be between " + 32 + " and " + 1_048_576);
-        }
-
+        checkPositive("sendBufferSizeKB", sendBufferSizeKB);
         this.sendBufferSizeKB = sendBufferSizeKB;
         return this;
     }

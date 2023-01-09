@@ -1,8 +1,8 @@
 package com.hazelcast.config.alto;
 
-import com.hazelcast.config.InvalidConfigurationException;
-
 import java.util.Objects;
+
+import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 public class AltoConfig {
     private boolean enabled = false;
@@ -22,10 +22,7 @@ public class AltoConfig {
     }
 
     public AltoConfig setEventloopCount(int eventloopCount) {
-        if (eventloopCount < 1) {
-            throw new InvalidConfigurationException("Buffer size should be a positive number");
-        }
-
+        checkPositive("eventloopCount", eventloopCount);
         this.eventloopCount = eventloopCount;
         return this;
     }
