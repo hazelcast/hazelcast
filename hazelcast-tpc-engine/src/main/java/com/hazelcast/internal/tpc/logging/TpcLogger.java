@@ -16,12 +16,10 @@
 
 package com.hazelcast.internal.tpc.logging;
 
-import com.hazelcast.internal.util.ThreadAffinityHelper;
 
 import java.util.logging.Level;
 
 public interface TpcLogger {
-
 
     /**
      * Logs a message at the {@link Level#FINEST} level.

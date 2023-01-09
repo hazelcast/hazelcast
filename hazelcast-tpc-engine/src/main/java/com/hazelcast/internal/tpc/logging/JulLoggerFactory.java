@@ -38,10 +38,10 @@ public final class JulLoggerFactory implements TpcLoggerFactory {
         return found == null ? logger : found;
     }
 
-    private static class JulLogger implements TpcLogger {
+    private static final class JulLogger implements TpcLogger {
         private final Logger logger;
 
-        public JulLogger(Logger logger) {
+        private JulLogger(Logger logger) {
             this.logger = logger;
         }
 
@@ -77,7 +77,7 @@ public final class JulLoggerFactory implements TpcLoggerFactory {
 
         @Override
         public void warning(String message, Throwable thrown) {
-           logger.log(Level.WARNING, message, thrown);
+            logger.log(Level.WARNING, message, thrown);
         }
 
         @Override
@@ -137,7 +137,7 @@ public final class JulLoggerFactory implements TpcLoggerFactory {
 
         @Override
         public boolean isInfoEnabled() {
-           return logger.isLoggable(Level.INFO);
+            return logger.isLoggable(Level.INFO);
         }
 
         @Override

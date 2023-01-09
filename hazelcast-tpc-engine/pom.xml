@@ -35,8 +35,6 @@
     <properties>
         <!-- Needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
-        <checkstyle.headerLocation>${project.parent.basedir}/checkstyle/ClassHeaderHazelcastCommunity.txt
-        </checkstyle.headerLocation>
         <jctools.version>3.3.0</jctools.version>
     </properties>
 

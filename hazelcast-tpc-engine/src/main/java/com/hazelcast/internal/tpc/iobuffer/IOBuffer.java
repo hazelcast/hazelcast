@@ -17,7 +17,6 @@
 package com.hazelcast.internal.tpc.iobuffer;
 
 import com.hazelcast.internal.tpc.AsyncSocket;
-import com.hazelcast.internal.tpc.util.Util;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -63,7 +62,7 @@ public class IOBuffer {
     public boolean trackRelease;
     private ByteBuffer buff;
     public IOBufferAllocator allocator;
-    public boolean concurrent = false;
+    public boolean concurrent;
     // make field?
     protected AtomicInteger refCount = new AtomicInteger();
 
