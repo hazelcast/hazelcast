@@ -33,7 +33,7 @@
 ### Background
 #### Description
 
-- Currently the job upload can only be perfomed by hz-cli command. This command required a JVM on the host machine. The purpose of this feature is to enable non-java clients to be able to upload jobs to Jet server 
+- Currently, the job upload can only be performed by hz-cli command. This command requires a JVM on the host machine. The purpose of this feature is to enable non-java clients to be able to upload jobs to Jet server 
 
 
 #### Terminology
@@ -72,7 +72,7 @@ List<String> jobParameters = emptyList();
 
 String job1 = "job1";
 //If there is an error, throws JetException
-jetService.uploadJob(getJarPath(),
+jetService.submitJobJar(getJarPath(),
         null,
         job1,
         null,
@@ -82,7 +82,7 @@ jetService.uploadJob(getJarPath(),
 #### Client Related Changes
 A new method has been added to JetService interface. Any client that implements this interface, has to implement this method
 ```java
-void uploadJob(@Nonnull Path jarPath, String snapshotName, String jobName, String mainClass, List<String> jobParameters);
+void submitJobJar(@Nonnull Path jarPath, String snapshotName, String jobName, String mainClass, List<String> jobParameters);
 ```
 
 ### Technical Design
@@ -107,7 +107,7 @@ The upload process starts with uploadJobMetaData. This message contains
 | jobParameters |   List_String   | Argument passed when starting the job                            |
 
 
-Upon reception of uploadJobMetaData message, the server performs some validation rules. If any of them fail, a **JetException** is thrown. If all is well, server stores a new entry in the JobUploadStore class
+Upon reception of uploadJobMetaData message, the server performs validation. If any validation rule them fails, a **JetException** is thrown. If the message can be validated, the server stores a new entry in the JobUploadStore class
 
 **2. uploadJobMultipart message**
 
@@ -123,32 +123,32 @@ The upload process continues with this message. It contains jar's bytes. This me
 
 **Why do we need an extra partSize field?** 
 
-For optimization, it is assumed that partData is allocated only once on the client side. So we need another field to indicate the number of bytes to be read in this buffer 
+For optimization, it is assumed that partData is allocated only once on the client side. So we need another field to indicate the number of bytes to be read from this buffer 
 
-Upon reception of uploadJobMultipart, various checks are performed on the message and current session. If any of them fail, a **JetException** is thrown. If all is well, message is processed.
+Upon reception of uploadJobMultipart, various checks are performed on the message and current session. If any of them fail, a **JetException** is thrown. If the message can be validated, it is processed.
 Some checks are
 - Validate partData.length is positive
 - Validate partSize field is positive
 - Validate partSize == partData.length
-- Validate currentPart is not >= receivedCurrentPart
-- Validate currentPart + 1 is not different from receivedCurrentPart
+- Validate currentPart is not >= receivedCurrentPart - A message from the past
+- Validate currentPart + 1 is not different from receivedCurrentPart - A message from the future. This also means that a duplicate message will be rejected and upload operation will fail.
 - Validate totalPart != 0 && totalPart != receivedTotalPart
-- Validate checksum 
-- 
-If it is the first message a new temporary file is created. Then the partSize bytes of partData byte[] is appended to this file
-When all the parts are complete, a new job is started using HazelcastBootstrap.executeJar() call. When the job starts, the jar is loaded into memory and it is not possible to delete it anymore, because it is in use.
+- Validate checksum
+Upon reception of the first message a new temporary file is created. For every message the partData byte[] is appended to this file. The length of partData field is specified by the partSize field
+  When all the parts are complete, a new job is started using HazelcastBootstrap.executeJar() call.
 
 The uploadJobMultipart by default allocates a buffer of 10_000_000 bytes. The size of the buffer can be controlled by
-**hazelcast.jobupload.partsize** system property. So clients that want to allocate less memory may prefer to send a bigger total number of messages
+**ClientProperty.JOB_UPLOAD_PART_SIZE** property. So clients that want to allocate less memory may prefer to send a bigger total number of messages
 
 HazelcastBootstrap was designed to work only by the **hz-client command**. With this PR it is modified to work on the server side. However, it is still a singleton.
 
-If any exception is thrown by the server or client fails to finish the upload sequence, a timer in JetServiceBackend cleans the expired JobUploadStore items and deletes the temporary file
+If an exception is thrown by the server the upload operation fails. A timer in JetServiceBackend cleans the expired JobUploadStore items and deletes the temporary file
 
 ### Testing Criteria
 
 Describe testing approach to developed functionality
-- Stress tests need to be performed with big jars or small upload buffer size
+- Unit tests are testing the functionality at class level
+- A stress test is uploading jobs in parallel
 
 
 ### Other Artifacts
