@@ -135,7 +135,14 @@ Some checks are
 - Validate totalPart != 0 && totalPart != receivedTotalPart
 - Validate checksum
 Upon reception of the first message a new temporary file is created. For every message the partData byte[] is appended to this file. The length of partData field is specified by the partSize field
-  When all the parts are complete, a new job is started using HazelcastBootstrap.executeJar() call.
+  When all the parts are complete, a new job is started using HazelcastBootstrap.executeJar() call. This call executes the jar within the same JVM as the member. 
+
+**Pros of using the same JVM**
+- The general approach of using the same JVM when the job is submitted from hz-client is preserved. 
+- The existing JetService and resources can be utilized, which is better for efficiency.
+
+**Cons of using the same JVM**
+- Any failure within the job is directly going to affect the member
 
 The uploadJobMultipart by default allocates a buffer of 10_000_000 bytes. The size of the buffer can be controlled by
 **ClientProperty.JOB_UPLOAD_PART_SIZE** property. So clients that want to allocate less memory may prefer to send a bigger total number of messages
