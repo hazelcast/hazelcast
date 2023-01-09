@@ -18,18 +18,19 @@ package com.hazelcast.internal.tpc.util;
 
 import java.io.Closeable;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
 import java.util.Collection;
 
-public class IOUtil {
+public final class IOUtil {
 
     public static final int SIZEOF_INT = Integer.BYTES;
     public static final int SIZEOF_LONG = Long.BYTES;
     public static final int SIZEOF_CHAR = Character.BYTES;
     public static final int SIZEOF_BYTE = 1;
+
+    private IOUtil() {
+    }
 
     /**
      * Compacts or clears the buffer depending if bytes are remaining in the byte-buffer.
@@ -101,4 +102,5 @@ public class IOUtil {
             src.limit(srcOldLimit);
         }
     }
+
 }

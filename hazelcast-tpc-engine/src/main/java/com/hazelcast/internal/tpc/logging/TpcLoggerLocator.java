@@ -19,9 +19,12 @@ package com.hazelcast.internal.tpc.logging;
 import java.lang.reflect.Method;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class TpcLoggerLocator {
+public final class TpcLoggerLocator {
 
-    private final static AtomicReference LOGGER = new AtomicReference();
+    private static final AtomicReference LOGGER = new AtomicReference();
+
+    private TpcLoggerLocator() {
+    }
 
     public static TpcLogger getLogger(Class clazz) {
         Object logger = LOGGER.get();
@@ -48,4 +51,5 @@ public class TpcLoggerLocator {
         }
         return getLogger(clazz);
     }
+
 }

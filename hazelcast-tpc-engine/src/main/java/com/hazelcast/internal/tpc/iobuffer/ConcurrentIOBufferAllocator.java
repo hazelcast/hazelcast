@@ -31,17 +31,18 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public class ConcurrentIOBufferAllocator implements IOBufferAllocator {
 
-    private final MpmcArrayQueue<IOBuffer> queue = new MpmcArrayQueue<>(4096);
-
     private static final AtomicLong newAllocations = new AtomicLong(0);
     private static final AtomicLong pooledAllocations = new AtomicLong(0);
     private static final AtomicLong allocateCalls = new AtomicLong();
     private static final AtomicLong releaseCalls = new AtomicLong();
+    private final static ThreadLocal<Pool> POOL = new ThreadLocal<>();
+
+    private final MpmcArrayQueue<IOBuffer> queue = new MpmcArrayQueue<>(4096);
     private final boolean direct;
 
     static class Pool {
-        private long newAllocateCnt = 0;
-        private long allocateCnt = 0;
+        private long newAllocateCnt;
+        private long allocateCnt;
         private IOBuffer[] bufs = new IOBuffer[128];
         private int index = -1;
         private final MessagePassingQueue.Consumer<IOBuffer> consumer = buf -> {
@@ -50,7 +51,6 @@ public class ConcurrentIOBufferAllocator implements IOBufferAllocator {
         };
     }
 
-    private final static ThreadLocal<Pool> POOL = new ThreadLocal<>();
     private final int minSize;
 
     public ConcurrentIOBufferAllocator(int minSize, boolean direct) {

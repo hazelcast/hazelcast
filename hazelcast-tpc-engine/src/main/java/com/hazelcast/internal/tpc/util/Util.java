@@ -20,10 +20,12 @@ import java.io.Closeable;
 import java.io.IOException;
 import java.time.Instant;
 
-public class Util {
+public final class Util {
     private static final long NANOS_MULTIPLIER = 1_000_000_000;
-    public static final String OS = System.getProperty("os.name").toLowerCase();
+    private static final String OS = System.getProperty("os.name").toLowerCase();
 
+    private Util() {
+    }
 
     /**
      * Returns {@code true} if the system is Linux.
