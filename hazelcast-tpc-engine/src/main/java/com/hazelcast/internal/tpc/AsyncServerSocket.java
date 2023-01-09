@@ -42,7 +42,7 @@ public abstract class AsyncServerSocket implements Closeable {
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
     protected final AtomicBoolean closed = new AtomicBoolean(false);
 
-    public AsyncServerSocket(){
+    public AsyncServerSocket() {
     }
 
     public final SocketAddress localAddress() {

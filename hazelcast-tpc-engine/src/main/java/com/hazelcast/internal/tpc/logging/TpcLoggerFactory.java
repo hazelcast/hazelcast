@@ -18,9 +18,9 @@ package com.hazelcast.internal.tpc.logging;
 
 public interface TpcLoggerFactory {
 
-     TpcLogger getLogger(String name);
+    TpcLogger getLogger(String name);
 
-     default TpcLogger getLogger(Class clazz){
-          return getLogger(clazz.getName());
-     }
+    default TpcLogger getLogger(Class clazz) {
+        return getLogger(clazz.getName());
+    }
 }
