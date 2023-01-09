@@ -422,16 +422,16 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         return result;
     }
 
-    public void checkIfCanRunJar() {
+    public void checkIfCanExecuteJar() {
         if (!jetConfig.isResourceUploadEnabled()) {
             throw new JetException("Resource upload is not enabled");
         }
     }
 
     // Run the given jar as Jet job
-    public boolean runJar(JobMetaDataParameterObject parameterObject) {
+    public void executeJar(JobMetaDataParameterObject parameterObject) {
 
-        logger.info("runJar Starting job for session id :" + parameterObject.getSessionId());
+        logger.info("executeJar is called for session id :" + parameterObject.getSessionId());
 
         try {
             HazelcastBootstrap.executeJar(this::getHazelcastInstance,
@@ -443,14 +443,13 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
                     true
             );
         } catch (Exception exception) {
-            logger.severe("runJar caught exception when running the jar", exception);
+            logger.severe("executeJar caught exception when running the jar", exception);
             // We can not delete the job jar because it is already loaded. If we try to delete it
             // we will get "java.nio.file.FileSystemException"
 
             // But rethrow the exception back to client to notify  that job did not run
             sneakyThrow(exception);
         }
-        return true;
     }
 
     private HazelcastInstance getHazelcastInstance() {

@@ -84,8 +84,8 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
 
             JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
 
-            jetServiceBackend.checkIfCanRunJar();
-            jetServiceBackend.runJar(parameterObject);
+            jetServiceBackend.checkIfCanExecuteJar();
+            jetServiceBackend.executeJar(parameterObject);
 
         } catch (Exception exception) {
             ExceptionUtil.sneakyThrow(exception);

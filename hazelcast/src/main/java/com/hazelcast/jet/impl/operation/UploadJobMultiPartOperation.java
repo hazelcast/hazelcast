@@ -47,7 +47,7 @@ public class UploadJobMultiPartOperation extends AsyncJobOperation {
             JetServiceBackend jetServiceBackend = getJetServiceBackend();
             JobMetaDataParameterObject partsComplete = jetServiceBackend.storeJobMultiPart(jobMultiPartParameterObject);
             if (partsComplete != null) {
-                jetServiceBackend.runJar(partsComplete);
+                jetServiceBackend.executeJar(partsComplete);
             }
             return true;
         });

@@ -19,16 +19,20 @@ package com.hazelcast.jet.impl.operation;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.jobupload.JobMetaDataParameterObject;
+import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.spi.impl.operationservice.Operation;
 
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
+
+import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
 
 /**
  * Uploads the metadata of a job to be executed by a jar
  */
-public class UploadJobMetaDataOperation extends AsyncJobOperation {
+public class UploadJobMetaDataOperation extends Operation implements IdentifiedDataSerializable {
 
+    Boolean response;
     JobMetaDataParameterObject jobMetaDataParameterObject;
 
     public UploadJobMetaDataOperation() {
@@ -46,17 +50,31 @@ public class UploadJobMetaDataOperation extends AsyncJobOperation {
         jobMetaDataParameterObject.setJobParameters(jobParameters);
     }
 
-
     @Override
-    public CompletableFuture<Boolean> doRun() {
-        return CompletableFuture.supplyAsync(() -> {
-            JetServiceBackend jetServiceBackend = getJetServiceBackend();
-            jetServiceBackend.checkIfCanRunJar();
-            jetServiceBackend.storeJobMetaData(jobMetaDataParameterObject);
-            return true;
-        });
+    public Object getResponse() {
+        return response;
     }
 
+    @Override
+    public void run() {
+
+        JetServiceBackend jetServiceBackend = getJetServiceBackend();
+        jetServiceBackend.checkIfCanExecuteJar();
+        jetServiceBackend.storeJobMetaData(jobMetaDataParameterObject);
+        response = true;
+
+    }
+
+    protected JetServiceBackend getJetServiceBackend() {
+        checkJetIsEnabled(getNodeEngine());
+        assert getServiceName().equals(JetServiceBackend.SERVICE_NAME) : "Service is not Jet Service";
+        return getService();
+    }
+
+    @Override
+    public final int getFactoryId() {
+        return JetInitDataSerializerHook.FACTORY_ID;
+    }
 
     @Override
     public int getClassId() {
