@@ -41,7 +41,7 @@ public final class JulLoggerFactory implements TpcLoggerFactory {
     private static class JulLogger implements TpcLogger {
         private final Logger logger;
 
-        public JulLogger(Logger logger) {
+        private JulLogger(Logger logger) {
             this.logger = logger;
         }
 

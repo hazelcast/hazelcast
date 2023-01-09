@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class TpcLoggerLocator {
 
-    private final static AtomicReference LOGGER = new AtomicReference();
+    private static final AtomicReference LOGGER = new AtomicReference();
 
     public static TpcLogger getLogger(Class clazz) {
         Object logger = LOGGER.get();
