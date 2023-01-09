@@ -1500,8 +1500,8 @@ public class ConfigXmlGeneratorTest extends HazelcastTestSupport {
     public void testAltoConfig() {
         Config expectedConfig = new Config();
         expectedConfig.getAltoConfig()
-                .setEnabled(true)
-                .setEventloopCount(12);
+                .setEventloopCount(12)
+                .setEnabled(true);
         Config actualConfig = getNewConfigViaXMLGenerator(expectedConfig);
         assertEquals(expectedConfig.getAltoConfig(), actualConfig.getAltoConfig());
     }
