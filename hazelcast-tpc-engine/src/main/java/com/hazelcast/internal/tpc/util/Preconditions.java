@@ -16,7 +16,7 @@
 
 package com.hazelcast.internal.tpc.util;
 
-public class Preconditions {
+public final class Preconditions {
 
     /**
      * Tests if a {@code value} is positive, that is strictly larger than 0 (value &gt; 0).
@@ -60,5 +60,8 @@ public class Preconditions {
             throw new NullPointerException();
         }
         return argument;
+    }
+
+    private Preconditions() {
     }
 }
