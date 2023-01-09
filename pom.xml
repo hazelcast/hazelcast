@@ -1881,7 +1881,7 @@
             <dependency>
               <groupId>com.google.api.grpc</groupId>
               <artifactId>proto-google-iam-v1</artifactId>
-              <version>1.1.7</version>
+              <version>1.7.0</version>
             </dependency>
             <!-- Force higher version, compatible with M1 -->
             <!-- Otherwise Docker for Java (used by TestContainers) is not able to load all JNA files for aarch64 -->
