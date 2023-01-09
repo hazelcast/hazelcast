@@ -25,6 +25,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+
 /**
  * Contains configuration for Network.
  */
@@ -411,6 +413,7 @@ public class NetworkConfig {
     }
 
     public NetworkConfig setAltoSocketConfig(@Nonnull AltoSocketConfig altoSocketConfig) {
+        checkNotNull(altoSocketConfig);
         this.altoSocketConfig = altoSocketConfig;
         return this;
     }

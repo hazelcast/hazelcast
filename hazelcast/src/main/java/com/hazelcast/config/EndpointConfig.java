@@ -26,6 +26,8 @@ import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
 
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
+
 /**
  * Endpoint configuration that defines communication/networking properties common to both incoming/outgoing connections
  * eg.
@@ -280,6 +282,7 @@ public class EndpointConfig implements NamedConfig {
     }
 
     public EndpointConfig setAltoSocketConfig(@Nonnull AltoSocketConfig altoSocketConfig) {
+        checkNotNull(altoSocketConfig);
         this.altoSocketConfig = altoSocketConfig;
         return this;
     }

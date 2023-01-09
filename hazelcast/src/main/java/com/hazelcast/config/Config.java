@@ -3229,6 +3229,7 @@ public class Config {
 
     @Beta
     public Config setAltoConfig(@Nonnull AltoConfig altoConfig) {
+        checkNotNull(altoConfig);
         this.altoConfig = altoConfig;
         return this;
     }
