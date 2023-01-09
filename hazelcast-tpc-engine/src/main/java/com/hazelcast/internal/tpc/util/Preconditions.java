@@ -18,7 +18,6 @@ package com.hazelcast.internal.tpc.util;
 
 public final class Preconditions {
 
-
     public static <E> E checkInstanceOf(Class<E> type, Object object, String paramName) {
         checkNotNull(type, "type");
         checkNotNull(object, paramName);

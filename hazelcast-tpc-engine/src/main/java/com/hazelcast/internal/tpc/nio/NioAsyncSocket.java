@@ -24,7 +24,6 @@ import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.reflect.Field;
 import java.net.SocketAddress;
 import java.net.SocketOption;
 import java.nio.ByteBuffer;
@@ -41,6 +40,7 @@ import static com.hazelcast.internal.tpc.util.BufferUtil.compactOrClear;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.tpc.util.ReflectionUtil.findStaticFieldValue;
 import static com.hazelcast.internal.tpc.util.Util.closeResource;
 import static java.net.StandardSocketOptions.SO_KEEPALIVE;
 import static java.net.StandardSocketOptions.SO_LINGER;
@@ -59,22 +59,16 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     private static final int DEFAULT_UNFLUSHED_BUFS_CAPACITY = 2 << 16;
 
-    private static final SocketOption<Integer> TCP_KEEPCOUNT = findSocketOption("TCP_KEEPCOUNT");
-    private static final SocketOption<Integer> TCP_KEEPIDLE = findSocketOption("TCP_KEEPIDLE");
-    private static final SocketOption<Integer> TCP_KEEPINTERVAL = findSocketOption("TCP_KEEPINTERVAL");
+    private static final SocketOption<Integer> TCP_KEEPCOUNT
+            = findStaticFieldValue(ExtendedSocketOptions.class, "TCP_KEEPCOUNT");
+    private static final SocketOption<Integer> TCP_KEEPIDLE
+            = findStaticFieldValue(ExtendedSocketOptions.class, "TCP_KEEPIDLE");
+    private static final SocketOption<Integer> TCP_KEEPINTERVAL
+            = findStaticFieldValue(ExtendedSocketOptions.class, "TCP_KEEPINTERVAL");
+
     private static final AtomicBoolean TCP_KEEPCOUNT_PRINTED = new AtomicBoolean();
     private static final AtomicBoolean TCP_KEEPIDLE_PRINTED = new AtomicBoolean();
     private static final AtomicBoolean TCP_KEEPINTERVAL_PRINTED = new AtomicBoolean();
-
-    private static SocketOption<Integer> findSocketOption(String fieldName) {
-        Class extendedSocketOptions = ExtendedSocketOptions.class;
-        try {
-            Field field = extendedSocketOptions.getDeclaredField(fieldName);
-            return (SocketOption) field.get(null);
-        } catch (Exception e) {
-            return null;
-        }
-    }
 
     /**
      * Opens a NioAsyncSocket.

@@ -16,16 +16,17 @@
 
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.util.Preconditions;
 
 import java.nio.ByteBuffer;
+
+import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 
 public abstract class ReadHandler {
 
     protected AsyncSocket socket;
 
     public void init(AsyncSocket socket) {
-        this.socket = Preconditions.checkNotNull(socket);
+        this.socket = checkNotNull(socket);
     }
 
     public abstract void onRead(ByteBuffer receiveBuffer);

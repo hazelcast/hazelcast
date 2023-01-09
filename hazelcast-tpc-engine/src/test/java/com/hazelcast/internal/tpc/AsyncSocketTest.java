@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.tpc;
 
+import com.hazelcast.internal.tpc.nio.NioAsyncSocketTest;
+import com.hazelcast.internal.tpc.util.JVM;
 import org.junit.After;
 import org.junit.Test;
 
@@ -30,6 +32,7 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.junit.Assume.assumeTrue;
 import static org.mockito.Mockito.mock;
 
 public abstract class AsyncSocketTest {
@@ -98,10 +101,18 @@ public abstract class AsyncSocketTest {
         assertEquals(10, socket.getSoLinger());
     }
 
+    private void assumeIfNioThenJava11Plus() {
+        if (this instanceof NioAsyncSocketTest) {
+            assumeTrue(JVM.getMajorVersion() >= 11);
+        }
+    }
 
     @Test
     public void test_TcpKeepAliveTime() {
+        assumeIfNioThenJava11Plus();
+
         Eventloop eventloop = createEventloop();
+
         AsyncSocket socket = eventloop.openAsyncSocket();
 
         socket.setTcpKeepAliveTime(100);
@@ -110,6 +121,8 @@ public abstract class AsyncSocketTest {
 
     @Test
     public void test_sTcpKeepaliveIntvl() {
+        assumeIfNioThenJava11Plus();
+
         Eventloop eventloop = createEventloop();
         AsyncSocket socket = eventloop.openAsyncSocket();
 
@@ -119,6 +132,8 @@ public abstract class AsyncSocketTest {
 
     @Test
     public void test_TcpKeepAliveProbes() {
+        assumeIfNioThenJava11Plus();
+
         Eventloop eventloop = createEventloop();
         AsyncSocket socket = eventloop.openAsyncSocket();
 

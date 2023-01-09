@@ -188,8 +188,9 @@ public abstract class Eventloop implements Executor {
      * <p/>
      * This AsyncSocket isn't tied to this Eventloop. After it is opened, it needs to be assigned to a particular
      * eventloop by calling {@link AsyncSocket#activate(Eventloop)}. The reason why this isn't done in 1 go, is
-     * that it could be that the when the AsyncServerSocket accepts an AsyncSocket, it could be that it want to
-     * assign that AsyncSocket to a different eventloop.
+     * that it could be that when the AsyncServerSocket accepts an AsyncSocket, we want to assign that AsyncSocket
+     * to a different Eventloop. Otherwise if there would be 1 AsyncServerSocket, connected AsyncSockets can only
+     * run on top of the Eventloop of the AsyncServerSocket instead of being distributed over multiple eventloops.
      * <p>
      * This method is thread-safe.
      *
@@ -297,18 +298,18 @@ public abstract class Eventloop implements Executor {
     protected abstract void wakeup();
 
     /**
-     * Registers a clo on this Eventloop.
+     * Registers a closable on this Eventloop.
      * <p>
-     * Registered resources are automatically closed when the eventloop closes.
+     * Registered closable are automatically closed when the eventloop closes.
      * Some examples: AsyncSocket and AsyncServerSocket.
      * <p>
      * If the Eventloop isn't in the running state, false is returned.
      * <p>
      * This method is thread-safe.
      *
-     * @param closable
-     * @return true if the clo was successfully register, false otherwise.
-     * @throws NullPointerException if clo is null.
+     * @param closable the Closable to register
+     * @return true if the closable was successfully register, false otherwise.
+     * @throws NullPointerException if closable is null.
      */
     public final boolean registerClosable(Closeable closable) {
         checkNotNull(closable, "closable");
@@ -547,9 +548,13 @@ public abstract class Eventloop implements Executor {
             setAffinity();
 
             try {
-                unsafe = createUnsafe();
-                beforeEventloop();
-                eventLoop();
+                try {
+                    unsafe = createUnsafe();
+                    beforeEventloop();
+                    eventLoop();
+                } finally {
+                    afterEventloop();
+                }
             } catch (Throwable e) {
                 logger.severe(e);
             } finally {

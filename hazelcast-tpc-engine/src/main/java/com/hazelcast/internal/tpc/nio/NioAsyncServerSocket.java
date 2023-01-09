@@ -22,7 +22,6 @@ import com.hazelcast.internal.tpc.Eventloop;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.reflect.Field;
 import java.net.SocketAddress;
 import java.net.SocketOption;
 import java.net.StandardSocketOptions;
@@ -35,6 +34,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpc.util.IOUtil.closeResource;
+import static com.hazelcast.internal.tpc.util.ReflectionUtil.findStaticFieldValue;
 import static java.net.StandardSocketOptions.SO_RCVBUF;
 import static java.net.StandardSocketOptions.SO_REUSEADDR;
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
@@ -46,17 +46,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     private static final int DEFAULT_LATCH_TIMEOUT_SECONDS = 10;
 
     // This option is available since Java 9, so we need to use reflection.
-    private static final SocketOption SO_REUSEPORT;
-
-    static {
-        SocketOption value = null;
-        try {
-            Field field = StandardSocketOptions.class.getField("SO_REUSEPORT");
-            value = (SocketOption) field.get(null);
-        } catch (Exception ignore) {
-        }
-        SO_REUSEPORT = value;
-    }
+    private static final SocketOption SO_REUSEPORT = findStaticFieldValue(StandardSocketOptions.class, "SO_REUSEPORT");
 
     private final ServerSocketChannel serverSocketChannel;
     private final Selector selector;

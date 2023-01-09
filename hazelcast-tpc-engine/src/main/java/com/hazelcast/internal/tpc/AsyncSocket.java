@@ -65,32 +65,32 @@ public abstract class AsyncSocket implements Closeable {
     private Executor closeExecutor;
     protected ReadHandler readHandler;
 
-    public final long ioBuffersWritten() {
+    public final long getIoBuffersWritten() {
         return ioBuffersWritten.get();
     }
 
-    public final long bytesRead() {
+    public final long getBytesRead() {
         return bytesRead.get();
     }
 
-    public final long bytesWritten() {
+    public final long getBytesWritten() {
         return bytesWritten.get();
     }
 
-    public final long ioBuffersRead() {
+    public final long getIoBuffersRead() {
         return ioBuffersRead.get();
     }
 
-    public final long handleWriteCnt() {
+    public final long getHandleWriteCnt() {
         return handleWriteCnt.get();
     }
 
-    public final long readEvents() {
+    public final long getReadEvents() {
         return readEvents.get();
     }
 
     /**
-     * Returns the {@link Eventloop} this {@link AsyncSocket} belongs to.
+     * Gets the {@link Eventloop} this {@link AsyncSocket} belongs to.
      *
      * @return the {@link Eventloop} this AsyncSocket belongs to or null if
      * the AsyncSocket has not been activated yet.
@@ -98,7 +98,7 @@ public abstract class AsyncSocket implements Closeable {
     public abstract Eventloop eventloop();
 
     /**
-     * Returns the remote address.
+     * Gets the remote address.
      * <p>
      * If the AsyncSocket isn't connected yet, null is returned.
      * <p>
@@ -111,7 +111,7 @@ public abstract class AsyncSocket implements Closeable {
     }
 
     /**
-     * Returns the local address.
+     * Gets the local address.
      * <p>
      * If the AsyncSocket isn't connected yet, null is returned.
      * <p>
@@ -145,9 +145,11 @@ public abstract class AsyncSocket implements Closeable {
     public abstract boolean isKeepAlive();
 
     /**
-     * Get the interval in seconds between the last data packet sent (simple ACKs are not considered data) and
+     * Sets the interval in seconds between the last data packet sent (simple ACKs are not considered data) and
      * the first keepalive probe; after the connection is marked to need keepalive, this counter is not used
      * any further.
+     * <p/>
+     * If the setting isn't supported, the call is ignored.
      *
      * @param keepAliveTime the keep alive time.
      * @throws IllegalArgumentException if keepAliveIntvl is smaller than 0.
@@ -156,9 +158,11 @@ public abstract class AsyncSocket implements Closeable {
     public abstract void setTcpKeepAliveTime(int keepAliveTime);
 
     /**
-     * Get the interval in seconds between the last data packet sent (simple ACKs are not considered data) and
+     * Gets the interval in seconds between the last data packet sent (simple ACKs are not considered data) and
      * the first keepalive probe; after the connection is marked to need keepalive, this counter is not used any
      * further.
+     * <p/>
+     * If the setting isn't supported, 0 is returned.
      *
      * @return the interval.
      * @throws UncheckedIOException if something failed with configuring the socket
@@ -167,7 +171,9 @@ public abstract class AsyncSocket implements Closeable {
 
     /**
      * Sets the interval in seconds between subsequent keepalive probes, regardless of what the connection
-     * has exchanged in the meantime
+     * has exchanged in the meantime.
+     * <p/>
+     * If the setting isn't supported, the call is ignored.
      *
      * @param keepaliveIntvl the interval in seconds.
      * @throws IllegalArgumentException if keepAliveIntvl is smaller than 0.
@@ -178,6 +184,8 @@ public abstract class AsyncSocket implements Closeable {
     /**
      * Gets the interval in seconds between subsequent keepalive probes, regardless of what the connection
      * has exchanged in the meantime
+     * <p/>
+     * If the setting isn't supported, 0 is returned.
      *
      * @return the interval.
      * @throws UncheckedIOException if something failed with configuring the socket
@@ -187,6 +195,8 @@ public abstract class AsyncSocket implements Closeable {
     /**
      * Sets the number of unacknowledged probes to send before considering the connection dead and notifying the
      * application layer.
+     * <p/>
+     * If the setting isn't supported, the call is ignored.
      *
      * @param keepAliveProbes the number of unacknowledged probes.
      * @throws UncheckedIOException if something failed with configuring the socket
@@ -196,6 +206,8 @@ public abstract class AsyncSocket implements Closeable {
     /**
      * Gets the number of unacknowledged probes to send before considering the connection dead and notifying the
      * application layer.
+     * <p/>
+     * If the setting isn't supported, 0 is returned.
      *
      * @return the number of unacknowledged probes.
      * @throws UncheckedIOException if something failed with configuring the socket
@@ -203,7 +215,7 @@ public abstract class AsyncSocket implements Closeable {
     public abstract int getTcpKeepaliveProbes();
 
     /**
-     * Set the TCP_NODELAY option.
+     * Sets the TCP_NODELAY option.
      *
      * @param tcpNoDelay a boolean indicating whether or not TCP_NODELAY is enabled.
      * @throws UncheckedIOException if something failed with configuring the socket
@@ -253,7 +265,7 @@ public abstract class AsyncSocket implements Closeable {
     public abstract int getSendBufferSize();
 
     /**
-     * Sets  the ReadHandler. Should be called before this AsyncSocket is activated.
+     * Sets the ReadHandler. Should be called before this AsyncSocket is activated.
      *
      * @param readHandler the ReadHandler
      * @throws NullPointerException if readHandler is null.

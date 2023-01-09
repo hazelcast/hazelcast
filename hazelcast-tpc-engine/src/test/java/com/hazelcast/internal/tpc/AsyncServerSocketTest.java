@@ -16,6 +16,8 @@
 
 package com.hazelcast.internal.tpc;
 
+import com.hazelcast.internal.tpc.nio.NioAsyncServerSocketTest;
+import com.hazelcast.internal.tpc.util.JVM;
 import org.junit.After;
 import org.junit.Test;
 
@@ -27,6 +29,7 @@ import java.util.concurrent.TimeUnit;
 import static com.hazelcast.internal.tpc.util.IOUtil.closeResources;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeTrue;
 
 public abstract class AsyncServerSocketTest {
     public List<Closeable> closeables = new ArrayList<>();
@@ -66,8 +69,16 @@ public abstract class AsyncServerSocketTest {
         assertFalse(socket.isReuseAddress());
     }
 
+    private void assumeIfNioThenJava11Plus() {
+        if (this instanceof NioAsyncServerSocketTest) {
+            assumeTrue(JVM.getMajorVersion() >= 11);
+        }
+    }
+
     @Test
     public void reusePort() {
+        assumeIfNioThenJava11Plus();
+
         Eventloop eventloop = createEventloop();
         AsyncServerSocket socket = createAsyncServerSocket(eventloop);
         socket.reusePort(true);

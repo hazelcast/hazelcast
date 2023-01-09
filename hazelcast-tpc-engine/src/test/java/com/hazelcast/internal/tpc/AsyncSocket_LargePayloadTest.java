@@ -19,7 +19,6 @@ package com.hazelcast.internal.tpc;
 import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpc.iobuffer.IOBufferAllocator;
 import com.hazelcast.internal.tpc.iobuffer.NonConcurrentIOBufferAllocator;
-import com.hazelcast.internal.tpc.util.IOUtil;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -69,8 +68,6 @@ public abstract class AsyncSocket_LargePayloadTest {
             serverEventloop.awaitTermination(10, SECONDS);
         }
     }
-
-    public class Banana{}
 
     @Test
     public void test_concurrency_1_payload_0B() throws InterruptedException {
@@ -236,7 +233,6 @@ public abstract class AsyncSocket_LargePayloadTest {
         clientSocket.setSendBufferSize(SOCKET_BUFFER_SIZE);
         clientSocket.setReceiveBufferSize(SOCKET_BUFFER_SIZE);
         clientSocket.setReadHandler(new ReadHandler() {
-            private boolean firstTime = true;
             private ByteBuffer payloadBuffer;
             private long round;
             private int payloadSize = -1;
@@ -244,10 +240,6 @@ public abstract class AsyncSocket_LargePayloadTest {
 
             @Override
             public void onRead(ByteBuffer receiveBuffer) {
-                if (firstTime) {
-                    firstTime = false;
-                }
-
                 for (; ; ) {
                     if (payloadSize == -1) {
                         if (receiveBuffer.remaining() < SIZEOF_INT + SIZEOF_LONG) {
@@ -303,13 +295,11 @@ public abstract class AsyncSocket_LargePayloadTest {
         serverSocket.listen(10);
 
         serverSocket.accept(socket -> {
-            System.out.println("Server side accepted " + socket);
             socket.setSoLinger(-1);
             socket.setTcpNoDelay(true);
             socket.setSendBufferSize(SOCKET_BUFFER_SIZE);
             socket.setReceiveBufferSize(serverSocket.receiveBufferSize());
             socket.setReadHandler(new ReadHandler() {
-                private boolean firstTime;
                 private ByteBuffer payloadBuffer;
                 private long round;
                 private int payloadSize = -1;
@@ -317,9 +307,6 @@ public abstract class AsyncSocket_LargePayloadTest {
 
                 @Override
                 public void onRead(ByteBuffer receiveBuffer) {
-                    if (firstTime) {
-                        firstTime = false;
-                    }
 
                     for (; ; ) {
                         if (payloadSize == -1) {

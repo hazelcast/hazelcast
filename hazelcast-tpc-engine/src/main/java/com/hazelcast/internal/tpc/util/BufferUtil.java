@@ -63,7 +63,6 @@ public class BufferUtil {
         return buf;
     }
 
-
     public static void put(ByteBuffer dst, ByteBuffer src) {
         if (src.remaining() <= dst.remaining()) {
             // there is enough space in the dst buffer to copy the src
@@ -76,5 +75,8 @@ public class BufferUtil {
             dst.put(src);
             src.limit(srcOldLimit);
         }
+    }
+
+    private BufferUtil() {
     }
 }
