@@ -220,7 +220,7 @@ public class TpcServerBootstrap {
             }
         }
 
-        throw new HazelcastException("Allowed TPC ports weren't enough.");
+        throw new HazelcastException("Allowed alto socket port range isn't enough.");
     }
 
     public void shutdown() {

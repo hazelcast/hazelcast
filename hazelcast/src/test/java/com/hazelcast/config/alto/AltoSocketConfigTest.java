@@ -63,6 +63,12 @@ public class AltoSocketConfigTest extends HazelcastTestSupport {
     }
 
     @Test
+    public void testClientPortsNotEnough_whenPortRangeIsDecreasing() {
+        getAltoSocketConfig().setPortRange("13000-12000");
+        assertThrows(HazelcastException.class, () -> createHazelcastInstance(config));
+    }
+
+    @Test
     public void testClientPortsWith3Members() {
         getAltoSocketConfig().setPortRange("13000-14000");
         HazelcastInstance[] hz = createHazelcastInstances(config, 3);
