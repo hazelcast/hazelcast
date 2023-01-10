@@ -18,8 +18,8 @@ package com.hazelcast.internal.tpc;
 
 
 import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
-import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpc.logging.TpcLogger;
+import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpc.util.CircularQueue;
 import com.hazelcast.internal.util.ThreadAffinity;
 import com.hazelcast.internal.util.ThreadAffinityHelper;
@@ -27,7 +27,6 @@ import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.Closeable;
 import java.util.BitSet;
-import java.util.Collection;
 import java.util.PriorityQueue;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -46,9 +45,9 @@ import static com.hazelcast.internal.tpc.Eventloop.State.NEW;
 import static com.hazelcast.internal.tpc.Eventloop.State.RUNNING;
 import static com.hazelcast.internal.tpc.Eventloop.State.SHUTDOWN;
 import static com.hazelcast.internal.tpc.Eventloop.State.TERMINATED;
+import static com.hazelcast.internal.tpc.util.CloseUtil.closeAllQuietly;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkPositive;
-import static com.hazelcast.internal.tpc.util.IOUtil.closeResources;
 import static com.hazelcast.internal.tpc.util.Util.epochNanos;
 import static java.lang.System.getProperty;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
@@ -80,7 +79,8 @@ public abstract class Eventloop implements Executor {
     protected final PriorityQueue<ScheduledTask> scheduledTaskQueue = new PriorityQueue<>();
 
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
-    protected final Set<Closeable> resources = new CopyOnWriteArraySet<>();
+    //todo: Litter; we need to come up with better solution.
+    protected final Set<AutoCloseable> closeables = new CopyOnWriteArraySet<>();
 
     protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     protected final MpmcArrayQueue concurrentRunQueue;
@@ -176,6 +176,30 @@ public abstract class Eventloop implements Executor {
     }
 
     /**
+     * Opens an AsyncServerSocket and ties that socket to the this Eventloop instance.
+     * <p>
+     * This method is thread-safe.
+     *
+     * @return the opened AsyncServerSocket.
+     */
+    public abstract AsyncServerSocket openAsyncServerSocket();
+
+    /**
+     * Opens an AsyncSocket.
+     * <p/>
+     * This AsyncSocket isn't tied to this Eventloop. After it is opened, it needs to be assigned to a particular
+     * eventloop by calling {@link AsyncSocket#activate(Eventloop)}. The reason why this isn't done in 1 go, is
+     * that it could be that when the AsyncServerSocket accepts an AsyncSocket, we want to assign that AsyncSocket
+     * to a different Eventloop. Otherwise if there would be 1 AsyncServerSocket, connected AsyncSockets can only
+     * run on top of the Eventloop of the AsyncServerSocket instead of being distributed over multiple eventloops.
+     * <p>
+     * This method is thread-safe.
+     *
+     * @return the opened AsyncSocket.
+     */
+    public abstract AsyncSocket openAsyncSocket();
+
+    /**
      * Creates the Eventloop specific Unsafe instance.
      *
      * @return the create Unsafe instance.
@@ -189,7 +213,7 @@ public abstract class Eventloop implements Executor {
      * <p>
      * Is called from the eventloop thread.
      */
-    protected void beforeEventloop() {
+    protected void beforeEventloop() throws Exception {
     }
 
     /**
@@ -198,6 +222,16 @@ public abstract class Eventloop implements Executor {
      * @throws Exception
      */
     protected abstract void eventLoop() throws Exception;
+
+    /**
+     * Is called after the {@link #eventLoop()} is called.
+     * <p>
+     * This method can be used to cleanup resources.
+     * <p>
+     * Is called from the eventloop thread.
+     */
+    protected void afterEventloop() throws Exception {
+    }
 
     /**
      * Starts the eventloop.
@@ -251,7 +285,7 @@ public abstract class Eventloop implements Executor {
      *
      * @param timeout the timeout
      * @param unit    the TimeUnit
-     * @return true if the Eventloop is terminated at the moment the timeout happened.
+     * @return true if the Eventloop is terminated.
      * @throws InterruptedException
      */
     public final boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
@@ -265,30 +299,30 @@ public abstract class Eventloop implements Executor {
     protected abstract void wakeup();
 
     /**
-     * Registers a resource on this Eventloop.
+     * Registers an AutoCloseable on this Eventloop.
      * <p>
-     * Registered resources are automatically closed when the eventloop closes.
+     * Registered closeable are automatically closed when the eventloop closes.
      * Some examples: AsyncSocket and AsyncServerSocket.
      * <p>
      * If the Eventloop isn't in the running state, false is returned.
      * <p>
      * This method is thread-safe.
      *
-     * @param resource
-     * @return true if the resource was successfully register, false otherwise.
-     * @throws NullPointerException if resource is null.
+     * @param closeable the AutoCloseable to register
+     * @return true if the closeable was successfully register, false otherwise.
+     * @throws NullPointerException if closeable is null.
      */
-    public final boolean registerResource(Closeable resource) {
-        checkNotNull(resource, "resource");
+    public final boolean registerClosable(AutoCloseable closeable) {
+        checkNotNull(closeable, "closeable");
 
         if (state != RUNNING) {
             return false;
         }
 
-        resources.add(resource);
+        closeables.add(closeable);
 
         if (state != RUNNING) {
-            resources.remove(resource);
+            closeables.remove(closeable);
             return false;
         }
 
@@ -296,28 +330,17 @@ public abstract class Eventloop implements Executor {
     }
 
     /**
-     * Deregisters a resource from this Eventloop.
+     * Deregisters an AutoCloseable from this Eventloop.
      * <p>
      * This method is thread-safe.
      * <p>
      * This method can be called no matter the state of the Eventloop.
      *
-     * @param resource the resource to deregister.
+     * @param closeable the AutoCloseable to deregister.
      */
-    public final void deregisterResource(Closeable resource) {
-        checkNotNull(resource, "resource");
-        resources.remove(resource);
-    }
-
-    /**
-     * Gets a collection of all registered resources.
-     * <p>
-     * This method is thread-safe.
-     *
-     * @return the collection of all registered resources.
-     */
-    public final Collection<Closeable> resources() {
-        return resources;
+    public final void deregisterCloseable(AutoCloseable closeable) {
+        checkNotNull(closeable, "closeable");
+        closeables.remove(closeable);
     }
 
     @Override
@@ -480,11 +503,11 @@ public abstract class Eventloop implements Executor {
         }
 
         public void setLocalRunQueueCapacity(int localRunQueueCapacity) {
-            this.localRunQueueCapacity = checkPositive("localRunQueueCapacity", localRunQueueCapacity);
+            this.localRunQueueCapacity = checkPositive(localRunQueueCapacity, "localRunQueueCapacity");
         }
 
         public void setConcurrentRunQueueCapacity(int concurrentRunQueueCapacity) {
-            this.concurrentRunQueueCapacity = checkPositive("concurrentRunQueueCapacity", concurrentRunQueueCapacity);
+            this.concurrentRunQueueCapacity = checkPositive(concurrentRunQueueCapacity, "concurrentRunQueueCapacity");
         }
 
         public final void setSpin(boolean spin) {
@@ -526,14 +549,18 @@ public abstract class Eventloop implements Executor {
             setAffinity();
 
             try {
-                unsafe = createUnsafe();
-                beforeEventloop();
-                eventLoop();
+                try {
+                    unsafe = createUnsafe();
+                    beforeEventloop();
+                    eventLoop();
+                } finally {
+                    afterEventloop();
+                }
             } catch (Throwable e) {
                 logger.severe(e);
             } finally {
                 state = TERMINATED;
-                closeResources(resources);
+                closeAllQuietly(closeables);
                 terminationLatch.countDown();
                 if (engine != null) {
                     engine.notifyEventloopTerminated();
@@ -622,7 +649,7 @@ public abstract class Eventloop implements Executor {
      */
     public enum Type {
 
-        NIO, EPOLL, IOURING;
+        NIO, IOURING;
 
         public static Type fromString(String type) {
             String typeLowerCase = type.toLowerCase();
@@ -630,10 +657,8 @@ public abstract class Eventloop implements Executor {
                 return IOURING;
             } else if (typeLowerCase.equals("nio")) {
                 return NIO;
-            } else if (typeLowerCase.equals("epoll")) {
-                return EPOLL;
             } else {
-                throw new RuntimeException("Unrecognized eventloop type [" + type + ']');
+                throw new IllegalArgumentException("Unrecognized eventloop type [" + type + ']');
             }
         }
     }

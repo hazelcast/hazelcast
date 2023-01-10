@@ -18,17 +18,58 @@ package com.hazelcast.internal.tpc.util;
 
 public final class Preconditions {
 
+    public static <E> E checkInstanceOf(Class<E> type, Object object, String paramName) {
+        checkNotNull(type, "type");
+        checkNotNull(object, paramName);
+
+        if (!type.isInstance(object)) {
+            throw new IllegalArgumentException("object "+object+" of type "+object.getClass()+" is not an instanceof "+type);
+        }
+        return (E) object;
+    }
+
     /**
      * Tests if a {@code value} is positive, that is strictly larger than 0 (value &gt; 0).
      *
+     * @param value     the value tested to see if it is positive.
      * @param paramName the the name of the checked parameter that will be in exception message
      * @param value     the value tested to see if it is positive.
      * @return the value
      * @throws IllegalArgumentException if the value is not positive.
      */
-    public static int checkPositive(String paramName, int value) {
+    public static int checkPositive(int value, String paramName) {
         if (value <= 0) {
             throw new IllegalArgumentException(paramName + " is " + value + " but must be > 0");
+        }
+        return value;
+    }
+
+    /**
+     * Tests if the {@code value} is &gt;= 0.
+     *
+     * @param value     the  value tested to see if it is not negative.
+     * @param paramName the the name of the checked parameter that will be in exception message
+     * @return the value
+     * @throws java.lang.IllegalArgumentException if the value is negative.
+     */
+    public static int checkNotNegative(int value, String paramName) {
+        if (value < 0) {
+            throw new IllegalArgumentException(paramName + " is " + value + " but must be >= 0");
+        }
+        return value;
+    }
+
+    /**
+     * Tests if the {@code value} is &gt;= 0.
+     *
+     * @param value     the  value tested to see if it is not negative.
+     * @param paramName the the name of the checked parameter that will be in exception message
+     * @return the value
+     * @throws java.lang.IllegalArgumentException if the value is negative.
+     */
+    public static long checkNotNegative(long value, String paramName) {
+        if (value < 0) {
+            throw new IllegalArgumentException(paramName + " is " + value + " but must be >= 0");
         }
         return value;
     }

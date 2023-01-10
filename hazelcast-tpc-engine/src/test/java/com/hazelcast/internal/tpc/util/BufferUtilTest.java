@@ -22,7 +22,7 @@ import java.nio.ByteBuffer;
 
 import static org.junit.Assert.assertEquals;
 
-public class IOUtilTest {
+public class BufferUtilTest {
     @Test
     public void test_put_exactlyEnoughSpace() {
         ByteBuffer src = ByteBuffer.allocate(8);
@@ -33,7 +33,7 @@ public class IOUtilTest {
         int srcLimit = src.limit();
 
         ByteBuffer dst = ByteBuffer.allocate(8);
-        IOUtil.put(dst, src);
+        BufferUtil.put(dst, src);
         dst.flip();
         assertEquals(8, dst.remaining());
         assertEquals(1, dst.getInt());
@@ -53,7 +53,7 @@ public class IOUtilTest {
         int srcLimit = src.limit();
 
         ByteBuffer dst = ByteBuffer.allocate(12);
-        IOUtil.put(dst, src);
+        BufferUtil.put(dst, src);
         dst.flip();
         assertEquals(8, dst.remaining());
         assertEquals(1, dst.getInt());
@@ -72,7 +72,7 @@ public class IOUtilTest {
         int srcLimit = src.limit();
 
         ByteBuffer dst = ByteBuffer.allocate(4);
-        IOUtil.put(dst, src);
+        BufferUtil.put(dst, src);
         dst.flip();
         assertEquals(4, dst.remaining());
         assertEquals(1, dst.getInt());

@@ -17,6 +17,7 @@
 package com.hazelcast.internal.tpc.nio;
 
 import com.hazelcast.internal.tpc.logging.TpcLogger;
+import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -36,11 +37,12 @@ import static java.lang.System.arraycopy;
  * The Selector uses a HashSet, but this creates an object for every add of a
  * selection key. With this SelectorOptimizer a SelectionKeysSet, which contains
  * an array, is being used since every key is going to be inserted only once.
- *
+ * <p>
  * This trick comes from Netty.
  */
 public final class SelectorOptimizer {
     static final String SELECTOR_IMPL = "sun.nio.ch.SelectorImpl";
+    private final static TpcLogger logger = TpcLoggerLocator.getLogger(SelectorOptimizer.class);
 
     private SelectorOptimizer() {
     }
@@ -52,9 +54,7 @@ public final class SelectorOptimizer {
      * @return the created Selector.
      * @throws NullPointerException if logger is null.
      */
-    public static Selector newSelector(TpcLogger logger) {
-        checkNotNull(logger, "logger");
-
+    public static Selector newSelector() {
         Selector selector;
         try {
             selector = Selector.open();

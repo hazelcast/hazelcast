@@ -14,30 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpc.iobuffer;
+package com.hazelcast.internal.tpc.util;
 
 import org.junit.Test;
 
-import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_INT;
+import static com.hazelcast.internal.tpc.util.BitUtil.nextPowerOfTwo;
 import static org.junit.Assert.assertEquals;
 
-public class IOBufferTest {
-
+public class BitUtilTest {
 
     @Test
-    public void test() {
-        IOBuffer buf = new IOBuffer(10);
-
-        int items = 1000;
-
-        for (int k = 0; k < items; k++) {
-            buf.writeInt(k);
-        }
-
-        for (int k = 0; k < items; k++) {
-            assertEquals(k, buf.getInt(k * SIZEOF_INT));
-        }
-
-        System.out.println(buf.byteBuffer().capacity());
+    public void testNextPowerOfTwo() {
+        assertEquals(1, nextPowerOfTwo(-9999999));
+        assertEquals(1, nextPowerOfTwo(-1));
+        assertEquals(1, nextPowerOfTwo(0));
+        assertEquals(1, nextPowerOfTwo(1));
+        assertEquals(2, nextPowerOfTwo(2));
+        assertEquals(1024, nextPowerOfTwo(999));
+        assertEquals(1 << 23, nextPowerOfTwo((1 << 23) - 1));
+        assertEquals(1 << 23, nextPowerOfTwo(1 << 23));
     }
 }
