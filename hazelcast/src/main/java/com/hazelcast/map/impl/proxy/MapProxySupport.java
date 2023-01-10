@@ -134,6 +134,7 @@ import static com.hazelcast.map.impl.MapService.SERVICE_NAME;
 import static com.hazelcast.map.impl.query.Target.createPartitionTarget;
 import static com.hazelcast.query.Predicates.alwaysFalse;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
+import static com.hazelcast.spi.properties.ClusterProperty.FAIL_ON_INDETERMINATE_OPERATION_STATE;
 import static java.lang.Math.ceil;
 import static java.lang.Math.log10;
 import static java.lang.Math.min;
@@ -218,7 +219,7 @@ abstract class MapProxySupport<K, V>
     protected MapOperationProvider operationProvider;
 
     // can be changed dynamically using internal API
-    private SyncBackupTimeoutPolicy syncBackupTimeoutPolicy = SyncBackupTimeoutPolicy.GLOBAL;
+    private boolean failOnIndeterminateOperationState;
 
     private final int putAllBatchSize;
     private final float putAllInitialSizeFactor;
@@ -245,6 +246,8 @@ abstract class MapProxySupport<K, V>
 
         this.putAllBatchSize = properties.getInteger(MAP_PUT_ALL_BATCH_SIZE);
         this.putAllInitialSizeFactor = properties.getFloat(MAP_PUT_ALL_INITIAL_SIZE_FACTOR);
+        // default value the same as in OperationService
+        this.failOnIndeterminateOperationState = properties.getBoolean(FAIL_ON_INDETERMINATE_OPERATION_STATE);
     }
 
     @Override
@@ -362,31 +365,19 @@ abstract class MapProxySupport<K, V>
     }
 
     /**
-     * Gets action to be taken when {@link
-     * com.hazelcast.spi.properties.ClusterProperty#OPERATION_BACKUP_TIMEOUT_MILLIS}
-     * elapses when waiting for completion of synchronous backups.
-     *
-     * @return action to be taken on backup timeout
-     * @see #setSyncBackupTimeoutPolicy(SyncBackupTimeoutPolicy)
-     */
-    public SyncBackupTimeoutPolicy getSyncBackupTimeoutPolicy() {
-        return syncBackupTimeoutPolicy;
-    }
-
-    /**
-     * Sets action to be taken when {@link
-     * com.hazelcast.spi.properties.ClusterProperty#OPERATION_BACKUP_TIMEOUT_MILLIS}
-     * elapses when waiting for completion of synchronous backups.
+     * Overrides {@link
+     * com.hazelcast.spi.properties.ClusterProperty#FAIL_ON_INDETERMINATE_OPERATION_STATE}
+     * for this {@link IMap} proxy instance.
      * <p>
      * This setting applies only to sync and async operations on single key
-     * (eg. {@link IMap#put(Object, Object)}. It does not affect multi-entry
+     * (e.g. {@link IMap#put(Object, Object)}. It does not affect multi-entry
      * operations (eg. {@link IMap#clear()}, {@link IMap#putAll}).
      *
-     * @param syncBackupTimeoutPolicy action to be taken on backup timeout
+     * @param failOnIndeterminateOperationState should fail with exception on backup timeout
      * @see MapConfig#setBackupCount(int)
      */
-    public void setSyncBackupTimeoutPolicy(SyncBackupTimeoutPolicy syncBackupTimeoutPolicy) {
-        this.syncBackupTimeoutPolicy = syncBackupTimeoutPolicy;
+    public void setFailOnIndeterminateOperationState(boolean failOnIndeterminateOperationState) {
+        this.failOnIndeterminateOperationState = failOnIndeterminateOperationState;
     }
 
     protected QueryEngine getMapQueryEngine() {
@@ -486,24 +477,6 @@ abstract class MapProxySupport<K, V>
                 timeInMsOrOneIfResultIsZero(maxIdle, maxIdleUnit));
     }
 
-    private InvocationBuilder overrideFailOnIndeterminateOperationState(InvocationBuilder invocationBuilder) {
-        SyncBackupTimeoutPolicy policy = getSyncBackupTimeoutPolicy();
-        switch (policy) {
-            case GLOBAL:
-                // use value configured by operationService
-                break;
-            case SUCCESS:
-                invocationBuilder.setFailOnIndeterminateOperationState(false);
-                break;
-            case INDETERMINATE:
-                invocationBuilder.setFailOnIndeterminateOperationState(true);
-                break;
-            default:
-                throw new IllegalArgumentException("Unknown SyncBackupTimeoutPolicy: " + policy);
-        }
-        return invocationBuilder;
-    }
-
     private Object invokeOperation(Data key, MapOperation operation) {
         int partitionId = partitionService.getPartitionId(key);
         operation.setThreadId(getThreadId());
@@ -512,16 +485,18 @@ abstract class MapProxySupport<K, V>
             Object result;
             if (statisticsEnabled) {
                 long startTimeNanos = Timer.nanos();
-                Future future = overrideFailOnIndeterminateOperationState(operationService
+                Future future = operationService
                         .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                        .setResultDeserialized(false))
+                        .setResultDeserialized(false)
+                        .setFailOnIndeterminateOperationState(failOnIndeterminateOperationState)
                         .invoke();
                 result = future.get();
                 incrementOperationStats(operation, localMapStats, startTimeNanos);
             } else {
-                Future future = overrideFailOnIndeterminateOperationState(operationService
+                Future future = operationService
                         .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                        .setResultDeserialized(false))
+                        .setResultDeserialized(false)
+                        .setFailOnIndeterminateOperationState(failOnIndeterminateOperationState)
                         .invoke();
                 result = future.get();
             }
@@ -540,16 +515,18 @@ abstract class MapProxySupport<K, V>
             InternalCompletableFuture<Data> result;
             if (statisticsEnabled) {
                 long startTimeNanos = Timer.nanos();
-                result = overrideFailOnIndeterminateOperationState(operationService
+                result = operationService
                         .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                        .setResultDeserialized(resultDeserialized))
+                        .setResultDeserialized(resultDeserialized)
+                        .setFailOnIndeterminateOperationState(failOnIndeterminateOperationState)
                         .setAsync()
                         .invoke();
                 result.whenCompleteAsync(new IncrementStatsExecutionCallback(operation, startTimeNanos), CALLER_RUNS);
             } else {
-                result = overrideFailOnIndeterminateOperationState(operationService
+                result = operationService
                         .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                        .setResultDeserialized(resultDeserialized))
+                        .setResultDeserialized(resultDeserialized)
+                        .setFailOnIndeterminateOperationState(failOnIndeterminateOperationState)
                         .setAsync()
                         .invoke();
             }
@@ -1247,9 +1224,10 @@ abstract class MapProxySupport<K, V>
         MapOperation operation = operationProvider.createEntryOperation(name, keyData, entryProcessor);
         operation.setThreadId(getThreadId());
         validateEntryProcessorForSingleKeyProcessing(entryProcessor);
-        return overrideFailOnIndeterminateOperationState(operationService
+        return operationService
                 .createInvocationBuilder(SERVICE_NAME, operation, partitionId)
-                .setResultDeserialized(false))
+                .setResultDeserialized(false)
+                .setFailOnIndeterminateOperationState(failOnIndeterminateOperationState)
                 .invoke();
     }
 
