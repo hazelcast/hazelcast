@@ -46,11 +46,9 @@ public class TpcTestSupport {
         return (E) actual;
     }
 
-
     public static void assertOpenEventually(CountDownLatch latch) {
         assertOpenEventually(latch, ASSERT_TRUE_EVENTUALLY_TIMEOUT);
     }
-
 
     public static void assertOpenEventually(CountDownLatch latch, long timeoutSeconds) {
         assertTrueEventually(() -> {

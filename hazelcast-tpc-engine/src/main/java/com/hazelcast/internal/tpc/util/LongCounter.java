@@ -21,6 +21,12 @@ import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
 
+/**
+ * A counter that can be used for progress indication.
+ * <p/>
+ * It can safely be updated by 1 thread and read by others. The value is guaranteed to be atomic,
+ * but no ordering guarantees are provided.
+ */
 public class LongCounter {
 
     private static final Unsafe UNSAFE = UnsafeUtil.UNSAFE;
@@ -44,6 +50,7 @@ public class LongCounter {
     @SuppressWarnings("checkstyle:innerassignment")
     public long inc() {
         final long newLocalValue = value + 1;
+        // In the future we could use an opaque write.
         UNSAFE.putOrderedLong(this, OFFSET, newLocalValue);
         return newLocalValue;
     }
@@ -51,11 +58,13 @@ public class LongCounter {
     @SuppressWarnings("checkstyle:innerassignment")
     public long inc(long amount) {
         final long newLocalValue = value + amount;
+        // In the future we could use an opaque write.
         UNSAFE.putOrderedLong(this, OFFSET, newLocalValue);
         return newLocalValue;
     }
 
     public long get() {
+        // In the future we could use an opaque read.
         return value;
     }
 

@@ -18,13 +18,14 @@ package com.hazelcast.internal.tpc.nio;
 
 import com.hazelcast.internal.tpc.AsyncSocket;
 import com.hazelcast.internal.tpc.Eventloop;
-import com.hazelcast.internal.tpc.ReadHandler;
 import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
+import jdk.net.ExtendedSocketOptions;
 import org.jctools.queues.MpmcArrayQueue;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketAddress;
+import java.net.SocketOption;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
@@ -32,13 +33,15 @@ import java.nio.channels.Selector;
 import java.nio.channels.SocketChannel;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static com.hazelcast.internal.tpc.util.BufferUtil.compactOrClear;
+import static com.hazelcast.internal.tpc.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
-
 import static com.hazelcast.internal.tpc.util.Preconditions.checkPositive;
+import static com.hazelcast.internal.tpc.util.ReflectionUtil.findStaticFieldValue;
 import static com.hazelcast.internal.tpc.util.Util.closeResource;
-import static com.hazelcast.internal.tpc.util.IOUtil.compactOrClear;
 import static java.net.StandardSocketOptions.SO_KEEPALIVE;
 import static java.net.StandardSocketOptions.SO_LINGER;
 import static java.net.StandardSocketOptions.SO_RCVBUF;
@@ -49,12 +52,31 @@ import static java.nio.channels.SelectionKey.OP_READ;
 import static java.nio.channels.SelectionKey.OP_WRITE;
 
 /**
- * Nio version of the {@link AsyncSocket}.
+ * Nio implementation of the {@link AsyncSocket}.
  */
 @SuppressWarnings({"checkstyle:DeclarationOrder", "checkstyle:VisibilityOrder"})
 public final class NioAsyncSocket extends AsyncSocket {
+
     private static final int DEFAULT_UNFLUSHED_BUFS_CAPACITY = 2 << 16;
 
+    private static final SocketOption<Integer> TCP_KEEPCOUNT
+            = findStaticFieldValue(ExtendedSocketOptions.class, "TCP_KEEPCOUNT");
+    private static final SocketOption<Integer> TCP_KEEPIDLE
+            = findStaticFieldValue(ExtendedSocketOptions.class, "TCP_KEEPIDLE");
+    private static final SocketOption<Integer> TCP_KEEPINTERVAL
+            = findStaticFieldValue(ExtendedSocketOptions.class, "TCP_KEEPINTERVAL");
+
+    private static final AtomicBoolean TCP_KEEPCOUNT_PRINTED = new AtomicBoolean();
+    private static final AtomicBoolean TCP_KEEPIDLE_PRINTED = new AtomicBoolean();
+    private static final AtomicBoolean TCP_KEEPINTERVAL_PRINTED = new AtomicBoolean();
+
+    /**
+     * Opens a NioAsyncSocket.
+     * <p/>
+     * To prevent coupling, it is better to use the {@link Eventloop#openAsyncSocket()}.
+     *
+     * @return the opened NioAsyncSocket.
+     */
     public static NioAsyncSocket open() {
         return new NioAsyncSocket();
     }
@@ -78,7 +100,6 @@ public final class NioAsyncSocket extends AsyncSocket {
     // reading side of the socket.
     // ======================================================
     private ByteBuffer receiveBuffer;
-    private NioAsyncReadHandler readHandler;
 
     // ======================================================
     // writing side of the socket.
@@ -118,14 +139,8 @@ public final class NioAsyncSocket extends AsyncSocket {
         return socketChannel;
     }
 
-    @Override
-    public void readHandler(ReadHandler h) {
-        this.readHandler = (NioAsyncReadHandler) checkNotNull(h);
-        this.readHandler.init(this);
-    }
-
     public void setUnflushedBufsCapacity(int unflushedBufsCapacity) {
-        this.unflushedBufsCapacity = checkPositive("unflushedBufsCapacity", unflushedBufsCapacity);
+        this.unflushedBufsCapacity = checkPositive(unflushedBufsCapacity, "unflushedBufsCapacity");
     }
 
     public void setRegularSchedule(boolean regularSchedule) {
@@ -137,7 +152,103 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public void soLinger(int soLinger) {
+    public void setTcpKeepAliveTime(int keepAliveTime) {
+        checkPositive(keepAliveTime, "keepAliveTime");
+        if (TCP_KEEPIDLE == null) {
+            if (TCP_KEEPIDLE_PRINTED.compareAndSet(false, true)) {
+                logger.warning("Ignoring NioAsyncSocket.setTcpKeepAliveTime. " +
+                        "Please upgrade to Java 11+ or configure tcp_keepalive_time in the kernel. " +
+                        "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. " +
+                        "If this isn't dealt with, idle connections could be closed prematurely.");
+            }
+        } else {
+            try {
+                socketChannel.setOption(TCP_KEEPIDLE, keepAliveTime);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+    }
+
+    @Override
+    public int getTcpKeepAliveTime() {
+        if (TCP_KEEPIDLE == null) {
+            return 0;
+        } else {
+            try {
+                return socketChannel.getOption(TCP_KEEPIDLE);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+    }
+
+    @Override
+    public void setTcpKeepaliveIntvl(int keepaliveIntvl) {
+        checkPositive(keepaliveIntvl, "keepaliveIntvl");
+        if (TCP_KEEPINTERVAL == null) {
+            if (TCP_KEEPINTERVAL_PRINTED.compareAndSet(false, true)) {
+                logger.warning("Ignoring NioAsyncSocket.setTcpKeepaliveIntvl. " +
+                        "Please upgrade to Java 11+ or configure tcp_keepalive_intvl in the kernel. " +
+                        "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. " +
+                        "If this isn't dealt with, idle connections could be closed prematurely.");
+            }
+        } else {
+            try {
+                socketChannel.setOption(TCP_KEEPINTERVAL, keepaliveIntvl);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+    }
+
+    @Override
+    public int getTcpKeepaliveIntvl() {
+        if (TCP_KEEPINTERVAL == null) {
+            return 0;
+        } else {
+            try {
+                return socketChannel.getOption(TCP_KEEPINTERVAL);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+    }
+
+    @Override
+    public void setTcpKeepAliveProbes(int keepAliveProbes) {
+        checkPositive(keepAliveProbes, "keepAliveProbes");
+        if (TCP_KEEPCOUNT == null) {
+            if (TCP_KEEPCOUNT_PRINTED.compareAndSet(false, true)) {
+                logger.warning("Ignoring NioAsyncSocket.setTcpKeepAliveProbes. " +
+                        "Please upgrade to Java 11+ or configure tcp_keepalive_probes in the kernel: " +
+                        "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. " +
+                        "If this isn't dealt with, idle connections could be closed prematurely.");
+            }
+        } else {
+            try {
+                socketChannel.setOption(TCP_KEEPCOUNT, keepAliveProbes);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+    }
+
+    @Override
+    public int getTcpKeepaliveProbes() {
+        if (TCP_KEEPCOUNT == null) {
+            return 0;
+        } else {
+            try {
+                return socketChannel.getOption(TCP_KEEPCOUNT);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
+        }
+    }
+
+    @Override
+    public void setSoLinger(int soLinger) {
         try {
             socketChannel.setOption(SO_LINGER, soLinger);
         } catch (IOException e) {
@@ -146,7 +257,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public int soLinger() {
+    public int getSoLinger() {
         try {
             return socketChannel.getOption(SO_LINGER);
         } catch (IOException e) {
@@ -155,7 +266,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public void keepAlive(boolean keepAlive) {
+    public void setKeepAlive(boolean keepAlive) {
         try {
             socketChannel.setOption(SO_KEEPALIVE, keepAlive);
         } catch (IOException e) {
@@ -182,7 +293,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public void tcpNoDelay(boolean tcpNoDelay) {
+    public void setTcpNoDelay(boolean tcpNoDelay) {
         try {
             socketChannel.setOption(TCP_NODELAY, tcpNoDelay);
         } catch (IOException e) {
@@ -191,7 +302,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public int receiveBufferSize() {
+    public int getReceiveBufferSize() {
         try {
             return socketChannel.getOption(SO_RCVBUF);
         } catch (IOException e) {
@@ -200,7 +311,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public void receiveBufferSize(int size) {
+    public void setReceiveBufferSize(int size) {
         try {
             socketChannel.setOption(SO_RCVBUF, size);
         } catch (IOException e) {
@@ -209,7 +320,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public int sendBufferSize() {
+    public int getSendBufferSize() {
         try {
             return socketChannel.getOption(SO_SNDBUF);
         } catch (IOException e) {
@@ -218,7 +329,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public void sendBufferSize(int size) {
+    public void setSendBufferSize(int size) {
         try {
             socketChannel.setOption(SO_SNDBUF, size);
         } catch (IOException e) {
@@ -227,27 +338,26 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    public void activate(Eventloop l) {
-        NioEventloop eventloop = (NioEventloop) checkNotNull(l, "l");
-
+    public void activate(Eventloop eventloop) {
         if (this.eventloop != null) {
-            throw new IllegalStateException("Can't activate an already activated NioAsynSocket");
+            throw new IllegalStateException(this + " already has been activated");
         }
 
         if (readHandler == null) {
-            throw new IllegalStateException("Can't activate NioAsyncSocket: readhandler isn't set");
+            throw new IllegalStateException("Can't activate " + this + ": readhandler isn't set");
         }
 
-        this.eventloop = eventloop;
-        this.eventloopThread = eventloop.eventloopThread();
+        this.eventloop = checkInstanceOf(NioEventloop.class, eventloop, "evenloop");
+        this.eventloopThread = this.eventloop.eventloopThread();
         this.unflushedBufs = new MpmcArrayQueue<>(unflushedBufsCapacity);
-        if (!eventloop.registerResource(NioAsyncSocket.this)) {
-            throw new IllegalStateException("Can't activate NioAsynSocket: eventloop not active");
+        if (!this.eventloop.registerClosable(NioAsyncSocket.this)) {
+            throw new IllegalStateException("Can't activate NioAsynSocket: Eventloop is shutdown");
         }
 
-        boolean offered = eventloop.offer(() -> {
-            selector = eventloop.selector;
-            receiveBuffer = ByteBuffer.allocateDirect(receiveBufferSize());
+        // todo: if something fails within this task, you just get a logged exception and that is it.
+        boolean offered = this.eventloop.offer(() -> {
+            selector = this.eventloop.selector;
+            receiveBuffer = ByteBuffer.allocateDirect(getReceiveBufferSize());
             if (!clientSide) {
                 try {
                     key = socketChannel.register(selector, OP_READ, eventLoopHandler);
@@ -256,8 +366,9 @@ public final class NioAsyncSocket extends AsyncSocket {
                 }
             }
         });
+
         if (!offered) {
-            throw new RuntimeException();
+            throw new RuntimeException("Failed to activate " + this);
         }
     }
 
@@ -291,7 +402,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     @Override
     public boolean write(IOBuffer buf) {
-        return unflushedBufs.offer(buf);
+        return unflushedBufs.add(buf);
     }
 
     @Override
@@ -339,18 +450,20 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    protected void doClose() {
+    protected void close0() {
         closeResource(socketChannel.socket());
 
         if (eventloop != null) {
-            eventloop.deregisterResource(this);
+            eventloop.deregisterCloseable(this);
         }
     }
 
     @Override
     public CompletableFuture<AsyncSocket> connect(SocketAddress address) {
         checkNotNull(address, "address");
-
+        if (eventloop == null) {
+            throw new IllegalStateException("Can't connect, NioAsyncSocket isn't activated.");
+        }
         if (logger.isInfoEnabled()) {
             logger.info("Connect to address:" + address);
         }
@@ -381,7 +494,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
         @Override
         public void handleException(Exception e) {
-            logger.warning(e);
+            logger.warning("Closing NioAsyncSocket due to exception", e);
             close();
         }
 

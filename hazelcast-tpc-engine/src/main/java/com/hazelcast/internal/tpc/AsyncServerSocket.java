@@ -18,6 +18,7 @@ package com.hazelcast.internal.tpc;
 
 import com.hazelcast.internal.tpc.logging.TpcLogger;
 import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
+import com.hazelcast.internal.tpc.nio.NioAsyncSocket;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -26,6 +27,7 @@ import java.net.SocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 /**
  * A server socket that is asynchronous. So accepting incoming connections does not block,
@@ -42,7 +44,7 @@ public abstract class AsyncServerSocket implements Closeable {
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
     protected final AtomicBoolean closed = new AtomicBoolean(false);
 
-    public AsyncServerSocket() {
+    protected AsyncServerSocket() {
     }
 
     /**
@@ -75,6 +77,7 @@ public abstract class AsyncServerSocket implements Closeable {
      * Gets the local port of the ServerSocketChannel.
      *
      * @return the local port.
+     * @throws UncheckedIOException if something failed while obtaining the local port.
      */
     public abstract int getLocalPort();
 
@@ -141,6 +144,8 @@ public abstract class AsyncServerSocket implements Closeable {
 
     public abstract void listen(int backlog);
 
+    public abstract void accept(Consumer<AsyncSocket> consumer);
+
     /**
      * Closes the AsyncServerSocket.
      * <p/>
@@ -167,10 +172,19 @@ public abstract class AsyncServerSocket implements Closeable {
         }
     }
 
+    /**
+     * Does the actual closing. No guarantee is made on which thread this is called.
+     * <p/>
+     * Is guaranteed to be called at most once.
+     *
+     * @throws IOException
+     */
     protected abstract void close0() throws IOException;
 
     /**
      * Checks if the AsyncServerSocket is closed.
+     *
+     * This method is thread-safe.
      *
      * @return true if closed, false otherwise.
      */

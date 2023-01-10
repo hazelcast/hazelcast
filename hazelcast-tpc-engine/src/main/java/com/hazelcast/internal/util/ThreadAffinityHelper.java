@@ -18,7 +18,7 @@ package com.hazelcast.internal.util;
 
 import com.hazelcast.internal.tpc.logging.TpcLogger;
 import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
-import com.hazelcast.internal.tpc.util.IOUtil;
+import com.hazelcast.internal.tpc.util.CloseUtil;
 import com.hazelcast.internal.tpc.util.Util;
 import net.openhft.affinity.Affinity;
 
@@ -103,7 +103,7 @@ public final class ThreadAffinityHelper {
     private static String extractBundledLib() {
         InputStream src = null;
         try {
-            src = IOUtil.class.getClassLoader().getResourceAsStream("lib/linux-x86_64/libaffinity_helper.so");
+            src = CloseUtil.class.getClassLoader().getResourceAsStream("lib/linux-x86_64/libaffinity_helper.so");
             File dest = File.createTempFile("hazelcast-libaffinity-helper-", ".so");
             Files.copy(src, dest.toPath(), StandardCopyOption.REPLACE_EXISTING);
             return dest.getAbsolutePath();
