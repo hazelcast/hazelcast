@@ -86,7 +86,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
             String collectionName,
             FunctionEx<Document, I> mapItemFn
     ) {
-        reader = new BatchMongoTraverser(connectionSupplier, databaseName, collectionName, mapItemFn, aggregates);
+        reader = new BatchMongoReader(connectionSupplier, databaseName, collectionName, mapItemFn, aggregates);
     }
 
     public ReadMongoP(
@@ -100,7 +100,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
     ) {
         EventTimeMapper<I> eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
         eventTimeMapper.addPartitions(1);
-        reader = new StreamMongoTraverser(connectionSupplier, databaseName, collectionName, mapStreamFn,
+        reader = new StreamMongoReader(connectionSupplier, databaseName, collectionName, mapStreamFn,
                 startAtTimestamp, aggregates, eventTimeMapper);
     }
 
@@ -257,13 +257,13 @@ public class ReadMongoP<I> extends AbstractProcessor {
         abstract boolean everCompletes();
     }
 
-    private final class BatchMongoTraverser extends MongoChunkedReader {
+    private final class BatchMongoReader extends MongoChunkedReader {
         private final FunctionEx<Document, I> mapItemFn;
         private final List<Bson> aggregates;
         private Traverser<Document> delegate;
         private ObjectId lastKey;
 
-        private BatchMongoTraverser(
+        private BatchMongoReader(
                 SupplierEx<? extends MongoClient> connectionSupplier,
                 String databaseName,
                 String collectionName,
@@ -346,7 +346,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
         }
     }
 
-    private final class StreamMongoTraverser extends MongoChunkedReader {
+    private final class StreamMongoReader extends MongoChunkedReader {
         private ChangeStreamIterable<Document>  changeStream;
         private final FunctionEx<ChangeStreamDocument<Document>, I> mapFn;
         private final Long startTimestamp;
@@ -357,7 +357,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
         private Traverser<Object> traverser;
 
-        private StreamMongoTraverser(
+        private StreamMongoReader(
                 SupplierEx<? extends MongoClient> connectionSupplier,
                 String databaseName,
                 String collectionName,

@@ -223,27 +223,61 @@ public final class MongoDBSourceBuilder {
             mapFn = (FunctionEx<Document, T>) toClass(Document.class);
         }
 
+        /**
+         * Adds a projection aggregate. Example use:
+         * <pre>{@code
+         * import static com.mongodb.client.model.Projections.include;
+         *
+         *  MongoDBSourceBuilder.stream(name, supplier)
+         *      .projection(include("fieldName"));
+         * }</pre>
+         * @param projection Bson form of projection;
+         *                   use {@link com.mongodb.client.model.Projections} to create projection.
+         * @return this builder with projection added
+         */
         @Nonnull
-        public Batch<T> project(@Nullable Bson projection) {
-            if (projection != null) {
-                aggregates.add(Aggregates.project(projection).toBsonDocument());
-            }
+        public Batch<T> project(@Nonnull Bson projection) {
+            aggregates.add(Aggregates.project(projection).toBsonDocument());
             return this;
         }
 
+        /**
+         * Adds sort aggregate to this builder.
+         *
+         * Example usage:
+         * <pre>{@code
+         *  import static com.mongodb.client.model.Sorts.ascending;
+         *
+         *  MongoDBSourceBuilder.stream(name, supplier)
+         *      .sort(ascending("fieldName"));
+         * }</pre>
+         * @param sort Bson form of sort. Use {@link com.mongodb.client.model.Sorts} to create sort.
+         * @return this builder with aggregate added
+         */
         @Nonnull
-        public Batch<T> sort(@Nullable Bson sort) {
-            if (sort != null) {
-                aggregates.add(Aggregates.sort(sort).toBsonDocument());
-            }
+        public Batch<T> sort(@Nonnull Bson sort) {
+            aggregates.add(Aggregates.sort(sort).toBsonDocument());
             return this;
         }
 
+        /**
+         * Adds filter aggregate to this builder, which allows to filter documents in MongoDB, without
+         * the need to download all documents.
+         *
+         * Example usage:
+         * <pre>{@code
+         *  import static com.mongodb.client.model.Filters.eq;
+         *
+         *  MongoDBSourceBuilder.stream(name, supplier)
+         *      .filter(eq("fieldName", 10));
+         * }</pre>
+         * @param filter Bson form of filter. Use {@link com.mongodb.client.model.Filters} to create sort.
+         * @return this builder with aggregate added
+         */
         @Nonnull
-        public Batch<T> filter(@Nullable Bson filter) {
-            if (filter != null) {
-                aggregates.add(Aggregates.match(filter).toBsonDocument());
-            }
+        public Batch<T> filter(@Nonnull Bson filter) {
+            checkNotNull(filter, "filter argument cannot be null");
+            aggregates.add(Aggregates.match(filter).toBsonDocument());
             return this;
         }
 
@@ -255,29 +289,76 @@ public final class MongoDBSourceBuilder {
         @Nonnull
         @SuppressWarnings("unchecked")
         public <T_NEW> Batch<T_NEW> mapFn(@Nonnull FunctionEx<Document, T_NEW> mapFn) {
-            checkSerializable(mapFn, "mapFn");
+            checkNotNull(mapFn, "mapFn argument cannot be null");
+            checkSerializable(mapFn, "mapFn must be serializable");
             Batch<T_NEW> newThis = (Batch<T_NEW>) this;
             newThis.mapFn = mapFn;
             return newThis;
         }
 
+        /**
+         * Specifies which database will be queried. If not specified, connector will look at all databases.
+         * @param database database name to query.
+         * @return this builder
+         */
         @Override @Nonnull
         public Batch<T> database(String database) {
             return (Batch<T>) super.database(database);
         }
 
-        @SuppressWarnings("unchecked")
+        /**
+         * Specifies from which collection connector will read documents. If not invoked,
+         * then connector will look at all collections in given database.
+         *
+         * Example usage:
+         * <pre>{@code
+         *  MongoDBSourceBuilder.stream(name, supplier)
+         *      .collection("myCollection");
+         * }</pre>
+         *
+         * This function is an equivalent of calling {@linkplain #collection(String, Class)} with {@linkplain Document}
+         * as the second argument.
+         *
+         * @param collectionName Name of the collection that will be queried.
+         * @return this builder
+         */
         @Override @Nonnull
+        public Batch<Document> collection(String collectionName) {
+            return (Batch<Document>) super.collection(collectionName, Document.class);
+        }
+
+        /**
+         * Specifies from which collection connector will read documents. If not invoked,
+         * then connector will look at all collections in given database. All documents read will be automatically
+         * parsed to user-defined type using
+         * {@linkplain com.mongodb.MongoClientSettings#getDefaultCodecRegistry mongo's standard codec registry}
+         * with pojo support added.
+         *
+         * Example usage:
+         * <pre>{@code
+         *  MongoDBSourceBuilder.stream(name, supplier)
+         *      .collection("myCollection", MyDocumentPojo.class);
+         * }</pre>
+         *
+         * This function is an equivalent for calling:
+         * <pre>{@code
+         * import static com.hazelcast.jet.mongodb.Mappers.toClass;
+         *
+         *  MongoDBSourceBuilder.stream(name, supplier)
+         *      .collection("myCollection")
+         *      .mapFn(toClass(MyuDocumentPojo.class));
+         * }</pre>
+         * @param collectionName Name of the collection that will be queried.
+         * @param mongoType user defined type to which the document will be parsed.
+         * @return this builder
+         */
+        @Override @Nonnull
+        @SuppressWarnings("unchecked")
         public <T_NEW> Batch<T_NEW> collection(String collectionName, Class<T_NEW> mongoType) {
             Batch<T_NEW> newThis = (Batch<T_NEW>) this;
             newThis.collection(collectionName);
             newThis.mapFn = toClass(mongoType);
             return newThis;
-        }
-
-        @Override @Nonnull
-        public Batch<Document> collection(String collectionName) {
-            return (Batch<Document>) super.collection(collectionName, Document.class);
         }
 
         /**
@@ -321,28 +402,101 @@ public final class MongoDBSourceBuilder {
             mapFn = (FunctionEx<ChangeStreamDocument<Document>, T>) streamToClass(Document.class);
         }
 
+        /**
+         * Adds a projection aggregate. Example use:
+         * <pre>{@code
+         * import static com.mongodb.client.model.Projections.include;
+         *
+         *  MongoDBSourceBuilder.stream(name, supplier)
+         *      .projection(include("fieldName"));
+         * }</pre>
+         * @param projection Bson form of projection;
+         *                   use {@link com.mongodb.client.model.Projections} to create projection.
+         * @return this builder with projection added
+         */
         @Nonnull
-        public Stream<T> project(@Nullable Bson projection) {
-            if (projection != null) {
-                aggregates.add(Aggregates.project(projection).toBsonDocument());
-            }
+        public Stream<T> project(@Nonnull Bson projection) {
+            aggregates.add(Aggregates.project(projection).toBsonDocument());
             return this;
         }
 
+        /**
+         * Adds filter aggregate to this builder, which allows to filter documents in MongoDB, without
+         * the need to download all documents.
+         *
+         * Example usage:
+         * <pre>{@code
+         *  import static com.mongodb.client.model.Filters.eq;
+         *
+         *  MongoDBSourceBuilder.stream(name, supplier)
+         *      .filter(eq("fieldName", 10));
+         * }</pre>
+         * @param filter Bson form of filter. Use {@link com.mongodb.client.model.Filters} to create sort.
+         * @return this builder with aggregate added
+         */
         @Nonnull
-        public Stream<T> filter(@Nullable Bson filter) {
-            if (filter != null) {
-                aggregates.add(Aggregates.match(filter).toBsonDocument());
-            }
+        public Stream<T> filter(@Nonnull Bson filter) {
+            aggregates.add(Aggregates.match(filter).toBsonDocument());
             return this;
         }
 
+        /**
+         * Specifies which database will be queried. If not specified, connector will look at all databases.
+         * @param database database name to query.
+         * @return this builder
+         */
         @Nonnull
-        public Stream<T> database(String database) {
+        public Stream<T> database(@Nonnull String database) {
             databaseName = database;
             return this;
         }
 
+        /**
+         * Specifies from which collection connector will read documents. If not invoked,
+         * then connector will look at all collections in given database.
+         *
+         * Example usage:
+         * <pre>{@code
+         *  MongoDBSourceBuilder.stream(name, supplier)
+         *      .collection("myCollection");
+         * }</pre>
+         *
+         * This function is an equivalent of calling {@linkplain #collection(String, Class)} with {@linkplain Document}
+         * as the second argument.
+         *
+         * @param collectionName Name of the collection that will be queried.
+         * @return this builder
+         */
+        @Nonnull
+        public Stream<Document> collection(@Nonnull String collectionName) {
+            return collection(collectionName, Document.class);
+        }
+
+        /**
+         * Specifies from which collection connector will read documents. If not invoked,
+         * then connector will look at all collections in given database. All documents read will be automatically
+         * parsed to user-defined type using
+         * {@linkplain com.mongodb.MongoClientSettings#getDefaultCodecRegistry mongo's standard codec registry}
+         * with pojo support added.
+         *
+         * Example usage:
+         * <pre>{@code
+         *  MongoDBSourceBuilder.stream(name, supplier)
+         *      .collection("myCollection", MyDocumentPojo.class);
+         * }</pre>
+         *
+         * This function is an equivalent for calling:
+         * <pre>{@code
+         * import static com.hazelcast.jet.mongodb.Mappers.toClass;
+         *
+         *  MongoDBSourceBuilder.stream(name, supplier)
+         *      .collection("myCollection")
+         *      .mapFn(toClass(MyuDocumentPojo.class));
+         * }</pre>
+         * @param collectionName Name of the collection that will be queried.
+         * @param mongoType user defined type to which the document will be parsed.
+         * @return this builder
+         */
         @Nonnull
         @SuppressWarnings("unchecked")
         public <T_NEW> Stream<T_NEW> collection(String collectionName, Class<T_NEW> mongoType) {
@@ -352,11 +506,12 @@ public final class MongoDBSourceBuilder {
             return newThis;
         }
 
-        @Nonnull
-        public Stream<Document> collection(String collectionName) {
-            return collection(collectionName, Document.class);
-        }
-
+        /**
+         * @param mapFn   transforms the queried document to the desired output
+         *                object
+         * @param <T_NEW> type of the emitted object
+         * @return this builder
+         */
         @Nonnull
         @SuppressWarnings("unchecked")
         public <T_NEW> Stream<T_NEW> mapFn(
@@ -368,11 +523,19 @@ public final class MongoDBSourceBuilder {
             return newThis;
         }
 
+        /**
+         * Specifies time from which MongoDB's events will be read.
+         *
+         * It is <strong>highly</strong> suggested to provide this argument, as it will reduce reading initial
+         * state of database.
+         * @param startAtOperationTime time from which events should be taken into consideration
+         * @return this builder
+         */
         @Nonnull
         public Stream<T> startAtOperationTime(
-                @Nullable BsonTimestamp startAtOperationTime
+                @Nonnull BsonTimestamp startAtOperationTime
         ) {
-            this.startAtOperationTime = startAtOperationTime == null ? null : startAtOperationTime.getValue();
+            this.startAtOperationTime = startAtOperationTime.getValue();
             return this;
         }
 

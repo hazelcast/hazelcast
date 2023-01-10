@@ -16,8 +16,12 @@
 
 package com.hazelcast.jet.mongodb;
 
+import com.hazelcast.function.SupplierEx;
+import com.hazelcast.jet.mongodb.MongoDBSourceBuilder.Batch;
+import com.hazelcast.jet.mongodb.MongoDBSourceBuilder.Stream;
 import com.hazelcast.jet.pipeline.BatchSource;
 import com.hazelcast.jet.pipeline.StreamSource;
+import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
 import org.bson.Document;
@@ -25,8 +29,6 @@ import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-
-import static com.hazelcast.function.FunctionEx.identity;
 
 /**
  * Contains factory methods for MongoDB sources.
@@ -36,6 +38,30 @@ import static com.hazelcast.function.FunctionEx.identity;
 public final class MongoDBSources {
 
     private MongoDBSources() {
+    }
+
+    /**
+     * Creates as builder for new batch mongo source. Equivalent to calling {@link MongoDBSourceBuilder#batch}.
+     * @param name descriptive name for the source (diagnostic purposes) connectionSupplier.
+     * @param connectionSupplier a function that creates MongoDB client.
+     * @return Batch Mongo source builder
+     */
+    public static MongoDBSourceBuilder.Batch<Document> batch(
+            @Nonnull String name,
+            @Nonnull SupplierEx<? extends MongoClient> connectionSupplier) {
+        return MongoDBSourceBuilder.batch(name, connectionSupplier);
+    }
+
+    /**
+     * Creates as builder for new stream mongo source. Equivalent to calling {@link MongoDBSourceBuilder#stream}.
+     * @param name descriptive name for the source (diagnostic purposes) connectionSupplier.
+     * @param connectionSupplier a function that creates MongoDB client.
+     * @return Stream Mongo source builder
+     */
+    public static MongoDBSourceBuilder.Stream<Document> stream(
+            @Nonnull String name,
+            @Nonnull SupplierEx<? extends MongoClient> connectionSupplier) {
+        return MongoDBSourceBuilder.stream(name, connectionSupplier);
     }
 
     /**
@@ -80,14 +106,17 @@ public final class MongoDBSources {
             @Nullable Bson filter,
             @Nullable Bson projection
     ) {
-        return MongoDBSourceBuilder
+        Batch<Document> builder = MongoDBSourceBuilder
                 .batch(name, () -> MongoClients.create(connectionString))
                 .database(database)
-                .collection(collection, Document.class) // todo change type
-                .project(projection)
-                .filter(filter)
-                .mapFn(identity())
-                .build();
+                .collection(collection);
+        if (projection != null) {
+            builder.project(projection);
+        }
+        if (filter != null) {
+            builder.filter(filter);
+        }
+        return builder.build();
     }
 
     /**
@@ -141,11 +170,17 @@ public final class MongoDBSources {
             @Nullable Document filter,
             @Nullable Document projection
     ) {
-        return MongoDBSourceBuilder
+        Stream<Document> builder = MongoDBSourceBuilder
                 .stream(name, () -> MongoClients.create(connectionString))
                 .database(database)
-                .collection(collection, Document.class)
-                .mapFn(ChangeStreamDocument::getFullDocument)
-                .build();
+                .collection(collection)
+                .mapFn(ChangeStreamDocument::getFullDocument);
+        if (projection != null) {
+            builder.project(projection);
+        }
+        if (filter != null) {
+            builder.filter(filter);
+        }
+        return builder.build();
     }
 }
