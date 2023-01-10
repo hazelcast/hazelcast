@@ -24,12 +24,25 @@ Hazelcast Enterprise allows using TLS protocol for data in transit protection.
 We want to enable key material (keyStores and trustStores) rotation without
 needing a Hazelcast instance restart.
 
+The current process required for the key material update is described in the
+[Updating Certificates in the Running Cluster](https://docs.hazelcast.com/hazelcast/5.2/security/tls-configuration#updating-certificates-in-the-running-cluster)
+section of the official documentation. It includes:
+
+* stopping each member;
+* waiting for cluster safe state;
+* updating key material;
+* starting the member;
+* waiting for cluster safe state
+
+These steps might require to be repeated (1-3 times) - based on the certificates trust configuration,
+
 ## Functional design
 
 New optional property, `keyMaterialDuration`, will be introduced into the `<ssl>`
-properties config. The value will be a [duration expression in
-ISO 8601 format](https://en.wikipedia.org/wiki/ISO_8601#Durations)
-as supported by Java [`java.time.Duration.parse()`](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-)
+properties config. The value will be a
+[duration expression in ISO 8601 format](https://en.wikipedia.org/wiki/ISO_8601#Durations)
+as supported by Java
+[`java.time.Duration.parse()`](https://docs.oracle.com/javase/8/docs/api/java/time/Duration.html#parse-java.lang.CharSequence-)
 method.
 
 The `keyMaterialDuration` property value is a string such as `PnDTnHnMn.nS`.
@@ -76,6 +89,41 @@ before the new reload.
 </network>
 ```
 
+### Updated process steps
+
+The process of replacing key material described in the Motivation section will be simplified to the following steps
+when a non-negative `keyMaterialDuration` value is used.
+
+#### 1. When new certificates are not trusted by the members
+
+This is usually a case when self-signed certificates are used on the members.
+
+Before we can deploy new member certificates, we have to update the list of trusted certificates on all members:
+
+* Import all new certificates to every member trustStore, so it contains both old and new ones.
+* Wait at least the time specified in the `keyMaterialDuration` parameter.
+* After completing the above steps, follow the steps described in the next section (certificates trusted).
+
+#### 2. When new certificates are already trusted by the members
+
+Switch certificates/keys on all members:
+
+* Replace the private key and certificate in every member keyStore.
+
+At the latest, after the specified duration, all new connections will use the new key material.
+
+#### 3. If the old certificates need to be removed
+
+When the mutual TLS authentication is enabled, and there is a key leakage,
+or the old certificates are not allowed to be used anymore for any reason,
+the trustStores have to be updated once more.
+
+This point is not described in the documentation, but it worked in the same way as point 1.
+I.e. Prepare trustStores without old certificates and update trustStores on all members one by one.
+
+Again this is simplified by setting a non-negative `keyMaterialDuration`.
+At the latest, after the specified duration, new connections
+with old certificates (used for mutual authentication) won't be allowed.
 
 ### Considered alternative approach
 
