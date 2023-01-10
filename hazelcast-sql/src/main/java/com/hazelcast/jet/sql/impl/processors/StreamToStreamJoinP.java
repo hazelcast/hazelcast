@@ -70,7 +70,7 @@ import static java.util.function.Function.identity;
  * See {@code docs/design/sql/15-stream-to-stream-join.md}.
  */
 public class StreamToStreamJoinP extends AbstractProcessor {
-    private static final long WATERMARK_MAP_DEFAULT_VALUE = Long.MIN_VALUE + 1;
+    private static final long OBJECT_2_LONG_MAP_MIN_VALUE = Long.MIN_VALUE + 1;
 
     // package-visible for tests
     // tracks the current minimum event time for each watermark
@@ -131,9 +131,9 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
         for (Byte wmKey : postponeTimeMap.keySet()) {
             // using MIN_VALUE + 1 because Object2LongHashMap uses MIN_VALUE as a missing value, and it cannot be used as a value
-            wmState.put(wmKey, WATERMARK_MAP_DEFAULT_VALUE);
-            lastEmittedWm.put(wmKey, WATERMARK_MAP_DEFAULT_VALUE);
-            lastReceivedWm.put(wmKey, WATERMARK_MAP_DEFAULT_VALUE);
+            wmState.put(wmKey, OBJECT_2_LONG_MAP_MIN_VALUE);
+            lastEmittedWm.put(wmKey, OBJECT_2_LONG_MAP_MIN_VALUE);
+            lastReceivedWm.put(wmKey, OBJECT_2_LONG_MAP_MIN_VALUE);
         }
 
         // no key must be on both sides
@@ -306,7 +306,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
             for (Entry<Byte, Long> e : wmState.entrySet()) {
                 Long timestamp = e.getValue();
-                if (timestamp != WATERMARK_MAP_DEFAULT_VALUE) {
+                if (timestamp != OBJECT_2_LONG_MAP_MIN_VALUE) {
                     snapshotList.add(
                             entry(
                                     broadcastKey(WM_STATE_KEY),
@@ -318,7 +318,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
             for (Entry<?, Long> e : lastReceivedWm.entrySet()) {
                 Long timestamp = e.getValue();
-                if (timestamp != WATERMARK_MAP_DEFAULT_VALUE) {
+                if (timestamp != OBJECT_2_LONG_MAP_MIN_VALUE) {
                     snapshotList.add(
                             entry(
                                     broadcastKey(LAST_RECEIVED_WM_KEY),
@@ -344,7 +344,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
             snapshotTraverser =
                     traverseStream(Stream.of(snapshotList.stream(), leftBufferStream, rightBufferStream).flatMap(identity()))
-                    .onFirstNull(() -> snapshotTraverser = null);
+                            .onFirstNull(() -> snapshotTraverser = null);
         }
 
         return emitFromTraverserToSnapshot(snapshotTraverser);
@@ -358,13 +358,13 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             // We pick minimal available watermark (both emitted/received) among all processors
             if (WM_STATE_KEY.equals(broadcastKey.key())) {
                 Long currentState = wmState.get(wmValue.key());
-                if (currentState <= WATERMARK_MAP_DEFAULT_VALUE ||
+                if (currentState <= OBJECT_2_LONG_MAP_MIN_VALUE ||
                         currentState > wmValue.timestamp()) {
                     wmState.put(wmValue.key(), wmValue.timestamp());
                 }
             } else if (LAST_RECEIVED_WM_KEY.equals(broadcastKey.key())) {
                 Long currentState = lastReceivedWm.get(wmValue.key());
-                if (currentState <= WATERMARK_MAP_DEFAULT_VALUE ||
+                if (currentState <= OBJECT_2_LONG_MAP_MIN_VALUE ||
                         currentState > wmValue.timestamp()) {
                     lastReceivedWm.put(wmValue.key(), wmValue.timestamp());
                 }
