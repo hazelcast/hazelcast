@@ -31,6 +31,7 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpc.util.IOUtil.closeResource;
@@ -44,9 +45,10 @@ import static java.nio.channels.SelectionKey.OP_ACCEPT;
  */
 public final class NioAsyncServerSocket extends AsyncServerSocket {
     private static final int DEFAULT_LATCH_TIMEOUT_SECONDS = 10;
+    private static final AtomicBoolean REUSE_PORT_PRINTED = new AtomicBoolean();
 
     // This option is available since Java 9, so we need to use reflection.
-    private static final SocketOption SO_REUSEPORT = findStaticFieldValue(StandardSocketOptions.class, "SO_REUSEPORT");
+    private static final SocketOption<Boolean> SO_REUSEPORT = findStaticFieldValue(StandardSocketOptions.class, "SO_REUSEPORT");
 
     private final ServerSocketChannel serverSocketChannel;
     private final Selector selector;
@@ -72,9 +74,9 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     /**
      * Opens a NioAsyncServerSocket.
      * <p/>
-     * To prevent coupling, it is better to use the {@link Eventloop#openAsyncServerSocket()}.
+     * To prevent coupling to Nio, it is better to use the {@link Eventloop#openAsyncServerSocket()}.
      *
-     * @param eventloop the eventloop this socket will be processed by.
+     * @param eventloop the eventloop the opened socket will be processed by.
      * @return the opened NioAsyncServerSocket.
      */
     public static NioAsyncServerSocket open(NioEventloop eventloop) {
@@ -112,7 +114,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         }
 
         try {
-            return (Boolean) serverSocketChannel.getOption(SO_REUSEPORT);
+            return serverSocketChannel.getOption(SO_REUSEPORT);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -121,13 +123,16 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     @Override
     public void setReusePort(boolean reusePort) {
         if (SO_REUSEPORT == null) {
-            return;
-        }
-
-        try {
-            serverSocketChannel.setOption(SO_REUSEPORT, reusePort);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            if (REUSE_PORT_PRINTED.compareAndSet(false, true)) {
+                logger.warning("Ignoring NioAsyncServerSocket.reusePort." +
+                        "Please upgrade to Java 9+ to enable the SO_REUSEPORT option.");
+            }
+        } else {
+            try {
+                serverSocketChannel.setOption(SO_REUSEPORT, reusePort);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
     }
 
