@@ -140,11 +140,6 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     @Override
-    public LocalRecordStoreStats getLocalRecordStoreStats() {
-        return stats;
-    }
-
-    @Override
     public Record createRecord(Data key, Object value, long now) {
         Record record = recordFactory.newRecord(key, value);
         record.setCreationTime(now);
@@ -248,12 +243,12 @@ abstract class AbstractRecordStore implements RecordStore<Record> {
     }
 
     @Override
-    public LocalRecordStoreStatsImpl getStats() {
+    public LocalRecordStoreStatsImpl getLocalRecordStoreStats() {
         return stats;
     }
 
     @Override
-    public void setStats(LocalRecordStoreStats stats) {
+    public void setLocalRecordStoreStats(LocalRecordStoreStats stats) {
         this.stats.copyFrom(stats);
     }
 }

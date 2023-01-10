@@ -123,7 +123,7 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
         if (firstChunk) {
             addIndexes(recordStore, mapIndexInfo.getIndexConfigs());
             initializeRecordStore(mapName, recordStore);
-            recordStore.setStats(stats);
+            recordStore.setLocalRecordStoreStats(stats);
             recordStore.setPreMigrationLoadedStatus(loaded);
 
             applyWriteBehindState(recordStore);
@@ -410,7 +410,7 @@ public class MapChunk extends Operation implements IdentifiedDataSerializable {
     protected void writeMetadata(ObjectDataOutput out) throws IOException {
         out.writeObject(context.createMapIndexInfo());
         out.writeBoolean(context.isRecordStoreLoaded());
-        context.getStats().writeData(out);
+        context.getLocalRecordStoreStats().writeData(out);
 
         writeWriteBehindState(out, context.getRecordStore());
         writeNearCacheState(out);

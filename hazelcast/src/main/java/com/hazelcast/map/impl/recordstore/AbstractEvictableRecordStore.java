@@ -147,6 +147,8 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     @Override
     public void doPostEvictionOperations(Data dataKey, Object value,
                                          ExpiryReason expiryReason) {
+
+        // Decide event type and update stats
         EntryEventType eventType;
         if (expiryReason != NOT_EXPIRED) {
             eventType = EXPIRED;
@@ -156,11 +158,14 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
             stats.increaseEvictions();
         }
 
+        // Publish event
         if (eventService.hasEventRegistration(SERVICE_NAME, name)) {
             mapEventPublisher.publishEvent(thisAddress, name,
                     eventType, dataKey, value, null);
         }
 
+        // Deal with idleness related expiry
+        // of entries on backup replicas
         if (expiryReason == MAX_IDLE_SECONDS) {
             // only send expired key to back-up if
             // it is expired according to idleness.

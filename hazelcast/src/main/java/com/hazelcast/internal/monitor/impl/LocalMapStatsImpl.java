@@ -537,8 +537,6 @@ public class LocalMapStatsImpl implements LocalMapStats {
                 + "lastAccessTime=" + lastAccessTime
                 + ", lastUpdateTime=" + lastUpdateTime
                 + ", hits=" + hits
-                + ", evictionCount=" + evictionCount
-                + ", expirationCount=" + expirationCount
                 + ", numberOfOtherOperations=" + numberOfOtherOperations
                 + ", numberOfEvents=" + numberOfEvents
                 + ", getCount=" + getCount
