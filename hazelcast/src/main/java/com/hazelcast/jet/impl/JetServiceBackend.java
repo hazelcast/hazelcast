@@ -170,6 +170,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         return config
                 .setName(SQL_CATALOG_MAP_NAME)
                 .setBackupCount(MapConfig.MAX_BACKUP_COUNT)
+                .setAsyncBackupCount(MapConfig.MIN_BACKUP_COUNT)
                 .setTimeToLiveSeconds(DISABLED_TTL_SECONDS)
                 .setReadBackupData(true)
                 .setMergePolicyConfig(new MergePolicyConfig().setPolicy(LatestUpdateMergePolicy.class.getName()))

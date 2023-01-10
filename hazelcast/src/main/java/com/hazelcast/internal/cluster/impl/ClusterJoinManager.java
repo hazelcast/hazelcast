@@ -683,7 +683,9 @@ public class ClusterJoinManager {
                 }
 
                 // send members update back to node trying to join again...
-                boolean deferPartitionProcessing = isMemberRestartingWithPersistence(member.getAttributes());
+                MemberMap memberMap = clusterService.getMembershipManager().getMemberMap();
+                boolean deferPartitionProcessing = isMemberRestartingWithPersistence(member.getAttributes())
+                        && isMemberRejoining(memberMap, member.getAddress(), member.getUuid());
                 OnJoinOp preJoinOp = preparePreJoinOps();
                 OnJoinOp postJoinOp = preparePostJoinOp();
                 PartitionRuntimeState partitionRuntimeState = node.getPartitionService().createPartitionState();
