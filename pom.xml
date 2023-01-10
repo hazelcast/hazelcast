@@ -52,7 +52,7 @@
         <hazelcast.previous.version>5.2.0</hazelcast.previous.version>
 
         <maven.compiler.plugin.version>3.10.0</maven.compiler.plugin.version>
-        <maven.jar.plugin.version>3.2.2</maven.jar.plugin.version>
+        <maven.jar.plugin.version>3.3.0</maven.jar.plugin.version>
         <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
         <maven.javadoc.plugin.version>3.3.2</maven.javadoc.plugin.version>
         <maven.javadoc.plugin.excludePackageNames>
@@ -81,7 +81,7 @@
         <maven.os.plugin.version>1.7.1</maven.os.plugin.version>
         <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
         <maven.resources.plugin.version>3.2.0</maven.resources.plugin.version>
-        <owasp.dependency-check.version>7.4.0</owasp.dependency-check.version>
+        <owasp.dependency-check.version>7.4.4</owasp.dependency-check.version>
         <maven.dependency.plugin.version>3.1.2</maven.dependency.plugin.version>
         <codehause.license.plugin.version>2.0.0</codehause.license.plugin.version>
 
@@ -92,7 +92,7 @@
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.1</avro.version>
-        <aws.sdk.version>1.12.333</aws.sdk.version>
+        <aws.sdk.version>1.12.381</aws.sdk.version>
         <classgraph.version>4.8.154</classgraph.version>
         <debezium.version>1.9.5.Final</debezium.version>
         <grpc.version>1.48.0</grpc.version>
@@ -110,7 +110,7 @@
         <kafka.version>2.8.2</kafka.version>
         <kotlin.version>1.7.10</kotlin.version>
         <log4j.version>1.2.17.redhat-00008</log4j.version>
-        <log4j2.version>2.18.0</log4j2.version>
+        <log4j2.version>2.19.0</log4j2.version>
         <mysql.connector.version>8.0.30</mysql.connector.version>
         <netty.version>4.1.79.Final</netty.version>
         <objenesis.version>3.2</objenesis.version>
@@ -118,7 +118,7 @@
         <parquet.version>1.12.3</parquet.version>
         <picocli.version>4.6.3</picocli.version>
         <postgresql.version>42.5.1</postgresql.version>
-        <prometheus.version>0.17.1</prometheus.version>
+        <prometheus.version>0.17.2</prometheus.version>
 
         <!--
         Protobuf libraries for each language have own major version, but share minor and patch
@@ -131,7 +131,7 @@
         <scala.version>2.13</scala.version>
         <slf4j.version>1.7.36</slf4j.version>
         <spring.version>4.3.0.RELEASE</spring.version>
-        <snakeyaml.version>1.32</snakeyaml.version>
+        <snakeyaml.version>1.33</snakeyaml.version>
         <snakeyaml.engine.version>2.3</snakeyaml.engine.version>
         <mongodb.version>4.7.2</mongodb.version>
 
@@ -140,7 +140,7 @@
         <activemq.version>5.15.11</activemq.version>
         <assertj.version>3.15.0</assertj.version>
         <atomikos.version>3.9.3</atomikos.version>
-        <bytebuddy.version>1.12.12</bytebuddy.version>
+        <bytebuddy.version>1.12.21</bytebuddy.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-io.version>2.11.0</commons-io.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
@@ -156,7 +156,7 @@
         <testcontainers.version>1.17.6</testcontainers.version>
         <jna.version>5.12.1</jna.version>
         <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitRulesTest.java -->
-        <archunit.version>1.0.0</archunit.version>
+        <archunit.version>1.0.1</archunit.version>
         <errorprone.version>2.15.0</errorprone.version>
         <awaitility.version>4.1.1</awaitility.version>
         <hikari.version>4.0.3</hikari.version>
@@ -1722,7 +1722,7 @@
             <dependency>
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>
-                <version>2.11.0</version>
+                <version>2.12.2</version>
             </dependency>
             <dependency>
                 <groupId>org.xerial.snappy</groupId>
@@ -1758,7 +1758,7 @@
             <dependency>
                 <groupId>com.google.auto.value</groupId>
                 <artifactId>auto-value-annotations</artifactId>
-                <version>1.7.4</version>
+                <version>1.10.1</version>
             </dependency>
             <dependency>
                 <groupId>com.nimbusds</groupId>
@@ -1778,7 +1778,7 @@
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
-                <version>2.9.1</version>
+                <version>2.10.1</version>
             </dependency>
             <dependency>
                 <groupId>com.amazonaws</groupId>
@@ -1818,7 +1818,7 @@
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
-                <version>3.27.0</version>
+                <version>3.29.0</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
@@ -1858,7 +1858,7 @@
             <dependency>
               <groupId>io.netty</groupId>
               <artifactId>netty-tcnative-classes</artifactId>
-              <version>2.0.48.Final</version>
+              <version>2.0.55.Final</version>
             </dependency>
             <dependency>
               <groupId>com.google.api-client</groupId>

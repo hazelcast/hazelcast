@@ -70,7 +70,7 @@ public final class FinalRemovalAgent {
                 .with(AgentBuilder.TypeStrategy.Default.REDEFINE)
                 .with(AgentBuilder.InitializationStrategy.NoOp.INSTANCE)
                 .type(nameStartsWith("com.hazelcast"))
-                .transform((builder, typeDescription, classLoader, module) -> {
+                .transform((builder, typeDescription, classLoader, module, domain) -> {
                     builder = manifestMethodAsPlain(builder, typeDescription);
                     int actualModifiers = typeDescription.getActualModifiers(false);
                     // unset final modifier
