@@ -21,23 +21,23 @@ import org.junit.Test;
 import java.io.Closeable;
 import java.io.IOException;
 
-import static com.hazelcast.internal.tpc.util.IOUtil.closeResource;
+import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
 
-public class IOUtilTest {
+public class CloseUtilTest {
 
     @Test
     public void test_closeResource_whenNull() {
-        closeResource(null);
+        closeQuietly(null);
     }
 
     @Test
     public void test_closeResource_whenNoException() throws Exception {
         AutoCloseable closeable = mock(Closeable.class);
-        closeResource(closeable);
+        closeQuietly(closeable);
         verify(closeable).close();
     }
 
@@ -46,7 +46,7 @@ public class IOUtilTest {
         Closeable closeable = mock(Closeable.class);
         doThrow(new IOException("expected")).when(closeable).close();
 
-        closeResource(closeable);
+        closeQuietly(closeable);
 
         verify(closeable).close();
         verifyNoMoreInteractions(closeable);

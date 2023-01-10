@@ -34,7 +34,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
-import static com.hazelcast.internal.tpc.util.IOUtil.closeResource;
+import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpc.util.ReflectionUtil.findStaticFieldValue;
 import static java.net.StandardSocketOptions.SO_RCVBUF;
 import static java.net.StandardSocketOptions.SO_REUSEADDR;
@@ -174,8 +174,8 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
 
     @Override
     protected void close0() {
-        closeResource(serverSocketChannel.socket());
-        eventloop.deregisterClosable(this);
+        closeQuietly(serverSocketChannel.socket());
+        eventloop.deregisterCloseable(this);
     }
 
 

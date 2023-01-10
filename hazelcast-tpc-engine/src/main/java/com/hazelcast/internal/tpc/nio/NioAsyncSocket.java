@@ -454,7 +454,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         closeResource(socketChannel.socket());
 
         if (eventloop != null) {
-            eventloop.deregisterClosable(this);
+            eventloop.deregisterCloseable(this);
         }
     }
 

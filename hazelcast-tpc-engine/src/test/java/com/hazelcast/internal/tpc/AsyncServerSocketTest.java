@@ -26,7 +26,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
-import static com.hazelcast.internal.tpc.util.IOUtil.closeResources;
+import static com.hazelcast.internal.tpc.util.CloseUtil.closeAllQuietly;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
@@ -41,7 +41,7 @@ public abstract class AsyncServerSocketTest {
 
     @After
     public void after() throws InterruptedException {
-        closeResources(closeables);
+        closeAllQuietly(closeables);
 
         for (Eventloop eventloop : loops) {
             eventloop.shutdown();

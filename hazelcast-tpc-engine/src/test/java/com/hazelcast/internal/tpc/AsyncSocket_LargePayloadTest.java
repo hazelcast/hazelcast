@@ -32,7 +32,7 @@ import static com.hazelcast.internal.tpc.TpcTestSupport.assertOpenEventually;
 import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_LONG;
 import static com.hazelcast.internal.tpc.util.BufferUtil.put;
-import static com.hazelcast.internal.tpc.util.IOUtil.closeResource;
+import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 public abstract class AsyncSocket_LargePayloadTest {
@@ -55,8 +55,8 @@ public abstract class AsyncSocket_LargePayloadTest {
 
     @After
     public void after() throws InterruptedException {
-        closeResource(clientSocket);
-        closeResource(serverSocket);
+        closeQuietly(clientSocket);
+        closeQuietly(serverSocket);
 
         if (clientEventloop != null) {
             clientEventloop.shutdown();

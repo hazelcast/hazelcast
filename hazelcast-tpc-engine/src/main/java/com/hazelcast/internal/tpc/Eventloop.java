@@ -45,7 +45,7 @@ import static com.hazelcast.internal.tpc.Eventloop.State.NEW;
 import static com.hazelcast.internal.tpc.Eventloop.State.RUNNING;
 import static com.hazelcast.internal.tpc.Eventloop.State.SHUTDOWN;
 import static com.hazelcast.internal.tpc.Eventloop.State.TERMINATED;
-import static com.hazelcast.internal.tpc.util.IOUtil.closeResources;
+import static com.hazelcast.internal.tpc.util.CloseUtil.closeAllQuietly;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.tpc.util.Util.epochNanos;
@@ -79,7 +79,8 @@ public abstract class Eventloop implements Executor {
     protected final PriorityQueue<ScheduledTask> scheduledTaskQueue = new PriorityQueue<>();
 
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
-    protected final Set<Closeable> closables = new CopyOnWriteArraySet<>();
+    //todo: Litter; we need to come up with better solution.
+    protected final Set<AutoCloseable> closeables = new CopyOnWriteArraySet<>();
 
     protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     protected final MpmcArrayQueue concurrentRunQueue;
@@ -298,30 +299,30 @@ public abstract class Eventloop implements Executor {
     protected abstract void wakeup();
 
     /**
-     * Registers a closable on this Eventloop.
+     * Registers an AutoCloseable on this Eventloop.
      * <p>
-     * Registered closable are automatically closed when the eventloop closes.
+     * Registered closeable are automatically closed when the eventloop closes.
      * Some examples: AsyncSocket and AsyncServerSocket.
      * <p>
      * If the Eventloop isn't in the running state, false is returned.
      * <p>
      * This method is thread-safe.
      *
-     * @param closable the Closable to register
-     * @return true if the closable was successfully register, false otherwise.
-     * @throws NullPointerException if closable is null.
+     * @param closeable the AutoCloseable to register
+     * @return true if the closeable was successfully register, false otherwise.
+     * @throws NullPointerException if closeable is null.
      */
-    public final boolean registerClosable(Closeable closable) {
-        checkNotNull(closable, "closable");
+    public final boolean registerClosable(AutoCloseable closeable) {
+        checkNotNull(closeable, "closeable");
 
         if (state != RUNNING) {
             return false;
         }
 
-        closables.add(closable);
+        closeables.add(closeable);
 
         if (state != RUNNING) {
-            closables.remove(closable);
+            closeables.remove(closeable);
             return false;
         }
 
@@ -329,17 +330,17 @@ public abstract class Eventloop implements Executor {
     }
 
     /**
-     * Deregisters a closable from this Eventloop.
+     * Deregisters an AutoCloseable from this Eventloop.
      * <p>
      * This method is thread-safe.
      * <p>
      * This method can be called no matter the state of the Eventloop.
      *
-     * @param closable the closable to deregister.
+     * @param closeable the AutoCloseable to deregister.
      */
-    public final void deregisterClosable(Closeable closable) {
-        checkNotNull(closable, "resource");
-        closables.remove(closable);
+    public final void deregisterCloseable(AutoCloseable closeable) {
+        checkNotNull(closeable, "closeable");
+        closeables.remove(closeable);
     }
 
     @Override
@@ -559,7 +560,7 @@ public abstract class Eventloop implements Executor {
                 logger.severe(e);
             } finally {
                 state = TERMINATED;
-                closeResources(closables);
+                closeAllQuietly(closeables);
                 terminationLatch.countDown();
                 if (engine != null) {
                     engine.notifyEventloopTerminated();

@@ -36,7 +36,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_LONG;
 import static com.hazelcast.internal.tpc.util.BufferUtil.put;
-import static com.hazelcast.internal.tpc.util.IOUtil.closeResource;
+import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
@@ -66,8 +66,8 @@ public abstract class AsyncSocket_RpcTest {
 
     @After
     public void after() throws InterruptedException {
-        closeResource(clientSocket);
-        closeResource(serverSocket);
+        closeQuietly(clientSocket);
+        closeQuietly(serverSocket);
 
         if (clientEventloop != null) {
             clientEventloop.shutdown();
