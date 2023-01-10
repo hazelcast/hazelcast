@@ -45,9 +45,14 @@ public abstract class AsyncServerSocket implements Closeable {
     public AsyncServerSocket() {
     }
 
-    public final SocketAddress localAddress() {
+    /**
+     * Gets the local address of this ServerSocketChannel.
+     *
+     * @return the local address.
+     */
+    public final SocketAddress getLocalAddress() {
         try {
-            return localAddress0();
+            return getLocalAddress0();
         } catch (Error e) {
             throw e;
         } catch (Exception e) {
@@ -55,7 +60,7 @@ public abstract class AsyncServerSocket implements Closeable {
         }
     }
 
-    protected abstract SocketAddress localAddress0() throws Exception;
+    protected abstract SocketAddress getLocalAddress0() throws Exception;
 
     /**
      * Gets the {@link Eventloop} this ServerSocket belongs to.
@@ -64,10 +69,14 @@ public abstract class AsyncServerSocket implements Closeable {
      *
      * @return the Eventloop.
      */
-    public abstract Eventloop eventloop();
+    public abstract Eventloop getEventloop();
 
-
-    public abstract int localPort();
+    /**
+     * Gets the local port of the ServerSocketChannel.
+     *
+     * @return the local port.
+     */
+    public abstract int getLocalPort();
 
     /**
      * Checks if the SO_REUSEPORT option has been set.
@@ -87,7 +96,7 @@ public abstract class AsyncServerSocket implements Closeable {
      * @param reusePort if the SO_REUSEPORT option should be enabled.
      * @throws UncheckedIOException if something failed with configuring the socket
      */
-    public abstract void reusePort(boolean reusePort);
+    public abstract void setReusePort(boolean reusePort);
 
     /**
      * Checks if the SO_REUSEADDR option has been set.
@@ -103,7 +112,7 @@ public abstract class AsyncServerSocket implements Closeable {
      * @param reuseAddress if the SO_REUSEADDR option should be enabled.
      * @throws UncheckedIOException if something failed with configuring the socket
      */
-    public abstract void reuseAddress(boolean reuseAddress);
+    public abstract void setReuseAddress(boolean reuseAddress);
 
     /**
      * Sets the receivebuffer size in bytes.
@@ -112,7 +121,7 @@ public abstract class AsyncServerSocket implements Closeable {
      * @throws IllegalArgumentException when the size isn't positive.
      * @throws UncheckedIOException     if something failed with configuring the socket
      */
-    public abstract void receiveBufferSize(int size);
+    public abstract void setReceiveBufferSize(int size);
 
     /**
      * Gets the receivebuffer size in bytes.
@@ -120,7 +129,7 @@ public abstract class AsyncServerSocket implements Closeable {
      * @return the size of the receive buffer.
      * @throws UncheckedIOException if something failed with configuring the socket
      */
-    public abstract int receiveBufferSize();
+    public abstract int getReceiveBufferSize();
 
     /**
      * Binds this AsyncServerSocket to the local.
@@ -171,6 +180,6 @@ public abstract class AsyncServerSocket implements Closeable {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + localAddress() + "]";
+        return getClass().getSimpleName() + "[" + getLocalAddress() + "]";
     }
 }

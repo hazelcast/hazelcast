@@ -121,7 +121,7 @@ public class TpcServerBootstrap {
                 throw new IllegalStateException("Unknown eventloopType:" + eventloopType);
         }
 
-        clientPorts = serverSockets.stream().map(AsyncServerSocket::localPort).collect(Collectors.toList());
+        clientPorts = serverSockets.stream().map(AsyncServerSocket::getLocalPort).collect(Collectors.toList());
     }
 
     private void startNio() {
@@ -150,8 +150,8 @@ public class TpcServerBootstrap {
             serverSockets.add(serverSocket);
             int receiveBufferSize = clientSocketConfig.getReceiveBufferSize();
             int sendBufferSize = clientSocketConfig.getSendBufferSize();
-            serverSocket.receiveBufferSize(receiveBufferSize);
-            serverSocket.reuseAddress(true);
+            serverSocket.setReceiveBufferSize(receiveBufferSize);
+            serverSocket.setReuseAddress(true);
             port = bind(serverSocket, port, limit);
             serverSocket.accept(socket -> {
                 socket.readHandler(readHandlerSuppliers.get(eventloop).get());

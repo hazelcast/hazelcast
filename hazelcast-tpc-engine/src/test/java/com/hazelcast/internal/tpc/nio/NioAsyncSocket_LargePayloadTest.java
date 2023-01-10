@@ -224,7 +224,7 @@ public class NioAsyncSocket_LargePayloadTest {
 
     private NioAsyncServerSocket newServer(SocketAddress serverAddress) {
         serverSocket = NioAsyncServerSocket.open(serverEventloop);
-        serverSocket.receiveBufferSize(SOCKET_BUFFER_SIZE);
+        serverSocket.setReceiveBufferSize(SOCKET_BUFFER_SIZE);
         serverSocket.bind(serverAddress);
         serverSocket.listen(10);
         serverSocket.accept(socket -> {
@@ -232,7 +232,7 @@ public class NioAsyncSocket_LargePayloadTest {
             socket.soLinger(-1);
             socket.tcpNoDelay(true);
             socket.sendBufferSize(SOCKET_BUFFER_SIZE);
-            socket.receiveBufferSize(serverSocket.receiveBufferSize());
+            socket.receiveBufferSize(serverSocket.getReceiveBufferSize());
             socket.readHandler(new NioAsyncReadHandler() {
                 private boolean firstTime;
                 private ByteBuffer payloadBuffer;
