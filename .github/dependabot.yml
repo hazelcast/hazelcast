@@ -10,7 +10,7 @@ updates:
       - "dependencies"
     open-pull-requests-limit: 100
     commit-message:
-      prefix: "[dependency]"
+      prefix: ""
 
   - package-ecosystem: "github-actions"
     directory: "/"
