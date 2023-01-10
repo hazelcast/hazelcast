@@ -188,10 +188,12 @@ public class PlanExecutor {
 
     SqlResult execute(CreateJobPlan plan, List<Object> arguments) {
         List<Object> args = prepareArguments(plan.getParameterMetadata(), arguments);
+        boolean isStreamingJob = plan.isInfiniteRows();
         JobConfig jobConfig = plan.getJobConfig()
                 .setArgument(SQL_ARGUMENTS_KEY_NAME, args)
                 .setArgument(KEY_SQL_QUERY_TEXT, plan.getQuery())
-                .setArgument(KEY_SQL_UNBOUNDED, plan.isInfiniteRows());
+                .setArgument(KEY_SQL_UNBOUNDED, isStreamingJob);
+        jobConfig.setSuspendOnFailure(isStreamingJob);
         if (plan.isIfNotExists()) {
             hazelcastInstance.getJet().newJobIfAbsent(plan.getExecutionPlan().getDag(), jobConfig);
         } else {
