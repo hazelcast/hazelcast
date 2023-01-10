@@ -33,7 +33,7 @@
         <!-- needed for CheckStyle -->
         <main.basedir>${project.parent.basedir}</main.basedir>
 
-        <maven-artifact.version>3.6.3</maven-artifact.version>
+        <maven-artifact.version>3.8.5</maven-artifact.version>
         <hazelcast-hibernate5.version>2.0.0</hazelcast-hibernate5.version>
     </properties>
 
