@@ -19,6 +19,7 @@ package com.hazelcast.internal.tpc;
 import com.hazelcast.internal.tpc.logging.TpcLogger;
 import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpc.nio.NioEventloop.NioConfiguration;
+import com.hazelcast.internal.tpc.util.Preconditions;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -32,7 +33,7 @@ import static com.hazelcast.internal.tpc.util.Preconditions.checkPositive;
 import static java.lang.System.getProperty;
 
 /**
- * The TpcEngine is effectively an array of eventloops
+ * The TpcEngine is effectively an array of eventloops.
  * <p>
  * The TpcEngine is not aware of any specific applications. E.g. it could execute operations, but it
  * can equally well run client requests or completely different applications.
@@ -60,7 +61,7 @@ public final class TpcEngine {
      * @throws NullPointerException when configuration is null.
      */
     public TpcEngine(Configuration engineCfg) {
-        this.engineCfg = engineCfg;
+        this.engineCfg = checkNotNull(engineCfg, "engineCfg");
         this.eventloopCount = engineCfg.eventloopCount;
         Eventloop.Configuration eventloopCfg = engineCfg.eventloopConfiguration;
         this.eventloops = new Eventloop[eventloopCount];
