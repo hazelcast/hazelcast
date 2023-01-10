@@ -285,6 +285,22 @@ public class JobUploadTest extends JetTestSupport {
         return list.stream().anyMatch(job -> Objects.equals(job.getName(), name));
     }
 
+    // this jar is only as below
+    /*
+     public class Main {
+       public static void main(String[] args) {
+
+         Pipeline pipeline = Pipeline.create();
+         pipeline.readFrom(TestSources.itemStream(10))
+           .withoutTimestamps()
+           .filter(event -> event.sequence() % 2 == 0)
+           .setName("filter out odd numbers")
+           .writeTo(Sinks.logger());
+
+         HazelcastInstance hz = Hazelcast.bootstrappedInstance();
+         hz.getJet().newJob(pipeline);
+       }
+     }*/
     private Path getJarPath() {
         ClassLoader classLoader = getClass().getClassLoader();
         URL resource = classLoader.getResource("simplejob-1.0.0.jar");
