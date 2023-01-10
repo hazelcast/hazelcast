@@ -39,6 +39,7 @@ public class JobAndSqlSummary {
      */
     private final boolean userCancelled;
 
+    @SuppressWarnings("checkstyle:parameternumber")
     public JobAndSqlSummary(
             boolean isLightJob,
             long jobId,
