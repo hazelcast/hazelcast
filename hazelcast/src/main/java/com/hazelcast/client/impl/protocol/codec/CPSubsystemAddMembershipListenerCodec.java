@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Registers a new CP membership listener.
  */
-@Generated("fc4025a7ef2dfa7d8cb2baf5aaf5cbf5")
+@Generated("83859b141a7b5165c321956afd1394f6")
 public final class CPSubsystemAddMembershipListenerCodec {
     //hex: 0x220100
     public static final int REQUEST_MESSAGE_TYPE = 2228480;

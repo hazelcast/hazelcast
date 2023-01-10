@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("846f8102c4b4430aea6d290f7091c1b1")
+@Generated("ca8794f4fc7a02ffec93999dbd002ba5")
 public final class AnchorDataListHolderCodec {
 
     private AnchorDataListHolderCodec() {

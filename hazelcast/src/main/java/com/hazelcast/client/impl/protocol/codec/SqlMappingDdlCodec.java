@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Derives CREATE MAPPING SQL.
  */
-@Generated("4c5a0f10b9af958fbd6f3a2e906ee8ee")
+@Generated("68941df2c89b146117dcd78b305ddde4")
 public final class SqlMappingDdlCodec {
     //hex: 0x210600
     public static final int REQUEST_MESSAGE_TYPE = 2164224;

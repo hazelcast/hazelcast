@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("7be4a7c4d7a8b6639435eb658c3f54c4")
+@Generated("2ebc012b2c9a818051acfed64cfee495")
 public final class SqlSummaryCodec {
     private static final int UNBOUNDED_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = UNBOUNDED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;

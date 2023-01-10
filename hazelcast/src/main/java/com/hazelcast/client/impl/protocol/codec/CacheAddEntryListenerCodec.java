@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Adds an entry listener for this cache. For the types of events that the listener
  * will be notified for, see the documentation of the type field of the Cache event below.
  */
-@Generated("b43c2987c252874102db982ccf68a60b")
+@Generated("4460a7df124b22abf9ab24c6281f3f72")
 public final class CacheAddEntryListenerCodec {
     //hex: 0x130100
     public static final int REQUEST_MESSAGE_TYPE = 1245440;

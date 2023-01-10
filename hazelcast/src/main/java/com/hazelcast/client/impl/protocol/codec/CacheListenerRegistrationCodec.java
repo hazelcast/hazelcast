@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Tries to register the listener configuration for the cache specified by its name
  * to the given member.
  */
-@Generated("2791bf150e46e415e0cc2a10ecc15612")
+@Generated("9c33558a43aebc2afb7d93ae57e6ab59")
 public final class CacheListenerRegistrationCodec {
     //hex: 0x130F00
     public static final int REQUEST_MESSAGE_TYPE = 1249024;

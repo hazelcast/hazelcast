@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("51e2687e2f0c3dbe298bcb7a33dfa3bb")
+@Generated("109fc414031e6e7f73a2bdc74d06a569")
 public final class CPMemberCodec {
     private static final int UUID_FIELD_OFFSET = 0;
     private static final int INITIAL_FRAME_SIZE = UUID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;

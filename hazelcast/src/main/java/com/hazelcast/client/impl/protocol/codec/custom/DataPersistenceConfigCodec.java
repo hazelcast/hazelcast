@@ -24,7 +24,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.CodecUtil.fastFor
 import static com.hazelcast.client.impl.protocol.ClientMessage.*;
 import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec.*;
 
-@Generated("9d53f66198e9d135d2ebe2cccd1dcc8c")
+@Generated("5d3ba2837c2b7ddd72f38886d26a47cb")
 public final class DataPersistenceConfigCodec {
     private static final int ENABLED_FIELD_OFFSET = 0;
     private static final int FSYNC_FIELD_OFFSET = ENABLED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
