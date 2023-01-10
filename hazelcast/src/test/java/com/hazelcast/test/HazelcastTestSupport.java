@@ -18,6 +18,7 @@ package com.hazelcast.test;
 
 import classloading.ThreadLocalLeakTestUtils;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.ClusterState;
@@ -313,18 +314,12 @@ public abstract class HazelcastTestSupport {
         }
     }
 
-    protected void assertNoRunningInstancesEventually(String methodName) {
+    protected void assertNoRunningInstancesEventually(String methodName, TestHazelcastFactory hazelcastFactory) {
         // check for running Hazelcast instances
         assertTrueEventually(() -> {
-            Set<HazelcastInstance> instances = Hazelcast.getAllHazelcastInstances();
+            Collection<HazelcastInstance> instances = hazelcastFactory.getAllHazelcastInstances();
             if (!instances.isEmpty()) {
                 fail("After " + methodName + " following instances haven't been shut down: " + instances);
-            }
-        });
-        assertTrueEventually(() -> {
-            Collection<HazelcastInstance> clientInstances = HazelcastClient.getAllHazelcastClients();
-            if (!clientInstances.isEmpty()) {
-                fail("After " + methodName + " following client instances haven't been shut down: " + clientInstances);
             }
         });
     }

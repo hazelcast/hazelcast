@@ -46,6 +46,8 @@ import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
+
 public abstract class AbstractMongoDBTest extends SimpleTestInClusterSupport {
 
     static final String SOURCE_NAME = "source";
@@ -66,6 +68,7 @@ public abstract class AbstractMongoDBTest extends SimpleTestInClusterSupport {
 
     @BeforeClass
     public static void beforeClass() {
+        assumeDockerEnabled();
         mongoContainer.start();
         initialize(2, null);
     }

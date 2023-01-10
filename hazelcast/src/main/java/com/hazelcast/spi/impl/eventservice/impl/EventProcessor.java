@@ -17,13 +17,13 @@
 package com.hazelcast.spi.impl.eventservice.impl;
 
 import com.hazelcast.internal.serialization.Data;
-import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 import com.hazelcast.internal.util.executor.StripedRunnable;
+import com.hazelcast.spi.impl.eventservice.EventPublishingService;
 
 import java.util.UUID;
 
 /**
- * An event processor responsible of fetching the registration and service responsible for the published event
+ * An event processor responsible for fetching the registration and service responsible for the published event
  * and processing it. The processor is an instance of the {@link StripedRunnable} and events are processed on a
  * thread defined by the {@link #orderKey}. This means that all events with the same {@link #orderKey} will be ordered.
  * Any exception thrown when processing the event will be returned to the caller.

@@ -35,14 +35,14 @@ public final class EntryViews {
         return new SimpleEntryView<>();
     }
 
-    public static <K, V> EntryView<K, V> createSimpleEntryView(K key, V value, Record record,
+    public static <K, V> EntryView<K, V> createSimpleEntryView(K key, V value, Record<V> record,
                                                                ExpiryMetadata expiryMetadata) {
         return new SimpleEntryView<>(key, value)
                 .withCost(record.getCost())
                 .withVersion(record.getVersion())
                 .withHits(record.getHits())
                 .withLastAccessTime(record.getLastAccessTime())
-                .withLastUpdateTime(record.getLastUpdateTime())
+                .withLastUpdateTime(calculateLastUpdateTime(record, expiryMetadata))
                 .withCreationTime(record.getCreationTime())
                 .withLastStoredTime(record.getLastStoredTime())
                 .withTtl(expiryMetadata.getTtl())
@@ -58,11 +58,23 @@ public final class EntryViews {
                 .withVersion(record.getVersion())
                 .withHits(record.getHits())
                 .withLastAccessTime(record.getLastAccessTime())
-                .withLastUpdateTime(record.getLastUpdateTime())
+                .withLastUpdateTime(calculateLastUpdateTime(record, expiryMetadata))
                 .withCreationTime(record.getCreationTime())
                 .withLastStoredTime(record.getLastStoredTime())
                 .withTtl(expiryMetadata.getTtl())
                 .withMaxIdle(expiryMetadata.getMaxIdle())
                 .withExpirationTime(expiryMetadata.getExpirationTime());
+    }
+
+    private static <V> long calculateLastUpdateTime(Record<V> record, ExpiryMetadata expiryMetadata) {
+        if (record.getLastUpdateTime() != Record.UNSET) {
+            return record.getLastUpdateTime();
+        }
+
+        if (expiryMetadata != ExpiryMetadata.NULL) {
+            return expiryMetadata.getLastUpdateTime();
+        }
+
+        return Record.UNSET;
     }
 }
