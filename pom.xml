@@ -177,7 +177,7 @@
         <checkstyle.version>8.38</checkstyle.version>
         <checkstyle.configLocation>${main.basedir}/checkstyle/checkstyle.xml</checkstyle.configLocation>
         <checkstyle.supressionsLocation>${main.basedir}/checkstyle/suppressions.xml</checkstyle.supressionsLocation>
-        <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeader.txt</checkstyle.headerLocation>
+        <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeaderApache.txt</checkstyle.headerLocation>
 
         <shade.jar-with-dependencies.phase>package</shade.jar-with-dependencies.phase>
         <fat.dependency.classifier>jar-with-dependencies</fat.dependency.classifier>
