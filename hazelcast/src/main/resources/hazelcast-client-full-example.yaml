@@ -257,11 +257,13 @@ hazelcast-client:
     ssl:
       enabled: false
       properties:
-        protocol: TLS
+        protocol: TLSv1.3
 
         trustStore: /opt/hazelcast-client.truststore
         trustStorePassword: secret.123456
         trustStoreType: PKCS12
+
+        keyMaterialDuration: PT10M
 
         # Following properties are only needed when the mutual authentication is used.
         keyStore: /opt/hazelcast-client.keystore
