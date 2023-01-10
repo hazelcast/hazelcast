@@ -29,6 +29,8 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
@@ -66,9 +68,9 @@ public class JetClientInstanceImplTest extends JetTestSupport {
 
         // Member is required to start the client
         createHazelcastInstance();
-        JetClientInstanceImpl client = (JetClientInstanceImpl) createHazelcastClient().getJet();
+        JetClientInstanceImpl jetClientInstance = (JetClientInstanceImpl) createHazelcastClient().getJet();
 
-        int totalParts = client.calculateTotalParts(jarSize, partSize);
+        int totalParts = jetClientInstance.calculateTotalParts(jarSize, partSize);
         assertEquals(1, totalParts);
     }
 
@@ -81,9 +83,9 @@ public class JetClientInstanceImplTest extends JetTestSupport {
         clientConfig.setProperty(ClientProperty.JOB_UPLOAD_PART_SIZE.getName(), "1000");
 
         HazelcastInstance hazelcastClient = createHazelcastClient(clientConfig);
-        JetClientInstanceImpl client = (JetClientInstanceImpl) hazelcastClient.getJet();
+        JetClientInstanceImpl jetClientInstance = (JetClientInstanceImpl) hazelcastClient.getJet();
 
-        int partSize = client.calculatePartBufferSize();
+        int partSize = jetClientInstance.calculatePartBufferSize();
         assertEquals(1_000, partSize);
     }
 
@@ -96,11 +98,37 @@ public class JetClientInstanceImplTest extends JetTestSupport {
         clientConfig.setProperty(ClientProperty.JOB_UPLOAD_PART_SIZE.getName(), "E");
         HazelcastInstance hazelcastClient = createHazelcastClient(clientConfig);
 
-        JetClientInstanceImpl client = (JetClientInstanceImpl) hazelcastClient.getJet();
+        JetClientInstanceImpl jetClientInstance = (JetClientInstanceImpl) hazelcastClient.getJet();
 
-        int partSize = client.calculatePartBufferSize();
+        int partSize = jetClientInstance.calculatePartBufferSize();
         int defaultValue = Integer.parseInt(ClientProperty.JOB_UPLOAD_PART_SIZE.getDefaultValue());
         assertEquals(defaultValue, partSize);
+    }
+
+    @Test
+    public void fileNameWithoutExtension() {
+        // Member is required to start the client
+        createHazelcastInstance();
+
+        HazelcastInstance hazelcastClient = createHazelcastClient();
+        JetClientInstanceImpl jetClientInstance = (JetClientInstanceImpl) hazelcastClient.getJet();
+
+        String expectedFileName = "foo";
+        Path jarPath = Paths.get("/mnt/foo.jar");
+        String fileNameWithoutExtension = jetClientInstance.fileNameWithoutExtension(jarPath);
+        assertEquals(expectedFileName, fileNameWithoutExtension);
+
+        jarPath = Paths.get("/mnt/foo");
+        fileNameWithoutExtension = jetClientInstance.fileNameWithoutExtension(jarPath);
+        assertEquals(expectedFileName, fileNameWithoutExtension);
+
+        jarPath = Paths.get("foo.jar");
+        fileNameWithoutExtension = jetClientInstance.fileNameWithoutExtension(jarPath);
+        assertEquals(expectedFileName, fileNameWithoutExtension);
+
+        jarPath = Paths.get("foo");
+        fileNameWithoutExtension = jetClientInstance.fileNameWithoutExtension(jarPath);
+        assertEquals(expectedFileName, fileNameWithoutExtension);
     }
 
 }

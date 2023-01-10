@@ -97,14 +97,15 @@ For this purpose two new messages are added to client protocol
 
 The upload process starts with uploadJobMetaData. This message contains
 
-| Term                   | Type | Definition                                                       |
-|------------------------|------|------------------------------------------------------------------|
-| sessionId | UUID | The UUID. This field associates all messages in a session |
-| jarSize |    long  | The jar size in bytes                                            |
-| snapshotName |  String    | Argument passed when starting the job                            |
-| jobName |    String  | Argument passed when starting the job                            |
-| mainClass |   String   | Argument passed when starting the job                            |
-| jobParameters |   List_String   | Argument passed when starting the job                            |
+| Term          | Type        | Definition                                                |
+|---------------|-------------|-----------------------------------------------------------|
+| sessionId     | UUID        | The UUID. This field associates all messages in a session |
+| filename      | String      | Name of the jar file without extension                    |
+| sha256Hex     | String      | Hexadecimal SHA256 of the jar file                        |
+| snapshotName  | String      | Argument passed when starting the job                     |
+| jobName       | String      | Argument passed when starting the job                     |
+| mainClass     | String      | Argument passed when starting the job                     |
+| jobParameters | List_String | Argument passed when starting the job                     |
 
 
 Upon reception of uploadJobMetaData message, the server performs validation. If any validation rule them fails, a **JetException** is thrown. If the message can be validated, the server stores a new entry in the JobUploadStore class

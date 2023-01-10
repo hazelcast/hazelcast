@@ -117,7 +117,7 @@ public class JobUploadStatus {
 
     private void createNewTemporaryFile() throws IOException {
         // Create a new temporary file
-        Path jarPath = Files.createTempFile("runjob", ".jar"); //NOSONAR
+        Path jarPath = Files.createTempFile(jobMetaDataParameterObject.getFileName(), ".jar"); //NOSONAR
 
         // Make it accessible only by the owner
         File jarFile = jarPath.toFile();
@@ -133,6 +133,7 @@ public class JobUploadStatus {
         if (!success) {
             LOGGER.info("setExecutable failed on " + jarFile);
         }
+
         jobMetaDataParameterObject.setJarPath(jarPath);
     }
 

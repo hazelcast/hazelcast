@@ -16,14 +16,12 @@
 
 package com.hazelcast.jet.impl.operation;
 
+import com.hazelcast.client.impl.protocol.codec.JetUploadJobMetaDataCodec;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.jet.impl.jobupload.JobMetaDataParameterObject;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.impl.operationservice.Operation;
-
-import java.util.List;
-import java.util.UUID;
 
 import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
 
@@ -32,22 +30,21 @@ import static com.hazelcast.jet.impl.util.Util.checkJetIsEnabled;
  */
 public class UploadJobMetaDataOperation extends Operation implements IdentifiedDataSerializable {
 
-    Boolean response;
+    Boolean response = false;
     JobMetaDataParameterObject jobMetaDataParameterObject;
 
     public UploadJobMetaDataOperation() {
     }
 
-    public UploadJobMetaDataOperation(UUID sessionId, String sha256Hex, long jarSize, String snapshotName, String jobName,
-                                      String mainClass, List<String> jobParameters) {
+    public UploadJobMetaDataOperation(JetUploadJobMetaDataCodec.RequestParameters parameters) {
         jobMetaDataParameterObject = new JobMetaDataParameterObject();
-        jobMetaDataParameterObject.setSessionId(sessionId);
-        jobMetaDataParameterObject.setSha256Hex(sha256Hex);
-        jobMetaDataParameterObject.setJarSize(jarSize);
-        jobMetaDataParameterObject.setSnapshotName(snapshotName);
-        jobMetaDataParameterObject.setJobName(jobName);
-        jobMetaDataParameterObject.setMainClass(mainClass);
-        jobMetaDataParameterObject.setJobParameters(jobParameters);
+        jobMetaDataParameterObject.setSessionId(parameters.sessionId);
+        jobMetaDataParameterObject.setSha256Hex(parameters.sha256Hex);
+        jobMetaDataParameterObject.setFileName(parameters.fileName);
+        jobMetaDataParameterObject.setSnapshotName(parameters.snapshotName);
+        jobMetaDataParameterObject.setJobName(parameters.jobName);
+        jobMetaDataParameterObject.setMainClass(parameters.mainClass);
+        jobMetaDataParameterObject.setJobParameters(parameters.jobParameters);
     }
 
     @Override

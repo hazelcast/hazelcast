@@ -29,7 +29,8 @@ public class JobMetaDataParameterObject {
 
     private String sha256Hex;
 
-    private long jarSize;
+    private String fileName;
+
     private String snapshotName;
     private String jobName;
 
@@ -55,12 +56,12 @@ public class JobMetaDataParameterObject {
         this.sha256Hex = sha256Hex;
     }
 
-    public long getJarSize() {
-        return jarSize;
+    public String getFileName() {
+        return fileName;
     }
 
-    public void setJarSize(long jarSize) {
-        this.jarSize = jarSize;
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
     }
 
     public String getSnapshotName() {

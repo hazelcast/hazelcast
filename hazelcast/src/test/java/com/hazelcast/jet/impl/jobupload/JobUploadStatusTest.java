@@ -59,7 +59,7 @@ public class JobUploadStatusTest {
     }
 
     @Test
-    public void testIsExpired() throws Exception {
+    public void testIsExpired() {
 
         Instant now = Instant.now();
         Instant expiredTime = now.minus(1, ChronoUnit.MINUTES);

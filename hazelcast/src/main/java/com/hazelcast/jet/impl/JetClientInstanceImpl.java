@@ -147,11 +147,14 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
         try {
             UUID sessionId = UuidUtil.newSecureUUID();
-            long jarSize = Files.size(jarPath);
+
+            String fileName = fileNameWithoutExtension(jarPath);
             String sha256Hex = calculateSha256Hex(jarPath);
+            long jarSize = Files.size(jarPath);
 
             // Send job meta data
-            boolean result = sendJobMetaData(sessionId, sha256Hex, jarSize, snapshotName, jobName, mainClass, jobParameters);
+            boolean result = sendJobMetaData(sessionId, fileName, sha256Hex, snapshotName, jobName, mainClass,
+                    jobParameters);
             if (result) {
                 logFine(getLogger(), "Submitted JobMetaData successfully for jarPath: %s", jarPath);
             }
@@ -163,14 +166,23 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         }
     }
 
+    protected String fileNameWithoutExtension(Path jarPath) {
+        String fileName = jarPath.getFileName().toString();
+        if (fileName.endsWith(".jar")) {
+            fileName = fileName.substring(0, fileName.lastIndexOf('.'));
+        }
+        return fileName;
+    }
+
     public String calculateSha256Hex(Path jarPath) throws IOException, NoSuchAlgorithmException {
         return Sha256Util.calculateSha256Hex(jarPath);
     }
-    private boolean sendJobMetaData(UUID sessionId, String md5Hex, long jarSize, String snapshotName, String jobName,
-                                 String mainClass, List<String> jobParameters) {
 
-        ClientMessage jobMetaDataRequest = JetUploadJobMetaDataCodec.encodeRequest(sessionId, md5Hex, jarSize, snapshotName,
-                jobName, mainClass, jobParameters);
+    private boolean sendJobMetaData(UUID sessionId, String fileName, String sha256Hex, String snapshotName,
+                                    String jobName, String mainClass, List<String> jobParameters) {
+
+        ClientMessage jobMetaDataRequest = JetUploadJobMetaDataCodec.encodeRequest(sessionId, fileName, sha256Hex,
+                snapshotName, jobName, mainClass, jobParameters);
         return invokeRequestOnMasterAndDecodeResponse(jobMetaDataRequest, JetUploadJobMetaDataCodec::decodeResponse);
     }
 
