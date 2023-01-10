@@ -54,18 +54,18 @@ public abstract class AsyncServerSocketTest {
         Eventloop eventloop = createEventloop();
         AsyncServerSocket socket = createAsyncServerSocket(eventloop);
         int size = 64 * 1024;
-        socket.receiveBufferSize(size);
-        assertTrue(socket.receiveBufferSize() >= size);
+        socket.setReceiveBufferSize(size);
+        assertTrue(socket.getReceiveBufferSize() >= size);
     }
 
     @Test
     public void reuseAddress() {
         Eventloop eventloop = createEventloop();
         AsyncServerSocket socket = createAsyncServerSocket(eventloop);
-        socket.reuseAddress(true);
+        socket.setReuseAddress(true);
         assertTrue(socket.isReuseAddress());
 
-        socket.reuseAddress(false);
+        socket.setReuseAddress(false);
         assertFalse(socket.isReuseAddress());
     }
 
@@ -81,10 +81,10 @@ public abstract class AsyncServerSocketTest {
 
         Eventloop eventloop = createEventloop();
         AsyncServerSocket socket = createAsyncServerSocket(eventloop);
-        socket.reusePort(true);
+        socket.setReusePort(true);
         assertTrue(socket.isReusePort());
 
-        socket.reusePort(false);
+        socket.setReusePort(false);
         assertFalse(socket.isReusePort());
     }
 }

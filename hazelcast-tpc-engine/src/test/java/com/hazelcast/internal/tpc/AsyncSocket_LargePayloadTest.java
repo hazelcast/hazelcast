@@ -290,7 +290,7 @@ public abstract class AsyncSocket_LargePayloadTest {
 
     private AsyncServerSocket newServer(SocketAddress serverAddress) {
         serverSocket = serverEventloop.openAsyncServerSocket();
-        serverSocket.receiveBufferSize(SOCKET_BUFFER_SIZE);
+        serverSocket.setReceiveBufferSize(SOCKET_BUFFER_SIZE);
         serverSocket.bind(serverAddress);
         serverSocket.listen(10);
 
@@ -298,7 +298,7 @@ public abstract class AsyncSocket_LargePayloadTest {
             socket.setSoLinger(-1);
             socket.setTcpNoDelay(true);
             socket.setSendBufferSize(SOCKET_BUFFER_SIZE);
-            socket.setReceiveBufferSize(serverSocket.receiveBufferSize());
+            socket.setReceiveBufferSize(serverSocket.getReceiveBufferSize());
             socket.setReadHandler(new ReadHandler() {
                 private ByteBuffer payloadBuffer;
                 private long round;
