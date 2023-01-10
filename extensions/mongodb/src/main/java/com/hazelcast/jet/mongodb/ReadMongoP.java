@@ -79,6 +79,10 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
     private Traverser<?> traverser;
     private Traverser<? extends Entry<BroadcastKey<Integer>, ?>> snapshotTraverser;
+
+    /**
+     * Creates a new processor with batch reader.
+     */
     public ReadMongoP(
             SupplierEx<? extends MongoClient> connectionSupplier,
             List<Bson> aggregates,
@@ -89,6 +93,9 @@ public class ReadMongoP<I> extends AbstractProcessor {
         reader = new BatchMongoReader(connectionSupplier, databaseName, collectionName, mapItemFn, aggregates);
     }
 
+    /**
+     * Creates a new processor with streaming reader.
+     */
     public ReadMongoP(
             SupplierEx<? extends MongoClient> connectionSupplier,
             Long startAtTimestamp,
