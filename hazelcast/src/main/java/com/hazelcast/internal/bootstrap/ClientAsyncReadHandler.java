@@ -22,7 +22,7 @@ import com.hazelcast.client.impl.protocol.ClientMessage;
 import com.hazelcast.client.impl.protocol.ClientMessageReader;
 import com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCodec;
 import com.hazelcast.internal.nio.Connection;
-import com.hazelcast.internal.tpc.nio.NioAsyncReadHandler;
+import com.hazelcast.internal.tpc.ReadHandler;
 
 import javax.annotation.Nullable;
 import java.nio.ByteBuffer;
@@ -30,14 +30,14 @@ import java.util.Collection;
 import java.util.UUID;
 
 
-public class ClientNioAsyncReadHandler extends NioAsyncReadHandler {
+public class ClientAsyncReadHandler extends ReadHandler {
 
     private final ClientEngine clientEngine;
     private final ClientMessageReader clientMessageReader = new ClientMessageReader(0);
     private boolean protocolBytesReceived;
     private Connection connection;
 
-    public ClientNioAsyncReadHandler(ClientEngine clientEngine) {
+    public ClientAsyncReadHandler(ClientEngine clientEngine) {
         this.clientEngine = clientEngine;
     }
 

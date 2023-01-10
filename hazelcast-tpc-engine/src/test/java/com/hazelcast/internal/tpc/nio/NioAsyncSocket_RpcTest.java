@@ -16,22 +16,15 @@
 
 package com.hazelcast.internal.tpc.nio;
 
-import com.hazelcast.internal.tpc.ReadHandler;
+import com.hazelcast.internal.tpc.AsyncSocket_RpcTest;
+import com.hazelcast.internal.tpc.Eventloop;
 
-import java.nio.ByteBuffer;
+public class NioAsyncSocket_RpcTest extends AsyncSocket_RpcTest {
 
-/**
- * Nio version of the {@link ReadHandler}.
- */
-public abstract class NioAsyncReadHandler implements ReadHandler {
-
-    protected NioAsyncSocket socket;
-    protected NioEventloop eventloop;
-
-    public void init(NioAsyncSocket socket) {
-        this.socket = socket;
-        this.eventloop = socket.eventloop();
+    @Override
+    public Eventloop createEventloop() {
+        Eventloop clientEventloop = new NioEventloop();
+        clientEventloop.start();
+        return clientEventloop;
     }
-
-    public abstract void onRead(ByteBuffer buffer);
 }
