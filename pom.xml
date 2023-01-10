@@ -30,6 +30,7 @@
 
     <modules>
         <module>hazelcast-tpc-engine</module>
+        <module>hazelcast-tpc-engine-benchmarks</module>
         <module>hazelcast</module>
         <module>hazelcast-archunit-rules</module>
         <module>hazelcast-spring</module>
