@@ -11,6 +11,9 @@ updates:
     open-pull-requests-limit: 100
     commit-message:
       prefix: ""
+    ignore:
+      # it's our supported version, no need to upgrade
+      - dependency-name: "org.springframework.version"
 
   - package-ecosystem: "github-actions"
     directory: "/"
