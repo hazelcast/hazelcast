@@ -35,15 +35,14 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("f8bdb0e1b9cc0821625ab8e3b706b43c")
+@Generated("6814b5e0404aed3dd1ef51464959cf2f")
 public final class JetUploadJobMetaDataCodec {
     //hex: 0xFE1000
     public static final int REQUEST_MESSAGE_TYPE = 16650240;
     //hex: 0xFE1001
     public static final int RESPONSE_MESSAGE_TYPE = 16650241;
     private static final int REQUEST_SESSION_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
-    private static final int REQUEST_JAR_SIZE_FIELD_OFFSET = REQUEST_SESSION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
-    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_JAR_SIZE_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
+    private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_SESSION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;
     private static final int RESPONSE_RESPONSE_FIELD_OFFSET = RESPONSE_BACKUP_ACKS_FIELD_OFFSET + BYTE_SIZE_IN_BYTES;
     private static final int RESPONSE_INITIAL_FRAME_SIZE = RESPONSE_RESPONSE_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
 
@@ -69,11 +68,6 @@ public final class JetUploadJobMetaDataCodec {
         public java.lang.String sha256Hex;
 
         /**
-         * jar size in bytes
-         */
-        public long jarSize;
-
-        /**
          * Name of the initial snapshot to start the job from
          */
         public @Nullable java.lang.String snapshotName;
@@ -94,7 +88,7 @@ public final class JetUploadJobMetaDataCodec {
         public java.util.List<java.lang.String> jobParameters;
     }
 
-    public static ClientMessage encodeRequest(java.util.UUID sessionId, java.lang.String fileName, java.lang.String sha256Hex, long jarSize, @Nullable java.lang.String snapshotName, @Nullable java.lang.String jobName, @Nullable java.lang.String mainClass, java.util.Collection<java.lang.String> jobParameters) {
+    public static ClientMessage encodeRequest(java.util.UUID sessionId, java.lang.String fileName, java.lang.String sha256Hex, @Nullable java.lang.String snapshotName, @Nullable java.lang.String jobName, @Nullable java.lang.String mainClass, java.util.Collection<java.lang.String> jobParameters) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Jet.UploadJobMetaData");
@@ -102,7 +96,6 @@ public final class JetUploadJobMetaDataCodec {
         encodeInt(initialFrame.content, TYPE_FIELD_OFFSET, REQUEST_MESSAGE_TYPE);
         encodeInt(initialFrame.content, PARTITION_ID_FIELD_OFFSET, -1);
         encodeUUID(initialFrame.content, REQUEST_SESSION_ID_FIELD_OFFSET, sessionId);
-        encodeLong(initialFrame.content, REQUEST_JAR_SIZE_FIELD_OFFSET, jarSize);
         clientMessage.add(initialFrame);
         StringCodec.encode(clientMessage, fileName);
         StringCodec.encode(clientMessage, sha256Hex);
@@ -118,7 +111,6 @@ public final class JetUploadJobMetaDataCodec {
         RequestParameters request = new RequestParameters();
         ClientMessage.Frame initialFrame = iterator.next();
         request.sessionId = decodeUUID(initialFrame.content, REQUEST_SESSION_ID_FIELD_OFFSET);
-        request.jarSize = decodeLong(initialFrame.content, REQUEST_JAR_SIZE_FIELD_OFFSET);
         request.fileName = StringCodec.decode(iterator);
         request.sha256Hex = StringCodec.decode(iterator);
         request.snapshotName = CodecUtil.decodeNullable(iterator, StringCodec::decode);
