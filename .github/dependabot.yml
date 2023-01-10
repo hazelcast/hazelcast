@@ -9,6 +9,8 @@ updates:
       - "Source: Internal"
       - "dependencies"
     open-pull-requests-limit: 100
+    commit-message:
+      prefix: "[dependency]"
 
   - package-ecosystem: "github-actions"
     directory: "/"
