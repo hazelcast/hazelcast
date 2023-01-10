@@ -17,12 +17,17 @@ package com.hazelcast.jet.mongodb;
 
 import com.hazelcast.function.FunctionEx;
 import com.mongodb.client.model.changestream.ChangeStreamDocument;
+import org.bson.BsonDocument;
 import org.bson.BsonDocumentReader;
+import org.bson.BsonDocumentWriter;
 import org.bson.Document;
 import org.bson.codecs.DecoderContext;
+import org.bson.codecs.EncoderContext;
 import org.bson.codecs.configuration.CodecProvider;
 import org.bson.codecs.configuration.CodecRegistry;
 import org.bson.codecs.pojo.PojoCodecProvider;
+
+import javax.annotation.Nonnull;
 
 import static com.mongodb.MongoClientSettings.getDefaultCodecRegistry;
 import static org.bson.codecs.configuration.CodecRegistries.fromProviders;
@@ -33,11 +38,13 @@ final class Mappers {
     private static final Mappers INSTANCE = new Mappers();
     private final CodecRegistry pojoCodecRegistry;
     private final DecoderContext decoderContext;
+    private final EncoderContext encoderContext;
 
     private Mappers() {
         CodecProvider pojoCodecProvider = PojoCodecProvider.builder().automatic(true).build();
         this.pojoCodecRegistry = fromRegistries(getDefaultCodecRegistry(), fromProviders(pojoCodecProvider));
         this.decoderContext = DecoderContext.builder().build();
+        this.encoderContext = EncoderContext.builder().build();
     }
 
     static <T> T map(Document doc, Class<T> type) {
@@ -45,15 +52,26 @@ final class Mappers {
                 new BsonDocumentReader(doc.toBsonDocument()), INSTANCE.decoderContext);
     }
 
+    @Nonnull
     static <T> FunctionEx<Document, T> toClass(Class<T> type) {
         return doc -> map(doc, type);
     }
 
+    @Nonnull
     static <T> FunctionEx<ChangeStreamDocument<Document>, T> streamToClass(Class<T> type) {
         return doc -> {
             assert doc.getFullDocument() != null;
             return map(doc.getFullDocument(), type);
         };
+    }
+
+    @Nonnull
+    @SuppressWarnings("unchecked")
+    static <I> BsonDocument toBsonDocument(I item) {
+        BsonDocument document = new BsonDocument();
+        Class<I> aClass = (Class<I>) item.getClass();
+        INSTANCE.pojoCodecRegistry.get(aClass).encode(new BsonDocumentWriter(document), item, INSTANCE.encoderContext);
+        return document;
     }
 
 }
