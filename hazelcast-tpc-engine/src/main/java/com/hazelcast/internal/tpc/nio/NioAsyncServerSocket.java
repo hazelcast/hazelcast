@@ -82,7 +82,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public NioEventloop eventloop() {
+    public NioEventloop getEventloop() {
         return eventloop;
     }
 
@@ -96,12 +96,12 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    protected SocketAddress localAddress0() throws IOException {
+    protected SocketAddress getLocalAddress0() throws IOException {
         return serverSocketChannel.getLocalAddress();
     }
 
     @Override
-    public int localPort() {
+    public int getLocalPort() {
         return serverSocketChannel.socket().getLocalPort();
     }
 
@@ -119,7 +119,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public void reusePort(boolean reusePort) {
+    public void setReusePort(boolean reusePort) {
         if (SO_REUSEPORT == null) {
             return;
         }
@@ -141,7 +141,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public void reuseAddress(boolean reuseAddress) {
+    public void setReuseAddress(boolean reuseAddress) {
         try {
             serverSocketChannel.setOption(SO_REUSEADDR, reuseAddress);
         } catch (IOException e) {
@@ -150,7 +150,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public void receiveBufferSize(int size) {
+    public void setReceiveBufferSize(int size) {
         try {
             serverSocketChannel.setOption(SO_RCVBUF, size);
         } catch (IOException e) {
@@ -159,7 +159,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public int receiveBufferSize() {
+    public int getReceiveBufferSize() {
         try {
             return serverSocketChannel.getOption(SO_RCVBUF);
         } catch (IOException e) {

@@ -134,7 +134,7 @@ public class NioAsyncSocket_IntegrationTest {
 
     private NioAsyncServerSocket newServer(SocketAddress serverAddress) {
         NioAsyncServerSocket serverSocket = NioAsyncServerSocket.open(serverEventloop);
-        serverSocket.reuseAddress(true);
+        serverSocket.setReuseAddress(true);
         serverSocket.bind(serverAddress);
         serverSocket.listen(10);
         serverSocket.accept(socket -> {
