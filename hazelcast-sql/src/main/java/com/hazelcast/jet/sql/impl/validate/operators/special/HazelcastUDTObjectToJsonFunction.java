@@ -28,10 +28,10 @@ import org.apache.calcite.sql.SqlOperandCountRange;
 import org.apache.calcite.sql.type.SqlOperandCountRanges;
 import org.apache.calcite.sql.type.SqlTypeName;
 
-public class HazelcastObjectToJsonFunction extends HazelcastFunction {
-    public static final HazelcastFunction INSTANCE = new HazelcastObjectToJsonFunction();
+public class HazelcastUDTObjectToJsonFunction extends HazelcastFunction {
+    public static final HazelcastFunction INSTANCE = new HazelcastUDTObjectToJsonFunction();
 
-    public HazelcastObjectToJsonFunction() {
+    public HazelcastUDTObjectToJsonFunction() {
         super(
                 "UDT_OBJECT_TO_JSON",
                 SqlKind.OTHER_FUNCTION,
