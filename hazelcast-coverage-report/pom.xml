@@ -68,8 +68,10 @@
     </build>
 
     <dependencies>
-        <!-- All modules and submodules must be included here for coverage calculating
-             To update use dependencies-list.sh script which prints dependencies list
+        <!-- Below list of dependencies is required for correct coverage calculation and must cover
+             all modules and submodules available during sonar build.
+             To update use dependencies-list.sh script which prints dependencies list.
+             IMPORTANT NOTE: The above script must be run with the same JDK version as sonar build.
         -->
         <dependency>
             <groupId>com.hazelcast</groupId>
