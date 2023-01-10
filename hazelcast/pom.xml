@@ -177,6 +177,10 @@
                                     <shadedPattern>${relocation.root}.org.snakeyaml</shadedPattern>
                                 </relocation>
                                 <relocation>
+                                    <pattern>org.jctools</pattern>
+                                    <shadedPattern>${relocation.root}.org.jctools</shadedPattern>
+                                </relocation>
+                                <relocation>
                                     <pattern>io.github.classgraph</pattern>
                                     <shadedPattern>${relocation.root}.io.github.classgraph</shadedPattern>
                                 </relocation>
@@ -205,9 +209,16 @@
                                 <transformer
                                         implementation="org.apache.maven.plugins.shade.resource.ServicesResourceTransformer"/>
                                 <transformer
-                                        implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer" />
+                                        implementation="org.apache.maven.plugins.shade.resource.ApacheNoticeResourceTransformer"/>
                             </transformers>
                             <filters>
+                                <filter>
+                                    <artifact>org.jctools:jctools-core</artifact>
+                                    <includes>
+                                        <include>org/jctools/queues/*</include>
+                                        <include>org/jctools/util/*</include>
+                                    </includes>
+                                </filter>
                                 <filter>
                                     <artifact>com.fasterxml.jackson.core:*</artifact>
                                     <excludes>
