@@ -35,7 +35,6 @@
         <module>hazelcast-spring-tests</module>
         <module>hazelcast-build-utils</module>
         <module>hazelcast-sql</module>
-        <module>hazelcast-coverage-report</module>
     </modules>
 
     <properties>
@@ -937,6 +936,9 @@
             <properties>
                 <vmHeapSettings>-Xms128m -Xmx1G</vmHeapSettings>
             </properties>
+            <modules>
+                <module>hazelcast-coverage-report</module>
+            </modules>
             <build>
                 <plugins>
                     <plugin>
@@ -996,6 +998,9 @@
 
         <profile>
             <id>test-coverage</id>
+            <modules>
+                <module>hazelcast-coverage-report</module>
+            </modules>
             <properties>
                 <argLine>
                     ${vmHeapSettings}
