@@ -95,12 +95,25 @@ public final class CircularQueue<E> {
         return tail < head;
     }
 
+    /**
+     * Adds an item to this CircularQueue.
+     *
+     * @param item the item to add.
+     * @throws NullPointerException if item is null.
+     * @throws IllegalStateException when there is no more space on this CircularQueue.
+     */
     public void add(E item) {
         if (!offer(item)) {
             throw new IllegalStateException("CircularQueue is full");
         }
     }
 
+    /**
+     * Fills this CircularQueue with as many items as fit from the queue.
+     *
+     * @param queue the queue to drain.
+     * @return the number of items added.
+     */
     public int fill(Queue<E> queue) {
         int remaining = remaining();
         int count = 0;
@@ -119,9 +132,10 @@ public final class CircularQueue<E> {
     }
 
     /**
-     * Peeks
+     * Peeks in the CircularQueue. So returns the first item without removing it. If the CircularQueue
+     * is empty, null is returned.
      *
-     * @return
+     * @return the first item or null.
      */
     public E peek() {
         if (tail < head) {
