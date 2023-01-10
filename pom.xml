@@ -159,7 +159,7 @@
         <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitRulesTest.java -->
         <archunit.version>1.0.1</archunit.version>
         <errorprone.version>2.18.0</errorprone.version>
-        <awaitility.version>4.1.1</awaitility.version>
+        <awaitility.version>4.2.0</awaitility.version>
         <hikari.version>4.0.3</hikari.version>
 
         <sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar>
