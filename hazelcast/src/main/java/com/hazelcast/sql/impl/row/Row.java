@@ -27,6 +27,10 @@ public interface Row extends RowBatch {
         return this;
     }
 
+    default <T> T get(int index, boolean useLazyDeserialization) {
+        return get(index);
+    }
+
     @Override
     default int getRowCount() {
         return 1;
