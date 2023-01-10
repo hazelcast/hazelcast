@@ -205,8 +205,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
         return mongoClient != null;
     }
 
-
-    public static class MongoTransactionId implements TwoPhaseSnapshotCommitUtility.TransactionId, Serializable {
+    private static class MongoTransactionId implements TwoPhaseSnapshotCommitUtility.TransactionId, Serializable {
 
         private static final long serialVersionUID = 1L;
 
