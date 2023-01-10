@@ -1326,7 +1326,7 @@ public class JobCoordinationService {
             // job is running, so not cancelled
             // or has just ended but MasterContext still exists
             userCancelled = status == FAILED &&
-                    maybeTerminationRequest.map(TerminationRequest::isUserInitiatedTermination).orElse(false);
+                    maybeTerminationRequest.map(TerminationRequest::isUserInitiated).orElse(false);
         }
         return new JobAndSqlSummary(false, record.getJobId(), execId, record.getJobNameOrId(), status,
                 record.getCreationTime(), 0, null, null, suspensionCause,

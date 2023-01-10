@@ -194,11 +194,11 @@ public class MasterJobContext {
     }
 
     Optional<TerminationMode> requestedTerminationMode() {
-        return getTerminationRequest().map(TerminationRequest::requestedTerminationMode);
+        return getTerminationRequest().map(TerminationRequest::getMode);
     }
 
     boolean isUserInitiatedTermination() {
-        return getTerminationRequest().map(TerminationRequest::isUserInitiatedTermination).orElse(false);
+        return getTerminationRequest().map(TerminationRequest::isUserInitiated).orElse(false);
     }
 
     /**
@@ -325,8 +325,8 @@ public class MasterJobContext {
             mc.writeJobExecutionRecord(true);
 
             if (terminationRequest != null) {
-                if (terminationRequest.requestedTerminationMode.actionAfterTerminate() != RESTART) {
-                    throw new JobTerminateRequestedException(terminationRequest.requestedTerminationMode);
+                if (terminationRequest.mode.actionAfterTerminate() != RESTART) {
+                    throw new JobTerminateRequestedException(terminationRequest.mode);
                 }
                 // requested termination mode is RESTART, ignore it because we are just starting
                 terminationRequest = null;
@@ -399,8 +399,8 @@ public class MasterJobContext {
             }
             if (terminationRequest != null) {
                 // don't report the cancellation of a cancelled job as an error
-                String message = terminationRequest.requestedTerminationMode == CANCEL_FORCEFUL && mode == CANCEL_FORCEFUL ? null
-                        : "Job is already terminating in mode: " + terminationRequest.requestedTerminationMode.name();
+                String message = terminationRequest.mode == CANCEL_FORCEFUL && mode == CANCEL_FORCEFUL ? null
+                        : "Job is already terminating in mode: " + terminationRequest.mode.name();
                 return tuple2(executionCompletionFuture, message);
             }
             terminationRequest = new TerminationRequest(mode, userInitiated);
@@ -521,7 +521,7 @@ public class MasterJobContext {
         executionFailureCallback = new ExecutionFailureCallback(executionId, mc.startOperationResponses());
 
         getTerminationRequest().ifPresent(request ->
-            handleTermination(request.requestedTerminationMode()));
+            handleTermination(request.getMode()));
 
         boolean savingMetricsEnabled = mc.jobConfig().isStoreMetricsAfterJobCompletion();
         Function<ExecutionPlan, Operation> operationCtor =
@@ -661,7 +661,7 @@ public class MasterJobContext {
                 error = getTerminationRequest()
                         // This cancellation can be because the master cancelled it. If that's the case, convert the exception
                         // to JobTerminateRequestedException.
-                        .map(request -> new JobTerminateRequestedException(request.requestedTerminationMode())
+                        .map(request -> new JobTerminateRequestedException(request.getMode())
                                 .initCause(notFoundException))
                         // The cancellation can also happen if some participant left and
                         // the target cancelled the execution locally in JobExecutionService.onMemberRemoved().
@@ -1011,34 +1011,30 @@ public class MasterJobContext {
 
     public static class TerminationRequest {
         /**
-         * Null initially. When a job termination is requested, it is assigned a
-         * termination mode. It's reset back to null when execute operations
-         * complete.
+         * Requested termination mode
          */
-        private final TerminationMode requestedTerminationMode;
+        private final TerminationMode mode;
         /**
-         * When a job termination is requested, stores information if the
-         * termination was initiated by the user. It is reset back to false when
-         * execute operations complete.
+         * If the termination was initiated by the user.
          * <p>
          * Note that at present this information is trustworthy only for
          * cancellations. For other modes of termination we may not have enough
          * information about what initiated it. In dubious cases we default to false
          * i.e. not user-initiated action.
          */
-        private final boolean userInitiatedTermination;
+        private final boolean userInitiated;
 
-        public TerminationRequest(@Nonnull TerminationMode requestedTerminationMode, boolean userInitiatedTermination) {
-            this.requestedTerminationMode = requestedTerminationMode;
-            this.userInitiatedTermination = userInitiatedTermination;
+        public TerminationRequest(@Nonnull TerminationMode mode, boolean userInitiated) {
+            this.mode = mode;
+            this.userInitiated = userInitiated;
         }
 
-        TerminationMode requestedTerminationMode() {
-            return requestedTerminationMode;
+        TerminationMode getMode() {
+            return mode;
         }
 
-        boolean isUserInitiatedTermination() {
-            return userInitiatedTermination;
+        boolean isUserInitiated() {
+            return userInitiated;
         }
     }
 
