@@ -77,6 +77,7 @@ public class SqlClientService implements SqlService {
 
     private final HazelcastClientInstanceImpl client;
     private final ILogger logger;
+    private final boolean isUniSocket;
 
     /**
      * The field to indicate whether a query should update phone home statistics or not.
@@ -94,6 +95,7 @@ public class SqlClientService implements SqlService {
         long resubmissionTimeoutMillis = client.getProperties().getPositiveMillisOrDefault(INVOCATION_TIMEOUT_SECONDS);
         this.resubmissionTimeoutNano = TimeUnit.MILLISECONDS.toNanos(resubmissionTimeoutMillis);
         this.resubmissionRetryPauseMillis = client.getProperties().getPositiveMillisOrDefault(INVOCATION_RETRY_PAUSE_MILLIS);
+        this.isUniSocket = !client.getClientConfig().getNetworkConfig().isSmartRouting();
     }
 
     @Nonnull
@@ -297,7 +299,7 @@ public class SqlClientService implements SqlService {
                     sqlError.getSuggestion()
             );
         } else {
-            if (response.partitionArgumentIndex != originalPartitionArgumentIndex) {
+            if (!isUniSocket && response.partitionArgumentIndex != originalPartitionArgumentIndex) {
                 if (response.partitionArgumentIndex != -1) {
                     partitionArgumentIndexCache.put(sqlText, response.partitionArgumentIndex);
                 } else {
@@ -438,6 +440,10 @@ public class SqlClientService implements SqlService {
     }
 
     private Integer extractPartitionId(SqlStatement statement, int argIndex) {
+        if (isUniSocket) {
+            return null;
+        }
+
         if (statement.getParameters().size() == 0) {
             return null;
         }
