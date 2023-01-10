@@ -18,6 +18,7 @@ package com.hazelcast.internal.util;
 
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+import java.util.Properties;
 
 import static com.hazelcast.internal.partition.InternalPartition.MAX_BACKUP_COUNT;
 import static java.lang.String.format;
@@ -367,5 +368,19 @@ public final class Preconditions {
         if (!condition) {
             throw new IllegalStateException(message);
         }
+    }
+
+    /**
+     * Tests if the elements inside the argument collection are not null.
+     * If collection is null or empty the test is ignored.
+     *
+     * @param properties the properties tested to see if it contains non-empty property value
+     * @param key        the key of the property to be tested
+     * @return the value of the property that was tested.
+     * @throws java.lang.IllegalArgumentException if argument contains a null element inside
+     */
+    public static String checkRequiredProperty(Properties properties, String key) {
+        String value = properties.getProperty(key);
+        return checkHasText(value, "Property '" + key + "' is required");
     }
 }
