@@ -265,8 +265,6 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
         return registerListener0(serviceName, topic, filter, listener, true);
     }
 
-    /**
-     *
      /**
      * Registers the listener for events matching the service name, topic and filter on local member.
      *
@@ -286,6 +284,8 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
         UUID id = UuidUtil.newUnsecureUUID();
         final Registration reg = new Registration(id, serviceName, topic, filter, nodeEngine.getThisAddress(), listener, isLocal);
         if (!segment.addRegistration(topic, reg)) {
+            // This can only happen if Registration#equals ignores the ID and in the current implementation,
+            // it only compares IDs. That's why we don't specify @Nonnull/@Nullable for the return value.
             return null;
         }
 

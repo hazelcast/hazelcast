@@ -50,8 +50,8 @@ public class JobService implements EventPublishingService<JobEvent, JobListener>
         Collection<EventRegistration> registrations = eventService.getRegistrations(
                 SERVICE_NAME, idToString(jobId));
         if (!registrations.isEmpty()) {
-            eventService.publishEvent(SERVICE_NAME, registrations, new JobEvent(
-                    jobId, oldStatus, newStatus, description, userRequested), (int) jobId);
+            JobEvent event = new JobEvent(jobId, oldStatus, newStatus, description, userRequested);
+            eventService.publishEvent(SERVICE_NAME, registrations, event, (int) jobId);
         }
     }
 

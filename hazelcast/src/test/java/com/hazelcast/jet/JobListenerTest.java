@@ -32,7 +32,7 @@ import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.HazelcastTestSupport;
 import com.hazelcast.test.annotation.ParallelJVMTest;
-import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.After;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -46,9 +46,9 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
-import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -58,6 +58,7 @@ import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
 import static com.hazelcast.spi.impl.eventservice.impl.EventServiceTest.getEventService;
 import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -65,7 +66,7 @@ import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
-@Category({QuickTest.class, ParallelJVMTest.class})
+@Category({SlowTest.class, ParallelJVMTest.class})
 public class JobListenerTest extends SimpleTestInClusterSupport {
     private static final Function<String, String> SIMPLIFY = log -> log.replaceAll("(?<=\\().*: ", "");
     private static final String MAP_NAME = "runCount";
@@ -105,7 +106,7 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
 
     @Test
     public void testListener_waitForCompletion() {
-        testListener(finiteStream(1000, 2),
+        testListener(finiteStream(1, SECONDS, 2),
                 Job::join,
                 "Jet: NOT_RUNNING -> STARTING",
                 "Jet: STARTING -> RUNNING",
@@ -123,8 +124,7 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
                     assertJobStatusEventually(job, RUNNING);
                     job.restart();
                     assertEqualsEventually(listener::runCount, 3);
-                    job.cancel();
-                    assertThrows(CancellationException.class, job::join);
+                    cancelAndJoin(job);
                     assertTailEqualsEventually(listener.log,
                             "Jet: NOT_RUNNING -> STARTING",
                             "Jet: STARTING -> RUNNING",
@@ -169,8 +169,7 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
                         }),
                 (job, listener) -> {
                     assertEqualsEventually(listener::runCount, 2);
-                    job.cancel();
-                    assertThrows(CancellationException.class, job::join);
+                    cancelAndJoin(job);
                     assertTailEqualsEventually(listener.log.stream().map(SIMPLIFY).collect(toList()),
                             "Jet: NOT_RUNNING -> STARTING",
                             "Jet: STARTING -> RUNNING",
@@ -188,8 +187,7 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
                 (job, listener) -> {
                     assertJobStatusEventually(job, SUSPENDED);
                     String failure = job.getSuspensionCause().errorCause().split("\n", 3)[1];
-                    job.cancel();
-                    assertThrows(CancellationException.class, job::join);
+                    cancelAndJoin(job);
                     assertTailEqualsEventually(listener.log,
                             "Jet: NOT_RUNNING -> STARTING",
                             "Jet: STARTING -> RUNNING",
@@ -204,8 +202,7 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
                 (job, listener) -> {
                     assertJobStatusEventually(job, RUNNING);
                     listener.deregister();
-                    job.cancel();
-                    assertThrows(CancellationException.class, job::join);
+                    cancelAndJoin(job);
                     assertHasNoListenerEventually(job.getIdString());
                     assertTailEqualsEventually(listener.log,
                             "Jet: NOT_RUNNING -> STARTING",
@@ -215,7 +212,7 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
 
     @Test
     public void testLightListener_waitForCompletion() {
-        testLightListener(finiteStream(1000, 2),
+        testLightListener(finiteStream(1, SECONDS, 2),
                 Job::join,
                 "Jet: RUNNING -> COMPLETED");
     }
@@ -363,29 +360,29 @@ public class JobListenerTest extends SimpleTestInClusterSupport {
         }
     }
 
-    static BatchSource<Long> finiteStream(int delayMillis, long maxSequence) {
+    static BatchSource<Long> finiteStream(long period, TimeUnit unit, long maxSequence) {
         return SourceBuilder.batch("finiteStream",
-                        ctx -> new FiniteStreamSource(delayMillis, maxSequence))
+                        ctx -> new FiniteStreamSource(period, unit, maxSequence))
                 .fillBufferFn(FiniteStreamSource::fillBuffer)
                 .build();
     }
 
     static class FiniteStreamSource {
-        final long delayMillis;
+        final long periodNanos;
         final long maxSequence;
-        long emitSchedule;
+        long emitSchedule = Long.MIN_VALUE;
         long sequence;
 
-        FiniteStreamSource(int delayMillis, long maxSequence) {
-            this.delayMillis = delayMillis;
+        FiniteStreamSource(long period, TimeUnit unit, long maxSequence) {
+            periodNanos = unit.toNanos(period);
             this.maxSequence = maxSequence;
         }
 
         void fillBuffer(SourceBuffer<Long> buf) {
-            long nowMillis = System.currentTimeMillis();
-            if (nowMillis >= emitSchedule) {
+            long nowNs = System.nanoTime();
+            if (nowNs >= emitSchedule) {
                 buf.add(sequence++);
-                emitSchedule = nowMillis + delayMillis;
+                emitSchedule += periodNanos;
                 if (sequence > maxSequence) {
                     buf.close();
                 }

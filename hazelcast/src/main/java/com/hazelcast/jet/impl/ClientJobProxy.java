@@ -228,6 +228,7 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
         return container().getLifecycleService().isRunning();
     }
 
+    @Nonnull
     @Override
     public UUID addStatusListener(@Nonnull JobListener listener) {
         return container().getListenerService().registerListener(
