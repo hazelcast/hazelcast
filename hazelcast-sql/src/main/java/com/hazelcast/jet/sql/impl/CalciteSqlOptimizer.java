@@ -379,7 +379,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         QueryParseResult dmlParseResult = new QueryParseResult(source, parseResult.getParameterMetadata());
         QueryConvertResult dmlConvertedResult = context.convert(dmlParseResult.getNode());
-        boolean infiniteRows = OptUtils.isUnbounded(dmlConvertedResult.getRel());
         SqlPlanImpl dmlPlan = toPlan(
                 null,
                 parseResult.getParameterMetadata(),
@@ -396,7 +395,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 sqlCreateJob.ifNotExists(),
                 (DmlPlan) dmlPlan,
                 query,
-                infiniteRows,
+                ((DmlPlan) dmlPlan).isInfiniteRows(),
                 planExecutor
         );
     }

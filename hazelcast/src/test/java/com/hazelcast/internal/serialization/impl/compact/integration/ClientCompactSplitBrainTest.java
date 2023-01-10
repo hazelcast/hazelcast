@@ -68,7 +68,7 @@ public class ClientCompactSplitBrainTest extends ClientTestSupport {
 
     @Test
     public void testLocalSchemasAreSent_whenClientReconnectsToOtherHalf() {
-        Config config = smallInstanceConfig();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
 
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
@@ -79,8 +79,7 @@ public class ClientCompactSplitBrainTest extends ClientTestSupport {
         blockCommunicationBetween(instance1, instance2);
 
         // make sure that each member quickly drops the other from their member list
-        suspectMember(instance1, instance2);
-        suspectMember(instance2, instance1);
+        closeConnectionBetween(instance1, instance2);
 
         assertClusterSizeEventually(1, instance1);
         assertClusterSizeEventually(1, instance2);
@@ -122,8 +121,7 @@ public class ClientCompactSplitBrainTest extends ClientTestSupport {
 
     @Test
     public void testSchemaReplicationRetried_whenClientIsConnectedToBothHalvesOfTheSplit() {
-        Config config = smallInstanceConfig();
-        config.getJetConfig().setEnabled(false);
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
 
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);

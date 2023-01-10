@@ -721,9 +721,16 @@ public class JobCoordinationService {
 
                 // completed jobs
                 jobRepository.getJobResults().stream()
-                        .map(r -> new JobAndSqlSummary(
-                                false, r.getJobId(), 0, r.getJobNameOrId(), r.getJobStatus(), r.getCreationTime(),
-                                r.getCompletionTime(), r.getFailureText(), null))
+                        .map(r -> {
+                            // Pre-review note : volatile read at supplier, should not read under lock path.
+                            // Q: Any other better way to get executionRecord?
+                            JobExecutionRecord executionRecord = jobRepository.getJobExecutionRecord(r.getJobId());
+                            return new JobAndSqlSummary(
+                                    false, r.getJobId(), 0, r.getJobNameOrId(), r.getJobStatus(), r.getCreationTime(),
+                                    r.getCompletionTime(), r.getFailureText(), null,
+                                    executionRecord == null || executionRecord.getSuspensionCause() == null ? null :
+                                            executionRecord.getSuspensionCause().description());
+                        })
                         .forEach(s -> jobs.put(s.getJobId(), s));
             }
 
@@ -743,9 +750,10 @@ public class JobCoordinationService {
         Object unbounded = lmc.getJobConfig().getArgument(JobConfigArguments.KEY_SQL_UNBOUNDED);
         SqlSummary sqlSummary = query != null && unbounded != null ?
                 new SqlSummary(query, Boolean.TRUE.equals(unbounded)) : null;
+        // Note: suspensionCause is not supported for light jobs.
         return new JobAndSqlSummary(
                 true, lmc.getJobId(), lmc.getJobId(), idToString(lmc.getJobId()),
-                RUNNING, lmc.getStartTime(), 0, null, sqlSummary);
+                RUNNING, lmc.getStartTime(), 0, null, sqlSummary, null);
     }
 
     /**
@@ -1215,16 +1223,18 @@ public class JobCoordinationService {
     private JobAndSqlSummary getJobAndSqlSummary(JobRecord record) {
         MasterContext ctx = masterContexts.get(record.getJobId());
         long execId = ctx == null ? 0 : ctx.executionId();
+        JobExecutionRecord executionRecord = jobRepository.getJobExecutionRecord(record.getJobId());
+        String suspensionCause = executionRecord != null && executionRecord.getSuspensionCause() != null
+                ? executionRecord.getSuspensionCause().description() : null;
         JobStatus status;
         if (ctx == null) {
-            JobExecutionRecord executionRecord = jobRepository.getJobExecutionRecord(record.getJobId());
             status = executionRecord != null && executionRecord.isSuspended()
                     ? JobStatus.SUSPENDED : JobStatus.NOT_RUNNING;
         } else {
             status = ctx.jobStatus();
         }
         return new JobAndSqlSummary(false, record.getJobId(), execId, record.getJobNameOrId(), status,
-                record.getCreationTime(), 0, null, null);
+                record.getCreationTime(), 0, null, null, suspensionCause);
     }
 
     private InternalPartitionServiceImpl getInternalPartitionService() {
