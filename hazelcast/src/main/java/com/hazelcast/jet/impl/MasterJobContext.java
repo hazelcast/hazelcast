@@ -214,6 +214,12 @@ public class MasterJobContext {
                 .orElse(false);
     }
 
+    private boolean isCancelledGracefully() {
+        return requestedTerminationMode()
+                .map(mode -> mode == CANCEL_GRACEFUL)
+                .orElse(false);
+    }
+
     /**
      * Starts the execution of the job if it is not already completed,
      * cancelled or failed.
@@ -731,7 +737,7 @@ public class MasterJobContext {
                     nonSynchronizedAction = () -> mc.writeJobExecutionRecord(false);
                 } else if (failure != null
                         && !isCancelled()
-                        && requestedTerminationMode != CANCEL_GRACEFUL
+                        && !isCancelledGracefully()
                         && mc.jobConfig().isSuspendOnFailure()
                 ) {
                     mc.setJobStatus(SUSPENDED);
