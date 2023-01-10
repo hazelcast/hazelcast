@@ -67,10 +67,6 @@ public final class EntryViews {
     }
 
     private static <V> long calculateLastUpdateTime(Record<V> record, ExpiryMetadata expiryMetadata) {
-        if (record.getLastUpdateTime() != Record.UNSET) {
-            return record.getLastUpdateTime();
-        }
-
         if (expiryMetadata != ExpiryMetadata.NULL) {
             return expiryMetadata.getLastUpdateTime();
         }
