@@ -81,7 +81,7 @@ public class ConcurrentIOBufferAllocator implements IOBufferAllocator<ThreadLoca
     public void free(ThreadLocalIOBuffer ioBuffer) {
         ThreadLocalIOBufferAllocator allocator = THREAD_LOCAL_IO_BUFFER_ALLOCATORS.get();
 
-        int chunkToRelease = ioBuffer.chunkToRelease;
+        int chunkToRelease = ioBuffer.chunkToRelease();
         boolean ioBufferFreed = false;
 
         if (allocator != null) {

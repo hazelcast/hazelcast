@@ -19,21 +19,16 @@ package com.hazelcast.internal.tpc.iobuffer;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
+import static com.hazelcast.internal.tpc.iobuffer.ThreadLocalIOBufferAllocator.BUFFER_SIZE;
 import static com.hazelcast.internal.tpc.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.tpc.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.internal.tpc.nio.Bits.SHORT_SIZE_IN_BYTES;
-import static com.hazelcast.internal.tpc.iobuffer.ThreadLocalIOBufferAllocator.BUFFER_SIZE;
 
 class ThreadLocalIOBuffer implements IOBuffer {
-    private final ConcurrentIOBufferAllocator superAllocator;
-    private ThreadLocalIOBufferAllocator allocator;
-
     ByteBuffer[] chunks;
 
-    /**
-     * Position of a last chunk in.
-     */
-    int chunksPos;
+    private final ConcurrentIOBufferAllocator superAllocator;
+    private ThreadLocalIOBufferAllocator allocator;
 
     /**
      * Position of a last byte in a buffer.
@@ -42,7 +37,12 @@ class ThreadLocalIOBuffer implements IOBuffer {
 
     private int limit;
 
-    int chunkToRelease;
+    /*&
+     * Position of a last chunk in.
+     */
+    private int chunksPos;
+
+    private int chunkToRelease;
 
     ThreadLocalIOBuffer(ThreadLocalIOBufferAllocator allocator, int minSize, ConcurrentIOBufferAllocator concurrentAllocator) {
         this.allocator = allocator;
@@ -138,7 +138,6 @@ class ThreadLocalIOBuffer implements IOBuffer {
         int toWriteRemaining = src.length - arrayPos;
         while (toWriteRemaining > 0) {
             int toWriteInCurrentChunk = Math.min(chunks[chunk].remaining(), toWriteRemaining);
-            ;
             chunks[chunk++].put(src, arrayPos, toWriteInCurrentChunk);
             arrayPos += toWriteInCurrentChunk;
             toWriteRemaining -= toWriteInCurrentChunk;
@@ -146,6 +145,7 @@ class ThreadLocalIOBuffer implements IOBuffer {
         }
     }
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     @Override
     public void writeShortL(short v) {
         ensureRemaining(SHORT_SIZE_IN_BYTES);
@@ -153,6 +153,7 @@ class ThreadLocalIOBuffer implements IOBuffer {
         writeByteUnsafe((byte) ((v >>> 8) & 0xFF));
     }
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     @Override
     public int getInt(int index) {
         int firstChunk = index / BUFFER_SIZE;
@@ -170,6 +171,7 @@ class ThreadLocalIOBuffer implements IOBuffer {
         return result;
     }
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     @Override
     public void writeInt(int value) {
         if (BUFFER_SIZE - (pos % BUFFER_SIZE) >= INT_SIZE_IN_BYTES) {
@@ -188,6 +190,7 @@ class ThreadLocalIOBuffer implements IOBuffer {
         writeByteUnsafe((byte) (value & 0xFF));
     }
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     @Override
     public void writeIntL(int value) {
         ensureRemaining(INT_SIZE_IN_BYTES);
@@ -197,6 +200,7 @@ class ThreadLocalIOBuffer implements IOBuffer {
         writeByteUnsafe((byte) ((value >>> 24) & 0xFF));
     }
 
+    @SuppressWarnings("checkstyle:MagicNumber")
     @Override
     public void writeLong(long value) {
         if (BUFFER_SIZE - (pos % BUFFER_SIZE) >= LONG_SIZE_IN_BYTES) {
@@ -250,6 +254,14 @@ class ThreadLocalIOBuffer implements IOBuffer {
     @Override
     public ByteBuffer[] getChunks() {
         return chunks;
+    }
+
+    public int chunksPos() {
+        return chunksPos;
+    }
+
+    public int chunkToRelease() {
+        return chunkToRelease;
     }
 
     @Override
