@@ -37,9 +37,10 @@ import com.mongodb.client.MongoCollection;
 import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.ReplaceOneModel;
-import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.model.ReplaceOptions;
 import com.mongodb.client.model.WriteModel;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
@@ -70,7 +71,8 @@ import static java.util.stream.Collectors.toList;
  * @param <I> type of saved item
  */
 public class WriteMongoP<I> extends AbstractProcessor {
-    public static final RetryStrategy RETRY_STRATEGY = RetryStrategies.custom()
+    @SuppressWarnings("checkstyle:MagicNumber")
+    private static final RetryStrategy RETRY_STRATEGY = RetryStrategies.custom()
                                                                       .intervalFunction(exponentialBackoffWithCap(100
                                                                               , 2.0, 3000))
                                                                       .maxAttempts(10)
@@ -89,9 +91,8 @@ public class WriteMongoP<I> extends AbstractProcessor {
     private final FunctionEx<I, Object> documentIdentityFn;
     private final String documentIdentityFieldName;
 
-    private final UpdateOptions updateOptions;
+    private final ReplaceOptions replaceOptions;
 
-    // todo double-check if it should not be concurrent
     private final Map<MongoTransactionId, MongoTransaction> activeTransactions = new HashMap<>();
 
     /**
@@ -103,18 +104,18 @@ public class WriteMongoP<I> extends AbstractProcessor {
             String collectionName,
             Class<I> documentType,
             FunctionEx<I, Object> documentIdentityFn,
-            ConsumerEx<UpdateOptions> updateOptionsChanger,
+            ConsumerEx<ReplaceOptions> replaceOptionAdjuster,
             String documentIdentityFieldName) {
         this.connectionSupplier = connectionSupplier;
         this.documentType = documentType;
         this.documentIdentityFn = documentIdentityFn;
         this.documentIdentityFieldName = documentIdentityFieldName;
 
-        UpdateOptions options = new UpdateOptions().upsert(true);
-        if (updateOptionsChanger != null) {
-            updateOptionsChanger.accept(options);
+        ReplaceOptions options = new ReplaceOptions().upsert(true);
+        if (replaceOptionAdjuster != null) {
+            replaceOptionAdjuster.accept(options);
         }
-        this.updateOptions = options;
+        this.replaceOptions = options;
         this.connectionRetryTracker = new RetryTracker(RETRY_STRATEGY);
 
         collectionPicker = new ConstantCollectionPicker(databaseName, collectionName);
@@ -129,18 +130,18 @@ public class WriteMongoP<I> extends AbstractProcessor {
             FunctionEx<I, String> collectionNameSelectFn,
             Class<I> documentType,
             FunctionEx<I, Object> documentIdentityFn,
-            ConsumerEx<UpdateOptions> updateOptionsChanger,
+            ConsumerEx<ReplaceOptions> replaceOptionAdjuster,
             String documentIdentityFieldName
     ) {
         this.connectionSupplier = connectionSupplier;
         this.documentType = documentType;
         this.documentIdentityFn = documentIdentityFn;
         this.documentIdentityFieldName = documentIdentityFieldName;
-        UpdateOptions options = new UpdateOptions().upsert(true);
-        if (updateOptionsChanger != null) {
-            updateOptionsChanger.accept(options);
+        ReplaceOptions options = new ReplaceOptions().upsert(true);
+        if (replaceOptionAdjuster != null) {
+            replaceOptionAdjuster.accept(options);
         }
-        this.updateOptions = options;
+        this.replaceOptions = options;
         this.connectionRetryTracker = new RetryTracker(
                 RETRY_STRATEGY
         );
@@ -164,22 +165,10 @@ public class WriteMongoP<I> extends AbstractProcessor {
                     refreshTransaction(mongoTransaction, true);
                 },
                 () -> {
-//                    if (clientSession == null) {
-//                        refreshTransaction();
-//                    }
-//                    clientSession.abortTransaction();
-//                    if (clientSession != null) {
-//                        clientSession.abortTransaction();
-//                    }
-//                    if (clientSession != null) {
-//                        clientSession.abortTransaction();
-//                        clientSession.close();
-//                    }
                     for (MongoTransaction tx : activeTransactions.values()) {
                         refreshTransaction(tx, false);
 
                     }
-//                    clientSession = null;
                 }
         );
     }
@@ -214,7 +203,8 @@ public class WriteMongoP<I> extends AbstractProcessor {
                 Object id = documentIdentityFn.apply(item);
 
                 if (docsFound.contains(id)) {
-                    ReplaceOneModel<I> update = new ReplaceOneModel<>(eq(documentIdentityFieldName, id), item);
+                    Bson filter = eq(documentIdentityFieldName, id);
+                    ReplaceOneModel<I> update = new ReplaceOneModel<>(filter, item, replaceOptions);
                     writes.add(update);
                 } else {
                     InsertOneModel<I> insert = new InsertOneModel<>(item);

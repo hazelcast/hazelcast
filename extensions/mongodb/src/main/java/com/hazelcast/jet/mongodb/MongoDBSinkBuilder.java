@@ -26,7 +26,7 @@ import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.SinkBuilder;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.mongodb.client.MongoClient;
-import com.mongodb.client.model.UpdateOptions;
+import com.mongodb.client.model.ReplaceOptions;
 
 import javax.annotation.Nonnull;
 
@@ -54,7 +54,7 @@ public final class MongoDBSinkBuilder<T> {
     private String collectionName;
     private String idFieldName;
     private FunctionEx<T, Object> documentIdentityFn;
-    private ConsumerEx<UpdateOptions> updateOptionsChanger;
+    private ConsumerEx<ReplaceOptions> replaceOptionsChanger;
 
     /**
      * See {@link MongoDBSinks#builder}
@@ -106,22 +106,26 @@ public final class MongoDBSinkBuilder<T> {
     }
 
     /**
-     * Sets the filter that decides which document in the collection is equal to processed document.
+     * Provides an option to adjust options used in replace action.
+     * By default {@linkplain ReplaceOptions#upsert(boolean) upsert} is only enabled.
      */
-    public MongoDBSinkBuilder<T> identifyDocumentBy(@Nonnull String fieldName, @Nonnull FunctionEx<T, Object> documentIdentityFn) {
-        checkNotNull(fieldName, "fieldName cannot be null");
-        checkSerializable(documentIdentityFn, "documentIdentityFn");
-        this.idFieldName = fieldName;
-        this.documentIdentityFn = documentIdentityFn;
+    public MongoDBSinkBuilder<T> withCustomReplaceOptions(ConsumerEx<ReplaceOptions> adjustConsumer) {
+        this.replaceOptionsChanger = checkSerializable(adjustConsumer, "adjustConsumer");
         return this;
     }
 
     /**
      * Sets the filter that decides which document in the collection is equal to processed document.
+     * @param fieldName field name in the collection, that will be used for comparison
+     * @param documentIdentityFn function that extracts ID from given item; will be compared against {@code fieldName}
      */
-    public MongoDBSinkBuilder<T> withUpdateOptionsChanged(@Nonnull ConsumerEx<UpdateOptions> updateOptionsChanger) {
-        checkSerializable(updateOptionsChanger, "updateOptionsChanger");
-        this.updateOptionsChanger = updateOptionsChanger;
+    public MongoDBSinkBuilder<T> identifyDocumentBy(
+            @Nonnull String fieldName,
+            @Nonnull FunctionEx<T, Object> documentIdentityFn) {
+        checkNotNull(fieldName, "fieldName cannot be null");
+        checkSerializable(documentIdentityFn, "documentIdentityFn");
+        this.idFieldName = fieldName;
+        this.documentIdentityFn = documentIdentityFn;
         return this;
     }
 
@@ -141,9 +145,9 @@ public final class MongoDBSinkBuilder<T> {
         final FunctionEx<T, String> selectCollectionNameFn = this.selectCollectionNameFn;
         final FunctionEx<T, Object> documentIdentityFn = this.documentIdentityFn;
         final String fieldName = this.idFieldName;
-        final ConsumerEx<UpdateOptions> updateOptionsChanger = this.updateOptionsChanger == null
+        final ConsumerEx<ReplaceOptions> updateOptionsChanger = this.replaceOptionsChanger == null
                 ? ConsumerEx.noop()
-                : this.updateOptionsChanger;
+                : this.replaceOptionsChanger;
 
         checkState((databaseName == null) == (collectionName == null), "if one of [databaseName, collectionName]" +
                 " is provided, so should the other one");
