@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.kafka.connect;
 
+import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.kafka.connect.impl.KafkaConnectSource;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.StreamSource;
@@ -23,6 +24,8 @@ import org.apache.kafka.connect.source.SourceRecord;
 
 import java.net.URL;
 import java.util.Properties;
+
+import static com.hazelcast.internal.util.Preconditions.checkRequiredProperty;
 
 /**
  * Contains factory methods to create a Kafka Connect source.
@@ -57,7 +60,12 @@ public final class KafkaConnectSources {
      * @return a source to use in {@link com.hazelcast.jet.pipeline.Pipeline#readFrom(StreamSource)}
      */
     public static StreamSource<SourceRecord> connect(Properties properties) {
+        Preconditions.checkRequiredProperty(properties, "name");
         String name = properties.getProperty("name");
+
+        //fail fast, required by lazy-initialized KafkaConnectSource
+        checkRequiredProperty(properties, "connector.class");
+
         return SourceBuilder.timestampedStream(name, ctx ->
                         new KafkaConnectSource(properties))
                 .fillBufferFn(KafkaConnectSource::fillBuffer)

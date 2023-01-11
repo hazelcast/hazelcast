@@ -30,6 +30,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import static com.hazelcast.client.impl.protocol.util.PropertiesUtil.toMap;
+import static com.hazelcast.internal.util.Preconditions.checkRequiredProperty;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
 public class KafkaConnectSource {
@@ -49,7 +50,7 @@ public class KafkaConnectSource {
 
     public KafkaConnectSource(Properties properties) {
         try {
-            String connectorClazz = properties.getProperty("connector.class");
+            String connectorClazz = checkRequiredProperty(properties, "connector.class");
             Class<?> connectorClass = Thread.currentThread().getContextClassLoader().loadClass(connectorClazz);
             this.connector = (SourceConnector) connectorClass.getConstructor().newInstance();
             this.connector.initialize(new JetConnectorContext());
