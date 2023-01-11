@@ -31,6 +31,7 @@ import java.util.UUID;
 import java.util.concurrent.Future;
 
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.impl.JobProxy.checkJobStatusListenerSupported;
 
 public class JetRemoveJobStatusListenerMessageTask extends AbstractRemoveListenerMessageTask<RequestParameters> {
 
@@ -40,6 +41,7 @@ public class JetRemoveJobStatusListenerMessageTask extends AbstractRemoveListene
 
     @Override
     protected Future<Boolean> deRegisterListener() {
+        checkJobStatusListenerSupported(nodeEngine);
         JobService jobService = getService(JobService.SERVICE_NAME);
         return jobService.removeEventListenerAsync(parameters.jobId, parameters.registrationId);
     }

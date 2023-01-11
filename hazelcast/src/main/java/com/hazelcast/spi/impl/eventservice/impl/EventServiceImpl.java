@@ -18,6 +18,7 @@ package com.hazelcast.spi.impl.eventservice.impl;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.impl.MemberImpl;
+import com.hazelcast.internal.cluster.ClusterService;
 import com.hazelcast.internal.metrics.MetricDescriptor;
 import com.hazelcast.internal.metrics.MetricsRegistry;
 import com.hazelcast.internal.metrics.Probe;
@@ -59,6 +60,7 @@ import java.util.function.Supplier;
 import java.util.logging.Level;
 
 import static com.hazelcast.instance.EndpointQualifier.MEMBER;
+import static com.hazelcast.internal.cluster.Versions.V5_3;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EVENT_DISCRIMINATOR_SERVICE;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EVENT_METRIC_EVENT_SERVICE_EVENTS_PROCESSED;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.EVENT_METRIC_EVENT_SERVICE_EVENT_QUEUE_SIZE;
@@ -404,9 +406,21 @@ public class EventServiceImpl implements EventService, StaticMetricsProvider {
 
     @Override
     public void deregisterAllListeners(@Nonnull String serviceName, @Nonnull String topic) {
-        deregisterAllLocalListeners(serviceName, topic);
-        invokeOnStableClusterSerial(nodeEngine, new DeregistrationOperationSupplier(
-                serviceName, topic, nodeEngine.getClusterService()), MAX_RETRIES);
+        EventServiceSegment segment = getSegment(serviceName, false);
+        Collection<Registration> registrations = segment == null ? null : segment.removeRegistrations(topic);
+        ClusterService clusterService = nodeEngine.getClusterService();
+
+        if (clusterService.getClusterVersion().isGreaterOrEqual(V5_3)) {
+            Supplier<Operation> op = new DeregistrationOperationSupplier(serviceName, topic, clusterService);
+            invokeOnStableClusterSerial(nodeEngine, op, MAX_RETRIES);
+        } else if (registrations != null) {
+            for (Registration reg : registrations) {
+                if (!reg.isLocalOnly()) {
+                    Supplier<Operation> op = new DeregistrationOperationSupplier(reg, clusterService);
+                    invokeOnStableClusterSerial(nodeEngine, op, MAX_RETRIES);
+                }
+            }
+        }
     }
 
     public StripedExecutor getEventExecutor() {

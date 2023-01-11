@@ -38,6 +38,7 @@ import com.hazelcast.jet.impl.operation.ResumeJobOperation;
 import com.hazelcast.jet.impl.operation.SubmitJobOperation;
 import com.hazelcast.jet.impl.operation.TerminateJobOperation;
 import com.hazelcast.logging.LoggingService;
+import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
@@ -46,6 +47,7 @@ import java.util.List;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
+import static com.hazelcast.internal.cluster.Versions.V5_3;
 import static com.hazelcast.jet.impl.JobMetricsUtil.toJobMetrics;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.rethrow;
 
@@ -214,13 +216,21 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
 
     @Override
     public UUID addStatusListener(@Nonnull JobListener listener) {
+        checkJobStatusListenerSupported(container());
         JobService jobService = container().getService(JobService.SERVICE_NAME);
         return jobService.addEventListener(getId(), listener);
     }
 
     @Override
     public boolean removeStatusListener(@Nonnull UUID id) {
+        checkJobStatusListenerSupported(container());
         JobService jobService = container().getService(JobService.SERVICE_NAME);
         return jobService.removeEventListener(getId(), id);
+    }
+
+    public static void checkJobStatusListenerSupported(NodeEngine nodeEngine) {
+        if (nodeEngine.getClusterService().getClusterVersion().isLessThan(V5_3)) {
+            throw new UnsupportedOperationException("Job status listener is not supported.");
+        }
     }
 }

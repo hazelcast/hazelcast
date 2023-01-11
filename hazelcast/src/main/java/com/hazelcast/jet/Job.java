@@ -354,16 +354,18 @@ public interface Job {
     /**
      * Associates the given listener to this job. The listener is automatically
      * removed after a {@linkplain JobStatus#isTerminal terminal event}.
-     * @return The registration id
      *
+     * @return The registration id
+     * @throws UnsupportedOperationException if the cluster version is less than 5.3
      * @since 5.3
      */
     UUID addStatusListener(@Nonnull JobListener listener);
 
     /**
      * Stops delivering all events to the listener with the given registration id.
-     * @return Whether the specified registration was removed
      *
+     * @return Whether the specified registration was removed
+     * @throws UnsupportedOperationException if the cluster version is less than 5.3
      * @since 5.3
      */
     boolean removeStatusListener(@Nonnull UUID id);

@@ -33,6 +33,7 @@ import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.impl.JobProxy.checkJobStatusListenerSupported;
 import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 
 public class JetAddJobStatusListenerMessageTask extends AbstractAddListenerMessageTask<RequestParameters> {
@@ -43,6 +44,7 @@ public class JetAddJobStatusListenerMessageTask extends AbstractAddListenerMessa
 
     @Override
     protected CompletableFuture<UUID> processInternal() {
+        checkJobStatusListenerSupported(nodeEngine);
         JobService jobService = getService(JobService.SERVICE_NAME);
         long jobId = parameters.jobId;
         JobListener listener = new ClientJobListener();
