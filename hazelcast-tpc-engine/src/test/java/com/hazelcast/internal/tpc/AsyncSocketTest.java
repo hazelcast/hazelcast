@@ -30,6 +30,7 @@ import java.util.concurrent.TimeUnit;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
@@ -209,16 +210,16 @@ public abstract class AsyncSocketTest {
         assertTrue(socket.isClosed());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void test_activate_whenNull() {
         Eventloop eventloop = createEventloop();
         AsyncSocket socket = eventloop.openAsyncSocket();
         socket.setReadHandler(mock(ReadHandler.class));
 
-        socket.activate(null);
+        assertThrows(NullPointerException.class, ()->socket.activate(null));
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void test_activate_whenAlreadyActivated() {
         Eventloop eventloop1 = createEventloop();
         Eventloop eventloop2 = createEventloop();
@@ -226,19 +227,15 @@ public abstract class AsyncSocketTest {
         AsyncSocket socket = eventloop1.openAsyncSocket();
         socket.setReadHandler(mock(ReadHandler.class));
 
-        eventloop1.start();
-        eventloop2.start();
-
         socket.activate(eventloop1);
-        socket.activate(eventloop2);
+        assertThrows(IllegalStateException.class, ()->socket.activate(eventloop2));
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void test_activate_whenReadHandlerNotConfigured() {
         Eventloop eventloop = createEventloop();
-        eventloop.start();
 
         AsyncSocket socket = eventloop.openAsyncSocket();
-        socket.activate(eventloop);
+        assertThrows(IllegalStateException.class, ()->socket.activate(eventloop));
     }
 }

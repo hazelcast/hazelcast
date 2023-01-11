@@ -24,6 +24,7 @@ import java.util.Queue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
 public class CircularQueueTest {
@@ -117,14 +118,14 @@ public class CircularQueueTest {
         assertTrue(queue.isFull());
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void test_add_whenFull() {
         CircularQueue<Integer> queue = new CircularQueue<>(128);
         for (int k = 0; k < queue.capacity(); k++) {
             queue.add(k);
         }
 
-        queue.add(1234);
+        assertThrows(IllegalStateException.class, ()->queue.add(1234));
     }
 
     @Test(expected = NullPointerException.class)
