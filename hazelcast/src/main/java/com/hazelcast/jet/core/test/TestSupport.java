@@ -221,7 +221,8 @@ public final class TestSupport {
     private int outputOrdinalCount;
     private boolean outputMustOccurOnTime;
     private final List<ItemWithOrdinal> accumulatedExpectedOutput = new ArrayList<>();
-    private Runnable beforeEachRun = () -> { };
+    private Runnable beforeEachRun = () -> {
+    };
 
     private int localProcessorIndex;
     private int globalProcessorIndex;
@@ -285,9 +286,9 @@ public final class TestSupport {
      * item0 from input0, item0 from input1, item1 from input0 etc.
      * <p>
      * See also:<ul>
-     *     <li>{@link #input(List)} - if you have just one input ordinal
-     *     <li>{@link #inputs(List, int[])} - if you want to specify input
-     *     priorities
+     * <li>{@link #input(List)} - if you have just one input ordinal
+     * <li>{@link #inputs(List, int[])} - if you want to specify input
+     * priorities
      * </ul>
      *
      * @param inputs one list of input items for each input edge
@@ -304,8 +305,8 @@ public final class TestSupport {
      * round-robin fashion.
      * <p>
      * See also:<ul>
-     *     <li>{@link #input(List)} - if you have just one input ordinal
-     *     <li>{@link #inputs(List)} - if all inputs are of equal priority
+     * <li>{@link #input(List)} - if you have just one input ordinal
+     * <li>{@link #inputs(List)} - if all inputs are of equal priority
      * </ul>
      *
      * @param inputs one list of input items for each input edge
@@ -419,7 +420,7 @@ public final class TestSupport {
      * can be used in the assertion message.
      *
      * @param outputOrdinalCount how many output ordinals should be created
-     * @param assertFn an assertion function which takes the current mode and the collected output
+     * @param assertFn           an assertion function which takes the current mode and the collected output
      */
     public void assertOutput(int outputOrdinalCount, BiConsumer<TestMode, List<List<Object>>> assertFn) {
         this.assertOutputFn = assertFn;
@@ -657,7 +658,7 @@ public final class TestSupport {
             TEST_CONTEXT.set(new TestContext(testMode));
             runTest0(testMode);
         } finally {
-            TEST_CONTEXT.set(null);
+            TEST_CONTEXT.remove();
         }
     }
 
@@ -1108,7 +1109,9 @@ public final class TestSupport {
     // super-interface, but we did it this way because we don't want them to be a public API.
     private interface TestEventInt extends TestEvent {
         boolean isInput();
+
         boolean isOutput();
+
         boolean isProcessorAssertion();
     }
 
