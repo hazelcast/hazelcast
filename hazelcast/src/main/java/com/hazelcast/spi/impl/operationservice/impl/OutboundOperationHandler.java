@@ -53,7 +53,7 @@ public class OutboundOperationHandler {
         checkNotNull(target, "Target is required!");
 
         if (thisAddress.equals(target)) {
-            throw new IllegalArgumentException("Target is this node! -> " + target + ", op: " + op);
+            return false;
         }
 
         int streamId = op.getPartitionId();

@@ -64,7 +64,9 @@ public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataS
 
     @Override
     public Object evalTop(Row row, ExpressionEvalContext context) {
-        Object res = row.get(index);
+        // Don't use lazy deserialization for compact and portable, we need to return a deserialized generic record
+        // if the column expression is the top expression.
+        Object res = row.get(index, false);
         if (res instanceof LazyTarget) {
             assert type.equals(QueryDataType.OBJECT);
             LazyTarget lazyTarget = (LazyTarget) res;
@@ -76,7 +78,13 @@ public final class ColumnExpression<T> implements Expression<T>, IdentifiedDataS
     @SuppressWarnings("unchecked")
     @Override
     public T eval(Row row, ExpressionEvalContext context) {
-        Object res = row.get(index);
+        // Lazy deserialization is disabled by default, and it has to be requested explicitly.
+        return eval(row, context, false);
+    }
+
+    @Override
+    public T eval(Row row, ExpressionEvalContext context, boolean useLazyDeserialization) {
+        Object res = row.get(index, useLazyDeserialization);
 
         if (res instanceof LazyTarget) {
             assert type.equals(QueryDataType.OBJECT);

@@ -49,9 +49,10 @@
         <hazelcast.distribution>Hazelcast</hazelcast.distribution>
         <hazelcast.serialization.version>1</hazelcast.serialization.version>
         <hazelcast.serverMainClass>com.hazelcast.core.server.HazelcastMemberStarter</hazelcast.serverMainClass>
+        <hazelcast.previous.version>5.2.0</hazelcast.previous.version>
 
         <maven.compiler.plugin.version>3.10.0</maven.compiler.plugin.version>
-        <maven.jar.plugin.version>3.2.2</maven.jar.plugin.version>
+        <maven.jar.plugin.version>3.3.0</maven.jar.plugin.version>
         <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
         <maven.javadoc.plugin.version>3.3.2</maven.javadoc.plugin.version>
         <maven.javadoc.plugin.excludePackageNames>
@@ -67,21 +68,21 @@
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
         <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
         <maven.shade.plugin.version>3.2.4</maven.shade.plugin.version>
-        <maven.dependency.plugin.version>3.2.0</maven.dependency.plugin.version>
+        <maven.dependency.plugin.version>3.4.0</maven.dependency.plugin.version>
         <maven.animal.sniffer.plugin.version>1.21</maven.animal.sniffer.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
 
-        <maven.surefire.plugin.version>2.22.2</maven.surefire.plugin.version>
+        <maven.surefire.plugin.version>3.0.0-M7</maven.surefire.plugin.version>
         <maven.checkstyle.plugin.version>3.2.0</maven.checkstyle.plugin.version>
         <maven.sonar.plugin.version>3.6.0.1398</maven.sonar.plugin.version>
         <maven.jacoco.plugin.version>0.8.7</maven.jacoco.plugin.version>
-        <maven.failsafe.plugin.version>2.22.2</maven.failsafe.plugin.version>
+        <maven.failsafe.plugin.version>3.0.0-M7</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.7</maven.cobertura.plugin.version>
         <maven.enforcer.plugin.version>3.0.0-M3</maven.enforcer.plugin.version>
-        <maven.os.plugin.version>1.7.0</maven.os.plugin.version>
+        <maven.os.plugin.version>1.7.1</maven.os.plugin.version>
         <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
         <maven.resources.plugin.version>3.2.0</maven.resources.plugin.version>
-        <owasp.dependency-check.version>7.2.1</owasp.dependency-check.version>
+        <owasp.dependency-check.version>7.4.4</owasp.dependency-check.version>
         <maven.dependency.plugin.version>3.1.2</maven.dependency.plugin.version>
         <codehause.license.plugin.version>2.0.0</codehause.license.plugin.version>
 
@@ -92,15 +93,15 @@
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.1</avro.version>
-        <aws.sdk.version>1.12.333</aws.sdk.version>
-        <classgraph.version>4.8.149</classgraph.version>
+        <aws.sdk.version>1.12.381</aws.sdk.version>
+        <classgraph.version>4.8.154</classgraph.version>
         <debezium.version>1.9.5.Final</debezium.version>
         <grpc.version>1.48.0</grpc.version>
         <guava.version>30.1.1-jre</guava.version>
         <hadoop.version>3.3.4</hadoop.version>
         <h2.version>2.1.214</h2.version>
         <!-- The Jackson version must match the version in EE, if you change this you must send EE PR as well -->
-        <jackson.version>2.13.4.20221013</jackson.version>
+        <jackson.version>2.14.1</jackson.version>
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
         <jline.version>3.21.0</jline.version>
         <jms.api.version>2.0.1</jms.api.version>
@@ -110,28 +111,37 @@
         <kafka.version>2.8.2</kafka.version>
         <kotlin.version>1.7.10</kotlin.version>
         <log4j.version>1.2.17.redhat-00008</log4j.version>
-        <log4j2.version>2.18.0</log4j2.version>
+        <log4j2.version>2.19.0</log4j2.version>
         <mysql.connector.version>8.0.30</mysql.connector.version>
-        <netty.version>4.1.79.Final</netty.version>
-        <objenesis.version>3.2</objenesis.version>
+        <netty.version>4.1.86.Final</netty.version>
+        <objenesis.version>3.3</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.12.3</parquet.version>
         <picocli.version>4.6.3</picocli.version>
-        <postgresql.version>42.4.2</postgresql.version>
-        <prometheus.version>0.17.1</prometheus.version>
-        <protobuf.version>3.19.4</protobuf.version>
+        <postgresql.version>42.5.1</postgresql.version>
+        <prometheus.version>0.17.2</prometheus.version>
+
+        <!--
+        Protobuf libraries for each language have own major version, but share minor and patch
+        See https://developers.google.com/protocol-buffers/docs/news/2022-05-06
+        -->
+        <protobuf.version>21.9</protobuf.version>
+        <java.protobuf.version>3.${protobuf.version}</java.protobuf.version>
+        <python.protobuf.version>4.${protobuf.version}</python.protobuf.version>
+
         <scala.version>2.13</scala.version>
         <slf4j.version>1.7.36</slf4j.version>
         <spring.version>4.3.0.RELEASE</spring.version>
-        <snakeyaml.version>1.32</snakeyaml.version>
+        <snakeyaml.version>1.33</snakeyaml.version>
         <snakeyaml.engine.version>2.3</snakeyaml.engine.version>
+        <mongodb.version>4.7.2</mongodb.version>
 
         <!-- test dependencies -->
         <activemq-artemis.version>2.11.0</activemq-artemis.version>
         <activemq.version>5.15.11</activemq.version>
         <assertj.version>3.15.0</assertj.version>
         <atomikos.version>3.9.3</atomikos.version>
-        <bytebuddy.version>1.12.12</bytebuddy.version>
+        <bytebuddy.version>1.12.21</bytebuddy.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-io.version>2.11.0</commons-io.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
@@ -144,11 +154,11 @@
         <mockito.version>3.6.0</mockito.version>
         <powermock.version>2.0.9</powermock.version>
         <reflections.version>0.9.10</reflections.version>
-        <testcontainers.version>1.17.5</testcontainers.version>
+        <testcontainers.version>1.17.6</testcontainers.version>
         <jna.version>5.12.1</jna.version>
         <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitRulesTest.java -->
-        <archunit.version>1.0.0</archunit.version>
-        <errorprone.version>2.15.0</errorprone.version>
+        <archunit.version>1.0.1</archunit.version>
+        <errorprone.version>2.18.0</errorprone.version>
         <awaitility.version>4.1.1</awaitility.version>
         <hikari.version>4.0.3</hikari.version>
 
@@ -161,7 +171,7 @@
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
 
         <!-- The path to relocated external dependencies. -->
-        <relocation.root>com.hazelcast</relocation.root>
+        <relocation.root>com.hazelcast.shaded</relocation.root>
 
         <!-- Additional JVM system arguments -->
         <extraVmArgs/>
@@ -377,6 +387,8 @@
                         com.hazelcast.test.annotation.SlowTest,
                         com.hazelcast.test.annotation.NightlyTest
                     </excludedGroups>
+                    <!-- Use TCP for IPC communication to avoid warnings: Corrupted STDOUT by directly writing... -->
+                    <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory" />
                 </configuration>
             </plugin>
 
@@ -401,6 +413,8 @@
                         com.hazelcast.test.annotation.SlowTest,
                         com.hazelcast.test.annotation.NightlyTest
                     </excludedGroups>
+                    <!-- Use TCP for IPC communication to avoid warnings: Corrupted STDOUT by directly writing... -->
+                    <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory" />
                 </configuration>
                 <executions>
                     <execution>
@@ -483,6 +497,7 @@
                                 <includedLicense>MIT License</includedLicense>
                                 <includedLicense>Public Domain</includedLicense>
                                 <includedLicense>EPL 2.0</includedLicense>
+                                <includedLicense>Eclipse Distribution License - v 1.0</includedLicense>
                                 <includedLicense>BSD 3-Clause License</includedLicense>
                                 <includedLicense>BSD 2-Clause License</includedLicense>
                                 <includedLicense>The JSON License</includedLicense>
@@ -542,6 +557,27 @@
                         <phase>generate-test-resources</phase>
                         <configuration>
                             <artifact>com.hazelcast:hazelcast:${hazelcast-3.version}</artifact>
+                            <artifact>com.hazelcast:hazelcast:${hazelcast-3.version}:jar:tests</artifact>
+
+                            <!-- Below are the jars used in compatibility tests. Install them to local repository -->
+                            <artifact>com.hazelcast:hazelcast:3.12.13</artifact>
+                            <artifact>com.hazelcast:hazelcast:3.12.13:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:4.0</artifact>
+                            <artifact>com.hazelcast:hazelcast:4.0:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:4.0.1</artifact>
+                            <artifact>com.hazelcast:hazelcast:4.0.1:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:4.0.2</artifact>
+                            <artifact>com.hazelcast:hazelcast:4.0.2:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:4.0.3</artifact>
+                            <artifact>com.hazelcast:hazelcast:4.0.3:jar:tests</artifact>
+
+                            <artifact>com.hazelcast:hazelcast:${hazelcast.previous.version}</artifact>
+                            <artifact>com.hazelcast:hazelcast:${hazelcast.previous.version}:jar:tests</artifact>
+
                         </configuration>
                     </execution>
                 </executions>
@@ -1538,7 +1574,7 @@
             <dependency>
                 <groupId>com.google.protobuf</groupId>
                 <artifactId>protobuf-bom</artifactId>
-                <version>${protobuf.version}</version>
+                <version>${java.protobuf.version}</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -1699,7 +1735,7 @@
             <dependency>
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>
-                <version>2.11.0</version>
+                <version>2.12.2</version>
             </dependency>
             <dependency>
                 <groupId>org.xerial.snappy</groupId>
@@ -1725,7 +1761,7 @@
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpcore</artifactId>
-                <version>4.4.15</version>
+                <version>4.4.16</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
@@ -1735,7 +1771,7 @@
             <dependency>
                 <groupId>com.google.auto.value</groupId>
                 <artifactId>auto-value-annotations</artifactId>
-                <version>1.7.4</version>
+                <version>1.10.1</version>
             </dependency>
             <dependency>
                 <groupId>com.nimbusds</groupId>
@@ -1755,7 +1791,7 @@
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
-                <version>2.9.1</version>
+                <version>2.10.1</version>
             </dependency>
             <dependency>
                 <groupId>com.amazonaws</groupId>
@@ -1770,7 +1806,7 @@
             <dependency>
                 <groupId>org.objenesis</groupId>
                 <artifactId>objenesis</artifactId>
-                <version>3.2</version>
+                <version>3.3</version>
             </dependency>
             <dependency>
                 <groupId>com.github.luben</groupId>
@@ -1795,7 +1831,7 @@
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
-                <version>3.27.0</version>
+                <version>3.29.0</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
@@ -1835,7 +1871,7 @@
             <dependency>
               <groupId>io.netty</groupId>
               <artifactId>netty-tcnative-classes</artifactId>
-              <version>2.0.48.Final</version>
+              <version>2.0.55.Final</version>
             </dependency>
             <dependency>
               <groupId>com.google.api-client</groupId>

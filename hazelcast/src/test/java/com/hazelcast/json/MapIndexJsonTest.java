@@ -92,12 +92,14 @@ public class MapIndexJsonTest extends HazelcastTestSupport {
     public void setup() {
         factory = createHazelcastInstanceFactory(3);
         factory.newInstances(getConfig(), 3);
+        assertClusterSizeEventually(3, factory.getAllHazelcastInstances());
+        warmUpPartitions(factory.getAllHazelcastInstances());
         instance = factory.getAllHazelcastInstances().iterator().next();
     }
 
     @Override
     protected Config getConfig() {
-        Config config = super.getConfig();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
         MapConfig mapConfig = new MapConfig("default")
                 .setInMemoryFormat(inMemoryFormat)
                 .setMetadataPolicy(metadataPolicy)
@@ -272,7 +274,7 @@ public class MapIndexJsonTest extends HazelcastTestSupport {
         MapContainer mapContainer = mapServiceContext.getMapContainer(mapName);
 
         List<Index> result = new ArrayList<>();
-        for (int partitionId : mapServiceContext.getOrInitCachedMemberPartitions()) {
+        for (int partitionId : mapServiceContext.getCachedOwnedPartitions()) {
             Indexes indexes = mapContainer.getIndexes(partitionId);
             result.add(indexes.getIndex(attribute));
         }

@@ -296,9 +296,19 @@ public class MigrationCommitTest extends HazelcastTestSupport {
 
         masterListener.other = hz2;
 
+        // hz1 and hz3 know the cluster members
         assertClusterSize(3, hz1, hz3);
+
+        // hz2 also  knows the cluster members
         assertClusterSizeEventually(3, hz2);
 
+        // In some rare occasions clusters member list is processed before the master information.
+        // Assert that hz2 and hz3 know the master
+        assertMasterAddressEventually(getAddress(hz1), hz2);
+        assertMasterAddressEventually(getAddress(hz1), hz3);
+
+        // Migration thread of hz1 (the master) was blocked.
+        // Unblock it and allow it to migrate hz2 to hz3
         migrationStartLatch.countDown();
 
         waitAllForSafeState(hz1, hz3);

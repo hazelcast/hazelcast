@@ -280,7 +280,7 @@ public class ClusterJoinManager {
                 return;
             }
 
-            startJoinRequest(joinRequest.toMemberInfo());
+            startJoinRequest(joinRequest.toMemberInfo(), joinRequest.getPreJoinOperation());
         } finally {
             clusterServiceLock.unlock();
         }
@@ -443,8 +443,9 @@ public class ClusterJoinManager {
      * will get processed as they arrive for the first time.
      *
      * @param memberInfo the joining member info
+     * @param preJoinOperation which is prepared on joining members and will run on the master
      */
-    private void startJoinRequest(MemberInfo memberInfo) {
+    private void startJoinRequest(MemberInfo memberInfo, OnJoinOp preJoinOperation) {
         long now = Clock.currentTimeMillis();
         if (logger.isFineEnabled()) {
             String timeToStart = (timeToStartJoin > 0 ? ", timeToStart: " + (timeToStartJoin - now) : "");
@@ -468,7 +469,7 @@ public class ClusterJoinManager {
                     + ". Previous UUID was " + existing.getUuid());
         }
         if (now >= timeToStartJoin) {
-            startJoin();
+            startJoin(preJoinOperation);
         }
     }
 
@@ -682,7 +683,9 @@ public class ClusterJoinManager {
                 }
 
                 // send members update back to node trying to join again...
-                boolean deferPartitionProcessing = isMemberRestartingWithPersistence(member.getAttributes());
+                MemberMap memberMap = clusterService.getMembershipManager().getMemberMap();
+                boolean deferPartitionProcessing = isMemberRestartingWithPersistence(member.getAttributes())
+                        && isMemberRejoining(memberMap, member.getAddress(), member.getUuid());
                 OnJoinOp preJoinOp = preparePreJoinOps();
                 OnJoinOp postJoinOp = preparePostJoinOp();
                 PartitionRuntimeState partitionRuntimeState = node.getPartitionService().createPartitionState();
@@ -763,8 +766,10 @@ public class ClusterJoinManager {
 
     /**
      * Starts join process on master member.
+     *
+     * @param preJoinOperation joining member's preJoinOperation, not master's
      */
-    private void startJoin() {
+    private void startJoin(OnJoinOp preJoinOperation) {
         logger.fine("Starting join...");
         clusterServiceLock.lock();
         try {
@@ -788,9 +793,14 @@ public class ClusterJoinManager {
                     return;
                 }
 
+                OnJoinOp preJoinOp = preparePreJoinOps();
+
+                if (preJoinOperation != null) {
+                    nodeEngine.getOperationService().run(preJoinOperation);
+                }
+
                 // post join operations must be lock free, that means no locks at all:
                 // no partition locks, no key-based locks, no service level locks!
-                OnJoinOp preJoinOp = preparePreJoinOps();
                 OnJoinOp postJoinOp = preparePostJoinOp();
 
                 // this is the current partition assignment state, not taking into account the

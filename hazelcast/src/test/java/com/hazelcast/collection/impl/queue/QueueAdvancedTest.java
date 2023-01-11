@@ -674,8 +674,9 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
             // intentional termination, we are not testing graceful shutdown.
             unreliableInstance.getLifecycleService().terminate();
 
-            boolean itemAdded = producer.offer("item");
+            waitAllForSafeState(factory.getAllHazelcastInstances());
 
+            boolean itemAdded = producer.offer("item");
 
             assertEquals("Failed at step :" + j
                             + " (0 is first step) [itemAdded=" + itemAdded
@@ -701,7 +702,7 @@ public class QueueAdvancedTest extends HazelcastTestSupport {
 
     @Override
     protected Config getConfig() {
-        Config config = smallInstanceConfig();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
         config.getQueueConfig("default")
                 .setPriorityComparatorClassName(comparatorClassName);
         return config;
