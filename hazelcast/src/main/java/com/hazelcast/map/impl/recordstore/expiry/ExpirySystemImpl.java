@@ -177,11 +177,16 @@ public class ExpirySystemImpl implements ExpirySystem {
             expiryTime = nextExpirationTime(ttl, maxIdle, now, lastUpdateTime);
         }
 
+        // If expirationTime is long max, this means key is no longer expirable.
+        boolean removeKeyFromExpirySystem = expiryTime == Long.MAX_VALUE;
+
+        // This is done after calculating removeKeyFromExpirySystem because we
+        // want max idle disabled entries become expirable after touching them.
         if (disableMaxIdle) {
             expiryTime = nextExpirationTime(ttl, Long.MAX_VALUE, now, lastUpdateTime);
         }
 
-        storeExpiryMetadata(key, ttl, maxIdle, expiryTime, lastUpdateTime);
+        storeExpiryMetadata(key, ttl, maxIdle, expiryTime, lastUpdateTime, removeKeyFromExpirySystem);
     }
 
     @Override
@@ -190,10 +195,9 @@ public class ExpirySystemImpl implements ExpirySystem {
     }
 
     private void storeExpiryMetadata(Data key, long ttlMillis, long maxIdleMillis,
-                                     long expirationTime, long lastUpdateTime) {
-        // If expirationTime is long max, this
-        // means key is no longer expirable.
-        if (expirationTime == Long.MAX_VALUE) {
+                                     long expirationTime, long lastUpdateTime,
+                                     boolean removeKeyFromExpirySystem) {
+        if (removeKeyFromExpirySystem) {
             removeKeyFromExpirySystem(key);
             return;
         }
