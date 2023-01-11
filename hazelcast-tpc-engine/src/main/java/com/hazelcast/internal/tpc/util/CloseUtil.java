@@ -35,7 +35,8 @@ public final class CloseUtil {
      * <p/>
      * If the Closable throws an exception, the exception is ignored and closing moves to the next element.
      *
-     * @param closeable the AutoClosable to close. When null, the call is ignored.
+     * @param collection the collections of AutoClosable to close. When null, the call is ignored. Null items
+     *                   in the collection are also ignored.
      */
     public static void closeAllQuietly(Collection<? extends AutoCloseable> collection) {
         if (collection == null) {

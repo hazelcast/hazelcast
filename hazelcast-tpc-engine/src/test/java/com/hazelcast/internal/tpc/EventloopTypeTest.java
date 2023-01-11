@@ -18,24 +18,24 @@ package com.hazelcast.internal.tpc;
 
 import org.junit.Test;
 
+import static org.junit.Assert.assertEquals;
 
-public class TpcEngine_ConfigurationTest {
+public class EventloopTypeTest {
+
+    @Test
+    public void test_fromString(){
+        assertEquals(EventloopType.NIO, EventloopType.fromString("nio"));
+        assertEquals(EventloopType.IOURING, EventloopType.fromString("iouring"));
+        assertEquals(EventloopType.IOURING, EventloopType.fromString("io_uring"));
+    }
 
     @Test(expected = NullPointerException.class)
-    public void setEventLoopConfiguration_whenNull() {
-        TpcEngine.Configuration configuration = new TpcEngine.Configuration();
-        configuration.setEventloopConfiguration(null);
+    public void test_fromString_whenNull(){
+       EventloopType.fromString(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
-    public void setEventLoopConfiguration_whenZero() {
-        TpcEngine.Configuration configuration = new TpcEngine.Configuration();
-        configuration.setEventloopCount(0);
-    }
-
-    @Test(expected = IllegalArgumentException.class)
-    public void setEventLoopConfiguration_whenNegative() {
-        TpcEngine.Configuration configuration = new TpcEngine.Configuration();
-        configuration.setEventloopCount(-1);
+    public void test_fromString_whenBogusString(){
+        EventloopType.fromString("bogus");
     }
 }

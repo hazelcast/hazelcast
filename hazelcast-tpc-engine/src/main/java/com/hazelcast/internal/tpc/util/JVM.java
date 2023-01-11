@@ -26,6 +26,7 @@ import static java.lang.Runtime.getRuntime;
 public class JVM {
 
     private final static int MAJOR_VERSION = getMajorVersion0();
+    private final static boolean IS_32_BIT = is32bit0();
 
     /**
      * Gets the Major version of the JVM. So for e.g. Java '1.8' that would be '8' and for '17.1' that would be '17'.
@@ -66,6 +67,36 @@ public class JVM {
             }
         }
         return Integer.parseInt(majorVersion);
+    }
+
+    private static boolean is32bit0() {
+        String systemProp;
+        systemProp = System.getProperty("com.ibm.vm.bitmode");
+        if (systemProp != null) {
+            return "64".equals(systemProp);
+        }
+
+        // sun.arch.data.model is available on Oracle, Zing and (most probably) IBM JVMs
+        String architecture = System.getProperty("sun.arch.data.model", "?");
+        return architecture != null && architecture.equals("32");
+    }
+
+    /**
+     * Checks if the JVM is 32 bit.
+     *
+     * @return true if 32 bit.
+     */
+    public static boolean is32bit() {
+        return IS_32_BIT;
+    }
+
+    /**
+     * Checks if the JVM is 64 bit.
+     *
+     * @return true if 64 bit.
+     */
+    public static boolean is64bit() {
+        return !IS_32_BIT;
     }
 
     private JVM() {

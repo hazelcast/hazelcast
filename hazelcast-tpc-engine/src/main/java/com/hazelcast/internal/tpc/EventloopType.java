@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpc.nio;
+package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.EventloopFactory;
-import com.hazelcast.internal.tpc.EventloopFactoryTest;
+/**
+ * The Type of {@link Eventloop}.
+ */
+public enum EventloopType {
 
-public class NioEventloop_Configuration_Test extends EventloopFactoryTest {
+    NIO, IOURING;
 
-    @Override
-    public EventloopFactory create() {
-        return new NioEventloopFactory();
+    public static EventloopType fromString(String type) {
+        String typeLowerCase = type.toLowerCase();
+        if (typeLowerCase.equals("io_uring") || typeLowerCase.equals("iouring")) {
+            return IOURING;
+        } else if (typeLowerCase.equals("nio")) {
+            return NIO;
+        } else {
+            throw new IllegalArgumentException("Unrecognized eventloop type [" + type + ']');
+        }
     }
 }

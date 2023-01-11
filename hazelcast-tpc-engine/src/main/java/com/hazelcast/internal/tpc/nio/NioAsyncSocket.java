@@ -19,6 +19,7 @@ package com.hazelcast.internal.tpc.nio;
 import com.hazelcast.internal.tpc.AsyncSocket;
 import com.hazelcast.internal.tpc.Eventloop;
 import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpc.util.CloseUtil;
 import jdk.net.ExtendedSocketOptions;
 import org.jctools.queues.MpmcArrayQueue;
 
@@ -37,11 +38,11 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static com.hazelcast.internal.tpc.util.BufferUtil.compactOrClear;
+import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkInstanceOf;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.tpc.util.ReflectionUtil.findStaticFieldValue;
-import static com.hazelcast.internal.tpc.util.Util.closeResource;
 import static java.net.StandardSocketOptions.SO_KEEPALIVE;
 import static java.net.StandardSocketOptions.SO_LINGER;
 import static java.net.StandardSocketOptions.SO_RCVBUF;
@@ -350,7 +351,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         this.eventloop = checkInstanceOf(NioEventloop.class, eventloop, "evenloop");
         this.eventloopThread = this.eventloop.eventloopThread();
         this.unflushedBufs = new MpmcArrayQueue<>(unflushedBufsCapacity);
-        if (!this.eventloop.registerClosable(NioAsyncSocket.this)) {
+        if (!this.eventloop.registerCloseable(NioAsyncSocket.this)) {
             throw new IllegalStateException("Can't activate NioAsynSocket: Eventloop is shutdown");
         }
 
@@ -377,7 +378,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         Thread currentThread = Thread.currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
             if (currentThread == eventloopThread) {
-                eventloop.localRunQueue.add(eventLoopHandler);
+                eventloop.localQueue.add(eventLoopHandler);
             } else if (writeThrough) {
                 eventLoopHandler.run();
             } else if (regularSchedule) {
@@ -427,7 +428,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         boolean result;
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
-                eventloop.localRunQueue.add(eventLoopHandler);
+                eventloop.localQueue.add(eventLoopHandler);
                 if (ioVector.offer(buf)) {
                     result = true;
                 } else {
@@ -451,7 +452,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
     @Override
     protected void close0() {
-        closeResource(socketChannel.socket());
+        closeQuietly(socketChannel.socket());
 
         if (eventloop != null) {
             eventloop.deregisterCloseable(this);
@@ -533,7 +534,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         private void handleWriteReady() throws IOException {
             assert flushThread.get() != null;
 
-            handleWriteCnt.inc();
+            writeEvents.inc();
 
             ioVector.populate(unflushedBufs);
             long written = ioVector.write(socketChannel);

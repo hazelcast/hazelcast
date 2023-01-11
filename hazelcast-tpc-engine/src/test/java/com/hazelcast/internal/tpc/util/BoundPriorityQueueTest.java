@@ -14,15 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpc.nio;
+package com.hazelcast.internal.tpc.util;
 
-import com.hazelcast.internal.tpc.EventloopFactory;
-import com.hazelcast.internal.tpc.EventloopFactoryTest;
+import org.junit.Test;
 
-public class NioEventloop_Configuration_Test extends EventloopFactoryTest {
+import static org.junit.Assert.assertFalse;
 
-    @Override
-    public EventloopFactory create() {
-        return new NioEventloopFactory();
+public class BoundPriorityQueueTest {
+
+    @Test
+    public void test() {
+        int capacity = 16;
+        BoundPriorityQueue queue = new BoundPriorityQueue(capacity);
+        for (int k = 0; k < capacity; k++) {
+            queue.add(k);
+        }
+
+        boolean result = queue.offer(0);
+        assertFalse(result);
     }
 }

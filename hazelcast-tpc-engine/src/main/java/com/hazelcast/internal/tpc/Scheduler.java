@@ -14,15 +14,15 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpc.nio;
+package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.EventloopFactory;
-import com.hazelcast.internal.tpc.EventloopFactoryTest;
+import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
 
-public class NioEventloop_Configuration_Test extends EventloopFactoryTest {
+public interface Scheduler {
 
-    @Override
-    public EventloopFactory create() {
-        return new NioEventloopFactory();
-    }
+    void init(Eventloop eventloop);
+
+    boolean tick();
+
+    void schedule(IOBuffer task);
 }

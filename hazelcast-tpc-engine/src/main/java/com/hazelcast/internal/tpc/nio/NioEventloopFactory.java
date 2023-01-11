@@ -17,12 +17,20 @@
 package com.hazelcast.internal.tpc.nio;
 
 import com.hazelcast.internal.tpc.EventloopFactory;
-import com.hazelcast.internal.tpc.EventloopFactoryTest;
+import com.hazelcast.internal.tpc.Eventloop;
+import com.hazelcast.internal.tpc.EventloopType;
 
-public class NioEventloop_Configuration_Test extends EventloopFactoryTest {
+/**
+ * Contains the configuration for the {@link NioEventloop}.
+ */
+public class NioEventloopFactory extends EventloopFactory {
+
+    public NioEventloopFactory() {
+        super(EventloopType.NIO);
+    }
 
     @Override
-    public EventloopFactory create() {
-        return new NioEventloopFactory();
+    public Eventloop create() {
+        return new NioEventloop(this);
     }
 }

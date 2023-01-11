@@ -14,15 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpc.nio;
+package com.hazelcast.internal.tpc.util;
 
-import com.hazelcast.internal.tpc.EventloopFactory;
-import com.hazelcast.internal.tpc.EventloopFactoryTest;
+import org.junit.Test;
 
-public class NioEventloop_Configuration_Test extends EventloopFactoryTest {
+import static com.hazelcast.internal.tpc.util.ExceptionUtil.ignore;
 
-    @Override
-    public EventloopFactory create() {
-        return new NioEventloopFactory();
+public class ExceptionUtilTest {
+
+    @Test
+    public void test_ignore(){
+        ignore(new Exception());
+    }
+
+    @Test
+    public void test_ignore_whenNull(){
+        ignore(null);
     }
 }

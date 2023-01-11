@@ -14,15 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpc.nio;
+package com.hazelcast.internal.tpc.util;
 
-import com.hazelcast.internal.tpc.EventloopFactory;
-import com.hazelcast.internal.tpc.EventloopFactoryTest;
+/**
+ * A {@link NanoClock} that calls {@link System#nanoTime()} on every invocation.
+ *
+ * This class is thread-safe.
+ */
+public class StandardNanoClock implements NanoClock {
 
-public class NioEventloop_Configuration_Test extends EventloopFactoryTest {
+    private static final long START_TIME = System.nanoTime();
 
     @Override
-    public EventloopFactory create() {
-        return new NioEventloopFactory();
+    public long nanoTime() {
+        return System.nanoTime() - START_TIME;
     }
 }
