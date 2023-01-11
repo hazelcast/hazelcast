@@ -16,11 +16,10 @@
 
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.nio.NioEventloopFactory;
+import com.hazelcast.internal.tpc.nio.NioEventloopBuilder;
 
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkPositive;
-import static java.lang.System.getProperty;
 
 /**
  * Configuration options for the {@link TpcEngine}.
@@ -31,16 +30,16 @@ public class Configuration {
 
     int eventloopCount = Integer.getInteger(NAME_EVENTLOOP_COUNT, Runtime.getRuntime().availableProcessors());
 
-    EventloopFactory eventloopFactory = new NioEventloopFactory();
+    EventloopBuilder eventloopBuilder = new NioEventloopBuilder();
 
     /**
-     * Sets the EventloopFactory.
+     * Sets the EventloopBuilder.
      *
-     * @param eventloopFactory the eventloopFactory.
-     * @throws NullPointerException if eventloopFactory is 0.
+     * @param eventloopBuilder the eventloopBuilder.
+     * @throws NullPointerException if eventloopBuilder is 0.
      */
-    public void setEventloopFactory(EventloopFactory eventloopFactory) {
-        this.eventloopFactory = checkNotNull(eventloopFactory, "eventloopFactory");
+    public void setEventloopBuilder(EventloopBuilder eventloopBuilder) {
+        this.eventloopBuilder = checkNotNull(eventloopBuilder, "eventloopBuilder");
     }
 
     /**

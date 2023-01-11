@@ -24,7 +24,7 @@ public class ConfigurationTest {
     @Test(expected = NullPointerException.class)
     public void setEventLoopConfiguration_whenNull() {
         Configuration configuration = new Configuration();
-        configuration.setEventloopFactory(null);
+        configuration.setEventloopBuilder(null);
     }
 
     @Test(expected = IllegalArgumentException.class)

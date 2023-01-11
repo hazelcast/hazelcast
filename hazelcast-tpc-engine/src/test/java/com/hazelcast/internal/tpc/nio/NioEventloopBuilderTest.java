@@ -16,13 +16,13 @@
 
 package com.hazelcast.internal.tpc.nio;
 
-import com.hazelcast.internal.tpc.EventloopFactory;
-import com.hazelcast.internal.tpc.EventloopFactoryTest;
+import com.hazelcast.internal.tpc.EventloopBuilder;
+import com.hazelcast.internal.tpc.EventloopBuilderTest;
 
-public class NioEventloop_Configuration_Test extends EventloopFactoryTest {
+public class NioEventloopBuilderTest extends EventloopBuilderTest {
 
     @Override
-    public EventloopFactory create() {
-        return new NioEventloopFactory();
+    public EventloopBuilder create() {
+        return new NioEventloopBuilder();
     }
 }

@@ -29,7 +29,7 @@ import static java.lang.System.getProperty;
 /**
  * A factory for {@link Eventloop} instances.
  */
-public abstract class EventloopFactory {
+public abstract class EventloopBuilder {
     public static final String NAME_LOCAL_TASK_QUEUE_CAPACITY = "hazelcast.tpc.localTaskQueue.capacity";
     public static final String NAME_CONCURRENT_TASK_QUEUE_CAPACITY = "hazelcast.tpc.concurrentTaskQueue.capacity";
     public static final String NAME_SCHEDULED_TASK_QUEUE_CAPACITY = "hazelcast.tpc.scheduledTaskQueue.capacity";
@@ -57,7 +57,7 @@ public abstract class EventloopFactory {
     int batchSize;
     int clockRefreshPeriod;
 
-    protected EventloopFactory(EventloopType type) {
+    protected EventloopBuilder(EventloopType type) {
         this.type = type;
         this.localTaskQueueCapacity = Integer.getInteger(NAME_LOCAL_TASK_QUEUE_CAPACITY, DEFAULT_LOCAL_QUEUE_CAPACITY);
         this.concurrentTaskQueueCapacity = Integer.getInteger(NAME_CONCURRENT_TASK_QUEUE_CAPACITY, DEFAULT_CONCURRENT_QUEUE_CAPACITY);
@@ -68,7 +68,7 @@ public abstract class EventloopFactory {
     }
 
     /**
-     * Creates an Eventloop based on the configuration of this {@link EventloopFactory}.
+     * Creates an Eventloop based on the configuration of this {@link EventloopBuilder}.
      *
      * @return the created Eventloop.
      */

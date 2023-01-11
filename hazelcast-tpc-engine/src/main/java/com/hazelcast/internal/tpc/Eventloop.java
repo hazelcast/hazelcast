@@ -107,25 +107,25 @@ public abstract class Eventloop implements Executor {
     /**
      * Creates a new {@link Eventloop}.
      *
-     * @param eventloopFactory the {@link EventloopFactory} uses to create this {@link Eventloop}.
-     * @throws NullPointerException if eventloopFactory is null.
+     * @param eventloopBuilder the {@link EventloopBuilder} uses to create this {@link Eventloop}.
+     * @throws NullPointerException if eventloopBuilder is null.
      */
-    protected Eventloop(EventloopFactory eventloopFactory, EventloopType type) {
-        this.type = checkNotNull(type);
-        this.clockRefreshInterval = eventloopFactory.clockRefreshPeriod;
-        this.spin = eventloopFactory.spin;
-        this.batchSize = eventloopFactory.batchSize;
-        this.scheduler = eventloopFactory.schedulerSupplier.get();
-        this.localTaskQueue = new CircularQueue<>(eventloopFactory.localTaskQueueCapacity);
-        this.concurrentTaskQueue = new MpmcArrayQueue(eventloopFactory.concurrentTaskQueueCapacity);
-        this.scheduledTaskQueue = new BoundPriorityQueue<>(eventloopFactory.scheduledTaskQueueCapacity);
+    protected Eventloop(EventloopBuilder eventloopBuilder) {
+        this.type = eventloopBuilder.type;
+        this.clockRefreshInterval = eventloopBuilder.clockRefreshPeriod;
+        this.spin = eventloopBuilder.spin;
+        this.batchSize = eventloopBuilder.batchSize;
+        this.scheduler = eventloopBuilder.schedulerSupplier.get();
         scheduler.init(this);
-        this.eventloopThread = eventloopFactory.threadFactory.newThread(new EventloopTask());
-        if (eventloopFactory.threadNameSupplier != null) {
-            eventloopThread.setName(eventloopFactory.threadNameSupplier.get());
+        this.localTaskQueue = new CircularQueue<>(eventloopBuilder.localTaskQueueCapacity);
+        this.concurrentTaskQueue = new MpmcArrayQueue(eventloopBuilder.concurrentTaskQueueCapacity);
+        this.scheduledTaskQueue = new BoundPriorityQueue<>(eventloopBuilder.scheduledTaskQueueCapacity);
+        this.eventloopThread = eventloopBuilder.threadFactory.newThread(new EventloopTask());
+        if (eventloopBuilder.threadNameSupplier != null) {
+            eventloopThread.setName(eventloopBuilder.threadNameSupplier.get());
         }
 
-        this.allowedCpus = eventloopFactory.threadAffinity == null ? null : eventloopFactory.threadAffinity.nextAllowedCpus();
+        this.allowedCpus = eventloopBuilder.threadAffinity == null ? null : eventloopBuilder.threadAffinity.nextAllowedCpus();
         this.futAllocator = new FutAllocator(this, INITIAL_ALLOCATOR_CAPACITY);
     }
 

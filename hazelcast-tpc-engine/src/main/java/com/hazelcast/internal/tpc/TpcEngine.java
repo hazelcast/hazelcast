@@ -64,7 +64,7 @@ public final class TpcEngine {
         this.terminationLatch = new CountDownLatch(eventloopCount);
 
         for (int idx = 0; idx < eventloopCount; idx++) {
-            eventloops[idx] = configuration.eventloopFactory.create();
+            eventloops[idx] = configuration.eventloopBuilder.create();
             eventloops[idx].engine = this;
         }
     }
@@ -86,7 +86,7 @@ public final class TpcEngine {
      * @return the type of Eventloop.
      */
     public EventloopType eventloopType() {
-        return configuration.eventloopFactory.type;
+        return configuration.eventloopBuilder.type;
     }
 
     /**

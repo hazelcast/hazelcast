@@ -36,11 +36,11 @@ public final class NioEventloop extends Eventloop {
     final Selector selector;
 
     public NioEventloop() {
-        this(new NioEventloopFactory());
+        this(new NioEventloopBuilder());
     }
 
-    public NioEventloop(NioEventloopFactory eventloopFactory) {
-        super(eventloopFactory, EventloopType.NIO);
+    public NioEventloop(NioEventloopBuilder eventloopBuilder) {
+        super(eventloopBuilder);
         this.selector = SelectorOptimizer.newSelector();
     }
 

@@ -28,7 +28,7 @@ import com.hazelcast.internal.tpc.Configuration;
 import com.hazelcast.internal.tpc.Eventloop;
 import com.hazelcast.internal.tpc.ReadHandler;
 import com.hazelcast.internal.tpc.TpcEngine;
-import com.hazelcast.internal.tpc.nio.NioEventloopFactory;
+import com.hazelcast.internal.tpc.nio.NioEventloopBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -92,9 +92,9 @@ public class TpcServerBootstrap {
         }
 
         Configuration configuration = new Configuration();
-        NioEventloopFactory eventloopFactory = new NioEventloopFactory();
-        eventloopFactory.setThreadFactory(AltoEventloopThread::new);
-        configuration.setEventloopFactory(eventloopFactory);
+        NioEventloopBuilder eventloopBuilder = new NioEventloopBuilder();
+        eventloopBuilder.setThreadFactory(AltoEventloopThread::new);
+        configuration.setEventloopBuilder(eventloopBuilder);
         configuration.setEventloopCount(nodeEngine.getConfig().getAltoConfig().getEventloopCount());
         return new TpcEngine(configuration);
     }

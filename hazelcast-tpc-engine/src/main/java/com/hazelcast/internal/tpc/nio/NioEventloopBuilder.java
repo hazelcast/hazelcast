@@ -16,16 +16,16 @@
 
 package com.hazelcast.internal.tpc.nio;
 
-import com.hazelcast.internal.tpc.EventloopFactory;
+import com.hazelcast.internal.tpc.EventloopBuilder;
 import com.hazelcast.internal.tpc.Eventloop;
 import com.hazelcast.internal.tpc.EventloopType;
 
 /**
  * Contains the configuration for the {@link NioEventloop}.
  */
-public class NioEventloopFactory extends EventloopFactory {
+public class NioEventloopBuilder extends EventloopBuilder {
 
-    public NioEventloopFactory() {
+    public NioEventloopBuilder() {
         super(EventloopType.NIO);
     }
 

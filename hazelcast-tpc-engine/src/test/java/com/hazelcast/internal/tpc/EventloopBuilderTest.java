@@ -22,19 +22,19 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
 
-public abstract class EventloopFactoryTest {
+public abstract class EventloopBuilderTest {
 
-    public abstract EventloopFactory create();
+    public abstract EventloopBuilder create();
 
     @Test(expected = NullPointerException.class)
     public void test_setThreadFactory_whenNull() {
-        EventloopFactory factory = create();
+        EventloopBuilder factory = create();
         factory.setThreadFactory(null);
     }
 
     @Test
     public void test_setThreadFactory() {
-        EventloopFactory factory = create();
+        EventloopBuilder factory = create();
 
         Thread thread = new Thread();
         factory.setThreadFactory(r -> thread);
@@ -45,7 +45,7 @@ public abstract class EventloopFactoryTest {
 
     @Test
     public void test_setThreadNameSupplier() {
-        EventloopFactory factory = create();
+        EventloopBuilder factory = create();
 
         AtomicInteger id = new AtomicInteger();
         factory.setThreadNameSupplier(() -> "thethread" + id.incrementAndGet());
@@ -58,67 +58,67 @@ public abstract class EventloopFactoryTest {
 
     @Test(expected = IllegalArgumentException.class)
     public void test_setScheduledTaskQueueCapacity_whenZero() {
-        EventloopFactory factory = create();
+        EventloopBuilder factory = create();
         factory.setScheduledTaskQueueCapacity(0);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void test_setScheduledTaskQueueCapacity_whenNegative() {
-        EventloopFactory factory = create();
+        EventloopBuilder factory = create();
         factory.setScheduledTaskQueueCapacity(-1);
     }
 
     @Test
     public void test_setClockRefreshPeriod_whenZero() {
-        EventloopFactory factory = create();
+        EventloopBuilder factory = create();
         factory.setClockRefreshPeriod(0);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void test_setClockRefreshPeriod_whenNegative() {
-        EventloopFactory factory = create();
+        EventloopBuilder factory = create();
         factory.setClockRefreshPeriod(-1);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void test_setBatchSize_whenZero() {
-        EventloopFactory factory = create();
+        EventloopBuilder factory = create();
         factory.setBatchSize(0);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void test_setBatchSize_whenNegative() {
-        EventloopFactory factory = create();
+        EventloopBuilder factory = create();
         factory.setBatchSize(-1);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void test_setConcurrentRunQueueCapacity_whenZero() {
-        EventloopFactory factory = create();
+        EventloopBuilder factory = create();
         factory.setConcurrentTaskQueueCapacity(0);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void test_setConcurrentRunQueueCapacity_whenNegative() {
-        EventloopFactory factory = create();
+        EventloopBuilder factory = create();
         factory.setConcurrentTaskQueueCapacity(-1);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void test_setLocalRunQueueCapacity_whenZero() {
-        EventloopFactory factory = create();
+        EventloopBuilder factory = create();
         factory.setLocalTaskQueueCapacity(0);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void test_setLocalRunQueueCapacity_whenNegative() {
-        EventloopFactory factory = create();
+        EventloopBuilder factory = create();
         factory.setLocalTaskQueueCapacity(-1);
     }
 
     @Test(expected = NullPointerException.class)
     public void test_setSchedulerSupplier_whenNull() {
-        EventloopFactory factory = create();
+        EventloopBuilder factory = create();
         factory.setSchedulerSupplier(null);
     }
 }
