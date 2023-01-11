@@ -71,6 +71,6 @@ public final class EntryViews {
             return expiryMetadata.getLastUpdateTime();
         }
 
-        return Record.UNSET;
+        return record.getLastUpdateTime();
     }
 }
