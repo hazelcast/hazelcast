@@ -210,11 +210,11 @@ public interface JetService {
     Job newLightJob(@Nonnull DAG dag, @Nonnull JobConfig config);
 
     /**
-     * For the client side uploads the jar and runs the main method to start the job
-     * For the member side runs the main method of the jar to start the job
+     * For the client side, the jar is uploaded to a member and then the member runs the main method to start the job
+     * For the member side, the member only runs the main method of the jar to start the job
      */
-    void submitJobJar(@Nonnull Path jarPath, String snapshotName, String jobName, String mainClass,
-                      List<String> jobParameters);
+    void submitJobFromJar(@Nonnull Path jarPath, String snapshotName, String jobName, String mainClass,
+                          List<String> jobParameters);
 
     /**
      * Returns all submitted jobs. The result includes completed normal jobs,

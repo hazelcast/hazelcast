@@ -72,7 +72,7 @@ List<String> jobParameters = emptyList();
 
 String job1 = "job1";
 //If there is an error, throws JetException
-jetService.submitJobJar(getJarPath(),
+jetService.submitJobFromJar (getJarPath(),
         null,
         job1,
         null,
@@ -82,13 +82,14 @@ jetService.submitJobJar(getJarPath(),
 #### Client Related Changes
 A new method has been added to JetService interface. Any client that implements this interface, has to implement this method
 ```java
-void submitJobJar(@Nonnull Path jarPath, String snapshotName, String jobName, String mainClass, List<String> jobParameters);
+void submitJobFromJar (@Nonnull Path jarPath, String snapshotName, String jobName, String mainClass, List<String> jobParameters);
 ```
 
 ### Technical Design
 
 The client protocol needs to support job uploading. So that non-java clients can also upload jet jobs.
 For this purpose two new messages are added to client protocol. These messages should be sent to the same member in a cluster since they are logically related
+Any member can be chosen but coordinator member should be preferred.  
 
 1. uploadJobMetaData
 2. uploadJobMultipart
@@ -141,6 +142,7 @@ Upon reception of the first message a new temporary file is created. For every m
 **Pros of using the same JVM**
 - The general approach of using the same JVM when the job is submitted from hz-client is preserved. 
 - The existing JetService and resources can be utilized, which is better for efficiency.
+- On one JVM you can have many instances running.
 
 **Cons of using the same JVM**
 - Any failure within the job is directly going to affect the member

@@ -25,13 +25,20 @@ import java.security.NoSuchAlgorithmException;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Holds the state of jobs that are being uploaded. Once the upload is complete the
+ * state is removed. If upload is abandoned the state is removed after it expires.
+ */
 public class JobUploadStore {
 
     private static ILogger logger = Logger.getLogger(JobUploadStore.class);
 
+    // Key is sessionID
     private ConcurrentHashMap<UUID, JobUploadStatus> jobMap = new ConcurrentHashMap<>();
 
-    // Iterate over entries and remove expired ones
+    /**
+     * Iterate over entries and remove expired ones
+     */
     public void cleanExpiredUploads() {
         jobMap.forEach((key, value) -> {
             if (value.isExpired()) {
@@ -40,6 +47,10 @@ public class JobUploadStore {
         });
     }
 
+    /**
+     * Remove the JobUploadStatus
+     * @param sessionId specifies the key to be used
+     */
     public void remove(UUID sessionId) {
         JobUploadStatus jobUploadStatus = jobMap.remove(sessionId);
 
@@ -48,6 +59,10 @@ public class JobUploadStore {
         }
     }
 
+    /**
+     * Process the metadata for the job upload
+     * @param parameterObject specifies the first message for the job upload
+     */
     public void processJobMetaData(JobMetaDataParameterObject parameterObject) {
         UUID sessionId = parameterObject.getSessionId();
         String message = String.format("processJobMetaData : Session : %s ", sessionId);
@@ -58,6 +73,13 @@ public class JobUploadStore {
 
     }
 
+    /**
+     * Process the part message for the job upload
+     * @param parameterObject specified message from client
+     * @return JobMetaDataParameterObject if upload is complete
+     * @throws IOException in case of I/O error
+     * @throws NoSuchAlgorithmException in case of message digest error
+     */
     public JobMetaDataParameterObject processJobMultipart(JobMultiPartParameterObject parameterObject)
             throws IOException, NoSuchAlgorithmException {
         // Log parameterObject
@@ -76,7 +98,7 @@ public class JobUploadStore {
 
         JobMetaDataParameterObject partsComplete = jobUploadStatus.processJobMultipart(parameterObject);
 
-        // If job upload is complete, remote from the map
+        // If job upload is complete, remove from the map
         if (partsComplete != null) {
 
             message = String.format("Session : %s is complete. It will be removed from the map", sessionId);

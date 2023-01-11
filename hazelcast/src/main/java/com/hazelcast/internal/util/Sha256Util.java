@@ -46,15 +46,12 @@ public final class Sha256Util {
         try (InputStream inputStream = Files.newInputStream(jarPath);
              DigestInputStream digestInputStream = new DigestInputStream(inputStream, messageDigest)) {
 
-            // 1 MB
             final int oneMB = 1024 * 1024;
             byte[] buffer = new byte[oneMB];
-            while (true) {
-                int readCount = digestInputStream.read(buffer);
-                if (readCount < 0) {
-                    break;
-                }
-            }
+            int readCount;
+            do {
+                readCount = digestInputStream.read(buffer);
+            } while (readCount >= 0);
         }
         BigInteger bigInteger = new BigInteger(1, messageDigest.digest());
         final int radix = 16;

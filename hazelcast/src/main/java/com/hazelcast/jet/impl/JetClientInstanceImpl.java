@@ -31,6 +31,7 @@ import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.util.Sha256Util;
 import com.hazelcast.internal.util.UuidUtil;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
@@ -142,8 +143,8 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     }
 
     @Override
-    public void submitJobJar(@Nonnull Path jarPath, String snapshotName, String jobName, String mainClass,
-                             @Nonnull List<String> jobParameters) {
+    public void submitJobFromJar(@Nonnull Path jarPath, String snapshotName, String jobName, String mainClass,
+                                 @Nonnull List<String> jobParameters) {
 
         try {
             UUID sessionId = UuidUtil.newSecureUUID();
@@ -168,9 +169,10 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
 
     protected String fileNameWithoutExtension(Path jarPath) {
         String fileName = jarPath.getFileName().toString();
-        if (fileName.endsWith(".jar")) {
-            fileName = fileName.substring(0, fileName.lastIndexOf('.'));
+        if (!fileName.endsWith(".jar")) {
+            throw new JetException("File name extension should be .jar");
         }
+        fileName = fileName.substring(0, fileName.lastIndexOf('.'));
         return fileName;
     }
 

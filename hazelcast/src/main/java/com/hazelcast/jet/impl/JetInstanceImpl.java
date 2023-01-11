@@ -71,8 +71,8 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
     }
 
     @Override
-    public void submitJobJar(@Nonnull Path jarPath, String snapshotName, String jobName, String mainClass,
-                             List<String> jobParameters) {
+    public void submitJobFromJar(@Nonnull Path jarPath, String snapshotName, String jobName, String mainClass,
+                                 List<String> jobParameters) {
 
         try {
             JobMetaDataParameterObject parameterObject = new JobMetaDataParameterObject();

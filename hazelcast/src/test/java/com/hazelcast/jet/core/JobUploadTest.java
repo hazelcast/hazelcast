@@ -66,7 +66,7 @@ public class JobUploadTest extends JetTestSupport {
         JetService jetService = client.getJet();
         List<String> jobParameters = emptyList();
         assertThrows(JetException.class, () ->
-                jetService.submitJobJar(getJarPath(),
+                jetService.submitJobFromJar(getJarPath(),
                         null,
                         null,
                         null,
@@ -83,7 +83,7 @@ public class JobUploadTest extends JetTestSupport {
         JetService jetService = hazelcastInstance.getJet();
         List<String> jobParameters = emptyList();
         assertThrows(JetException.class, () ->
-                jetService.submitJobJar(getJarPath(),
+                jetService.submitJobFromJar(getJarPath(),
                         null,
                         null,
                         null,
@@ -108,7 +108,7 @@ public class JobUploadTest extends JetTestSupport {
         JetService jetService = client.getJet();
         List<String> jobParameters = emptyList();
 
-        jetService.submitJobJar(getJarPath(),
+        jetService.submitJobFromJar(getJarPath(),
                 null,
                 null,
                 null,
@@ -131,7 +131,7 @@ public class JobUploadTest extends JetTestSupport {
         JetService jetService = hazelcastInstance.getJet();
         List<String> jobParameters = emptyList();
 
-        jetService.submitJobJar(getJarPath(),
+        jetService.submitJobFromJar(getJarPath(),
                 null,
                 null,
                 null,
@@ -162,7 +162,7 @@ public class JobUploadTest extends JetTestSupport {
         List<String> jobParameters = emptyList();
 
         assertThrows(JetException.class, () ->
-                spyJetService.submitJobJar(jarPath,
+                spyJetService.submitJobFromJar(jarPath,
                         null,
                         null,
                         null,
@@ -193,7 +193,7 @@ public class JobUploadTest extends JetTestSupport {
         JetService jetService = client.getJet();
         List<String> jobParameters = emptyList();
 
-        jetService.submitJobJar(getJarPath(),
+        jetService.submitJobFromJar(getJarPath(),
                 null,
                 null,
                 null,
@@ -224,7 +224,7 @@ public class JobUploadTest extends JetTestSupport {
                 JetService jetService = client.getJet();
                 List<String> jobParameters = emptyList();
 
-                jetService.submitJobJar(getJarPath(),
+                jetService.submitJobFromJar(getJarPath(),
                         null,
                         null,
                         null,
@@ -255,14 +255,14 @@ public class JobUploadTest extends JetTestSupport {
         List<String> jobParameters = emptyList();
 
         String job1 = "job1";
-        jetService.submitJobJar(getJarPath(),
+        jetService.submitJobFromJar(getJarPath(),
                 null,
                 job1,
                 null,
                 jobParameters);
 
         String job2 = "job2";
-        jetService.submitJobJar(getJarPath(),
+        jetService.submitJobFromJar(getJarPath(),
                 null,
                 job2,
                 null,

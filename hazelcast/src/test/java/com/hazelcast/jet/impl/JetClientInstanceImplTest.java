@@ -20,6 +20,7 @@ import com.hazelcast.client.config.ClientConfig;
 import com.hazelcast.client.impl.client.DistributedObjectInfo;
 import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.core.HazelcastInstance;
+import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.JetTestSupport;
 import com.hazelcast.map.impl.MapService;
 import com.hazelcast.test.HazelcastParallelClassRunner;
@@ -118,17 +119,14 @@ public class JetClientInstanceImplTest extends JetTestSupport {
         String fileNameWithoutExtension = jetClientInstance.fileNameWithoutExtension(jarPath);
         assertEquals(expectedFileName, fileNameWithoutExtension);
 
-        jarPath = Paths.get("/mnt/foo");
-        fileNameWithoutExtension = jetClientInstance.fileNameWithoutExtension(jarPath);
-        assertEquals(expectedFileName, fileNameWithoutExtension);
+        Path jarPath1 = Paths.get("/mnt/foo");
+        assertThrows(JetException.class, () -> jetClientInstance.fileNameWithoutExtension(jarPath1));
 
         jarPath = Paths.get("foo.jar");
         fileNameWithoutExtension = jetClientInstance.fileNameWithoutExtension(jarPath);
         assertEquals(expectedFileName, fileNameWithoutExtension);
 
-        jarPath = Paths.get("foo");
-        fileNameWithoutExtension = jetClientInstance.fileNameWithoutExtension(jarPath);
-        assertEquals(expectedFileName, fileNameWithoutExtension);
+        Path jarPath2 = Paths.get("foo");
+        assertThrows(JetException.class, () -> jetClientInstance.fileNameWithoutExtension(jarPath2));
     }
-
 }

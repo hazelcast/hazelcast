@@ -32,6 +32,9 @@ import java.time.Instant;
 
 import static com.hazelcast.internal.util.Sha256Util.calculateSha256Hex;
 
+/**
+ * Holds the details of a job that is being uploaded
+ */
 public class JobUploadStatus {
 
     private static final ILogger LOGGER = Logger.getLogger(JobUploadStatus.class);
@@ -65,7 +68,9 @@ public class JobUploadStatus {
         return minutes >= EXPIRATION_MINUTES;
     }
 
-    // Called when this object is removed from JobUploadStore
+    /**
+     * Called when this object is removed from JobUploadStore
+     */
     public void onRemove() {
         try {
             if (jobMetaDataParameterObject.getJarPath() != null) {
@@ -76,6 +81,13 @@ public class JobUploadStatus {
         }
     }
 
+    /**
+     * Process the part message for the job upload
+     * @param parameterObject specified message from client
+     * @return JobMetaDataParameterObject if upload is complete
+     * @throws IOException in case of I/O error
+     * @throws NoSuchAlgorithmException in case of message digest error
+     */
     public JobMetaDataParameterObject processJobMultipart(JobMultiPartParameterObject parameterObject)
             throws IOException, NoSuchAlgorithmException {
 

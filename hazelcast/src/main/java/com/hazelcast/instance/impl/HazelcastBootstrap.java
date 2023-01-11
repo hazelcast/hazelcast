@@ -653,9 +653,9 @@ public final class HazelcastBootstrap {
         }
 
         @Override
-        public void submitJobJar(@Nonnull Path jarPath, String snapshotName, String jobName, String mainClass,
-                                 List<String> jobParameters) {
-            jet.submitJobJar(jarPath, snapshotName, jobName, mainClass, jobParameters);
+        public void submitJobFromJar(@Nonnull Path jarPath, String snapshotName, String jobName, String mainClass,
+                                     List<String> jobParameters) {
+            jet.submitJobFromJar(jarPath, snapshotName, jobName, mainClass, jobParameters);
         }
 
         @Nonnull @Override

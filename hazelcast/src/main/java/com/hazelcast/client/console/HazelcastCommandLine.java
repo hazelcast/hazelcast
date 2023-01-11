@@ -189,7 +189,8 @@ public class HazelcastCommandLine implements Runnable {
             printf("Will restore the job from the snapshot with name '%s'", snapshotName);
         }
 
-        // calledByMember is false
+        // calledByMember is false because when job upload is called by client side we want the HazelcastInstance
+        // to be closed
         HazelcastBootstrap.executeJar(
                 () -> getHazelcastClient(false),
                 file.getAbsolutePath(), snapshotName, name, mainClass, params, false);
