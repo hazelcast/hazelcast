@@ -60,10 +60,6 @@ public final class LogicalRules {
                 SortLogicalRule.INSTANCE,
 
                 // Join rules
-                CoreRules.JOIN_COMMUTE_OUTER,
-                CoreRules.JOIN_TO_CORRELATE,
-                CoreRules.FILTER_TO_CALC,
-                CorrelateLogicalRule.INSTANCE,
                 JoinLogicalRule.INSTANCE,
                 CoreRules.JOIN_REDUCE_EXPRESSIONS,
 //                STREAMING_JOIN_TRANSPOSE,

@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.jet.sql.impl.opt.OptUtils;
+import com.hazelcast.jet.sql.impl.opt.logical.CorrelateLogicalRel;
 import com.hazelcast.jet.sql.impl.opt.logical.JoinLogicalRel;
 import org.apache.calcite.plan.RelOptRule;
 import org.apache.calcite.plan.RelOptRuleCall;
@@ -58,6 +59,11 @@ public final class JoinPhysicalRule extends RelRule<RelRule.Config> {
     @Override
     public void onMatch(RelOptRuleCall call) {
         JoinLogicalRel logicalJoin = call.rel(0);
+
+        if (logicalJoin instanceof CorrelateLogicalRel) {
+            // correlate has different conditions
+            return;
+        }
 
         JoinRelType joinType = logicalJoin.getJoinType();
         if (OptUtils.isBounded(logicalJoin) && (joinType != JoinRelType.INNER && joinType != JoinRelType.LEFT)) {

@@ -28,7 +28,7 @@ import javax.annotation.Nonnull;
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
 public final class CalcLogicalRule extends ConverterRule {
-    static final RelOptRule INSTANCE = new CalcLogicalRule();
+    public static final RelOptRule INSTANCE = new CalcLogicalRule();
 
     private CalcLogicalRule() {
         super(

@@ -26,9 +26,9 @@ import org.apache.calcite.rel.logical.LogicalCorrelate;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
-final class CorrelateLogicalRule extends ConverterRule {
+public final class CorrelateLogicalRule extends ConverterRule {
 
-    static final RelOptRule INSTANCE = new CorrelateLogicalRule();
+    public static final RelOptRule INSTANCE = new CorrelateLogicalRule();
 
     private CorrelateLogicalRule() {
         super(
@@ -43,9 +43,7 @@ final class CorrelateLogicalRule extends ConverterRule {
 
         // We convert every RIGHT JOIN to LEFT JOIN to use already-implemented LEFT JOIN operators.
         if (OptUtils.isBounded(join) && join.getJoinType() == JoinRelType.RIGHT) {
-           // return JoinCommuteRule.swap(join, true);
-            //throw  new RuntimeException("TODO");
-            System.out.println("RIGHT JOIN cannot be converted, waiting for commuted one");
+            return null;
         }
 
         return new CorrelateLogicalRel(

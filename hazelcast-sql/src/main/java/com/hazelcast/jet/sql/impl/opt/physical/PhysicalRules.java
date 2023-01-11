@@ -16,8 +16,14 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.jet.sql.impl.opt.common.CalcIntoScanRule;
+import com.hazelcast.jet.sql.impl.opt.logical.CalcLogicalRule;
+import com.hazelcast.jet.sql.impl.opt.logical.CalcMergeRule;
+import com.hazelcast.jet.sql.impl.opt.logical.CalcReduceExprRule;
+import com.hazelcast.jet.sql.impl.opt.logical.CorrelateLogicalRule;
 import org.apache.calcite.plan.volcano.AbstractConverter;
 import org.apache.calcite.rel.core.RelFactories;
+import org.apache.calcite.rel.rules.CoreRules;
 import org.apache.calcite.tools.RuleSet;
 import org.apache.calcite.tools.RuleSets;
 
@@ -49,6 +55,18 @@ public final class PhysicalRules {
                 // Sort rules
                 SortPhysicalRule.INSTANCE,
                 StreamingSortMustNotExecuteRule.INSTANCE,
+
+                // Nested loops join logical transformation rules
+                JoinLogicalReverseRule.INSTANCE,
+                CoreRules.JOIN_COMMUTE_OUTER,
+                CoreRules.JOIN_TO_CORRELATE,
+                CoreRules.FILTER_TO_CALC,
+                CalcLogicalRule.INSTANCE,
+                CalcIntoScanRule.INSTANCE,
+                CalcMergeRule.INSTANCE,
+                CoreRules.CALC_REMOVE,
+                CalcReduceExprRule.INSTANCE,
+                CorrelateLogicalRule.INSTANCE,
 
                 // Join rules
                 JoinPhysicalRule.INSTANCE,

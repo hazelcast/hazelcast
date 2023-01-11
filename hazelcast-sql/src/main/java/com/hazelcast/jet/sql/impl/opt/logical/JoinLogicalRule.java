@@ -27,7 +27,7 @@ import org.apache.calcite.rel.rules.JoinCommuteRule;
 
 import static com.hazelcast.jet.sql.impl.opt.Conventions.LOGICAL;
 
-final class JoinLogicalRule extends ConverterRule {
+public final class JoinLogicalRule extends ConverterRule {
 
     static final RelOptRule INSTANCE = new JoinLogicalRule();
 

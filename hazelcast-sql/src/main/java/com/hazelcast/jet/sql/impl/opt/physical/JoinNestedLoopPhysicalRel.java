@@ -24,16 +24,20 @@ import com.hazelcast.jet.sql.impl.validate.HazelcastSqlOperatorTable;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.Expression;
 import org.apache.calcite.plan.RelOptCluster;
+import org.apache.calcite.plan.RelOptCost;
+import org.apache.calcite.plan.RelOptPlanner;
 import org.apache.calcite.plan.RelTraitSet;
 import org.apache.calcite.rel.RelNode;
 import org.apache.calcite.rel.core.CorrelationId;
 import org.apache.calcite.rel.core.Join;
 import org.apache.calcite.rel.core.JoinRelType;
+import org.apache.calcite.rel.metadata.RelMetadataQuery;
 import org.apache.calcite.rex.RexBuilder;
 import org.apache.calcite.rex.RexInputRef;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.rex.RexShuttle;
 import org.apache.calcite.rex.RexUtil;
+import org.checkerframework.checker.nullness.qual.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -42,6 +46,10 @@ import static com.hazelcast.internal.util.CollectionUtil.toIntArray;
 import static java.util.Arrays.asList;
 
 public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
+
+    // nested-loops self cost is smaller than hash-join
+    // but additional cost is added due to repetition
+    private static final double COST_FACTOR = 1;
 
     private final CorrelationId correlationId;
 
@@ -126,5 +134,22 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
             boolean semiJoinDone
     ) {
         return new JoinNestedLoopPhysicalRel(getCluster(), traitSet, left, correlationId, right, getCondition(), joinType);
+    }
+
+    @Override
+    @Nullable
+    public RelOptCost computeSelfCost(RelOptPlanner planner, RelMetadataQuery mq) {
+        // right will be repeated for each left row
+        double rightRepetitions = getLeft().estimateRowCount(mq);
+        // 1 repetition will be included already in the total cost of the node.
+        // Add cost of remaining iterations.
+        RelOptCost rightRepetitionsCost = planner.getCost(getRight(), mq)
+                .multiplyBy(Math.max(rightRepetitions - 1.0, 0.0));
+
+        RelOptCost selfCost = super.computeSelfCost(planner, mq);
+
+        // TODO: this multiplies only number of rows, other elements of join cost are 0. Does it make sense?
+        return selfCost.multiplyBy(COST_FACTOR)
+                .plus(rightRepetitionsCost);
     }
 }
