@@ -175,10 +175,13 @@ public final class HazelcastBootstrap {
             String[] jobArgs = args.toArray(new String[0]);
             // upcast args to Object so it's passed as a single array-typed argument
             main.invoke(null, (Object) jobArgs);
-            awaitJobsStarted();
+
+            // Method is synchronized so, it is safe to access submittedJobs array in BootstrappedJetProxy
+            awaitJobsStarted(calledByMember);
+
         } finally {
-            // HazelcastInstance should be closed if called by client
-            // HazelcastInstance should not be closed if called by member
+            // HazelcastInstance should be closed if called by client side
+            // HazelcastInstance should not be closed if called by member side
             if (!calledByMember) {
                 HazelcastInstance remembered = HazelcastBootstrap.supplier.remembered();
                 if (remembered != null) {
@@ -216,7 +219,12 @@ public final class HazelcastBootstrap {
         }
     }
 
-    private static void awaitJobsStarted() {
+    private static void awaitJobsStarted(boolean calledByMember) {
+        // Wait for the job to start only if called by the client side
+        if (calledByMember) {
+            return;
+        }
+
         List<Job> submittedJobs = (HazelcastBootstrap.supplier.get().getJet()).submittedJobs();
         int submittedCount = submittedJobs.size();
         if (submittedCount == 0) {
