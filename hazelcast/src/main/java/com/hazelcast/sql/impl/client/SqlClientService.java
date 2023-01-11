@@ -101,7 +101,10 @@ public class SqlClientService implements SqlService {
     @Nonnull
     @Override
     public SqlResult execute(@Nonnull SqlStatement statement) {
-        final Integer argIndex = partitionArgumentIndexCache.getOrDefault(statement.getSql(), -1);
+        final Integer argIndex = statement.getPartitionArgumentIndex() != -1
+                ? statement.getPartitionArgumentIndex()
+                : partitionArgumentIndexCache.getOrDefault(statement.getSql(), -1);
+
         final Integer partitionId = extractPartitionId(statement, argIndex);
         final ClientConnection connection = partitionId != null
                 ? getQueryConnection(partitionId)
@@ -138,7 +141,7 @@ public class SqlClientService implements SqlService {
 
         try {
             ClientMessage message = invoke(requestMessage, connection);
-            handleExecuteResponse(statement.getSql(), argIndex, res, message);
+            handleExecuteResponse(statement, argIndex, res, message);
             return res;
         } catch (Exception e) {
             RuntimeException error = rethrow(e, connection);
@@ -283,7 +286,7 @@ public class SqlClientService implements SqlService {
     }
 
     private void handleExecuteResponse(
-            String sqlText,
+            SqlStatement statement,
             int originalPartitionArgumentIndex,
             SqlClientResult res,
             ClientMessage message
@@ -301,9 +304,10 @@ public class SqlClientService implements SqlService {
         } else {
             if (!isUniSocket && response.partitionArgumentIndex != originalPartitionArgumentIndex) {
                 if (response.partitionArgumentIndex != -1) {
-                    partitionArgumentIndexCache.put(sqlText, response.partitionArgumentIndex);
+                    partitionArgumentIndexCache.put(statement.getSql(), response.partitionArgumentIndex);
+                    statement.setPartitionArgumentIndex(response.partitionArgumentIndex);
                 } else {
-                    partitionArgumentIndexCache.remove(sqlText);
+                    partitionArgumentIndexCache.remove(statement.getSql());
                 }
             }
 
