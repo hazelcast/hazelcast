@@ -65,7 +65,6 @@ import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamTo
 import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinBroadcastKeys.WM_STATE_KEY;
 import static java.util.function.Function.identity;
 
-
 /**
  * See {@code docs/design/sql/15-stream-to-stream-join.md}.
  */

@@ -188,7 +188,7 @@ public final class TestSupport {
      * current test. For example, the {@link #outputChecker(BiPredicate) output
      * checker} can check differently in various modes.
      */
-    public static ThreadLocal<TestContext> TEST_CONTEXT = new ThreadLocal<>();
+    public static final ThreadLocal<TestContext> TEST_CONTEXT = new ThreadLocal<>();
 
     private static final Address LOCAL_ADDRESS;
 
