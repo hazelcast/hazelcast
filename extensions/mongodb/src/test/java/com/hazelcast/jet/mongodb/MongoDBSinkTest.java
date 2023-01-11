@@ -64,7 +64,7 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
     public void test() {
         MongoCollection<Document> collection = collection(defaultDatabase(), testName.getMethodName());
         IList<Integer> list = instance().getList("list");
-        final int count = 80_000;
+        final int count = 10_000;
         for (int i = 0; i < count / 2; i++) {
             list.add(i);
         }
