@@ -18,6 +18,8 @@ package com.hazelcast.jet.mongodb;
 
 import com.hazelcast.collection.IList;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.config.JobConfig;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
@@ -34,8 +36,9 @@ import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.stream.Collectors;
 
+import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
+import static java.util.stream.Collectors.toList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -46,7 +49,7 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
     public void test() {
         MongoCollection<Document> collection = collection(defaultDatabase(), testName.getMethodName());
         IList<Integer> list = instance().getList("list");
-        final int count = 40_000;
+        final int count = 80_000;
         for (int i = 0; i < count / 2; i++) {
             list.add(i);
         }
@@ -56,7 +59,7 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
         }
         Collection<String> ids = collection.insertMany(docsToUpdate).getInsertedIds().values().stream()
                                                  .map(id -> id.asObjectId().getValue().toHexString())
-                                                 .collect(Collectors.toList());
+                                                 .collect(toList());
 
         String connectionString = mongoContainer.getConnectionString();
 
@@ -76,12 +79,12 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
                                                                      .append("some", "text lorem ipsum etc"))
                                                              .setLocalParallelism(2);
 
-        toAddSource.merge(alreadyExistingSource)
+        toAddSource.merge(alreadyExistingSource).setLocalParallelism(8)
                 .rebalance(doc -> doc.get("val")).setLocalParallelism(8)
                 .writeTo(MongoDBSinks.mongodb(SINK_NAME, connectionString, defaultDatabase(), testName.getMethodName()))
                 .setLocalParallelism(4);
 
-        instance().getJet().newJob(pipeline).join();
+        instance().getJet().newJob(pipeline, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE).setSnapshotIntervalMillis(1500)).join();
 
         assertEquals(count, collection.countDocuments());
         assertEquals(count/2, collection.countDocuments(Filters.eq("key", keyDiscriminator)));
@@ -99,9 +102,8 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
         String collectionName = testName.getMethodName();
         Sink<Document> sink = MongoDBSinks
                 .builder(SINK_NAME, Document.class, () -> mongoClient("non-existing-server", 0))
-                .databaseName(defaultDatabase)
-                .collectionName(collectionName)
-                .documentIdentityFn((doc) -> doc.get("_id"))
+                .into(defaultDatabase, collectionName)
+                .identifyDocumentBy("_id", (doc) -> doc.get("_id"))
                 .build();
 
         Pipeline p = Pipeline.create();
