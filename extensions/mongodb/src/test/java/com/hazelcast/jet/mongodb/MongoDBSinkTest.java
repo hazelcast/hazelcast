@@ -18,15 +18,23 @@ package com.hazelcast.jet.mongodb;
 
 import com.hazelcast.collection.IList;
 import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.pipeline.BatchStage;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.Sources;
-import com.mongodb.client.MongoClient;
+import com.hazelcast.jet.pipeline.test.TestSources;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.model.Filters;
 import org.bson.Document;
+import org.bson.types.ObjectId;
 import org.junit.Test;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -36,22 +44,48 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
 
     @Test
     public void test() {
+        MongoCollection<Document> collection = collection(defaultDatabase(), testName.getMethodName());
         IList<Integer> list = instance().getList("list");
-        for (int i = 0; i < 100; i++) {
+        final int count = 40_000;
+        for (int i = 0; i < count / 2; i++) {
             list.add(i);
         }
+        List<Document> docsToUpdate = new ArrayList<>();
+        for (int i = count/2; i < count; i++) {
+            docsToUpdate.add(new Document("key", i).append("val", i + 100_000).append("some", "text lorem ipsum etc"));
+        }
+        Collection<String> ids = collection.insertMany(docsToUpdate).getInsertedIds().values().stream()
+                                                 .map(id -> id.asObjectId().getValue().toHexString())
+                                                 .collect(Collectors.toList());
 
         String connectionString = mongoContainer.getConnectionString();
 
-        Pipeline p = Pipeline.create();
-        p.readFrom(Sources.list(list))
-         .map(i -> new Document("key", i))
-         .writeTo(MongoDBSinks.mongodb(SINK_NAME, connectionString, defaultDatabase(), testName.getMethodName()));
+        // used to distinguish Documents read from second source, where IDs are count/2 and higher
+        int keyDiscriminator = (count/2) + 100;
 
-        instance().getJet().newJob(p).join();
+        Pipeline pipeline = Pipeline.create();
+        BatchStage<Document> toAddSource = pipeline.readFrom(Sources.list(list))
+                .map(i -> new Document("key", i).append("val", i + 100_000).append("some", "text lorem ipsum etc"))
+                .setLocalParallelism(2);
 
-        MongoCollection<Document> collection = collection();
-        assertEquals(100, collection.countDocuments());
+        BatchStage<Document> alreadyExistingSource = pipeline.readFrom(TestSources.items(ids))
+                                                             .mapStateful(() -> new AtomicLong(count / 2 + 1),
+                                                                     (counter, i) -> new Document("key", keyDiscriminator)
+                                                                     .append("_id", new ObjectId(i))
+                                                                     .append("val", counter.incrementAndGet())
+                                                                     .append("some", "text lorem ipsum etc"))
+                                                             .setLocalParallelism(2);
+
+        toAddSource.merge(alreadyExistingSource)
+                .rebalance(doc -> doc.get("val")).setLocalParallelism(8)
+                .writeTo(MongoDBSinks.mongodb(SINK_NAME, connectionString, defaultDatabase(), testName.getMethodName()))
+                .setLocalParallelism(4);
+
+        instance().getJet().newJob(pipeline).join();
+
+        assertEquals(count, collection.countDocuments());
+        assertEquals(count/2, collection.countDocuments(Filters.eq("key", keyDiscriminator)));
+        assertEquals(count/2, collection.countDocuments(Filters.ne("key", keyDiscriminator)));
     }
 
     @Test
@@ -64,10 +98,10 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
         String defaultDatabase = defaultDatabase();
         String collectionName = testName.getMethodName();
         Sink<Document> sink = MongoDBSinks
-                .<Document>builder(SINK_NAME, () -> mongoClient("non-existing-server", 0))
-                .databaseFn(client -> client.getDatabase(defaultDatabase))
-                .collectionFn(db -> db.getCollection(collectionName))
-                .destroyFn(MongoClient::close)
+                .builder(SINK_NAME, Document.class, () -> mongoClient("non-existing-server", 0))
+                .databaseName(defaultDatabase)
+                .collectionName(collectionName)
+                .documentIdentityFn((doc) -> doc.get("_id"))
                 .build();
 
         Pipeline p = Pipeline.create();
