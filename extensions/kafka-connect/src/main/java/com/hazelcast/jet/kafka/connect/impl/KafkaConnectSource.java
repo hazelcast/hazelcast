@@ -46,7 +46,7 @@ public class KafkaConnectSource {
      * See {@link SourceRecord} for more information regarding the format.
      */
     private Map<Map<String, ?>, Map<String, ?>> partitionsToOffset = new HashMap<>();
-    private boolean taskInit;
+    private boolean taskInitialized;
 
     public KafkaConnectSource(Properties properties) {
         try {
@@ -64,10 +64,10 @@ public class KafkaConnectSource {
     }
 
     public void fillBuffer(SourceBuilder.TimestampedSourceBuffer<SourceRecord> buf) {
-        if (!taskInit) {
+        if (!taskInitialized) {
             task.initialize(new JetSourceTaskContext());
             task.start(taskConfig);
-            taskInit = true;
+            taskInitialized = true;
         }
         try {
             List<SourceRecord> records = task.poll();
