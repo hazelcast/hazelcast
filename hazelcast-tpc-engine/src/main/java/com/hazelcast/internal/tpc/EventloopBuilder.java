@@ -58,7 +58,7 @@ public abstract class EventloopBuilder {
     int clockRefreshPeriod;
 
     protected EventloopBuilder(EventloopType type) {
-        this.type = type;
+        this.type = checkNotNull(type);
         this.localTaskQueueCapacity = Integer.getInteger(NAME_LOCAL_TASK_QUEUE_CAPACITY, DEFAULT_LOCAL_QUEUE_CAPACITY);
         this.concurrentTaskQueueCapacity = Integer.getInteger(NAME_CONCURRENT_TASK_QUEUE_CAPACITY, DEFAULT_CONCURRENT_QUEUE_CAPACITY);
         this.scheduledTaskQueueCapacity = Integer.getInteger(NAME_SCHEDULED_TASK_QUEUE_CAPACITY, DEFAULT_SCHEDULED_TASK_QUEUE_CAPACITY);

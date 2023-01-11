@@ -17,7 +17,7 @@
 package com.hazelcast.internal.tpc.util;
 
 /**
- * Returns the time in nanoseconds based on a recent but arbitrary starting point.
+ * Returns the time in nanoseconds from when this clock was created.
  * <p/>
  * The difference between {@link NanoClock} and {@link System#nanoTime()} is that
  * with NanoClock, the start time is very recent, so there is a huge period between now
@@ -32,7 +32,7 @@ package com.hazelcast.internal.tpc.util;
 public interface NanoClock {
 
      /**
-      * Returns the time in nanoseconds.
+      * Returns the time in nanoseconds from when this NanoClock was created.
       *
       * @return the time in nanoseconds.
       */
