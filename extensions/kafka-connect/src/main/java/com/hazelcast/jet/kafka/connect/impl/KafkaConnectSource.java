@@ -76,10 +76,8 @@ public class KafkaConnectSource {
             }
 
             for (SourceRecord record : records) {
-                boolean added = addToBuffer(record, buf);
-                if (added) {
-                    partitionsToOffset.put(record.sourcePartition(), record.sourceOffset());
-                }
+                addToBuffer(record, buf);
+                partitionsToOffset.put(record.sourcePartition(), record.sourceOffset());
             }
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
@@ -87,10 +85,9 @@ public class KafkaConnectSource {
         }
     }
 
-    protected boolean addToBuffer(SourceRecord record, SourceBuilder.TimestampedSourceBuffer<SourceRecord> buf) {
+    private void addToBuffer(SourceRecord record, SourceBuilder.TimestampedSourceBuffer<SourceRecord> buf) {
         long ts = record.timestamp() == null ? 0 : record.timestamp();
         buf.add(record, ts);
-        return true;
     }
 
     public void destroy() {
