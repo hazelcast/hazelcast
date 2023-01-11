@@ -88,7 +88,7 @@ void submitJobJar(@Nonnull Path jarPath, String snapshotName, String jobName, St
 ### Technical Design
 
 The client protocol needs to support job uploading. So that non-java clients can also upload jet jobs.
-For this purpose two new messages are added to client protocol
+For this purpose two new messages are added to client protocol. These messages should be sent to the same member in a cluster since they are logically related
 
 1. uploadJobMetaData
 2. uploadJobMultipart
