@@ -60,6 +60,7 @@ import com.hazelcast.config.TopicConfig;
 import com.hazelcast.config.UserCodeDeploymentConfig;
 import com.hazelcast.config.WanReplicationConfig;
 import com.hazelcast.config.cp.CPSubsystemConfig;
+import com.hazelcast.config.alto.AltoConfig;
 import com.hazelcast.core.ManagedContext;
 import com.hazelcast.internal.config.CacheSimpleConfigReadOnly;
 import com.hazelcast.internal.config.DataPersistenceAndHotRestartMerger;
@@ -1254,5 +1255,10 @@ public class DynamicConfigurationAwareConfig extends Config {
     @Override
     public ExternalDataStoreConfig findExternalDataStoreConfig(String name) {
         return new ExternalDataStoreConfigReadOnly(getExternalDataStoreConfigInternal(name, "default"));
+    }
+
+    @Override
+    public AltoConfig getAltoConfig() {
+        return staticConfig.getAltoConfig();
     }
 }
