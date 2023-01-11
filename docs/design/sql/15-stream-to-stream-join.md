@@ -470,11 +470,11 @@ The following tests will be created:
 
 ### Fault tolerance
 
-Update since HZ 5.3
+Since: HZ 5.3
 
 For fault tolerance, we need to save the contents of the buffers, and also
 ensure that if a null-padded row was emitted, after restore, a matching row
-that's not-late-by-chance isn't emitted.
+that's _not late by chance_ isn't emitted.
 
 The processor uses two routing schemes:
 
@@ -483,16 +483,15 @@ The processor uses two routing schemes:
   After restore, items will be repartitioned to the new set of processors.
 
 - for the broadcast-unicast case, we'll save the broadcast side using a
-  `broadcastKey`, but we'll do it only on processor with global index 0. This
-  way we'll ensure that only one copy is saved, and the one copy will be
-  re-broadcast after restore. For the unicast side, each processor will save all
-  its items, but we have to ensure that the entry is saved to some a local
-  partition, to avoid sending the primary copy of the snapshot data over the
-  network.
+  `broadcastKey`, but we'll do it only on processor with global index 0. This way
+  we'll ensure that only one copy is saved, and the one copy will be re-broadcast
+  after restore. For the unicast side, each processor will save all its items, but
+  we have to ensure that the entry is saved to some local partition, to avoid
+  sending the primary copy of the snapshot data over the network.
 
 Along with the buffer data, we need to save additional information to ensure
 that items that were already removed from the buffer, and for which a
-null-padded row was already emitted, aren't joined with a row, that is not late
+null-padded row was already emitted aren't joined with a row that is not late
 after a restart. This can happen because watermarks after the restart can be
 delayed differently than they were before the restart, because, for example,
 some source takes longer time to initialize, and watermarks are coalesced.
