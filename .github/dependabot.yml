@@ -3,7 +3,8 @@ updates:
   - package-ecosystem: "maven"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+      day: "thursday"
       time: "02:00"
     labels:
       - "Source: Internal"
@@ -18,5 +19,6 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"
+      day: "thursday"
       time: "02:00"
