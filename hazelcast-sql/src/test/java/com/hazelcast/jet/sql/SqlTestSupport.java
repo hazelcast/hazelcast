@@ -332,6 +332,25 @@ public abstract class SqlTestSupport extends SimpleTestInClusterSupport {
 
     /**
      * Execute a query and wait until it completes. Assert that the returned
+     * rows does not contain the expected rows, in any order.
+     *
+     * @param instance     Hazelcast Instance to be used
+     * @param sql          The query
+     * @param expectedRows Expected rows
+     */
+    public static void assertDoesNotContainRow(HazelcastInstance instance, String sql, Collection<Row> expectedRows) {
+        SqlStatement statement = new SqlStatement(sql);
+
+        SqlService sqlService = instance.getSql();
+        List<Row> actualRows = new ArrayList<>();
+        try (SqlResult result = sqlService.execute(statement)) {
+            result.iterator().forEachRemaining(row -> actualRows.add(new Row(row)));
+        }
+        assertThat(actualRows).doesNotContainAnyElementsOf(expectedRows);
+    }
+
+    /**
+     * Execute a query and wait until it completes. Assert that the returned
      * rows contain the expected rows, in any order.
      *
      * @param sql          The query
