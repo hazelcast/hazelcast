@@ -141,7 +141,7 @@ public class DefaultNodeExtension implements NodeExtension {
             + "\t+ +   + +  |    |  /     \\   /    |      |     \\       /     \\       |    |   \n"
             + "\t+       +  o    o o       o o---o o----o o----o o---o o       o o----o    o   ";
 
-    private static final String COPYRIGHT_LINE = "Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.";
+    private static final String COPYRIGHT_LINE = "Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.";
 
     protected final Node node;
     protected final ILogger logger;
