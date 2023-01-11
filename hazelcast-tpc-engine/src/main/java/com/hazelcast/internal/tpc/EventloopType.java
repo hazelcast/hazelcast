@@ -24,10 +24,9 @@ public enum EventloopType {
     NIO, IOURING;
 
     public static EventloopType fromString(String type) {
-        String typeLowerCase = type.toLowerCase();
-        if (typeLowerCase.equals("io_uring") || typeLowerCase.equals("iouring")) {
+        if (type.equalsIgnoreCase("io_uring") || type.equalsIgnoreCase("iouring")) {
             return IOURING;
-        } else if (typeLowerCase.equals("nio")) {
+        } else if (type.equalsIgnoreCase("nio")) {
             return NIO;
         } else {
             throw new IllegalArgumentException("Unrecognized eventloop type [" + type + ']');

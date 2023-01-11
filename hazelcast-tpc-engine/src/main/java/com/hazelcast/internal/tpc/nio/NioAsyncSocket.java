@@ -19,7 +19,6 @@ package com.hazelcast.internal.tpc.nio;
 import com.hazelcast.internal.tpc.AsyncSocket;
 import com.hazelcast.internal.tpc.Eventloop;
 import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
-import com.hazelcast.internal.tpc.util.CloseUtil;
 import jdk.net.ExtendedSocketOptions;
 import org.jctools.queues.MpmcArrayQueue;
 
@@ -378,7 +377,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         Thread currentThread = Thread.currentThread();
         if (flushThread.compareAndSet(null, currentThread)) {
             if (currentThread == eventloopThread) {
-                eventloop.localQueue.add(eventLoopHandler);
+                eventloop.localTaskQueue.add(eventLoopHandler);
             } else if (writeThrough) {
                 eventLoopHandler.run();
             } else if (regularSchedule) {
@@ -428,7 +427,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         boolean result;
         if (currentFlushThread == null) {
             if (flushThread.compareAndSet(null, currentThread)) {
-                eventloop.localQueue.add(eventLoopHandler);
+                eventloop.localTaskQueue.add(eventLoopHandler);
                 if (ioVector.offer(buf)) {
                     result = true;
                 } else {

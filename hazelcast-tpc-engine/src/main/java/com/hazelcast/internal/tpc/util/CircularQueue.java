@@ -27,7 +27,7 @@ import static com.hazelcast.internal.tpc.util.Preconditions.checkPositive;
  * <p/>
  * This class is not thread-safe.
  *
- * @param <E>
+ * @param <E> the type of elements in this CircularQueue.
  */
 public final class CircularQueue<E> {
 

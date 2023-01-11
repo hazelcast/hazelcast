@@ -30,9 +30,9 @@ import static java.lang.System.getProperty;
  * A factory for {@link Eventloop} instances.
  */
 public abstract class EventloopFactory {
-    public static final String NAME_LOCAL_QUEUE_CAPACITY = "hazelcast.tpc.localQueue.capacity";
-    public static final String NAME_CONCURRENT_QUEUE_CAPACITY = "hazelcast.tpc.concurrentQueue.capacity";
-    public static final String NAME_SCHEDULED_QUEUE_CAPACITY = "hazelcast.tpc.scheduledQueue.capacity";
+    public static final String NAME_LOCAL_TASK_QUEUE_CAPACITY = "hazelcast.tpc.localTaskQueue.capacity";
+    public static final String NAME_CONCURRENT_TASK_QUEUE_CAPACITY = "hazelcast.tpc.concurrentTaskQueue.capacity";
+    public static final String NAME_SCHEDULED_TASK_QUEUE_CAPACITY = "hazelcast.tpc.scheduledTaskQueue.capacity";
     public static final String NAME_BATCH_SIZE = "hazelcast.tpc.batch.size";
     public static final String NAME_CLOCK_REFRESH_PERIOD = "hazelcast.tpc.clock.refreshPeriod";
     public static final String NAME_EVENTLOOP_SPIN = "hazelcast.tpc.eventloop.spin";
@@ -51,17 +51,17 @@ public abstract class EventloopFactory {
 
     ThreadFactory threadFactory = Thread::new;
     boolean spin;
-    int localRunQueueCapacity;
-    int concurrentRunQueueCapacity;
+    int localTaskQueueCapacity;
+    int concurrentTaskQueueCapacity;
     int scheduledTaskQueueCapacity;
     int batchSize;
     int clockRefreshPeriod;
 
     protected EventloopFactory(EventloopType type) {
         this.type = type;
-        this.localRunQueueCapacity = Integer.getInteger(NAME_LOCAL_QUEUE_CAPACITY, DEFAULT_LOCAL_QUEUE_CAPACITY);
-        this.concurrentRunQueueCapacity = Integer.getInteger(NAME_CONCURRENT_QUEUE_CAPACITY, DEFAULT_CONCURRENT_QUEUE_CAPACITY);
-        this.scheduledTaskQueueCapacity = Integer.getInteger(NAME_SCHEDULED_QUEUE_CAPACITY, DEFAULT_SCHEDULED_TASK_QUEUE_CAPACITY);
+        this.localTaskQueueCapacity = Integer.getInteger(NAME_LOCAL_TASK_QUEUE_CAPACITY, DEFAULT_LOCAL_QUEUE_CAPACITY);
+        this.concurrentTaskQueueCapacity = Integer.getInteger(NAME_CONCURRENT_TASK_QUEUE_CAPACITY, DEFAULT_CONCURRENT_QUEUE_CAPACITY);
+        this.scheduledTaskQueueCapacity = Integer.getInteger(NAME_SCHEDULED_TASK_QUEUE_CAPACITY, DEFAULT_SCHEDULED_TASK_QUEUE_CAPACITY);
         this.batchSize = Integer.getInteger(NAME_BATCH_SIZE, DEFAULT_BATCH_SIZE);
         this.clockRefreshPeriod = Integer.getInteger(NAME_CLOCK_REFRESH_PERIOD, DEFAULT_CLOCK_REFRESH_INTERVAL);
         this.spin = Boolean.parseBoolean(getProperty(NAME_EVENTLOOP_SPIN, "" + DEFAULT_SPIN));
@@ -77,7 +77,7 @@ public abstract class EventloopFactory {
     /**
      * Sets the clock refresh period.
      *
-     * @param clockRefreshPeriod the period to refresh the time. A clockRefreshPeriod of 0 means that the always the newest
+     * @param clockRefreshPeriod the period to refresh the time. A clockRefreshPeriod of 0 means that always the newest
      *                           time is obtained. There will be more overhead, but you get better granularity.
      * @throws IllegalArgumentException when clockRefreshPeriod smaller than 0.
      */
@@ -137,21 +137,21 @@ public abstract class EventloopFactory {
     /**
      * Sets the capacity of the local run queue.
      *
-     * @param localRunQueueCapacity the capacity
+     * @param localTaskQueueCapacity the capacity
      * @throws IllegalArgumentException if localRunQueueCapacity not positive.
      */
-    public void setLocalRunQueueCapacity(int localRunQueueCapacity) {
-        this.localRunQueueCapacity = checkPositive(localRunQueueCapacity, "localRunQueueCapacity");
+    public void setLocalTaskQueueCapacity(int localTaskQueueCapacity) {
+        this.localTaskQueueCapacity = checkPositive(localTaskQueueCapacity, "localRunQueueCapacity");
     }
 
     /**
      * Sets the capacity of the scheduled task queue.
      *
-     * @param concurrentRunQueueCapacity the capacity
+     * @param concurrentTaskQueueCapacity the capacity
      * @throws IllegalArgumentException if scheduledTaskQueueCapacity not positive.
      */
-    public void setConcurrentRunQueueCapacity(int concurrentRunQueueCapacity) {
-        this.concurrentRunQueueCapacity = checkPositive(concurrentRunQueueCapacity, "concurrentRunQueueCapacity");
+    public void setConcurrentTaskQueueCapacity(int concurrentTaskQueueCapacity) {
+        this.concurrentTaskQueueCapacity = checkPositive(concurrentTaskQueueCapacity, "concurrentRunQueueCapacity");
     }
 
     /**

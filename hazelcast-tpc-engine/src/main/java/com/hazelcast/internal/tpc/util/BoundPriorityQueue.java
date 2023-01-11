@@ -23,7 +23,7 @@ import java.util.PriorityQueue;
  * array grow, the array has a fixed size. So no growing and control on the maximum
  * number of items in this priority queue.
  *
- * @param <E>
+ * @param <E> the type of elements in this BoundPriorityQueue.
  */
 public class BoundPriorityQueue<E> extends PriorityQueue<E> {
 

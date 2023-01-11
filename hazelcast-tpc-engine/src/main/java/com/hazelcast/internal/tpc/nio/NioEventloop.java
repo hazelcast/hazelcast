@@ -80,7 +80,7 @@ public final class NioEventloop extends Eventloop {
                 keyCount = selector.selectNow();
             } else {
                 wakeupNeeded.set(true);
-                if (concurrentQueue.isEmpty()) {
+                if (concurrentTaskQueue.isEmpty()) {
                     if (earliestDeadlineNanos == -1) {
                         keyCount = selector.select();
                     } else {

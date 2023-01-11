@@ -25,8 +25,10 @@ public class EventloopTypeTest {
     @Test
     public void test_fromString(){
         assertEquals(EventloopType.NIO, EventloopType.fromString("nio"));
+        assertEquals(EventloopType.NIO, EventloopType.fromString("NIO"));
         assertEquals(EventloopType.IOURING, EventloopType.fromString("iouring"));
         assertEquals(EventloopType.IOURING, EventloopType.fromString("io_uring"));
+        assertEquals(EventloopType.IOURING, EventloopType.fromString("IOURING"));
     }
 
     @Test(expected = NullPointerException.class)

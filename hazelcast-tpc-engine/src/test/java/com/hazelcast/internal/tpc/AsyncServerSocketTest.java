@@ -52,7 +52,7 @@ public abstract class AsyncServerSocketTest {
     }
 
     @Test
-    public void test_construction(){
+    public void test_construction() {
         Eventloop eventloop = createEventloop();
         AsyncServerSocket socket = createAsyncServerSocket(eventloop);
         assertSame(eventloop, socket.getEventloop());
@@ -68,16 +68,16 @@ public abstract class AsyncServerSocketTest {
     }
 
     @Test(expected = UncheckedIOException.class)
-    public void test_setReceiveBufferSize_whenIOException(){
+    public void test_setReceiveBufferSize_whenIOException() {
         Eventloop eventloop = createEventloop();
         AsyncServerSocket socket = createAsyncServerSocket(eventloop);
         socket.close();
-        socket.setReceiveBufferSize( 64 * 1024);
+        socket.setReceiveBufferSize(64 * 1024);
     }
 
 
     @Test(expected = UncheckedIOException.class)
-    public void test_getReceiveBufferSize_whenIOException(){
+    public void test_getReceiveBufferSize_whenIOException() {
         Eventloop eventloop = createEventloop();
         AsyncServerSocket socket = createAsyncServerSocket(eventloop);
         socket.close();
@@ -96,7 +96,7 @@ public abstract class AsyncServerSocketTest {
     }
 
     @Test(expected = UncheckedIOException.class)
-    public void test_setReuseAddress_whenIOException(){
+    public void test_setReuseAddress_whenIOException() {
         Eventloop eventloop = createEventloop();
         AsyncServerSocket socket = createAsyncServerSocket(eventloop);
         socket.close();
@@ -104,7 +104,7 @@ public abstract class AsyncServerSocketTest {
     }
 
     @Test(expected = UncheckedIOException.class)
-    public void test_isReuseAddress_whenIOException(){
+    public void test_isReuseAddress_whenIOException() {
         Eventloop eventloop = createEventloop();
         AsyncServerSocket socket = createAsyncServerSocket(eventloop);
         socket.close();

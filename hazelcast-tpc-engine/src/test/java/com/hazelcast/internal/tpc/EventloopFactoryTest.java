@@ -95,25 +95,25 @@ public abstract class EventloopFactoryTest {
     @Test(expected = IllegalArgumentException.class)
     public void test_setConcurrentRunQueueCapacity_whenZero() {
         EventloopFactory factory = create();
-        factory.setConcurrentRunQueueCapacity(0);
+        factory.setConcurrentTaskQueueCapacity(0);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void test_setConcurrentRunQueueCapacity_whenNegative() {
         EventloopFactory factory = create();
-        factory.setConcurrentRunQueueCapacity(-1);
+        factory.setConcurrentTaskQueueCapacity(-1);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void test_setLocalRunQueueCapacity_whenZero() {
         EventloopFactory factory = create();
-        factory.setLocalRunQueueCapacity(0);
+        factory.setLocalTaskQueueCapacity(0);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void test_setLocalRunQueueCapacity_whenNegative() {
         EventloopFactory factory = create();
-        factory.setLocalRunQueueCapacity(-1);
+        factory.setLocalTaskQueueCapacity(-1);
     }
 
     @Test(expected = NullPointerException.class)
