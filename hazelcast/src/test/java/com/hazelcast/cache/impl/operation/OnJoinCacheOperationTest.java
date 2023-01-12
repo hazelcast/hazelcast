@@ -26,14 +26,12 @@ import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
-import org.junit.runner.RunWith;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import org.mockito.Mockito;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -46,8 +44,6 @@ import static org.mockito.Mockito.when;
  * Test whether OnJoinCacheOperation logs warning, fails or succeeds under different JCache API availability
  * in classpath.
  */
-@RunWith(PowerMockRunner.class)
-@PrepareForTest(JCacheDetector.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class OnJoinCacheOperationTest {
 
@@ -58,9 +54,13 @@ public class OnJoinCacheOperationTest {
     private ClassLoader classLoader = mock(ClassLoader.class);
     private ILogger logger = mock(ILogger.class);
 
+    @BeforeClass
+    public static void beforeClass() throws Exception {
+        Mockito.mockStatic(JCacheDetector.class);
+    }
+
     @Before
     public void setUp() {
-        PowerMockito.mockStatic(JCacheDetector.class);
         when(nodeEngine.getConfigClassLoader()).thenReturn(classLoader);
         when(nodeEngine.getLogger(any(Class.class))).thenReturn(logger);
     }
