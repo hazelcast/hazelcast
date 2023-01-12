@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -177,7 +177,7 @@
         <checkstyle.version>8.38</checkstyle.version>
         <checkstyle.configLocation>${main.basedir}/checkstyle/checkstyle.xml</checkstyle.configLocation>
         <checkstyle.supressionsLocation>${main.basedir}/checkstyle/suppressions.xml</checkstyle.supressionsLocation>
-        <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeader.txt</checkstyle.headerLocation>
+        <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeaderApache.txt</checkstyle.headerLocation>
 
         <shade.jar-with-dependencies.phase>package</shade.jar-with-dependencies.phase>
         <fat.dependency.classifier>jar-with-dependencies</fat.dependency.classifier>

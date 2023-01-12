@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Returns true if this list contains no elements
  */
-@Generated("dec43a5701a7187de92f4f00784641be")
+@Generated("bad7028595d71851d5dd5ca897a7916a")
 public final class ListIsEmptyCodec {
     //hex: 0x050D00
     public static final int REQUEST_MESSAGE_TYPE = 331008;
