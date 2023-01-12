@@ -83,18 +83,44 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     In the resultQueue we also store the last received WM value for each key.
 
     Separately, we track watermark counts for each key, which we increment for each WM key when an event is received,
-    and decrement when a response is processed. The count is the count of events received _before_ that WM, since
-    the previous WM. When the count gets to 0, we know we can emit the watermark, because all the responses
+    and decrement when a response is processed. The count is the count of events received _since_ that WM, _before_
+    the next WM. When the count gets to 0, we know we can emit the next watermark, because all the responses
     for events received before it were already sent.
+
+    Snapshot contains in-flight elements at the time of taking the snapshot.
+    They are replayed when state is restored from the snapshot.
      */
 
     private final BiFunctionEx<? super S, ? super T, ? extends CompletableFuture<Traverser<R>>> callAsyncFn;
     private final Function<? super T, ? extends K> extractKeyFn;
 
     private ManyToOneConcurrentArrayQueue<Tuple3<T, long[], Object>> resultQueue;
+    /**
+     * Each watermark count map contains:
+     * <ul>
+     *     <li>key: watermark timestamp or {@link Long#MIN_VALUE} for items before first watermark</li>
+     *     <li>value: number of items received _after_ this WM and _before_ next WM (if any)
+     *     that are still being processed.</li>
+     * </ul>
+     */
     // TODO we can use more efficient structure: we only remove from the beginning and add to the end
     @SuppressWarnings("unchecked")
     private SortedMap<Long, Integer>[] watermarkCounts = new SortedMap[0];
+    /**
+     * Current in-flight items.
+     * <p>
+     * Invariants:
+     * <ol>
+     *     <li>for each key, value > 0. Finished items are immediately removed
+     *     <li>sum of all values in {@link #inFlightItems} is equal to
+     *     {@link #asyncOpsCounter}, and to the sum of values in every map in the
+     *     {@link #watermarkCounts} array.
+     * </ol>
+     * <p>
+     * This is {@link IdentityHashMap} but after restoring from snapshot objects
+     * that used single shared instance (e.g. {@link String})
+     * may no longer be the same shared instance.
+     */
     private final Map<T, Integer> inFlightItems = new IdentityHashMap<>();
     private Traverser<Object> currentTraverser = Traversers.empty();
     @SuppressWarnings("rawtypes")
@@ -110,9 +136,23 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
      * WM key.
      */
     private byte[] wmKeysInv = {};
+    /**
+     * Last received watermark for given key index (wmIndex).
+     * Copy-on-write.
+     */
     private long[] lastReceivedWms = {};
     private long[] lastEmittedWms = {};
     private long[] minRestoredWms = {};
+    /**
+     * Number of submitted asynchronous operations that have not yet finished.
+     * <p>
+     * Invariants:
+     * <ol>
+     *     <li>asyncOpsCounter >= 0</li>
+     *     <li>asyncOpsCounter <= maxConcurrentOps</li>
+     *     <li>see invariant in {@link #inFlightItems}</li>
+     * </ol>
+     */
     private int asyncOpsCounter;
 
     /** Temporary collection for restored objects during snapshot restore. */
@@ -194,6 +234,7 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
             return true;
         }
         if (allEmpty(watermarkCounts)) {
+            // Emit watermark eagerly if there are no pending items to wait for.
             if (!tryEmit(watermark)) {
                 return false;
             }
@@ -201,7 +242,7 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
         }
         // We must not mutate lastReceivedWms, because we share the instance in the inFlightItems - we would
         // mutate the instance they have. Instead, we copy and mutate it.
-        lastReceivedWms = Arrays.copyOf(lastReceivedWms, Math.max(wmIndex + 1, lastReceivedWms.length));
+        lastReceivedWms = lastReceivedWms.clone();
         lastReceivedWms[wmIndex] = watermark.timestamp();
         return true;
     }
@@ -239,8 +280,12 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
 
             watermarkCounts = Arrays.copyOf(watermarkCounts, newLength);
             watermarkCounts[wmIndex] = new TreeMap<>();
-            if (inFlightItems.size() > 0) {
-                watermarkCounts[wmIndex].put(Long.MIN_VALUE, inFlightItems.size());
+            if (asyncOpsCounter > 0) {
+                // This is the first time we have seen this watermark key.
+                // Current in-flight items were received before any watermark for this key.
+                // Note that the same item can be processed multiple times
+                // if it appeared many times in the inbox.
+                watermarkCounts[wmIndex].put(Long.MIN_VALUE, asyncOpsCounter);
             }
 
             minRestoredWms = Arrays.copyOf(minRestoredWms, newLength);
@@ -289,7 +334,7 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         if (key instanceof BroadcastKey) {
             assert ((BroadcastKey) key).key().equals(Keys.LAST_RECEIVED_WMS) : "Unexpected key: " + key;
-            // we restart at the oldest WM any instance was at at the time of snapshot
+            // we restart at the oldest WM any instance was at the time of snapshot
             for (Entry<Byte, Long> en : ((Map<Byte, Long>) value).entrySet()) {
                 int wmIndex = getWmIndex(en.getKey());
                 minRestoredWms[wmIndex] = Math.min(minRestoredWms[wmIndex], en.getValue());
@@ -300,6 +345,7 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
         Tuple2<T, Integer> value1 = (Tuple2<T, Integer>) value;
         // we can't apply backpressure here, we have to store the items and execute them later
         assert value1.f0() != null && value1.f1() != null;
+        // replay each item appropriate number of times, order does not matter
         for (int i = 0; i < value1.f1(); i++) {
             restoredObjects.add(value1.f0());
             LoggingUtil.logFinest(getLogger(), "Restored: %s", value1.f0());
@@ -321,8 +367,8 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
             return true;
         } else {
             tryFlushQueue();
+            return false;
         }
-        return false;
     }
 
     /**
@@ -344,10 +390,12 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
             }
             Tuple3<T, long[], Object> tuple = resultQueue.poll();
             if (tuple == null) {
-                return allEmpty(watermarkCounts);
+                // done if there are no ready and no in-flight items
+                return asyncOpsCounter == 0;
             }
+            assert asyncOpsCounter > 0;
             asyncOpsCounter--;
-            Integer inFlightItemsCount = inFlightItems.merge(tuple.f0(), -1, (o, n) -> o == 1 ? null : o + n);
+            Integer inFlightItemsCount = inFlightItems.compute(tuple.f0(), (k, v) -> v == 1 ? null : v - 1);
             assert inFlightItemsCount == null || inFlightItemsCount > 0 : "inFlightItemsCount=" + inFlightItemsCount;
             // the result is either Throwable or Traverser<Object>
             if (tuple.f2() instanceof Throwable) {
@@ -370,6 +418,9 @@ public final class AsyncTransformUsingServiceUnorderedP<C, S, T, K, R> extends A
                     continue;
                 }
                 long wmToEmit = Long.MIN_VALUE;
+                // The first watermark with non-zero counter is ready to be emitted:
+                // - all items before it have completed (and can be removed from watermarkCount map)
+                // - there are in-flight items received after it, so the next watermark is not ready
                 for (Iterator<Entry<Long, Integer>> it = watermarkCount.entrySet().iterator(); it.hasNext(); ) {
                     Entry<Long, Integer> entry = it.next();
                     if (entry.getValue() != 0) {

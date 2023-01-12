@@ -222,6 +222,7 @@ public final class UnsupportedOperationVisitor extends SqlBasicVisitor<Void> {
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.EXTRACT);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TO_TIMESTAMP_TZ);
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TO_EPOCH_MILLIS);
+        SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.TO_CHAR);
 
         // Windowing
         SUPPORTED_OPERATORS.add(HazelcastSqlOperatorTable.IMPOSE_ORDER);
