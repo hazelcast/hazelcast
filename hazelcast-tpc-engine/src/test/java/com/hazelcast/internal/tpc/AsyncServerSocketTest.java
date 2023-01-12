@@ -20,14 +20,18 @@ import com.hazelcast.internal.tpc.nio.NioAsyncServerSocketTest;
 import com.hazelcast.internal.tpc.util.JVM;
 import org.junit.After;
 import org.junit.Test;
+import org.junit.function.ThrowingRunnable;
 
 import java.io.Closeable;
+import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 import static com.hazelcast.internal.tpc.util.CloseUtil.closeAllQuietly;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
 
@@ -50,7 +54,14 @@ public abstract class AsyncServerSocketTest {
     }
 
     @Test
-    public void receiveBufferSize() {
+    public void test_construction() {
+        Eventloop eventloop = createEventloop();
+        AsyncServerSocket socket = createAsyncServerSocket(eventloop);
+        assertSame(eventloop, socket.getEventloop());
+    }
+
+    @Test
+    public void test_receiveBufferSize() {
         Eventloop eventloop = createEventloop();
         AsyncServerSocket socket = createAsyncServerSocket(eventloop);
         int size = 64 * 1024;
@@ -59,7 +70,23 @@ public abstract class AsyncServerSocketTest {
     }
 
     @Test
-    public void reuseAddress() {
+    public void test_setReceiveBufferSize_whenIOException() {
+        Eventloop eventloop = createEventloop();
+        AsyncServerSocket socket = createAsyncServerSocket(eventloop);
+        socket.close();
+        assertThrows(UncheckedIOException.class, () -> socket.setReceiveBufferSize(64*1024));
+    }
+
+    @Test
+    public void test_getReceiveBufferSize_whenIOException() {
+        Eventloop eventloop = createEventloop();
+        AsyncServerSocket socket = createAsyncServerSocket(eventloop);
+        socket.close();
+        assertThrows(UncheckedIOException.class, socket::getReceiveBufferSize);
+    }
+
+    @Test
+    public void test_reuseAddress() {
         Eventloop eventloop = createEventloop();
         AsyncServerSocket socket = createAsyncServerSocket(eventloop);
         socket.setReuseAddress(true);
@@ -69,6 +96,22 @@ public abstract class AsyncServerSocketTest {
         assertFalse(socket.isReuseAddress());
     }
 
+    @Test
+    public void test_setReuseAddress_whenIOException() {
+        Eventloop eventloop = createEventloop();
+        AsyncServerSocket socket = createAsyncServerSocket(eventloop);
+        socket.close();
+        assertThrows(UncheckedIOException.class, () -> socket.setReuseAddress(true));
+    }
+
+    @Test
+    public void test_isReuseAddress_whenIOException() {
+        Eventloop eventloop = createEventloop();
+        AsyncServerSocket socket = createAsyncServerSocket(eventloop);
+        socket.close();
+        assertThrows(UncheckedIOException.class, socket::isReuseAddress);
+    }
+
     private void assumeIfNioThenJava11Plus() {
         if (this instanceof NioAsyncServerSocketTest) {
             assumeTrue(JVM.getMajorVersion() >= 11);
@@ -76,7 +119,7 @@ public abstract class AsyncServerSocketTest {
     }
 
     @Test
-    public void reusePort() {
+    public void test_reusePort() {
         assumeIfNioThenJava11Plus();
 
         Eventloop eventloop = createEventloop();
@@ -86,5 +129,27 @@ public abstract class AsyncServerSocketTest {
 
         socket.setReusePort(false);
         assertFalse(socket.isReusePort());
+    }
+
+    @Test
+    public void test_setReusePort_whenException() {
+        assumeIfNioThenJava11Plus();
+
+        Eventloop eventloop = createEventloop();
+        AsyncServerSocket socket = createAsyncServerSocket(eventloop);
+        socket.close();
+
+        assertThrows(UncheckedIOException.class, () -> socket.setReusePort(true));
+    }
+
+    @Test
+    public void test_isReusePort_whenException() {
+        assumeIfNioThenJava11Plus();
+
+        Eventloop eventloop = createEventloop();
+        AsyncServerSocket socket = createAsyncServerSocket(eventloop);
+        socket.close();
+
+        assertThrows(UncheckedIOException.class, socket::isReusePort);
     }
 }

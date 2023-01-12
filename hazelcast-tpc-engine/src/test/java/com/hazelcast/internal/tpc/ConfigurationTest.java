@@ -19,23 +19,23 @@ package com.hazelcast.internal.tpc;
 import org.junit.Test;
 
 
-public class TpcEngine_ConfigurationTest {
+public class ConfigurationTest {
 
     @Test(expected = NullPointerException.class)
     public void setEventLoopConfiguration_whenNull() {
-        TpcEngine.Configuration configuration = new TpcEngine.Configuration();
-        configuration.setEventloopConfiguration(null);
+        Configuration configuration = new Configuration();
+        configuration.setEventloopBuilder(null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void setEventLoopConfiguration_whenZero() {
-        TpcEngine.Configuration configuration = new TpcEngine.Configuration();
+        Configuration configuration = new Configuration();
         configuration.setEventloopCount(0);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void setEventLoopConfiguration_whenNegative() {
-        TpcEngine.Configuration configuration = new TpcEngine.Configuration();
+        Configuration configuration = new Configuration();
         configuration.setEventloopCount(-1);
     }
 }

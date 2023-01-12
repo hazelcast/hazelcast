@@ -14,15 +14,21 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpc.nio;
+package com.hazelcast.internal.tpc.util;
 
-import com.hazelcast.internal.tpc.Eventloop;
-import com.hazelcast.internal.tpc.Eventloop_Configuration_Test;
+import org.junit.Test;
 
-public class NioEventloop_Configuration_Test extends Eventloop_Configuration_Test {
+import static com.hazelcast.internal.tpc.util.ExceptionUtil.ignore;
 
-    @Override
-    public Eventloop.Configuration create() {
-        return new NioEventloop.NioConfiguration();
+public class ExceptionUtilTest {
+
+    @Test
+    public void test_ignore(){
+        ignore(new Exception());
+    }
+
+    @Test
+    public void test_ignore_whenNull(){
+        ignore(null);
     }
 }

@@ -62,7 +62,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
             this.eventloop = eventloop;
             this.eventloopThread = eventloop.eventloopThread();
             this.selector = eventloop.selector;
-            if (!eventloop.registerClosable(this)) {
+            if (!eventloop.registerCloseable(this)) {
                 close();
                 throw new IllegalStateException(eventloop + " is not running");
             }
@@ -86,15 +86,6 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     @Override
     public NioEventloop getEventloop() {
         return eventloop;
-    }
-
-    /**
-     * Returns the underlying {@link ServerSocketChannel}.
-     *
-     * @return the ServerSocketChannel.
-     */
-    public ServerSocketChannel serverSocketChannel() {
-        return serverSocketChannel;
     }
 
     @Override
@@ -243,6 +234,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
             SocketChannel socketChannel = serverSocketChannel.accept();
             NioAsyncSocket socket = new NioAsyncSocket(socketChannel);
 
+            accepted.inc();
             consumer.accept(socket);
 
             if (logger.isInfoEnabled()) {

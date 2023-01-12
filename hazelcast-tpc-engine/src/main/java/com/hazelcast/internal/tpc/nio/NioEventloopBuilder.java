@@ -14,25 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpc;
+package com.hazelcast.internal.tpc.nio;
 
-import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
+import com.hazelcast.internal.tpc.EventloopBuilder;
+import com.hazelcast.internal.tpc.Eventloop;
+import com.hazelcast.internal.tpc.EventloopType;
 
 /**
- * A scheduler that doesn't do anything.
+ * Contains the configuration for the {@link NioEventloop}.
  */
-public class NopScheduler implements Scheduler {
+public class NioEventloopBuilder extends EventloopBuilder {
 
-    @Override
-    public void init(Eventloop eventloop) {
+    public NioEventloopBuilder() {
+        super(EventloopType.NIO);
     }
 
     @Override
-    public boolean tick() {
-        return false;
-    }
-
-    @Override
-    public void schedule(IOBuffer task) {
+    public Eventloop create() {
+        return new NioEventloop(this);
     }
 }

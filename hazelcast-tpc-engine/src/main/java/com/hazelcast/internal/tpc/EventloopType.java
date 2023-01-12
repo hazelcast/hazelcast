@@ -16,23 +16,20 @@
 
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
-
 /**
- * A scheduler that doesn't do anything.
+ * The Type of {@link Eventloop}.
  */
-public class NopScheduler implements Scheduler {
+public enum EventloopType {
 
-    @Override
-    public void init(Eventloop eventloop) {
-    }
+    NIO, IOURING;
 
-    @Override
-    public boolean tick() {
-        return false;
-    }
-
-    @Override
-    public void schedule(IOBuffer task) {
+    public static EventloopType fromString(String type) {
+        if (type.equalsIgnoreCase("io_uring") || type.equalsIgnoreCase("iouring")) {
+            return IOURING;
+        } else if (type.equalsIgnoreCase("nio")) {
+            return NIO;
+        } else {
+            throw new IllegalArgumentException("Unrecognized eventloop type [" + type + ']');
+        }
     }
 }
