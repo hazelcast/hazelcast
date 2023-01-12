@@ -35,7 +35,7 @@ public abstract class EventloopTest {
 
     public abstract Eventloop createEventloop();
 
-    public abstract Eventloop.Type getType();
+    public abstract EventloopType getType();
 
     @Test(expected = NullPointerException.class)
     public void test_offer_Runnable_whenNull() {
