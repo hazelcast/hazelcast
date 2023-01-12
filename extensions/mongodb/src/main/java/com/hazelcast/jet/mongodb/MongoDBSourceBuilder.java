@@ -30,6 +30,7 @@ import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -231,7 +232,7 @@ public final class MongoDBSourceBuilder {
          * @return this builder
          */
         @Override @Nonnull
-        public Batch<T> database(String database) {
+        public Batch<T> database(@Nullable String database) {
             return (Batch<T>) super.database(database);
         }
 
@@ -252,7 +253,7 @@ public final class MongoDBSourceBuilder {
          * @return this builder
          */
         @Override @Nonnull
-        public Batch<Document> collection(String collectionName) {
+        public Batch<Document> collection(@Nullable String collectionName) {
             return (Batch<Document>) super.collection(collectionName, Document.class);
         }
 
@@ -283,7 +284,7 @@ public final class MongoDBSourceBuilder {
          */
         @Override @Nonnull
         @SuppressWarnings("unchecked")
-        public <T_NEW> Batch<T_NEW> collection(String collectionName, Class<T_NEW> mongoType) {
+        public <T_NEW> Batch<T_NEW> collection(String collectionName, @Nonnull Class<T_NEW> mongoType) {
             Batch<T_NEW> newThis = (Batch<T_NEW>) this;
             newThis.collection(collectionName);
             newThis.mapFn = toClass(mongoType);
@@ -375,7 +376,7 @@ public final class MongoDBSourceBuilder {
          * @return this builder
          */
         @Nonnull
-        public Stream<T> database(@Nonnull String database) {
+        public Stream<T> database(@Nullable String database) {
             databaseName = database;
             return this;
         }
@@ -397,7 +398,7 @@ public final class MongoDBSourceBuilder {
          * @return this builder
          */
         @Nonnull
-        public Stream<Document> collection(@Nonnull String collectionName) {
+        public Stream<Document> collection(@Nullable String collectionName) {
             return collection(collectionName, Document.class);
         }
 
@@ -428,7 +429,7 @@ public final class MongoDBSourceBuilder {
          */
         @Nonnull
         @SuppressWarnings("unchecked")
-        public <T_NEW> Stream<T_NEW> collection(String collectionName, Class<T_NEW> mongoType) {
+        public <T_NEW> Stream<T_NEW> collection(@Nullable String collectionName, @Nonnull Class<T_NEW> mongoType) {
             Stream<T_NEW> newThis = (Stream<T_NEW>) this;
             newThis.collectionName = collectionName;
             newThis.mapFn = streamToClass(mongoType);
@@ -443,9 +444,7 @@ public final class MongoDBSourceBuilder {
          */
         @Nonnull
         @SuppressWarnings("unchecked")
-        public <T_NEW> Stream<T_NEW> mapFn(
-                @Nonnull FunctionEx<ChangeStreamDocument<Document>, T_NEW> mapFn
-        ) {
+        public <T_NEW> Stream<T_NEW> mapFn(@Nonnull FunctionEx<ChangeStreamDocument<Document>, T_NEW> mapFn) {
             checkSerializable(mapFn, "mapFn");
             Stream<T_NEW> newThis = (Stream<T_NEW>) this;
             newThis.mapFn = mapFn;
@@ -461,9 +460,7 @@ public final class MongoDBSourceBuilder {
          * @return this builder
          */
         @Nonnull
-        public Stream<T> startAtOperationTime(
-                @Nonnull BsonTimestamp startAtOperationTime
-        ) {
+        public Stream<T> startAtOperationTime(@Nonnull BsonTimestamp startAtOperationTime) {
             this.startAtOperationTime = startAtOperationTime.getValue();
             return this;
         }

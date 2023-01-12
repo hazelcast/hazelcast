@@ -32,10 +32,13 @@ import javax.annotation.Nonnull;
 
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkState;
+import static com.hazelcast.jet.impl.util.Util.checkNonNullAndSerializable;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 
 /**
  * See {@link MongoDBSinks#builder}
+ *
+ * @since 5.3
  *
  * @param <T> type of the items the sink will accept
  */
@@ -64,16 +67,16 @@ public final class MongoDBSinkBuilder<T> {
             @Nonnull Class<T> documentClass,
             @Nonnull SupplierEx<MongoClient> connectionSupplier
     ) {
-        this.documentClass = documentClass;
-        checkSerializable(connectionSupplier, "connectionSupplier");
-        this.name = name;
-        this.connectionSupplier = connectionSupplier;
+        this.connectionSupplier = checkNonNullAndSerializable(connectionSupplier, "connectionSupplier");
+        this.documentClass = checkNotNull(documentClass, "document class cannot be null");
+        this.name = checkNotNull(name, "sink name cannot be null");
     }
 
     /**
      * @param selectDatabaseNameFn selects database name for each item individually
      * @param selectCollectionNameFn selects collection name for each item individually
      */
+    @Nonnull
     public MongoDBSinkBuilder<T> into(
             @Nonnull FunctionEx<T, String> selectDatabaseNameFn,
             @Nonnull FunctionEx<T, String> selectCollectionNameFn
@@ -89,6 +92,7 @@ public final class MongoDBSinkBuilder<T> {
      * @param databaseName database name to which objects will be inserted/updated.
      * @param collectionName collection name to which objects will be inserted/updated.
      */
+    @Nonnull
     public MongoDBSinkBuilder<T> into(@Nonnull String databaseName, @Nonnull String collectionName) {
         checkNotNull(databaseName, "databaseName cannot be null");
         checkNotNull(collectionName, "collectionName cannot be null");
@@ -100,6 +104,7 @@ public final class MongoDBSinkBuilder<T> {
     /**
      * See {@link SinkBuilder#preferredLocalParallelism(int)}.
      */
+    @Nonnull
     public MongoDBSinkBuilder<T> preferredLocalParallelism(int preferredLocalParallelism) {
         this.preferredLocalParallelism = Vertex.checkLocalParallelism(preferredLocalParallelism);
         return this;
@@ -109,8 +114,9 @@ public final class MongoDBSinkBuilder<T> {
      * Provides an option to adjust options used in replace action.
      * By default {@linkplain ReplaceOptions#upsert(boolean) upsert} is only enabled.
      */
-    public MongoDBSinkBuilder<T> withCustomReplaceOptions(ConsumerEx<ReplaceOptions> adjustConsumer) {
-        this.replaceOptionsChanger = checkSerializable(adjustConsumer, "adjustConsumer");
+    @Nonnull
+    public MongoDBSinkBuilder<T> withCustomReplaceOptions(@Nonnull ConsumerEx<ReplaceOptions> adjustConsumer) {
+        this.replaceOptionsChanger = checkNonNullAndSerializable(adjustConsumer, "adjustConsumer");
         return this;
     }
 
@@ -119,6 +125,7 @@ public final class MongoDBSinkBuilder<T> {
      * @param fieldName field name in the collection, that will be used for comparison
      * @param documentIdentityFn function that extracts ID from given item; will be compared against {@code fieldName}
      */
+    @Nonnull
     public MongoDBSinkBuilder<T> identifyDocumentBy(
             @Nonnull String fieldName,
             @Nonnull FunctionEx<T, Object> documentIdentityFn) {
@@ -133,6 +140,7 @@ public final class MongoDBSinkBuilder<T> {
      * Creates and returns the MongoDB {@link Sink} with the components you
      * supplied to this builder.
      */
+    @Nonnull
     public Sink<T> build() {
         checkNotNull(connectionSupplier, "connectionSupplier must be set");
         checkNotNull(documentIdentityFn, "documentIdentityFn must be set");
