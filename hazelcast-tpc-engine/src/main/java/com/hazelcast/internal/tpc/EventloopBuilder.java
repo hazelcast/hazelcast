@@ -138,10 +138,10 @@ public abstract class EventloopBuilder {
     }
 
     /**
-     * Sets the capacity of the local run queue.
+     * Sets the capacity of the local task queue.
      *
      * @param localTaskQueueCapacity the capacity
-     * @throws IllegalArgumentException if localRunQueueCapacity not positive.
+     * @throws IllegalArgumentException if localTaskQueueCapacity not positive.
      */
     public void setLocalTaskQueueCapacity(int localTaskQueueCapacity) {
         this.localTaskQueueCapacity = checkPositive(localTaskQueueCapacity, "localTaskQueueCapacity");
@@ -151,7 +151,7 @@ public abstract class EventloopBuilder {
      * Sets the capacity of the scheduled task queue.
      *
      * @param concurrentTaskQueueCapacity the capacity
-     * @throws IllegalArgumentException if scheduledTaskQueueCapacity not positive.
+     * @throws IllegalArgumentException if concurrentTaskQueueCapacity not positive.
      */
     public void setConcurrentTaskQueueCapacity(int concurrentTaskQueueCapacity) {
         this.concurrentTaskQueueCapacity = checkPositive(concurrentTaskQueueCapacity, "concurrentTaskQueueCapacity");
