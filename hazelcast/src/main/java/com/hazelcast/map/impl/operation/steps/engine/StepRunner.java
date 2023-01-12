@@ -99,10 +99,24 @@ public class StepRunner extends Offload
         return CURRENTLY_EXECUTING_ON_PARTITION_THREAD.get();
     }
 
-    private void addOpToOffloadedOps(MapOperation op) {
-        op.setOperationResponseHandler(new OffloadedStepResponseHandler(op.getOperationResponseHandler()));
-        offloadedOperations.add(op);
-        op.getRecordStore().incMapStoreOffloadedOperationsCount();
+    private boolean addOpToOffloadedOps(MapOperation op) {
+        if (offloadedOperations.add(op)) {
+            op.getRecordStore().incMapStoreOffloadedOperationsCount();
+            return true;
+        }
+
+        return false;
+    }
+
+    private void setSteppedOpResponseHandler() {
+        MapOperation op = stepSupplier.getOperation();
+        OperationResponseHandler current = op.getOperationResponseHandler();
+
+        if (current instanceof SteppedOpResponseHandler) {
+            return;
+        }
+
+        op.setOperationResponseHandler(new SteppedOpResponseHandler(current));
     }
 
     private boolean isHeadOp() {
@@ -116,7 +130,8 @@ public class StepRunner extends Offload
      * has a {@link #maxRunNanos} upper limit.
      */
     @Override
-    @SuppressWarnings("checkstyle:innerassignment")
+    @SuppressWarnings({"checkstyle:innerassignment",
+            "checkstyle:CyclomaticComplexity"})
     public void run() {
         final boolean runningOnPartitionThread = isRunningOnPartitionThread();
         final long start = System.nanoTime();
@@ -140,6 +155,17 @@ public class StepRunner extends Offload
                         operationExecutor.execute(this);
                         return;
                     }
+                }
+
+                // If an already offloaded operation is retried on
+                // member left, response handler is re-set by retry
+                // mechanism. But this new response handler is not the
+                // same response handler expected by offload mechanism.
+                // As a consequence of this, offloaded operation cannot
+                // be removed from offload-queue. To prevent this issue
+                // we set response handler before running a step.
+                if (runningOnPartitionThread) {
+                    setSteppedOpResponseHandler();
                 }
 
                 // Try to run this step in this thread, otherwise
@@ -232,15 +258,18 @@ public class StepRunner extends Offload
     }
 
     /**
-     * After response is sent for an offloaded operation,
-     * this callback removes offloaded operation from
-     * the {@link #offloadedOperations} registry.
+     * Response handler of an operation which
+     * is modeled as a chain of {@link Step}
+     * <p>
+     * This callback removes the stepped operation
+     * from {@link #offloadedOperations} registry then
+     * calls delegate operation response handler.
      */
-    private class OffloadedStepResponseHandler implements OperationResponseHandler {
+    private class SteppedOpResponseHandler implements OperationResponseHandler {
 
         private OperationResponseHandler delegate;
 
-        OffloadedStepResponseHandler(OperationResponseHandler delegate) {
+        SteppedOpResponseHandler(OperationResponseHandler delegate) {
             this.delegate = delegate;
         }
 
