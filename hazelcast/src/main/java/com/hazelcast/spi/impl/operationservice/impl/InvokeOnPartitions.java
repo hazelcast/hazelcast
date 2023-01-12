@@ -16,8 +16,9 @@
 
 package com.hazelcast.spi.impl.operationservice.impl;
 
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.cluster.Address;
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationexecutor.impl.PartitionOperationThread;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.impl.operationservice.OperationFactory;
@@ -33,9 +34,9 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 import java.util.function.BiConsumer;
 
-import static com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareFactoryAccessor.extractPartitionAware;
 import static com.hazelcast.internal.util.CollectionUtil.toIntArray;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
+import static com.hazelcast.spi.impl.operationservice.impl.operations.PartitionAwareFactoryAccessor.extractPartitionAware;
 
 /**
  * Executes an operation on a set of partitions.
@@ -60,6 +61,7 @@ final class InvokeOnPartitions {
     private final AtomicReferenceArray<Object> partitionResults;
     private final AtomicInteger latch;
     private final CompletableFuture future;
+    private final ExecutionService executionService;
     private boolean invoked;
 
     InvokeOnPartitions(OperationServiceImpl operationService, String serviceName, OperationFactory operationFactory,
@@ -78,6 +80,7 @@ final class InvokeOnPartitions {
         this.partitionResults = new AtomicReferenceArray<Object>(partitionCount);
         this.latch = new AtomicInteger(actualPartitionCount);
         this.future = new CompletableFuture();
+        this.executionService = operationService.node.getNodeEngine().getExecutionService();
     }
 
     /**
@@ -118,7 +121,8 @@ final class InvokeOnPartitions {
                     .setTryCount(TRY_COUNT)
                     .setTryPauseMillis(TRY_PAUSE_MILLIS)
                     .invoke()
-                    .whenCompleteAsync(new FirstAttemptExecutionCallback(partitions));
+                    .whenCompleteAsync(new FirstAttemptExecutionCallback(partitions),
+                            executionService.getExecutor(ExecutionService.ASYNC_EXECUTOR));
         }
     }
 
@@ -132,16 +136,16 @@ final class InvokeOnPartitions {
         }
 
         operationService.createInvocationBuilder(serviceName, operation, partitionId)
-                        .invoke()
-                        .whenCompleteAsync((response, throwable) -> {
-                            if (throwable == null) {
-                                setPartitionResult(partitionId, response);
-                                decrementLatchAndHandle(1);
-                            } else {
-                                setPartitionResult(partitionId, throwable);
-                                decrementLatchAndHandle(1);
-                            }
-                        });
+                .invoke()
+                .whenCompleteAsync((response, throwable) -> {
+                    if (throwable == null) {
+                        setPartitionResult(partitionId, response);
+                        decrementLatchAndHandle(1);
+                    } else {
+                        setPartitionResult(partitionId, throwable);
+                        decrementLatchAndHandle(1);
+                    }
+                });
     }
 
     private void decrementLatchAndHandle(int count) {

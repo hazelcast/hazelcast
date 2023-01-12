@@ -1147,6 +1147,9 @@ public abstract class AbstractInvocationFuture<V> extends InternalCompletableFut
      * is the response.
      */
     private Object registerWaiter(Object waiter, Executor executor) {
+        if (executor != null && executor.toString().contains("FORBIDDEN")) {
+            Thread.dumpStack();
+        }
         assert !(waiter instanceof UnblockableThread) : "Waiting for response on this thread is illegal";
         WaitNode waitNode = null;
         for (; ; ) {

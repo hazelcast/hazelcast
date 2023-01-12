@@ -56,14 +56,23 @@ public final class ConcurrencyUtil {
         ILogger logger = Logger.getLogger(ConcurrencyUtil.class);
         Executor asyncExecutor;
         if (ForkJoinPool.getCommonPoolParallelism() > 1) {
-            asyncExecutor = command -> {
-                String stackTrace = getStackTrace();
-                logger.info(stackTrace);
-                ForkJoinPool.commonPool().execute(command);
+            asyncExecutor = new Executor() {
+                @Override
+                public void execute(Runnable command) {
+                    String stackTrace = getStackTrace();
+                    logger.info(stackTrace);
+                    ForkJoinPool.commonPool().execute(command);
+                }
+
+                @Override
+                public String toString() {
+                    return "FORBIDDEN";
+                }
             };
         } else {
             asyncExecutor = command -> new Thread(command).start();
         }
+
         defaultAsyncExecutor = asyncExecutor;
     }
 

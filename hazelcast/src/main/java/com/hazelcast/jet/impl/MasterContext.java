@@ -26,6 +26,7 @@ import com.hazelcast.jet.impl.operation.StartExecutionOperation;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.InternalCompletableFuture;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
@@ -56,8 +57,8 @@ import static java.util.stream.Collectors.toConcurrentMap;
 /**
  * Data pertaining to single job on master member. There's one instance per job,
  * shared between multiple executions. It has 2 subcomponents:<ul>
- *      <li>{@link MasterJobContext}
- *      <li>{@link MasterSnapshotContext}
+ * <li>{@link MasterJobContext}
+ * <li>{@link MasterSnapshotContext}
  * </ul>
  */
 public class MasterContext {
@@ -313,6 +314,6 @@ public class MasterContext {
                         .map(e -> e.getValue() == NULL_OBJECT ? entry(e.getKey(), null) : e)
                         .collect(Collectors.toList()));
             }
-        }));
+        }), nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR));
     }
 }

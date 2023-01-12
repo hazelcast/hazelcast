@@ -19,6 +19,7 @@ package com.hazelcast.spi.impl;
 import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.serialization.SerializationService;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.nio.serialization.HazelcastSerializationException;
 
 import javax.annotation.Nonnull;
@@ -99,7 +100,8 @@ public class DelegatingCompletableFuture<V> extends InternalCompletableFuture<V>
         this.serializationService = (InternalSerializationService) serializationService;
         this.result = result;
         if (listenFutureCompletion) {
-            this.future.whenComplete((v, t) -> completeSuper(v, (Throwable) t));
+            // TODO use another executor
+            this.future.whenCompleteAsync((v, t) -> completeSuper(v, (Throwable) t), ConcurrencyUtil.CALLER_RUNS);
         }
     }
 

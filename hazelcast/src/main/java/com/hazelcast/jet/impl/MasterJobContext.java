@@ -132,7 +132,8 @@ public class MasterJobContext {
 
 
     private static final int COLLECT_METRICS_RETRY_DELAY_MILLIS = 100;
-    private static final Runnable NO_OP = () -> { };
+    private static final Runnable NO_OP = () -> {
+    };
 
     private final MasterContext mc;
     private final ILogger logger;
@@ -207,46 +208,46 @@ public class MasterJobContext {
         MembersView membersView = Util.getMembersView(mc.nodeEngine());
 
         mc.coordinationService()
-          .submitToCoordinatorThread(() -> {
-              try {
-                  executionStartTime = System.currentTimeMillis();
-                  JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
-                  jobExecRec.markExecuted();
-                  DAG dag = resolveDag(executionIdSupplier);
-                  if (dag == null) {
-                      return;
-                  }
-                  // must call this before rewriteDagWithSnapshotRestore()
-                  String dotRepresentation = dag.toDotString(defaultParallelism, defaultQueueSize);
-                  long snapshotId = jobExecRec.snapshotId();
-                  String snapshotName = mc.jobConfig().getInitialSnapshotName();
-                  String mapName =
-                          snapshotId >= 0 ? jobExecRec.successfulSnapshotDataMapName(mc.jobId())
-                                  : snapshotName != null ? EXPORTED_SNAPSHOTS_PREFIX + snapshotName
-                                  : null;
-                  if (mapName != null) {
-                      rewriteDagWithSnapshotRestore(dag, snapshotId, mapName, snapshotName);
-                  } else {
-                      logger.info("Didn't find any snapshot to restore for " + mc.jobIdString());
-                  }
-                  logger.info("Start executing " + mc.jobIdString()
-                          + ", execution graph in DOT format:\n" + dotRepresentation
-                          + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.");
-                  logger.fine("Building execution plan for " + mc.jobIdString());
+                .submitToCoordinatorThread(() -> {
+                    try {
+                        executionStartTime = System.currentTimeMillis();
+                        JobExecutionRecord jobExecRec = mc.jobExecutionRecord();
+                        jobExecRec.markExecuted();
+                        DAG dag = resolveDag(executionIdSupplier);
+                        if (dag == null) {
+                            return;
+                        }
+                        // must call this before rewriteDagWithSnapshotRestore()
+                        String dotRepresentation = dag.toDotString(defaultParallelism, defaultQueueSize);
+                        long snapshotId = jobExecRec.snapshotId();
+                        String snapshotName = mc.jobConfig().getInitialSnapshotName();
+                        String mapName =
+                                snapshotId >= 0 ? jobExecRec.successfulSnapshotDataMapName(mc.jobId())
+                                        : snapshotName != null ? EXPORTED_SNAPSHOTS_PREFIX + snapshotName
+                                        : null;
+                        if (mapName != null) {
+                            rewriteDagWithSnapshotRestore(dag, snapshotId, mapName, snapshotName);
+                        } else {
+                            logger.info("Didn't find any snapshot to restore for " + mc.jobIdString());
+                        }
+                        logger.info("Start executing " + mc.jobIdString()
+                                + ", execution graph in DOT format:\n" + dotRepresentation
+                                + "\nHINT: You can use graphviz or http://viz-js.com to visualize the printed graph.");
+                        logger.fine("Building execution plan for " + mc.jobIdString());
 
-                  createExecutionPlans(dag, membersView)
-                          .thenCompose(plans -> coordinator.submitToCoordinatorThread(
-                                  () -> initExecution(membersView, plans)
-                          ))
-                          .whenComplete((r, e) -> {
-                              if (e != null) {
-                                  finalizeJob(peel(e));
-                              }
-                          });
-              } catch (Throwable e) {
-                  finalizeJob(e);
-              }
-          });
+                        createExecutionPlans(dag, membersView)
+                                .thenCompose(plans -> coordinator.submitToCoordinatorThread(
+                                        () -> initExecution(membersView, plans)
+                                ))
+                                .whenComplete((r, e) -> {
+                                    if (e != null) {
+                                        finalizeJob(peel(e));
+                                    }
+                                });
+                    } catch (Throwable e) {
+                        finalizeJob(e);
+                    }
+                });
     }
 
     private CompletableFuture<Map<MemberInfo, ExecutionPlan>> createExecutionPlans(
@@ -308,7 +309,7 @@ public class MasterJobContext {
                 requestedTerminationMode = null;
             }
             ClassLoader classLoader = mc.getJetServiceBackend().getJobClassLoaderService()
-                                        .getOrCreateClassLoader(mc.jobConfig(), mc.jobId(), COORDINATOR);
+                    .getOrCreateClassLoader(mc.jobConfig(), mc.jobId(), COORDINATOR);
             DAG dag;
             JobClassLoaderService jobClassLoaderService = mc.getJetServiceBackend().getJobClassLoaderService();
             try {
@@ -337,14 +338,14 @@ public class MasterJobContext {
 
     /**
      * Returns a tuple of:<ol>
-     *     <li>a future that will be completed when the execution completes (or
-     *          a completed future, if execution is not RUNNING or STARTING)
-     *     <li>a string with a message why this call did nothing or null, if
-     *          this call actually initiated the termination
+     * <li>a future that will be completed when the execution completes (or
+     * a completed future, if execution is not RUNNING or STARTING)
+     * <li>a string with a message why this call did nothing or null, if
+     * this call actually initiated the termination
      * </ol>
      *
      * @param allowWhileExportingSnapshot if false and jobStatus is
-     *      SUSPENDED_EXPORTING_SNAPSHOT, termination will be rejected
+     *                                    SUSPENDED_EXPORTING_SNAPSHOT, termination will be rejected
      */
     @Nonnull
     Tuple2<CompletableFuture<Void>, String> requestTermination(
@@ -474,7 +475,8 @@ public class MasterJobContext {
             } else {
                 cancelExecutionInvocations(mc.jobId(), mc.executionId(), null, () ->
                         onStartExecutionComplete(error != null ? error
-                                : new IllegalStateException("Cannot execute " + mc.jobIdString() + ": status is " + status),
+                                        : new IllegalStateException("Cannot execute "
+                                        + mc.jobIdString() + ": status is " + status),
                                 emptyList())
                 );
             }
@@ -660,80 +662,81 @@ public class MasterJobContext {
 
     void finalizeJob(@Nullable Throwable failure) {
         mc.coordinationService().submitToCoordinatorThread(() -> {
-            mc.lock();
-            JobStatus status = mc.jobStatus();
-            if (status == COMPLETED || status == FAILED) {
-                logIgnoredCompletion(failure, status);
-            }
-            mc.unlock();
-          })
-          .thenComposeAsync(r -> completeVertices(failure))
-          .thenCompose(ignored -> mc.coordinationService().submitToCoordinatorThread(() -> {
-            final Runnable nonSynchronizedAction;
-            try {
-                mc.lock();
-                mc.getJetServiceBackend().getJobClassLoaderService().tryRemoveClassloadersForJob(mc.jobId(), COORDINATOR);
-
-                ActionAfterTerminate terminationModeAction = failure instanceof JobTerminateRequestedException
-                        ? ((JobTerminateRequestedException) failure).mode().actionAfterTerminate() : null;
-                mc.snapshotContext().onExecutionTerminated();
-
-                // if restart was requested, restart immediately
-                if (terminationModeAction == RESTART) {
-                    mc.setJobStatus(NOT_RUNNING);
-                    nonSynchronizedAction = () -> mc.coordinationService().restartJob(mc.jobId());
-                } else if (!isCancelled() && isRestartableException(failure) && mc.jobConfig().isAutoScaling()) {
-                    // if restart is due to a failure, schedule a restart after a delay
-                    scheduleRestart();
-                    nonSynchronizedAction = NO_OP;
-                } else if (terminationModeAction == SUSPEND
-                        || isRestartableException(failure)
-                        && !isCancelled()
-                        && !mc.jobConfig().isAutoScaling()
-                        && mc.jobConfig().getProcessingGuarantee() != NONE
-                ) {
-                    mc.setJobStatus(SUSPENDED);
-                    mc.jobExecutionRecord().setSuspended(null);
-                    nonSynchronizedAction = () -> mc.writeJobExecutionRecord(false);
-                } else if (failure != null
-                        && !isCancelled()
-                        && requestedTerminationMode != CANCEL_GRACEFUL
-                        && mc.jobConfig().isSuspendOnFailure()
-                ) {
-                    mc.setJobStatus(SUSPENDED);
-                    mc.jobExecutionRecord().setSuspended("Execution failure:\n" +
-                            ExceptionUtil.stackTraceToString(failure));
-                    nonSynchronizedAction = () -> mc.writeJobExecutionRecord(false);
-                } else {
-                    long completionTime = System.currentTimeMillis();
-                    boolean isSuccess = logExecutionSummary(failure, completionTime);
-                    mc.setJobStatus(isSuccess ? COMPLETED : FAILED);
-                    if (failure instanceof LocalMemberResetException) {
-                        logger.fine("Cancelling job " + mc.jobIdString() + " locally: member (local or remote) reset. " +
-                                "We don't delete job metadata: job will restart on majority cluster");
-                        setFinalResult(new CancellationException());
-                    } else {
-                        mc.coordinationService()
-                          .completeJob(mc, failure, completionTime)
-                          .whenComplete(withTryCatch(logger, (r, f) -> {
-                              if (f != null) {
-                                  logger.warning("Completion of " + mc.jobIdString() + " failed", f);
-                              } else {
-                                  setFinalResult(failure);
-                              }
-                          }));
+                    mc.lock();
+                    JobStatus status = mc.jobStatus();
+                    if (status == COMPLETED || status == FAILED) {
+                        logIgnoredCompletion(failure, status);
                     }
-                    nonSynchronizedAction = NO_OP;
-                }
-                // reset the state for the next execution
-                requestedTerminationMode = null;
-                executionFailureCallback = null;
-            } finally {
-                mc.unlock();
-            }
-            executionCompletionFuture.complete(null);
-            nonSynchronizedAction.run();
-        }));
+                    mc.unlock();
+                })
+                .thenComposeAsync(r -> completeVertices(failure), mc.nodeEngine().getExecutionService()
+                        .getExecutor(ExecutionService.ASYNC_EXECUTOR))
+                .thenCompose(ignored -> mc.coordinationService().submitToCoordinatorThread(() -> {
+                    final Runnable nonSynchronizedAction;
+                    try {
+                        mc.lock();
+                        mc.getJetServiceBackend().getJobClassLoaderService().tryRemoveClassloadersForJob(mc.jobId(), COORDINATOR);
+
+                        ActionAfterTerminate terminationModeAction = failure instanceof JobTerminateRequestedException
+                                ? ((JobTerminateRequestedException) failure).mode().actionAfterTerminate() : null;
+                        mc.snapshotContext().onExecutionTerminated();
+
+                        // if restart was requested, restart immediately
+                        if (terminationModeAction == RESTART) {
+                            mc.setJobStatus(NOT_RUNNING);
+                            nonSynchronizedAction = () -> mc.coordinationService().restartJob(mc.jobId());
+                        } else if (!isCancelled() && isRestartableException(failure) && mc.jobConfig().isAutoScaling()) {
+                            // if restart is due to a failure, schedule a restart after a delay
+                            scheduleRestart();
+                            nonSynchronizedAction = NO_OP;
+                        } else if (terminationModeAction == SUSPEND
+                                || isRestartableException(failure)
+                                && !isCancelled()
+                                && !mc.jobConfig().isAutoScaling()
+                                && mc.jobConfig().getProcessingGuarantee() != NONE
+                        ) {
+                            mc.setJobStatus(SUSPENDED);
+                            mc.jobExecutionRecord().setSuspended(null);
+                            nonSynchronizedAction = () -> mc.writeJobExecutionRecord(false);
+                        } else if (failure != null
+                                && !isCancelled()
+                                && requestedTerminationMode != CANCEL_GRACEFUL
+                                && mc.jobConfig().isSuspendOnFailure()
+                        ) {
+                            mc.setJobStatus(SUSPENDED);
+                            mc.jobExecutionRecord().setSuspended("Execution failure:\n" +
+                                    ExceptionUtil.stackTraceToString(failure));
+                            nonSynchronizedAction = () -> mc.writeJobExecutionRecord(false);
+                        } else {
+                            long completionTime = System.currentTimeMillis();
+                            boolean isSuccess = logExecutionSummary(failure, completionTime);
+                            mc.setJobStatus(isSuccess ? COMPLETED : FAILED);
+                            if (failure instanceof LocalMemberResetException) {
+                                logger.fine("Cancelling job " + mc.jobIdString() + " locally: member (local or remote) reset. " +
+                                        "We don't delete job metadata: job will restart on majority cluster");
+                                setFinalResult(new CancellationException());
+                            } else {
+                                mc.coordinationService()
+                                        .completeJob(mc, failure, completionTime)
+                                        .whenComplete(withTryCatch(logger, (r, f) -> {
+                                            if (f != null) {
+                                                logger.warning("Completion of " + mc.jobIdString() + " failed", f);
+                                            } else {
+                                                setFinalResult(failure);
+                                            }
+                                        }));
+                            }
+                            nonSynchronizedAction = NO_OP;
+                        }
+                        // reset the state for the next execution
+                        requestedTerminationMode = null;
+                        executionFailureCallback = null;
+                    } finally {
+                        mc.unlock();
+                    }
+                    executionCompletionFuture.complete(null);
+                    nonSynchronizedAction.run();
+                }));
     }
 
     /**
@@ -954,7 +957,7 @@ public class MasterJobContext {
             return;
         }
         Throwable firstThrowable = (Throwable) metrics.stream().map(Map.Entry::getValue)
-                                                      .filter(Throwable.class::isInstance).findFirst().orElse(null);
+                .filter(Throwable.class::isInstance).findFirst().orElse(null);
         if (firstThrowable != null) {
             clientFuture.completeExceptionally(firstThrowable);
         } else {

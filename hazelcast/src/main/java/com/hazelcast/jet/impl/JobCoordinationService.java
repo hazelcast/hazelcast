@@ -298,7 +298,7 @@ public class JobCoordinationService {
                 logger.info("Starting job " + idToString(masterContext.jobId()) + " based on submit request");
             } catch (Throwable e) {
                 jetServiceBackend.getJobClassLoaderService()
-                                 .tryRemoveClassloadersForJob(jobId, COORDINATOR);
+                        .tryRemoveClassloadersForJob(jobId, COORDINATOR);
 
                 res.completeExceptionally(e);
                 throw e;
@@ -346,11 +346,11 @@ public class JobCoordinationService {
                     scheduleJobTimeout(jobId, jobConfig.getTimeoutMillis());
 
                     return mc.getCompletionFuture()
-                      .whenComplete((r, t) -> {
-                          Object removed = lightMasterContexts.remove(jobId);
-                          assert removed instanceof LightMasterContext : "LMC not found: " + removed;
-                          unscheduleJobTimeout(jobId);
-                      });
+                            .whenComplete((r, t) -> {
+                                Object removed = lightMasterContexts.remove(jobId);
+                                assert removed instanceof LightMasterContext : "LMC not found: " + removed;
+                                unscheduleJobTimeout(jobId);
+                            });
                 }, coordinationExecutor());
     }
 
@@ -386,7 +386,8 @@ public class JobCoordinationService {
                 .collect(Collectors.toSet());
     }
 
-    @SuppressWarnings("WeakerAccess") // used by jet-enterprise
+    @SuppressWarnings("WeakerAccess")
+        // used by jet-enterprise
     MasterContext createMasterContext(JobRecord jobRecord, JobExecutionRecord jobExecutionRecord) {
         return new MasterContext(nodeEngine, this, jobRecord, jobExecutionRecord);
     }
@@ -401,8 +402,8 @@ public class JobCoordinationService {
         }
 
         return masterContexts.values()
-                             .stream()
-                             .anyMatch(ctx -> jobName.equals(ctx.jobConfig().getName()));
+                .stream()
+                .anyMatch(ctx -> jobName.equals(ctx.jobConfig().getName()));
     }
 
     public CompletableFuture<Void> prepareForPassiveClusterState() {
@@ -459,8 +460,9 @@ public class JobCoordinationService {
                 null
         );
 
-        return future
-                .thenCompose(identity()); // unwrap the inner future
+        // unwrap the inner future
+        return future.thenComposeAsync(identity(), nodeEngine.getExecutionService()
+                        .getExecutor(ExecutionService.ASYNC_EXECUTOR));
     }
 
     public CompletableFuture<Void> joinLightJob(long jobId) {
@@ -574,12 +576,12 @@ public class JobCoordinationService {
                     }
 
                     jobs.entrySet().stream()
-                        .sorted(
-                                comparing(Entry<Long, Long>::getValue)
-                                        .thenComparing(Entry::getKey)
-                                        .reversed()
-                        )
-                        .forEach(entry -> result.add(tuple2(entry.getKey(), false)));
+                            .sorted(
+                                    comparing(Entry<Long, Long>::getValue)
+                                            .thenComparing(Entry::getKey)
+                                            .reversed()
+                            )
+                            .forEach(entry -> result.add(tuple2(entry.getKey(), false)));
                 } else {
                     for (Long jobId : jobRepository.getAllJobIds()) {
                         result.add(tuple2(jobId, false));
@@ -779,11 +781,11 @@ public class JobCoordinationService {
         }
         logFine(logger, "Added a shutting-down member: %s", uuid);
         CompletableFuture[] futures = masterContexts.values().stream()
-                                                    .map(mc -> mc.jobContext().onParticipantGracefulShutdown(uuid))
-                                                    .toArray(CompletableFuture[]::new);
+                .map(mc -> mc.jobContext().onParticipantGracefulShutdown(uuid))
+                .toArray(CompletableFuture[]::new);
         // Need to do this even if futures.length == 0, we need to perform the action in whenComplete
         CompletableFuture.allOf(futures)
-                         .whenComplete(withTryCatch(logger, (r, e) -> future.complete(null)));
+                .whenComplete(withTryCatch(logger, (r, e) -> future.complete(null)));
         return future;
     }
 
@@ -842,7 +844,7 @@ public class JobCoordinationService {
             return false;
         }
         if (nodeEngine.getNode().isClusterStateManagementAutomatic()
-            && !nodeEngine.getNode().isManagedClusterStable()) {
+                && !nodeEngine.getNode().isManagedClusterStable()) {
             LoggingUtil.logFine(logger, "Not starting jobs because cluster is running in managed context "
                             + "and is not yet stable. Current cluster topology intentL %s, "
                             + "expected cluster size: %d, current: %d.",
@@ -1291,7 +1293,7 @@ public class JobCoordinationService {
     }
 
     @SuppressWarnings("WeakerAccess")
-    // used by jet-enterprise
+        // used by jet-enterprise
     void assertIsMaster(String error) {
         if (!isMaster()) {
             throw new JetException(error + ". Master address: " + nodeEngine.getClusterService().getMasterAddress());
@@ -1302,7 +1304,8 @@ public class JobCoordinationService {
         return nodeEngine.getClusterService().isMaster();
     }
 
-    @SuppressWarnings("unused") // used in jet-enterprise
+    @SuppressWarnings("unused")
+        // used in jet-enterprise
     NodeEngineImpl nodeEngine() {
         return nodeEngine;
     }

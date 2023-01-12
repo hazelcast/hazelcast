@@ -22,6 +22,7 @@ import com.hazelcast.core.HazelcastInstanceNotActiveException;
 import com.hazelcast.core.LifecycleService;
 import com.hazelcast.flakeidgen.FlakeIdGenerator;
 import com.hazelcast.internal.nio.IOUtil;
+import com.hazelcast.internal.util.ConcurrencyUtil;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.config.JobConfig;
@@ -420,8 +421,8 @@ public class JobRepository {
                             + idToString(jobId) + ", ignoring", t);
             }
         };
-        jobExecutionRecords.get().removeAsync(jobId).whenComplete(callback);
-        jobRecords.get().removeAsync(jobId).whenComplete(callback);
+        jobExecutionRecords.get().removeAsync(jobId).whenCompleteAsync(callback, ConcurrencyUtil.CALLER_RUNS);
+        jobRecords.get().removeAsync(jobId).whenCompleteAsync(callback, ConcurrencyUtil.CALLER_RUNS);
     }
 
     /**

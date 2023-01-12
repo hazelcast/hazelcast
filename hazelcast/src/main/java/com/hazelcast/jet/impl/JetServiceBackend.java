@@ -46,6 +46,7 @@ import com.hazelcast.jet.impl.util.ExceptionUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.NodeEngineImpl;
+import com.hazelcast.spi.impl.executionservice.ExecutionService;
 import com.hazelcast.spi.impl.operationservice.LiveOperations;
 import com.hazelcast.spi.impl.operationservice.LiveOperationsTracker;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -200,24 +201,24 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
     private void notifyMasterWeAreShuttingDown(CompletableFuture<Void> future) {
         Operation op = new NotifyMemberShutdownOperation();
         nodeEngine.getOperationService()
-                  .invokeOnTarget(JetServiceBackend.SERVICE_NAME, op, nodeEngine.getClusterService().getMasterAddress())
-                  .whenCompleteAsync((response, throwable) -> {
-                      // if there is an error and the node is still ACTIVE, try again. If the node isn't ACTIVE, log & ignore.
-                      NodeState nodeState = nodeEngine.getNode().getState();
-                      if (throwable != null && nodeState == NodeState.ACTIVE) {
-                          logger.warning("Failed to notify master member that this member is shutting down," +
-                                  " will retry in " + NOTIFY_MEMBER_SHUTDOWN_DELAY + " seconds", throwable);
-                          // recursive call
-                          nodeEngine.getExecutionService().schedule(
-                                  () -> notifyMasterWeAreShuttingDown(future), NOTIFY_MEMBER_SHUTDOWN_DELAY, SECONDS);
-                      } else {
-                          if (throwable != null) {
-                              logger.warning("Failed to notify master member that this member is shutting down," +
-                                      " but this member is " + nodeState + ", so not retrying", throwable);
-                          }
-                          future.complete(null);
-                      }
-                  });
+                .invokeOnTarget(JetServiceBackend.SERVICE_NAME, op, nodeEngine.getClusterService().getMasterAddress())
+                .whenCompleteAsync((response, throwable) -> {
+                    // if there is an error and the node is still ACTIVE, try again. If the node isn't ACTIVE, log & ignore.
+                    NodeState nodeState = nodeEngine.getNode().getState();
+                    if (throwable != null && nodeState == NodeState.ACTIVE) {
+                        logger.warning("Failed to notify master member that this member is shutting down," +
+                                " will retry in " + NOTIFY_MEMBER_SHUTDOWN_DELAY + " seconds", throwable);
+                        // recursive call
+                        nodeEngine.getExecutionService().schedule(
+                                () -> notifyMasterWeAreShuttingDown(future), NOTIFY_MEMBER_SHUTDOWN_DELAY, SECONDS);
+                    } else {
+                        if (throwable != null) {
+                            logger.warning("Failed to notify master member that this member is shutting down," +
+                                    " but this member is " + nodeState + ", so not retrying", throwable);
+                        }
+                        future.complete(null);
+                    }
+                }, nodeEngine.getExecutionService().getExecutor(ExecutionService.ASYNC_EXECUTOR));
     }
 
     @Override
@@ -244,7 +245,8 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
                 .from(getNodeEngine().getSerializationService(), serializerConfigs);
     }
 
-    @SuppressWarnings("unused") // parameters are used from jet-enterprise
+    @SuppressWarnings("unused")
+    // parameters are used from jet-enterprise
     public Operation createExportSnapshotOperation(long jobId, String name, boolean cancelJob) {
         throw new UnsupportedOperationException("You need Hazelcast Enterprise to use this feature");
     }
@@ -367,7 +369,7 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         if (requestedState == PASSIVE) {
             try {
                 nodeEngine.getOperationService().createInvocationBuilder(JetServiceBackend.SERVICE_NAME,
-                        new PrepareForPassiveClusterOperation(), nodeEngine.getMasterAddress())
+                                new PrepareForPassiveClusterOperation(), nodeEngine.getMasterAddress())
                         .invoke().get();
             } catch (InterruptedException | ExecutionException e) {
                 throw rethrow(e);
