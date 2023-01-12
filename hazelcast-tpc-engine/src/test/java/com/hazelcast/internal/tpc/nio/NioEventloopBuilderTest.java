@@ -22,7 +22,7 @@ import com.hazelcast.internal.tpc.EventloopBuilderTest;
 public class NioEventloopBuilderTest extends EventloopBuilderTest {
 
     @Override
-    public EventloopBuilder create() {
+    public EventloopBuilder newBuilder() {
         return new NioEventloopBuilder();
     }
 }
