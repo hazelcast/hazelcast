@@ -39,12 +39,10 @@ import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.ClientSession;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
 import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.client.model.ReplaceOptions;
 import com.mongodb.client.model.WriteModel;
-import org.bson.BsonDocument;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
@@ -99,12 +97,17 @@ public class WriteMongoP<I> extends AbstractProcessor {
                                                                       .build();
 
     private static final long MAX_COMMIT_TIME = 10L;
-    private static final TransactionOptions TRANSACTION_OPTIONS = TransactionOptions.builder()
-                                                                                    .writeConcern(WriteConcern.MAJORITY)
-                                                                                    .maxCommitTime(MAX_COMMIT_TIME, MINUTES)
-                                                                                    .readPreference(ReadPreference.primaryPreferred())
-                                                                                    .build();
-    public static final int MONGODB_TRANSIENT_ERROR = 112;
+    private static final TransactionOptions TRANSACTION_OPTIONS = TransactionOptions
+            .builder()
+            .writeConcern(WriteConcern.MAJORITY)
+            .maxCommitTime(MAX_COMMIT_TIME, MINUTES)
+            .readPreference(ReadPreference.primaryPreferred())
+            .build();
+    /**
+     * Error code used by MongoDB when there is Transient Error during transaction commit - which means we can
+     * try to re-process such transaction.
+     */
+    private static final int MONGODB_TRANSIENT_ERROR = 112;
     private final SupplierEx<? extends MongoClient> connectionSupplier;
     private final Class<I> documentType;
     private MongoClient mongoClient;
@@ -221,10 +224,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
         @SuppressWarnings("DataFlowIssue")
         Map<MongoCollectionKey, List<I>> itemsPerCollection = items
                 .stream()
-                .map(e -> {
-                    MongoCollection<BsonDocument> col = collectionPicker.pick(e);
-                    return tuple2(new MongoCollectionKey(col), e);
-                })
+                .map(e -> tuple2(collectionPicker.pick(e), e))
                 .collect(groupingBy(Tuple2::f0, mapping(Tuple2::getValue, toList())));
 
         for (MongoCollectionKey collectionKey : itemsPerCollection.keySet()) {
@@ -308,7 +308,6 @@ public class WriteMongoP<I> extends AbstractProcessor {
             if (connectionRetryTracker.shouldTryAgain()) {
                 try {
                     mongoClient = connectionSupplier.get();
-                    collectionPicker.refreshOnReconnect(mongoClient);
                     connectionRetryTracker.reset();
                     return true;
                 } catch (Exception e) {
@@ -500,16 +499,13 @@ public class WriteMongoP<I> extends AbstractProcessor {
     }
 
     private interface CollectionPicker<I> {
-        MongoCollection<BsonDocument> pick(I item);
-
-        void refreshOnReconnect(MongoClient client);
+        MongoCollectionKey pick(I item);
     }
 
     private final class ConstantCollectionPicker implements CollectionPicker<I> {
 
         private final String databaseName;
         private final String collectionName;
-        private MongoCollection<BsonDocument> collection;
 
         private ConstantCollectionPicker(String databaseName, String collectionName) {
             this.databaseName = databaseName;
@@ -518,22 +514,16 @@ public class WriteMongoP<I> extends AbstractProcessor {
 
 
         @Override
-        public MongoCollection<BsonDocument> pick(I item) {
-            return collection;
+        public MongoCollectionKey pick(I item) {
+            return new MongoCollectionKey(databaseName, collectionName);
         }
 
-        @Override
-        public void refreshOnReconnect(MongoClient client) {
-            MongoDatabase database = client.getDatabase(databaseName);
-            collection = database.getCollection(collectionName, BsonDocument.class);
-        }
     }
 
     private final class FunctionalCollectionPicker implements CollectionPicker<I> {
 
         private final FunctionEx<I, String> databaseNameSelectFn;
         private final FunctionEx<I, String> collectionNameSelectFn;
-        private MongoClient mongoClient;
 
         private FunctionalCollectionPicker(FunctionEx<I, String> databaseNameSelectFn,
                                            FunctionEx<I, String> collectionNameSelectFn) {
@@ -543,27 +533,21 @@ public class WriteMongoP<I> extends AbstractProcessor {
 
 
         @Override
-        public MongoCollection<BsonDocument> pick(I item) {
+        public MongoCollectionKey pick(I item) {
             String databaseName = databaseNameSelectFn.apply(item);
             String collectionName = collectionNameSelectFn.apply(item);
-
-            MongoDatabase database = mongoClient.getDatabase(databaseName);
-            return database.getCollection(collectionName, BsonDocument.class);
+            return new MongoCollectionKey(databaseName, collectionName);
         }
 
-        @Override
-        public void refreshOnReconnect(MongoClient client) {
-            mongoClient = client;
-        }
     }
 
     private static final class MongoCollectionKey {
         private final @Nonnull String collectionName;
         private final @Nonnull String databaseName;
 
-        public MongoCollectionKey(@Nonnull MongoCollection<?> collection) {
-            this.collectionName = collection.getNamespace().getCollectionName();
-            this.databaseName = collection.getNamespace().getDatabaseName();
+        MongoCollectionKey(@Nonnull String databaseName, @Nonnull String collectionName) {
+            this.collectionName = collectionName;
+            this.databaseName = databaseName;
         }
 
         @Override

@@ -105,7 +105,7 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
         Pipeline pipeline = Pipeline.create();
         BatchStage<Document> toAddSource = pipeline.readFrom(Sources.list(list))
                                                    .map(i -> new Document("key", i)
-                                                           .append("val", i )
+                                                           .append("val", i)
                                                            .append("type", "new")
                                                            .append("some", "text lorem ipsum etc")
                                                    )
