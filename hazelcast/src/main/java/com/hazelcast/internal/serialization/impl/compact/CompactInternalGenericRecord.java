@@ -31,6 +31,7 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.lang.reflect.Array;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -57,6 +58,7 @@ import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DATE;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DECIMAL;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_FLOAT32;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_FLOAT64;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INSTANT;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT16;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT32;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT64;
@@ -76,6 +78,7 @@ import static com.hazelcast.nio.serialization.FieldKind.BOOLEAN;
 import static com.hazelcast.nio.serialization.FieldKind.COMPACT;
 import static com.hazelcast.nio.serialization.FieldKind.DATE;
 import static com.hazelcast.nio.serialization.FieldKind.DECIMAL;
+import static com.hazelcast.nio.serialization.FieldKind.INSTANT;
 import static com.hazelcast.nio.serialization.FieldKind.STRING;
 import static com.hazelcast.nio.serialization.FieldKind.TIME;
 import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP;
@@ -401,6 +404,11 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
         return getVariableSize(fieldName, TIMESTAMP_WITH_TIMEZONE, IOUtil::readOffsetDateTime);
     }
 
+    @Override
+    @Nullable
+    public Instant getInstant(@Nonnull String fieldName) {
+        return getVariableSize(fieldName, INSTANT, IOUtil::readInstant);
+    }
 
     @Override
     @Nullable
@@ -518,6 +526,13 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     public OffsetDateTime[] getArrayOfTimestampWithTimezone(@Nonnull String fieldName) {
         return getArrayOfVariableSize(fieldName, ARRAY_OF_TIMESTAMP_WITH_TIMEZONE,
                 OffsetDateTime[]::new, IOUtil::readOffsetDateTime);
+    }
+
+    @Override
+    @Nullable
+    public Instant[] getArrayOfInstant(@Nonnull String fieldName) {
+        return getArrayOfVariableSize(fieldName, ARRAY_OF_INSTANT,
+                Instant[]::new, IOUtil::readInstant);
     }
 
     @Override
@@ -1017,6 +1032,12 @@ public class CompactInternalGenericRecord extends CompactGenericRecord implement
     @Override
     public OffsetDateTime getTimestampWithTimezoneFromArray(@Nonnull String fieldName, int index) {
         return getVariableSizeFromArray(fieldName, ARRAY_OF_TIMESTAMP_WITH_TIMEZONE, IOUtil::readOffsetDateTime, index);
+    }
+
+    @Nullable
+    @Override
+    public Instant getInstantFromArray(@Nonnull String fieldName, int index) {
+        return getVariableSizeFromArray(fieldName, ARRAY_OF_INSTANT, IOUtil::readInstant, index);
     }
 
     @Nullable

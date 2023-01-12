@@ -29,6 +29,7 @@ import javax.annotation.Nullable;
 import java.io.DataOutput;
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -74,11 +75,13 @@ import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT16;
 import static com.hazelcast.nio.serialization.FieldKind.STRING;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_STRING;
 import static com.hazelcast.nio.serialization.FieldKind.TIME;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIME;
 import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMP;
 import static com.hazelcast.nio.serialization.FieldKind.TIMESTAMP_WITH_TIMEZONE;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONE;
-import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_TIME;
+import static com.hazelcast.nio.serialization.FieldKind.INSTANT;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INSTANT;
 
 /**
  * Default implementation of the {@link CompactWriter} that writes the
@@ -293,6 +296,11 @@ public class DefaultCompactWriter implements CompactWriter {
     }
 
     @Override
+    public void writeInstant(@Nonnull String fieldName, @Nullable Instant value) {
+        writeVariableSizeField(fieldName, INSTANT, value, IOUtil::writeInstant);
+    }
+
+    @Override
     public void writeArrayOfInt8(@Nonnull String fieldName, @Nullable byte[] values) {
         writeVariableSizeField(fieldName, ARRAY_OF_INT8, values, ObjectDataOutput::writeByteArray);
     }
@@ -386,6 +394,11 @@ public class DefaultCompactWriter implements CompactWriter {
     @Override
     public void writeArrayOfTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime[] value) {
         writeArrayOfVariableSize(fieldName, ARRAY_OF_TIMESTAMP_WITH_TIMEZONE, value, IOUtil::writeOffsetDateTime);
+    }
+
+    @Override
+    public void writeArrayOfInstant(@Nonnull String fieldName, @Nullable Instant[] value) {
+        writeArrayOfVariableSize(fieldName, ARRAY_OF_INSTANT, value, IOUtil::writeInstant);
     }
 
     protected void setPositionAsNull(@Nonnull String fieldName, @Nonnull FieldKind fieldKind) {

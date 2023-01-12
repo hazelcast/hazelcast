@@ -36,6 +36,7 @@ import example.serialization.SerializableEmployeeDTO;
 
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -169,7 +170,7 @@ public final class CompactTestUtil {
                 OffsetDateTime.of(-999999999, 3, 31, 1, 2, 3, 999999999, ZoneOffset.UTC), true,
                 (byte) 113, (short) -500, 56789, -50992225L, 900.5678f, -897543.3678909d,
                 new boolean[]{true, false}, new byte[]{0, 1, 2}, new short[]{3, 4, 5},
-                 new int[]{9, 8, 7, 6}, new long[]{0, 1, 5, 7, 9, 11},
+                new int[]{9, 8, 7, 6}, new long[]{0, 1, 5, 7, 9, 11},
                 new float[]{0.6543f, -3.56f, 45.67f}, new double[]{456.456, 789.789, 321.321},
                 new String[]{"test", null}, new BigDecimal[]{new BigDecimal("12345"), new BigDecimal("123456")},
                 new LocalTime[]{LocalTime.of(22, 13, 15, 123123), null, LocalTime.of(1, 2, 3, 999_999_999)},
@@ -193,13 +194,13 @@ public final class CompactTestUtil {
                 new String[]{"test", null}, new BigDecimal("12345"),
                 new BigDecimal[]{new BigDecimal("12345.123123123"), null},
                 null, new LocalTime[]{LocalTime.now(), null, LocalTime.now()},
-                LocalDate.now(),  new LocalDate[]{LocalDate.now(), null, LocalDate.now()},
+                LocalDate.now(), new LocalDate[]{LocalDate.now(), null, LocalDate.now()},
                 LocalDateTime.now(), new LocalDateTime[]{LocalDateTime.now(), null},
-                OffsetDateTime.now(), null, inner, new InnerDTO[]{createInnerDTO(), null},
-                null, new Boolean[]{true, false, null}, (byte) 123, new Byte[]{0, 1, 2, null},
-                (short) 1232, new Short[]{3, 4, 5, null}, null, new Integer[]{9, 8, 7, 6, null},
-                12323121331L, new Long[]{0L, 1L, 5L, 7L, 9L, 12323121331L}, 0.6543f,
-                new Float[]{0.6543f, -3.56f, 45.67f}, 456.4123156,
+                OffsetDateTime.now(), null, Instant.now(), new Instant[]{Instant.now(), null}, inner,
+                new InnerDTO[]{createInnerDTO(), null}, null, new Boolean[]{true, false, null}, (byte) 123,
+                new Byte[]{0, 1, 2, null}, (short) 1232, new Short[]{3, 4, 5, null}, null,
+                new Integer[]{9, 8, 7, 6, null}, 12323121331L, new Long[]{0L, 1L, 5L, 7L, 9L, 12323121331L},
+                0.6543f, new Float[]{0.6543f, -3.56f, 45.67f}, 456.4123156,
                 new Double[]{456.4123156, 789.789, 321.321});
     }
 

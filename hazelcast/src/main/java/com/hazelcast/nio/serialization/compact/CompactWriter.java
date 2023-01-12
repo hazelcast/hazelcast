@@ -21,6 +21,7 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -138,6 +139,14 @@ public interface CompactWriter {
     void writeTimestampWithTimezone(@Nonnull String fieldName, @Nonnull OffsetDateTime value);
 
     /**
+     * Writes an instant consisting of epoch seconds and nanos.
+     *
+     * @param fieldName name of the field.
+     * @param value     to be written.
+     */
+    void writeInstant(@Nonnull String fieldName, @Nonnull Instant value);
+
+    /**
      * Writes a nested compact object.
      *
      * @param fieldName name of the field.
@@ -248,6 +257,14 @@ public interface CompactWriter {
      * @param value     to be written.
      */
     void writeArrayOfTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime[] value);
+
+    /**
+     * Writes an array of instants consisting of epoch seconds and nanos.
+     *
+     * @param fieldName name of the field.
+     * @param value     to be written.
+     */
+    void writeArrayOfInstant(@Nonnull String fieldName, @Nullable Instant[] value);
 
     /**
      * Writes an array of nested compact objects.

@@ -25,6 +25,7 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -41,6 +42,7 @@ import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DATE;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DECIMAL;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_FLOAT32;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_FLOAT64;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INSTANT;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT16;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT32;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT64;
@@ -62,6 +64,7 @@ import static com.hazelcast.nio.serialization.FieldKind.DATE;
 import static com.hazelcast.nio.serialization.FieldKind.DECIMAL;
 import static com.hazelcast.nio.serialization.FieldKind.FLOAT32;
 import static com.hazelcast.nio.serialization.FieldKind.FLOAT64;
+import static com.hazelcast.nio.serialization.FieldKind.INSTANT;
 import static com.hazelcast.nio.serialization.FieldKind.INT16;
 import static com.hazelcast.nio.serialization.FieldKind.INT32;
 import static com.hazelcast.nio.serialization.FieldKind.INT64;
@@ -205,6 +208,12 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Override
     public OffsetDateTime getTimestampWithTimezone(@Nonnull String fieldName) {
         return get(fieldName, TIMESTAMP_WITH_TIMEZONE);
+    }
+
+    @Nullable
+    @Override
+    public Instant getInstant(@Nonnull String fieldName) {
+        return get(fieldName, INSTANT);
     }
 
     @Nullable
@@ -379,6 +388,12 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Nullable
     public OffsetDateTime[] getArrayOfTimestampWithTimezone(@Nonnull String fieldName) {
         return get(fieldName, ARRAY_OF_TIMESTAMP_WITH_TIMEZONE);
+    }
+
+    @Nullable
+    @Override
+    public Instant[] getArrayOfInstant(@Nonnull String fieldName) {
+        return get(fieldName, ARRAY_OF_INSTANT);
     }
 
     @Nullable
@@ -715,6 +730,12 @@ public class DeserializedGenericRecord extends CompactGenericRecord {
     @Override
     public OffsetDateTime getTimestampWithTimezoneFromArray(@Nonnull String fieldName, int index) {
         return getFromArray(getArrayOfTimestampWithTimezone(fieldName), index);
+    }
+
+    @Nullable
+    @Override
+    public Instant getInstantFromArray(@Nonnull String fieldName, int index) {
+        return getFromArray(getArrayOfInstant(fieldName), index);
     }
 
     @Nullable

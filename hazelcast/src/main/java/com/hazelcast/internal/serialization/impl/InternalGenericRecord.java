@@ -30,6 +30,7 @@ import com.hazelcast.nio.serialization.compact.CompactReader;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -285,6 +286,16 @@ public interface InternalGenericRecord extends GenericRecord {
      */
     @Nullable
     OffsetDateTime getTimestampWithTimezoneFromArray(@Nonnull String fieldName, int index);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value from the given index, returns null if index is larger than the array size or if array itself
+     * is null
+     * @throws HazelcastSerializationException if the field name does not exist in the class definition/schema or
+     *                                         the type of the field does not match the one in the class definition/schema.
+     */
+    @Nullable
+    Instant getInstantFromArray(@Nonnull String fieldName, int index);
 
     /**
      * @param fieldName the name of the field

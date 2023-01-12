@@ -18,6 +18,7 @@ package com.hazelcast.internal.serialization.impl.compact;
 import example.serialization.InnerDTO;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -47,6 +48,8 @@ public class VarSizedFieldsDTO {
     public LocalDateTime[] arrayOfLocalDateTime;
     public OffsetDateTime offsetDateTime;
     public OffsetDateTime[] arrayOfOffsetDateTime;
+    public Instant instant;
+    public Instant[] arrayOfInstant;
     public InnerDTO compact;
     public InnerDTO[] arrayOfCompact;
     public Boolean nullableBool;
@@ -73,8 +76,9 @@ public class VarSizedFieldsDTO {
                              LocalTime localTime, LocalTime[] arrayOfLocalTime, LocalDate localDate,
                              LocalDate[] arrayOfLocalDate, LocalDateTime localDateTime,
                              LocalDateTime[] arrayOfLocalDateTime, OffsetDateTime offsetDateTime,
-                             OffsetDateTime[] arrayOfOffsetDateTime, InnerDTO compact, InnerDTO[] arrayOfCompact,
-                             Boolean nullableBool, Boolean[] arrayOfNullableBool, Byte nullableB, Byte[] arrayOfNullableB,
+                             OffsetDateTime[] arrayOfOffsetDateTime, Instant instant, Instant[] arrayOfInstant,
+                             InnerDTO compact,  InnerDTO[] arrayOfCompact, Boolean nullableBool,
+                             Boolean[] arrayOfNullableBool, Byte nullableB, Byte[] arrayOfNullableB,
                              Short nullableS, Short[] arrayOfNullableS, Integer nullableI, Integer[] arrayOfNullableI,
                              Long nullableL, Long[] arrayOfNullableL, Float nullableF, Float[] arrayOfNullableF,
                              Double nullableD, Double[] arrayOfNullableD) {
@@ -97,6 +101,8 @@ public class VarSizedFieldsDTO {
         this.arrayOfLocalDateTime = arrayOfLocalDateTime;
         this.offsetDateTime = offsetDateTime;
         this.arrayOfOffsetDateTime = arrayOfOffsetDateTime;
+        this.instant = instant;
+        this.arrayOfInstant = arrayOfInstant;
         this.compact = compact;
         this.arrayOfCompact = arrayOfCompact;
         this.nullableBool = nullableBool;
@@ -136,6 +142,8 @@ public class VarSizedFieldsDTO {
                 && Arrays.equals(arrayOfLocalDateTime, that.arrayOfLocalDateTime)
                 && Objects.equals(offsetDateTime, that.offsetDateTime)
                 && Arrays.equals(arrayOfOffsetDateTime, that.arrayOfOffsetDateTime)
+                && Objects.equals(instant, that.instant)
+                && Arrays.equals(arrayOfInstant, that.arrayOfInstant)
                 && Objects.equals(compact, that.compact) && Arrays.equals(arrayOfCompact, that.arrayOfCompact)
                 && Objects.equals(nullableBool, that.nullableBool)
                 && Arrays.equals(arrayOfNullableBool, that.arrayOfNullableBool)
@@ -149,8 +157,8 @@ public class VarSizedFieldsDTO {
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(str, bigDecimal, localTime, localDate, localDateTime, offsetDateTime, compact,
-                nullableBool, nullableB, nullableS, nullableI, nullableL, nullableF, nullableD);
+        int result = Objects.hash(str, bigDecimal, localTime, localDate, localDateTime, offsetDateTime, instant,
+                compact, nullableBool, nullableB, nullableS, nullableI, nullableL, nullableF, nullableD);
         result = 31 * result + Arrays.hashCode(arrayOfBoolean);
         result = 31 * result + Arrays.hashCode(arrayOfInt8);
         result = 31 * result + Arrays.hashCode(arrayOfInt16);
@@ -164,6 +172,7 @@ public class VarSizedFieldsDTO {
         result = 31 * result + Arrays.hashCode(arrayOfLocalDate);
         result = 31 * result + Arrays.hashCode(arrayOfLocalDateTime);
         result = 31 * result + Arrays.hashCode(arrayOfOffsetDateTime);
+        result = 31 * result + Arrays.hashCode(arrayOfInstant);
         result = 31 * result + Arrays.hashCode(arrayOfCompact);
         result = 31 * result + Arrays.hashCode(arrayOfNullableBool);
         result = 31 * result + Arrays.hashCode(arrayOfNullableB);
@@ -196,6 +205,8 @@ public class VarSizedFieldsDTO {
                 + ", arrayOfLocalDateTime=" + Arrays.toString(arrayOfLocalDateTime)
                 + ", offsetDateTime=" + offsetDateTime
                 + ", arrayOfOffsetDateTime=" + Arrays.toString(arrayOfOffsetDateTime)
+                + ", instant=" + instant
+                + ", arrayOfInstant=" + Arrays.toString(arrayOfInstant)
                 + ", compact=" + compact
                 + ", arrayOfCompact=" + Arrays.toString(arrayOfCompact)
                 + ", nullableBool=" + nullableBool

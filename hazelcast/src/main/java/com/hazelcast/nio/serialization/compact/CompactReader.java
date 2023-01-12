@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.HazelcastSerializationException;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -272,6 +273,18 @@ public interface CompactReader {
     @Nullable
     OffsetDateTime readTimestampWithTimezone(@Nonnull String fieldName);
 
+    /**
+     * Reads an instant consisting of epoch seconds and nanos.
+     *
+     * @param fieldName name of the field.
+     * @return the value of the field.
+     * @throws HazelcastSerializationException if the field does not exist in
+     *                                         the schema or the type of the
+     *                                         field does not match with the one
+     *                                         defined in the schema.
+     */
+    @Nullable
+    Instant readInstant(@Nonnull String fieldName);
 
     /**
      * Reads a compact object
@@ -501,6 +514,18 @@ public interface CompactReader {
     @Nullable
     OffsetDateTime[] readArrayOfTimestampWithTimezone(@Nonnull String fieldName);
 
+    /**
+     * Reads an array of instants consisting of epoch seconds and nanos.
+     *
+     * @param fieldName name of the field.
+     * @return the value of the field. The items in the array cannot be null.
+     * @throws HazelcastSerializationException if the field does not exist in
+     *                                         the schema or the type of the
+     *                                         field does not match with the one
+     *                                         defined in the schema.
+     */
+    @Nullable
+    Instant[] readArrayOfInstant(@Nonnull String fieldName);
 
     /**
      * Reads an array of compact objects.

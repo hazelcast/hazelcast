@@ -27,6 +27,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -59,6 +60,7 @@ import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DATE;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_DECIMAL;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_FLOAT32;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_FLOAT64;
+import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INSTANT;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT16;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT32;
 import static com.hazelcast.nio.serialization.FieldKind.ARRAY_OF_INT64;
@@ -80,6 +82,7 @@ import static com.hazelcast.nio.serialization.FieldKind.DATE;
 import static com.hazelcast.nio.serialization.FieldKind.DECIMAL;
 import static com.hazelcast.nio.serialization.FieldKind.FLOAT32;
 import static com.hazelcast.nio.serialization.FieldKind.FLOAT64;
+import static com.hazelcast.nio.serialization.FieldKind.INSTANT;
 import static com.hazelcast.nio.serialization.FieldKind.INT16;
 import static com.hazelcast.nio.serialization.FieldKind.INT32;
 import static com.hazelcast.nio.serialization.FieldKind.INT64;
@@ -123,6 +126,9 @@ public final class ValueReaderWriters {
 
         CONSTRUCTORS.put(OffsetDateTime.class, OffsetDateTimeReaderWriter::new);
         ARRAY_CONSTRUCTORS.put(OffsetDateTime.class, OffsetDateTimeArrayReaderWriter::new);
+
+        CONSTRUCTORS.put(Instant.class, InstantReaderWriter::new);
+        ARRAY_CONSTRUCTORS.put(Instant.class, InstantArrayReaderWriter::new);
 
         CONSTRUCTORS.put(Boolean.class, NullableBooleanReaderWriter::new);
         CONSTRUCTORS.put(Boolean.TYPE, BooleanReaderWriter::new);
@@ -534,6 +540,46 @@ public final class ValueReaderWriters {
         @Override
         public void write(CompactWriter writer, OffsetDateTime[] value) {
             writer.writeArrayOfTimestampWithTimezone(fieldName, value);
+        }
+    }
+
+    private static final class InstantReaderWriter extends ValueReaderWriter<Instant> {
+
+        private InstantReaderWriter(String fieldName) {
+            super(fieldName);
+        }
+
+        @Override
+        public Instant read(CompactReader reader, Schema schema) {
+            if (!isFieldExist(schema, fieldName, INSTANT)) {
+                return null;
+            }
+            return reader.readInstant(fieldName);
+        }
+
+        @Override
+        public void write(CompactWriter writer, Instant value) {
+            writer.writeInstant(fieldName, value);
+        }
+    }
+
+    private static final class InstantArrayReaderWriter extends ValueReaderWriter<Instant[]> {
+
+        private InstantArrayReaderWriter(String fieldName) {
+            super(fieldName);
+        }
+
+        @Override
+        public Instant[] read(CompactReader reader, Schema schema) {
+            if (!isFieldExist(schema, fieldName, ARRAY_OF_INSTANT)) {
+                return null;
+            }
+            return reader.readArrayOfInstant(fieldName);
+        }
+
+        @Override
+        public void write(CompactWriter writer, Instant[] value) {
+            writer.writeArrayOfInstant(fieldName, value);
         }
     }
 

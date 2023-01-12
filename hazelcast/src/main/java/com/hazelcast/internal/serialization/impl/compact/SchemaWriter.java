@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.compact.CompactWriter;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -135,6 +136,11 @@ public final class SchemaWriter implements CompactWriter {
     }
 
     @Override
+    public void writeInstant(@Nonnull String fieldName, @Nullable Instant value) {
+        addField(new FieldDescriptor(fieldName, FieldKind.INSTANT));
+    }
+
+    @Override
     public void writeArrayOfInt8(@Nonnull String fieldName, @Nullable byte[] values) {
         addField(new FieldDescriptor(fieldName, FieldKind.ARRAY_OF_INT8));
     }
@@ -197,6 +203,11 @@ public final class SchemaWriter implements CompactWriter {
     @Override
     public void writeArrayOfTimestampWithTimezone(@Nonnull String fieldName, @Nullable OffsetDateTime[] values) {
         addField(new FieldDescriptor(fieldName, FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONE));
+    }
+
+    @Override
+    public void writeArrayOfInstant(@Nonnull String fieldName, @Nullable Instant[] value) {
+        addField(new FieldDescriptor(fieldName, FieldKind.ARRAY_OF_INSTANT));
     }
 
     @Override

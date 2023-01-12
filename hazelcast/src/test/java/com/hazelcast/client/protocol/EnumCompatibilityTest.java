@@ -185,6 +185,8 @@ public class EnumCompatibilityTest {
         mappings.put(FieldKind.ARRAY_OF_NULLABLE_FLOAT32, 44);
         mappings.put(FieldKind.NULLABLE_FLOAT64, 45);
         mappings.put(FieldKind.ARRAY_OF_NULLABLE_FLOAT64, 46);
+        mappings.put(FieldKind.INSTANT, 47);
+        mappings.put(FieldKind.ARRAY_OF_INSTANT, 48);
         verifyCompatibility(FieldKind.values(), FieldKind::getId, mappings);
     }
 

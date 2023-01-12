@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.ClassDefinition;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.time.Instant;
 
 /**
  * See the javadoc of {@link InternalGenericRecord} for GenericRecord class hierarchy.
@@ -86,6 +87,12 @@ public abstract class PortableGenericRecord extends AbstractGenericRecord {
 
     @Nullable
     @Override
+    public Instant getInstant(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
     public Boolean[] getArrayOfNullableBoolean(@Nonnull String fieldName) {
         throw new UnsupportedOperationException();
     }
@@ -123,6 +130,18 @@ public abstract class PortableGenericRecord extends AbstractGenericRecord {
     @Nullable
     @Override
     public Short[] getArrayOfNullableInt16(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Instant[] getArrayOfInstant(@Nonnull String fieldName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Nullable
+    @Override
+    public Instant getInstantFromArray(@Nonnull String fieldName, int index) {
         throw new UnsupportedOperationException();
     }
 

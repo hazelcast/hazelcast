@@ -23,6 +23,7 @@ import com.hazelcast.nio.serialization.compact.CompactReader;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -115,6 +116,12 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
         return getTimestampWithTimezone(fieldName);
     }
 
+    @Nullable
+    @Override
+    public Instant readInstant(@Nonnull String fieldName) {
+        return getInstant(fieldName);
+    }
+
     @Override
     public <T> T readCompact(@Nonnull String fieldName) {
         return getObject(fieldName);
@@ -183,6 +190,11 @@ public class DefaultCompactReader extends CompactInternalGenericRecord implement
     @Override
     public OffsetDateTime[] readArrayOfTimestampWithTimezone(@Nonnull String fieldName) {
         return getArrayOfTimestampWithTimezone(fieldName);
+    }
+
+    @Override
+    public Instant[] readArrayOfInstant(@Nonnull String fieldName) {
+        return getArrayOfInstant(fieldName);
     }
 
     @Override

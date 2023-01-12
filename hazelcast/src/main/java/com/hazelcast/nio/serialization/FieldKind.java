@@ -159,7 +159,17 @@ public enum FieldKind {
     /**
      * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
      */
-    ARRAY_OF_NULLABLE_FLOAT64(46);
+    ARRAY_OF_NULLABLE_FLOAT64(46),
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     */
+    INSTANT(47),
+
+    /**
+     * Supported only for {@link com.hazelcast.config.CompactSerializationConfig Compact}. Not applicable to {@link Portable}.
+     */
+    ARRAY_OF_INSTANT(48);
 
     private static final FieldKind[] ALL = FieldKind.values();
     private final int id;

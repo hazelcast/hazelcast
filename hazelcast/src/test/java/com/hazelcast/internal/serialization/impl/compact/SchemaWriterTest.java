@@ -76,6 +76,9 @@ public class SchemaWriterTest {
         writer.writeTimestampWithTimezone(FieldKind.TIMESTAMP_WITH_TIMEZONE.name(), null);
         writer.writeArrayOfTimestampWithTimezone(FieldKind.ARRAY_OF_TIMESTAMP_WITH_TIMEZONE.name(), null);
 
+        writer.writeInstant(FieldKind.INSTANT.name(), null);
+        writer.writeArrayOfInstant(FieldKind.ARRAY_OF_INSTANT.name(), null);
+
         writer.writeCompact(FieldKind.COMPACT.name(), null);
         writer.writeArrayOfCompact(FieldKind.ARRAY_OF_COMPACT.name(), null);
 

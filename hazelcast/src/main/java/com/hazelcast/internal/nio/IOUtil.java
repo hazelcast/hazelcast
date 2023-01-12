@@ -55,6 +55,7 @@ import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.time.Duration;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -229,6 +230,19 @@ public final class IOUtil {
         int zoneTotalSeconds = in.readInt();
         ZoneOffset zoneOffset = ZoneOffset.ofTotalSeconds(zoneTotalSeconds);
         return OffsetDateTime.of(year, month, dayOfMonth, hour, minute, second, nano, zoneOffset);
+    }
+
+    public static void writeInstant(ObjectDataOutput out, Instant value) throws IOException {
+        long epochSeconds = value.getEpochSecond();
+        int nanos = value.getNano();
+        out.writeLong(epochSeconds);
+        out.writeInt(nanos);
+    }
+
+    public static Instant readInstant(ObjectDataInput in) throws IOException {
+        long epochSeconds = in.readLong();
+        int nanos = in.readInt();
+        return Instant.ofEpochSecond(epochSeconds, nanos);
     }
 
     public static void writeData(ObjectDataOutput out, Data data) throws IOException {

@@ -27,6 +27,7 @@ import com.hazelcast.nio.serialization.PortableFactory;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -323,6 +324,19 @@ public interface GenericRecord {
 
     /**
      * @param fieldName the name of the field
+     * @return instant consisting of epoch seconds and nanos parts as
+     * {@link Instant}
+     * @throws HazelcastSerializationException if the field name does not exist
+     *                                         in the schema/class definition or
+     *                                         the type of the field does not
+     *                                         match the one in the schema/class
+     *                                         definition.
+     */
+    @Nullable
+    Instant getInstant(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
      * @return the value of the field
      * @throws HazelcastSerializationException if the field name does not exist
      *                                         in the schema/class definition or
@@ -507,6 +521,19 @@ public interface GenericRecord {
      */
     @Nullable
     OffsetDateTime[] getArrayOfTimestampWithTimezone(@Nonnull String fieldName);
+
+    /**
+     * @param fieldName the name of the field
+     * @return the value of the field
+     * @throws HazelcastSerializationException if the field name does not exist
+     *                                         in the schema/class definition or
+     *                                         the type of the field does not
+     *                                         match the one in the schema/class
+     *                                         definition.
+     * @see #getTimestampWithTimezone(String)
+     */
+    @Nullable
+    Instant[] getArrayOfInstant(@Nonnull String fieldName);
 
     /**
      * @param fieldName the name of the field

@@ -22,6 +22,7 @@ import example.serialization.InnerDTO;
 
 import javax.annotation.Nonnull;
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -50,6 +51,8 @@ public class VarSizedFieldsDTOSerializer implements CompactSerializer<VarSizedFi
         LocalDateTime[] arrayOfLocalDateTime = reader.readArrayOfTimestamp("arrayOfLocalDateTime");
         OffsetDateTime offsetDateTime = reader.readTimestampWithTimezone("offsetDateTime");
         OffsetDateTime[] arrayOfOffsetDateTime = reader.readArrayOfTimestampWithTimezone("arrayOfOffsetDateTime");
+        Instant instant = reader.readInstant("instant");
+        Instant[] arrayOfInstant = reader.readArrayOfInstant("arrayOfInstant");
         InnerDTO compact = reader.readCompact("compact");
         InnerDTO[] arrayOfCompact = reader.readArrayOfCompact("arrayOfCompact", InnerDTO.class);
         Boolean nullableBool = reader.readNullableBoolean("nullableBool");
@@ -70,9 +73,9 @@ public class VarSizedFieldsDTOSerializer implements CompactSerializer<VarSizedFi
         return new VarSizedFieldsDTO(arrayOfBoolean, arrayOfInt8, arrayOfInt16, arrayOfInt32, arrayOfInt64, arrayOfFloat32,
                 arrayOfFloat64, str, arrayOfString, bigDecimal, arrayOfBigDecimal, localTime, arrayOfLocalTime,
                 localDate, arrayOfLocalDate, localDateTime, arrayOfLocalDateTime, offsetDateTime,
-                arrayOfOffsetDateTime, compact, arrayOfCompact, nullableBool, arrayOfNullableBool, nullableB,
-                arrayOfNullableB, nullableS, arrayOfNullableS, nullableI, arrayOfNullableI, nullableL,
-                arrayOfNullableL, nullableF, arrayOfNullableF, nullableD, arrayOfNullableD
+                arrayOfOffsetDateTime, instant, arrayOfInstant, compact, arrayOfCompact, nullableBool,
+                arrayOfNullableBool, nullableB, arrayOfNullableB, nullableS, arrayOfNullableS, nullableI,
+                arrayOfNullableI, nullableL, arrayOfNullableL, nullableF, arrayOfNullableF, nullableD, arrayOfNullableD
         );
     }
 
@@ -97,6 +100,8 @@ public class VarSizedFieldsDTOSerializer implements CompactSerializer<VarSizedFi
         out.writeArrayOfTimestamp("arrayOfLocalDateTime", object.arrayOfLocalDateTime);
         out.writeTimestampWithTimezone("offsetDateTime", object.offsetDateTime);
         out.writeArrayOfTimestampWithTimezone("arrayOfOffsetDateTime", object.arrayOfOffsetDateTime);
+        out.writeInstant("instant", object.instant);
+        out.writeArrayOfInstant("arrayOfInstant", object.arrayOfInstant);
         out.writeCompact("compact", object.compact);
         out.writeArrayOfCompact("arrayOfCompact", object.arrayOfCompact);
         out.writeNullableBoolean("nullableBool", object.nullableBool);

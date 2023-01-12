@@ -22,6 +22,7 @@ import com.hazelcast.nio.serialization.FieldKind;
 import com.hazelcast.nio.serialization.genericrecord.GenericRecord;
 
 import java.math.BigDecimal;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
@@ -715,6 +716,55 @@ public final class FieldOperations {
             @Override
             public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
                 Object[] objects = record.getArrayOfTimestampWithTimezone(fieldName);
+                writeArrayJsonFormatted(stringBuilder, objects,
+                        (builder, o) -> builder.append("\"").append(o).append("\""));
+            }
+        };
+        ALL[FieldKind.INSTANT.getId()] = new FieldKindBasedOperations() {
+            @Override
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
+                return genericRecord.getInstant(fieldName);
+            }
+
+            @Override
+            public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord genericRecord, String fieldName) {
+                writer.writeInstant(fieldName, genericRecord.getInstant(fieldName));
+            }
+
+            @Override
+            public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
+                Instant value = record.getInstant(fieldName);
+                if (value == null) {
+                    stringBuilder.append("null");
+                    return;
+                }
+                stringBuilder.append('"').append(value).append('"');
+            }
+        };
+        ALL[FieldKind.ARRAY_OF_INSTANT.getId()] = new FieldKindBasedOperations() {
+            @Override
+            public Object readGenericRecordOrPrimitive(GenericRecord genericRecord, String fieldName) {
+                return genericRecord.getArrayOfInstant(fieldName);
+            }
+
+            @Override
+            public Object readIndexed(InternalGenericRecord record, String fieldName, int index) {
+                return record.getInstantFromArray(fieldName, index);
+            }
+
+            @Override
+            public int hashCode(GenericRecord record, String fieldName) {
+                return Arrays.hashCode(record.getArrayOfInstant(fieldName));
+            }
+
+            @Override
+            public void writeFieldFromRecordToWriter(DefaultCompactWriter writer, GenericRecord record, String fieldName) {
+                writer.writeArrayOfInstant(fieldName, record.getArrayOfInstant(fieldName));
+            }
+
+            @Override
+            public void writeJsonFormattedField(StringBuilder stringBuilder, AbstractGenericRecord record, String fieldName) {
+                Object[] objects = record.getArrayOfInstant(fieldName);
                 writeArrayJsonFormatted(stringBuilder, objects,
                         (builder, o) -> builder.append("\"").append(o).append("\""));
             }
