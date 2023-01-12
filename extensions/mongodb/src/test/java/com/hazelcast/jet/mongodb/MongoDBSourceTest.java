@@ -86,7 +86,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
         Pipeline pipeline = Pipeline.create();
         String connectionString = mongoContainer.getConnectionString();
-        Batch<?> sourceBuilder = MongoDBSourceBuilder.batch(SOURCE_NAME, () -> mongoClient(connectionString))
+        Batch<?> sourceBuilder = MongoDBSources.batch(SOURCE_NAME, () -> mongoClient(connectionString))
                                                      .database(defaultDatabase())
                                                      .collection(testName.getMethodName(), Document.class);
         sourceBuilder = batchFilters(sourceBuilder);
@@ -114,7 +114,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
         Pipeline pipeline = Pipeline.create();
         String connectionString = mongoContainer.getConnectionString();
-        Batch<?> sourceBuilder = MongoDBSourceBuilder.batch(SOURCE_NAME, () -> mongoClient(connectionString))
+        Batch<?> sourceBuilder = MongoDBSources.batch(SOURCE_NAME, () -> mongoClient(connectionString))
                 .database(defaultDatabase());
         sourceBuilder = batchFilters(sourceBuilder);
         pipeline.readFrom(sourceBuilder.build())

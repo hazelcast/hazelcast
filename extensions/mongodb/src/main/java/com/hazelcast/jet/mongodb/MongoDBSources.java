@@ -54,7 +54,13 @@ public final class MongoDBSources {
 
     /**
      * Creates as builder for new stream mongo source. Equivalent to calling {@link MongoDBSourceBuilder#stream}.
-     * @param name descriptive name for the source (diagnostic purposes) connectionSupplier.
+     * @param name descriptive name for the source (diagnostic purposes) connectionSupplier.@Nonnull
+     *     public static MongoDBSourceBuilder.Batch<Document> batch(
+     *             @Nonnull String name,
+     *             @Nonnull SupplierEx<? extends MongoClient> connectionSupplier
+     *     ) {
+     *         return new Batch<>(name, connectionSupplier);
+     *     }
      * @param connectionSupplier a function that creates MongoDB client.
      * @return Stream Mongo source builder
      */

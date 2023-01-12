@@ -37,12 +37,18 @@ public final class MongoDBSinks {
      * Returns a builder object that offers a step-by-step fluent API to build
      * a custom MongoDB {@link Sink} for the Pipeline API.
      * <p>
-     * The sink inserts the items it receives to specified collection using
-     * {@link MongoCollection#updateOne}. Updates are done within transaction if processing guarantee
+     * The sink inserts or replaces the items it receives to specified collection using
+     * {@link MongoCollection#bulkWrite}.
+     *
+     * All operations are done within transaction if processing guarantee
      * of the job is {@link com.hazelcast.jet.config.ProcessingGuarantee#EXACTLY_ONCE}.
+     *
+     * All writes are by default done with non-standard {@linkplain Mappers#defaultCodecRegistry() codec registry},
+     * to allow out-of-the-box POJO support.
      *
      * @param name               name of the sink
      * @param connectionSupplier MongoDB client supplier
+     * @param itemClass          type of document that will be saved
      * @param <T>                type of the items the sink accepts
      */
     public static <T> MongoDBSinkBuilder<T> builder(

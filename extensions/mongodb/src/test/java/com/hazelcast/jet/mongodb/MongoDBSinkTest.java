@@ -76,15 +76,15 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
 
     @Parameter(0)
     public ProcessingGuarantee processingGuarantee;
-    IList<Integer> list = instance().getList("list");
 
     @Parameters(name = "processing guarantee: {0}")
-    public static Object[] filterProjectionSortMatrix() {
+    public static Object[] guarantees() {
         return ProcessingGuarantee.values();
     }
 
     @Test
     public void test_withBatchSource() {
+        IList<Integer> list = instance().getList(testName.getMethodName());
         MongoCollection<Document> collection = collection(defaultDatabase(), testName.getMethodName());
         for (int i = 0; i < HALF; i++) {
             list.add(i);
@@ -181,14 +181,12 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
 
         Sink<Doc> sink = builder(SINK_NAME, Doc.class, () -> createClient(connectionString))
                 .identifyDocumentBy("key", o -> o.key)
-                .into(i -> defaultDatabase, i -> "col_1")// + (i.key % 10)
+                .into(i -> defaultDatabase, i -> "col_" + (i.key % 10))//
                 .build();
-//        Sink<Document> sink = mongodb(SINK_NAME, connectionString, defaultDatabase, "col_1");
         toAddSource
                 .merge(alreadyExistingSource)
                    .setLocalParallelism(8)
                    .rebalance(doc -> doc.key).setLocalParallelism(8)
-//                   .map(e -> Document.parse(toBsonDocument(e).toJson()))
                    .writeTo(sink)
                    .setLocalParallelism(1);
 
