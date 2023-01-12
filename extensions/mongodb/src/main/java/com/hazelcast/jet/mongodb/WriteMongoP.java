@@ -30,8 +30,12 @@ import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.jet.retry.impl.RetryTracker;
 import com.hazelcast.logging.ILogger;
+import com.mongodb.MongoBulkWriteException;
+import com.mongodb.MongoCommandException;
+import com.mongodb.ReadPreference;
 import com.mongodb.TransactionOptions;
 import com.mongodb.WriteConcern;
+import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.ClientSession;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
@@ -51,13 +55,16 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Objects;
 import java.util.Set;
 
+import static com.hazelcast.internal.util.EmptyStatement.ignore;
+import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
-import static com.hazelcast.jet.mongodb.Mappers.toBsonDocument;
+import static com.hazelcast.jet.mongodb.Mappers.defaultCodecRegistry;
 import static com.hazelcast.jet.retry.IntervalFunction.exponentialBackoffWithCap;
 import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.project;
@@ -65,6 +72,7 @@ import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.in;
 import static com.mongodb.client.model.Projections.include;
 import static java.util.Arrays.asList;
+import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
@@ -82,13 +90,20 @@ public class WriteMongoP<I> extends AbstractProcessor {
                                                                               , 2.0, 3000))
                                                                       .maxAttempts(10)
                                                                       .build();
+
+    private static final long MAX_COMMIT_TIME = 10L;
+    private static final TransactionOptions TRANSACTION_OPTIONS = TransactionOptions.builder()
+                                                                                    .writeConcern(WriteConcern.MAJORITY)
+                                                                                    .maxCommitTime(MAX_COMMIT_TIME, MINUTES)
+                                                                                    .readPreference(ReadPreference.primaryPreferred())
+                                                                                    .build();
+    public static final int MONGODB_TRANSIENT_ERROR = 112;
     private final SupplierEx<? extends MongoClient> connectionSupplier;
     private final Class<I> documentType;
     private MongoClient mongoClient;
     private final RetryTracker connectionRetryTracker;
     private ILogger logger;
 
-    private int processorIndex;
     private UnboundedTransactionsProcessorUtility<MongoTransactionId, MongoTransaction> snapshotUtility;
 
     private final CollectionPicker<I> collectionPicker;
@@ -112,9 +127,9 @@ public class WriteMongoP<I> extends AbstractProcessor {
             ConsumerEx<ReplaceOptions> replaceOptionAdjuster,
             String documentIdentityFieldName) {
         this.connectionSupplier = connectionSupplier;
-        this.documentType = documentType;
         this.documentIdentityFn = documentIdentityFn;
         this.documentIdentityFieldName = documentIdentityFieldName;
+        this.documentType = documentType;
 
         ReplaceOptions options = new ReplaceOptions().upsert(true);
         if (replaceOptionAdjuster != null) {
@@ -138,8 +153,8 @@ public class WriteMongoP<I> extends AbstractProcessor {
             ConsumerEx<ReplaceOptions> replaceOptionAdjuster,
             String documentIdentityFieldName
     ) {
-        this.connectionSupplier = connectionSupplier;
         this.documentType = documentType;
+        this.connectionSupplier = connectionSupplier;
         this.documentIdentityFn = documentIdentityFn;
         this.documentIdentityFieldName = documentIdentityFieldName;
         ReplaceOptions options = new ReplaceOptions().upsert(true);
@@ -155,8 +170,8 @@ public class WriteMongoP<I> extends AbstractProcessor {
     @Override
     protected void init(@Nonnull Context context) {
         logger = context.logger();
-        processorIndex = context.globalProcessorIndex();
 
+        int processorIndex = context.globalProcessorIndex();
         snapshotUtility = new UnboundedTransactionsProcessorUtility<>(
                 getOutbox(),
                 context,
@@ -186,38 +201,6 @@ public class WriteMongoP<I> extends AbstractProcessor {
         return snapshotUtility.tryProcess();
     }
 
-    private static final class MongoCollectionKey {
-        private final String collectionName;
-        private final MongoCollection<BsonDocument> collection;
-
-        private MongoCollectionKey(MongoCollection<BsonDocument> collection) {
-            this.collectionName = collection.getNamespace().getCollectionName();
-            this.collection = collection;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) {
-                return true;
-            }
-            if (o == null || getClass() != o.getClass()) {
-                return false;
-            }
-            MongoCollectionKey that = (MongoCollectionKey) o;
-            return Objects.equals(collectionName, that.collectionName);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(collectionName);
-        }
-
-        @Override
-        public String toString() {
-            return collectionName;
-        }
-    }
-
     @Override
     public void process(int ordinal, @Nonnull Inbox inbox) {
         if (!reconnectIfNecessary()) {
@@ -238,32 +221,30 @@ public class WriteMongoP<I> extends AbstractProcessor {
                 .collect(groupingBy(Tuple2::f0, mapping(Tuple2::getValue, toList())));
 
         for (MongoCollectionKey collectionKey : itemsPerCollection.keySet()) {
-            MongoCollection<BsonDocument> collection = collectionKey.collection;
+            MongoCollection<I> collection = collectionKey.get(mongoClient, documentType);
 
             Set<Object> docsFound = queryForExistingIds(items, collection);
-            List<WriteModel<BsonDocument>> writes = new ArrayList<>();
+            List<WriteModel<I>> writes = new ArrayList<>();
 
             for (I item : itemsPerCollection.get(collectionKey)) {
                 Object id = documentIdentityFn.apply(item);
 
                 if (docsFound.contains(id)) {
                     Bson filter = eq(documentIdentityFieldName, id);
-                    ReplaceOneModel<BsonDocument> update =
-                            new ReplaceOneModel<>(filter, toBsonDocument(item), replaceOptions);
+                    ReplaceOneModel<I> update = new ReplaceOneModel<>(filter, item, replaceOptions);
                     writes.add(update);
                 } else {
-                    InsertOneModel<BsonDocument> insert = new InsertOneModel<>(toBsonDocument(item));
+                    InsertOneModel<I> insert = new InsertOneModel<>(item);
                     writes.add(insert);
                 }
             }
             if (snapshotUtility.usesTransactionLifecycle()) {
-                collection.bulkWrite(mongoTransaction.clientSession, writes);
+                checkNotNull(mongoTransaction, "there is no active transaction");
+                mongoTransaction.addWrites(collectionKey, writes);
             } else {
                 collection.bulkWrite(writes);
             }
         }
-
-
     }
 
     private Set<Object> queryForExistingIds(ArrayList<I> items, MongoCollection<?> collection) {
@@ -351,11 +332,12 @@ public class WriteMongoP<I> extends AbstractProcessor {
         MongoTransactionId(long jobId, String jobName, @Nonnull String vertexId, int processorIndex) {
             this.processorIndex = processorIndex;
 
-            mongoId = "jet.job-" + idToString(jobId) + '.' + sanitize(jobName) + '.' + sanitize(vertexId) + '.'
+            String mongoId = "jet.job-" + idToString(jobId) + '.' + sanitize(jobName) + '.' + sanitize(vertexId) + '.'
                     + processorIndex;
+
+            this.mongoId = mongoId;
             hashCode = Objects.hash(jobId, vertexId, processorIndex);
         }
-
 
         MongoTransactionId(Context context, int processorIndex) {
             this(context.jobId(), context.jobConfig().getName(), context.vertexName(), processorIndex);
@@ -421,17 +403,25 @@ public class WriteMongoP<I> extends AbstractProcessor {
         private final ILogger logger;
         private final MongoTransactionId transactionId;
         private boolean txnInitialized;
+        private final RetryTracker commitRetryTracker;
+
+        private final Map<MongoCollectionKey, List<WriteModel<I>>> documents = new HashMap<>();
 
         private MongoTransaction(
                 MongoTransactionId transactionId,
                 ILogger logger) {
             this.transactionId = transactionId;
             this.logger = logger;
+            this.commitRetryTracker = new RetryTracker(RETRY_STRATEGY);
         }
 
         @Override
         public MongoTransactionId id() {
             return transactionId;
+        }
+
+        void addWrites(MongoCollectionKey key, List<WriteModel<I>> writes) {
+            documents.computeIfAbsent(key, k -> new ArrayList<>()).addAll(writes);
         }
 
         @Override
@@ -440,25 +430,56 @@ public class WriteMongoP<I> extends AbstractProcessor {
                 logFine(logger, "beginning transaction %s", transactionId);
                 txnInitialized = true;
             }
-//            refreshTransaction(true);
             clientSession = mongoClient.startSession();
-            TransactionOptions options = TransactionOptions.builder()
-                                                           .writeConcern(WriteConcern.MAJORITY).build();
-            clientSession.startTransaction(options);
             activeTransactions.put(transactionId, this);
         }
 
         @Override
         public void commit() {
             if (transactionId != null) {
-                clientSession.commitTransaction();
+                boolean success = false;
+                while (commitRetryTracker.shouldTryAgain() && !success) {
+                    try {
+                        clientSession.startTransaction(TRANSACTION_OPTIONS);
+
+                        for (Entry<MongoCollectionKey, List<WriteModel<I>>> entry :
+                                documents.entrySet()) {
+
+                            MongoCollection<I> collection = entry.getKey().get(mongoClient, documentType);
+                            List<WriteModel<I>> writes = entry.getValue();
+
+                            BulkWriteResult result = collection.bulkWrite(clientSession, writes);
+
+                            if (!result.wasAcknowledged()) {
+                                commitRetryTracker.attemptFailed();
+                                break;
+                            }
+                        }
+                        clientSession.commitTransaction();
+                        commitRetryTracker.reset();
+                        success = true;
+                    } catch (MongoCommandException e) {
+                        commitRetryTracker.attemptFailed();
+                        if (!commitRetryTracker.shouldTryAgain() || e.getErrorCode() != MONGODB_TRANSIENT_ERROR) {
+                            throw e;
+                        }
+                    } catch (MongoBulkWriteException e) {
+                        throw new JetException(e);
+                    }
+
+                }
             }
         }
 
         @Override
         public void rollback() {
             if (transactionId != null) {
-                clientSession.abortTransaction();
+                try {
+                    clientSession.abortTransaction();
+                } catch (IllegalStateException e) {
+                    ignore(e);
+                }
+                documents.clear();
             }
         }
 
@@ -526,6 +547,48 @@ public class WriteMongoP<I> extends AbstractProcessor {
         @Override
         public void refreshOnReconnect(MongoClient client) {
             mongoClient = client;
+        }
+    }
+
+    private static final class MongoCollectionKey {
+        private final @Nonnull String collectionName;
+        private final @Nonnull String databaseName;
+
+        public MongoCollectionKey(@Nonnull MongoCollection<?> collection) {
+            this.collectionName = collection.getNamespace().getCollectionName();
+            this.databaseName = collection.getNamespace().getDatabaseName();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            MongoCollectionKey that = (MongoCollectionKey) o;
+            return collectionName.equals(that.collectionName) && databaseName.equals(that.databaseName);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(collectionName, databaseName);
+        }
+
+        @Override
+        public String toString() {
+            return "MongoCollectionKey{" +
+                    "collectionName='" + collectionName + '\'' +
+                    ", databaseName='" + databaseName + '\'' +
+                    '}';
+        }
+
+        @Nonnull
+        public <I> MongoCollection<I> get(MongoClient mongoClient, Class<I> documentType) {
+            return mongoClient.getDatabase(databaseName)
+                              .getCollection(collectionName, documentType)
+                              .withCodecRegistry(defaultCodecRegistry());
         }
     }
 

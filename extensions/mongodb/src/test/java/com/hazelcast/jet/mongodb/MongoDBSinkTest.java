@@ -30,6 +30,8 @@ import com.hazelcast.map.EventJournalMapEvent;
 import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.QuickTest;
+import com.mongodb.ConnectionString;
+import com.mongodb.MongoClientSettings;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
@@ -69,7 +71,7 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class})
 public class MongoDBSinkTest extends AbstractMongoDBTest {
 
-    private static final int COUNT = 80;
+    private static final int COUNT = 2000;
     private static final int HALF = COUNT / 2;
 
     @Parameter(0)
@@ -103,25 +105,28 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
         Pipeline pipeline = Pipeline.create();
         BatchStage<Document> toAddSource = pipeline.readFrom(Sources.list(list))
                                                    .map(i -> new Document("key", i)
-                                                           .append("val", i + 100_000)
+                                                           .append("val", i )
+                                                           .append("type", "new")
                                                            .append("some", "text lorem ipsum etc")
                                                    )
                                                    .setLocalParallelism(2);
 
         BatchStage<Document> alreadyExistingSource = pipeline.readFrom(TestSources.items(ids))
                                                              .mapStateful(() -> new AtomicLong(HALF + 1),
-                                                                     (counter, i) -> new Document("key", counter.incrementAndGet())
+                                                                     (counter, i) -> new Document("key",
+                                                                             counter.incrementAndGet())
                                                                              .append("_id", new ObjectId(i))
                                                                              .append("val", originStreamDiscriminator)
+                                                                             .append("type", "existing")
                                                                              .append("some", "text lorem ipsum etc"))
                                                              .setLocalParallelism(2);
 
         toAddSource.merge(alreadyExistingSource).setLocalParallelism(8)
                    .rebalance(doc -> doc.get("key")).setLocalParallelism(8)
                    .writeTo(mongodb(SINK_NAME, connectionString, defaultDatabase(), testName.getMethodName()))
-                   .setLocalParallelism(4);
+                   .setLocalParallelism(1);
 
-        JobConfig config = new JobConfig().setProcessingGuarantee(processingGuarantee).setSnapshotIntervalMillis(1500);
+        JobConfig config = new JobConfig().setProcessingGuarantee(processingGuarantee).setSnapshotIntervalMillis(500);
         instance().getJet().newJob(pipeline, config).join();
 
         assertEquals(COUNT, collection.countDocuments());
@@ -165,7 +170,7 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
                         EventJournalMapEvent::getNewValue, e -> e.getType() == ADDED))
                 .withIngestionTimestamps()
                 .mapStateful(() -> new AtomicLong(HALF + 1),
-                        (counter, i) -> new Doc(new ObjectId(i),
+                        (counter, objectIdHex) -> new Doc(new ObjectId(objectIdHex),
                                 counter.incrementAndGet(),
                                 streamOriginDiscriminator,
                                 "text lorem ipsum etc"
@@ -173,16 +178,21 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
                 .setLocalParallelism(2);
 
         final String defaultDatabase = defaultDatabase();
-        Sink<Doc> sink = builder(SINK_NAME, Doc.class, () -> MongoClients.create(connectionString))
+
+        Sink<Doc> sink = builder(SINK_NAME, Doc.class, () -> createClient(connectionString))
                 .identifyDocumentBy("key", o -> o.key)
-                .into(i -> defaultDatabase, i -> "col_" + (i.key % 10))
+                .into(i -> defaultDatabase, i -> "col_1")// + (i.key % 10)
                 .build();
-        toAddSource.merge(alreadyExistingSource).setLocalParallelism(8)
+//        Sink<Document> sink = mongodb(SINK_NAME, connectionString, defaultDatabase, "col_1");
+        toAddSource
+                .merge(alreadyExistingSource)
+                   .setLocalParallelism(8)
                    .rebalance(doc -> doc.key).setLocalParallelism(8)
+//                   .map(e -> Document.parse(toBsonDocument(e).toJson()))
                    .writeTo(sink)
                    .setLocalParallelism(1);
 
-        JobConfig config = new JobConfig().setProcessingGuarantee(processingGuarantee).setSnapshotIntervalMillis(1500);
+        JobConfig config = new JobConfig().setProcessingGuarantee(processingGuarantee).setSnapshotIntervalMillis(200);
         instance().getJet().newJob(pipeline, config);
 
         MongoClient client = MongoClients.create(connectionString);
@@ -190,6 +200,15 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
         assertTrueEventually(() -> assertEquals(COUNT, countInAll(db, gte("val", 0))));
         assertEquals(HALF, countInAll(db, eq("val", streamOriginDiscriminator)));
         assertEquals(HALF, countInAll(db, ne("val", streamOriginDiscriminator)));
+    }
+
+    private static MongoClient createClient(String connectionString) {
+        MongoClientSettings mcs = MongoClientSettings.builder()
+                                                     .retryReads(true)
+                                                     .retryWrites(true)
+                                                     .applyConnectionString(new ConnectionString(connectionString))
+                                                     .build();
+        return MongoClients.create(mcs);
     }
 
     private static int countInAll(MongoDatabase database, Bson filter) {
