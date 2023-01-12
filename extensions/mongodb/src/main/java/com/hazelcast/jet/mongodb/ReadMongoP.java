@@ -60,12 +60,20 @@ import static com.mongodb.client.model.Sorts.ascending;
 /**
  * Processor for reading from MongoDB
  *
- * TODO add more info
+ * Reading is done by one of two readers:
+ * <ul>
+ * <li>batch reader, which uses {@linkplain MongoCollection#aggregate} to find matching documents.</li>
+ * <li>streaming reader, which uses {@linkplain MongoClient#watch} (or same function on database or collection level)
+ * to find matching documents, as they arrive in the stream.</li>
+ *
+ * All processing guarantees are supported via standard snapshotting mechanism. Each instance of this processor
+ * will save it's state (last read key or resumeToken) with the key being global processor index mod total parallelism.
+ * </ul>
  * @param <I> type of emitted item
  */
 public class ReadMongoP<I> extends AbstractProcessor {
 
-    private static final long RETRY_INTERVAL = 3_000;
+    private static final long RETRY_INTERVAL_MS = 3_000;
     private static final int BATCH_SIZE = 1000;
     private ILogger logger;
 
@@ -125,7 +133,8 @@ public class ReadMongoP<I> extends AbstractProcessor {
     public boolean complete() {
         reader.reconnectIfNecessary(snapshotsEnabled);
         if (traverser == null) {
-            this.traverser = reader.nextChunkTraverser().onFirstNull(() -> traverser = null);
+            this.traverser = reader.nextChunkTraverser()
+                                   .onFirstNull(() -> traverser = null);
         }
         if (!emitFromTraverser(traverser)) {
             return false;
@@ -204,7 +213,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
             this.databaseName = databaseName;
             this.collectionName = collectionName;
             this.connectionSupplier = connectionSupplier;
-            this.connectionRetryTracker = new RetryTracker(RetryStrategies.indefinitely(RETRY_INTERVAL));
+            this.connectionRetryTracker = new RetryTracker(RetryStrategies.indefinitely(RETRY_INTERVAL_MS));
         }
 
         void reconnectIfNecessary(boolean snapshotsEnabled) {
@@ -362,8 +371,6 @@ public class ReadMongoP<I> extends AbstractProcessor {
         private MongoCursor<ChangeStreamDocument<Document>> cursor;
         private BsonDocument resumeToken;
 
-        private Traverser<Object> traverser;
-
         private StreamMongoReader(
                 SupplierEx<? extends MongoClient> connectionSupplier,
                 String databaseName,
@@ -426,8 +433,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
                     }
                 }
 
-                traverser = Traversers.traverseIterable(chunk)
-                                      .onFirstNull(() -> traverser = null)
+                Traverser<?> traverser = Traversers.traverseIterable(chunk)
                                       .flatMap(doc -> {
                                           resumeToken = doc.getResumeToken();
                                           long eventTime = clusterTime(doc);
@@ -436,10 +442,10 @@ public class ReadMongoP<I> extends AbstractProcessor {
                                                   ? Traversers.empty()
                                                   : eventTimeMapper.flatMapEvent(item, 0, eventTime);
                                       });
+                return traverser;
             } catch (MongoException e) {
                 throw new JetException("error while reading from mongodb", e);
             }
-            return traverser;
         }
 
         private long clusterTime(ChangeStreamDocument<Document> changeStreamDocument) {

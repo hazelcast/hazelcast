@@ -80,7 +80,14 @@ import static java.util.stream.Collectors.toList;
 /**
  * Processor for writing to MongoDB
  *
- * TODO add more info
+ * For each chunk of items, processor will choose proper collection and write ReplaceOne or InsertOne operation,
+ * depending on the existence of a document with given {@link #documentIdentityFieldName} in the collection.
+ *
+ * All writes are postponed until transaction commit. This is on purpose, so that - in case of any
+ * MongoDB's WriteError - we will be able to retry the commit.
+ *
+ * Transactional guarantees are provided using {@linkplain UnboundedTransactionsProcessorUtility}.
+ *
  * @param <I> type of saved item
  */
 public class WriteMongoP<I> extends AbstractProcessor {
@@ -104,7 +111,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
     private final RetryTracker connectionRetryTracker;
     private ILogger logger;
 
-    private UnboundedTransactionsProcessorUtility<MongoTransactionId, MongoTransaction> snapshotUtility;
+    private UnboundedTransactionsProcessorUtility<MongoTransactionId, MongoTransaction> transactionUtility;
 
     private final CollectionPicker<I> collectionPicker;
 
@@ -172,7 +179,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
         logger = context.logger();
 
         int processorIndex = context.globalProcessorIndex();
-        snapshotUtility = new UnboundedTransactionsProcessorUtility<>(
+        transactionUtility = new UnboundedTransactionsProcessorUtility<>(
                 getOutbox(),
                 context,
                 context.processingGuarantee(),
@@ -198,7 +205,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
 
     @Override
     protected boolean tryProcess(int ordinal, @Nonnull Object item) {
-        return snapshotUtility.tryProcess();
+        return transactionUtility.tryProcess();
     }
 
     @Override
@@ -206,7 +213,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
         if (!reconnectIfNecessary()) {
             return;
         }
-        MongoTransaction mongoTransaction = snapshotUtility.activeTransaction();
+        MongoTransaction mongoTransaction = transactionUtility.activeTransaction();
 
         ArrayList<I> items = new ArrayList<>();
         inbox.drainTo(items);
@@ -238,7 +245,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
                     writes.add(insert);
                 }
             }
-            if (snapshotUtility.usesTransactionLifecycle()) {
+            if (transactionUtility.usesTransactionLifecycle()) {
                 checkNotNull(mongoTransaction, "there is no active transaction");
                 mongoTransaction.addWrites(collectionKey, writes);
             } else {
@@ -267,7 +274,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
         if (mongoClient != null) {
             mongoClient.close();
         }
-        snapshotUtility.close();
+        transactionUtility.close();
     }
 
     @Override
@@ -277,23 +284,23 @@ public class WriteMongoP<I> extends AbstractProcessor {
 
     @Override
     public boolean snapshotCommitPrepare() {
-        return snapshotUtility.snapshotCommitPrepare();
+        return transactionUtility.snapshotCommitPrepare();
     }
 
     @Override
     public boolean snapshotCommitFinish(boolean success) {
-        return snapshotUtility.snapshotCommitFinish(success);
+        return transactionUtility.snapshotCommitFinish(success);
     }
 
     @Override
     public boolean complete() {
-        snapshotUtility.afterCompleted();
+        transactionUtility.afterCompleted();
         return true;
     }
 
     @Override
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
-        snapshotUtility.restoreFromSnapshot(key, value);
+        transactionUtility.restoreFromSnapshot(key, value);
     }
 
     boolean reconnectIfNecessary() {
@@ -385,7 +392,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
     }
 
     private void refreshTransaction(MongoTransaction transaction, boolean commit) {
-        if (!snapshotUtility.usesTransactionLifecycle()) {
+        if (!transactionUtility.usesTransactionLifecycle()) {
             return;
         }
         if (transaction == null) {
