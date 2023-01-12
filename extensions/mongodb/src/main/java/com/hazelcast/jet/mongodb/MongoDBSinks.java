@@ -27,6 +27,8 @@ import javax.annotation.Nonnull;
 
 /**
  * Contains factory methods for MongoDB sinks.
+ *
+ * @since 5.3
  */
 public final class MongoDBSinks {
 
@@ -46,6 +48,8 @@ public final class MongoDBSinks {
      * All writes are by default done with non-standard {@linkplain Mappers#defaultCodecRegistry() codec registry},
      * to allow out-of-the-box POJO support.
      *
+     * @since 5.3
+     *
      * @param name               name of the sink
      * @param connectionSupplier MongoDB client supplier
      * @param itemClass          type of document that will be saved
@@ -62,6 +66,8 @@ public final class MongoDBSinks {
 
     /**
      * Convenience for {@link #builder}.
+     *
+     * @since 5.3
      */
     public static Sink<Document> mongodb(
             @Nonnull String name,

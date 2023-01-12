@@ -1,5 +1,5 @@
 /*
- * Copyright 2023 Hazelcast Inc.
+ * Copyright 2021 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,8 @@ import javax.annotation.Nullable;
  * Contains factory methods for MongoDB sources.
  * <p>
  * See {@link MongoDBSourceBuilder} for creating custom MongoDB sources.
+ *
+ * @since 5.3
  */
 public final class MongoDBSources {
 
@@ -42,6 +44,8 @@ public final class MongoDBSources {
 
     /**
      * Creates as builder for new batch mongo source. Equivalent to calling {@link MongoDBSourceBuilder#batch}.
+     *
+     * @since 5.3
      * @param name descriptive name for the source (diagnostic purposes) connectionSupplier.
      * @param connectionSupplier a function that creates MongoDB client.
      * @return Batch Mongo source builder
@@ -54,13 +58,10 @@ public final class MongoDBSources {
 
     /**
      * Creates as builder for new stream mongo source. Equivalent to calling {@link MongoDBSourceBuilder#stream}.
-     * @param name descriptive name for the source (diagnostic purposes) connectionSupplier.@Nonnull
-     *     public static MongoDBSourceBuilder.Batch<Document> batch(
-     *             @Nonnull String name,
-     *             @Nonnull SupplierEx<? extends MongoClient> connectionSupplier
-     *     ) {
-     *         return new Batch<>(name, connectionSupplier);
-     *     }
+     *
+     * @since 5.3
+     *
+     * @param name descriptive name for the source (diagnostic purposes) connectionSupplier.
      * @param connectionSupplier a function that creates MongoDB client.
      * @return Stream Mongo source builder
      */
@@ -94,6 +95,8 @@ public final class MongoDBSources {
      * Pipeline p = Pipeline.create();
      * BatchStage<Document> srcStage = p.readFrom(batchSource);
      * }</pre>
+     *
+     * @since 5.3
      *
      * @param name             a descriptive name for the source (diagnostic purposes)
      * @param connectionString a connection string URI to MongoDB for example:
@@ -158,6 +161,8 @@ public final class MongoDBSources {
      * Pipeline p = Pipeline.create();
      * StreamSourceStage<? extends Document> srcStage = p.readFrom(streamSource);
      * }</pre>
+     *
+     * @since 5.3
      *
      * @param name             a descriptive name for the source (diagnostic purposes)
      * @param connectionString a connection string URI to MongoDB for example:

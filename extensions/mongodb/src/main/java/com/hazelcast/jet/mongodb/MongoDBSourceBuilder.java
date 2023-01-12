@@ -47,6 +47,8 @@ import static com.hazelcast.jet.mongodb.Mappers.toClass;
  *      <li>{@link #stream(String, SupplierEx)}</li>
  * </ul>
  *
+ * @since 5.3
+ *
  */
 public final class MongoDBSourceBuilder {
 
@@ -61,40 +63,9 @@ public final class MongoDBSourceBuilder {
      * The created source will not be distributed, a single processor instance
      * will be created on an arbitrary member.
      * <p>
-     * These are the callback functions you should provide to implement the
-     * source's behavior:
-     * <ol><li>
-     * {@code connectionSupplier} supplies MongoDb client.
-     * </li><li>
-     * {@code databaseFn} creates/obtains a database using the given client.
-     * </li><li>
-     * {@code collectionFn} creates/obtains a collection in the given
-     * database.
-     * </li><li>
-     * {@code searchFn} queries the collection and returns an iterable over the
-     * result set.
-     * </li><li>
-     * {@code mapFn} transforms the queried items to the desired output items.
-     * </li><li>
-     * {@code destroyFn} destroys the client. It will be called upon completion
-     * to release any resource. This component is optional.
-     * </li></ol>
-     * <p>
      * Here's an example that builds a simple source which queries all the
      * documents in a collection and emits the items as a string by transforming
      * each item to json.
-     * <pre>{@code
-     * BatchSource<String> source = MongoDBSourceBuilder
-     *         .batch("batch-source",
-     *                 () -> MongoClients.create("mongodb://127.0.0.1:27017"))
-     *         .databaseFn(client -> client.getDatabase("databaseName"))
-     *         .collectionFn(db -> db.getCollection("collectionName"))
-     *         .searchFn(MongoCollection::find)
-     *         .mapFn(Document::toJson)
-     *         .build();
-     * Pipeline p = Pipeline.create();
-     * BatchStage<String> srcStage = p.readFrom(source);
-     * }</pre>
      *
      * @param name               a descriptive name for the source (diagnostic purposes)
      * @param connectionSupplier a function that creates MongoDB client
@@ -115,47 +86,6 @@ public final class MongoDBSourceBuilder {
      * will be created on an arbitrary member. The source provides native
      * timestamps using {@link ChangeStreamDocument#getClusterTime()} and fault
      * tolerance using {@link ChangeStreamDocument#getResumeToken()}.
-     *
-     * <p>
-     * These are the callback functions you should provide to implement the
-     * source's behavior:
-     * <ol><li>
-     * {@code connectionSupplier} supplies MongoDb client.
-     * </li><li>
-     * {@code databaseFn} creates/obtains a database using the given client.
-     * </li><li>
-     * {@code collectionFn} creates/obtains a collection in the given
-     * database.
-     * </li><li>
-     * {@code searchFn} watches the changes on the collection and returns an
-     * iterable over the changes.
-     * </li><li>
-     * {@code mapFn} transforms the queried items to the desired output items.
-     * </li><li>
-     * {@code destroyFn} destroys the client. It will be called upon completion
-     * to release any resource. This component is optional.
-     * </li></ol>
-     * <p>
-     * Change stream is available for replica sets and sharded clusters that
-     * use WiredTiger storage engine and replica set protocol version 1 (pv1).
-     * Change streams can also be used on deployments which employ MongoDB's
-     * encryption-at-rest feature. You cannot watch on system collections and
-     * collections in admin, local and config databases.
-     * <p>
-     * Here's an example that builds a simple source which watches all changes
-     * on a collection and emits the full document of the change.
-     * <pre>{@code
-     * StreamSource<? extends Document> streamCollection = MongoDBSourceBuilder
-     *         .stream("stream-collection",
-     *                 () -> MongoClients.create("mongodb://127.0.0.1:27017"))
-     *         .databaseFn(client -> client.getDatabase("dbName"))
-     *         .collectionFn(db -> db.getCollection("collectionName"))
-     *         .searchFn(MongoCollection::watch)
-     *         .mapFn(ChangeStreamDocument::getFullDocument)
-     *         .build();
-     * Pipeline p = Pipeline.create();
-     * StreamSourceStage<? extends Document> srcStage = p.readFrom(streamCollection);
-     * }</pre>
      *
      * @param name               a descriptive name for the source (diagnostic purposes)
      * @param connectionSupplier a function that creates MongoDB client
