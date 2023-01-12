@@ -22,6 +22,7 @@ import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Watermark;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility;
 import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility.TransactionalResource;
 import com.hazelcast.jet.impl.processor.UnboundedTransactionsProcessorUtility;
@@ -39,6 +40,7 @@ import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.client.model.ReplaceOptions;
 import com.mongodb.client.model.WriteModel;
+import org.bson.BsonDocument;
 import org.bson.Document;
 import org.bson.conversions.Bson;
 
@@ -53,7 +55,9 @@ import java.util.Objects;
 import java.util.Set;
 
 import static com.hazelcast.jet.Util.idToString;
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
+import static com.hazelcast.jet.mongodb.Mappers.toBsonDocument;
 import static com.hazelcast.jet.retry.IntervalFunction.exponentialBackoffWithCap;
 import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.project;
@@ -62,6 +66,7 @@ import static com.mongodb.client.model.Filters.in;
 import static com.mongodb.client.model.Projections.include;
 import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.groupingBy;
+import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
 
 /**
@@ -142,9 +147,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
             replaceOptionAdjuster.accept(options);
         }
         this.replaceOptions = options;
-        this.connectionRetryTracker = new RetryTracker(
-                RETRY_STRATEGY
-        );
+        this.connectionRetryTracker = new RetryTracker(RETRY_STRATEGY);
 
         collectionPicker = new FunctionalCollectionPicker(databaseNameSelectFn, collectionNameSelectFn);
     }
@@ -183,6 +186,38 @@ public class WriteMongoP<I> extends AbstractProcessor {
         return snapshotUtility.tryProcess();
     }
 
+    private static final class MongoCollectionKey {
+        private final String collectionName;
+        private final MongoCollection<BsonDocument> collection;
+
+        private MongoCollectionKey(MongoCollection<BsonDocument> collection) {
+            this.collectionName = collection.getNamespace().getCollectionName();
+            this.collection = collection;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            MongoCollectionKey that = (MongoCollectionKey) o;
+            return Objects.equals(collectionName, that.collectionName);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(collectionName);
+        }
+
+        @Override
+        public String toString() {
+            return collectionName;
+        }
+    }
+
     @Override
     public void process(int ordinal, @Nonnull Inbox inbox) {
         if (!reconnectIfNecessary()) {
@@ -193,23 +228,32 @@ public class WriteMongoP<I> extends AbstractProcessor {
         ArrayList<I> items = new ArrayList<>();
         inbox.drainTo(items);
 
-        Map<MongoCollection<I>, List<I>> itemsPerCollection = items.stream().collect(groupingBy(collectionPicker::pick));
+        @SuppressWarnings("DataFlowIssue")
+        Map<MongoCollectionKey, List<I>> itemsPerCollection = items
+                .stream()
+                .map(e -> {
+                    MongoCollection<BsonDocument> col = collectionPicker.pick(e);
+                    return tuple2(new MongoCollectionKey(col), e);
+                })
+                .collect(groupingBy(Tuple2::f0, mapping(Tuple2::getValue, toList())));
 
-        for (MongoCollection<I> collection : itemsPerCollection.keySet()) {
+        for (MongoCollectionKey collectionKey : itemsPerCollection.keySet()) {
+            MongoCollection<BsonDocument> collection = collectionKey.collection;
+
             Set<Object> docsFound = queryForExistingIds(items, collection);
-            List<WriteModel<I>> writes = new ArrayList<>();
+            List<WriteModel<BsonDocument>> writes = new ArrayList<>();
 
-            for (I item : items) {
+            for (I item : itemsPerCollection.get(collectionKey)) {
                 Object id = documentIdentityFn.apply(item);
 
                 if (docsFound.contains(id)) {
                     Bson filter = eq(documentIdentityFieldName, id);
-                    ReplaceOneModel<I> update = new ReplaceOneModel<>(filter, item, replaceOptions);
+                    ReplaceOneModel<BsonDocument> update =
+                            new ReplaceOneModel<>(filter, toBsonDocument(item), replaceOptions);
                     writes.add(update);
                 } else {
-                    InsertOneModel<I> insert = new InsertOneModel<>(item);
+                    InsertOneModel<BsonDocument> insert = new InsertOneModel<>(toBsonDocument(item));
                     writes.add(insert);
-
                 }
             }
             if (snapshotUtility.usesTransactionLifecycle()) {
@@ -222,7 +266,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
 
     }
 
-    private Set<Object> queryForExistingIds(ArrayList<I> items, MongoCollection<I> collection) {
+    private Set<Object> queryForExistingIds(ArrayList<I> items, MongoCollection<?> collection) {
         List<Object> identityValues = items.stream()
                                            .map(documentIdentityFn)
                                            .filter(Objects::nonNull)
@@ -428,7 +472,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
     }
 
     private interface CollectionPicker<I> {
-        MongoCollection<I> pick(I item);
+        MongoCollection<BsonDocument> pick(I item);
 
         void refreshOnReconnect(MongoClient client);
     }
@@ -437,7 +481,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
 
         private final String databaseName;
         private final String collectionName;
-        private MongoCollection<I> collection;
+        private MongoCollection<BsonDocument> collection;
 
         private ConstantCollectionPicker(String databaseName, String collectionName) {
             this.databaseName = databaseName;
@@ -446,14 +490,14 @@ public class WriteMongoP<I> extends AbstractProcessor {
 
 
         @Override
-        public MongoCollection<I> pick(I item) {
+        public MongoCollection<BsonDocument> pick(I item) {
             return collection;
         }
 
         @Override
         public void refreshOnReconnect(MongoClient client) {
             MongoDatabase database = client.getDatabase(databaseName);
-            collection = database.getCollection(collectionName, documentType);
+            collection = database.getCollection(collectionName, BsonDocument.class);
         }
     }
 
@@ -471,12 +515,12 @@ public class WriteMongoP<I> extends AbstractProcessor {
 
 
         @Override
-        public MongoCollection<I> pick(I item) {
+        public MongoCollection<BsonDocument> pick(I item) {
             String databaseName = databaseNameSelectFn.apply(item);
             String collectionName = collectionNameSelectFn.apply(item);
 
             MongoDatabase database = mongoClient.getDatabase(databaseName);
-            return database.getCollection(collectionName, documentType);
+            return database.getCollection(collectionName, BsonDocument.class);
         }
 
         @Override

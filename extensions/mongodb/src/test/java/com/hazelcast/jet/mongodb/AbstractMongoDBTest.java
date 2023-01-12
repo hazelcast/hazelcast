@@ -16,6 +16,9 @@
 
 package com.hazelcast.jet.mongodb;
 
+import com.hazelcast.config.Config;
+import com.hazelcast.config.EventJournalConfig;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.mongodb.ConnectionString;
 import com.mongodb.MongoClientSettings;
@@ -70,7 +73,10 @@ public abstract class AbstractMongoDBTest extends SimpleTestInClusterSupport {
     public static void beforeClass() {
         assumeDockerEnabled();
         mongoContainer.start();
-        initialize(2, null);
+        Config config = new Config();
+        config.addMapConfig(new MapConfig("*").setEventJournalConfig(new EventJournalConfig().setEnabled(true)));
+        config.getJetConfig().setEnabled(true);
+        initialize(2, config);
     }
 
     @BeforeClass
@@ -137,9 +143,7 @@ public abstract class AbstractMongoDBTest extends SimpleTestInClusterSupport {
         MongoClientSettings settings = MongoClientSettings
                 .builder()
                 .applyConnectionString(new ConnectionString(connectionString))
-                .applyToClusterSettings(b -> {
-                    b.serverSelectionTimeout(timeoutSeconds, SECONDS);
-                })
+                .applyToClusterSettings(b -> b.serverSelectionTimeout(timeoutSeconds, SECONDS))
                 .build();
 
         return MongoClients.create(settings);
