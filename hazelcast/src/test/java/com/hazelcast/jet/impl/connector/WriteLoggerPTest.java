@@ -33,7 +33,7 @@ import static com.hazelcast.jet.core.processor.DiagnosticProcessors.writeLoggerP
 import static com.hazelcast.jet.core.test.TestSupport.supplierFrom;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -55,9 +55,9 @@ public class WriteLoggerPTest {
         p.tryProcessWatermark(wm);
 
         // Then
-        verifyZeroInteractions(outbox);
+        verifyNoInteractions(outbox);
         verify(logger).info("1");
         verify(logger).fine(wm.toString());
-        verifyZeroInteractions(logger);
+        verifyNoInteractions(logger);
     }
 }
