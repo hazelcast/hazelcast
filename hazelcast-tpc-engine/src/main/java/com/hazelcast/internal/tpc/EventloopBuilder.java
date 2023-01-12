@@ -59,9 +59,12 @@ public abstract class EventloopBuilder {
 
     protected EventloopBuilder(EventloopType type) {
         this.type = checkNotNull(type);
-        this.localTaskQueueCapacity = Integer.getInteger(NAME_LOCAL_TASK_QUEUE_CAPACITY, DEFAULT_LOCAL_QUEUE_CAPACITY);
-        this.concurrentTaskQueueCapacity = Integer.getInteger(NAME_CONCURRENT_TASK_QUEUE_CAPACITY, DEFAULT_CONCURRENT_QUEUE_CAPACITY);
-        this.scheduledTaskQueueCapacity = Integer.getInteger(NAME_SCHEDULED_TASK_QUEUE_CAPACITY, DEFAULT_SCHEDULED_TASK_QUEUE_CAPACITY);
+        this.localTaskQueueCapacity = Integer.getInteger(
+                NAME_LOCAL_TASK_QUEUE_CAPACITY, DEFAULT_LOCAL_QUEUE_CAPACITY);
+        this.concurrentTaskQueueCapacity = Integer.getInteger(
+                NAME_CONCURRENT_TASK_QUEUE_CAPACITY, DEFAULT_CONCURRENT_QUEUE_CAPACITY);
+        this.scheduledTaskQueueCapacity = Integer.getInteger(
+                NAME_SCHEDULED_TASK_QUEUE_CAPACITY, DEFAULT_SCHEDULED_TASK_QUEUE_CAPACITY);
         this.batchSize = Integer.getInteger(NAME_BATCH_SIZE, DEFAULT_BATCH_SIZE);
         this.clockRefreshPeriod = Integer.getInteger(NAME_CLOCK_REFRESH_PERIOD, DEFAULT_CLOCK_REFRESH_INTERVAL);
         this.spin = Boolean.parseBoolean(getProperty(NAME_EVENTLOOP_SPIN, "" + DEFAULT_SPIN));
@@ -82,7 +85,7 @@ public abstract class EventloopBuilder {
      * @throws IllegalArgumentException when clockRefreshPeriod smaller than 0.
      */
     public void setClockRefreshPeriod(int clockRefreshPeriod) {
-        this.clockRefreshPeriod = checkNotNegative(clockRefreshPeriod, "clockRefreshInterval");
+        this.clockRefreshPeriod = checkNotNegative(clockRefreshPeriod, "clockRefreshPeriod");
     }
 
     /**
