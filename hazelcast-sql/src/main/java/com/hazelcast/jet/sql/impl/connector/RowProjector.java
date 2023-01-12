@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,6 +77,12 @@ public class RowProjector implements Row {
         target.setTarget(object, null);
 
         return ExpressionUtil.projection(predicate, projection, this, evalContext);
+    }
+
+    @SuppressWarnings("unchecked")
+    @Override
+    public <T> T get(int index, boolean useLazyDeserialization) {
+        return (T) extractors[index].get(useLazyDeserialization);
     }
 
     @SuppressWarnings("unchecked")
