@@ -525,6 +525,8 @@ public class RaftSessionService extends AbstractCPMigrationAwareService
                 context.collect(desc.copy().withTag("endpoint", session.endpoint().toString()).withMetric("endpoint"), 0);
                 context.collect(desc.copy().withTag("endpointType", session.endpointType().toString())
                         .withMetric("endpointType"), 0);
+                context.collect(desc.copy().withTag("endpointName", session.endpointName())
+                        .withMetric("endpointName"), 0);
 
                 context.collect(desc.copy().withMetric("version"), session.version());
                 context.collect(desc.copy().withUnit(ProbeUnit.MS).withMetric("creationTime"), session.creationTime());
