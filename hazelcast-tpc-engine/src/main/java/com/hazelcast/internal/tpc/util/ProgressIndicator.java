@@ -22,12 +22,13 @@ import sun.misc.Unsafe;
 import java.lang.reflect.Field;
 
 /**
- * A counter that can be used for progress indication.
+ * A progress indicator is a counter that is updated by one thread, and can be read by many and is
+ * useful to indicate progress like number of bytes received on a socket.
  * <p/>
- * It can safely be updated by 1 thread and read by others. The value is guaranteed to be atomic,
- * but no ordering guarantees are provided.
+ * The value is guaranteed to be atomic, coherent and progress is guaranteed as well. But no ordering guarantees
+ * with respect to other loads/stores are provided.
  */
-public class LongCounter {
+public class ProgressIndicator {
 
     private static final Unsafe UNSAFE = UnsafeUtil.UNSAFE;
     private static final long OFFSET;
@@ -35,18 +36,26 @@ public class LongCounter {
     static {
         Field field = null;
         try {
-            field = LongCounter.class.getDeclaredField("value");
+            field = ProgressIndicator.class.getDeclaredField("value");
         } catch (NoSuchFieldException ignore) {
-            Util.ignore(ignore);
+            ExceptionUtil.ignore(ignore);
         }
         OFFSET = UNSAFE.objectFieldOffset(field);
     }
 
     private volatile long value;
 
-    public LongCounter() {
+    /**
+     * Creates a new ProgressIndicator with 0 as initial value.
+     */
+    public ProgressIndicator() {
     }
 
+    /**
+     * Increases the current value by 1.
+     *
+     * @return the updated value.
+     */
     @SuppressWarnings("checkstyle:innerassignment")
     public long inc() {
         final long newLocalValue = value + 1;
@@ -55,14 +64,25 @@ public class LongCounter {
         return newLocalValue;
     }
 
+    /**
+     * Increases the current value by delta (delta can be 0 or negative).
+     *
+     * @param delta the amount to add.
+     * @return the updated value.
+     */
     @SuppressWarnings("checkstyle:innerassignment")
-    public long inc(long amount) {
-        final long newLocalValue = value + amount;
+    public long inc(long delta) {
+        final long newLocalValue = value + delta;
         // In the future we could use an opaque write.
         UNSAFE.putOrderedLong(this, OFFSET, newLocalValue);
         return newLocalValue;
     }
 
+    /**
+     * Gets the current value.
+     *
+     * @return the current value.
+     */
     public long get() {
         // In the future we could use an opaque read.
         return value;

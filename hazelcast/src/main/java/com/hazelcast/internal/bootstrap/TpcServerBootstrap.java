@@ -24,10 +24,11 @@ import com.hazelcast.core.HazelcastException;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.internal.serialization.InternalSerializationService;
 import com.hazelcast.internal.tpc.AsyncServerSocket;
+import com.hazelcast.internal.tpc.Configuration;
 import com.hazelcast.internal.tpc.Eventloop;
 import com.hazelcast.internal.tpc.ReadHandler;
 import com.hazelcast.internal.tpc.TpcEngine;
-import com.hazelcast.internal.tpc.nio.NioEventloop;
+import com.hazelcast.internal.tpc.nio.NioEventloopBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngineImpl;
 
@@ -90,10 +91,10 @@ public class TpcServerBootstrap {
             return null;
         }
 
-        TpcEngine.Configuration configuration = new TpcEngine.Configuration();
-        NioEventloop.NioConfiguration eventloopConfiguration = new NioEventloop.NioConfiguration();
-        eventloopConfiguration.setThreadFactory(AltoEventloopThread::new);
-        configuration.setEventloopConfiguration(eventloopConfiguration);
+        Configuration configuration = new Configuration();
+        NioEventloopBuilder eventloopBuilder = new NioEventloopBuilder();
+        eventloopBuilder.setThreadFactory(AltoEventloopThread::new);
+        configuration.setEventloopBuilder(eventloopBuilder);
         configuration.setEventloopCount(nodeEngine.getConfig().getAltoConfig().getEventloopCount());
         return new TpcEngine(configuration);
     }

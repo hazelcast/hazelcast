@@ -14,25 +14,23 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpc;
+package com.hazelcast.internal.tpc.util;
 
-import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
+import org.junit.Test;
 
-/**
- * A scheduler that doesn't do anything.
- */
-public class NopScheduler implements Scheduler {
+import static org.junit.Assert.assertFalse;
 
-    @Override
-    public void init(Eventloop eventloop) {
-    }
+public class BoundPriorityQueueTest {
 
-    @Override
-    public boolean tick() {
-        return false;
-    }
+    @Test
+    public void test() {
+        int capacity = 16;
+        BoundPriorityQueue queue = new BoundPriorityQueue(capacity);
+        for (int k = 0; k < capacity; k++) {
+            queue.add(k);
+        }
 
-    @Override
-    public void schedule(IOBuffer task) {
+        boolean result = queue.offer(0);
+        assertFalse(result);
     }
 }

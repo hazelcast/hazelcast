@@ -19,6 +19,7 @@ package com.hazelcast.internal.tpc;
 import com.hazelcast.internal.tpc.logging.TpcLogger;
 import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpc.nio.NioAsyncSocket;
+import com.hazelcast.internal.tpc.util.ProgressIndicator;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -43,8 +44,18 @@ public abstract class AsyncServerSocket implements Closeable {
 
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
     protected final AtomicBoolean closed = new AtomicBoolean(false);
+    protected final ProgressIndicator accepted = new ProgressIndicator();
 
     protected AsyncServerSocket() {
+    }
+
+    /**
+     * Returns the number of socks that have been accepted by the AsyncServerSocket.
+     *
+     * @return the number of accepted sockets.
+     */
+    public long getAccepted() {
+        return accepted.get();
     }
 
     /**
@@ -144,6 +155,14 @@ public abstract class AsyncServerSocket implements Closeable {
 
     public abstract void listen(int backlog);
 
+    /**
+     * Accept incoming AsyncSocket.
+     * <p/>
+     * This call can be made from any thread, but the actual processing will happen on the eventloop-thread.
+     *
+     * @param consumer a function that is called when a socket has connected.
+     * @throws NullPointerException if consumer is null.
+     */
     public abstract void accept(Consumer<AsyncSocket> consumer);
 
     /**

@@ -14,25 +14,19 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpc;
-
-import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
+package com.hazelcast.internal.tpc.util;
 
 /**
- * A scheduler that doesn't do anything.
+ * A {@link NanoClock} that calls {@link System#nanoTime()} on every invocation.
+ *
+ * This class is thread-safe.
  */
-public class NopScheduler implements Scheduler {
+public class StandardNanoClock implements NanoClock {
+
+    private static final long START_TIME = System.nanoTime();
 
     @Override
-    public void init(Eventloop eventloop) {
-    }
-
-    @Override
-    public boolean tick() {
-        return false;
-    }
-
-    @Override
-    public void schedule(IOBuffer task) {
+    public long nanoTime() {
+        return System.nanoTime() - START_TIME;
     }
 }

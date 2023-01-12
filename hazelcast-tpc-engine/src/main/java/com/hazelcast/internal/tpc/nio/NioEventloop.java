@@ -19,13 +19,14 @@ package com.hazelcast.internal.tpc.nio;
 import com.hazelcast.internal.tpc.AsyncServerSocket;
 import com.hazelcast.internal.tpc.AsyncSocket;
 import com.hazelcast.internal.tpc.Eventloop;
+import com.hazelcast.internal.tpc.EventloopType;
+import com.hazelcast.internal.tpc.util.NanoClock;
 
 import java.io.IOException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
 
-import static com.hazelcast.internal.tpc.util.Util.epochNanos;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
@@ -35,11 +36,11 @@ public final class NioEventloop extends Eventloop {
     final Selector selector;
 
     public NioEventloop() {
-        this(new NioConfiguration());
+        this(new NioEventloopBuilder());
     }
 
-    public NioEventloop(NioConfiguration config) {
-        super(config, Type.NIO);
+    public NioEventloop(NioEventloopBuilder eventloopBuilder) {
+        super(eventloopBuilder);
         this.selector = SelectorOptimizer.newSelector();
     }
 
@@ -72,17 +73,18 @@ public final class NioEventloop extends Eventloop {
     @Override
     protected void eventLoop() throws Exception {
         boolean moreWork = false;
+        NanoClock nanoClock = unsafe.nanoClock();
         do {
             int keyCount;
             if (spin || moreWork) {
                 keyCount = selector.selectNow();
             } else {
                 wakeupNeeded.set(true);
-                if (concurrentRunQueue.isEmpty()) {
-                    if (earliestDeadlineEpochNanos == -1) {
+                if (concurrentTaskQueue.isEmpty()) {
+                    if (earliestDeadlineNanos == -1) {
                         keyCount = selector.select();
                     } else {
-                        long timeoutMillis = NANOSECONDS.toMillis(earliestDeadlineEpochNanos - epochNanos());
+                        long timeoutMillis = NANOSECONDS.toMillis(earliestDeadlineNanos - nanoClock.nanoTime());
                         keyCount = timeoutMillis <= 0
                                 ? selector.selectNow()
                                 : selector.select(timeoutMillis);
@@ -108,28 +110,14 @@ public final class NioEventloop extends Eventloop {
                 }
             }
 
-            runConcurrentTasks();
-
-            moreWork = scheduler.tick();
-
-            runLocalTasks();
+            moreWork = runConcurrentTasks();
+            moreWork |= scheduler.tick();
+            moreWork |= runScheduledTasks();
+            moreWork |= runLocalTasks();
         } while (state == State.RUNNING);
     }
 
     private class NioUnsafe extends Unsafe {
     }
 
-    /**
-     * Contains the configuration for the {@link NioEventloop}.
-     */
-    public static class NioConfiguration extends Configuration {
-        public NioConfiguration() {
-            super(Type.NIO);
-        }
-
-        @Override
-        public Eventloop create() {
-            return new NioEventloop(this);
-        }
-    }
 }

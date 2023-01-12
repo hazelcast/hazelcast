@@ -14,25 +14,18 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpc;
+package com.hazelcast.internal.tpc.util;
 
-import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
+public final class ExceptionUtil {
 
-/**
- * A scheduler that doesn't do anything.
- */
-public class NopScheduler implements Scheduler {
-
-    @Override
-    public void init(Eventloop eventloop) {
+    private ExceptionUtil() {
     }
 
-    @Override
-    public boolean tick() {
-        return false;
-    }
-
-    @Override
-    public void schedule(IOBuffer task) {
+    /**
+     * Ignores the given exception.
+     *
+     * @param t the exception to ignore
+     */
+    public static void ignore(Throwable t) {
     }
 }

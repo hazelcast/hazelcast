@@ -19,7 +19,7 @@ package com.hazelcast.internal.tpc;
 import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
 import com.hazelcast.internal.tpc.logging.TpcLogger;
 import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
-import com.hazelcast.internal.tpc.util.LongCounter;
+import com.hazelcast.internal.tpc.util.ProgressIndicator;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -54,37 +54,68 @@ public abstract class AsyncSocket implements Closeable {
     protected volatile SocketAddress localAddress;
     protected boolean clientSide;
 
-    protected final LongCounter ioBuffersWritten = new LongCounter();
-    protected final LongCounter bytesRead = new LongCounter();
-    protected final LongCounter bytesWritten = new LongCounter();
-    protected final LongCounter ioBuffersRead = new LongCounter();
-    protected final LongCounter handleWriteCnt = new LongCounter();
-    protected final LongCounter readEvents = new LongCounter();
+    protected final ProgressIndicator ioBuffersWritten = new ProgressIndicator();
+    protected final ProgressIndicator bytesRead = new ProgressIndicator();
+    protected final ProgressIndicator bytesWritten = new ProgressIndicator();
+    protected final ProgressIndicator ioBuffersRead = new ProgressIndicator();
+    protected final ProgressIndicator writeEvents = new ProgressIndicator();
+    protected final ProgressIndicator readEvents = new ProgressIndicator();
 
     private CloseListener closeListener;
     private Executor closeExecutor;
     protected ReadHandler readHandler;
 
-    public final long getIoBuffersWritten() {
-        return ioBuffersWritten.get();
-    }
 
+    /**
+     * Gets the number of bytes read.
+     *
+     * @return number of bytes read.
+     */
     public final long getBytesRead() {
         return bytesRead.get();
     }
 
+    /**
+     * Gets the number of bytes written.
+     *
+     * @return number of bytes written.
+     */
     public final long getBytesWritten() {
         return bytesWritten.get();
     }
 
+    /**
+     * Gets the number of IOBuffers read.
+     *
+     * @return the number of IOBuffers read.
+     */
     public final long getIoBuffersRead() {
         return ioBuffersRead.get();
     }
 
-    public final long getHandleWriteCnt() {
-        return handleWriteCnt.get();
+    /**
+     * Gets the number of IOBuffers written.
+     *
+     * @return the number of IOBuffers written.
+     */
+    public final long getIoBuffersWritten() {
+        return ioBuffersWritten.get();
     }
 
+    /**
+     * Gets the number of write events.
+     *
+     * @return the number of write events.
+     */
+    public final long getWriteEvents() {
+        return writeEvents.get();
+    }
+
+    /**
+     * Gets the number of read events.
+     *
+     * @return the number of read events.
+     */
     public final long getReadEvents() {
         return readEvents.get();
     }
