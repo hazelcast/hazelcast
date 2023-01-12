@@ -113,8 +113,7 @@ method with the Properties object. After that you can use your pipeline like any
 The source will emit items in `SourceRecord` type from Kafka Connect API, where you can access the key and value along
 with their corresponding schemas. Hazelcast Jet will instantiate a single task for the specified source in the cluster.
 You need to make sure the source connector is available on the classpath, either by putting its jar to the classpath of
-the members or
-by uploading the connector jar as a part for the job config.
+the members or by uploading the connector jar as a part for the job config.
 
 Besides that you need to provide set of the properties used by the connector. Some of them are
 [common](https://docs.confluent.io/platform/current/installation/configuration/connect/source-connect-configs.html#kconnect-long-source-configuration-properties-for-cp)
