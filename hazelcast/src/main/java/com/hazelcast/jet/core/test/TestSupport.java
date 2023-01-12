@@ -963,8 +963,8 @@ public final class TestSupport {
         if (isCooperative) {
             if (cooperativeTimeout > 0) {
                 assertTrue(String.format("call to %s() took %.1fms, it should be <%dms", methodName,
-                                toMillis(elapsed), COOPERATIVE_TIME_LIMIT_MS_FAIL),
-                        elapsed < MILLISECONDS.toNanos(COOPERATIVE_TIME_LIMIT_MS_FAIL));
+                                toMillis(elapsed), cooperativeTimeout),
+                        elapsed < MILLISECONDS.toNanos(cooperativeTimeout));
             }
             // print warning
             if (elapsed > MILLISECONDS.toNanos(COOPERATIVE_TIME_LIMIT_MS_WARN)) {
