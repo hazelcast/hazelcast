@@ -418,8 +418,7 @@ public abstract class Eventloop implements Executor {
             }
         }
 
-        //todo:
-        return true;
+        return !scheduledTaskQueue.isEmpty();
     }
 
     protected final boolean runLocalTasks() {
