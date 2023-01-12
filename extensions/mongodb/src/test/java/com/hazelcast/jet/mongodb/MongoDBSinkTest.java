@@ -71,8 +71,8 @@ import static org.junit.Assert.fail;
 @Category({QuickTest.class})
 public class MongoDBSinkTest extends AbstractMongoDBTest {
 
-    private static final int COUNT = 2000;
-    private static final int HALF = COUNT / 2;
+    private static final long COUNT = 2000;
+    private static final long HALF = COUNT / 2;
 
     @Parameter(0)
     public ProcessingGuarantee processingGuarantee;
@@ -84,13 +84,13 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
 
     @Test
     public void test_withBatchSource() {
-        IList<Integer> list = instance().getList(testName.getMethodName());
+        IList<Long> list = instance().getList(testName.getMethodName());
         MongoCollection<Document> collection = collection(defaultDatabase(), testName.getMethodName());
-        for (int i = 0; i < HALF; i++) {
+        for (long i = 0; i < HALF; i++) {
             list.add(i);
         }
         List<Document> docsToUpdate = new ArrayList<>();
-        for (int i = HALF; i < COUNT; i++) {
+        for (long i = HALF; i < COUNT; i++) {
             docsToUpdate.add(new Document("key", i).append("val", i + 100_000).append("some", "text lorem ipsum etc"));
         }
         Collection<String> ids = collection.insertMany(docsToUpdate).getInsertedIds().values().stream()
@@ -100,7 +100,7 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
         String connectionString = mongoContainer.getConnectionString();
 
         // used to distinguish Documents read from second source, where IDs are count/2 and higher
-        int originStreamDiscriminator = HALF + 100;
+        long originStreamDiscriminator = HALF + 100;
 
         Pipeline pipeline = Pipeline.create();
         BatchStage<Document> toAddSource = pipeline.readFrom(Sources.list(list))
@@ -142,7 +142,7 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
             mapToInsert.put(i, i);
         }
         List<Document> docsToUpdate = new ArrayList<>();
-        for (int i = HALF; i < COUNT; i++) {
+        for (long i = HALF; i < COUNT; i++) {
             docsToUpdate.add(new Document("key", i).append("val", i + 100_000).append("some", "text lorem ipsum etc"));
         }
         IMap<String, String> mapToUpdate = instance().getMap("toUpdate");
@@ -209,8 +209,8 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
         return MongoClients.create(mcs);
     }
 
-    private static int countInAll(MongoDatabase database, Bson filter) {
-        int count = 0;
+    private static long countInAll(MongoDatabase database, Bson filter) {
+        long count = 0;
         for (String name : database.listCollectionNames()) {
             if (name.startsWith("col_")) {
                 count += database.getCollection(name).countDocuments(filter);
