@@ -69,7 +69,7 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
-                <version>3.0.0-M5</version>
+                <version>3.0.0-M8</version>
                 <configuration>
                     <!-- Use TCP for IPC communication to avoid warnings: Corrupted STDOUT by directly writing... -->
                     <forkNode implementation="org.apache.maven.plugin.surefire.extensions.SurefireForkNodeFactory" />
