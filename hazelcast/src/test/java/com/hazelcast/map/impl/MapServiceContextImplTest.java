@@ -53,7 +53,6 @@ public class MapServiceContextImplTest extends HazelcastTestSupport {
         mapServiceContext.destroyMap(mapName);
 
         assertTrue(mapContainer.isDestroyed());
-
     }
 
     @Test(expected = AssertionError.class)
