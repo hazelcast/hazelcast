@@ -27,7 +27,7 @@ import static com.hazelcast.internal.tpc.util.Preconditions.checkPositive;
 import static java.lang.System.getProperty;
 
 /**
- * A factory for {@link Eventloop} instances.
+ * A builder for {@link Eventloop} instances.
  */
 public abstract class EventloopBuilder {
     public static final String NAME_LOCAL_TASK_QUEUE_CAPACITY = "hazelcast.tpc.localTaskQueue.capacity";
