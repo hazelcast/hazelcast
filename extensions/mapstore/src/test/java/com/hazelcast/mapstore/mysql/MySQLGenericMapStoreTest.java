@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@ import org.junit.experimental.categories.Category;
 public class MySQLGenericMapStoreTest extends GenericMapStoreTest {
 
     @BeforeClass
-    public static void beforeClass() throws Exception {
+    public static void beforeClass()  {
         initialize(new MySQLDatabaseProvider());
     }
 

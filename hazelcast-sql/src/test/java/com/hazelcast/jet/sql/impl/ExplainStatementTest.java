@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -114,6 +114,25 @@ public class ExplainStatementTest extends SqlTestSupport {
     }
 
     @Test
+    public void test_explainStatementLimitOffsetWithIndexScan() {
+        IMap<Integer, Integer> map = instance().getMap("map");
+        map.put(1, 1);
+        map.put(2, 2);
+        map.put(3, 3);
+        map.put(4, 4);
+        map.addIndex(IndexType.SORTED, "this");
+
+        String sql = "EXPLAIN PLAN FOR SELECT * FROM map ORDER BY this LIMIT 1 OFFSET 1";
+
+        createMapping("map", Integer.class, Integer.class);
+        assertRowsOrdered(sql, asList(
+                new Row("LimitPhysicalRel(offset=[1:TINYINT(1)], fetch=[1:TINYINT(1)])"),
+                new Row("  IndexScanMapPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], " +
+                        "index=[map_sorted_this], indexExp=[null], remainderExp=[null])")
+        ));
+    }
+
+    @Test
     public void test_explainStatementOrderedScanBelowUnion() {
         IMap<Integer, Integer> map = instance().getMap("map");
         map.put(1, 1);
@@ -124,7 +143,7 @@ public class ExplainStatementTest extends SqlTestSupport {
 
         createMapping("map", Integer.class, Integer.class);
         assertRowsOrdered(sql, asList(
-                new Row("SortPhysicalRel(sort0=[$1], dir0=[DESC], requiresSort=[true])"),
+                new Row("SortPhysicalRel(sort0=[$1], dir0=[DESC])"),
                 new Row("  UnionPhysicalRel(all=[true])"),
                 new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], discriminator=[0])"),
                 new Row("    FullScanPhysicalRel(table=[[hazelcast, public, map[projects=[$0, $1]]]], discriminator=[0])")

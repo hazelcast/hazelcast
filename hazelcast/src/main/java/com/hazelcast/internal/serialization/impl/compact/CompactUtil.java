@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -208,7 +208,7 @@ public final class CompactUtil {
                 + "cannot be serialized with zero configuration Compact "
                 + "serialization because this type can be serialized with another "
                 + "serialization mechanism. If you want to serialize "
-                + "'" + clazz + "' which uses this class in its fields, consider"
+                + "'" + clazz + "' which uses this class in its fields, consider "
                 + "overriding that serialization mechanism.");
     }
 

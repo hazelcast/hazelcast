@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -46,6 +46,7 @@ import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.SQLNonTransientException;
 import java.sql.Statement;
@@ -76,13 +77,13 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     private static final String DUMMY_DATA_STORE = "dummy-data-store";
 
     @ClassRule
-    @SuppressWarnings("rawtypes")
+    @SuppressWarnings({"rawtypes", "resource"})
     public static PostgreSQLContainer container = new PostgreSQLContainer<>("postgres:12.1")
-            .withCommand("postgres -c max_prepared_transactions=10");
+            .withCommand("postgres -c max_prepared_transactions=10 -c max_connections=500");
 
     private static final int PERSON_COUNT = 10;
 
-    private static AtomicInteger tableCounter = new AtomicInteger();
+    private static final AtomicInteger TABLE_COUNTER = new AtomicInteger();
     private static HikariDataSource hikariDataSource;
     private String tableName;
 
@@ -92,7 +93,7 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
     }
 
     @BeforeClass
-    public static void setupClass() throws SQLException {
+    public static void setupClass() {
         Config config = smallInstanceConfig();
         configureJdbcDataStore(JDBC_DATA_STORE, container.getJdbcUrl(), container.getUsername(), container.getPassword(), config);
         configureDummyDataStore(DUMMY_DATA_STORE, config);
@@ -101,18 +102,52 @@ public class WriteJdbcPTest extends SimpleTestInClusterSupport {
 
     @Before
     public void setup() throws SQLException {
-        tableName = "T" + tableCounter.incrementAndGet();
+        tableName = "T" + TABLE_COUNTER.incrementAndGet();
         logger.info("Will use table: " + tableName);
-        try (Connection connection = ((DataSource) createDataSource(false)).getConnection()) {
-            connection.createStatement()
-                    .execute("CREATE TABLE " + tableName + "(id int, name varchar(255))");
-        }
+        /* language=SQL */
+        executeSql("CREATE TABLE " + tableName + "(id int, name varchar(255))");
     }
 
     @After
     public void tearDown() throws Exception {
         if (hikariDataSource != null) {
             hikariDataSource.close();
+        }
+
+        listRemainingConnections();
+    }
+
+    private static void executeSql(String sql) throws SQLException {
+        try (Connection connection = ((DataSource) createDataSource(false)).getConnection()) {
+            connection.createStatement().execute(sql);
+        }
+    }
+    private void listRemainingConnections() throws SQLException {
+        try (
+                Connection connection = ((DataSource) createDataSource(false)).getConnection();
+                ResultSet resultSet = connection.createStatement().executeQuery(
+                        "SELECT * FROM pg_stat_activity WHERE datname = current_database() and pid <> pg_backend_pid()")
+        ) {
+            ResultSetMetaData metaData = resultSet.getMetaData();
+            List<String> rows = new ArrayList<>();
+            StringBuilder row = new StringBuilder();
+            for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                row.append(metaData.getColumnName(i)).append("\t|");
+            }
+            rows.add(row.toString());
+
+            while (resultSet.next()) {
+                row = new StringBuilder();
+                for (int i = 1; i <= metaData.getColumnCount(); i++) {
+                    row.append(resultSet.getObject(i) + "\t|\t");
+                }
+                rows.add(row.toString());
+
+            }
+
+            if (!rows.isEmpty()) {
+                logger.warning("Remaining connections: \n" + String.join("\n", rows));
+            }
         }
     }
 

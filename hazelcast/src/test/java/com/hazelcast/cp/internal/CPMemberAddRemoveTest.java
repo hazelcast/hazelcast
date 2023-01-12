@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -997,6 +997,8 @@ public class CPMemberAddRemoveTest extends HazelcastRaftTestSupport {
         assertTrue(newMetadataGroupId.getSeed() > initialMetadataGroupId.getSeed());
         assertEquals(newMetadataGroupId.getSeed(), getRaftService(newInstance1).getMetadataGroupId().getSeed());
         assertEquals(newMetadataGroupId.getSeed(), getRaftService(newInstance2).getMetadataGroupId().getSeed());
+
+        waitUntilCPDiscoveryCompleted(instances[0], newInstance1, newInstance2);
 
         for (int i = 0; i < commitIndexAdvanceCountToSnapshot; i++) {
             getRaftInvocationManager(instances[0]).invoke(getMetadataGroupId(instances[0]), new GetActiveCPMembersOp()).get();

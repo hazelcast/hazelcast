@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,11 +49,13 @@ import com.hazelcast.jet.sql.impl.connector.SqlConnectorUtil;
 import com.hazelcast.jet.sql.impl.connector.map.IMapSqlConnector;
 import com.hazelcast.jet.sql.impl.opt.ExpressionValues;
 import com.hazelcast.jet.sql.impl.opt.WatermarkKeysAssigner;
+import com.hazelcast.jet.sql.impl.opt.WatermarkThrottlingFrameSizeCalculator;
 import com.hazelcast.jet.sql.impl.processors.LateItemsDropP;
 import com.hazelcast.jet.sql.impl.processors.SqlHashJoinP;
 import com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinProcessorSupplier;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.spi.impl.NodeEngine;
+import com.hazelcast.sql.impl.QueryException;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.expression.ConstantExpression;
 import com.hazelcast.sql.impl.expression.Expression;
@@ -94,7 +96,7 @@ import static java.util.Collections.singletonList;
 public class CreateDagVisitor {
 
     // TODO https://github.com/hazelcast/hazelcast/issues/20383
-    private static final ExpressionEvalContext MOCK_EEC =
+    public static final ExpressionEvalContext MOCK_EEC =
             new ExpressionEvalContext(emptyList(), new DefaultSerializationServiceBuilder().build());
 
     private static final int LOW_PRIORITY = 10;
@@ -106,6 +108,7 @@ public class CreateDagVisitor {
     private final Address localMemberAddress;
     private final QueryParameterMetadata parameterMetadata;
     private final WatermarkKeysAssigner watermarkKeysAssigner;
+    private long watermarkThrottlingFrameSize = -1;
 
     public CreateDagVisitor(
             NodeEngine nodeEngine,
@@ -184,7 +187,12 @@ public class CreateDagVisitor {
         Table table = hazelcastTable.getTarget();
         collectObjectKeys(table);
 
-        BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> policyProvider = rel.eventTimePolicyProvider();
+        BiFunctionEx<ExpressionEvalContext, Byte, EventTimePolicy<JetSqlRow>> policyProvider =
+                rel.eventTimePolicyProvider(
+                        rel.watermarkedColumnIndex(),
+                        rel.lagExpression(),
+                        watermarkThrottlingFrameSize);
+
         Map<Integer, MutableByte> fieldsKey = watermarkKeysAssigner.getWatermarkedFieldsKey(rel);
         Byte wmKey;
         if (fieldsKey != null) {
@@ -529,34 +537,29 @@ public class CreateDagVisitor {
         return merger;
     }
 
+    public Vertex onLimit(LimitPhysicalRel rel) {
+        throw QueryException.error("FETCH/OFFSET is only supported for the top-level SELECT");
+    }
+
     public Vertex onRoot(RootRel rootRel) {
+        watermarkThrottlingFrameSize = WatermarkThrottlingFrameSizeCalculator.calculate((PhysicalRel) rootRel.getInput());
+
         RelNode input = rootRel.getInput();
-        Expression<?> fetch;
-        Expression<?> offset;
 
-        if (input instanceof SortPhysicalRel || isCalcWithSort(input)) {
-            SortPhysicalRel sortRel = input instanceof SortPhysicalRel
-                    ? (SortPhysicalRel) input
-                    : (SortPhysicalRel) ((CalcPhysicalRel) input).getInput();
+        Expression<?> fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
+        Expression<?> offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
 
-            if (sortRel.fetch == null) {
-                fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
-            } else {
-                fetch = sortRel.fetch(parameterMetadata);
+        // We support only top-level LIMIT ... OFFSET.
+        if (input instanceof LimitPhysicalRel) {
+            LimitPhysicalRel limit = (LimitPhysicalRel) input;
+            if (limit.fetch() != null) {
+                fetch = limit.fetch(parameterMetadata);
             }
 
-            if (sortRel.offset == null) {
-                offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
-            } else {
-                offset = sortRel.offset(parameterMetadata);
+            if (limit.offset() != null) {
+                offset = limit.offset(parameterMetadata);
             }
-
-            if (!sortRel.requiresSort()) {
-                input = sortRel.getInput();
-            }
-        } else {
-            fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
-            offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
+            input = limit.getInput();
         }
 
         Vertex vertex = dag.newUniqueVertex(
@@ -718,10 +721,5 @@ public class CreateDagVisitor {
         if (objectKey != null) {
             objectKeys.add(objectKey);
         }
-    }
-
-    private boolean isCalcWithSort(RelNode input) {
-        return input instanceof CalcPhysicalRel &&
-                ((CalcPhysicalRel) input).getInput() instanceof SortPhysicalRel;
     }
 }

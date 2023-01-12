@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,16 +28,9 @@ import org.elasticsearch.client.RestClientBuilder;
 import org.junit.After;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-
 import static com.google.common.collect.ImmutableMap.of;
-import static java.util.Collections.synchronizedList;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.spy;
-import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 /**
@@ -60,6 +53,7 @@ public class LocalElasticSourcesTest extends CommonElasticSourcesTest {
 
     @Test
     public void given_nonColocatedCluster_whenReadFromElasticSourceWithCoLocation_then_shouldThrowException() {
+        ClientHolder.elasticClients.clear();
         indexDocument("my-index", of("name", "Frantisek"));
 
         Pipeline p = Pipeline.create();
@@ -80,7 +74,9 @@ public class LocalElasticSourcesTest extends CommonElasticSourcesTest {
     }
 
     @Test
-    public void when_readFromElasticSource_then_shouldCloseAllCreatedClients() throws IOException {
+    public void when_readFromElasticSource_then_shouldCloseAllCreatedClients() {
+        ClientHolder.elasticClients.clear();
+
         indexDocument("my-index", of("name", "Frantisek"));
 
         Pipeline p = Pipeline.create();
@@ -90,7 +86,7 @@ public class LocalElasticSourcesTest extends CommonElasticSourcesTest {
                     RestClientBuilder builder = spy(ElasticSupport.elasticClientSupplier().get());
                     when(builder.build()).thenAnswer(invocation -> {
                         Object result = invocation.callRealMethod();
-                        RestClient elasticClient = (RestClient) spy(result);
+                        RestClient elasticClient = (RestClient) result;
                         ClientHolder.elasticClients.add(elasticClient);
                         return elasticClient;
                     });
@@ -105,12 +101,7 @@ public class LocalElasticSourcesTest extends CommonElasticSourcesTest {
 
         submitJob(p);
 
-        for (RestClient elasticClient : ClientHolder.elasticClients) {
-            verify(elasticClient).close();
-        }
+        ClientHolder.assertAllClientsNotRunning();
     }
 
-    static class ClientHolder implements Serializable {
-        static List<RestClient> elasticClients = synchronizedList(new ArrayList<>());
-    }
 }

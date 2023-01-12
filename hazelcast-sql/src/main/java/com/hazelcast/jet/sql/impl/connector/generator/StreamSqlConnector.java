@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +40,7 @@ import java.util.Map;
 
 import static java.util.Collections.singletonList;
 
-class StreamSqlConnector implements SqlConnector {
+public class StreamSqlConnector implements SqlConnector {
 
     static final StreamSqlConnector INSTANCE = new StreamSqlConnector();
 
@@ -83,7 +83,7 @@ class StreamSqlConnector implements SqlConnector {
 
     @Nonnull
     @SuppressWarnings("SameParameterValue")
-    static StreamTable createTable(String schemaName, String name, List<Expression<?>> argumentExpressions) {
+    public static StreamTable createTable(String schemaName, String name, List<Expression<?>> argumentExpressions) {
         return new StreamTable(INSTANCE, FIELDS, schemaName, name, argumentExpressions);
     }
 

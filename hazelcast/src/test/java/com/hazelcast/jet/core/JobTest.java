@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -942,7 +942,7 @@ public class JobTest extends SimpleTestInClusterSupport {
         allJobs.add(lightBatchJob2);
 
         // Then
-        // getJobs must include all submitted all jobs, except for the light batch jobs that are done
+        // getJobs must include all submitted jobs, except for the light batch jobs that are done
         assertThat(toList(jet.getJobs(), this::jobEqualityString))
                 .containsExactlyInAnyOrderElementsOf(toList(allJobsExceptCompletedLightJobs, this::jobEqualityString));
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -92,12 +92,14 @@ public class MapIndexJsonTest extends HazelcastTestSupport {
     public void setup() {
         factory = createHazelcastInstanceFactory(3);
         factory.newInstances(getConfig(), 3);
+        assertClusterSizeEventually(3, factory.getAllHazelcastInstances());
+        warmUpPartitions(factory.getAllHazelcastInstances());
         instance = factory.getAllHazelcastInstances().iterator().next();
     }
 
     @Override
     protected Config getConfig() {
-        Config config = super.getConfig();
+        Config config = smallInstanceConfigWithoutJetAndMetrics();
         MapConfig mapConfig = new MapConfig("default")
                 .setInMemoryFormat(inMemoryFormat)
                 .setMetadataPolicy(metadataPolicy)
