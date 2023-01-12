@@ -67,7 +67,7 @@ public abstract class EventloopBuilder {
                 NAME_SCHEDULED_TASK_QUEUE_CAPACITY, DEFAULT_SCHEDULED_TASK_QUEUE_CAPACITY);
         this.batchSize = Integer.getInteger(NAME_BATCH_SIZE, DEFAULT_BATCH_SIZE);
         this.clockRefreshPeriod = Integer.getInteger(NAME_CLOCK_REFRESH_PERIOD, DEFAULT_CLOCK_REFRESH_INTERVAL);
-        this.spin = Boolean.parseBoolean(getProperty(NAME_EVENTLOOP_SPIN, "" + DEFAULT_SPIN));
+        this.spin = Boolean.parseBoolean(getProperty(NAME_EVENTLOOP_SPIN, Boolean.toString(DEFAULT_SPIN)));
     }
 
     /**
