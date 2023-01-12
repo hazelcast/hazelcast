@@ -293,7 +293,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
         @Override
         void onConnect(MongoClient mongoClient, boolean supportsSnapshots) {
             List<Bson> aggregateList = new ArrayList<>(aggregates);
-            if (supportsSnapshots) {
+            if (supportsSnapshots && !hasSorts(aggregateList)) {
                 aggregateList.add(sort(ascending("_id")).toBsonDocument());
             }
             if (totalParallelism > 1) {
@@ -312,6 +312,10 @@ public class ReadMongoP<I> extends AbstractProcessor {
                         });
             }
             checkNotNull(this.delegate, "unable to construct Mongo traverser");
+        }
+
+        private boolean hasSorts(List<Bson> aggregateList) {
+            return aggregateList.stream().anyMatch(agg -> agg.toBsonDocument().get("$sort") != null);
         }
 
         private Traverser<Document> delegateForCollection(MongoCollection<Document> collection, List<Bson> aggregateList) {

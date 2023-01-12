@@ -81,14 +81,16 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
     public void testBatchOneCollection() {
         IList<Object> list = instance().getList(testName.getMethodName());
 
+
         collection().insertMany(range(0, 30).mapToObj(i -> newDocument("key", i).append("val", i)).collect(toList()));
         assertEquals(collection().countDocuments(), 30L);
 
         Pipeline pipeline = Pipeline.create();
         String connectionString = mongoContainer.getConnectionString();
         Batch<?> sourceBuilder = MongoDBSources.batch(SOURCE_NAME, () -> mongoClient(connectionString))
-                                                     .database(defaultDatabase())
-                                                     .collection(testName.getMethodName(), Document.class);
+                                               .database(defaultDatabase())
+                                               .collection(testName.getMethodName(), Document.class)
+                                               .sort(Sorts.ascending("key"));
         sourceBuilder = batchFilters(sourceBuilder);
         pipeline.readFrom(sourceBuilder.build())
                 .setLocalParallelism(2)

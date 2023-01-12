@@ -195,7 +195,6 @@ public class WriteMongoP<I> extends AbstractProcessor {
                 () -> {
                     for (MongoTransaction tx : activeTransactions.values()) {
                         refreshTransaction(tx, false);
-
                     }
                 }
         );
