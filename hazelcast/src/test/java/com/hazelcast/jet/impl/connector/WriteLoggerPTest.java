@@ -34,6 +34,7 @@ import static com.hazelcast.jet.core.test.TestSupport.supplierFrom;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -58,6 +59,6 @@ public class WriteLoggerPTest {
         verifyNoInteractions(outbox);
         verify(logger).info("1");
         verify(logger).fine(wm.toString());
-        verifyNoInteractions(logger);
+        verifyNoMoreInteractions(logger);
     }
 }
