@@ -163,7 +163,11 @@ public class RaftInvocationManager {
                         .collect(Collectors.toList());
     }
 
-    private void invokeCreateRaftGroup(String groupName, int groupSize, long groupIndex, List<RaftEndpoint> members,
+    /**
+     * This method needs to be public to allow to create CP groups in
+     * integration tests deterministically
+     */
+    public void invokeCreateRaftGroup(String groupName, int groupSize, long groupIndex, List<RaftEndpoint> members,
                                        InternalCompletableFuture<RaftGroupId> resultFuture) {
         InternalCompletableFuture<CPGroupSummary> f =
                 invoke(raftService.getMetadataGroupId(), new CreateRaftGroupOp(groupName, members, groupIndex));
