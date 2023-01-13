@@ -35,7 +35,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 
 /**
  */
-@Generated("096ea34385cdce7ec85199d625f66f7f")
+@Generated("2792b853a8056a0dbaef5ccec327b0c1")
 public final class JetUploadJobMultipartCodec {
     //hex: 0xFE1100
     public static final int REQUEST_MESSAGE_TYPE = 16650496;
@@ -79,9 +79,14 @@ public final class JetUploadJobMultipartCodec {
          * The size of binary data
          */
         public int partSize;
+
+        /**
+         * Hexadecimal SHA256 of the part data
+         */
+        public java.lang.String sha256Hex;
     }
 
-    public static ClientMessage encodeRequest(java.util.UUID sessionId, int currentPartNumber, int totalPartNumber, byte[] partData, int partSize) {
+    public static ClientMessage encodeRequest(java.util.UUID sessionId, int currentPartNumber, int totalPartNumber, byte[] partData, int partSize, java.lang.String sha256Hex) {
         ClientMessage clientMessage = ClientMessage.createForEncode();
         clientMessage.setRetryable(true);
         clientMessage.setOperationName("Jet.UploadJobMultipart");
@@ -94,6 +99,7 @@ public final class JetUploadJobMultipartCodec {
         encodeInt(initialFrame.content, REQUEST_PART_SIZE_FIELD_OFFSET, partSize);
         clientMessage.add(initialFrame);
         ByteArrayCodec.encode(clientMessage, partData);
+        StringCodec.encode(clientMessage, sha256Hex);
         return clientMessage;
     }
 
@@ -106,6 +112,7 @@ public final class JetUploadJobMultipartCodec {
         request.totalPartNumber = decodeInt(initialFrame.content, REQUEST_TOTAL_PART_NUMBER_FIELD_OFFSET);
         request.partSize = decodeInt(initialFrame.content, REQUEST_PART_SIZE_FIELD_OFFSET);
         request.partData = ByteArrayCodec.decode(iterator);
+        request.sha256Hex = StringCodec.decode(iterator);
         return request;
     }
 

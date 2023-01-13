@@ -188,7 +188,8 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         return invokeRequestOnMasterAndDecodeResponse(jobMetaDataRequest, JetUploadJobMetaDataCodec::decodeResponse);
     }
 
-    private void sendJobMultipart(Path jarPath, UUID sessionId, long jarSize) throws IOException {
+    private void sendJobMultipart(Path jarPath, UUID sessionId, long jarSize)
+            throws IOException, NoSuchAlgorithmException {
         int partSize = calculatePartBufferSize();
 
         int totalParts = calculateTotalParts(jarSize, partSize);
@@ -204,9 +205,10 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
                 // Read data
                 int bytesRead = fileInputStream.read(data);
 
+                String sha256Hex = Sha256Util.calculateSha256Hex(data,bytesRead);
                 //Send the part
                 ClientMessage jobDataRequest = JetUploadJobMultipartCodec.encodeRequest(sessionId, currentPartNumber, totalParts,
-                        data, bytesRead);
+                        data, bytesRead, sha256Hex);
                 invokeRequestOnMasterAndDecodeResponse(jobDataRequest, JetUploadJobMultipartCodec::decodeResponse);
             }
         }
