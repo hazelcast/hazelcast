@@ -46,11 +46,7 @@ public class JetUploadJobMultipartTask extends
 
     @Override
     protected Operation prepareOperation() {
-        return new UploadJobMultiPartOperation(parameters.sessionId,
-                parameters.currentPartNumber,
-                parameters.totalPartNumber,
-                parameters.partData,
-                parameters.partSize);
+        return new UploadJobMultiPartOperation(this.parameters);
     }
 
     @Override

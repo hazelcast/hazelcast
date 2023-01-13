@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.jobupload;
 
+import com.hazelcast.internal.util.Sha256Util;
 import com.hazelcast.test.HazelcastParallelClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
@@ -118,14 +119,26 @@ public class JobUploadStoreTest {
 
 
         // Send part 1
-        JobMultiPartParameterObject parameterObject1 = new JobMultiPartParameterObject(sessionID, 1, 2,
-                jarData, jarData.length);
+        JobMultiPartParameterObject parameterObject1 = new JobMultiPartParameterObject();
+        parameterObject1.setSessionId(sessionID);
+        parameterObject1.setCurrentPartNumber(1);
+        parameterObject1.setTotalPartNumber(2);
+        parameterObject1.setPartData(jarData);
+        parameterObject1.setPartSize(jarData.length);
+        parameterObject1.setSha256Hex(Sha256Util.calculateSha256HexOfData(jarData,jarData.length));
+
         JobMetaDataParameterObject result = jobUploadStore.processJobMultipart(parameterObject1);
         assertNull(result);
 
         // Send part 2
-        JobMultiPartParameterObject parameterObject2 = new JobMultiPartParameterObject(sessionID, 2, 2,
-                jarData, jarData.length);
+        JobMultiPartParameterObject parameterObject2 = new JobMultiPartParameterObject();
+        parameterObject2.setSessionId(sessionID);
+        parameterObject2.setCurrentPartNumber(2);
+        parameterObject2.setTotalPartNumber(2);
+        parameterObject2.setPartData(jarData);
+        parameterObject2.setPartSize(jarData.length);
+        parameterObject2.setSha256Hex(Sha256Util.calculateSha256HexOfData(jarData,jarData.length));
+
         result = jobUploadStore.processJobMultipart(parameterObject2);
 
         // Assert result

@@ -29,32 +29,53 @@ public class JobMultiPartParameterObject {
     private byte[] partData;
     private int partSize;
 
-    public JobMultiPartParameterObject(UUID sessionId, int currentPartNumber, int totalPartNumber, byte[] partData,
-                                       int partSize) {
-        this.sessionId = sessionId;
-        this.currentPartNumber = currentPartNumber;
-        this.totalPartNumber = totalPartNumber;
-        this.partData = partData;
-        this.partSize = partSize;
-    }
+    private String sha256Hex;
 
     public UUID getSessionId() {
         return sessionId;
+    }
+
+    public void setSessionId(UUID sessionId) {
+        this.sessionId = sessionId;
     }
 
     public int getCurrentPartNumber() {
         return currentPartNumber;
     }
 
+    public void setCurrentPartNumber(int currentPartNumber) {
+        this.currentPartNumber = currentPartNumber;
+    }
+
     public int getTotalPartNumber() {
         return totalPartNumber;
+    }
+
+    public void setTotalPartNumber(int totalPartNumber) {
+        this.totalPartNumber = totalPartNumber;
     }
 
     public byte[] getPartData() {
         return partData;
     }
 
+    public void setPartData(byte[] partData) {
+        this.partData = partData;
+    }
+
     public int getPartSize() {
         return partSize;
+    }
+
+    public void setPartSize(int partSize) {
+        this.partSize = partSize;
+    }
+
+    public String getSha256Hex() {
+        return sha256Hex;
+    }
+
+    public void setSha256Hex(String sha256Hex) {
+        this.sha256Hex = sha256Hex;
     }
 }

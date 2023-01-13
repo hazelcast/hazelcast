@@ -177,7 +177,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     }
 
     public String calculateSha256Hex(Path jarPath) throws IOException, NoSuchAlgorithmException {
-        return Sha256Util.calculateSha256Hex(jarPath);
+        return Sha256Util.calculateSha256HexOfPath(jarPath);
     }
 
     private boolean sendJobMetaData(UUID sessionId, String fileName, String sha256Hex, String snapshotName,
@@ -205,7 +205,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
                 // Read data
                 int bytesRead = fileInputStream.read(data);
 
-                String sha256Hex = Sha256Util.calculateSha256Hex(data,bytesRead);
+                String sha256Hex = Sha256Util.calculateSha256HexOfData(data, bytesRead);
                 //Send the part
                 ClientMessage jobDataRequest = JetUploadJobMultipartCodec.encodeRequest(sessionId, currentPartNumber, totalParts,
                         data, bytesRead, sha256Hex);

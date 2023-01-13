@@ -21,6 +21,7 @@ import com.hazelcast.client.properties.ClientProperty;
 import com.hazelcast.config.Config;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.impl.HazelcastBootstrap;
+import com.hazelcast.internal.util.Sha256Util;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
@@ -42,7 +43,6 @@ import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import static com.hazelcast.internal.util.Sha256Util.calculateSha256Hex;
 import static java.util.Collections.emptyList;
 import static junit.framework.TestCase.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -55,7 +55,7 @@ public class JobUploadTest extends JetTestSupport {
     @Test
     public void sha256() throws IOException, NoSuchAlgorithmException {
         Path jarPath = getJarPath();
-        String sha256Hex = calculateSha256Hex(jarPath);
+        String sha256Hex = Sha256Util.calculateSha256HexOfPath(jarPath);
         assertEquals("bba07be19c71bfe5fd51dc681f807ab212efd4d6e7c3f6380dbfcbdcb5deb073", sha256Hex);
     }
 

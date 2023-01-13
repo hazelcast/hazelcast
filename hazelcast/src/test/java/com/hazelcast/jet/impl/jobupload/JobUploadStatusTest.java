@@ -35,6 +35,7 @@ import java.nio.file.Path;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.UUID;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -84,46 +85,106 @@ public class JobUploadStatusTest {
 
     @Test
     public void testInvalidCurrentPart() {
-        JobMultiPartParameterObject jobMultiPartParameterObject = new JobMultiPartParameterObject(null, 0, 0, null, 0);
+        JobMultiPartParameterObject jobMultiPartParameterObject = new JobMultiPartParameterObject();
+        jobMultiPartParameterObject.setSessionId(null);
+        jobMultiPartParameterObject.setCurrentPartNumber(0);
+        jobMultiPartParameterObject.setTotalPartNumber(0);
+        jobMultiPartParameterObject.setPartData(null);
+        jobMultiPartParameterObject.setPartSize(0);
+
         Assert.assertThrows(JetException.class, () -> jobUploadStatus.processJobMultipart(jobMultiPartParameterObject));
     }
 
     @Test
     public void testInvalidTotalPart() {
-        JobMultiPartParameterObject jobMultiPartParameterObject = new JobMultiPartParameterObject(null, 1, 0, null, 0);
+        JobMultiPartParameterObject jobMultiPartParameterObject = new JobMultiPartParameterObject();
+        jobMultiPartParameterObject.setSessionId(null);
+        jobMultiPartParameterObject.setCurrentPartNumber(1);
+        jobMultiPartParameterObject.setTotalPartNumber(0);
+        jobMultiPartParameterObject.setPartData(null);
+        jobMultiPartParameterObject.setPartSize(0);
+
         Assert.assertThrows(JetException.class, () -> jobUploadStatus.processJobMultipart(jobMultiPartParameterObject));
     }
 
     @Test
     public void testInvalidOrder() {
-        JobMultiPartParameterObject jobMultiPartParameterObject = new JobMultiPartParameterObject(null, 2, 1, null, 0);
+        JobMultiPartParameterObject jobMultiPartParameterObject = new JobMultiPartParameterObject();
+        jobMultiPartParameterObject.setSessionId(null);
+        jobMultiPartParameterObject.setCurrentPartNumber(2);
+        jobMultiPartParameterObject.setTotalPartNumber(1);
+        jobMultiPartParameterObject.setPartData(null);
+        jobMultiPartParameterObject.setPartSize(0);
+
         Assert.assertThrows(JetException.class, () -> jobUploadStatus.processJobMultipart(jobMultiPartParameterObject));
     }
 
     @Test
     public void testNullPartData() {
-        JobMultiPartParameterObject jobMultiPartParameterObject = new JobMultiPartParameterObject(null, 1, 1, null, 0);
+        JobMultiPartParameterObject jobMultiPartParameterObject = new JobMultiPartParameterObject();
+        jobMultiPartParameterObject.setSessionId(null);
+        jobMultiPartParameterObject.setCurrentPartNumber(1);
+        jobMultiPartParameterObject.setTotalPartNumber(1);
+        jobMultiPartParameterObject.setPartData(null);
+        jobMultiPartParameterObject.setPartSize(0);
+
         Assert.assertThrows(JetException.class, () -> jobUploadStatus.processJobMultipart(jobMultiPartParameterObject));
     }
 
     @Test
     public void testEmptyPartData() {
         byte[] partData = new byte[]{};
-        JobMultiPartParameterObject jobMultiPartParameterObject = new JobMultiPartParameterObject(null, 1, 1, partData, 0);
+
+        JobMultiPartParameterObject jobMultiPartParameterObject = new JobMultiPartParameterObject();
+        jobMultiPartParameterObject.setSessionId(null);
+        jobMultiPartParameterObject.setCurrentPartNumber(1);
+        jobMultiPartParameterObject.setTotalPartNumber(1);
+        jobMultiPartParameterObject.setPartData(partData);
+        jobMultiPartParameterObject.setPartSize(0);
+
         Assert.assertThrows(JetException.class, () -> jobUploadStatus.processJobMultipart(jobMultiPartParameterObject));
     }
 
     @Test
     public void testZeroPartSize() {
         byte[] partData = new byte[]{1};
-        JobMultiPartParameterObject jobMultiPartParameterObject = new JobMultiPartParameterObject(null, 1, 1, partData, 0);
+
+        JobMultiPartParameterObject jobMultiPartParameterObject = new JobMultiPartParameterObject();
+        jobMultiPartParameterObject.setSessionId(null);
+        jobMultiPartParameterObject.setCurrentPartNumber(1);
+        jobMultiPartParameterObject.setTotalPartNumber(1);
+        jobMultiPartParameterObject.setPartData(partData);
+        jobMultiPartParameterObject.setPartSize(0);
+
         Assert.assertThrows(JetException.class, () -> jobUploadStatus.processJobMultipart(jobMultiPartParameterObject));
     }
 
     @Test
     public void testInvalidPartSize() {
         byte[] partData = new byte[]{1};
-        JobMultiPartParameterObject jobMultiPartParameterObject = new JobMultiPartParameterObject(null, 1, 1, partData, 2);
+
+        JobMultiPartParameterObject jobMultiPartParameterObject = new JobMultiPartParameterObject();
+        jobMultiPartParameterObject.setSessionId(null);
+        jobMultiPartParameterObject.setCurrentPartNumber(1);
+        jobMultiPartParameterObject.setTotalPartNumber(1);
+        jobMultiPartParameterObject.setPartData(partData);
+        jobMultiPartParameterObject.setPartSize(2);
+
+        Assert.assertThrows(JetException.class, () -> jobUploadStatus.processJobMultipart(jobMultiPartParameterObject));
+    }
+
+    @Test
+    public void testInvalidSHA256() {
+        byte[] partData = new byte[]{1};
+
+        JobMultiPartParameterObject jobMultiPartParameterObject = new JobMultiPartParameterObject();
+        jobMultiPartParameterObject.setSessionId(UUID.randomUUID());
+        jobMultiPartParameterObject.setCurrentPartNumber(1);
+        jobMultiPartParameterObject.setTotalPartNumber(1);
+        jobMultiPartParameterObject.setPartData(partData);
+        jobMultiPartParameterObject.setPartSize(partData.length);
+        jobMultiPartParameterObject.setSha256Hex(null);
+
         Assert.assertThrows(JetException.class, () -> jobUploadStatus.processJobMultipart(jobMultiPartParameterObject));
     }
 

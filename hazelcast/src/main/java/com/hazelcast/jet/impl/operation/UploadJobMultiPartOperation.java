@@ -16,12 +16,12 @@
 
 package com.hazelcast.jet.impl.operation;
 
+import com.hazelcast.client.impl.protocol.codec.JetUploadJobMultipartCodec;
 import com.hazelcast.jet.impl.JetServiceBackend;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
-import com.hazelcast.jet.impl.jobupload.JobMultiPartParameterObject;
 import com.hazelcast.jet.impl.jobupload.JobMetaDataParameterObject;
+import com.hazelcast.jet.impl.jobupload.JobMultiPartParameterObject;
 
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 /**
@@ -34,10 +34,14 @@ public class UploadJobMultiPartOperation extends AsyncJobOperation {
     public UploadJobMultiPartOperation() {
     }
 
-    public UploadJobMultiPartOperation(UUID sessionId, int currentPartNumber, int totalPartNumber, byte[] partData,
-                                       int partSize) {
-        jobMultiPartParameterObject = new JobMultiPartParameterObject(sessionId, currentPartNumber, totalPartNumber,
-                partData, partSize);
+    public UploadJobMultiPartOperation(JetUploadJobMultipartCodec.RequestParameters parameters) {
+        jobMultiPartParameterObject = new JobMultiPartParameterObject();
+        jobMultiPartParameterObject.setSessionId(parameters.sessionId);
+        jobMultiPartParameterObject.setCurrentPartNumber(parameters.currentPartNumber);
+        jobMultiPartParameterObject.setTotalPartNumber(parameters.totalPartNumber);
+        jobMultiPartParameterObject.setPartData(parameters.partData);
+        jobMultiPartParameterObject.setPartSize(parameters.partSize);
+        jobMultiPartParameterObject.setSha256Hex(parameters.sha256Hex);
     }
 
 

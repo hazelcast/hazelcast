@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl.jobupload;
 
+import com.hazelcast.internal.util.Sha256Util;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
@@ -29,8 +30,9 @@ import java.security.NoSuchAlgorithmException;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Objects;
 
-import static com.hazelcast.internal.util.Sha256Util.calculateSha256Hex;
+import static com.hazelcast.internal.util.Sha256Util.calculateSha256HexOfData;
 
 /**
  * Holds the details of a job that is being uploaded
@@ -108,6 +110,8 @@ public class JobUploadStatus {
 
         validateReceivedPartNumbersAreExpected(parameterObject);
 
+        validatePartChecksum(parameterObject);
+
         // Parts numbers are good. Save them
         currentPart = parameterObject.getCurrentPartNumber();
         totalPart = parameterObject.getTotalPartNumber();
@@ -133,7 +137,7 @@ public class JobUploadStatus {
         // If parts are complete
         if (currentPart == totalPart) {
 
-            validateChecksum();
+            validateJarChecksum();
 
             result = jobMetaDataParameterObject;
         }
@@ -212,6 +216,12 @@ public class JobUploadStatus {
                     partData.length);
             throw new JetException(errorMessage);
         }
+
+        // Ensure SHA256 of part is not null
+        if (Objects.isNull(parameterObject.getSha256Hex())) {
+            String errorMessage = "Sha256Hex of part is null";
+            throw new JetException(errorMessage);
+        }
     }
 
     private void validateReceivedPartNumbersAreExpected(JobMultiPartParameterObject parameterObject) {
@@ -240,10 +250,22 @@ public class JobUploadStatus {
         }
     }
 
+    private void validatePartChecksum(JobMultiPartParameterObject parameterObject) throws NoSuchAlgorithmException {
+        String calculatedSha256Hex = calculateSha256HexOfData(parameterObject.getPartData(), parameterObject.getPartSize());
+        String receivedSha256Hex = parameterObject.getSha256Hex();
+
+        if (!calculatedSha256Hex.equals(receivedSha256Hex)) {
+            String errorMessage = String.format("Checksum is different!. Calculated SHA256 : %s. Received SHA256 : %s",
+                    calculatedSha256Hex, receivedSha256Hex);
+            throw new JetException(errorMessage);
+        }
+    }
+
     // Validate checksum when the upload is complete
-    private void validateChecksum() throws IOException, NoSuchAlgorithmException {
-        String calculatedSha256Hex = calculateSha256Hex(jobMetaDataParameterObject.getJarPath());
+    private void validateJarChecksum() throws IOException, NoSuchAlgorithmException {
+        String calculatedSha256Hex = Sha256Util.calculateSha256HexOfPath(jobMetaDataParameterObject.getJarPath());
         String receivedSha256Hex = jobMetaDataParameterObject.getSha256Hex();
+
         if (!calculatedSha256Hex.equals(receivedSha256Hex)) {
             String errorMessage = String.format("Checksum is different!. Calculated SHA256 : %s. Received SHA256 : %s",
                     calculatedSha256Hex, receivedSha256Hex);
