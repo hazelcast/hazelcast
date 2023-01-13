@@ -69,7 +69,7 @@ Beware the fact that you'll need to attach the Kafka Connect Connector of your
 choice with the job that you are submitting.
 
 ```java
-Properties properties=new Properties();
+        Properties properties = new Properties();
         properties.setProperty("name","rabbitmq-source-connector");
         properties.setProperty("connector.class","com.github.jcustenborder.kafka.connect.rabbitmq.RabbitMQSourceConnector");
         properties.setProperty("kafka.topic","messages");
@@ -79,13 +79,13 @@ Properties properties=new Properties();
         properties.setProperty("rabbitmq.username","???");
         properties.setProperty("rabbitmq.password","???");
 
-        Pipeline pipeline=Pipeline.create();
+        Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(KafkaConnectSources.connect(properties))
         .withoutTimestamps()
         .map(record->Values.convertToString(record.valueSchema(),record.value()))
         .writeTo(Sinks.logger());
 
-        JobConfig jobConfig=new JobConfig();
+        JobConfig jobConfig = new JobConfig();
         jobConfig.addJarsInZip("/path/to/kafka-connect-rabbitmq-0.0.2-SNAPSHOT.zip");
 
         Job job=createHazelcastInstance().getJet().newJob(pipeline,jobConfig);
