@@ -210,8 +210,33 @@ public interface JetService {
     Job newLightJob(@Nonnull DAG dag, @Nonnull JobConfig config);
 
     /**
-     * For the client side, the jar is uploaded to a member and then the member runs the main method to start the job
-     * For the member side, the member only runs the main method of the jar to start the job
+     * For the client side, the jar is uploaded to a member and then the member runs the main method to start the job.
+     * The jar should have a main method that submits a Pipeline with {@link #newJob(Pipeline)} or
+     * {@link #newLightJob(Pipeline)} methods
+     * <p>
+     * The upload operation is performed by two messages.
+     * <ul>
+     * <li>First {@link com.hazelcast.client.impl.protocol.codec.JetUploadJobMetaDataCodec} sends metadata about the
+     * job</li>
+     * <li>Then one or more {@link com.hazelcast.client.impl.protocol.codec.JetUploadJobMultipartCodec} messages send
+     * the jar's content in parts.
+     * For Java clients the part size is controlled by {@link com.hazelcast.client.properties.ClientProperty#JOB_UPLOAD_PART_SIZE}
+     * property</li>
+     * </ul>
+     *
+     * <p>
+     * For the member side, since the jar is already on the member there is no need to upload anything.
+     * The member only runs the main method of the jar to start the job
+     * <p>
+     * Limitations for the client side jobs:
+     * <ul>
+     *     <li>The job can only access resources on the member or cluster. This is different from the jobs submitted from
+     *     the hz-cli tool. A job submitted from hz-cli tool creates a local HazelcastInstance on the client JVM and
+     *     connects to cluster. Therefore, the job can access local resources. This is not the case for the jar
+     *     uploaded to a member.
+     *     </li>
+     * </ul>
+     *
      */
     void submitJobFromJar(@Nonnull Path jarPath, String snapshotName, String jobName, String mainClass,
                           List<String> jobParameters);
