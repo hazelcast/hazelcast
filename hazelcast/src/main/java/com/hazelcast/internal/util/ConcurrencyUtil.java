@@ -19,14 +19,18 @@ package com.hazelcast.internal.util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.ForkJoinWorkerThread;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
+import java.util.function.Predicate;
 
 /**
  * Utility methods to getOrPutSynchronized and getOrPutIfAbsent in a thread safe way
@@ -53,8 +57,12 @@ public final class ConcurrencyUtil {
 
     private static final String PROP_PARALLELISM
             = "hazelcast.internal.default.async.executor.parallelism";
+    private static final String PROP_MAX_POOL_SIZE
+            = "hazelcast.internal.default.async.executor.maxPoolSize";
+    private static final String PROP_MIN_RUNNABLE
+            = "hazelcast.internal.default.async.executor.minRunnable";
 
-    private static Executor defaultAsyncExecutor = createDefaultAsyncExecutor();
+    private static Executor defaultAsyncExecutor;
 
     private ConcurrencyUtil() {
     }
@@ -156,28 +164,34 @@ public final class ConcurrencyUtil {
     }
 
     private static ForkJoinPool createDefaultAsyncExecutor() {
-        ForkJoinPool.ForkJoinWorkerThreadFactory forkJoinWorkerThreadFactory = pool -> {
-            PrivilegedAction<ForkJoinWorkerThread> privilegedAction
-                    = () -> new HzForkJoinWorkerThread(pool);
-            return AccessController.doPrivileged(privilegedAction);
-        };
-
+        ForkJoinPool.ForkJoinWorkerThreadFactory forkJoinWorkerThreadFactory
+                = getForkJoinWorkerThreadFactory();
         PrivilegedAction<ForkJoinPool> privilegedAction = () -> {
-            Thread.UncaughtExceptionHandler handler = new Thread.UncaughtExceptionHandler() {
-                ILogger logger = Logger.getLogger(ConcurrencyUtil.class);
-
-                @Override
-                public void uncaughtException(Thread t, Throwable e) {
-                    logger.severe(t + " had an unexpected exception", e);
-                }
-            };
-
+            Thread.UncaughtExceptionHandler handler = getUncaughtExceptionHandler();
             int parallelism = getParallelism();
-
             // For FIFO, set asyncMode to true
             return new ForkJoinPool(parallelism, forkJoinWorkerThreadFactory, handler, true);
         };
         return AccessController.doPrivileged(privilegedAction);
+    }
+
+    private static ForkJoinPool.ForkJoinWorkerThreadFactory getForkJoinWorkerThreadFactory() {
+        return pool -> {
+            PrivilegedAction<ForkJoinWorkerThread> privilegedAction
+                    = () -> new HzForkJoinWorkerThread(pool);
+            return AccessController.doPrivileged(privilegedAction);
+        };
+    }
+
+    private static Thread.UncaughtExceptionHandler getUncaughtExceptionHandler() {
+        return new Thread.UncaughtExceptionHandler() {
+            ILogger logger = Logger.getLogger(ConcurrencyUtil.class);
+
+            @Override
+            public void uncaughtException(Thread t, Throwable e) {
+                logger.severe(t + " had an unexpected exception", e);
+            }
+        };
     }
 
     private static int getParallelism() {
@@ -193,5 +207,74 @@ public final class ConcurrencyUtil {
             super(pool);
             this.setContextClassLoader(ForkJoinPool.class.getClassLoader());
         }
+    }
+
+    private static final Class[] CONSTRUCTOR_ARGUMENT_TYPES
+            = new Class[]{int.class, ForkJoinPool.ForkJoinWorkerThreadFactory.class,
+            Thread.UncaughtExceptionHandler.class, boolean.class,
+            int.class, int.class, int.class, Predicate.class, long.class, TimeUnit.class};
+
+    static final Class<?> FJP_CLASS;
+
+    static {
+        if (JavaVersion.isAtLeast(JavaVersion.JAVA_9)) {
+            try {
+                FJP_CLASS = Class.forName("java.util.concurrent.ForkJoinPool");
+                Constructor<?> constructor = FJP_CLASS.getConstructor(CONSTRUCTOR_ARGUMENT_TYPES);
+                constructor.setAccessible(true);
+
+                int parallelism = getParallelism();
+                int maxPoolSize = getMaxPoolSize(parallelism);
+                int minRunnable = getMinRunnable(parallelism);
+
+                ForkJoinPool.ForkJoinWorkerThreadFactory forkJoinWorkerThreadFactory
+                        = getForkJoinWorkerThreadFactory();
+                Thread.UncaughtExceptionHandler uncaughtExceptionHandler = getUncaughtExceptionHandler();
+
+                defaultAsyncExecutor = (Executor) constructor.newInstance(parallelism, forkJoinWorkerThreadFactory,
+                        uncaughtExceptionHandler, true, 0, maxPoolSize, minRunnable,
+                        (Predicate<? super ForkJoinPool>) pool -> true, 30, TimeUnit.SECONDS);
+
+            } catch (ClassNotFoundException e) {
+                throw new RuntimeException();
+            } catch (NoSuchMethodException e) {
+                throw new RuntimeException(e);
+            } catch (InvocationTargetException e) {
+                throw new RuntimeException(e);
+            } catch (InstantiationException e) {
+                throw new RuntimeException(e);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+        } else {
+            FJP_CLASS = null;
+            defaultAsyncExecutor = getDefaultAsyncExecutor();
+        }
+    }
+
+    private static int getMinRunnable(int parallelism) {
+        String fromSystemProp = System.getProperty(PROP_MIN_RUNNABLE);
+        if (fromSystemProp != null) {
+            return Integer.parseInt(fromSystemProp);
+        }
+        return Integer.max(parallelism / 2, 1);
+    }
+
+    private static int getMaxPoolSize(int parallelism) {
+        String fromSystemProp = System.getProperty(PROP_MAX_POOL_SIZE);
+        if (fromSystemProp != null) {
+            return Integer.parseInt(fromSystemProp);
+        }
+
+        return Integer.max(parallelism, 256);
+
+//        int maxPoolSize;
+//        if (maxPoolSizeValue != null) {
+//            maxPoolSize = Integer.parseInt(maxPoolSizeValue);
+//            parallelism = Integer.min(parallelism, maxPoolSize);
+//        } else {
+//            maxPoolSize = Integer.max(parallelism, 256);
+//        }
+//        return parallelism;
     }
 }
