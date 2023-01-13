@@ -21,8 +21,14 @@ import com.hazelcast.client.impl.protocol.codec.JetUploadJobMetaDataCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.jet.impl.operation.UploadJobMetaDataOperation;
+import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
+import javax.annotation.Nullable;
+
+/**
+ * The task that creates UploadJobMetaDataOperation with client protocol message
+ */
 public class JetUploadJobMetaDataTask extends
         AbstractJetMessageTask<JetUploadJobMetaDataCodec.RequestParameters, Boolean> {
 
@@ -30,6 +36,12 @@ public class JetUploadJobMetaDataTask extends
         super(clientMessage, node, connection,
                 JetUploadJobMetaDataCodec::decodeRequest,
                 JetUploadJobMetaDataCodec::encodeResponse);
+    }
+
+    @Override
+    @Nullable
+    public String[] actions() {
+        return new String[]{ActionConstants.ACTION_SUBMIT};
     }
 
     @Override

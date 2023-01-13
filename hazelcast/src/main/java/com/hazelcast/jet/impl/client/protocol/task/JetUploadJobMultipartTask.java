@@ -21,8 +21,14 @@ import com.hazelcast.client.impl.protocol.codec.JetUploadJobMultipartCodec;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
 import com.hazelcast.jet.impl.operation.UploadJobMultiPartOperation;
+import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
+import javax.annotation.Nullable;
+
+/**
+ * The task that creates UploadJobMultiPartOperation with client protocol message
+ */
 public class JetUploadJobMultipartTask extends
         AbstractJetMessageTask<JetUploadJobMultipartCodec.RequestParameters, Boolean> {
 
@@ -30,6 +36,12 @@ public class JetUploadJobMultipartTask extends
         super(clientMessage, node, connection,
                 JetUploadJobMultipartCodec::decodeRequest,
                 JetUploadJobMultipartCodec::encodeResponse);
+    }
+
+    @Override
+    @Nullable
+    public String[] actions() {
+        return new String[]{ActionConstants.ACTION_ADD_RESOURCES};
     }
 
     @Override
