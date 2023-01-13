@@ -28,7 +28,6 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
-import org.mockito.Answers;
 
 import java.net.UnknownHostException;
 import java.util.Arrays;
@@ -37,7 +36,7 @@ import java.util.Set;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.spy;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -107,7 +106,7 @@ public class LiveOperationRegistryTest {
     }
 
     private Operation createOperation(String host, int port, long callId) throws UnknownHostException {
-        Operation op = mock(Operation.class, Answers.CALLS_REAL_METHODS);
+        Operation op = spy(Operation.class);
         Address address = new Address(host, port);
 
         OperationAccessor.setCallerAddress(op, address);
