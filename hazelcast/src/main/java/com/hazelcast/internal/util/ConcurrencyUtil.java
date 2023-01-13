@@ -16,12 +16,14 @@
 
 package com.hazelcast.internal.util;
 
-import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -53,27 +55,28 @@ public final class ConcurrencyUtil {
     private static Executor defaultAsyncExecutor;
 
     static {
-        ILogger logger = Logger.getLogger(ConcurrencyUtil.class);
-        Executor asyncExecutor;
-        if (ForkJoinPool.getCommonPoolParallelism() > 1) {
-            asyncExecutor = new Executor() {
-                @Override
-                public void execute(Runnable command) {
-                    String stackTrace = getStackTrace();
-                    logger.info(stackTrace);
-                    ForkJoinPool.commonPool().execute(command);
-                }
-
-                @Override
-                public String toString() {
-                    return "FORBIDDEN";
-                }
-            };
-        } else {
-            asyncExecutor = command -> new Thread(command).start();
-        }
-
-        defaultAsyncExecutor = asyncExecutor;
+//        ILogger logger = Logger.getLogger(ConcurrencyUtil.class);
+//        Executor asyncExecutor;
+//        if (ForkJoinPool.getCommonPoolParallelism() > 1) {
+//            asyncExecutor = new Executor() {
+//                @Override
+//                public void execute(Runnable command) {
+//                    String stackTrace = getStackTrace();
+//                    logger.info(stackTrace);
+//                    ForkJoinPool.commonPool().execute(command);
+//                }
+//
+//                @Override
+//                public String toString() {
+//                    return "FORBIDDEN";
+//                }
+//            };
+//        } else {
+//            asyncExecutor = command -> new Thread(command).start();
+//        }
+//
+//        defaultAsyncExecutor = asyncExecutor;
+        defaultAsyncExecutor = createDefaultAsyncExecutor();
     }
 
     private ConcurrencyUtil() {
@@ -185,6 +188,30 @@ public final class ConcurrencyUtil {
         }
 
         return builder.toString();
+    }
+
+    private static ForkJoinPool createDefaultAsyncExecutor() {
+        ForkJoinPool.ForkJoinWorkerThreadFactory factory = pool -> {
+            PrivilegedAction<ForkJoinWorkerThread> pa = () -> new HzForkJoinWorkerThread(pool);
+            return AccessController.doPrivileged(pa);
+        };
+        PrivilegedAction<ForkJoinPool> pa = () -> {
+            int parallelism = Runtime.getRuntime().availableProcessors();
+            Thread.UncaughtExceptionHandler handler = (t, e) -> {
+                Logger.getLogger(ConcurrencyUtil.class).severe(t + " had an unexpected exception", e);
+            };
+            // FIFO
+            boolean asyncMode = true;
+            return new ForkJoinPool(parallelism, factory, handler, asyncMode);
+        };
+        return AccessController.doPrivileged(pa);
+    }
+
+    private static class HzForkJoinWorkerThread extends ForkJoinWorkerThread {
+        protected HzForkJoinWorkerThread(ForkJoinPool pool) {
+            super(pool);
+            this.setContextClassLoader(ForkJoinPool.class.getClassLoader());
+        }
     }
 
 }
