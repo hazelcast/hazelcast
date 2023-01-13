@@ -40,8 +40,8 @@ public class CreateDagVisitorTest {
         dag.edge(between(a, b));
         CreateDagVisitor.decreaseParallelism(dag, 16);
 
-        assertEquals(a.getLocalParallelism(), 4);
-        assertEquals(b.getLocalParallelism(), 4);
+        assertEquals(4, a.getLocalParallelism());
+        assertEquals(4, b.getLocalParallelism());
     }
 
     @Test
@@ -54,9 +54,9 @@ public class CreateDagVisitorTest {
         dag.edge(between(b, c));
         CreateDagVisitor.decreaseParallelism(dag, 16);
 
-        assertEquals(a.getLocalParallelism(), 4);
-        assertEquals(b.getLocalParallelism(), 4);
-        assertEquals(c.getLocalParallelism(), 4);
+        assertEquals(4, a.getLocalParallelism());
+        assertEquals(4, b.getLocalParallelism());
+        assertEquals(4, c.getLocalParallelism());
     }
 
     @Test
@@ -69,8 +69,8 @@ public class CreateDagVisitorTest {
         dag.edge(between(a, b));
         CreateDagVisitor.decreaseParallelism(dag, 16);
 
-        assertEquals(a.getLocalParallelism(), 1);
-        assertEquals(b.getLocalParallelism(), LOCAL_PARALLELISM_USE_DEFAULT);
+        assertEquals(1, a.getLocalParallelism());
+        assertEquals(LOCAL_PARALLELISM_USE_DEFAULT, b.getLocalParallelism());
     }
 
     @Test
@@ -82,8 +82,8 @@ public class CreateDagVisitorTest {
         dag.edge(between(a, b));
         CreateDagVisitor.decreaseParallelism(dag, 1);
 
-        assertEquals(a.getLocalParallelism(), LOCAL_PARALLELISM_USE_DEFAULT);
-        assertEquals(b.getLocalParallelism(), LOCAL_PARALLELISM_USE_DEFAULT);
+        assertEquals(LOCAL_PARALLELISM_USE_DEFAULT, a.getLocalParallelism());
+        assertEquals(LOCAL_PARALLELISM_USE_DEFAULT, b.getLocalParallelism());
     }
 
     @Test
@@ -108,8 +108,8 @@ public class CreateDagVisitorTest {
 
         CreateDagVisitor.decreaseParallelism(dag, 16);
 
-        assertEquals(a.getLocalParallelism(), LOCAL_PARALLELISM_USE_DEFAULT);
-        assertEquals(b.getLocalParallelism(), LOCAL_PARALLELISM_USE_DEFAULT);
+        assertEquals(LOCAL_PARALLELISM_USE_DEFAULT, a.getLocalParallelism());
+        assertEquals(LOCAL_PARALLELISM_USE_DEFAULT, b.getLocalParallelism());
     }
 
     @Test

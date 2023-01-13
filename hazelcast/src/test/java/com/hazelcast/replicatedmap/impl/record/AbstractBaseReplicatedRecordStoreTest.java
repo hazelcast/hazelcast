@@ -79,8 +79,8 @@ public class AbstractBaseReplicatedRecordStoreTest extends HazelcastTestSupport 
         assertEquals(recordStore, recordStore);
         assertEquals(recordStoreSameAttributes, recordStore);
 
-        assertNotEquals(recordStore, null);
-        assertNotEquals(recordStore, new Object());
+        assertNotEquals(null, recordStore);
+        assertNotEquals(new Object(), recordStore);
 
         assertNotEquals(recordStoreOtherStorage, recordStore);
         assertNotEquals(recordStoreOtherName, recordStore);

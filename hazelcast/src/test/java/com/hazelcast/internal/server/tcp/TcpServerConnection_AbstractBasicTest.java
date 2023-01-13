@@ -193,10 +193,10 @@ public abstract class TcpServerConnection_AbstractBasicTest extends TcpServerCon
 
         assertEquals(connAB, connAB);
         assertEquals(connAC, connAC);
-        assertNotEquals(connAB, null);
+        assertNotEquals(null, connAB);
         assertNotEquals(connAB, connAC);
         assertNotEquals(connAC, connAB);
-        assertNotEquals(connAB, "foo");
+        assertNotEquals("foo", connAB);
 
         //don't mock if you don't need to
         TcpServerConnectionManager cm = connAB.getConnectionManager();

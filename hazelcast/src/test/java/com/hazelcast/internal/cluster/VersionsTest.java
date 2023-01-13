@@ -38,11 +38,11 @@ public class VersionsTest extends HazelcastTestSupport {
 
     @Test
     public void version_4_0() {
-        assertEquals(Version.of(4, 0), Versions.V4_0);
+        assertEquals(Versions.V4_0, Version.of(4, 0));
     }
 
     @Test
     public void version_4_1() {
-        assertEquals(Version.of(4, 1), Versions.V4_1);
+        assertEquals(Versions.V4_1, Version.of(4, 1));
     }
 }

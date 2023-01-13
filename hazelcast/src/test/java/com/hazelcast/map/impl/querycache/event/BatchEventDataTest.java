@@ -150,8 +150,8 @@ public class BatchEventDataTest extends HazelcastTestSupport {
         assertEquals(batchEventData, batchEventData);
         assertEquals(batchEventData, batchEventDataSameAttribute);
 
-        assertNotEquals(batchEventData, null);
-        assertNotEquals(batchEventData, new Object());
+        assertNotEquals(null, batchEventData);
+        assertNotEquals(new Object(), batchEventData);
 
         assertEquals(batchEventData, batchEventDataOtherSource);
         assertEquals(batchEventData, batchEventDataOtherPartitionId);

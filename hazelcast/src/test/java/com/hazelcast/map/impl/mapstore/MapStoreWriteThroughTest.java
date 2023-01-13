@@ -114,12 +114,12 @@ public class MapStoreWriteThroughTest extends AbstractMapStoreTest {
             }
             map.put(i, new Employee("joe", i, true, 100.00));
         }
-        assertEquals(testMapStore.getStore().size(), size * 2);
+        assertEquals(size * 2, testMapStore.getStore().size());
         assertOpenEventually(countDownLatch);
         final String msgFailure = String.format("map size: %d put count: %d", map.size(), size);
         assertTrue(msgFailure, map.size() > size / 2);
         assertTrue(msgFailure, map.size() <= size);
-        assertEquals(testMapStore.getStore().size(), size * 2);
+        assertEquals(size * 2, testMapStore.getStore().size());
     }
 
     @Test(timeout = 120000)

@@ -68,8 +68,8 @@ public class ClusterStateChangeTest {
         assertEquals(clusterStateChange, clusterStateChange);
         assertEquals(clusterStateChange, clusterStateChangeSameAttributes);
 
-        assertNotEquals(clusterStateChange, null);
-        assertNotEquals(clusterStateChange, new Object());
+        assertNotEquals(null, clusterStateChange);
+        assertNotEquals(new Object(), clusterStateChange);
 
         assertNotEquals(clusterStateChange, clusterStateChangeOtherType);
         assertNotEquals(clusterStateChange, clusterStateChangeOtherNewState);

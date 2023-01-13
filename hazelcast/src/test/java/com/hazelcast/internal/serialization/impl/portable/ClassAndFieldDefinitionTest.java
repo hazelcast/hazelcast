@@ -133,8 +133,8 @@ public class ClassAndFieldDefinitionTest {
         assertNotEquals(cd3, cdEmpty1);
         assertNotEquals(cdWithField, classDefinition);
         assertNotEquals(cdEmpty1, classDefinition);
-        assertNotEquals(classDefinition, null);
-        assertNotEquals(classDefinition, "Another Class");
+        assertNotEquals(null, classDefinition);
+        assertNotEquals("Another Class", classDefinition);
 
         assertNotEquals(0, cd1.hashCode());
     }
@@ -186,8 +186,8 @@ public class ClassAndFieldDefinitionTest {
         assertNotEquals(fd0, fd0_1);
         assertNotEquals(fd0, fd1);
         assertNotEquals(fd0, fd2);
-        assertNotEquals(fd0, null);
-        assertNotEquals(fd0, "Another Class");
+        assertNotEquals(null, fd0);
+        assertNotEquals("Another Class", fd0);
 
         assertNotEquals(0, fd0.hashCode());
     }

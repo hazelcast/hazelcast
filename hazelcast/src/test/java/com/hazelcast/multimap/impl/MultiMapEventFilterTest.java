@@ -65,8 +65,8 @@ public class MultiMapEventFilterTest {
         assertEquals(multiMapEventFilter, multiMapEventFilter);
         assertEquals(multiMapEventFilter, multiMapEventFilterSameAttributes);
 
-        assertNotEquals(multiMapEventFilter, null);
-        assertNotEquals(multiMapEventFilter, new Object());
+        assertNotEquals(null, multiMapEventFilter);
+        assertNotEquals(new Object(), multiMapEventFilter);
 
         assertNotEquals(multiMapEventFilter, multiMapEventFilterOtherIncludeValue);
         assertNotEquals(multiMapEventFilter, multiMapEventFilterOtherKey);

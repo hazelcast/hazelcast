@@ -127,8 +127,8 @@ public class MemberVersionTest {
         assertEquals(version, version);
         assertEquals(version, versionSameAttributes);
 
-        assertNotEquals(version, null);
-        assertNotEquals(version, new Object());
+        assertNotEquals(null, version);
+        assertNotEquals(new Object(), version);
 
         assertNotEquals(version, versionOtherMajor);
         assertNotEquals(version, versionOtherMinor);

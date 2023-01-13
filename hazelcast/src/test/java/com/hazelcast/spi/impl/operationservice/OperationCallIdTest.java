@@ -128,7 +128,7 @@ public class OperationCallIdTest {
         long callId = op.getCallId();
 
         // Then
-        assertEquals(callId, mockCallId);
+        assertEquals(mockCallId, callId);
     }
 
     @Test

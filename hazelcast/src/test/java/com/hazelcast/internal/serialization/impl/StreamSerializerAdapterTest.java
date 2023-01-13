@@ -79,8 +79,8 @@ public class StreamSerializerAdapterTest {
 
         assertEquals(adapter, adapter);
         assertEquals(adapter, theOther);
-        assertNotEquals(adapter, null);
-        assertNotEquals(adapter, "Not An Adaptor");
+        assertNotEquals(null, adapter);
+        assertNotEquals("Not An Adaptor", adapter);
         assertNotEquals(adapter, theEmptyOne);
 
         assertEquals(adapter.hashCode(), serializer.hashCode());

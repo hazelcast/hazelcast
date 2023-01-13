@@ -157,8 +157,8 @@ public class ReplicatedRecordTest {
         assertEquals(replicatedRecord, replicatedRecord);
         assertEquals(replicatedRecord, replicatedRecordSameAttributes);
 
-        assertNotEquals(replicatedRecord, null);
-        assertNotEquals(replicatedRecord, new Object());
+        assertNotEquals(null, replicatedRecord);
+        assertNotEquals(new Object(), replicatedRecord);
 
         assertNotEquals(replicatedRecord, replicatedRecordOtherKey);
         assertNotEquals(replicatedRecord, replicatedRecordOtherValue);

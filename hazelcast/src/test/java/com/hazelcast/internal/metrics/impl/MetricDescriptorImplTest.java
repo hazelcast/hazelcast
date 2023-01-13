@@ -429,7 +429,7 @@ public class MetricDescriptorImplTest {
     @Test
     public void testEqualsDifferentClass() {
         MetricDescriptorImpl descriptor = new MetricDescriptorImpl(mock(Supplier.class));
-        assertNotEquals(descriptor, new Object());
+        assertNotEquals(new Object(), descriptor);
     }
 
     @Test

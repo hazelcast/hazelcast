@@ -305,8 +305,8 @@ public class DefaultAddressPickerTest {
         assertEquals(interfaceDefinition, interfaceDefinition);
         assertEquals(interfaceDefinition, interfaceDefinitionSameAttributes);
 
-        assertNotEquals(interfaceDefinition, null);
-        assertNotEquals(interfaceDefinition, new Object());
+        assertNotEquals(null, interfaceDefinition);
+        assertNotEquals(new Object(), interfaceDefinition);
 
         assertNotEquals(interfaceDefinition, interfaceDefinitionOtherHost);
         assertNotEquals(interfaceDefinition, interfaceDefinitionOtherAddress);
@@ -322,8 +322,8 @@ public class DefaultAddressPickerTest {
         assertEquals(addressDefinition, addressDefinition);
         assertEquals(addressDefinition, addressDefinitionSameAttributes);
 
-        assertNotEquals(addressDefinition, null);
-        assertNotEquals(addressDefinition, new Object());
+        assertNotEquals(null, addressDefinition);
+        assertNotEquals(new Object(), addressDefinition);
 
         assertNotEquals(addressDefinition, addressDefinitionOtherHost);
         assertNotEquals(addressDefinition, addressDefinitionOtherPort);

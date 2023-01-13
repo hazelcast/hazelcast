@@ -418,13 +418,13 @@ public abstract class SplitBrainTestSupport extends HazelcastTestSupport {
 
     public static void assertPiCollection(Collection<Object> collection) {
         assertEquals("Expected the collection to be a PI collection",
-                collection.size(), ReturnPiCollectionMergePolicy.PI_COLLECTION.size());
+                ReturnPiCollectionMergePolicy.PI_COLLECTION.size(), collection.size());
         assertTrue("Expected the collection to be a PI collection",
                 collection.containsAll(ReturnPiCollectionMergePolicy.PI_COLLECTION));
     }
 
     public static void assertPiSet(Collection<Object> collection) {
-        assertEquals("Expected the collection to be a PI set", collection.size(), ReturnPiCollectionMergePolicy.PI_SET.size());
+        assertEquals("Expected the collection to be a PI set", ReturnPiCollectionMergePolicy.PI_SET.size(), collection.size());
         assertTrue("Expected the collection to be a PI set", collection.containsAll(ReturnPiCollectionMergePolicy.PI_SET));
     }
 

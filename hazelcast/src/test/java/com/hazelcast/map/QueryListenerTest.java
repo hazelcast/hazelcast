@@ -95,13 +95,13 @@ public class QueryListenerTest extends HazelcastTestSupport {
         map.remove("key1");
         Thread.sleep(1000);
 
-        assertEquals(addedKey[0], "key1");
-        assertEquals(addedValue[0], "abc");
-        assertEquals(updatedKey[0], "key2");
-        assertEquals(oldValue[0], "bcd");
-        assertEquals(newValue[0], "axyz");
-        assertEquals(removedKey[0], "key1");
-        assertEquals(removedValue[0], "abc");
+        assertEquals("key1", addedKey[0]);
+        assertEquals("abc", addedValue[0]);
+        assertEquals("key2", updatedKey[0]);
+        assertEquals("bcd", oldValue[0]);
+        assertEquals("axyz", newValue[0]);
+        assertEquals("key1", removedKey[0]);
+        assertEquals("abc", removedValue[0]);
     }
 
     @Test

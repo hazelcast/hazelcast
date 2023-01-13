@@ -123,7 +123,7 @@ public class LocalRaftTest extends HazelcastTestSupport {
 
         Object val = "val";
         Object result = group.getLeaderNode().replicate(new ApplyRaftRunnable(val)).get();
-        assertEquals(result, val);
+        assertEquals(val, result);
 
         int commitIndex = 1;
         assertTrueEventually(() -> {

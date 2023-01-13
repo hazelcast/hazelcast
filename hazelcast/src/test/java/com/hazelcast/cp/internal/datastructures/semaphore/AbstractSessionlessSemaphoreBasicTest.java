@@ -81,7 +81,7 @@ public abstract class AbstractSessionlessSemaphoreBasicTest extends HazelcastRaf
             semaphore.acquire();
         }
 
-        assertEquals(semaphore.availablePermits(), 0);
+        assertEquals(0, semaphore.availablePermits());
     }
 
     @Test
@@ -128,7 +128,7 @@ public abstract class AbstractSessionlessSemaphoreBasicTest extends HazelcastRaf
             semaphore.release();
         }
 
-        assertEquals(semaphore.availablePermits(), numberOfPermits);
+        assertEquals(numberOfPermits, semaphore.availablePermits());
     }
 
     @Test
@@ -206,7 +206,7 @@ public abstract class AbstractSessionlessSemaphoreBasicTest extends HazelcastRaf
             assertEquals(numberOfPermits - i, semaphore.availablePermits());
             semaphore.acquire(5);
         }
-        assertEquals(semaphore.availablePermits(), 0);
+        assertEquals(0, semaphore.availablePermits());
     }
 
     @Test
@@ -253,7 +253,7 @@ public abstract class AbstractSessionlessSemaphoreBasicTest extends HazelcastRaf
             assertEquals(i, semaphore.availablePermits());
             semaphore.release(5);
         }
-        assertEquals(semaphore.availablePermits(), numberOfPermits);
+        assertEquals(numberOfPermits, semaphore.availablePermits());
     }
 
     @Test
@@ -294,8 +294,8 @@ public abstract class AbstractSessionlessSemaphoreBasicTest extends HazelcastRaf
         assertTrue(semaphore.init(numberOfPermits));
         semaphore.acquire(5);
         int drainedPermits = semaphore.drainPermits();
-        assertEquals(drainedPermits, numberOfPermits - 5);
-        assertEquals(semaphore.availablePermits(), 0);
+        assertEquals(numberOfPermits - 5, drainedPermits);
+        assertEquals(0, semaphore.availablePermits());
     }
 
     @Test
@@ -314,7 +314,7 @@ public abstract class AbstractSessionlessSemaphoreBasicTest extends HazelcastRaf
             semaphore.reducePermits(5);
         }
 
-        assertEquals(semaphore.availablePermits(), 0);
+        assertEquals(0, semaphore.availablePermits());
     }
 
     @Test
@@ -347,7 +347,7 @@ public abstract class AbstractSessionlessSemaphoreBasicTest extends HazelcastRaf
             assertTrue(semaphore.tryAcquire());
         }
         assertFalse(semaphore.tryAcquire());
-        assertEquals(semaphore.availablePermits(), 0);
+        assertEquals(0, semaphore.availablePermits());
     }
 
     @Test
@@ -360,7 +360,7 @@ public abstract class AbstractSessionlessSemaphoreBasicTest extends HazelcastRaf
             assertTrue(semaphore.tryAcquire(5));
         }
 
-        assertEquals(semaphore.availablePermits(), 0);
+        assertEquals(0, semaphore.availablePermits());
     }
 
     @Test

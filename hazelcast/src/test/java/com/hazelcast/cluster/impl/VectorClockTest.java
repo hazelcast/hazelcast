@@ -93,7 +93,7 @@ public class VectorClockTest {
 
     private void assertMerged(VectorClock from, VectorClock to, VectorClock expected) {
         to.merge(from);
-        assertEquals(to, expected);
+        assertEquals(expected, to);
     }
 
     private VectorClock vectorClock(Object... params) {

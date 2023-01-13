@@ -69,7 +69,7 @@ public class LatencyTrackingQueueStoreTest extends HazelcastTestSupport {
 
         String result = queueStore.load(key);
 
-        assertEquals(result, value);
+        assertEquals(value, result);
         assertProbeCalledOnce("load");
     }
 

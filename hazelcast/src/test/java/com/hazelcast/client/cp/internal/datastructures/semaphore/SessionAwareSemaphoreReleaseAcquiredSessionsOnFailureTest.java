@@ -137,7 +137,7 @@ public class SessionAwareSemaphoreReleaseAcquiredSessionsOnFailureTest extends H
 
     private long getSessionAcquireCount() {
         long sessionId = sessionManager.getSession(groupId);
-        assertNotEquals(sessionId, NO_SESSION_ID);
+        assertNotEquals(NO_SESSION_ID, sessionId);
         return sessionManager.getSessionAcquireCount(groupId, sessionId);
     }
 }

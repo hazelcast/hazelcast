@@ -259,7 +259,7 @@ public class YamlConfigBuilderConfigResolutionTest {
             new ArrayList<>(DeclarativeConfigUtil.YAML_ACCEPTED_SUFFIXES);
         Collections.sort(YAML_ACCEPTED_SUFFIXES_SORTED);
 
-        assertEquals("YAML_ACCEPTED_SUFFIXES sequence", YAML_ACCEPTED_SUFFIXES_SORTED, DeclarativeConfigUtil.YAML_ACCEPTED_SUFFIXES);
+        assertEquals("YAML_ACCEPTED_SUFFIXES sequence", DeclarativeConfigUtil.YAML_ACCEPTED_SUFFIXES, YAML_ACCEPTED_SUFFIXES_SORTED);
         assertEquals("YAML_ACCEPTED_SUFFIXES size", 2, YAML_ACCEPTED_SUFFIXES_SORTED.size());
     }
 

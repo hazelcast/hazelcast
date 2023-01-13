@@ -104,7 +104,7 @@ public class SqlNoDeserializationTest extends SqlTestSupport {
             if (classId == PORTABLE_KEY_ID) {
                 return new PersonKey();
             } else {
-                assertEquals(classId, PORTABLE_VALUE_ID);
+                assertEquals(PORTABLE_VALUE_ID, classId);
 
                 return new Person();
             }

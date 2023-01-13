@@ -61,8 +61,8 @@ public class BackupTaskStatusTest {
         assertEquals(backupTaskStatus, backupTaskStatus);
         assertEquals(backupTaskStatus, backupTaskStatusWithSameAttributes);
 
-        assertNotEquals(backupTaskStatus, null);
-        assertNotEquals(backupTaskStatus, new Object());
+        assertNotEquals(null, backupTaskStatus);
+        assertNotEquals(new Object(), backupTaskStatus);
 
         assertNotEquals(backupTaskStatus, backupTaskStatusOtherState);
         assertNotEquals(backupTaskStatus, backupTaskStatusOtherCompleted);

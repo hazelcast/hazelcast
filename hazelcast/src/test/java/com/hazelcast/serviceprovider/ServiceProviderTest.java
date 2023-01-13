@@ -37,6 +37,6 @@ public class ServiceProviderTest extends HazelcastTestSupport {
         TestHazelcastInstanceFactory nodeFactory = createHazelcastInstanceFactory(1);
         HazelcastInstance instance = nodeFactory.newHazelcastInstance();
         TestDistributedObject testDistributedObject = instance.getDistributedObject(TestRemoteService.SERVICE_NAME, "test");
-        assertEquals(testDistributedObject.getName(), "test");
+        assertEquals("test", testDistributedObject.getName());
     }
 }

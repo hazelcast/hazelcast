@@ -273,7 +273,7 @@ public class UnmodifiableLazyListTest extends HazelcastTestSupport {
     }
 
     private void assertParamsEquals(Object[] array, Object... expected) {
-        assertArrayEquals(array, expected);
+        assertArrayEquals(expected, array);
     }
 
     private int randomInt() {

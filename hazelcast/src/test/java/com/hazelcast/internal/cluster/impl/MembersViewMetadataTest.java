@@ -40,8 +40,8 @@ public class MembersViewMetadataTest {
                 = new MembersViewMetadata(new Address("localhost", 1234), memberUUID, new Address("localhost", 4321), 0);
 
         assertEqualAndHashCode(metadata, metadata);
-        assertNotEquals(metadata, null);
-        assertNotEquals(metadata, "");
+        assertNotEquals(null, metadata);
+        assertNotEquals("", metadata);
         assertEqualAndHashCode(
                 metadata,
                 new MembersViewMetadata(new Address("localhost", 1234), memberUUID, new Address("localhost", 4321), 0));

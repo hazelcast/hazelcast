@@ -101,8 +101,8 @@ public class HashUtilTest extends HazelcastTestSupport {
 
     @Test
     public void hashToIndex_whenHashPositive() {
-        assertEquals(hashToIndex(20, 100), 20);
-        assertEquals(hashToIndex(420, 100), 20);
+        assertEquals(20, hashToIndex(20, 100));
+        assertEquals(20, hashToIndex(420, 100));
     }
 
     @Test

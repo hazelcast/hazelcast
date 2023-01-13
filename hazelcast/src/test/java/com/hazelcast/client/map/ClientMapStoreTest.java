@@ -188,8 +188,8 @@ public class ClientMapStoreTest extends HazelcastTestSupport {
             }
         }
 
-        assertEquals(success, maxCapacity);
-        assertEquals(map.size(), maxCapacity);
+        assertEquals(maxCapacity, success);
+        assertEquals(maxCapacity, map.size());
     }
 
     @Test

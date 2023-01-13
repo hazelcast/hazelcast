@@ -348,7 +348,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         assertEquals(2, entries.size());
         for (Map.Entry<String, Employee> entry : entries) {
             Employee employee = entry.getValue();
-            assertEquals(employee.getAge(), 23);
+            assertEquals(23, employee.getAge());
             assertTrue(employee.isActive());
         }
     }
@@ -375,7 +375,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         assertEquals(2, entries.size());
         for (Map.Entry<String, Employee> entry : entries) {
             Employee employee = entry.getValue();
-            assertEquals(employee.getAge(), 23);
+            assertEquals(23, employee.getAge());
             assertTrue(employee.isActive());
         }
     }
@@ -404,7 +404,7 @@ public class QueryAdvancedTest extends HazelcastTestSupport {
         assertEquals(2, entries.size());
         for (Map.Entry<String, Employee> entry : entries) {
             Employee employee = entry.getValue();
-            assertEquals(employee.getAge(), 23);
+            assertEquals(23, employee.getAge());
             assertTrue(employee.isActive());
         }
     }

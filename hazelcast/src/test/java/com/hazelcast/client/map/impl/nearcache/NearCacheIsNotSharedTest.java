@@ -64,6 +64,6 @@ public class NearCacheIsNotSharedTest {
         replicatedMap.put("key", "replicated-map-value");
         map.put("key", "map-value");
         map.get("key");
-        assertEquals(replicatedMap.get("key"), "replicated-map-value");
+        assertEquals("replicated-map-value", replicatedMap.get("key"));
     }
 }

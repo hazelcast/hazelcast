@@ -84,7 +84,7 @@ public class ExceptionUtilTest extends HazelcastTestSupport {
         RuntimeException result = (RuntimeException) ExceptionUtil.peel(new ExecutionException(expectedException),
                 null, null, (throwable, message) -> new IllegalStateException(message, throwable));
 
-        assertEquals(result.getClass(), IllegalStateException.class);
+        assertEquals(IllegalStateException.class, result.getClass());
         assertEquals(result.getCause(), expectedException);
     }
 
@@ -93,7 +93,7 @@ public class ExceptionUtilTest extends HazelcastTestSupport {
         IOException expectedException = new IOException();
         ExecutionException result = ExceptionUtil.cloneExceptionWithFixedAsyncStackTrace(new ExecutionException(expectedException));
 
-        assertEquals(result.getClass(), ExecutionException.class);
+        assertEquals(ExecutionException.class, result.getClass());
         assertEquals(result.getCause(), expectedException);
     }
 

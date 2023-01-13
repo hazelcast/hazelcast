@@ -178,8 +178,8 @@ public class ClientComputeConditionallyTests extends ClientTestSupport {
         map.put("present_key", "present_value");
 
         Function function = (k) -> "new_value";
-        assertEquals(map.computeIfAbsent("present_key", function), "present_value");
-        assertEquals(map.get("present_key"), "present_value");
+        assertEquals("present_value", map.computeIfAbsent("present_key", function));
+        assertEquals("present_value", map.get("present_key"));
     }
 
     @Test

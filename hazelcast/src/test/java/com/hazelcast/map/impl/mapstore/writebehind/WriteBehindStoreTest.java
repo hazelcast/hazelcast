@@ -53,14 +53,14 @@ public class WriteBehindStoreTest {
         DummyQueue queue = mock(DummyQueue.class, CALLS_REAL_METHODS);
         ReflectionUtils.setFieldValueReflectively(store, "writeBehindQueue", queue);
         DelayedEntry<Data, Object> delayedEntry = DelayedEntries.newAddedDelayedEntry(mock(HeapData.class), new Entry(1, 1), 0, 0, 1, null);
-        assertEquals(delayedEntry.getSequence(), 0L);
+        assertEquals(0L, delayedEntry.getSequence());
 
         // when
         store.add(delayedEntry);
 
         // then
-        assertEquals(delayedEntry.getSequence(), 1L);
-        assertEquals(queue.getSequence(), 1L);
+        assertEquals(1L, delayedEntry.getSequence());
+        assertEquals(1L, queue.getSequence());
 
     }
 

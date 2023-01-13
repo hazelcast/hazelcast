@@ -171,7 +171,7 @@ public class RestClientTest {
                         .get());
 
         // then
-        assertEquals(exception.getHttpErrorCode(), responseCode);
+        assertEquals(responseCode, exception.getHttpErrorCode());
     }
 
     @Test
@@ -191,7 +191,7 @@ public class RestClientTest {
                         .post());
 
         // then
-        assertEquals(exception.getHttpErrorCode(), unexpectedCode);
+        assertEquals(unexpectedCode, exception.getHttpErrorCode());
     }
 
     @Test

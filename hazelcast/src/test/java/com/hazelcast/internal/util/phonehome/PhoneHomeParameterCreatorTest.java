@@ -52,7 +52,7 @@ public class PhoneHomeParameterCreatorTest {
         PhoneHomeParameterCreator phoneHomeParameterCreator = new PhoneHomeParameterCreator();
         Map<String, String> map = phoneHomeParameterCreator.getParameters();
         assertEquals(Collections.emptyMap(), map);
-        assertEquals(phoneHomeParameterCreator.build(), "");
+        assertEquals("", phoneHomeParameterCreator.build());
     }
 
     @Test

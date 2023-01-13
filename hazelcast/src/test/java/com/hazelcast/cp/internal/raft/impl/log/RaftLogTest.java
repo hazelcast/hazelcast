@@ -406,9 +406,9 @@ public class RaftLogTest {
         LogEntry lastLogEntry = log.lastLogOrSnapshotEntry();
         assertEquals(1, lastLogEntry.index());
         assertEquals(1, lastLogEntry.term());
-        assertEquals(log.lastLogOrSnapshotIndex(), 1);
-        assertEquals(log.lastLogOrSnapshotTerm(), 1);
-        assertEquals(log.snapshotIndex(), 1);
+        assertEquals(1, log.lastLogOrSnapshotIndex());
+        assertEquals(1, log.lastLogOrSnapshotTerm());
+        assertEquals(1, log.snapshotIndex());
 
         LogEntry snapshotEntry = log.snapshot();
         assertEquals(1, snapshotEntry.index());
@@ -433,9 +433,9 @@ public class RaftLogTest {
         LogEntry lastLogEntry = log.lastLogOrSnapshotEntry();
         assertEquals(5, lastLogEntry.index());
         assertEquals(1, lastLogEntry.term());
-        assertEquals(log.lastLogOrSnapshotIndex(), 5);
-        assertEquals(log.lastLogOrSnapshotTerm(), 1);
-        assertEquals(log.snapshotIndex(), 5);
+        assertEquals(5, log.lastLogOrSnapshotIndex());
+        assertEquals(1, log.lastLogOrSnapshotTerm());
+        assertEquals(5, log.snapshotIndex());
 
         LogEntry snapshot = log.snapshot();
         assertEquals(5, snapshot.index());
@@ -469,9 +469,9 @@ public class RaftLogTest {
         assertEquals(5, lastLogEntry.index());
         assertEquals(1, lastLogEntry.term());
         assertSame(lastLogEntry, log.getLogEntry(lastLogEntry.index()));
-        assertEquals(log.lastLogOrSnapshotIndex(), 5);
-        assertEquals(log.lastLogOrSnapshotTerm(), 1);
-        assertEquals(log.snapshotIndex(), 3);
+        assertEquals(5, log.lastLogOrSnapshotIndex());
+        assertEquals(1, log.lastLogOrSnapshotTerm());
+        assertEquals(3, log.snapshotIndex());
 
         LogEntry snapshot = log.snapshot();
         assertEquals(3, snapshot.index());
@@ -516,9 +516,9 @@ public class RaftLogTest {
         assertEquals(5, lastLogEntry.index());
         assertEquals(1, lastLogEntry.term());
         assertSame(lastLogEntry, log.getLogEntry(lastLogEntry.index()));
-        assertEquals(log.lastLogOrSnapshotIndex(), 5);
-        assertEquals(log.lastLogOrSnapshotTerm(), 1);
-        assertEquals(log.snapshotIndex(), 4);
+        assertEquals(5, log.lastLogOrSnapshotIndex());
+        assertEquals(1, log.lastLogOrSnapshotTerm());
+        assertEquals(4, log.snapshotIndex());
 
         LogEntry snapshotEntry = log.snapshot();
         assertEquals(4, snapshotEntry.index());

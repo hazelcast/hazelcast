@@ -384,7 +384,7 @@ public abstract class JmsSourceIntegrationTestBase extends SimpleTestInClusterSu
             }
             logger.info(countsStr);
         }, 30);
-        assertEquals(job.getStatus(), RUNNING);
+        assertEquals(RUNNING, job.getStatus());
     }
 
     @Test

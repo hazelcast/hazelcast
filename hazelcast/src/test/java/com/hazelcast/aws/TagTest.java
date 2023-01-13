@@ -32,7 +32,7 @@ public class TagTest {
         Tag tag = new Tag(key, value);
 
         // then
-        assertEquals(tag.getKey(), key);
+        assertEquals(key, tag.getKey());
         assertNull(tag.getValue());
     }
 
@@ -47,7 +47,7 @@ public class TagTest {
 
         // then
         assertNull(tag.getKey());
-        assertEquals(tag.getValue(), value);
+        assertEquals(value, tag.getValue());
     }
 
     @Test(expected = IllegalArgumentException.class)

@@ -86,8 +86,8 @@ public class AbstractRecordTest {
         assertEquals(record, record);
         assertEquals(record, recordSameAttributes);
 
-        assertNotEquals(record, null);
-        assertNotEquals(record, new Object());
+        assertNotEquals(null, record);
+        assertNotEquals(new Object(), record);
 
         assertNotEquals(record, recordOtherVersion);
         assertNotEquals(record, recordOtherCreationTime);

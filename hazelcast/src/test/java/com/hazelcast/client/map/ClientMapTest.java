@@ -234,7 +234,7 @@ public class ClientMapTest extends HazelcastTestSupport {
 
         IMap<Integer, Integer> map = createMap();
         map.putAll(expectedMap);
-        assertEquals(map.size(), 100);
+        assertEquals(100, map.size());
         for (int i = 0; i < 100; i++) {
             int actual = map.get(i);
             assertEquals(i, actual);
@@ -258,7 +258,7 @@ public class ClientMapTest extends HazelcastTestSupport {
 
         IMap<Integer, Integer> map = createMap();
         map.putAll(expectedMap);
-        assertEquals(map.size(), 1000);
+        assertEquals(1000, map.size());
         for (int i = 0; i < 1000; i++) {
             int actual = map.get(i);
             assertEquals(i, actual);

@@ -70,7 +70,7 @@ public class SingleProtocolHandlerRegressionTest extends HazelcastTestSupport {
         textProtocolClient.connect();
 
         assertTrueEventually(() -> assertTrue(textProtocolClient.isConnected()), ASSERT_TRUE_TIMEOUT_SECS);
-        assertTrueEventually(() -> assertEquals(connectionManager.getConnections().size(), 1), ASSERT_TRUE_TIMEOUT_SECS);
+        assertTrueEventually(() -> assertEquals(1, connectionManager.getConnections().size()), ASSERT_TRUE_TIMEOUT_SECS);
         // Send wrong protocol data to client endpoint
         textProtocolClient.sendData("AAACP2CP2");
         // Assert that connection must be closed on the member side

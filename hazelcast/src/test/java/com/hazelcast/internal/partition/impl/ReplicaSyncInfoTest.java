@@ -70,8 +70,8 @@ public class ReplicaSyncInfoTest {
         assertEquals(replicaSyncInfo, replicaSyncInfoSameAttributes);
         assertEquals(replicaSyncInfo, replicaSyncInfoOtherTarget);
 
-        assertNotEquals(replicaSyncInfo, null);
-        assertNotEquals(replicaSyncInfo, new Object());
+        assertNotEquals(null, replicaSyncInfo);
+        assertNotEquals(new Object(), replicaSyncInfo);
 
         assertNotEquals(replicaSyncInfo, replicaSyncInfoOtherPartitionId);
         assertNotEquals(replicaSyncInfo, replicaSyncInfoOtherReplicaIndex);
