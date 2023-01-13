@@ -284,7 +284,8 @@ public class MapIndexScanPTest extends SimpleTestInClusterSupport {
                 asList(create(0, INT), create(1, VARCHAR), create(2, INT)),
                 reminderFilter,
                 fieldIndex == -1 ? null : comparisonFn(singletonList(new FieldCollation(new RelFieldCollation(fieldIndex)))),
-                descending
+                descending,
+                null
         );
     }
 

@@ -21,6 +21,7 @@ import com.hazelcast.jet.core.DAG;
 import com.hazelcast.jet.core.Edge;
 import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.core.Vertex;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
@@ -332,20 +333,21 @@ public interface SqlConnector {
      *         null}s and returned
      * </ul>
      *
-     * @param table      the table object
-     * @param predicate  SQL expression to filter the rows
-     * @param projection the list of fields to return
-     * @param joinInfo   {@link JetJoinInfo}
+     * @param table         the table object
+     * @param predicate     SQL expression to filter the rows
+     * @param projection    the list of fields to return
+     * @param joinInfo      {@link JetJoinInfo}
+     * @param parentVisitor
      * @return {@link VertexWithInputConfig}
      */
     @Nonnull
-    default CreateDagVisitor<VertexWithInputConfig> nestedLoopReader(
+    default CreateDagVisitor<Tuple2<VertexWithInputConfig, VertexWithInputConfig>> nestedLoopReader(
             @Nonnull DAG dag,
             @Nonnull Table table,
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projection,
-            @Nonnull JetJoinInfo joinInfo
-    ) {
+            @Nonnull JetJoinInfo joinInfo,
+            CreateDagVisitor<Vertex> parentVisitor) {
         throw new UnsupportedOperationException("Nested-loop join not supported for " + typeName());
     }
 
@@ -353,7 +355,7 @@ public interface SqlConnector {
         try {
             // nestedLoopReader() is supported, if the class overrides the default method in this class
             Method m = getClass().getMethod("nestedLoopReader", DAG.class, Table.class, Expression.class, List.class,
-                    JetJoinInfo.class);
+                    JetJoinInfo.class, CreateDagVisitor.class);
             return m.getDeclaringClass() != SqlConnector.class;
         } catch (NoSuchMethodException e) {
             throw new RuntimeException(e);

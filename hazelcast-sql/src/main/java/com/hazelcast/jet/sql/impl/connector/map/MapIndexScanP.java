@@ -48,7 +48,10 @@ import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.sql.impl.exec.scan.MapIndexScanMetadata;
 import com.hazelcast.sql.impl.exec.scan.MapScanRow;
 import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
+import com.hazelcast.sql.impl.expression.ConstantExpression;
+import com.hazelcast.sql.impl.expression.CorrelatedExpressionEvalContext;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
+import com.hazelcast.sql.impl.row.JetSqlJoinRow;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import javax.annotation.Nonnull;
@@ -105,23 +108,51 @@ final class MapIndexScanP extends AbstractProcessor {
     private MapScanRow row;
     private JetSqlRow pendingItem;
     private boolean isIndexSorted;
+    private int[] memberPartitions;
+
+    // join-scan state
+    private JetSqlRow currentLeft;
+    /**
+     * If matching right row was found/emitted for {@link #currentLeft}
+     */
+    private boolean found;
 
     private MapIndexScanP(@Nonnull MapIndexScanMetadata indexScanMetadata) {
         this.metadata = indexScanMetadata;
+    }
+
+    private boolean isJoinScan() {
+        return metadata.getJoinInfo() != null;
     }
 
     @Override
     protected void init(@Nonnull Context context) {
         hazelcastInstance = context.hazelcastInstance();
         evalContext = ExpressionEvalContext.from(context);
+        if (isJoinScan()) {
+            // create CorrelatedExpressionEvalContext eagerly.
+            // It is cheap and saves time during iteration.
+            evalContext = new CorrelatedExpressionEvalContext(evalContext);
+        }
+
         reader = new LocalMapIndexReader(hazelcastInstance, evalContext.getSerializationService(), metadata);
 
-        int[] memberPartitions = context.processorPartitions();
-        splits.add(new Split(
-                new PartitionIdSet(hazelcastInstance.getPartitionService().getPartitions().size(), memberPartitions),
-                hazelcastInstance.getCluster().getLocalMember().getAddress(),
-                filtersToPointers(metadata.getFilter(), metadata.isDescending(), evalContext)
-        ));
+        // each processor instance scans all local partitions
+        // for scan-mode local parallelism > 1 does not make sense
+        // for join-mode fanout inbound edge should be used to not scan twice
+        //
+        // TODO: this seems to be not required, scanning could be partitioned locally
+        // but may be related to parallelism or SortCombine operation in scan mode.
+        memberPartitions = context.memberPartitions();
+
+        if (!isJoinScan()) {
+            // for ordinary scan init early
+            splits.add(new Split(
+                    new PartitionIdSet(hazelcastInstance.getPartitionService().getPartitions().size(), memberPartitions),
+                    hazelcastInstance.getCluster().getLocalMember().getAddress(),
+                    filtersToPointers(metadata.getFilter(), metadata.isDescending(), evalContext)
+            ));
+        }
 
         row = MapScanRow.create(
                 metadata.getKeyDescriptor(),
@@ -145,8 +176,58 @@ final class MapIndexScanP extends AbstractProcessor {
     }
 
     @Override
+    protected boolean tryProcess(int ordinal, @Nonnull Object item) {
+        assert isJoinScan() : "Unexpected input for ordinary scan";
+        // do not accept new row until previous is processed
+        if (!doRun()) {
+            return false;
+        }
+
+        // init next iteration
+        currentLeft = (JetSqlRow) item;
+        found = false;
+        ((CorrelatedExpressionEvalContext) evalContext)
+                .setCorrelationVariable(metadata.getJoinInfo().getCorrelationId().getId(), currentLeft);
+
+        // start new row processing
+        splits.clear();
+        splits.add(new Split(
+                new PartitionIdSet(hazelcastInstance.getPartitionService().getPartitions().size(), memberPartitions),
+                hazelcastInstance.getCluster().getLocalMember().getAddress(),
+                filtersToPointers(metadata.getFilter(), metadata.isDescending(), evalContext)
+        ));
+
+        row = MapScanRow.create(
+                metadata.getKeyDescriptor(),
+                metadata.getValueDescriptor(),
+                metadata.getFieldPaths(),
+                metadata.getFieldTypes(),
+                Extractors.newBuilder(evalContext.getSerializationService())
+                        .setGetterCacheSupplier(SIMPLE_GETTER_CACHE_SUPPLIER)
+                        .build(),
+                evalContext.getSerializationService()
+        );
+
+        getLogger().info("item " + currentLeft + " on partitions " + memberPartitions);
+
+        return true;
+    }
+
+    @Override
     public boolean complete() {
-        return isIndexSorted ? runSortedIndex() : runHashIndex();
+        return doRun();
+    }
+
+    private boolean doRun() {
+        boolean scanDone = isIndexSorted ? runSortedIndex() : runHashIndex();
+
+        // currentLeft can be null if the processor did not get any left rows in join mode
+        if (scanDone && isJoinScan() && !metadata.getJoinInfo().isInner() && currentLeft != null && !found) {
+            // return null-padded row in outer mode when no matching row
+            return tryEmitUnmatchedRow();
+        }
+
+        return scanDone;
     }
 
     @Override
@@ -156,7 +237,7 @@ final class MapIndexScanP extends AbstractProcessor {
 
     private boolean runSortedIndex() {
         for (; ; ) {
-            if (pendingItem != null && !tryEmit(pendingItem)) {
+            if (pendingItem != null && !tryEmitRow(pendingItem)) {
                 return false;
             } else {
                 pendingItem = null;
@@ -182,6 +263,7 @@ final class MapIndexScanP extends AbstractProcessor {
                     // waiting for more rows from this split
                     return false;
                 }
+                // TODO: adjust comparator for join mode? - evaluated after row is joined with left
                 if (extremeIndex < 0
                         || metadata.getComparator().compare(split.currentRow, splits.get(extremeIndex).currentRow) < 0) {
                     extremeIndex = i;
@@ -195,6 +277,7 @@ final class MapIndexScanP extends AbstractProcessor {
             }
 
             pendingItem = extreme;
+            found = true;
             splits.get(extremeIndex).remove();
         }
     }
@@ -222,7 +305,8 @@ final class MapIndexScanP extends AbstractProcessor {
                     }
                 } else {
                     allIdle = false;
-                    if (tryEmit(split.currentRow)) {
+                    if (tryEmitRow(split.currentRow)) {
+                        found = true;
                         split.remove();
                     } else {
                         return false;
@@ -232,6 +316,34 @@ final class MapIndexScanP extends AbstractProcessor {
         } while (!allIdle);
 
         return false;
+    }
+
+    private int getLeftRowProcessorIndex() {
+        return ((JetSqlJoinRow) currentLeft).getProcessorIndex();
+    }
+
+    private long getLeftRowId() {
+        return ((JetSqlJoinRow) currentLeft).getRowId();
+    }
+
+    private boolean tryEmitRow(JetSqlRow row) {
+
+        if (isJoinScan() && !metadata.getJoinInfo().isInner()) {
+            getLogger().info("tryEmitRow " + new JetSqlJoinRow(row, getLeftRowProcessorIndex(), getLeftRowId(), true)
+                    + " on partitions " + memberPartitions);
+            return tryEmit(new JetSqlJoinRow(row, getLeftRowProcessorIndex(), getLeftRowId(), true));
+        } else {
+            return tryEmit(row);
+        }
+    }
+
+    private boolean tryEmitUnmatchedRow() {
+        assert isJoinScan() && !metadata.getJoinInfo().isInner();
+
+        getLogger().info("tryEmitUnmatchedRow " + new JetSqlJoinRow(currentLeft.extendedRow(metadata.getProjection().size()),
+                getLeftRowProcessorIndex(), getLeftRowId(), false) + " on partitions " + memberPartitions);
+        return tryEmit(new JetSqlJoinRow(currentLeft.extendedRow(metadata.getProjection().size()),
+                getLeftRowProcessorIndex(), getLeftRowId(), false));
     }
 
     /**
@@ -350,6 +462,7 @@ final class MapIndexScanP extends AbstractProcessor {
                 // Sometimes scan query may not include indexed field.
                 // So, additional projection is required to ability to merge-sort an output.
                 currentRow = projectAndFilter(currentBatch.get(currentBatchPosition));
+
                 if (currentRow == null) {
                     currentBatchPosition++;
                 }
@@ -383,7 +496,18 @@ final class MapIndexScanP extends AbstractProcessor {
                     entry.getKeyIfPresent(), entry.getKeyDataIfPresent(),
                     entry.getValueIfPresent(), entry.getValueDataIfPresent()
             );
-            return ExpressionUtil.projection(metadata.getRemainingFilter(), metadata.getProjection(), row, evalContext);
+
+            // TODO: add this to projections? sometimes may be not needed (eg. corr variable not used in result)
+            JetSqlRow rightRow = ExpressionUtil.projection(metadata.getRemainingFilter(),
+                    metadata.getProjection(), row, evalContext);
+            if (isJoinScan()) {
+                assert currentLeft != null;
+                // append left in join mode
+                // TODO: do not filter twice
+                return ExpressionUtil.join(currentLeft, rightRow, ConstantExpression.TRUE, evalContext);
+            } else {
+                return rightRow;
+            }
         }
 
         private void remove() {

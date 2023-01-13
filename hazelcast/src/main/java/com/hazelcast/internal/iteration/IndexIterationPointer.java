@@ -126,6 +126,11 @@ public class IndexIterationPointer implements IdentifiedDataSerializable {
         } else if (indexFilter instanceof IndexEqualsFilter) {
             IndexEqualsFilter equalsFilter = (IndexEqualsFilter) indexFilter;
             Comparable<?> value = equalsFilter.getComparable(evalContext);
+            // Same comment above for expressions like `a == NULL`.
+            // We allow `a IS NULL` which has the same representation but allows null.
+            if (value == null && !equalsFilter.getValue().getAllowNulls().contains(Boolean.TRUE)) {
+                return;
+            }
             result.add(create(value, true, value, true, descending, null));
         } else if (indexFilter instanceof IndexCompositeFilter) {
             IndexCompositeFilter inFilter = (IndexCompositeFilter) indexFilter;

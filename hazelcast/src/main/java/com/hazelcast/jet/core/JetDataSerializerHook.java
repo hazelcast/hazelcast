@@ -28,6 +28,7 @@ import com.hazelcast.jet.pipeline.test.impl.ItemsDistributedFillBufferFn;
 import com.hazelcast.nio.serialization.DataSerializableFactory;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
 import com.hazelcast.spi.annotation.PrivateApi;
+import com.hazelcast.sql.impl.row.JetSqlJoinRow;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 
 import static com.hazelcast.jet.impl.JetFactoryIdHelper.JET_DS_FACTORY;
@@ -62,6 +63,7 @@ public final class JetDataSerializerHook implements DataSerializerHook {
     public static final int EDGE_SINGLE_PARTITIONER = 18;
     public static final int EXPECT_NOTHING_PROCESSOR_SUPPLIER = 19;
     public static final int SPECIFIC_MEMBER_PROCESSOR_META_SUPPLIER = 20;
+    public static final int JET_SQL_JOIN_ROW = 21;
 
     /**
      * Factory ID
@@ -124,6 +126,8 @@ public final class JetDataSerializerHook implements DataSerializerHook {
                     return new ProcessorMetaSupplier.ExpectNothingProcessorSupplier();
                 case SPECIFIC_MEMBER_PROCESSOR_META_SUPPLIER:
                     return new ProcessorMetaSupplier.SpecificMemberPms();
+                case JET_SQL_JOIN_ROW:
+                    return new JetSqlJoinRow();
                 default:
                     throw new IllegalArgumentException("Unknown type id " + typeId);
             }

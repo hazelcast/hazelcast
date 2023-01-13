@@ -29,6 +29,7 @@ import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.processor.SourceProcessors;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvMetadata;
@@ -52,6 +53,7 @@ import com.hazelcast.sql.impl.exec.scan.index.IndexFilter;
 import com.hazelcast.sql.impl.expression.Expression;
 import com.hazelcast.sql.impl.expression.ExpressionEvalContext;
 import com.hazelcast.sql.impl.extract.QueryPath;
+import com.hazelcast.sql.impl.row.JetSqlJoinRow;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.schema.ConstantTableStatistics;
 import com.hazelcast.sql.impl.schema.MappingField;
@@ -72,6 +74,7 @@ import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.processor.Processors.mapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.updateMapP;
 import static com.hazelcast.jet.core.processor.SinkProcessors.writeMapP;
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.sql.impl.connector.map.MapIndexScanP.readMapIndexSupplier;
 import static com.hazelcast.jet.sql.impl.connector.map.RowProjectorProcessorSupplier.rowProjector;
 import static com.hazelcast.sql.impl.schema.map.MapTableUtils.estimatePartitionedMapRowCount;
@@ -202,9 +205,13 @@ public class IMapSqlConnector implements SqlConnector {
         return vEnd;
     }
 
+    /**
+     * @return tuple of (input vertex, output vertex). Input vertex is null for
+     *         source mode (not join mode). Both elements can be the same vertex.
+     */
     @Nonnull
     @SuppressWarnings("checkstyle:ParameterNumber")
-    public Vertex indexScanReader(
+    public Tuple2<VertexWithInputConfig, Vertex> indexScanReader(
             @Nonnull DAG dag,
             @Nonnull Address localMemberAddress,
             @Nonnull Table table0,
@@ -213,7 +220,8 @@ public class IMapSqlConnector implements SqlConnector {
             @Nonnull List<Expression<?>> projection,
             @Nullable IndexFilter indexFilter,
             @Nullable ComparatorEx<JetSqlRow> comparator,
-            boolean descending
+            boolean descending,
+            @Nullable JetJoinInfo joinInfo
     ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
         MapIndexScanMetadata indexScanMetadata = new MapIndexScanMetadata(
@@ -227,18 +235,82 @@ public class IMapSqlConnector implements SqlConnector {
                 projection,
                 remainingFilter,
                 comparator,
-                descending
+                descending,
+                joinInfo
         );
 
         Vertex scanner = dag.newUniqueVertex(
-                "Index(" + toString(table) + ")",
+                (joinInfo != null ? "Join(" : "") + "Index(" + toString(table) + ")"
+                    + (joinInfo != null ? ")" : ""),
                 readMapIndexSupplier(indexScanMetadata)
         );
-        // LP must be 1 - one local index contains all local partitions, if there are 2 local processors,
-        // the index will be scanned twice and each time half of the partitions will be thrown out.
-        scanner.localParallelism(1);
 
-        if (tableIndex.getType() == IndexType.SORTED) {
+        if (joinInfo == null) {
+            // LP must be 1 in scan mode - one local index contains all local
+            // partitions, if there are 2 local processors, the index will be
+            // scanned twice and each time half of the partitions will be
+            // thrown out.
+            // It is not the case in join mode were we scan the partitions
+            // repeatedly, once for each left item.
+            scanner.localParallelism(1);
+        }
+
+        if (joinInfo != null && !joinInfo.isInner()) {
+            // TODO: snapshots and watermarks support in ordered edges
+
+            // Parallelism for idAssigner and merger should be the same
+            // so the items will be properly collected to partitions in merger.
+            // We could have fewer idAssigners than mergers if each idAssigner
+            // generated keys for non-overlapping partitions, but not the other
+            // way around.
+            //
+            // Currently, the parallelism is limited to 1 because ordered
+            // partitioned edge does not handle case when items are ordered
+            // only inside partition/processor instance, they must have total
+            // order. It is caused by the fact that there is a single
+            // SenderTasklet that sends data to remote node even if there is >1
+            // processor instance there. SenderTasklet uses single OrderedDrain
+            // for all incoming data which mixes different partitions, in
+            // particular partitions assigned to different processor instances.
+            Vertex idAssigner = dag.newUniqueVertex(
+                    "OuterNestedLoopIdAssigner",
+                    ProcessorSupplier.of(IdAssignerProcessor::new)
+            ).localParallelism(1);
+
+            dag.edge(between(idAssigner, scanner)
+                    // send left items to all nodes, so they can process their local partitions
+                    .distributed()
+                    // each row needs to be processed by one scanner instance on each node
+                    // each scanner scans all local partitions
+                    .fanout());
+
+            Vertex merger = dag.newUniqueVertex(
+                    "OuterNestedLoopMerger",
+                    // TODO: convert JetSqlJoinRow to JetSqlRow (or maybe not needed?)
+                    ProcessorSupplier.of(MergerProcessor::new)
+            ).localParallelism(1);
+
+            dag.edge(between(scanner, merger)
+                    .distributed()
+                    .partitioned(JetSqlJoinRow::getProcessorIndex, (index, count) -> {
+                        // explicitly partition in the same way as ids were assigned
+                        // so in each partition rowId is monotonic
+                        assert index <= count;
+                        return index;
+                    })
+                    .ordered(ComparatorEx.comparing(JetSqlJoinRow::getRowId))
+            );
+
+            return tuple2(new VertexWithInputConfig(idAssigner, edge -> {
+                // id assigner will distribute rows
+                edge.local().isolated();
+                //TODO: distr only for test with test batch source
+//                edge.distributed();
+            }), merger);
+        }
+
+        // TODO: why do we sort always IndexType.SORTED? The query may not require it
+        if (joinInfo == null && tableIndex.getType() == IndexType.SORTED) {
             Vertex sorter = dag.newUniqueVertex(
                     "SortCombine",
                     ProcessorMetaSupplier.forceTotalParallelismOne(
@@ -253,20 +325,29 @@ public class IMapSqlConnector implements SqlConnector {
                     .distributeTo(localMemberAddress)
                     .allToOne("")
             );
-            return sorter;
+            return tuple2(null, sorter);
         }
-        return scanner;
+
+        if (joinInfo == null) {
+            return tuple2(null, scanner);
+        } else {
+            // single stage join (inner)
+            return tuple2(new VertexWithInputConfig(scanner, edge -> {
+                // send left items to all nodes, so they can process their local partitions
+                edge.distributed().fanout();
+            }), scanner);
+        }
     }
 
     @Nonnull
     @Override
-    public CreateDagVisitor<VertexWithInputConfig> nestedLoopReader(
+    public CreateDagVisitor<Tuple2<VertexWithInputConfig, VertexWithInputConfig>> nestedLoopReader(
             @Nonnull DAG dag,
             @Nonnull Table table0,
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projections,
-            @Nonnull JetJoinInfo joinInfo
-    ) {
+            @Nonnull JetJoinInfo joinInfo,
+            @Nonnull CreateDagVisitor<Vertex> parentVisitor) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
         String mapName = table.getMapName();
         String tableName = toString(table);
@@ -280,24 +361,49 @@ public class IMapSqlConnector implements SqlConnector {
                 projections
         );
 
-//        return Joiner.join(dag, table.getMapName(), toString(table), joinInfo, rightRowProjectorSupplier);
-        return new CreateDagVisitorBase<VertexWithInputConfig>(dag) {
-            // TODO: support index scan and key lookup
+        @SuppressWarnings("checkstyle:anoninnerlength")
+        CreateDagVisitor<Tuple2<VertexWithInputConfig, VertexWithInputConfig>> visitor
+                = new CreateDagVisitorBase<Tuple2<VertexWithInputConfig, VertexWithInputConfig>>(dag,
+                    parentVisitor.getLocalMemberAddress(), parentVisitor.getParameterMetadata()) {
+            // TODO: support key lookup
             @Override
-            public VertexWithInputConfig onMapIndexScan(IndexScanMapPhysicalRel rel) {
-                return super.onMapIndexScan(rel);
+            public Tuple2<VertexWithInputConfig, VertexWithInputConfig> onMapIndexScan(IndexScanMapPhysicalRel scanRel) {
+                // IndexScanMapPhysicalRel for IMap is correlation-variable-aware
+                // TODO: collect tables/keys!
+
+                // index scan is supported only for IMap
+                // f0 - input, f1 - output
+                Tuple2<VertexWithInputConfig, Vertex> vertices = indexScanReader(
+                        dag,
+                        localMemberAddress,
+                        table,
+                        scanRel.getIndex(),
+                        scanRel.filter(parameterMetadata),
+                        scanRel.projection(parameterMetadata),
+                        scanRel.getIndexFilter(),
+                        scanRel.getComparator(),
+                        scanRel.isDescending(),
+                        joinInfo
+                );
+
+                // TODO: support partition-aligned joins
+                return tuple2(vertices.f0(),
+                        //TODO: config for output?
+                        new VertexWithInputConfig(vertices.f1()));
             }
 
             @Override
-            public VertexWithInputConfig onFullScan(FullScanPhysicalRel rel) {
-                return new VertexWithInputConfig(
+            public Tuple2<VertexWithInputConfig, VertexWithInputConfig> onFullScan(FullScanPhysicalRel rel) {
+                VertexWithInputConfig vertex = new VertexWithInputConfig(
                         dag.newUniqueVertex(
                                 "Join(Scan-" + tableName + ")",
                                 new JoinScanProcessorSupplier(joinInfo, mapName, rightRowProjectorSupplier)
                         )
                 );
+                return tuple2(vertex, vertex);
             }
         };
+        return visitor;
     }
 
     @Nonnull

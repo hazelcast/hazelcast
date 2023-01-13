@@ -18,6 +18,7 @@ package com.hazelcast.sql.impl.exec.scan;
 
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
+import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.jet.sql.impl.JetSqlSerializerHook;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
@@ -29,6 +30,7 @@ import com.hazelcast.sql.impl.extract.QueryTargetDescriptor;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.sql.impl.type.QueryDataType;
 
+import javax.annotation.Nullable;
 import java.io.IOException;
 import java.util.List;
 import java.util.Objects;
@@ -49,6 +51,10 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
     protected IndexFilter filter;
     protected ComparatorEx<JetSqlRow> comparator;
     protected boolean descending;
+    /**
+     * Join info if the scan should be executed in join-mode.
+     */
+    private JetJoinInfo joinInfo;
 
     public MapIndexScanMetadata() {
         // No-op.
@@ -66,7 +72,8 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
             List<Expression<?>> projections,
             Expression<Boolean> remainingFilter,
             ComparatorEx<JetSqlRow> comparator,
-            boolean descending
+            boolean descending,
+            @Nullable JetJoinInfo joinInfo
     ) {
         this.mapName = mapName;
         this.indexName = indexName;
@@ -79,6 +86,7 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
         this.filter = filter;
         this.comparator = comparator;
         this.descending = descending;
+        this.joinInfo = joinInfo;
     }
 
     public String getMapName() {
@@ -125,6 +133,10 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
         return descending;
     }
 
+    public JetJoinInfo getJoinInfo() {
+        return joinInfo;
+    }
+
     @SuppressWarnings("checkstyle:CyclomaticComplexity")
     @Override
     public boolean equals(Object o) {
@@ -145,7 +157,8 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
                 && Objects.equals(remainingFilter, that.remainingFilter)
                 && Objects.equals(filter, that.filter)
                 && Objects.equals(comparator, that.comparator)
-                && descending == that.descending;
+                && descending == that.descending
+                && Objects.equals(joinInfo, that.joinInfo);
     }
 
     @Override
@@ -161,7 +174,8 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
                 remainingFilter,
                 filter,
                 comparator,
-                descending
+                descending,
+                joinInfo
         );
     }
 
@@ -178,6 +192,7 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
         out.writeObject(remainingFilter);
         out.writeObject(comparator);
         out.writeBoolean(descending);
+        out.writeObject(joinInfo);
     }
 
     @Override
@@ -193,6 +208,7 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
         remainingFilter = in.readObject();
         comparator = in.readObject();
         descending = in.readBoolean();
+        joinInfo = in.readObject();
     }
 
     @Override

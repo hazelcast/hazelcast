@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.hazelcast.cluster.Address;
 import com.hazelcast.function.BiFunctionEx;
 import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.function.ConsumerEx;
@@ -38,6 +37,7 @@ import com.hazelcast.jet.core.TimestampKind;
 import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.core.function.KeyedWindowResultFunction;
 import com.hazelcast.jet.core.processor.Processors;
+import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.pipeline.ServiceFactories;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
@@ -104,8 +104,6 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
     private final Set<PlanObjectKey> objectKeys = new HashSet<>();
     private final NodeEngine nodeEngine;
-    private final Address localMemberAddress;
-    private final QueryParameterMetadata parameterMetadata;
     private final WatermarkKeysAssigner watermarkKeysAssigner;
     private long watermarkThrottlingFrameSize = -1;
 
@@ -115,10 +113,8 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
             @Nullable WatermarkKeysAssigner watermarkKeysAssigner,
             Set<PlanObjectKey> usedViews
     ) {
-        super(new DAG());
+        super(new DAG(), nodeEngine.getThisAddress(), parameterMetadata);
         this.nodeEngine = nodeEngine;
-        this.localMemberAddress = nodeEngine.getThisAddress();
-        this.parameterMetadata = parameterMetadata;
         this.watermarkKeysAssigner = watermarkKeysAssigner;
         this.objectKeys.addAll(usedViews);
     }
@@ -235,8 +231,9 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
                         rel.projection(parameterMetadata),
                         rel.getIndexFilter(),
                         rel.getComparator(),
-                        rel.isDescending()
-                );
+                        rel.isDescending(),
+                        null
+                ).f1();
     }
 
     @Override
@@ -457,19 +454,24 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
         Table rightTable = rel.getRight().getTable().unwrap(HazelcastTable.class).getTarget();
         collectObjectKeys(rightTable);
 
-        CreateDagVisitor<VertexWithInputConfig> nestedVisitor = getJetSqlConnector(rightTable).nestedLoopReader(
-                dag,
-                rightTable,
-                rel.rightFilter(parameterMetadata),
-                rel.rightProjection(parameterMetadata),
-                rel.joinInfo(parameterMetadata)
-        );
-        VertexWithInputConfig vertexWithConfig = ((PhysicalRel) rel.getRight()).accept(nestedVisitor);
 
-        Vertex vertex = vertexWithConfig.vertex();
+        CreateDagVisitor<Tuple2<VertexWithInputConfig, VertexWithInputConfig>> nestedVisitor =
+                getJetSqlConnector(rightTable).nestedLoopReader(
+                        dag,
+                        rightTable,
+                        rel.rightFilter(parameterMetadata),
+                        rel.rightProjection(parameterMetadata),
+                        rel.joinInfo(parameterMetadata),
+                        this
+                );
+
+        // f0 - input, f1 - output
+        Tuple2<VertexWithInputConfig, VertexWithInputConfig> vertexWithConfig =
+                ((PhysicalRel) rel.getRight()).accept(nestedVisitor);
+
         // execute left normally
-        connectInput(rel.getLeft(), vertex, vertexWithConfig.configureEdgeFn());
-        return vertex;
+        connectInput(rel.getLeft(), vertexWithConfig.f0().vertex(), vertexWithConfig.f0().configureEdgeFn());
+        return vertexWithConfig.f1().vertex();
     }
 
     @Override

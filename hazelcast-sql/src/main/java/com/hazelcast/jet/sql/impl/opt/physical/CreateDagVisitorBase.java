@@ -16,14 +16,31 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.cluster.Address;
 import com.hazelcast.jet.core.DAG;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
 
 public abstract class CreateDagVisitorBase<V> implements CreateDagVisitor<V> {
 
     protected final DAG dag;
+    protected final Address localMemberAddress;
+    protected final QueryParameterMetadata parameterMetadata;
 
-    protected CreateDagVisitorBase(DAG dag) {
+
+    protected CreateDagVisitorBase(DAG dag, Address thisAddress, QueryParameterMetadata parameterMetadata) {
         this.dag = dag;
+        this.localMemberAddress = thisAddress;
+        this.parameterMetadata = parameterMetadata;
+    }
+
+    @Override
+    public Address getLocalMemberAddress() {
+        return localMemberAddress;
+    }
+
+    @Override
+    public QueryParameterMetadata getParameterMetadata() {
+        return parameterMetadata;
     }
 
     @Override

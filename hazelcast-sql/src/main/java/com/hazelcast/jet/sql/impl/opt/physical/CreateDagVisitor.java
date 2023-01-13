@@ -16,6 +16,9 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
+import com.hazelcast.cluster.Address;
+import com.hazelcast.sql.impl.QueryParameterMetadata;
+
 public interface CreateDagVisitor<V> {
     V onValues(ValuesPhysicalRel rel);
 
@@ -64,4 +67,8 @@ public interface CreateDagVisitor<V> {
     V onLimit(LimitPhysicalRel rel);
 
     V onRoot(RootRel rootRel);
+
+    Address getLocalMemberAddress();
+
+    QueryParameterMetadata getParameterMetadata();
 }

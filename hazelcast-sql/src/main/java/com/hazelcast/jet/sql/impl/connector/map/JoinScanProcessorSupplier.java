@@ -72,6 +72,8 @@ final class JoinScanProcessorSupplier implements ProcessorSupplier, DataSerializ
             String mapName,
             KvRowProjector.Supplier rightRowProjectorSupplier
     ) {
+        assert joinInfo.getCorrelationId() != null
+                : "JoinScanProcessorSupplier supports only nested loops join with correlation variable";
         this.joinInfo = joinInfo;
         this.mapName = mapName;
         this.rightRowProjectorSupplier = rightRowProjectorSupplier;
@@ -113,7 +115,6 @@ final class JoinScanProcessorSupplier implements ProcessorSupplier, DataSerializ
                 QueryUtil.toProjection(rightRowProjectorSupplier, nested);
 
         return left -> {
-            List<JetSqlRow> rights = new ArrayList<>();
             // TODO it would be nice if we executed the project() with the predicate that the rightRowProjector
             //  uses, maybe the majority of rows are rejected. In general it's good to do filtering as closely to the
             //  source as possible. However, the predicate has state. Without a state the predicate will have to
@@ -121,6 +122,8 @@ final class JoinScanProcessorSupplier implements ProcessorSupplier, DataSerializ
             // TODO: maybe after changes above comment is not relevant anymore?
 
             nested.setCorrelationVariable(joinInfo.getCorrelationId().getId(), left);
+
+            List<JetSqlRow> rights = new ArrayList<>();
             // current rules pull projects up, hence project() cardinality won't be greater than the source's
             // changing the rules might require revisiting
             for (JetSqlRow right : map.project(projection)) {
