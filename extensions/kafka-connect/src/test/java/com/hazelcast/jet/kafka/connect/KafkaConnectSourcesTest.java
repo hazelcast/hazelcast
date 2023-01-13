@@ -23,6 +23,7 @@ import org.junit.Test;
 
 import java.util.Properties;
 
+import static com.hazelcast.jet.kafka.connect.KafkaConnectSources.connect;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class KafkaConnectSourcesTest {
@@ -30,7 +31,7 @@ public class KafkaConnectSourcesTest {
     @Test
     public void should_fail_when_no_name_property() {
         Properties properties = new Properties();
-        Assertions.assertThatThrownBy(() -> KafkaConnectSources.connect(properties))
+        Assertions.assertThatThrownBy(() -> connect(properties))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Property 'name' is required");
     }
@@ -39,7 +40,7 @@ public class KafkaConnectSourcesTest {
     public void should_fail_when_no_connector_class_property() {
         Properties properties = new Properties();
         properties.setProperty("name", "some-name");
-        Assertions.assertThatThrownBy(() -> KafkaConnectSources.connect(properties))
+        Assertions.assertThatThrownBy(() -> connect(properties))
                 .isInstanceOf(IllegalArgumentException.class)
                 .hasMessage("Property 'connector.class' is required");
     }
@@ -49,7 +50,7 @@ public class KafkaConnectSourcesTest {
         Properties properties = new Properties();
         properties.setProperty("name", "some-name");
         properties.setProperty("connector.class", "some-name");
-        StreamSource<SourceRecord> source = KafkaConnectSources.connect(properties);
+        StreamSource<SourceRecord> source = connect(properties);
         assertThat(source).isNotNull();
     }
 }
