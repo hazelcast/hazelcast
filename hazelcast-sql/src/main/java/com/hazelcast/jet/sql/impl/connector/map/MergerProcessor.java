@@ -44,7 +44,7 @@ class MergerProcessor extends AbstractProcessor {
         getLogger().info("merge " + row + " current: " + currentResult);
 
         // TODO: emit when we got all results (count them) without waiting for next record/complete
-        // so in streaming case we do not delay the record
+        //  so in streaming case we do not delay the record
         if (currentResult == null || currentResult.getRowId() < row.getRowId()) {
             // we got new row - emit current if needed
             if (!tryEmitCurrentResult()) {
@@ -59,7 +59,7 @@ class MergerProcessor extends AbstractProcessor {
     }
 
     private boolean onNew(JetSqlJoinRow row) {
-        // emit before saving. After save the row would not be "new"
+        // emit before saving. After save, the row would not be "new"
         if (row.isMatched() && !tryEmit(row)) {
             return false;
         }

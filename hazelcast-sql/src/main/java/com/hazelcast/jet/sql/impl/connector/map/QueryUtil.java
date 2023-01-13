@@ -135,7 +135,7 @@ final class QueryUtil {
         @Override
         public void setSerializationService(SerializationService serializationService) {
             //TODO: this does not make sense
-            //after deserialization we loose original evalContext type
+            // after deserialization we lose original evalContext type
             this.evalContext =
                     new ExpressionEvalContext(arguments, (InternalSerializationService) serializationService);
             if (tmpVars != null) {

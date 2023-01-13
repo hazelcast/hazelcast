@@ -266,7 +266,7 @@ public class IMapSqlConnector implements SqlConnector {
             //
             // Currently, the parallelism is limited to 1 because ordered
             // partitioned edge does not handle case when items are ordered
-            // only inside partition/processor instance, they must have total
+            // only within partition/processor instance, they must have total
             // order. It is caused by the fact that there is a single
             // SenderTasklet that sends data to remote node even if there is >1
             // processor instance there. SenderTasklet uses single OrderedDrain
@@ -345,7 +345,8 @@ public class IMapSqlConnector implements SqlConnector {
             @Nullable Expression<Boolean> predicate,
             @Nonnull List<Expression<?>> projections,
             @Nonnull JetJoinInfo joinInfo,
-            @Nonnull CreateDagVisitor<Vertex> parentVisitor) {
+            @Nonnull CreateDagVisitor<Vertex> parentVisitor
+    ) {
         PartitionedMapTable table = (PartitionedMapTable) table0;
         String mapName = table.getMapName();
         String tableName = toString(table);

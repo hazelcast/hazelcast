@@ -179,7 +179,7 @@ public interface ProcessorSupplier extends Serializable, SecuredFunction {
 
         /**
          * Returns the partitions from {@link #partitionAssignment()} pertaining to
-         * this member. The returned list can be empty.
+         * this member. The returned array can be empty.
          */
         @Nonnull
         default int[] memberPartitions() {

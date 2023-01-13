@@ -605,7 +605,7 @@ public interface Processor {
         /**
          * Returns the slice of partitions for this processor. It distributes
          * {@link #memberPartitions()} according to the {@link #localParallelism()}
-         * and {@link #localProcessorIndex()}.
+         * and {@link #localProcessorIndex()}. The returned array can be empty.
          */
         default int[] processorPartitions() {
             int[] memberPartitions = memberPartitions();

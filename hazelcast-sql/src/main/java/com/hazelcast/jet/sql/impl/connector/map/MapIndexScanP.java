@@ -138,8 +138,8 @@ final class MapIndexScanP extends AbstractProcessor {
         reader = new LocalMapIndexReader(hazelcastInstance, evalContext.getSerializationService(), metadata);
 
         // each processor instance scans all local partitions
-        // for scan-mode local parallelism > 1 does not make sense
-        // for join-mode fanout inbound edge should be used to not scan twice
+        // for scan mode, local parallelism > 1 will cause duplicate scanning
+        // for join mode, fanout inbound edge should be used instead of broadcast to avoid duplicates
         //
         // TODO: this seems to be not required, scanning could be partitioned locally
         // but may be related to parallelism or SortCombine operation in scan mode.
@@ -327,7 +327,6 @@ final class MapIndexScanP extends AbstractProcessor {
     }
 
     private boolean tryEmitRow(JetSqlRow row) {
-
         if (isJoinScan() && !metadata.getJoinInfo().isInner()) {
             getLogger().info("tryEmitRow " + new JetSqlJoinRow(row, getLeftRowProcessorIndex(), getLeftRowId(), true)
                     + " on partitions " + memberPartitions);

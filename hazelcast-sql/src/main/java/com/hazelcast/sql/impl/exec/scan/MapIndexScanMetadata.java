@@ -52,7 +52,7 @@ public class MapIndexScanMetadata implements IdentifiedDataSerializable {
     protected ComparatorEx<JetSqlRow> comparator;
     protected boolean descending;
     /**
-     * Join info if the scan should be executed in join-mode.
+     * Join info if the scan should be executed in join mode.
      */
     private JetJoinInfo joinInfo;
 
