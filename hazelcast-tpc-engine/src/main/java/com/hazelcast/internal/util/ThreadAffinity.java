@@ -26,11 +26,11 @@ import static com.hazelcast.internal.util.ThreadAffinityHelper.isAffinityAvailab
 
 /**
  * Contains the thread affinity logic for certain threads.
- *
+ * <p>
  * Inside is a list of CPU bitmaps and using the {@link #nextAllowedCpus()} there is a round robin
  * over the list of the CPU bitmaps. The reason for a round robin is that the same ThreadAffinity can
  * be used when threads get stopped and new threads created.
- *
+ * <p>
  * This class is threadsafe.
  */
 public class ThreadAffinity {
@@ -53,7 +53,7 @@ public class ThreadAffinity {
 
     /**
      * Creates a new ThreadAffinity based on a system property.
-     *
+     * <p>
      * If no property is set, then affinity is disabled.
      *
      * @param property the name of the system property.

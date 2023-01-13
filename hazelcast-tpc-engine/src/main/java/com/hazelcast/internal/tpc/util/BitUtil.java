@@ -16,13 +16,17 @@
 
 package com.hazelcast.internal.tpc.util;
 
-public class BitUtil {
+@SuppressWarnings("checkstyle:magicnumber")
+public final class BitUtil {
     public static final int SIZEOF_BYTE = Byte.BYTES;
     public static final int SIZEOF_CHAR = Character.BYTES;
     public static final int SIZEOF_INT = Integer.BYTES;
     public static final int SIZEOF_LONG = Long.BYTES;
     public static final int SIZEOF_FLOAT = Float.BYTES;
     public static final int SIZEOF_DOUBLE = Double.BYTES;
+
+    private BitUtil() {
+    }
 
     /**
      * Fast method of finding the next power of 2 greater than or equal to the supplied value.
@@ -38,6 +42,4 @@ public class BitUtil {
         return 1 << (32 - Integer.numberOfLeadingZeros(value - 1));
     }
 
-    private BitUtil() {
-    }
 }

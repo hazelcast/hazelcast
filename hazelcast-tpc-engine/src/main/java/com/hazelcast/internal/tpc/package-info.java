@@ -16,7 +16,7 @@
 
 /**
  * <p>Contains the Thread Per Core engine<br>
- *
+ * <p>
  * This whole package is internal and no compatibility will be provided.
  *
  * Network/Kernel tuning references:

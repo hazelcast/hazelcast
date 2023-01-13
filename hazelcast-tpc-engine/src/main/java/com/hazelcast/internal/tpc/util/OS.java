@@ -19,7 +19,7 @@ package com.hazelcast.internal.tpc.util;
 /**
  * Utility methods for OS specific functionality.
  */
-public class OS {
+public final class OS {
 
     private static final String OS_NAME = System.getProperty("os.name", "?");
     private static final String OS_VERSION = System.getProperty("os.version", "?");
@@ -30,6 +30,9 @@ public class OS {
     private static final String OS_ARCH = System.getProperty("os.arch", "?");
     private static final boolean IS_64BIT = is64bit0(OS_ARCH);
     private static final boolean IS_X86_64 = OS_ARCH.equals("amd64");
+
+    private OS() {
+    }
 
     private static boolean is64bit0(String osArch) {
         return osArch.contains("64");
@@ -156,7 +159,5 @@ public class OS {
         return IS_64BIT;
     }
 
-    private OS() {
-    }
 
 }

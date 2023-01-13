@@ -29,6 +29,7 @@ import java.util.concurrent.atomic.AtomicLong;
  * It also allows the {@link #allocate()} of a {@link IOBuffer} to be done by a different
  * thread than {@link #free(IOBuffer)}.
  */
+@SuppressWarnings("checkstyle:magicnumber")
 public class ConcurrentIOBufferAllocator implements IOBufferAllocator {
 
     private static final AtomicLong newAllocations = new AtomicLong(0);

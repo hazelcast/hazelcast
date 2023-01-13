@@ -157,10 +157,10 @@ public final class NioAsyncSocket extends AsyncSocket {
         checkPositive(keepAliveTime, "keepAliveTime");
         if (TCP_KEEPIDLE == null) {
             if (TCP_KEEPIDLE_PRINTED.compareAndSet(false, true)) {
-                logger.warning("Ignoring NioAsyncSocket.setTcpKeepAliveTime. " +
-                        "Please upgrade to Java 11+ or configure tcp_keepalive_time in the kernel. " +
-                        "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. " +
-                        "If this isn't dealt with, idle connections could be closed prematurely.");
+                logger.warning("Ignoring NioAsyncSocket.setTcpKeepAliveTime. "
+                        + "Please upgrade to Java 11+ or configure tcp_keepalive_time in the kernel. "
+                        + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
+                        + "If this isn't dealt with, idle connections could be closed prematurely.");
             }
         } else {
             try {
@@ -190,10 +190,10 @@ public final class NioAsyncSocket extends AsyncSocket {
 
         if (TCP_KEEPINTERVAL == null) {
             if (TCP_KEEPINTERVAL_PRINTED.compareAndSet(false, true)) {
-                logger.warning("Ignoring NioAsyncSocket.setTcpKeepaliveIntvl. " +
-                        "Please upgrade to Java 11+ or configure tcp_keepalive_intvl in the kernel. " +
-                        "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. " +
-                        "If this isn't dealt with, idle connections could be closed prematurely.");
+                logger.warning("Ignoring NioAsyncSocket.setTcpKeepaliveIntvl. "
+                        + "Please upgrade to Java 11+ or configure tcp_keepalive_intvl in the kernel. "
+                        + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
+                        + "If this isn't dealt with, idle connections could be closed prematurely.");
             }
         } else {
             try {
@@ -223,10 +223,10 @@ public final class NioAsyncSocket extends AsyncSocket {
 
         if (TCP_KEEPCOUNT == null) {
             if (TCP_KEEPCOUNT_PRINTED.compareAndSet(false, true)) {
-                logger.warning("Ignoring NioAsyncSocket.setTcpKeepAliveProbes. " +
-                        "Please upgrade to Java 11+ or configure tcp_keepalive_probes in the kernel: " +
-                        "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. " +
-                        "If this isn't dealt with, idle connections could be closed prematurely.");
+                logger.warning("Ignoring NioAsyncSocket.setTcpKeepAliveProbes. "
+                        + "Please upgrade to Java 11+ or configure tcp_keepalive_probes in the kernel: "
+                        + "For more info see https://tldp.org/HOWTO/html_single/TCP-Keepalive-HOWTO/. "
+                        + "If this isn't dealt with, idle connections could be closed prematurely.");
             }
         } else {
             try {
@@ -329,7 +329,7 @@ public final class NioAsyncSocket extends AsyncSocket {
         }
 
         if (readHandler == null) {
-            throw new IllegalStateException("Can't activate " + this + ": readhandler isn't set");
+            throw new IllegalStateException("Can't activate " + this + ": readHandler isn't set");
         }
 
         this.eventloop = checkInstanceOf(NioEventloop.class, eventloop, "eventloop");
@@ -465,7 +465,7 @@ public final class NioAsyncSocket extends AsyncSocket {
             logger.info("Connect to address:" + address);
         }
 
-         eventloop.offer(() -> {
+        eventloop.offer(() -> {
             try {
                 key = socketChannel.register(selector, OP_CONNECT, eventLoopHandler);
                 connectFuture = future;
@@ -490,7 +490,7 @@ public final class NioAsyncSocket extends AsyncSocket {
 
         @Override
         public void close(String reason, Exception cause) {
-              NioAsyncSocket.this.close(reason, cause);
+            NioAsyncSocket.this.close(reason, cause);
         }
 
         @Override

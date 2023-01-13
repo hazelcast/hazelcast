@@ -53,6 +53,7 @@ import static com.hazelcast.internal.tpc.util.BitUtil.nextPowerOfTwo;
  * E.g. in case of the buffer pool (application specific page cache) we just want to take a pointer to
  * some memory in the bufferpool and pass it to the IOBuffer for reading/writing that page to disk.
  */
+@SuppressWarnings({"checkstyle:magicnumber", "WeakerAccess", "checkstyle:methodcount"})
 public class IOBuffer {
 
     public IOBuffer next;

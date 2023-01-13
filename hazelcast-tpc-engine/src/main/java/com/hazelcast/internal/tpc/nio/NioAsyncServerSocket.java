@@ -206,7 +206,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
                 serverSocketChannel.register(selector, OP_ACCEPT, new AcceptHandler(consumer));
 
                 if (logger.isInfoEnabled()) {
-                    logger.info(getLocalAddress()+" started accepting");
+                    logger.info(getLocalAddress() + " started accepting");
                 }
 
                 future.complete(null);
@@ -248,7 +248,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
             consumer.accept(socket);
 
             if (logger.isInfoEnabled()) {
-                logger.info(NioAsyncServerSocket.this +" accepted: " + socketChannel.getRemoteAddress()
+                logger.info(NioAsyncServerSocket.this + " accepted: " + socketChannel.getRemoteAddress()
                         + "->" + socketChannel.getLocalAddress());
             }
         }

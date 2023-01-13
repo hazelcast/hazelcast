@@ -25,7 +25,7 @@ import static org.junit.Assert.assertTrue;
 public class OSTest {
 
     @Test
-    public void test_pageSize(){
+    public void test_pageSize() {
         assertEquals(UnsafeLocator.UNSAFE.pageSize(), OS.pageSize());
     }
 

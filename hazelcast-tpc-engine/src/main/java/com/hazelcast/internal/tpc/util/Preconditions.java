@@ -23,7 +23,8 @@ public final class Preconditions {
         checkNotNull(object, paramName);
 
         if (!type.isInstance(object)) {
-            throw new IllegalArgumentException("object "+object+" of type "+object.getClass()+" is not an instanceof "+type);
+            throw new IllegalArgumentException("object " + object + " of type "
+                    + object.getClass() + " is not an instanceof " + type);
         }
         return (E) object;
     }

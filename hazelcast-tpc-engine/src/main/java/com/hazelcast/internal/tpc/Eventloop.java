@@ -58,7 +58,7 @@ import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater
  *     <li>Tasks from some asynchronous eventing system that interacts with I/O. </li>>
  * </ol>
  */
-@SuppressWarnings({"checkstyle:VisibilityModifier", "rawtypes"})
+@SuppressWarnings({"checkstyle:VisibilityModifier", "rawtypes", "checkstyle:DeclarationOrder", "checkstyle:VisibilityOrder"})
 public abstract class Eventloop implements Executor {
 
     protected static final AtomicReferenceFieldUpdater<Eventloop, State> STATE
@@ -444,7 +444,7 @@ public abstract class Eventloop implements Executor {
                 }
 
                 if (!scheduledTaskQueue.offer(this)) {
-                    //todo: some log message
+                    throw new RuntimeException("Failed to offer task; scheduledTaskQueue is full");
                 }
             } else {
                 if (fut != null) {
