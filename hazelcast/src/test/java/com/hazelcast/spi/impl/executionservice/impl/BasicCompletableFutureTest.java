@@ -41,6 +41,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category(QuickTest.class)
@@ -171,7 +172,7 @@ public class BasicCompletableFutureTest {
 
         verify(callback, times(1)).accept(any(String.class), isNull());
         verify(callback, times(0)).accept(isNull(), any(Throwable.class));
-        verifyNoInteractions(callback);
+        verifyNoMoreInteractions(callback);
     }
 
     @Test
@@ -184,7 +185,7 @@ public class BasicCompletableFutureTest {
 
         verify(callback, times(1)).accept(any(String.class), isNull());
         verify(callback, times(0)).accept(isNull(), any(Throwable.class));
-        verifyNoInteractions(callback);
+        verifyNoMoreInteractions(callback);
     }
 
     @Test
@@ -197,7 +198,7 @@ public class BasicCompletableFutureTest {
 
         verify(callback, times(1)).accept(any(String.class), isNull());
         verify(callback, times(0)).accept(isNull(), any(Throwable.class));
-        verifyNoInteractions(callback);
+        verifyNoMoreInteractions(callback);
     }
 
     @Test
@@ -210,7 +211,7 @@ public class BasicCompletableFutureTest {
 
         verify(callback, times(1)).accept(any(String.class), isNull());
         verify(callback, times(0)).accept(isNull(), any(Throwable.class));
-        verifyNoInteractions(callback);
+        verifyNoMoreInteractions(callback);
     }
 
     @Test
@@ -224,7 +225,7 @@ public class BasicCompletableFutureTest {
 
         verify(callback, times(0)).accept(any(String.class), isNull());
         verify(callback, times(1)).accept(isNull(), any(Throwable.class));
-        verifyNoInteractions(callback);
+        verifyNoMoreInteractions(callback);
     }
 
     @Test
@@ -244,7 +245,7 @@ public class BasicCompletableFutureTest {
 
         verify(callback, times(0)).accept(any(String.class), isNull());
         verify(callback, times(1)).accept(isNull(), any(Throwable.class));
-        verifyNoInteractions(callback);
+        verifyNoMoreInteractions(callback);
     }
 
     private <V> FutureTask<V> future(final V result) {
