@@ -30,10 +30,8 @@ import org.jctools.queues.MpmcArrayQueue;
 
 import java.util.BitSet;
 import java.util.PriorityQueue;
-import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
 import java.util.concurrent.RejectedExecutionException;
@@ -45,7 +43,6 @@ import static com.hazelcast.internal.tpc.Eventloop.State.NEW;
 import static com.hazelcast.internal.tpc.Eventloop.State.RUNNING;
 import static com.hazelcast.internal.tpc.Eventloop.State.SHUTDOWN;
 import static com.hazelcast.internal.tpc.Eventloop.State.TERMINATED;
-import static com.hazelcast.internal.tpc.util.CloseUtil.closeAllQuietly;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNegative;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 import static java.util.concurrent.atomic.AtomicReferenceFieldUpdater.newUpdater;
@@ -81,8 +78,6 @@ public abstract class Eventloop implements Executor {
     protected final PriorityQueue<ScheduledTask> scheduledTaskQueue;
 
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
-    //todo: Litter; we need to come up with better solution.
-    protected final Set<AutoCloseable> closeables = new CopyOnWriteArraySet<>();
 
     protected final AtomicBoolean wakeupNeeded = new AtomicBoolean(true);
     protected final MpmcArrayQueue concurrentTaskQueue;
@@ -193,7 +188,7 @@ public abstract class Eventloop implements Executor {
      *
      * @return the opened AsyncServerSocket.
      */
-    public abstract AsyncServerSocket openTcpServerSocket();
+    public abstract AsyncServerSocket openTcpAsyncServerSocket();
 
     /**
      * Opens TCP/IP (stream) based async socket. The returned socket assumes IPv4. When support for
@@ -210,7 +205,7 @@ public abstract class Eventloop implements Executor {
      *
      * @return the opened AsyncSocket.
      */
-    public abstract AsyncSocket openAsyncTcpSocket();
+    public abstract AsyncSocket openTcpAsyncSocket();
 
     /**
      * Creates the Eventloop specific Unsafe instance.
@@ -311,51 +306,6 @@ public abstract class Eventloop implements Executor {
      */
     protected abstract void wakeup();
 
-    /**
-     * Registers an AutoCloseable on this Eventloop.
-     * <p>
-     * Registered closeable are automatically closed when the eventloop closes.
-     * Some examples: AsyncSocket and AsyncServerSocket.
-     * <p>
-     * If the Eventloop isn't in the running state, false is returned.
-     * <p>
-     * This method is thread-safe.
-     *
-     * @param closeable the AutoCloseable to register
-     * @return true if the closeable was successfully register, false otherwise.
-     * @throws NullPointerException if closeable is null.
-     */
-    public final boolean registerCloseable(AutoCloseable closeable) {
-        checkNotNull(closeable, "closeable");
-
-        if (state != RUNNING) {
-            return false;
-        }
-
-        closeables.add(closeable);
-
-        if (state != RUNNING) {
-            closeables.remove(closeable);
-            return false;
-        }
-
-        return true;
-    }
-
-    /**
-     * Deregisters an AutoCloseable from this Eventloop.
-     * <p>
-     * This method is thread-safe.
-     * <p>
-     * This method can be called no matter the state of the Eventloop.
-     *
-     * @param closeable the AutoCloseable to deregister.
-     */
-    public final void deregisterCloseable(AutoCloseable closeable) {
-        checkNotNull(closeable, "closeable");
-        closeables.remove(closeable);
-    }
-
     @Override
     public void execute(Runnable command) {
         if (!offer(command)) {
@@ -410,6 +360,7 @@ public abstract class Eventloop implements Executor {
             if (scheduledTask.deadlineNanos > unsafe.nanoClock.nanoTime()) {
                 // Task should not yet be executed.
                 earliestDeadlineNanos = scheduledTask.deadlineNanos;
+                // we are done since all other tasks have a larger deadline.
                 return false;
             }
 
@@ -519,28 +470,35 @@ public abstract class Eventloop implements Executor {
 
         @Override
         public void run() {
-            configureAffinity();
-
             try {
+                configureAffinity();
+
                 try {
-                    unsafe = createUnsafe();
-                    beforeEventloop();
-                    eventLoop();
+                    try {
+                        unsafe = createUnsafe();
+                        beforeEventloop();
+                        eventLoop();
+                    } finally {
+                        afterEventloop();
+                    }
+                } catch (Throwable e) {
+                    logger.severe(e);
                 } finally {
-                    afterEventloop();
+                    state = TERMINATED;
+
+                    terminationLatch.countDown();
+
+                    if (engine != null) {
+                        engine.notifyEventloopTerminated();
+                    }
+
+                    if (logger.isInfoEnabled()) {
+                        logger.info(Thread.currentThread().getName() + " terminated");
+                    }
                 }
             } catch (Throwable e) {
+                // log whatever wasn't caught so that we don't swallow throwables.
                 logger.severe(e);
-            } finally {
-                state = TERMINATED;
-                closeAllQuietly(closeables);
-                terminationLatch.countDown();
-                if (engine != null) {
-                    engine.notifyEventloopTerminated();
-                }
-                if (logger.isInfoEnabled()) {
-                    logger.info(Thread.currentThread().getName() + " terminated");
-                }
             }
         }
 
@@ -603,11 +561,11 @@ public abstract class Eventloop implements Executor {
         /**
          * Schedules a one shot action with the given delay.
          *
-         * @param task the task to execute.
+         * @param task  the task to execute.
          * @param delay the delay
-         * @param unit the unit of the delay
+         * @param unit  the unit of the delay
          * @return true if the task was successfully scheduled.
-         * @throws NullPointerException if task or unit is null
+         * @throws NullPointerException     if task or unit is null
          * @throws IllegalArgumentException when delay smaller than 0.
          */
         public boolean schedule(Runnable task, long delay, TimeUnit unit) {
@@ -630,10 +588,10 @@ public abstract class Eventloop implements Executor {
          * Creates a periodically executing task with a fixed delay between the completion and start of
          * the task.
          *
-         * @param task the task to periodically execute.
+         * @param task         the task to periodically execute.
          * @param initialDelay the initial delay
-         * @param delay the delay between executions.
-         * @param unit the unit of the initial delay and delay
+         * @param delay        the delay between executions.
+         * @param unit         the unit of the initial delay and delay
          * @return true if the task was successfully executed.
          */
         public boolean scheduleWithFixedDelay(Runnable task, long initialDelay, long delay, TimeUnit unit) {
@@ -657,10 +615,10 @@ public abstract class Eventloop implements Executor {
         /**
          * Creates a periodically executing task with a fixed delay between the start of the task.
          *
-         * @param task the task to periodically execute.
+         * @param task         the task to periodically execute.
          * @param initialDelay the initial delay
-         * @param period the period between executions.
-         * @param unit the unit of the initial delay and delay
+         * @param period       the period between executions.
+         * @param unit         the unit of the initial delay and delay
          * @return true if the task was successfully executed.
          */
         public boolean scheduleAtFixedRate(Runnable task, long initialDelay, long period, TimeUnit unit) {

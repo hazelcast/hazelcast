@@ -16,41 +16,25 @@
 
 package com.hazelcast.internal.tpc;
 
-import com.hazelcast.internal.tpc.logging.TpcLogger;
-import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
-import com.hazelcast.internal.tpc.nio.NioAsyncSocket;
 import com.hazelcast.internal.tpc.util.ProgressIndicator;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketAddress;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.CompletableFuture;
 import java.util.function.Consumer;
 
 /**
  * A server socket that is asynchronous. So accepting incoming connections does not block,
  * but are executed on an {@link Eventloop}.
  */
-public abstract class AsyncServerSocket implements Closeable {
-
-    /**
-     * Allows for objects to be bound to this AsyncServerSocket. Useful for the lookup of services and other dependencies.
-     */
-    @SuppressWarnings("checkstyle:VisibilityModifier")
-    public final ConcurrentMap<?, ?> context = new ConcurrentHashMap<>();
-
-    protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
-    protected final AtomicBoolean closed = new AtomicBoolean(false);
+public abstract class AsyncServerSocket extends Socket {
     protected final ProgressIndicator accepted = new ProgressIndicator();
 
     protected AsyncServerSocket() {
     }
 
     /**
-     * Returns the number of socks that have been accepted by the AsyncServerSocket.
+     * Returns the number of sockets that have been accepted.
      *
      * @return the number of accepted sockets.
      */
@@ -59,7 +43,7 @@ public abstract class AsyncServerSocket implements Closeable {
     }
 
     /**
-     * Gets the local address of this ServerSocketChannel.
+     * Gets the local address: the socket address that this channel's socket is bound to.
      *
      * @return the local address.
      */
@@ -86,6 +70,8 @@ public abstract class AsyncServerSocket implements Closeable {
 
     /**
      * Gets the local port of the ServerSocketChannel.
+     * <p/>
+     * If {@link #bind(SocketAddress)} has not been called, then 0 is returned.
      *
      * @return the local port.
      * @throws UncheckedIOException if something failed while obtaining the local port.
@@ -129,16 +115,16 @@ public abstract class AsyncServerSocket implements Closeable {
     public abstract void setReuseAddress(boolean reuseAddress);
 
     /**
-     * Sets the receivebuffer size in bytes.
+     * Sets the receive buffer size in bytes.
      *
-     * @param size the receivebuffer size in bytes.
+     * @param size the receive buffer size in bytes.
      * @throws IllegalArgumentException when the size isn't positive.
      * @throws UncheckedIOException     if something failed with configuring the socket
      */
     public abstract void setReceiveBufferSize(int size);
 
     /**
-     * Gets the receivebuffer size in bytes.
+     * Gets the receive buffer size in bytes.
      *
      * @return the size of the receive buffer.
      * @throws UncheckedIOException if something failed with configuring the socket
@@ -146,73 +132,58 @@ public abstract class AsyncServerSocket implements Closeable {
     public abstract int getReceiveBufferSize();
 
     /**
-     * Binds this AsyncServerSocket to the local.
+     * Binds this AsyncServerSocket to the localAddress address. This method is equivalent to calling
+     * {@link #bind(SocketAddress, int)} with an Integer.MAX_VALUE backlog.
      *
-     * @param local the local SocketAddress.
-     * @throws UncheckedIOException if something failed with configuring the socket
+     * @param localAddress the local address.
+     * @throws UncheckedIOException if something failed while binding.
+     * @throws NullPointerException if localAddress is null.
      */
-    public abstract void bind(SocketAddress local);
-
-    public abstract void listen(int backlog);
+    public void bind(SocketAddress localAddress) {
+        bind(localAddress, Integer.MAX_VALUE);
+    }
 
     /**
-     * Accept incoming AsyncSocket.
+     * Binds this AsyncServerSocket to the localAddress address by assigning the local address to it.
+     * <p/>
+     * At a socket level, this method does 2 things:
+     * <ol>
+     *     <li>bind: assigning an address to the socket</li>
+     *     <li>listen: marks the socket as a passive socket that waits for incoming connections.
+     *     Because every AsyncServerSocket is such a passive socket, there is no point in adding a
+     *     listen method to the AsyncServerSocket.</li>
+     * </ol>
+     * <p>
+     * This call needs to be made before {@link #accept(Consumer)}.
+     * <p/>
+     * Bind should only be called once, otherwise an UncheckedIOException is thrown.
+     *
+     * @param localAddress the local address.
+     * @param backlog      the maximum number of pending connections. The backlog argument doesn't need
+     *                     to be respected by the socket implementation.
+     * @throws UncheckedIOException     if something failed while binding.
+     * @throws NullPointerException     if localAddress is null.
+     * @throws IllegalArgumentException if backlog smaller than 0.
+     */
+    public abstract void bind(SocketAddress localAddress, int backlog);
+
+    /**
+     * Start accept incoming sockets asynchronously This call should only be made once.
      * <p/>
      * This call can be made from any thread, but the actual processing will happen on the eventloop-thread.
+     * <p/>
+     * Before accept is called, bind needs to be called.
      *
      * @param consumer a function that is called when a socket has connected.
+     * @return a CompletableFuture that contains the result of the AsyncServerSocket managed
+     * to start with accepting successfully.
      * @throws NullPointerException if consumer is null.
      */
-    public abstract void accept(Consumer<AsyncSocket> consumer);
-
-    /**
-     * Closes the AsyncServerSocket.
-     * <p/>
-     * If the AsyncServerSocket is already closed, it is ignored.
-     * <p/>
-     * This method is thread-safe.
-     * <p/>
-     * This method doesn't throw an exception.
-     */
-    @Override
-    public final void close() {
-        if (!closed.compareAndSet(false, true)) {
-            return;
-        }
-
-        if (logger.isInfoEnabled()) {
-            logger.info("Closing  " + this);
-        }
-
-        try {
-            close0();
-        } catch (Exception e) {
-            logger.warning(e);
-        }
-    }
-
-    /**
-     * Does the actual closing. No guarantee is made on which thread this is called.
-     * <p/>
-     * Is guaranteed to be called at most once.
-     *
-     * @throws IOException
-     */
-    protected abstract void close0() throws IOException;
-
-    /**
-     * Checks if the AsyncServerSocket is closed.
-     *
-     * This method is thread-safe.
-     *
-     * @return true if closed, false otherwise.
-     */
-    public final boolean isClosed() {
-        return closed.get();
-    }
+    public abstract CompletableFuture<Void> accept(Consumer<AsyncSocket> consumer);
 
     @Override
     public String toString() {
         return getClass().getSimpleName() + "[" + getLocalAddress() + "]";
     }
+
 }

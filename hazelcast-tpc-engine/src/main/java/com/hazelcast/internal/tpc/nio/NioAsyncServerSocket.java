@@ -25,16 +25,20 @@ import java.io.UncheckedIOException;
 import java.net.SocketAddress;
 import java.net.SocketOption;
 import java.net.StandardSocketOptions;
+import java.nio.channels.AlreadyBoundException;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
+import java.nio.channels.UnsupportedAddressTypeException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
 import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
+import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNegative;
+import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpc.util.ReflectionUtil.findStaticFieldValue;
 import static java.net.StandardSocketOptions.SO_RCVBUF;
 import static java.net.StandardSocketOptions.SO_REUSEADDR;
@@ -44,8 +48,7 @@ import static java.nio.channels.SelectionKey.OP_ACCEPT;
  * Nio implementation of the {@link AsyncServerSocket}.
  */
 public final class NioAsyncServerSocket extends AsyncServerSocket {
-    private static final int DEFAULT_LATCH_TIMEOUT_SECONDS = 10;
-    private static final AtomicBoolean REUSE_PORT_PRINTED = new AtomicBoolean();
+    private static final AtomicBoolean SO_REUSE_PORT_PRINTED = new AtomicBoolean();
 
     // This option is available since Java 9, so we need to use reflection.
     private static final SocketOption<Boolean> SO_REUSEPORT = findStaticFieldValue(StandardSocketOptions.class, "SO_REUSEPORT");
@@ -55,6 +58,18 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     private final NioEventloop eventloop;
     private final Thread eventloopThread;
 
+    /**
+     * Opens a TCP/IP (stream) based IPv4 NioAsyncServerSocket.
+     * <p/>
+     * To prevent coupling to Nio, it is better to use the {@link Eventloop#openTcpAsyncServerSocket()}.
+     *
+     * @param eventloop the eventloop the opened socket will be processed by.
+     * @return the opened NioAsyncServerSocket.
+     */
+    public static NioAsyncServerSocket openTcpServerSocket(NioEventloop eventloop) {
+        return new NioAsyncServerSocket(eventloop);
+    }
+
     private NioAsyncServerSocket(NioEventloop eventloop) {
         try {
             this.serverSocketChannel = ServerSocketChannel.open();
@@ -62,25 +77,9 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
             this.eventloop = eventloop;
             this.eventloopThread = eventloop.eventloopThread();
             this.selector = eventloop.selector;
-            if (!eventloop.registerCloseable(this)) {
-                close();
-                throw new IllegalStateException(eventloop + " is not running");
-            }
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
-    }
-
-    /**
-     * Opens a TCP/IP (stream) based IPv4 NioAsyncServerSocket.
-     * <p/>
-     * To prevent coupling to Nio, it is better to use the {@link Eventloop#openTcpServerSocket()}.
-     *
-     * @param eventloop the eventloop the opened socket will be processed by.
-     * @return the opened NioAsyncServerSocket.
-     */
-    public static NioAsyncServerSocket openTcpServerSocket(NioEventloop eventloop) {
-        return new NioAsyncServerSocket(eventloop);
     }
 
     @Override
@@ -95,7 +94,8 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
 
     @Override
     public int getLocalPort() {
-        return serverSocketChannel.socket().getLocalPort();
+        int localPort = serverSocketChannel.socket().getLocalPort();
+        return localPort == -1 ? 0 : localPort;
     }
 
     @Override
@@ -114,7 +114,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     @Override
     public void setReusePort(boolean reusePort) {
         if (SO_REUSEPORT == null) {
-            if (REUSE_PORT_PRINTED.compareAndSet(false, true)) {
+            if (SO_REUSE_PORT_PRINTED.compareAndSet(false, true)) {
                 logger.warning("Ignoring NioAsyncServerSocket.reusePort." +
                         "Please upgrade to Java 9+ to enable the SO_REUSEPORT option.");
             }
@@ -164,59 +164,66 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    protected void close0() {
-        closeQuietly(serverSocketChannel.socket());
-        eventloop.deregisterCloseable(this);
-    }
+    protected void close0() throws IOException {
+        // First we need to obtain the key, because as soon as the
+        // serverSocketChannel is closed, the key is deregistered.
 
+        // Can be called on any thread, so we need to make use of the
+        // synchronization of the serverSocketChannel to obtain the key
+        SelectionKey key = serverSocketChannel.keyFor(selector);
 
-    @Override
-    public void listen(int backlog) {
-        // ignore; not needed for serverSocketChannel
-    }
+        closeQuietly(serverSocketChannel);
 
-    @Override
-    public void bind(SocketAddress local) {
-        try {
-            if (logger.isInfoEnabled()) {
-                logger.info(eventloopThread.getName() + " Binding to " + local);
-            }
-            serverSocketChannel.bind(local);
-        } catch (IOException e) {
-            throw new UncheckedIOException("Failed to bind to " + local, e);
+        if (key != null) {
+            key.cancel();
         }
     }
 
-    public void accept(Consumer<AsyncSocket> consumer) {
-        CountDownLatch latch = new CountDownLatch(1);
+    @Override
+    public void bind(SocketAddress localAddress, int backlog) {
+        checkNotNull(localAddress, "localAddress");
+        checkNotNegative(backlog, "backlog");
+
+        try {
+            if (logger.isInfoEnabled()) {
+                logger.info(eventloopThread.getName() + " Binding to " + localAddress);
+            }
+            serverSocketChannel.bind(localAddress, backlog);
+        } catch (IOException e) {
+            throw new UncheckedIOException("Failed to bind to " + localAddress, e);
+        } catch (AlreadyBoundException | UnsupportedAddressTypeException | SecurityException e) {
+            throw new UncheckedIOException(new IOException("Failed to bind to " + localAddress, e));
+        }
+    }
+
+    @Override
+    public CompletableFuture<Void> accept(Consumer<AsyncSocket> consumer) {
+        checkNotNull(consumer, "consumer");
+
+        CompletableFuture<Void> future = new CompletableFuture<>();
 
         Runnable acceptTask = () -> {
             try {
                 serverSocketChannel.register(selector, OP_ACCEPT, new AcceptHandler(consumer));
 
                 if (logger.isInfoEnabled()) {
-                    logger.info(eventloopThread.getName() + " ServerSocket listening at "
-                            + serverSocketChannel.getLocalAddress());
+                    logger.info(getLocalAddress()+" started accepting");
                 }
-            } catch (IOException e) {
-                throw new UncheckedIOException("Failed to accept", e);
-            } finally {
-                latch.countDown();
+
+                future.complete(null);
+            } catch (RuntimeException | IOException e) {
+                future.completeExceptionally(e);
             }
         };
 
         if (!eventloop.offer(acceptTask)) {
-            throw new RuntimeException("Failed to offer accept task");
+            future.completeExceptionally(new RuntimeException("Failed to offer accept task"));
         }
 
-        try {
-            latch.await(DEFAULT_LATCH_TIMEOUT_SECONDS, TimeUnit.SECONDS);
-        } catch (InterruptedException e) {
-            throw new RuntimeException(e);
-        }
+        return future;
     }
 
-    private final class AcceptHandler implements NioSelectedKeyListener {
+    private final class AcceptHandler implements SelectionKeyListener {
 
         private final Consumer<AsyncSocket> consumer;
 
@@ -225,12 +232,16 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         }
 
         @Override
-        public void handleException(Exception e) {
-            logger.severe(this + " ran into a fatal exception", e);
+        public void close(String reason, Exception cause) {
+            NioAsyncServerSocket.this.close(reason, cause);
         }
 
         @Override
         public void handle(SelectionKey key) throws IOException {
+            if (!key.isValid()) {
+                throw new CancelledKeyException();
+            }
+
             SocketChannel socketChannel = serverSocketChannel.accept();
             NioAsyncSocket socket = new NioAsyncSocket(socketChannel);
 
@@ -238,7 +249,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
             consumer.accept(socket);
 
             if (logger.isInfoEnabled()) {
-                logger.info("Connection Accepted: " + socketChannel.getRemoteAddress()
+                logger.info(NioAsyncServerSocket.this +" accepted: " + socketChannel.getRemoteAddress()
                         + "->" + socketChannel.getLocalAddress());
             }
         }

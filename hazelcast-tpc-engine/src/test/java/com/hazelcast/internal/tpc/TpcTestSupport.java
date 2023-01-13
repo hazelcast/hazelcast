@@ -16,8 +16,10 @@
 
 package com.hazelcast.internal.tpc;
 
+import java.util.Collection;
 import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Future;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.lang.Integer.getInteger;
@@ -31,6 +33,52 @@ import static org.junit.Assert.fail;
 public class TpcTestSupport {
 
     public static final int ASSERT_TRUE_EVENTUALLY_TIMEOUT = getInteger("hazelcast.assertTrueEventually.timeout", 120);
+    public static final int TERMINATION_TIMEOUT_SECONDS = 30;
+
+    public static void assertCompletesEventually(final Future future) {
+        assertTrueEventually(() -> assertTrue("Future has not completed", future.isDone()));
+    }
+
+    public static void terminateAll(Collection<? extends Eventloop> eventloops)  {
+        if(eventloops==null){
+            return;
+        }
+
+        for (Eventloop eventloop : eventloops) {
+            if (eventloop == null) {
+                continue;
+            }
+            eventloop.shutdown();
+        }
+
+        for (Eventloop eventloop : eventloops) {
+            if (eventloop == null) {
+                continue;
+            }
+            try {
+                if (!eventloop.awaitTermination(TERMINATION_TIMEOUT_SECONDS, SECONDS)) {
+                    throw new RuntimeException("Eventloop failed to terminate within timeout.");
+                }
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+
+    public static void terminate(Eventloop eventloop)  {
+        if (eventloop == null) {
+            return;
+        }
+
+        eventloop.shutdown();
+        try {
+            if (!eventloop.awaitTermination(TERMINATION_TIMEOUT_SECONDS, SECONDS)) {
+                throw new RuntimeException("Eventloop failed to terminate within timeout.");
+            }
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     public static void sleepMillis(int millis) {
         try {
@@ -110,7 +158,6 @@ public class TpcTestSupport {
 
         throw new RuntimeException(t);
     }
-
 
     public static void assertTrueEventually(AssertTask task, long timeoutSeconds) {
         assertTrueEventually(null, task, timeoutSeconds);
