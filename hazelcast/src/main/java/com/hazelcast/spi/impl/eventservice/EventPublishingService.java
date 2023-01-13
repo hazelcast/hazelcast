@@ -17,7 +17,7 @@
 package com.hazelcast.spi.impl.eventservice;
 
 /**
- * A service for publishing events. For example a Topic that receives an message (the event)
+ * A service for publishing events. For example a Topic that receives a message (the event)
  * and dispatches it to a listener.
  *
  * @param <E> the event type
