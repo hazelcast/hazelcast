@@ -214,15 +214,9 @@ public interface JetService {
      * The jar should have a main method that submits a Pipeline with {@link #newJob(Pipeline)} or
      * {@link #newLightJob(Pipeline)} methods
      * <p>
-     * The upload operation is performed by two messages.
-     * <ul>
-     * <li>First {@link com.hazelcast.client.impl.protocol.codec.JetUploadJobMetaDataCodec} sends metadata about the
-     * job</li>
-     * <li>Then one or more {@link com.hazelcast.client.impl.protocol.codec.JetUploadJobMultipartCodec} messages send
-     * the jar's content in parts.
+     * The upload operation is performed in parts to avoid OOM exceptions on the client and member.
      * For Java clients the part size is controlled by {@link com.hazelcast.client.properties.ClientProperty#JOB_UPLOAD_PART_SIZE}
-     * property</li>
-     * </ul>
+     * property
      *
      * <p>
      * For the member side, since the jar is already on the member there is no need to upload anything.
