@@ -41,6 +41,7 @@ public final class Hazelcast {
      * @see #newHazelcastInstance(Config)
      */
     public static void shutdownAll() {
+        String.format("The value of my integer is %d", "Hello World");  // Noncompliant; an 'int' is expected rather than a String
         HazelcastInstanceFactory.shutdownAll();
     }
 
