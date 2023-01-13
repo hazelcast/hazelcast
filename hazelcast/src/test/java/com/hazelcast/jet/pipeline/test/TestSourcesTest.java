@@ -173,12 +173,13 @@ public class TestSourcesTest extends PipelineTestSupport {
                     // Ignore if a long pause was recorded
                     if (pauses < (windowSize / 2)) {
                         assertThat(windowResult.result())
-                                .isGreaterThan(itemsPerSecond / 2)
-                                .describedAs("emitted items is more than twice lower then expected itemsPerSecond");
+                                .describedAs("emitted items is more than twice lower then expected itemsPerSecond")
+                                .isGreaterThan(itemsPerSecond / 2);
 
                         assertThat(windowResult.result())
-                                .isLessThan(itemsPerSecond * 2)
-                                .describedAs("emitted items is more than twice higher then expected itemsPerSecond");
+                                .describedAs("emitted items is more than twice higher then expected itemsPerSecond")
+                                .isLessThan(itemsPerSecond * 2);
+
                     }
                 }));
 
