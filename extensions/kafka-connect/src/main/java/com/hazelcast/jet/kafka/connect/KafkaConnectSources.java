@@ -22,6 +22,7 @@ import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.StreamSource;
 import org.apache.kafka.connect.source.SourceRecord;
 
+import javax.annotation.Nonnull;
 import java.net.URL;
 import java.util.Properties;
 
@@ -59,7 +60,8 @@ public final class KafkaConnectSources {
      * @param properties Kafka connect properties
      * @return a source to use in {@link com.hazelcast.jet.pipeline.Pipeline#readFrom(StreamSource)}
      */
-    public static StreamSource<SourceRecord> connect(Properties properties) {
+    @Nonnull
+    public static StreamSource<SourceRecord> connect(@Nonnull Properties properties) {
         Preconditions.checkRequiredProperty(properties, "name");
         String name = properties.getProperty("name");
 
