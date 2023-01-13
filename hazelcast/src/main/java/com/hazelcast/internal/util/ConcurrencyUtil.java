@@ -16,9 +16,15 @@
 
 package com.hazelcast.internal.util;
 
+import com.hazelcast.logging.ILogger;
+import com.hazelcast.logging.Logger;
+
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.Executor;
 import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicLongFieldUpdater;
 
@@ -45,19 +51,10 @@ public final class ConcurrencyUtil {
         }
     };
 
-    // Default executor for async callbacks: ForkJoinPool.commonPool() or a thread-per-task executor when
-    // the common pool does not support parallelism
-    private static Executor defaultAsyncExecutor;
+    private static final String PROP_PARALLELISM
+            = "hazelcast.internal.default.async.executor.parallelism";
 
-    static {
-        Executor asyncExecutor;
-        if (ForkJoinPool.getCommonPoolParallelism() > 1) {
-            asyncExecutor = ForkJoinPool.commonPool();
-        } else {
-            asyncExecutor = command -> new Thread(command).start();
-        }
-        defaultAsyncExecutor = asyncExecutor;
-    }
+    private static Executor defaultAsyncExecutor = createDefaultAsyncExecutor();
 
     private ConcurrencyUtil() {
     }
@@ -158,4 +155,43 @@ public final class ConcurrencyUtil {
         return value;
     }
 
+    private static ForkJoinPool createDefaultAsyncExecutor() {
+        ForkJoinPool.ForkJoinWorkerThreadFactory forkJoinWorkerThreadFactory = pool -> {
+            PrivilegedAction<ForkJoinWorkerThread> privilegedAction
+                    = () -> new HzForkJoinWorkerThread(pool);
+            return AccessController.doPrivileged(privilegedAction);
+        };
+
+        PrivilegedAction<ForkJoinPool> privilegedAction = () -> {
+            Thread.UncaughtExceptionHandler handler = new Thread.UncaughtExceptionHandler() {
+                ILogger logger = Logger.getLogger(ConcurrencyUtil.class);
+
+                @Override
+                public void uncaughtException(Thread t, Throwable e) {
+                    logger.severe(t + " had an unexpected exception", e);
+                }
+            };
+
+            int parallelism = getParallelism();
+
+            // For FIFO, set asyncMode to true
+            return new ForkJoinPool(parallelism, forkJoinWorkerThreadFactory, handler, true);
+        };
+        return AccessController.doPrivileged(privilegedAction);
+    }
+
+    private static int getParallelism() {
+        String parallelismFromSystemProp = System.getProperty(PROP_PARALLELISM);
+        if (parallelismFromSystemProp != null) {
+            return Integer.parseInt(parallelismFromSystemProp);
+        }
+        return Runtime.getRuntime().availableProcessors();
+    }
+
+    private static class HzForkJoinWorkerThread extends ForkJoinWorkerThread {
+        protected HzForkJoinWorkerThread(ForkJoinPool pool) {
+            super(pool);
+            this.setContextClassLoader(ForkJoinPool.class.getClassLoader());
+        }
+    }
 }
