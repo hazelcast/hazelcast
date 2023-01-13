@@ -28,6 +28,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
 import org.junit.runner.RunWith;
+import org.mockito.Answers;
 
 import java.net.UnknownHostException;
 import java.util.Arrays;
@@ -106,7 +107,7 @@ public class LiveOperationRegistryTest {
     }
 
     private Operation createOperation(String host, int port, long callId) throws UnknownHostException {
-        Operation op = mock(Operation.class);
+        Operation op = mock(Operation.class, Answers.CALLS_REAL_METHODS);
         Address address = new Address(host, port);
 
         OperationAccessor.setCallerAddress(op, address);
