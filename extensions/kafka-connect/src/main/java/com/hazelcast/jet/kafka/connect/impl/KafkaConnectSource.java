@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.kafka.connect.impl;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import org.apache.kafka.connect.connector.ConnectorContext;
 import org.apache.kafka.connect.source.SourceConnector;
@@ -51,7 +52,7 @@ public class KafkaConnectSource {
     public KafkaConnectSource(Properties properties) {
         try {
             String connectorClazz = checkRequiredProperty(properties, "connector.class");
-            Class<?> connectorClass = Thread.currentThread().getContextClassLoader().loadClass(connectorClazz);
+            Class<?> connectorClass = loadConnectorClass(connectorClazz);
             this.connector = (SourceConnector) connectorClass.getConstructor().newInstance();
             this.connector.initialize(new JetConnectorContext());
             this.connector.start(toMap(properties));
@@ -60,6 +61,15 @@ public class KafkaConnectSource {
             this.task = (SourceTask) connector.taskClass().getConstructor().newInstance();
         } catch (Exception e) {
             throw rethrow(e);
+        }
+    }
+
+    private static Class<?> loadConnectorClass(String connectorClazz) {
+        try {
+            return Thread.currentThread().getContextClassLoader().loadClass(connectorClazz);
+        } catch (ClassNotFoundException e) {
+            throw new HazelcastException("Connector class '" + connectorClazz + "' not found. " +
+                    "Did you add the connector jar to the job?", e);
         }
     }
 

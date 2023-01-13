@@ -18,14 +18,13 @@ package com.hazelcast.jet.kafka.connect;
 
 import com.hazelcast.jet.pipeline.StreamSource;
 import org.apache.kafka.connect.source.SourceRecord;
-import org.assertj.core.api.Assertions;
 import org.junit.Test;
 
 import java.util.Properties;
 
 import static com.hazelcast.jet.kafka.connect.KafkaConnectSources.connect;
-import static org.assertj.core.api.Assertions.*;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class KafkaConnectSourcesTest {
 

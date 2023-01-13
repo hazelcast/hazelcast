@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.kafka.connect.impl;
 
+import com.hazelcast.core.HazelcastException;
 import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.pipeline.SourceBufferImpl;
@@ -35,6 +36,7 @@ import static com.hazelcast.jet.kafka.connect.impl.DummySourceConnector.INSTANCE
 import static com.hazelcast.jet.kafka.connect.impl.DummySourceConnector.ITEMS_SIZE;
 import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 public class KafkaConnectSourceTest {
     @Test
@@ -45,6 +47,18 @@ public class KafkaConnectSourceTest {
         assertThat(INSTANCE.isInitialized()).isTrue();
         assertThat(INSTANCE.isStarted()).isTrue();
     }
+
+    @Test
+    public void should_fail_with_connector_class_not_found() {
+        Properties properties = new Properties();
+        properties.setProperty("name", "some-name");
+        properties.setProperty("connector.class", "com.example.non.existing.Connector");
+        assertThatThrownBy(() -> new KafkaConnectSource(properties))
+                .isInstanceOf(HazelcastException.class)
+                .hasMessage("Connector class 'com.example.non.existing.Connector' not found. " +
+                        "Did you add the connector jar to the job?");
+    }
+
 
     @Test
     public void should_cleanup_on_destroy() {
