@@ -48,8 +48,7 @@ import static com.hazelcast.internal.tpc.util.BufferUtil.put;
 public abstract class AsyncSocket_RpcTest {
     // use small buffers to cause a lot of network scheduling overhead (and shake down problems)
     public static final int SOCKET_BUFFER_SIZE = 16 * 1024;
-    //todo: needs to be restored to 20000 for nightly tests
-    public static int requestTotal = 200;
+    public int iterations = 200;
     public final ConcurrentMap<Long, CompletableFuture> futures = new ConcurrentHashMap<>();
 
     private Eventloop clientEventloop;
@@ -233,7 +232,7 @@ public abstract class AsyncSocket_RpcTest {
 
         AtomicLong callIdGenerator = new AtomicLong();
         List<WorkerThread> threads = new ArrayList<>();
-        int requestPerThread = requestTotal / concurrency;
+        int requestPerThread = iterations / concurrency;
         for (int k = 0; k < concurrency; k++) {
             WorkerThread thread = new WorkerThread(requestPerThread, payloadSize, callIdGenerator, clientSocket);
             threads.add(thread);
