@@ -37,33 +37,45 @@ import static com.hazelcast.internal.util.Sha256Util.calculateSha256Hex;
  */
 public class JobUploadStatus {
 
+    // Indicates the elapsed duration for an entry to expire
+    protected static final long EXPIRATION_MINUTES = 2;
+
     private static final ILogger LOGGER = Logger.getLogger(JobUploadStatus.class);
 
-    private static final long EXPIRATION_MINUTES = 1;
-
+    // The instant when this object was updated
     protected Instant lastUpdatedTime;
+
     private final Clock clock;
 
+    // Last processed value
     private int currentPart;
+
+    // Last processed value
     private int totalPart;
 
+    // Metadata about the upload
     private final JobMetaDataParameterObject jobMetaDataParameterObject;
-
 
     public JobUploadStatus(JobMetaDataParameterObject parameterObject) {
         this(parameterObject, Clock.systemUTC());
     }
 
-    public JobUploadStatus(JobMetaDataParameterObject parameterObject, Clock clock) {
+    // Get an external Clock for easy unit testing
+    protected JobUploadStatus(JobMetaDataParameterObject parameterObject, Clock clock) {
         this.jobMetaDataParameterObject = parameterObject;
         this.clock = clock;
         changeLastUpdatedTime();
     }
 
+    /**
+     * Returns if this instance is considered expired or not
+     *
+     * @return true if expired, false otherwise
+     */
     public boolean isExpired() {
         Instant now = clock.instant();
         Duration between = Duration.between(lastUpdatedTime, now);
-        // Check if total number of minutes is bigger
+        // Compare elapsed time to EXPIRATION_MINUTES
         long minutes = between.toMinutes();
         return minutes >= EXPIRATION_MINUTES;
     }
@@ -83,9 +95,10 @@ public class JobUploadStatus {
 
     /**
      * Process the part message for the job upload
+     *
      * @param parameterObject specified message from client
      * @return JobMetaDataParameterObject if upload is complete
-     * @throws IOException in case of I/O error
+     * @throws IOException              in case of I/O error
      * @throws NoSuchAlgorithmException in case of message digest error
      */
     public JobMetaDataParameterObject processJobMultipart(JobMultiPartParameterObject parameterObject)
@@ -146,6 +159,7 @@ public class JobUploadStatus {
             LOGGER.info("setExecutable failed on " + jarFile);
         }
 
+        // Keep the temporary file's path in the metadata object
         jobMetaDataParameterObject.setJarPath(jarPath);
     }
 
@@ -153,45 +167,46 @@ public class JobUploadStatus {
         int receivedCurrentPart = parameterObject.getCurrentPartNumber();
         int receivedTotalPart = parameterObject.getTotalPartNumber();
 
-        //Ensure positive number
+        // Ensure positive number
         if (receivedCurrentPart <= 0) {
             String errorMessage = String.format("receivedPart : %d is incorrect", receivedCurrentPart);
             throw new JetException(errorMessage);
         }
 
+        // Ensure positive number
         if (receivedTotalPart <= 0) {
             String errorMessage = String.format("receivedTotalPart : %d is incorrect", receivedTotalPart);
             throw new JetException(errorMessage);
         }
 
-        //Ensure relative order
+        // Ensure received values are logical
         if (receivedCurrentPart > receivedTotalPart) {
             String errorMessage = String.format("receivedPart : %d is bigger than receivedTotalPart : %d ",
                     receivedCurrentPart, receivedTotalPart);
             throw new JetException(errorMessage);
         }
 
-        //Ensure part data is not null
+        // Ensure part data is not null
         byte[] partData = parameterObject.getPartData();
         if (partData == null) {
             String errorMessage = "receivedPartData is null";
             throw new JetException(errorMessage);
         }
 
-        //Ensure part data size is positive
+        // Ensure part data size is positive
         if (partData.length == 0) {
             String errorMessage = "receivedPartData size is 0";
             throw new JetException(errorMessage);
         }
 
-        //Ensure part size is positive
+        // Ensure part size is positive
         int partSize = parameterObject.getPartSize();
         if (partSize == 0) {
             String errorMessage = "receivedPartSize is 0";
             throw new JetException(errorMessage);
         }
 
-        //Ensure part size is valid
+        // Ensure part size is valid
         if (partSize > partData.length) {
             String errorMessage = String.format("receivedPartSize: %d is bigger than receivedPartLength : %d ", partSize,
                     partData.length);
@@ -203,18 +218,21 @@ public class JobUploadStatus {
         int receivedCurrentPart = parameterObject.getCurrentPartNumber();
         int receivedTotalPart = parameterObject.getTotalPartNumber();
 
+        // Ensure received part is not from the past
         if (currentPart >= receivedCurrentPart) {
             String errorMessage = String.format("Received an old order part. currentPart : %d receivedPart : %d",
                     currentPart, receivedCurrentPart);
             throw new JetException(errorMessage);
         }
 
+        // Ensure received part is the next one
         if (currentPart + 1 != receivedCurrentPart) {
             String errorMessage = String.format("Received an out of order part. currentPart : %d receivedPart : %d",
                     currentPart, receivedCurrentPart);
             throw new JetException(errorMessage);
         }
 
+        // Ensure total part is still consistent
         if (totalPart != 0 && totalPart != receivedTotalPart) {
             String errorMessage = String.format("Received a different totalPart. totalPart : %d receivedTotalPart : %d",
                     totalPart, receivedTotalPart);
@@ -222,6 +240,7 @@ public class JobUploadStatus {
         }
     }
 
+    // Validate checksum when the upload is complete
     private void validateChecksum() throws IOException, NoSuchAlgorithmException {
         String calculatedSha256Hex = calculateSha256Hex(jobMetaDataParameterObject.getJarPath());
         String receivedSha256Hex = jobMetaDataParameterObject.getSha256Hex();

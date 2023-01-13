@@ -49,7 +49,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.when;
 
-@Category({SlowTest.class, SerialTest.class})
+@Category({SerialTest.class})
 public class JobUploadTest extends JetTestSupport {
 
     @Test
@@ -204,6 +204,7 @@ public class JobUploadTest extends JetTestSupport {
     }
 
     // This test is slow because it is trying to upload a lot of jobs
+    @Category({SlowTest.class})
     @Test
     public void test_stress_jarUpload_whenResourceUploadIsEnabled() {
 

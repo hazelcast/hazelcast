@@ -65,7 +65,7 @@ public class JobUploadStoreTest {
         UUID sessionID = UUID.randomUUID();
 
         Instant now = Instant.now();
-        Instant expiredTime = now.minus(1, ChronoUnit.MINUTES);
+        Instant expiredTime = now.minus(JobUploadStatus.EXPIRATION_MINUTES, ChronoUnit.MINUTES);
 
         JobMetaDataParameterObject jobMetaDataParameterObject = new JobMetaDataParameterObject();
         //Create a mock clock

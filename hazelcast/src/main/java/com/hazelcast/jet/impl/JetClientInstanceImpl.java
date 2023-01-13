@@ -241,7 +241,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     // Calculate the buffer size from properties if defined, otherwise use default value
     protected int calculatePartBufferSize() {
         HazelcastProperties properties = client.getProperties();
-        return properties.getIntegerOrDefault(JOB_UPLOAD_PART_SIZE);
+        return properties.getInteger(JOB_UPLOAD_PART_SIZE);
     }
 
     protected int calculateTotalParts(long jarSize, int partSize) {

@@ -49,6 +49,7 @@ public class JobUploadStore {
 
     /**
      * Remove the JobUploadStatus
+     *
      * @param sessionId specifies the key to be used
      */
     public void remove(UUID sessionId) {
@@ -61,6 +62,7 @@ public class JobUploadStore {
 
     /**
      * Process the metadata for the job upload
+     *
      * @param parameterObject specifies the first message for the job upload
      */
     public void processJobMetaData(JobMetaDataParameterObject parameterObject) {
@@ -75,9 +77,10 @@ public class JobUploadStore {
 
     /**
      * Process the part message for the job upload
+     *
      * @param parameterObject specified message from client
      * @return JobMetaDataParameterObject if upload is complete
-     * @throws IOException in case of I/O error
+     * @throws IOException              in case of I/O error
      * @throws NoSuchAlgorithmException in case of message digest error
      */
     public JobMetaDataParameterObject processJobMultipart(JobMultiPartParameterObject parameterObject)
@@ -94,8 +97,7 @@ public class JobUploadStore {
         if (jobUploadStatus == null) {
             throw new JetException("Unknown session id : " + sessionId);
         }
-
-
+        // If we could get jobUploadStatus even if it expires we still can work on it
         JobMetaDataParameterObject partsComplete = jobUploadStatus.processJobMultipart(parameterObject);
 
         // If job upload is complete, remove from the map

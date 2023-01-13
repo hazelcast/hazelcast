@@ -199,20 +199,6 @@ public class HazelcastProperties {
     }
 
     /**
-     * Returns the configured int value of a {@link HazelcastProperty} or the default value.
-     *
-     * @param property the {@link HazelcastProperty} to get the value from
-     * @return the value as int
-     */
-    public int getIntegerOrDefault(HazelcastProperty property) {
-        try {
-            return Integer.parseInt(getString(property));
-        } catch (Exception ignored) {
-            return Integer.parseInt(property.getDefaultValue());
-        }
-    }
-
-    /**
      * Returns the configured long value of a {@link HazelcastProperty}.
      *
      * @param property the {@link HazelcastProperty} to get the value from

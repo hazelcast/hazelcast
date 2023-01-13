@@ -52,7 +52,6 @@ public class JetClientInstanceImplTest extends JetTestSupport {
         // When
         List<DistributedObjectInfo> objects = client.getDistributedObjects();
 
-
         // Then
         assertFalse(objects.isEmpty());
         DistributedObjectInfo info = objects.stream()
@@ -101,9 +100,8 @@ public class JetClientInstanceImplTest extends JetTestSupport {
 
         JetClientInstanceImpl jetClientInstance = (JetClientInstanceImpl) hazelcastClient.getJet();
 
-        int partSize = jetClientInstance.calculatePartBufferSize();
-        int defaultValue = Integer.parseInt(ClientProperty.JOB_UPLOAD_PART_SIZE.getDefaultValue());
-        assertEquals(defaultValue, partSize);
+        assertThrows(NumberFormatException.class, jetClientInstance::calculatePartBufferSize);
+
     }
 
     @Test

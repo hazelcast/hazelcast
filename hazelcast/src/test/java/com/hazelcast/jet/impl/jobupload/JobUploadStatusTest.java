@@ -62,7 +62,7 @@ public class JobUploadStatusTest {
     public void testIsExpired() {
 
         Instant now = Instant.now();
-        Instant expiredTime = now.minus(1, ChronoUnit.MINUTES);
+        Instant expiredTime = now.minus(JobUploadStatus.EXPIRATION_MINUTES, ChronoUnit.MINUTES);
 
         when(clock.instant()).thenReturn(expiredTime, now);
 
