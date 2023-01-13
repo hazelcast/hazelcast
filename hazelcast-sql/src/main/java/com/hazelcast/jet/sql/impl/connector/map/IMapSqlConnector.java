@@ -304,8 +304,6 @@ public class IMapSqlConnector implements SqlConnector {
             return tuple2(new VertexWithInputConfig(idAssigner, edge -> {
                 // id assigner will distribute rows
                 edge.local().isolated();
-                //TODO: distr only for test with test batch source
-//                edge.distributed();
             }), merger);
         }
 
