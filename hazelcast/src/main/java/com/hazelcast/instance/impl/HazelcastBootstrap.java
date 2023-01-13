@@ -150,11 +150,13 @@ public final class HazelcastBootstrap {
             checkHazelcastCodebasePresence(jarFile);
             if (StringUtil.isNullOrEmpty(mainClass)) {
                 if (jarFile.getManifest() == null) {
-                    error("No manifest file in " + jar + ". You can use the -c option to provide the main class.");
+                    String message = "No manifest file in " + jar + ". You can use the -c option to provide the main class.";
+                    error(message, calledByMember);
                 }
                 mainClass = jarFile.getManifest().getMainAttributes().getValue("Main-Class");
                 if (mainClass == null) {
-                    error("No Main-Class found in manifest. You can use the -c option to provide the main class.");
+                    String message = "No Main-Class found in manifest. You can use the -c option to provide the main class.";
+                    error(message, calledByMember);
                 }
             }
 
@@ -166,18 +168,15 @@ public final class HazelcastBootstrap {
 
             Class<?> clazz = loadMainClass(classLoader, mainClass);
 
-            Method main = clazz.getDeclaredMethod("main", String[].class);
-            int mods = main.getModifiers();
-            if ((mods & Modifier.PUBLIC) == 0 || (mods & Modifier.STATIC) == 0) {
-                error("Class " + clazz.getName()
-                        + " has a main(String[] args) method which is not public static");
-            }
+            Method main = getMainMethod(clazz, calledByMember);
             String[] jobArgs = args.toArray(new String[0]);
             // upcast args to Object so it's passed as a single array-typed argument
             main.invoke(null, (Object) jobArgs);
 
-            // Method is synchronized so, it is safe to access submittedJobs array in BootstrappedJetProxy
-            awaitJobsStarted(calledByMember);
+            // Wait for the job to start only if called by the client side
+            if (!calledByMember) {
+                awaitJobsStarted();
+            }
 
         } finally {
             // HazelcastInstance should be closed if called by client side
@@ -197,6 +196,19 @@ public final class HazelcastBootstrap {
         }
     }
 
+    private static Method getMainMethod(Class<?> clazz, boolean calledByMember) throws NoSuchMethodException {
+        // If main method does not exist, throws NoSuchMethodException
+        Method main = clazz.getDeclaredMethod("main", String[].class);
+
+        int mods = main.getModifiers();
+        if ((mods & Modifier.PUBLIC) == 0 || (mods & Modifier.STATIC) == 0) {
+            String message = "Class " + clazz.getName()
+                             + " has a main(String[] args) method which is not public static";
+            error(message, calledByMember);
+        }
+        return main;
+    }
+
     private static void resetJetParametersIfNecessary(String jar, String snapshotName, String jobName, boolean calledByMember) {
         if (calledByMember) {
             // BootstrappedInstanceProxy has a HazelcastInstance and BootstrappedJetProxy member fields
@@ -214,16 +226,13 @@ public final class HazelcastBootstrap {
         List<String> classFiles = JarScanner.findClassFiles(jarFile, HazelcastBootstrap.class.getSimpleName());
         if (!classFiles.isEmpty()) {
             System.err.format("WARNING: Hazelcast code detected in the jar: %s. "
-                            + "Hazelcast dependency should be set with the 'provided' scope or equivalent.%n",
+                              + "Hazelcast dependency should be set with the 'provided' scope or equivalent.%n",
                     String.join(", ", classFiles));
         }
     }
 
-    private static void awaitJobsStarted(boolean calledByMember) {
-        // Wait for the job to start only if called by the client side
-        if (calledByMember) {
-            return;
-        }
+    // Method is call by synchronized executeJar() so, it is safe to access submittedJobs array in BootstrappedJetProxy
+    private static void awaitJobsStarted() {
 
         List<Job> submittedJobs = (HazelcastBootstrap.supplier.get().getJet()).submittedJobs();
         int submittedCount = submittedJobs.size();
@@ -256,12 +265,12 @@ public final class HazelcastBootstrap {
                 // back to startup statuses.
                 if (job.getName() != null) {
                     System.out.println("Job '" + job.getName() + "' submitted at "
-                            + toLocalDateTime(job.getSubmissionTime()) + " changed status to "
-                            + job.getStatus() + " at " + toLocalDateTime(System.currentTimeMillis()) + ".");
+                                       + toLocalDateTime(job.getSubmissionTime()) + " changed status to "
+                                       + job.getStatus() + " at " + toLocalDateTime(System.currentTimeMillis()) + ".");
                 } else {
                     System.out.println("Job '" + job.getIdString() + "' submitted at "
-                            + toLocalDateTime(job.getSubmissionTime())  + " changed status to "
-                            + job.getStatus() + " at " + toLocalDateTime(System.currentTimeMillis()) + ".");
+                                       + toLocalDateTime(job.getSubmissionTime()) + " changed status to "
+                                       + job.getStatus() + " at " + toLocalDateTime(System.currentTimeMillis()) + ".");
                 }
             }
             if (remainingCount == 1) {
@@ -282,9 +291,11 @@ public final class HazelcastBootstrap {
         }
     }
 
-    private static void error(String msg) {
+    private static void error(String msg, boolean calledByMember) {
         System.err.println(msg);
-        System.exit(1);
+        if (!calledByMember) {
+            System.exit(1);
+        }
     }
 
     /**
@@ -302,7 +313,7 @@ public final class HazelcastBootstrap {
     private static HazelcastInstance createStandaloneInstance() {
         configureLogging();
         LOGGER.info("Bootstrapped instance requested but application wasn't called from hazelcast submit script. "
-                + "Creating a standalone Hazelcast instance instead. Jet is enabled in this standalone instance.");
+                    + "Creating a standalone Hazelcast instance instead. Jet is enabled in this standalone instance.");
         Config config = Config.load();
         // enable jet
         config.getJetConfig().setEnabled(true);
@@ -617,37 +628,44 @@ public final class HazelcastBootstrap {
             this.jobName = jobName;
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public String getName() {
             return jet.getName();
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public HazelcastInstance getHazelcastInstance() {
             return jet.getHazelcastInstance();
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public Cluster getCluster() {
             return jet.getCluster();
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public JetConfig getConfig() {
             return jet.getConfig();
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public Job newJob(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
             return remember(jet.newJob(pipeline, updateJobConfig(config)));
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public Job newJob(@Nonnull DAG dag, @Nonnull JobConfig config) {
             return remember(jet.newJob(dag, updateJobConfig(config)));
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public Job newJobIfAbsent(@Nonnull Pipeline pipeline, @Nonnull JobConfig config) {
             return remember(jet.newJobIfAbsent(pipeline, updateJobConfig(config)));
         }
@@ -658,7 +676,8 @@ public final class HazelcastBootstrap {
             jet.submitJobFromJar(jarPath, snapshotName, jobName, mainClass, jobParameters);
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public Job newJobIfAbsent(@Nonnull DAG dag, @Nonnull JobConfig config) {
             return remember(jet.newJobIfAbsent(dag, updateJobConfig(config)));
         }
@@ -685,37 +704,44 @@ public final class HazelcastBootstrap {
             return config;
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public List<Job> getJobs(@Nonnull String name) {
             return jet.getJobs(name);
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public <K, V> IMap<K, V> getMap(@Nonnull String name) {
             return jet.getMap(name);
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public <K, V> ReplicatedMap<K, V> getReplicatedMap(@Nonnull String name) {
             return jet.getReplicatedMap(name);
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public JetCacheManager getCacheManager() {
             return jet.getCacheManager();
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public <E> IList<E> getList(@Nonnull String name) {
             return jet.getList(name);
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public <T> ITopic<T> getReliableTopic(@Nonnull String name) {
             return jet.getReliableTopic(name);
         }
 
-        @Nonnull @Override
+        @Nonnull
+        @Override
         public <T> Observable<T> getObservable(@Nonnull String name) {
             return jet.getObservable(name);
         }
@@ -762,6 +788,7 @@ public final class HazelcastBootstrap {
         public void setSnapshotName(String snapshotName) {
             this.snapshotName = snapshotName;
         }
+
         public void setJobName(String jobName) {
             this.jobName = jobName;
         }
