@@ -40,8 +40,8 @@ Add the following lines to your pom.xml to include it as a dependency to your pr
 
 ```
 <dependency>
-    <groupId>com.hazelcast.jet.contrib</groupId>
-    <artifactId>kafka-connect</artifactId>
+    <groupId>com.hazelcast.jet</groupId>
+    <artifactId>hazelcast-jet-kafka-connect</artifactId>
     <version>${version}</version>
 </dependency>
 ```
@@ -49,7 +49,7 @@ Add the following lines to your pom.xml to include it as a dependency to your pr
 or if you are using Gradle:
 
 ```
-compile group: 'com.hazelcast.jet.contrib', name: 'kafka-connect', version: ${version}
+compile group: 'com.hazelcast.jet', name: 'hazelcast-jet-kafka-connect', version: ${version}
 ```
 
 ### Usage
