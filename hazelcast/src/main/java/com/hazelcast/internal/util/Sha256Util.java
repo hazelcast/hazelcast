@@ -36,6 +36,24 @@ public final class Sha256Util {
     /**
      * Calculate the SHA256 of given file
      *
+     * @param data   specifies the data whose SHA256 is calculated
+     * @param length specifies length of data
+     * @return SHA256 as hexadecimal string
+     * @throws NoSuchAlgorithmException in case of MessageDigest error
+     */
+    public static String calculateSha256Hex(byte[] data, int length) throws NoSuchAlgorithmException {
+        MessageDigest messageDigest = MessageDigest.getInstance("SHA-256");
+        messageDigest.update(data, 0, length);
+
+        BigInteger bigInteger = new BigInteger(1, messageDigest.digest());
+        final int radix = 16;
+        return bigInteger.toString(radix);
+
+    }
+
+    /**
+     * Calculate the SHA256 of given file
+     *
      * @param jarPath specifies the path to file
      * @return SHA256 as hexadecimal string
      * @throws IOException              in case of IO error
