@@ -229,14 +229,14 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
                     NodeState nodeState = nodeEngine.getNode().getState();
                     if (throwable != null && nodeState == NodeState.ACTIVE) {
                         logger.warning("Failed to notify master member that this member is shutting down," +
-                                       " will retry in " + NOTIFY_MEMBER_SHUTDOWN_DELAY + " seconds", throwable);
+                                " will retry in " + NOTIFY_MEMBER_SHUTDOWN_DELAY + " seconds", throwable);
                         // recursive call
                         nodeEngine.getExecutionService().schedule(
                                 () -> notifyMasterWeAreShuttingDown(future), NOTIFY_MEMBER_SHUTDOWN_DELAY, SECONDS);
                     } else {
                         if (throwable != null) {
                             logger.warning("Failed to notify master member that this member is shutting down," +
-                                           " but this member is " + nodeState + ", so not retrying", throwable);
+                                    " but this member is " + nodeState + ", so not retrying", throwable);
                         }
                         future.complete(null);
                     }
