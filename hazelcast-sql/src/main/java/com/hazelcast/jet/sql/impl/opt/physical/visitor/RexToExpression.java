@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,6 +40,7 @@ import com.hazelcast.sql.impl.expression.SargExpression;
 import com.hazelcast.sql.impl.expression.SymbolExpression;
 import com.hazelcast.sql.impl.expression.datetime.ExtractField;
 import com.hazelcast.sql.impl.expression.datetime.ExtractFunction;
+import com.hazelcast.sql.impl.expression.datetime.ToCharFunction;
 import com.hazelcast.sql.impl.expression.datetime.ToEpochMillisFunction;
 import com.hazelcast.sql.impl.expression.datetime.ToTimestampTzFunction;
 import com.hazelcast.sql.impl.expression.math.AbsFunction;
@@ -451,6 +452,12 @@ public final class RexToExpression {
                     return ToTimestampTzFunction.create(operands[0]);
                 } else if (function == HazelcastSqlOperatorTable.TO_EPOCH_MILLIS) {
                     return ToEpochMillisFunction.create(operands[0]);
+                } else if (function == HazelcastSqlOperatorTable.TO_CHAR) {
+                    Expression<?> input = operands[0];
+                    Expression<?> format = operands[1];
+                    Expression<?> locale = operands.length > 2 ? operands[2] : null;
+
+                    return ToCharFunction.create(input, format, locale);
                 } else if (function == HazelcastSqlOperatorTable.CONCAT_WS) {
                     return ConcatWSFunction.create(operands);
                 } else if (function == HazelcastSqlOperatorTable.JSON_QUERY) {

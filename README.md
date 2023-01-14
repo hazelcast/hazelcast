@@ -354,6 +354,7 @@ see used in the comments on your PR:
 * `run-s3-tests` - run all tests in the `extensions/s3` module
 * *`run-nightly-tests` - run nightly (slow) tests. WARNING: Use with care as this is a resource consuming task.*
 * `run-sql-only` - run default tests in `hazelcast-sql`, `hazelcast-distribution`, and `extensions/mapstore` modules
+* `run-sonar` - run SonarCloud analysis
 
 Where not indicated, the builds run on a Linux machine with Oracle JDK 8.
 
@@ -387,6 +388,6 @@ We owe (the good parts of) our CLI tool's user experience to
 
 ## Copyright
 
-Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
 
 Visit [www.hazelcast.com](http://www.hazelcast.com/) for more info.

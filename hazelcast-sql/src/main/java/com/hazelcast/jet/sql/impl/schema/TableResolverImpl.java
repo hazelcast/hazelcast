@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,14 @@ package com.hazelcast.jet.sql.impl.schema;
 
 import com.hazelcast.core.EntryEvent;
 import com.hazelcast.core.LifecycleEvent;
+import com.hazelcast.jet.function.TriFunction;
 import com.hazelcast.jet.sql.impl.connector.SqlConnector;
 import com.hazelcast.jet.sql.impl.connector.SqlConnectorCache;
 import com.hazelcast.jet.sql.impl.connector.infoschema.MappingColumnsTable;
 import com.hazelcast.jet.sql.impl.connector.infoschema.MappingsTable;
 import com.hazelcast.jet.sql.impl.connector.infoschema.TablesTable;
+import com.hazelcast.jet.sql.impl.connector.infoschema.UDTAttributesTable;
+import com.hazelcast.jet.sql.impl.connector.infoschema.UserDefinedTypesTable;
 import com.hazelcast.jet.sql.impl.connector.infoschema.ViewsTable;
 import com.hazelcast.jet.sql.impl.connector.virtual.ViewTable;
 import com.hazelcast.spi.impl.NodeEngine;
@@ -37,13 +40,11 @@ import com.hazelcast.sql.impl.schema.view.View;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
-import java.util.function.BiFunction;
 
 import static com.hazelcast.sql.impl.QueryUtils.CATALOG;
 import static java.util.Arrays.asList;
@@ -62,11 +63,13 @@ public class TableResolverImpl implements TableResolver {
             asList(CATALOG, SCHEMA_NAME_PUBLIC)
     );
 
-    private static final List<BiFunction<List<Mapping>, List<View>, Table>> ADDITIONAL_TABLE_PRODUCERS = Arrays.asList(
-            (m, v) -> new TablesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m, v),
-            (m, v) -> new MappingsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m),
-            (m, v) -> new MappingColumnsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m, v),
-            (m, v) -> new ViewsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, v)
+    private static final List<TriFunction<List<Mapping>, List<View>, List<Type>, Table>> ADDITIONAL_TABLE_PRODUCERS = asList(
+            (m, v, t) -> new TablesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m, v),
+            (m, v, t) -> new MappingsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m),
+            (m, v, t) -> new MappingColumnsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, m, v),
+            (m, v, t) -> new ViewsTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, v),
+            (m, v, t) -> new UserDefinedTypesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, t),
+            (m, v, t) -> new UDTAttributesTable(CATALOG, SCHEMA_NAME_INFORMATION_SCHEMA, SCHEMA_NAME_PUBLIC, t)
     );
 
     private final NodeEngine nodeEngine;
@@ -80,6 +83,7 @@ public class TableResolverImpl implements TableResolver {
     // shave a tiny bit of performance from not synchronizing :)
     private int lastViewsSize;
     private int lastMappingsSize;
+    private int lastTypesSize;
 
     public TableResolverImpl(
             NodeEngine nodeEngine,
@@ -236,10 +240,12 @@ public class TableResolverImpl implements TableResolver {
 
         int lastMappingsSize = this.lastMappingsSize;
         int lastViewsSize = this.lastViewsSize;
+        int lastTypesSize = this.lastTypesSize;
 
         // Trying to avoid list growing.
         List<Mapping> mappings = lastMappingsSize == 0 ? new ArrayList<>() : new ArrayList<>(lastMappingsSize);
         List<View> views = lastViewsSize == 0 ? new ArrayList<>() : new ArrayList<>(lastViewsSize);
+        List<Type> types = lastTypesSize == 0 ? new ArrayList<>() : new ArrayList<>(lastTypesSize);
 
         for (Object o : objects) {
             if (o instanceof Mapping) {
@@ -249,18 +255,18 @@ public class TableResolverImpl implements TableResolver {
                 tables.add(toTable((View) o));
                 views.add((View) o);
             } else if (o instanceof Type) {
-                // Types are not tables
-                continue;
+                types.add((Type) o);
             } else {
                 throw new RuntimeException("Unexpected: " + o);
             }
         }
 
         ADDITIONAL_TABLE_PRODUCERS.forEach(
-                producer -> tables.add(producer.apply(mappings, views)));
+                producer -> tables.add(producer.apply(mappings, views, types)));
 
         this.lastViewsSize = views.size();
         this.lastMappingsSize = mappings.size();
+        this.lastTypesSize = types.size();
 
         return tables;
     }
