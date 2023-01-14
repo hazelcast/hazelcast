@@ -535,7 +535,7 @@ public class NearCachedClientMapProxy<K, V> extends ClientMapProxy<K, V> {
             Data dataKey = entry.getKey();
             K key = toObject(dataKey);
             R value = toObject(entry.getValue());
-            if (shouldInvalidate){
+            if (shouldInvalidate) {
                 invalidateNearCache(serializeKeys ? dataKey : key);
             }
             result.put(key, value);

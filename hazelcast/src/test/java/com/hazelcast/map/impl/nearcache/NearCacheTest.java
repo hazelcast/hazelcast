@@ -251,15 +251,11 @@ public class NearCacheTest extends NearCacheTestSupport {
 
         // make some hits
         populateNearCache(map, mapSize);
-
-        long hitsBefore = stats.getHits();
         long invalidationsBefore = stats.getInvalidations();
         for (int i = 0; i < mapSize; i++) {
             map.executeOnKey(i, new TestReadOnlyProcessor());
         }
-        long hitsAfter = stats.getHits();
         long invalidationsAfter = stats.getInvalidations();
-//        assertEquals("No Invalidation after getting keys from read only entry processor ", hitsBefore, hitsAfter);
         assertEquals("No Invalidation after getting keys from read only entry processor ", invalidationsBefore, invalidationsAfter);
     }
 
@@ -717,16 +713,7 @@ public class NearCacheTest extends NearCacheTestSupport {
         populateNearCache(map, mapSize);
 
         EntryObject e = Predicates.newPredicateBuilder().getEntryObject();
-        Predicate predicate = e.get("salary").equal(0);
-        map.executeOnEntries(
-                entry -> {
-                    Employee employee = entry.getValue();
-                    double currentSalary = employee.getSalary();
-                    double newSalary = currentSalary + 10;
-                    employee.setSalary(newSalary);
-                    return newSalary;
-                }, predicate);
-
+        map.executeOnEntries(new TestObjectBasedReadOnlyProcessor());
         assertEquals(0, getNearCacheStats(map).getOwnedEntryCount());
     }
 

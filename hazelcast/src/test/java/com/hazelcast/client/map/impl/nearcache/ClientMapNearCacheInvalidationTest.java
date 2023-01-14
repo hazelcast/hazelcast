@@ -24,6 +24,7 @@ import com.hazelcast.config.NearCacheConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.nearcache.NearCache;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.nearcache.TestObjectBasedReadOnlyProcessor;
 import com.hazelcast.map.impl.nearcache.TestReadOnlyProcessor;
 import com.hazelcast.nearcache.NearCacheStats;
 import com.hazelcast.query.Predicate;
@@ -39,7 +40,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 
 import static com.hazelcast.config.InMemoryFormat.OBJECT;
 import static com.hazelcast.internal.nearcache.impl.NearCacheTestUtils.getBaseConfig;
@@ -193,17 +196,88 @@ public class ClientMapNearCacheInvalidationTest extends ClientTestSupport {
 
         NearCacheStats nearCachestats = ((NearCachedClientMapProxy) clientMap).getNearCache().getNearCacheStats();
         long invalidationsBefore = nearCachestats.getInvalidations();
-        System.out.println(invalidationsBefore);
         // fill Near Cache on client
         for (int i = 0; i < size; i++) {
             clientMap.submitToKey(i, new TestReadOnlyProcessor());
         }
 
         long invalidationsAfter = nearCachestats.getInvalidations();
-        System.out.println(invalidationsAfter);
         assertEquals("No Invalidation after getting keys from read only entry processor ", invalidationsBefore, invalidationsAfter);
 
     }
+
+
+
+    @Test
+    public void testMapExecuteToKey_withReadOnlyProcessor_noInvalidations() {
+        Config config = getConfig();
+        configureBatching(config, 10, 1);
+
+        ClientConfig clientConfig = getClientConfig(mapName);
+
+        HazelcastInstance server = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+        makeSureConnectedToServers(client, 1);
+
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
+        IMap<Integer, Integer> clientMap = client.getMap(mapName);
+
+        int size = 1000;
+
+        // fill serverMap
+        for (int i = 0; i < size; i++) {
+            serverMap.put(i, i);
+        }
+
+        NearCacheStats nearCachestats = ((NearCachedClientMapProxy) clientMap).getNearCache().getNearCacheStats();
+        long invalidationsBefore = nearCachestats.getInvalidations();
+        // fill Near Cache on client
+        for (int i = 0; i < size; i++) {
+            clientMap.executeOnKey(i, new TestReadOnlyProcessor());
+        }
+
+        long invalidationsAfter = nearCachestats.getInvalidations();
+        assertEquals("No Invalidation after getting keys from read only entry processor ", invalidationsBefore, invalidationsAfter);
+
+    }
+
+    @Test
+    public void testMapSubmitToKeys_withReadOnlyProcessor_noInvalidations() {
+        Config config = getConfig();
+        configureBatching(config, 10, 1);
+
+        ClientConfig clientConfig = getClientConfig(mapName);
+
+        HazelcastInstance server = factory.newHazelcastInstance(config);
+        factory.newHazelcastInstance(config);
+
+        HazelcastInstance client = factory.newHazelcastClient(clientConfig);
+        makeSureConnectedToServers(client, 1);
+
+        IMap<Integer, Integer> serverMap = server.getMap(mapName);
+        IMap<Integer, Integer> clientMap = client.getMap(mapName);
+
+        int size = 1000;
+
+        // fill serverMap
+        for (int i = 0; i < size; i++) {
+            serverMap.put(i, i);
+        }
+
+        NearCacheStats nearCachestats = ((NearCachedClientMapProxy) clientMap).getNearCache().getNearCacheStats();
+        long invalidationsBefore = nearCachestats.getInvalidations();
+        // fill Near Cache on client
+        Set<Integer> set = new HashSet<Integer>();
+        for (int i = 0; i < size; i++) {
+            set.add(i);
+        }
+        clientMap.submitToKeys(set, new TestReadOnlyProcessor());
+        long invalidationsAfter = nearCachestats.getInvalidations();
+        assertEquals("No Invalidation after getting keys from read only entry processor ", invalidationsBefore, invalidationsAfter);
+    }
+
 
     @Test
     public void testMapExecuteOnEntries_noInvalidations() {
@@ -231,17 +305,9 @@ public class ClientMapNearCacheInvalidationTest extends ClientTestSupport {
         NearCacheStats nearCachestats = ((NearCachedClientMapProxy) clientMap).getNearCache().getNearCacheStats();
         long invalidationsBefore = nearCachestats.getInvalidations();
         PredicateBuilder.EntryObject e = Predicates.newPredicateBuilder().getEntryObject();
-        Predicate predicate = e.get("salary").equal(0);
-        map.executeOnEntries(
-                entry -> {
-                    SampleTestObjects.Employee employee = entry.getValue();
-                    double currentSalary = employee.getSalary();
-                    double newSalary = currentSalary + 10;
-                    employee.setSalary(newSalary);
-                    return newSalary;
-                }, predicate);
+//        Predicate predicate = e.get("salary").equal(0);
+        map.executeOnEntries(new TestObjectBasedReadOnlyProcessor());
         long invalidationsAfter = nearCachestats.getInvalidations();
-//        assertEquals("No Invalidation after getting keys from read only entry processor ", hitsBefore, hitsAfter);
         assertEquals("No Invalidation after getting keys from read only entry processor ", invalidationsBefore, invalidationsAfter);
 
     }
