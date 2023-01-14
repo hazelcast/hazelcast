@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -79,6 +79,7 @@ public abstract class HttpCommandProcessor<T extends HttpCommand> extends Abstra
     // WAN
     public static final String URI_WAN_SYNC_MAP = URI_WAN_BASE_URL + "/sync/map";
     public static final String URI_WAN_SYNC_ALL_MAPS = URI_WAN_BASE_URL + "/sync/allmaps";
+    public static final String URI_WAN_SYNC_PROGRESS = URI_WAN_BASE_URL + "/sync/progress";
     public static final String URI_WAN_CLEAR_QUEUES = URI_WAN_BASE_URL + "/clearWanQueues";
     public static final String URI_ADD_WAN_CONFIG = URI_WAN_BASE_URL + "/addWanConfig";
     public static final String URI_WAN_PAUSE_PUBLISHER = URI_WAN_BASE_URL + "/pausePublisher";
