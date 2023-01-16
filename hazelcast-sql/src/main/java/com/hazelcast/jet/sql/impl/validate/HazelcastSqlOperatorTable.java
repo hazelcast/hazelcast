@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,6 +34,7 @@ import com.hazelcast.jet.sql.impl.connector.generator.SeriesGeneratorTableFuncti
 import com.hazelcast.jet.sql.impl.connector.generator.StreamGeneratorTableFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.common.HazelcastDescriptorOperator;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastExtractFunction;
+import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastToCharFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastToEpochMillisFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.datetime.HazelcastToTimestampTzFunction;
 import com.hazelcast.jet.sql.impl.validate.operators.json.HazelcastJsonArrayFunction;
@@ -244,6 +245,7 @@ public final class HazelcastSqlOperatorTable extends ReflectiveSqlOperatorTable 
     public static final SqlFunction EXTRACT = HazelcastExtractFunction.INSTANCE;
     public static final SqlFunction TO_TIMESTAMP_TZ = HazelcastToTimestampTzFunction.INSTANCE;
     public static final SqlFunction TO_EPOCH_MILLIS = HazelcastToEpochMillisFunction.INSTANCE;
+    public static final SqlFunction TO_CHAR = HazelcastToCharFunction.INSTANCE;
 
     public static final SqlFunction JSON_QUERY = HazelcastJsonQueryFunction.INSTANCE;
     public static final SqlFunction JSON_VALUE = HazelcastJsonValueFunction.INSTANCE;
