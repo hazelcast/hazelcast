@@ -61,7 +61,7 @@ public class FailOnIndeterminateOperationStateOverrideTest extends HazelcastTest
     private static String absentKey(IMap<?, ?> m) {
         // hacky way to generate key that does not exist in map
         // and is owned by first instance
-        return generateKeyOwnedBy(((MapProxyImpl<?, ?>)m).getNodeEngine().getHazelcastInstance());
+        return generateKeyOwnedBy(((MapProxyImpl<?, ?>) m).getNodeEngine().getHazelcastInstance());
     }
 
     @Parameterized.Parameters(
@@ -122,7 +122,7 @@ public class FailOnIndeterminateOperationStateOverrideTest extends HazelcastTest
                 {"computeIfAbsent", (BiConsumerEx<IMap, Object>) (m, k) -> {
                     String absentKey = absentKey(m);
                     assertEquals(absentKey + "1", m.computeIfAbsent(absentKey, (ek) -> ek + "1"));
-                }},
+                } },
                 {"compute", (BiConsumerEx<IMap, Object>) (m, k) ->
                         assertEquals(k + "1", m.compute(k, (ek, ev) -> ev + "1"))},
                 {"merge", (BiConsumerEx<IMap, Object>) (m, k) ->
@@ -172,7 +172,6 @@ public class FailOnIndeterminateOperationStateOverrideTest extends HazelcastTest
         instance1 = factory.newHazelcastInstance(config);
         instance2 = factory.newHazelcastInstance(config);
         warmUpPartitions(instance1, instance2);
-
     }
 
     @Test
