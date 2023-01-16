@@ -41,7 +41,7 @@ public class MySQLAllTypesSelectJdbcSqlConnectorTest extends AllTypesSelectJdbcS
     @Before
     public void setUp() throws Exception {
         assumeThat(type).describedAs("TIMESTAMP WITH TIME ZONE not supported on MySQL")
-        .isNotEqualTo("TIMESTAMP WITH TIME ZONE");
+                .isNotEqualTo("TIMESTAMP WITH TIME ZONE");
 
     }
 }
