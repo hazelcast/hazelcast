@@ -33,6 +33,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
 
 import static com.hazelcast.sql.impl.type.QueryDataType.INT;
 import static com.hazelcast.sql.impl.type.QueryDataType.OBJECT;
@@ -46,7 +48,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.ArgumentMatchers.isA;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -58,22 +59,30 @@ public class TableResolverImplTest {
 
     private TableResolverImpl catalog;
 
-    private NodeEngine nodeEngine = mock(NodeEngine.class);
+    @Mock
+    private NodeEngine nodeEngine;
 
-    private TablesStorage tableStorage = mock(TablesStorage.class);
+    @Mock
+    private TablesStorage tableStorage;
 
-    private SqlConnectorCache connectorCache = mock(SqlConnectorCache.class);
+    @Mock
+    private SqlConnectorCache connectorCache;
 
-    private SqlConnector connector = mock(SqlConnector.class);
+    @Mock
+    private SqlConnector connector;
 
-    private TableListener listener = mock(TableListener.class);
+    @Mock
+    private TableListener listener;
 
-    private HazelcastInstance hazelcastInstance = mock(HazelcastInstance.class);
+    @Mock
+    private HazelcastInstance hazelcastInstance;
 
-    private LifecycleService lifecycleService = mock(LifecycleService.class);
+    @Mock
+    private LifecycleService lifecycleService;
 
     @Before
     public void before() {
+        MockitoAnnotations.openMocks(this);
 
         when(nodeEngine.getHazelcastInstance()).thenReturn(hazelcastInstance);
         when(hazelcastInstance.getLifecycleService()).thenReturn(lifecycleService);
