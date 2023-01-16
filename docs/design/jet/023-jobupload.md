@@ -122,6 +122,7 @@ The upload process continues with this message. It contains jar's bytes. This me
 | totalPartNumber   | int       | It is the total number of parts of the sequence                                |
 | partData          | byteArray | is the **byte[]** containing jar data                                          |
 | partSize          | int       | shows how many bytes of the partData byte[] is valid,                          |
+| sha256Hex          | int       | Hexadecimal SHA256 of the part                                                |
 
 **Why do we need an extra partSize field?** 
 
