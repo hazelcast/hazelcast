@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package com.hazelcast.test;
 
 import classloading.ThreadLocalLeakTestUtils;
 import com.hazelcast.client.HazelcastClient;
+import com.hazelcast.client.test.TestHazelcastFactory;
 import com.hazelcast.cluster.Address;
 import com.hazelcast.cluster.Cluster;
 import com.hazelcast.cluster.ClusterState;
@@ -311,6 +312,16 @@ public abstract class HazelcastTestSupport {
         } else {
             return nodeCount == null ? new TestHazelcastInstanceFactory() : new TestHazelcastInstanceFactory(nodeCount);
         }
+    }
+
+    protected void assertNoRunningInstancesEventually(String methodName, TestHazelcastFactory hazelcastFactory) {
+        // check for running Hazelcast instances
+        assertTrueEventually(() -> {
+            Collection<HazelcastInstance> instances = hazelcastFactory.getAllHazelcastInstances();
+            if (!instances.isEmpty()) {
+                fail("After " + methodName + " following instances haven't been shut down: " + instances);
+            }
+        });
     }
 
     // ###########################################

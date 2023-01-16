@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.impl.MapDataSerializerHook;
 import com.hazelcast.map.impl.MapEntries;
-import com.hazelcast.map.impl.operation.steps.PartitionWideOpSteps;
+import com.hazelcast.map.impl.operation.steps.PartitionWideEntryOpSteps;
 import com.hazelcast.map.impl.operation.steps.engine.State;
 import com.hazelcast.map.impl.operation.steps.engine.Step;
 import com.hazelcast.map.impl.recordstore.StaticParams;
@@ -95,7 +95,7 @@ public class PartitionWideEntryOperation extends MapOperation
 
     @Override
     public Step getStartingStep() {
-        return PartitionWideOpSteps.PROCESS;
+        return PartitionWideEntryOpSteps.PROCESS;
     }
 
     @Override

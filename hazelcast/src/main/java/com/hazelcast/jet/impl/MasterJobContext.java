@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -695,7 +695,11 @@ public class MasterJobContext {
                     mc.setJobStatus(SUSPENDED);
                     mc.jobExecutionRecord().setSuspended(null);
                     nonSynchronizedAction = () -> mc.writeJobExecutionRecord(false);
-                } else if (failure != null && !isCancelled() && mc.jobConfig().isSuspendOnFailure()) {
+                } else if (failure != null
+                        && !isCancelled()
+                        && requestedTerminationMode != CANCEL_GRACEFUL
+                        && mc.jobConfig().isSuspendOnFailure()
+                ) {
                     mc.setJobStatus(SUSPENDED);
                     mc.jobExecutionRecord().setSuspended("Execution failure:\n" +
                             ExceptionUtil.stackTraceToString(failure));

@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,9 +27,12 @@ import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.utility.DockerImageName;
+
+import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 
 public abstract class AbstractMongoDBTest extends JetTestSupport {
 
@@ -45,6 +48,11 @@ public abstract class AbstractMongoDBTest extends JetTestSupport {
 
     @Rule
     public MongoDBContainer mongoContainer = new MongoDBContainer(DOCKER_IMAGE_NAME);
+
+    @BeforeClass
+    public static void beforeClass() {
+        assumeDockerEnabled();
+    }
 
     @Before
     public void setUp() {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * If a ringbuffer configuration with the given {@code name} already exists, then
  * the new ringbuffer config is ignored and the existing one is preserved.
  */
-@Generated("9707888e1bd7733b7f40fa8bcfd7f455")
+@Generated("8e2b40606058fb31b87c7686994af6ba")
 public final class DynamicConfigAddRingbufferConfigCodec {
     //hex: 0x1B0200
     public static final int REQUEST_MESSAGE_TYPE = 1769984;

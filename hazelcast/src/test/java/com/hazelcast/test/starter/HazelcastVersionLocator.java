@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
+import static com.hazelcast.internal.util.OsHelper.isWindows;
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.test.JenkinsDetector.isOnJenkins;
 import static java.io.File.separator;
@@ -109,7 +110,8 @@ public class HazelcastVersionLocator {
     }
 
     private static String buildMavenCommand(Artifact artifact, String version) {
-        return "mvn dependency:get -Dartifact=com.hazelcast:"
+        String mvn = isWindows() ? "mvn.cmd" : "mvn";
+        return mvn + " dependency:get -Dartifact=com.hazelcast:"
                 + artifact.mavenProject + ":" + version
                 + (artifact.test ? ":jar:tests" : "")
                 + (artifact.enterprise ? " -DremoteRepositories=https://repository.hazelcast.com/release" : "");

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,7 +36,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Removes the mapping for a key from this map if existing value equal to the this value
  */
-@Generated("f443ad21907df2c80d3adf0f87b3c3c1")
+@Generated("fcc316f69c2da078b5459462dda2d4ec")
 public final class MapRemoveIfSameCodec {
     //hex: 0x010800
     public static final int REQUEST_MESSAGE_TYPE = 67584;

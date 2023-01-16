@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,7 +89,20 @@ public class TcpIpSplitBrainDiscoveryTest extends HazelcastTestSupport {
         instances.add(Hazelcast.newHazelcastInstance(createConfigWithRestEnabled(6001, 6101)));
         instances.add(Hazelcast.newHazelcastInstance(createConfigWithRestEnabled(6101, 6001)));
         assertClusterSizeEventually(2, Arrays.asList(instances.get(2), instances.get(3)));
-        updateMemberList();
+        updateMemberList(3);
+        assertClusterSizeEventually(4, instances);
+    }
+
+    @Test
+    public void testAddressAreStoredForUnreachableNodes() throws IOException {
+        instances.add(Hazelcast.newHazelcastInstance(createConfigWithRestEnabled(5801, 5901)));
+        instances.add(Hazelcast.newHazelcastInstance(createConfigWithRestEnabled(5901, 5801)));
+        assertClusterSizeEventually(2, Arrays.asList(instances.get(0), instances.get(1)));
+        updateMemberList(1);
+
+        instances.add(Hazelcast.newHazelcastInstance(createConfigWithRestEnabled(6001, 6101)));
+        instances.add(Hazelcast.newHazelcastInstance(createConfigWithRestEnabled(6101, 6001)));
+        // first brain should find second brain eventually
         assertClusterSizeEventually(4, instances);
     }
 
@@ -128,11 +141,11 @@ public class TcpIpSplitBrainDiscoveryTest extends HazelcastTestSupport {
         return config;
     }
 
-    protected void updateMemberList() throws IOException {
+    protected void updateMemberList(int restNodeIndex) throws IOException {
         HTTPCommunicator communicator;
         switch (updateType) {
             case MEMBER_LIST_UPDATE:
-                communicator = new HTTPCommunicator(instances.get(3));
+                communicator = new HTTPCommunicator(instances.get(restNodeIndex));
                 communicator.updateTcpIpMemberList(
                         instances.get(0).getConfig().getClusterName(),
                         "",
@@ -140,7 +153,7 @@ public class TcpIpSplitBrainDiscoveryTest extends HazelcastTestSupport {
                 break;
             case WITH_OPERATION:
                 invokeOnStableClusterSerial(
-                        Accessors.getNodeEngineImpl(instances.get(3)),
+                        Accessors.getNodeEngineImpl(instances.get(restNodeIndex)),
                         () -> new UpdateTcpIpMemberListOperation(
                                 Arrays.asList("localhost:" + 5801, "localhost:" + 5901, "localhost:" + 6001, "localhost:" + 6101)),
                         5

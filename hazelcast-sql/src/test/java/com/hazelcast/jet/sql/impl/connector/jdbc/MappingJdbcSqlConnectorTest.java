@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -158,7 +158,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ")"
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("could not resolve field with name fullName");
+                .hasMessageContaining("Could not resolve field with name fullName");
 
         assertRowsAnyOrder("SHOW MAPPINGS",
                 emptyList()
@@ -186,7 +186,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ")"
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("could not resolve field with external name myName");
+                .hasMessageContaining("Could not resolve field with external name myName");
 
         assertRowsAnyOrder("SHOW MAPPINGS",
                 emptyList()
@@ -209,7 +209,7 @@ public class MappingJdbcSqlConnectorTest extends JdbcSqlTestSupport {
                         + ")"
                 )
         ).isInstanceOf(HazelcastSqlException.class)
-                .hasMessageContaining("type BOOLEAN of field id does not match db type INTEGER");
+                .hasMessageContaining("Type BOOLEAN of field id does not match db type INTEGER");
 
         assertRowsAnyOrder("SHOW MAPPINGS",
                 emptyList()

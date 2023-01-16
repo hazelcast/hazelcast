@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,7 @@ import com.hazelcast.jet.sql.impl.opt.logical.SelectByKeyMapLogicalRule;
 import com.hazelcast.jet.sql.impl.opt.physical.AssignDiscriminatorToScansRule;
 import com.hazelcast.jet.sql.impl.opt.physical.CalcLimitTransposeRule;
 import com.hazelcast.jet.sql.impl.opt.physical.CalcPhysicalRel;
-import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
+import com.hazelcast.jet.sql.impl.opt.physical.CreateTopLevelDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.DeleteByKeyMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.InsertMapPhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.LimitPhysicalRel;
@@ -373,7 +373,6 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
 
         QueryParseResult dmlParseResult = new QueryParseResult(source, parseResult.getParameterMetadata());
         QueryConvertResult dmlConvertedResult = context.convert(dmlParseResult.getNode());
-        boolean infiniteRows = OptUtils.isUnbounded(dmlConvertedResult.getRel());
         SqlPlanImpl dmlPlan = toPlan(
                 null,
                 parseResult.getParameterMetadata(),
@@ -390,7 +389,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
                 sqlCreateJob.ifNotExists(),
                 (DmlPlan) dmlPlan,
                 query,
-                infiniteRows,
+                ((DmlPlan) dmlPlan).isInfiniteRows(),
                 planExecutor
         );
     }
@@ -711,7 +710,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
      * <p>
      * Also, it executes {@link CalcLimitTransposeRule}, which pushes the
      * {@link LimitPhysicalRel} up before a {@link CalcPhysicalRel}.
-     * We rely on this in {@link CreateDagVisitor} when handling
+     * We rely on this in {@link CreateTopLevelDagVisitor} when handling
      * {@link LimitPhysicalRel} - it must be a direct input of
      * the RootRel, there cannot be a {@link CalcPhysicalRel} in between.
      */
@@ -772,7 +771,7 @@ public class CalciteSqlOptimizer implements SqlOptimizer {
         wmKeysAssigner.assignWatermarkKeys();
         logger.finest("Watermark keys assigned");
 
-        CreateDagVisitor visitor = new CreateDagVisitor(nodeEngine, parameterMetadata, wmKeysAssigner, usedViews);
+        CreateTopLevelDagVisitor visitor = new CreateTopLevelDagVisitor(nodeEngine, parameterMetadata, wmKeysAssigner, usedViews);
         physicalRel.accept(visitor);
         visitor.optimizeFinishedDag();
         return tuple2(visitor.getDag(), visitor.getObjectKeys());

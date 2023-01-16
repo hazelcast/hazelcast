@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -83,15 +83,17 @@ public class ClientHazelcastRunningInForkJoinPoolTest extends HazelcastTestSuppo
 
     @Test
     public void slow_data_loading_does_not_block_entry_listener_addition() {
-        // 1. Let's simulate 1000 parallel tasks
+        // 1. Let's simulate some parallel tasks
         // contend on loading 1 item from a database.
-        Collection<Future> tasks = new ArrayList<>();
-        for (int i = 0; i < 1000; i++) {
+        int availableProcessors = Runtime.getRuntime().availableProcessors();
+        int count = availableProcessors + 1;
+        Collection<Future> tasks = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
             tasks.add(ForkJoinPool.commonPool().submit(() -> clientMap.get(1)));
         }
 
         // 2. In parallel, adding a listener to a different
-        // map must not affected by loading phase at step 1.
+        // map must not be affected by loading phase at step 1.
         serverMap.addEntryListener(new EntryAdapter<>(), true);
     }
 }
