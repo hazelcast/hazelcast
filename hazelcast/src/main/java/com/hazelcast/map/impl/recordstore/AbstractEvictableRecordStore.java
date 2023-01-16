@@ -22,17 +22,19 @@ import com.hazelcast.core.EntryView;
 import com.hazelcast.internal.eviction.ExpiredKey;
 import com.hazelcast.internal.nearcache.impl.invalidation.InvalidationQueue;
 import com.hazelcast.internal.serialization.Data;
+import com.hazelcast.internal.util.TimeStripUtil;
 import com.hazelcast.map.impl.MapContainer;
 import com.hazelcast.map.impl.event.MapEventPublisher;
 import com.hazelcast.map.impl.eviction.Evictor;
 import com.hazelcast.map.impl.record.Record;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryMetadata;
 import com.hazelcast.map.impl.recordstore.expiry.ExpiryReason;
-import com.hazelcast.map.impl.recordstore.expiry.ExpirySystemImpl;
 import com.hazelcast.map.impl.recordstore.expiry.ExpirySystem;
+import com.hazelcast.map.impl.recordstore.expiry.ExpirySystemImpl;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.spi.impl.eventservice.EventService;
 import com.hazelcast.spi.merge.SplitBrainMergeTypes.MapMergeTypes;
+import com.hazelcast.wan.impl.InternalWanPublisher;
 
 import javax.annotation.Nonnull;
 import java.util.LinkedList;
@@ -169,11 +171,39 @@ public abstract class AbstractEvictableRecordStore extends AbstractRecordStore {
     public void accessRecord(Data dataKey, Record record, long now) {
         record.onAccess(now);
         updateStatsOnGet(now);
+        int previousRawExpirationTime = expirySystem.getExpiryMetadata(dataKey).getRawExpirationTime();
         expirySystem.extendExpiryTime(dataKey, now);
+
+        if (mapContainer.isWanReplicationEnabled()) {
+            // Ramiz TODO: Do checks and convey properly and maybe do this async like write events
+            // Pros of sync:
+            //   - we can access now vs getting a new time via Clock
+            //   - we can access previousRawExpirationTime vs saving it in beforeRun of operations
+            //   - we don't need to modify all read operations
+            // Pros of async:
+            //   - read itself won't effected by offer latency if not throughput bound,
+            //     but it will have beforeRun in read operations so maybe not that useful.
+            mapContainer.getWanReplicationDelegate()
+                    .getPublishers()
+                    .stream()
+                    .filter(wanPublisher -> wanPublisher instanceof InternalWanPublisher<?>)
+                    .map(wanPublisher -> ((InternalWanPublisher<?>) wanPublisher))
+                    .forEach(internalWanPublisher -> internalWanPublisher.onAccess(
+                            mapContainer.getName(),
+                            dataKey,
+                            previousRawExpirationTime,
+                            TimeStripUtil.stripBaseTime(now)
+                    ));
+        }
+    }
+
+    @Override
+    public void accessRecord(Data dataKey, Record record, long now, int hitDelta) {
+
     }
 
     public void mergeRecordExpiration(Data key, Record record,
-                                         MapMergeTypes mergingEntry, long now) {
+                                      MapMergeTypes mergingEntry, long now) {
         mergeRecordExpiration(record, mergingEntry.getCreationTime(),
                 mergingEntry.getLastAccessTime(), mergingEntry.getLastUpdateTime());
         // WAN events received from source cluster also carry null maxIdle

@@ -341,6 +341,10 @@ public abstract class HazelcastTestSupport {
     // ########## generic utility ##########
     // #####################################
 
+    public void log(String log) {
+        Logger.getLogger(getClass()).info(log);
+    }
+
     protected void checkThreadLocalsForLeaks() throws Exception {
         ThreadLocalLeakTestUtils.checkThreadLocalsForLeaks(getClass().getClassLoader());
     }
@@ -351,17 +355,26 @@ public abstract class HazelcastTestSupport {
     /**
      * Note: the {@code cancel()} method on the returned future has no effect.
      */
-    public static Future spawn(Runnable task) {
-        FutureTask<Runnable> futureTask = new FutureTask<>(task, null);
+    public static Future<Void> spawn(Runnable task) {
+        FutureTask<Void> futureTask = new FutureTask<>(task, null);
         new Thread(futureTask).start();
         return futureTask;
+    }
+
+    public Future<Void> spawnForSeconds(Runnable task, int seconds) {
+        long deadline = System.currentTimeMillis() + seconds * 1000L;
+        return spawn(() -> {
+            while (System.currentTimeMillis() < deadline) {
+                task.run();
+            }
+        });
     }
 
     /**
      * Note: the {@code cancel()} method on the returned future has no effect.
      */
     public static <E> Future<E> spawn(Callable<E> task) {
-        FutureTask<E> futureTask = new FutureTask<E>(task);
+        FutureTask<E> futureTask = new FutureTask<>(task);
         new Thread(futureTask).start();
         return futureTask;
     }

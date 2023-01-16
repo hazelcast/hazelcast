@@ -145,6 +145,8 @@ public interface RecordStore<R extends Record> {
      */
     void accessRecord(Data dataKey, Record record, long now);
 
+    void accessRecord(Data dataKey, Record record, long now, int hitDelta);
+
     /**
      * Similar to {@link RecordStore#remove(Data, CallerProvenance)}
      * except removeBackup doesn't touch mapstore since it does not return previous value.

@@ -17,6 +17,7 @@
 package com.hazelcast.wan.impl;
 
 import com.hazelcast.internal.monitor.LocalWanPublisherStats;
+import com.hazelcast.internal.serialization.Data;
 import com.hazelcast.wan.WanPublisher;
 
 /**
@@ -135,5 +136,9 @@ public interface InternalWanPublisher<T> extends WanPublisher<T> {
      */
     default int removeWanEvents() {
         return 0;
+    }
+
+    default void onAccess(String mapName, Data key, int previousRawExpirationTime, int rawNow) {
+        // no-op
     }
 }

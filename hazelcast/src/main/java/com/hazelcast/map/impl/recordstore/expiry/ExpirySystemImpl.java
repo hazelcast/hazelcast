@@ -253,8 +253,12 @@ public class ExpirySystemImpl implements ExpirySystem {
             return;
         }
 
-        expiryMetadata.setExpirationTime(nextExpirationTime(ttl,
-                maxIdle, now, expiryMetadata.getLastUpdateTime()));
+        expiryMetadata.setExpirationTime(
+                Math.max(
+                        expiryMetadata.getExpirationTime(),
+                        nextExpirationTime(ttl, maxIdle, now, expiryMetadata.getLastUpdateTime())
+                )
+        );
     }
 
     @Override
