@@ -152,6 +152,7 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
 
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         int expectedPartitions = getPartitionService(instance1).getPartitionCount();
+
         IMap<Integer, Integer> map1 = instance1.getMap(MAP_NAME);
         assertPartitionsIndexedCorrectlyEventually(expectedPartitions, map1);
 
