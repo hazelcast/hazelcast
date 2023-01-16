@@ -46,6 +46,7 @@ import com.hazelcast.map.impl.recordstore.expiry.ExpiryReason;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
+import com.hazelcast.nio.serialization.impl.Versioned;
 import com.hazelcast.query.impl.Indexes;
 import com.hazelcast.query.impl.MapIndexInfo;
 import com.hazelcast.spi.impl.operationservice.Operation;
@@ -77,7 +78,8 @@ import static com.hazelcast.map.impl.mapstore.writebehind.entry.DelayedEntries.n
  * @see #writeChunk
  */
 @SuppressWarnings("checkstyle:MethodCount")
-public class MapChunk extends Operation implements IdentifiedDataSerializable {
+public class MapChunk extends Operation
+        implements IdentifiedDataSerializable, Versioned {
 
     private static final int DISPOSE_AT_COUNT = 1024;
 

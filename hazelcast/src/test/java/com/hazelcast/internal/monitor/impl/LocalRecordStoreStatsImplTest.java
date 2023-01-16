@@ -75,8 +75,15 @@ public class LocalRecordStoreStatsImplTest extends HazelcastTestSupport {
         return config;
     }
 
+    /**
+     * Since this is an explicit evict triggered by the user we
+     * don't expect to see eviction and expiration stats changed.
+     * <p>
+     * Only internal system should trigger
+     * eviction and expiration stats.
+     */
     @Test
-    public void eviction_count() {
+    public void map_evict_does_not_change_eviction_and_expiration_stats() {
         for (int i = 0; i < 100; i++) {
             map.set(randomString(), randomString());
         }

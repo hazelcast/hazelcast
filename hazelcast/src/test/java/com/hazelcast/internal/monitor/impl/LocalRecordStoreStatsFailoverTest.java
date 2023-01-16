@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import com.hazelcast.test.OverridePropertyRule;
 import com.hazelcast.test.TestHazelcastInstanceFactory;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.SlowTest;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
@@ -70,17 +71,18 @@ public class LocalRecordStoreStatsFailoverTest extends HazelcastTestSupport {
     }
 
     @Test
+    @Category(SlowTest.class)
     public void eviction_and_expiration_counts_preserved_when_node_bouncing() {
         Config config = getConfig();
         TestHazelcastInstanceFactory factory = createHazelcastInstanceFactory();
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         HazelcastInstance instance2 = factory.newHazelcastInstance(config);
-        HazelcastInstance instance3 = factory.newHazelcastInstance(config);
 
         AtomicBoolean stop = new AtomicBoolean();
 
         spawn(() -> {
             while (!stop.get()) {
+                HazelcastInstance instance3 = factory.newHazelcastInstance(config);
                 sleepSeconds(2);
                 instance3.shutdown();
             }
