@@ -41,6 +41,9 @@ import com.hazelcast.sql.impl.type.QueryDataType;
 import org.apache.calcite.rex.RexNode;
 import org.apache.calcite.sql.SqlDialect;
 import org.apache.calcite.sql.SqlDialectFactoryImpl;
+import org.apache.calcite.sql.dialect.H2SqlDialect;
+import org.apache.calcite.sql.dialect.MysqlSqlDialect;
+import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -370,6 +373,48 @@ public class JdbcSqlConnector implements SqlConnector {
                         table.getBatchLimit()
                 )
         );
+    }
+
+    protected boolean isUpsertAvailable(JdbcTable jdbcTable) {
+        boolean result = false;
+        SqlDialect dialect = jdbcTable.sqlDialect();
+        if (dialect instanceof MysqlSqlDialect || dialect instanceof PostgresqlSqlDialect || dialect instanceof H2SqlDialect) {
+            result = true;
+        }
+        return result;
+    }
+
+    @Nonnull
+    @Override
+    public Vertex sinkProcessor(@Nonnull DAG dag, @Nonnull Table table) {
+        JdbcTable jdbcTable = (JdbcTable) table;
+        SqlDialect dialect = jdbcTable.sqlDialect();
+        if (isUpsertAvailable(jdbcTable)) {
+            String query = null;
+
+            if (dialect instanceof MysqlSqlDialect) {
+                MySqlUpsertQueryBuilder builder = new MySqlUpsertQueryBuilder(jdbcTable);
+                query = builder.query();
+
+            } else if (dialect instanceof PostgresqlSqlDialect) {
+                PostgreSqlUpsertQueryBuilder builder = new PostgreSqlUpsertQueryBuilder(jdbcTable);
+                query = builder.query();
+
+            } else if (dialect instanceof H2SqlDialect) {
+                H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(jdbcTable);
+                query = builder.query();
+            }
+            return dag.newUniqueVertex(
+                    "sinkProcessor(" + jdbcTable.getExternalName() + ")",
+                    new UpsertProcessorSupplier(
+                            jdbcTable.getExternalDataStoreRef(),
+                            query,
+                            jdbcTable.getBatchLimit()
+                    )
+            );
+        }
+        VertexWithInputConfig vertexWithInputConfig = insertProcessor(dag, table);
+        return vertexWithInputConfig.vertex();
     }
 
     /**

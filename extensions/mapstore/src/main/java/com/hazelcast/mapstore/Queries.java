@@ -55,7 +55,7 @@ class Queries {
                                            .map(sqlColumnMetadata -> '\"' + sqlColumnMetadata.getName() + '\"')
                                            .collect(joining(", "));
 
-        storeInsert = "INSERT INTO \"" + mapping + "\" ( " + columnNames + " ) VALUES (" +
+        storeInsert = "SINK INTO \"" + mapping + "\" ( " + columnNames + " ) VALUES (" +
                 queryParams(columnMetadata.size()) +
                 ")";
 
