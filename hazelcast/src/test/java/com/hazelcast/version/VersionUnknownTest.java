@@ -128,7 +128,7 @@ public class VersionUnknownTest {
 
     @Test
     public void any_notEquals_to_unknown() throws Exception {
-        assertNotEquals(UNKNOWN, ANY_VERSION);
+        assertNotEquals(ANY_VERSION, UNKNOWN);
     }
 
     @Test
