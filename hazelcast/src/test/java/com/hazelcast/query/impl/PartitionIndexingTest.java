@@ -26,8 +26,6 @@ import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.internal.partition.MigrationAwareService;
 import com.hazelcast.internal.partition.PartitionMigrationEvent;
 import com.hazelcast.internal.partition.PartitionReplicationEvent;
-import com.hazelcast.internal.partition.PartitionTableView;
-import com.hazelcast.internal.partition.TestPartitionUtils;
 import com.hazelcast.map.IMap;
 import com.hazelcast.spi.impl.operationservice.Operation;
 import com.hazelcast.spi.properties.ClusterProperty;
@@ -154,47 +152,40 @@ public class PartitionIndexingTest extends HazelcastTestSupport {
 
         HazelcastInstance instance1 = factory.newHazelcastInstance(config);
         int expectedPartitions = getPartitionService(instance1).getPartitionCount();
-        try {
-            IMap<Integer, Integer> map1 = instance1.getMap(MAP_NAME);
-            assertPartitionsIndexedCorrectlyEventually(expectedPartitions, map1);
+        IMap<Integer, Integer> map1 = instance1.getMap(MAP_NAME);
+        assertPartitionsIndexedCorrectlyEventually(expectedPartitions, map1);
 
-            IMap<Integer, Integer> client1 = createClientFor(map1);
-            for (int i = 0; i < ENTRIES; ++i) {
-                client1.put(i, i);
-            }
-            client1.addIndex(IndexType.HASH, "this");
-            assertPartitionsIndexedCorrectlyEventually(expectedPartitions, map1);
-
-            HazelcastInstance instance2 = factory.newHazelcastInstance(config);
-            IMap<Integer, Integer> map2 = instance2.getMap(MAP_NAME);
-            waitAllForSafeState(instance1, instance2);
-            assertPartitionsIndexedCorrectlyEventually(expectedPartitions, map1, map2);
-
-            HazelcastInstance instance3 = factory.newHazelcastInstance(config);
-            IMap<Integer, Integer> map3 = instance3.getMap(MAP_NAME);
-            waitAllForSafeState(instance1, instance2, instance3);
-            assertPartitionsIndexedCorrectlyEventually(expectedPartitions, map1, map2, map3);
-
-            instance2.shutdown();
-            waitAllForSafeState(instance1, instance3);
-            assertPartitionsIndexedCorrectlyEventually(expectedPartitions, map1, map3);
-
-            IMap<Integer, Integer> client3 = createClientFor(map3);
-            client3.addIndex(IndexType.HASH, "__key");
-            assertPartitionsIndexedCorrectlyEventually(expectedPartitions, map1, map3);
-
-            migrationFailingService.fail = true;
-            HazelcastInstance instance4 = factory.newHazelcastInstance(config);
-            IMap<Integer, Integer> map4 = instance4.getMap(MAP_NAME);
-            waitAllForSafeState(instance1, instance3, instance4);
-            assertPartitionsIndexedCorrectlyEventually(expectedPartitions, map1, map3, map4);
-            assertTrue(migrationFailingService.rolledBack);
-        } catch (AssertionError e) {
-            PartitionTableView partitionTableView = getPartitionService(instance1).createPartitionTableView();
-            System.out.println("Partition assignments at time of failure:\n"
-                    + TestPartitionUtils.dumpPartitionTable(partitionTableView));
-            throw e;
+        IMap<Integer, Integer> client1 = createClientFor(map1);
+        for (int i = 0; i < ENTRIES; ++i) {
+            client1.put(i, i);
         }
+        client1.addIndex(IndexType.HASH, "this");
+        assertPartitionsIndexedCorrectlyEventually(expectedPartitions, map1);
+
+        HazelcastInstance instance2 = factory.newHazelcastInstance(config);
+        IMap<Integer, Integer> map2 = instance2.getMap(MAP_NAME);
+        waitAllForSafeState(instance1, instance2);
+        assertPartitionsIndexedCorrectlyEventually(expectedPartitions, map1, map2);
+
+        HazelcastInstance instance3 = factory.newHazelcastInstance(config);
+        IMap<Integer, Integer> map3 = instance3.getMap(MAP_NAME);
+        waitAllForSafeState(instance1, instance2, instance3);
+        assertPartitionsIndexedCorrectlyEventually(expectedPartitions, map1, map2, map3);
+
+        instance2.shutdown();
+        waitAllForSafeState(instance1, instance3);
+        assertPartitionsIndexedCorrectlyEventually(expectedPartitions, map1, map3);
+
+        IMap<Integer, Integer> client3 = createClientFor(map3);
+        client3.addIndex(IndexType.HASH, "__key");
+        assertPartitionsIndexedCorrectlyEventually(expectedPartitions, map1, map3);
+
+        migrationFailingService.fail = true;
+        HazelcastInstance instance4 = factory.newHazelcastInstance(config);
+        IMap<Integer, Integer> map4 = instance4.getMap(MAP_NAME);
+        waitAllForSafeState(instance1, instance3, instance4);
+        assertPartitionsIndexedCorrectlyEventually(expectedPartitions, map1, map3, map4);
+        assertTrue(migrationFailingService.rolledBack);
     }
 
     /**
