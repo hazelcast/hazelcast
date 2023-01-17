@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -720,8 +720,7 @@
         </interfaces>
         <ssl enabled="false">
             <properties>
-                <property name="protocol">TLS</property>
-
+                <property name="protocol">TLSv1.3</property>
                 <property name="mutualAuthentication">REQUIRED</property>
                 <property name="keyStore">/opt/hazelcast.keystore</property>
                 <property name="keyStorePassword">secret.97531</property>
@@ -729,6 +728,7 @@
                 <property name="trustStore">/opt/hazelcast.truststore</property>
                 <property name="trustStorePassword">changeit</property>
                 <property name="trustStoreType">PKCS12</property>
+                <property name="keyMaterialDuration">PT10M</property>
             </properties>
         </ssl>
         <socket-interceptor enabled="false"/>

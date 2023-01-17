@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -451,7 +451,7 @@
         <dependency>
             <groupId>net.openhft</groupId>
             <artifactId>affinity</artifactId>
-            <version>3.20.0</version>
+            <version>3.23.2</version>
             <scope>provided</scope>
             <optional>true</optional>
         </dependency>
@@ -676,7 +676,7 @@
         <dependency>
             <groupId>com.github.tomakehurst</groupId>
             <artifactId>wiremock-jre8-standalone</artifactId>
-            <version>2.34.0</version>
+            <version>2.35.0</version>
             <scope>test</scope>
         </dependency>
 
@@ -715,7 +715,7 @@
         <dependency>
             <groupId>com.rabbitmq.jms</groupId>
             <artifactId>rabbitmq-jms</artifactId>
-            <version>2.4.0</version>
+            <version>2.6.0</version>
             <scope>test</scope>
         </dependency>
 
