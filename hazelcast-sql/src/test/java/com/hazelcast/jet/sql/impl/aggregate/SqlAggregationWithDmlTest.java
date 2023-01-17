@@ -62,11 +62,7 @@ public class SqlAggregationWithDmlTest extends SqlTestSupport {
                 "OPTIONS (\n" +
                 "    'keyFormat' = 'int',\n" +
                 "    'valueFormat' = 'json-flat',\n" +
-<<<<<<< HEAD
                 "    'bootstrap.servers' = '" + kafkaTestSupport.getBrokerConnectionString() + "')");
-=======
-                "    'bootstrap.servers' = '" + kafkaTestSupport.getBrokerConnectionString()+ "')");
->>>>>>> viliam-durina/dml-wm-throttling-fix
     }
 
     @AfterClass
