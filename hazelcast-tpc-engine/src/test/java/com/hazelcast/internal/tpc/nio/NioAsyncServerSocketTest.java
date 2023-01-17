@@ -32,7 +32,7 @@ public class NioAsyncServerSocketTest extends AsyncServerSocketTest {
 
     @Override
     public AsyncServerSocket createAsyncServerSocket(Eventloop eventloop) {
-        NioAsyncServerSocket socket = NioAsyncServerSocket.open((NioEventloop) eventloop);
+        NioAsyncServerSocket socket = NioAsyncServerSocket.openTcpServerSocket((NioEventloop) eventloop);
         closeables.add(socket);
         return socket;
     }
