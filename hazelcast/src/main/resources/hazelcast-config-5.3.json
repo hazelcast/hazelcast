@@ -5004,29 +5004,36 @@
       "type": "object",
       "properties": {
         "enabled": {
-          "type": "boolean"
+          "type": "boolean",
+          "description": "Enabled Hazelcast Alto. Disabled by default."
         },
         "eventloop-count": {
-          "type": "integer"
+          "type": "integer",
+          "description": "Configures the number of eventloop threads. It's equal to available processor count by default."
         }
       },
       "required": [
         "enabled"
-      ]
+      ],
+      "description": "Hazelcast Alto is the next generation of Hazelcast built with thread per core architecture. It's still being developed and everything is subject to change. Alto is disabled by default."
     },
     "AltoSocketConfig": {
       "type": "object",
       "properties": {
         "port-range": {
-          "type": "string"
+          "type": "string",
+          "description": "Configures the port range available for alto sockets."
         },
         "receive-buffer-size-kb": {
-          "type": "integer"
+          "type": "integer",
+          "description": "Configures SO_RCVBUF socket option for alto sockets."
         },
         "send-buffer-size-kb": {
-          "type": "integer"
+          "type": "integer",
+          "description": "Configures SO_SNDBUF socket option for alto sockets."
         }
-      }
+      },
+      "description": "Socket configuration for Alto. In Alto, each eventloop has its own socket."
     }
   }
 }

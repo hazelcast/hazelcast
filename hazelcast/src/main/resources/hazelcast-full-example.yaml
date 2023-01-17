@@ -611,6 +611,14 @@ hazelcast:
   #       all Hazelcast cluster members would be within one network switch/router therefore
   #       default of 0 is usually sufficient.
   #
+  # - "alto-socket":
+  #   Socket configuration for Alto. In Alto, each eventloop has its own socket.
+  #   - "port-range":
+  #       Configures the port range available for alto sockets.
+  #   - "receive-buffer-size-kb":
+  #       Configures SO_RCVBUF socket option for alto sockets.
+  #   - "send-buffer-size-kb":
+  #       Configures SO_SNDBUF socket option for alto sockets.
   network:
     public-address: 11.22.33.44:5555
     port:
@@ -3096,6 +3104,15 @@ hazelcast:
   #          * "linger-seconds":
   #              Specifies the TCP linger seconds. The default value is 0.
   #
+  #      - "alto-socket":
+  #        Socket configuration for Alto. In Alto, each eventloop has its own socket.
+  #        - "port-range":
+  #            Configures the port range available for alto sockets.
+  #        - "receive-buffer-size-kb":
+  #            Configures SO_RCVBUF socket option for alto sockets.
+  #        - "send-buffer-size-kb":
+  #            Configures SO_SNDBUF socket option for alto sockets.
+  #
   #  * "rest-server-socket-endpoint-config":
   #      Controls access to Hazelcast HTTP REST API.
   #      The methods available through REST API are grouped to several REST endpoint groups, which can be specified
@@ -3846,6 +3863,11 @@ hazelcast:
     other-database:
       class-name: com.hazelcast.datastore.OtherDataStore
 
+  #    ===== HAZELCAST ALTO CONFIGURATION =====
+  #
+  #    Hazelcast Alto is the next generation of Hazelcast built with thread per core architecture.
+  #    It's still being developed and everything is subject to change. Alto is disabled by default.
   alto:
     enabled: true
+    # Configures the number of eventloop threads. It's equal to available processor count by default.
     eventloop-count: 12

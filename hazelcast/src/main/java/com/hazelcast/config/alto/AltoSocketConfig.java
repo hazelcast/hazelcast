@@ -22,7 +22,7 @@ public class AltoSocketConfig {
     private int sendBufferSizeKB = 128;
 
     /**
-     * This method gets the possible port range for these sockets to bind.
+     * This method gets the possible port range for alto sockets to bind.
      *
      * @return the port range string
      */
@@ -31,7 +31,7 @@ public class AltoSocketConfig {
     }
 
     /**
-     * This method sets the possible port range for these sockets to bind.
+     * This method sets the possible port range for alto sockets to bind.
      *
      * @param portRange the port range to set
      * @return this alto socket config
