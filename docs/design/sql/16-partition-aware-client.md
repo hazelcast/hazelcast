@@ -8,8 +8,8 @@ implemented shortcut evaluation for the queries where the WHERE clause contains
 statements.
 
 However, the operation is still much slower than the `IMap` counterparts. The
-main reason is that the client sending a query picks a random member to execute
-the query, unaware of the partition owner.
+main design issue is that the client sending a query picks a random member to
+execute the query, unaware of the partition owner.
 
 The original idea to fix this was to use a kind of client-side plan cache. Along
 with the query result, the cluster will send a plan to the client telling it
@@ -49,6 +49,8 @@ of `IMap.get`.
 
 # Other proposed solutions
 
+## Using a special call to get the partition argument index
+
 As an alternative it was proposed to add a new client operation to the protocol:
 `returnPartitionAwareKey`. The client will send this operation for each new
 `PreparedStatement` to determine the partition argument index. The result will
@@ -69,7 +71,53 @@ Reasons against it are:
 
 For the above reasons we decided to not use this approach.
 
-# Cache specification
+## Caching the partition argument index in the query object
+
+It was proposed to cache the argument index in `PreparedStatement`, or an
+equivalent in other languages. The benefit is a much simpler implementation and
+more predictable behavior (cache hits/misses are predictable). It was rejected
+for two reasons:
+
+- such an object doesn't always exist, or is used in a different style. For
+  example, our custom Java API uses `SqlStatement`, but this is only a shorthand
+  for setting per-query options, it's not really required to be used. Python
+  doesn't have a statement object at all.
+
+- for the optimization to work, one must reuse the `PreparedStatement`
+  instances. But they aren't thread-safe, so to reuse, one would have to use some
+  kind of pool, which isn't commonly done. JDBC drivers commonly cache more
+  expensive immutable state of the prepared statement in background caches,
+  assuming that many `PreparedStatement` instances will be created for the same
+  query.
+
+Especially for the 2nd reason we rejected this idea.
+
+## Using custom API to specify the partition argument index
+
+In addition for per-statement or per-client cache, we can provide a custom API
+so that an advanced user can set the partition argument index so that even the
+first call is optimized.
+
+This idea was rejected for the following reasons:
+
+- In JDBC, the user will have to downcast the statement object. This is
+  generally frowned upon.
+
+```java
+((HazelcastPreparedStatement) pstmt).setPartitionArgumentIndex(0);
+```
+
+- The benefit is small. The speedup of a single query is in the range of 100s of
+  microseconds or less, the benefit is important if the same query is executed
+  many times. Saving 100µs on an execution that takes seconds overall is
+  negligible.
+
+- Even though the implementation is simple, there's more work needed to document
+  and support it.
+
+- It can be added later.
+
+# Client-wide cache specification
 
 We expect read-heavy usage pattern for the cache. We propose hard-coded capacity
 of around 1024 elements. If average query is 128 bytes, the payload size of the
@@ -89,3 +137,22 @@ actual size of the cache.
 
 The Java code is available here:
 https://github.com/hazelcast/hazelcast/pull/22659/files#diff-7b6e5ea0a8c86d03effa6ce417f47cc1a2438a37b493faf8bb640e2b51e7224f
+
+## Cache size configuration
+
+We'll expose the cache size as a client configuration option. In that case we
+could use a smaller default and the user can increase or decrease it.
+The clean-up threshold can be hardcoded to: `min(cacheSize / 10, 50)`.
+
+```java
+    /**
+     * Parametrized SQL queries touching only a single partition benefit from
+     * using the partition owner as the query coordinator, if the partition
+     * owner can be determined from one of the query parameters. When such a
+     * query is executed, the cluster sends the index of such argument to the
+     * client. This parameter configures the size of the cache the client uses
+     * for storing this information.
+     */
+    public static final HazelcastProperty PARTITION_ARGUMENT_CACHE_SIZE
+            = new HazelcastProperty("hazelcast.client.partition.argument.cache.size", 100);
+```
