@@ -62,6 +62,7 @@ import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.mongodb.Mappers.defaultCodecRegistry;
 import static com.hazelcast.jet.retry.IntervalFunction.exponentialBackoffWithCap;
@@ -466,8 +467,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
                 boolean success = false;
                 while (commitRetryTracker.shouldTryAgain() && !success) {
                     try {
-                        clientSession.startTransaction(TRANSACTION_OPTIONS);
-
+                        startTransactionQuietly();
                         for (Entry<MongoCollectionKey, List<WriteModel<I>>> entry :
                                 documents.entrySet()) {
 
@@ -497,6 +497,16 @@ public class WriteMongoP<I> extends AbstractProcessor {
                             throw e;
                         }
                     }
+                }
+            }
+        }
+
+        private void startTransactionQuietly() {
+            try {
+                clientSession.startTransaction(TRANSACTION_OPTIONS);
+            } catch (IllegalStateException e) {
+                if (!e.getMessage().contains("already started")) {
+                    throw sneakyThrow(e);
                 }
             }
         }

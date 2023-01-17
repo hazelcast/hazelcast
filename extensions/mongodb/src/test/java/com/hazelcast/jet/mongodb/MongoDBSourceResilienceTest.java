@@ -138,13 +138,13 @@ public class MongoDBSourceResilienceTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void testNetworkCutoff() throws IOException {
+    public void testSource_networkCutoff() throws IOException {
         sourceNetworkTest(false);
     }
 
 
     @Test
-    public void testNetworkTimeout() throws IOException {
+    public void testSource_networkTimeout() throws IOException {
         sourceNetworkTest(true);
     }
 
