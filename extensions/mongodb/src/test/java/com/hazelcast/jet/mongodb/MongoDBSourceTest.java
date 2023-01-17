@@ -128,7 +128,6 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         sourceBuilder = batchFilters(sourceBuilder);
         pipeline.readFrom(sourceBuilder.build())
                 .setLocalParallelism(2)
-                .peek()
                 .writeTo(Sinks.list(list));
 
         instance().getJet().newJob(pipeline, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE)).join();
@@ -236,7 +235,6 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         pipeline.readFrom(builder.build())
                 .withNativeTimestamps(0)
                 .setLocalParallelism(2)
-                .peek()
                 .writeTo(Sinks.list(list));
 
         Job job = instance().getJet().newJob(pipeline);
