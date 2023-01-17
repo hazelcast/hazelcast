@@ -504,14 +504,6 @@ public class WriteMongoP<I> extends AbstractProcessor {
             }
         }
 
-        private void tryExternalRollback() {
-            try {
-                clientSession.abortTransaction();
-            } catch (IllegalStateException e) {
-                ignore(e);
-            }
-        }
-
         private void startTransactionQuietly() {
             try {
                 clientSession.startTransaction(TRANSACTION_OPTIONS);
@@ -525,12 +517,16 @@ public class WriteMongoP<I> extends AbstractProcessor {
         @Override
         public void rollback() {
             if (transactionId != null) {
-                try {
-                    clientSession.abortTransaction();
-                } catch (IllegalStateException e) {
-                    ignore(e);
-                }
+                tryExternalRollback();
                 documents.clear();
+            }
+        }
+
+        private void tryExternalRollback() {
+            try {
+                clientSession.abortTransaction();
+            } catch (IllegalStateException e) {
+                ignore(e);
             }
         }
 
