@@ -185,28 +185,32 @@ public abstract class Eventloop implements Executor {
     }
 
     /**
-     * Opens an AsyncServerSocket and ties that socket to the this Eventloop instance.
+     * Opens an TCP/IP (stream) async server socket and ties that socket to the this Eventloop
+     * instance. The returned socket assumes IPv4. When support for IPv6 is added, a boolean
+     * 'ipv4' flag needs to be added.
      * <p>
      * This method is thread-safe.
      *
      * @return the opened AsyncServerSocket.
      */
-    public abstract AsyncServerSocket openAsyncServerSocket();
+    public abstract AsyncServerSocket openTcpServerSocket();
 
     /**
-     * Opens an AsyncSocket.
+     * Opens TCP/IP (stream) based async socket. The returned socket assumes IPv4. When support for
+     * IPv6 is added, a boolean 'ipv4' flag needs to be added.
      * <p/>
-     * This AsyncSocket isn't tied to this Eventloop. After it is opened, it needs to be assigned to a particular
-     * eventloop by calling {@link AsyncSocket#activate(Eventloop)}. The reason why this isn't done in 1 go, is
-     * that it could be that when the AsyncServerSocket accepts an AsyncSocket, we want to assign that AsyncSocket
-     * to a different Eventloop. Otherwise if there would be 1 AsyncServerSocket, connected AsyncSockets can only
-     * run on top of the Eventloop of the AsyncServerSocket instead of being distributed over multiple eventloops.
+     * This AsyncSocket isn't tied to this Eventloop. After it is opened, it needs to be assigned
+     * to a particular eventloop by calling {@link AsyncSocket#activate(Eventloop)}. The reason why
+     * this isn't done in 1 go, is that it could be that when the AsyncServerSocket accepts an
+     * AsyncSocket, we want to assign that AsyncSocket to a different Eventloop. Otherwise if there
+     * would be 1 AsyncServerSocket, connected AsyncSockets can only run on top of the Eventloop of
+     * the AsyncServerSocket instead of being distributed over multiple eventloops.
      * <p>
      * This method is thread-safe.
      *
      * @return the opened AsyncSocket.
      */
-    public abstract AsyncSocket openAsyncSocket();
+    public abstract AsyncSocket openAsyncTcpSocket();
 
     /**
      * Creates the Eventloop specific Unsafe instance.
