@@ -60,7 +60,7 @@ import static org.junit.Assert.assertNull;
 @Category({QuickTest.class})
 public class MongoDBSourceTest extends AbstractMongoDBTest {
 
-    private static final int COUNT_IN_BATCH = 30_000;
+    private static final int COUNT_IN_BATCH = 200;
     private static final int FILTERED_BOUND = 10;
     @Parameter(0)
     public boolean filter;
@@ -246,20 +246,20 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         MongoCollection<Document> col3 = collection("testDb2", "col3");
 
         col1.insertOne(newDocument("val", 1));
-        col1.insertOne(newDocument("val", 11).append("foo", "bar").append("testName", testName.getMethodName()));
+        col1.insertOne(newDocument("val", 11).append("foo", "bar"));
         col2.insertOne(newDocument("val", 2));
-        col2.insertOne(newDocument("val", 12).append("foo", "bar").append("testName", testName.getMethodName()));
-        col3.insertOne(newDocument("val", 3).append("testName", testName.getMethodName()));
-        col3.insertOne(newDocument("val", 13).append("foo", "bar").append("testName", testName.getMethodName()));
+        col2.insertOne(newDocument("val", 12).append("foo", "bar"));
+        col3.insertOne(newDocument("val", 3));
+        col3.insertOne(newDocument("val", 13).append("foo", "bar"));
 
         assertTrueEventually(() -> contentAsserts(list, filter ? 11 : 1, 13, filter ? 3 : 6), 5);
 
-        col1.insertOne(newDocument("val", 4).append("testName", testName.getMethodName()));
-        col1.insertOne(newDocument("val", 14).append("foo", "bar").append("testName", testName.getMethodName()));
-        col2.insertOne(newDocument("val", 5).append("test", testName.getMethodName()));
-        col2.insertOne(newDocument("val", 15).append("foo", "bar").append("testName", testName.getMethodName()));
+        col1.insertOne(newDocument("val", 4));
+        col1.insertOne(newDocument("val", 14).append("foo", "bar"));
+        col2.insertOne(newDocument("val", 5));
+        col2.insertOne(newDocument("val", 15).append("foo", "bar"));
         col2.insertOne(newDocument("val", 6));
-        col2.insertOne(newDocument("val", 16).append("foo", "bar").append("testName", testName.getMethodName()));
+        col2.insertOne(newDocument("val", 16).append("foo", "bar"));
 
         assertTrueEventually(() -> contentAsserts(list, filter ? 11  : 1, 16, filter ? 6 : 12));
 

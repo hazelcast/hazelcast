@@ -97,7 +97,7 @@ public class MongoDBSourceResilienceTest extends SimpleTestInClusterSupport {
     private final Random random = new Random();
 
     @Test
-    public void testStream_whenServerDown() {
+    public void testSourceStream_whenServerDown() {
         HazelcastInstance hz = createHazelcastInstance();
         HazelcastInstance serverToShutdown = createHazelcastInstance();
         JobRepository jobRepository = new JobRepository(hz);
