@@ -1962,15 +1962,6 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <!--
-                parquet-avro depends on this transitively, but it has an invalid pom, generating warnings during build.
-                This is newer fixed version.
-                -->
-                <groupId>org.apache.yetus</groupId>
-                <artifactId>audience-annotations</artifactId>
-                <version>0.14.1</version>
-            </dependency>
-            <dependency>
                 <groupId>org.reflections</groupId>
                 <artifactId>reflections</artifactId>
                 <version>${reflections.version}</version>
