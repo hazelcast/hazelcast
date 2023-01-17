@@ -71,13 +71,13 @@ public final class NioAsyncSocket extends AsyncSocket {
     private static final AtomicBoolean TCP_KEEPINTERVAL_PRINTED = new AtomicBoolean();
 
     /**
-     * Opens a NioAsyncSocket.
+     * Opens a stream based IPv4 NioAsyncSocket.
      * <p/>
-     * To prevent coupling, it is better to use the {@link Eventloop#openAsyncSocket()}.
+     * To prevent coupling, it is better to use the {@link Eventloop#openAsyncTcpSocket()}.
      *
      * @return the opened NioAsyncSocket.
      */
-    public static NioAsyncSocket open() {
+    public static NioAsyncSocket openTcpSocket() {
         return new NioAsyncSocket();
     }
 
