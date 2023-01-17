@@ -3222,11 +3222,20 @@ public class Config {
         return new ExternalDataStoreConfigReadOnly(getExternalDataStoreConfig("default"));
     }
 
+    /**
+     * @return the alto configuration
+     * @since 5.3
+     */
     @Beta
     public AltoConfig getAltoConfig() {
         return altoConfig;
     }
 
+    /**
+     * @param altoConfig alto configuration to be set
+     * @return this config
+     * @since 5.3
+     */
     @Beta
     public Config setAltoConfig(@Nonnull AltoConfig altoConfig) {
         checkNotNull(altoConfig);

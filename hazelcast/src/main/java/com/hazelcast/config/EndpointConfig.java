@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.ProtocolType;
+import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
@@ -277,10 +278,23 @@ public class EndpointConfig implements NamedConfig {
         return this;
     }
 
+    /**
+     * @return the alto socket config
+     * @see com.hazelcast.config.alto.AltoConfig
+     * @since 5.3
+     */
+    @Beta
     public AltoSocketConfig getAltoSocketConfig() {
         return altoSocketConfig;
     }
 
+    /**
+     * @param altoSocketConfig alto socket config to set
+     * @return this endpoint config
+     * @see com.hazelcast.config.alto.AltoConfig
+     * @since 5.3
+     */
+    @Beta
     public EndpointConfig setAltoSocketConfig(@Nonnull AltoSocketConfig altoSocketConfig) {
         checkNotNull(altoSocketConfig);
         this.altoSocketConfig = altoSocketConfig;

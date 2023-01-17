@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.internal.util.StringUtil;
 import com.hazelcast.security.jsm.HazelcastRuntimePermission;
+import com.hazelcast.spi.annotation.Beta;
 
 import javax.annotation.Nonnull;
 import java.util.Collection;
@@ -408,10 +409,23 @@ public class NetworkConfig {
         return this;
     }
 
+    /**
+     * @return the alto socket config
+     * @see com.hazelcast.config.alto.AltoConfig
+     * @since 5.3
+     */
+    @Beta
     public AltoSocketConfig getAltoSocketConfig() {
         return altoSocketConfig;
     }
 
+    /**
+     * @param altoSocketConfig the alto socket config to set
+     * @return this network config
+     * @see com.hazelcast.config.alto.AltoConfig
+     * @since 5.3
+     */
+    @Beta
     public NetworkConfig setAltoSocketConfig(@Nonnull AltoSocketConfig altoSocketConfig) {
         checkNotNull(altoSocketConfig);
         this.altoSocketConfig = altoSocketConfig;
