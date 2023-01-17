@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 class MySqlUpsertQueryBuilder {
 
@@ -36,35 +37,30 @@ class MySqlUpsertQueryBuilder {
 
         stringBuilder.append("INSERT INTO ")
                 .append(jdbcTable.getExternalName())
-                .append(" ( ")
+                .append(" (")
                 .append(String.join(",", jdbcTable.dbFieldNames()))
-                .append(" ) ");
+                .append(") ");
     }
 
     protected void getValuesClause(JdbcTable jdbcTable, StringBuilder stringBuilder) {
 
         List<String> dbFieldNames = jdbcTable.dbFieldNames();
 
-        stringBuilder.append(" VALUES (");
+        String values = dbFieldNames.stream()
+                .map(dbFieldName -> "?")
+                .collect(Collectors.joining(","));
 
-        for (int i = 0; i < dbFieldNames.size(); i++) {
-            stringBuilder.append('?');
-            if (i < (dbFieldNames.size() - 1)) {
-                stringBuilder.append(", ");
-            }
-        }
-        stringBuilder.append(')');
+        String format = String.format("VALUES (%s) ", values);
+        stringBuilder.append(format);
     }
 
     protected void getOnDuplicateClause(JdbcTable jdbcTable, StringBuilder stringBuilder) {
-        stringBuilder.append(" ON DUPLICATE KEY UPDATE ");
-        List<String> dbFieldNames = jdbcTable.dbFieldNames();
-        for (String dbFieldName : dbFieldNames) {
-            String value = String.format("%s = VALUES(%s) ", dbFieldName, dbFieldName);
-            stringBuilder.append(value);
-        }
+        String values = jdbcTable.dbFieldNames().stream()
+                .map(dbFieldName -> String.format("%s = VALUES(%s)", dbFieldName, dbFieldName))
+                .collect(Collectors.joining(","));
 
-
+        String clause = String.format("ON DUPLICATE KEY UPDATE %s", values);
+        stringBuilder.append(clause);
     }
 
     String query() {

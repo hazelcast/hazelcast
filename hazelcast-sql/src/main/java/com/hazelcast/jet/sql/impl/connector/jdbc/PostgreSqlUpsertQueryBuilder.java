@@ -17,6 +17,7 @@
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 class PostgreSqlUpsertQueryBuilder {
 
@@ -36,29 +37,31 @@ class PostgreSqlUpsertQueryBuilder {
 
         stringBuilder.append("INSERT INTO ")
                 .append(jdbcTable.getExternalName())
-                .append(" ( ")
+                .append(" (")
                 .append(String.join(",", jdbcTable.dbFieldNames()))
-                .append(" ) ");
+                .append(") ");
     }
 
     protected void getValuesClause(JdbcTable jdbcTable, StringBuilder stringBuilder) {
 
         List<String> dbFieldNames = jdbcTable.dbFieldNames();
 
-        stringBuilder.append(" VALUES (");
+        String values = dbFieldNames.stream()
+                .map(dbFieldName -> "?")
+                .collect(Collectors.joining(","));
 
-        for (int i = 0; i < dbFieldNames.size(); i++) {
-            stringBuilder.append('?');
-            if (i < (dbFieldNames.size() - 1)) {
-                stringBuilder.append(", ");
-            }
-        }
-        stringBuilder.append(')');
+        String format = String.format("VALUES (%s) ", values);
+        stringBuilder.append(format);
     }
 
     protected void getOnConflictClause(JdbcTable jdbcTable, StringBuilder stringBuilder) {
         String primaryKeys = String.join(",", jdbcTable.getPrimaryKeyList());
-        String clause = String.format(" ON CONFLICT (%s) DO UPDATE", primaryKeys);
+
+        String values = jdbcTable.dbFieldNames().stream()
+                .map(dbFieldName -> String.format("%s = EXCLUDED.%s", dbFieldName, dbFieldName))
+                .collect(Collectors.joining(","));
+
+        String clause = String.format("ON CONFLICT (%s) DO UPDATE SET %s", primaryKeys, values);
 
         stringBuilder.append(clause);
     }
