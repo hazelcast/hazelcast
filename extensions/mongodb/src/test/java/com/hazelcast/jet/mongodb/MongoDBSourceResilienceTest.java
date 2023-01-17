@@ -103,12 +103,10 @@ public class MongoDBSourceResilienceTest extends SimpleTestInClusterSupport {
         JobRepository jobRepository = new JobRepository(hz);
         int itemCount = 10_000;
 
-        Sink<Integer> setSink = getSetSink("set");
-
         final String databaseName = "shutdownTest";
         final String collectionName = "testStream_whenServerDown";
         final String connectionString = mongoContainer.getConnectionString();
-        Pipeline pipeline = buildIngestPipeline(connectionString, setSink, databaseName, collectionName);
+        Pipeline pipeline = buildIngestPipeline(connectionString, "set", databaseName, collectionName);
 
         Job job = invokeJob(hz, pipeline);
         ISet<Integer> set = hz.getSet("set");
@@ -162,7 +160,7 @@ public class MongoDBSourceResilienceTest extends SimpleTestInClusterSupport {
         final String databaseName = "networkCutoff";
         final String collectionName = "testNetworkCutoff";
         final String connectionViaToxi = "mongodb://" + toxi.getHost() + ":" + toxi.getMappedPort(8670);
-        Pipeline pipeline = buildIngestPipeline(connectionViaToxi, getSetSink("networkTest"), databaseName, collectionName);
+        Pipeline pipeline = buildIngestPipeline(connectionViaToxi, "networkTest", databaseName, collectionName);
 
         Job job = invokeJob(hz, pipeline);
         ISet<Integer> set = hz.getSet("networkTest");
@@ -223,7 +221,7 @@ public class MongoDBSourceResilienceTest extends SimpleTestInClusterSupport {
     }
 
     @Nonnull
-    private static Pipeline buildIngestPipeline(String mongoContainerConnectionString, Sink<Integer> setSink,
+    private static Pipeline buildIngestPipeline(String mongoContainerConnectionString, String sinkName,
                                                 String databaseName, String collectionName) {
         Pipeline pipeline = Pipeline.create();
         pipeline.readFrom(MongoDBSourceBuilder
@@ -236,7 +234,7 @@ public class MongoDBSourceResilienceTest extends SimpleTestInClusterSupport {
                 .withNativeTimestamps(0)
                 .setLocalParallelism(4)
                 .map(doc -> doc.getInteger("key"))
-                .writeTo(setSink);
+                .writeTo(getSetSink(sinkName));
         return pipeline;
     }
 
