@@ -105,8 +105,6 @@ public class ForcefulShutdownTest extends JetTestSupport {
         Config config = smallInstanceConfig();
         // slow down anti-entropy process, so it does not kick in during test
         config.setProperty(ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL.getName(), "120");
-        // TODO: uncomment to test workaround
-//        config.setProperty(ClusterProperty.FAIL_ON_INDETERMINATE_OPERATION_STATE.getName(), "true");
         return config;
     }
 
@@ -277,9 +275,9 @@ public class ForcefulShutdownTest extends JetTestSupport {
 
         logger.info("Joining job...");
         // TODO: in reproducer job.join() fails, after fix should not throw but complete normally
-//        instances[liveInstance].getJet().getJob(job.getId()).join();
-        assertThatThrownBy(() -> instances[liveInstance].getJet().getJob(job.getId()).join())
-                .hasMessageContainingAll("State for job", "is corrupted: it should have");
+        instances[liveInstance].getJet().getJob(job.getId()).join();
+//        assertThatThrownBy(() -> instances[liveInstance].getJet().getJob(job.getId()).join())
+//                .hasMessageContainingAll("State for job", "is corrupted: it should have");
         logger.info("Joined");
 
         // TODO: this check will make sense after fix
@@ -358,9 +356,9 @@ public class ForcefulShutdownTest extends JetTestSupport {
 
         logger.info("Joining job...");
         // TODO: in reproducer job.join() fails, after fix should not throw but complete normally
-//         instances[liveInstance].getJet().getJob(job.getId()).join();
-        assertThatThrownBy(() -> instances[liveInstance].getJet().getJob(job.getId()).join())
-                .hasMessageContainingAll("snapshot with ID", "is damaged. Unable to restore the state for job");
+         instances[liveInstance].getJet().getJob(job.getId()).join();
+//        assertThatThrownBy(() -> instances[liveInstance].getJet().getJob(job.getId()).join())
+//                .hasMessageContainingAll("snapshot with ID", "is damaged. Unable to restore the state for job");
         logger.info("Joined");
 
         // TODO: this check will make sense after fix

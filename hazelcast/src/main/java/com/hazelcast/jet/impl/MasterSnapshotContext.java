@@ -29,6 +29,7 @@ import com.hazelcast.jet.impl.operation.SnapshotPhase2Operation;
 import com.hazelcast.jet.impl.util.LoggingUtil;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.spi.impl.operationservice.Operation;
 
 import javax.annotation.Nonnull;
@@ -279,6 +280,9 @@ class MasterSnapshotContext {
                 }
 
                 IMap<Object, Object> snapshotMap = mc.nodeEngine().getHazelcastInstance().getMap(snapshotMapName);
+                // Snapshot IMap proxy instance may be shared, but we always want it
+                // to have failOnIndeterminateOperationState enabled.
+                ((MapProxyImpl<?, ?>) snapshotMap).setFailOnIndeterminateOperationState(true);
                 try {
                     SnapshotValidationRecord validationRecord = new SnapshotValidationRecord(snapshotId,
                             mergedResult.getNumChunks(), mergedResult.getNumBytes(),

@@ -28,6 +28,7 @@ import com.hazelcast.jet.impl.execution.SnapshotContext;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -78,7 +79,7 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
     private long totalChunks;
     private long totalPayloadBytes;
 
-    private BiConsumer<Object, Throwable> putResponseConsumer = this::consumePutResponse;
+    private final BiConsumer<Object, Throwable> putResponseConsumer = this::consumePutResponse;
 
     public AsyncSnapshotWriterImpl(NodeEngine nodeEngine,
                                    SnapshotContext snapshotContext,
@@ -274,6 +275,9 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
                 return false;
             }
             currentMap = nodeEngine.getHazelcastInstance().getMap(mapName);
+            // Snapshot IMap proxy instance may be shared, but we always want it
+            // to have failOnIndeterminateOperationState enabled.
+            ((MapProxyImpl<?, ?>) currentMap).setFailOnIndeterminateOperationState(true);
             this.currentSnapshotId = snapshotContext.currentSnapshotId();
         }
         return true;
