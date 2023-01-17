@@ -393,11 +393,11 @@ public class JdbcSqlConnector implements SqlConnector {
             String query = null;
 
             if (dialect instanceof MysqlSqlDialect) {
-                MySqlUpsertQueryBuilder builder = new MySqlUpsertQueryBuilder(jdbcTable);
+                MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
                 query = builder.query();
 
             } else if (dialect instanceof PostgresqlSqlDialect) {
-                PostgreSqlUpsertQueryBuilder builder = new PostgreSqlUpsertQueryBuilder(jdbcTable);
+                PostgreSQLUpsertQueryBuilder builder = new PostgreSQLUpsertQueryBuilder(jdbcTable);
                 query = builder.query();
 
             } else if (dialect instanceof H2SqlDialect) {

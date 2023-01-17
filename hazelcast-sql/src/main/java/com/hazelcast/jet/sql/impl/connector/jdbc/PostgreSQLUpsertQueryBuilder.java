@@ -19,11 +19,11 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import java.util.List;
 import java.util.stream.Collectors;
 
-class PostgreSqlUpsertQueryBuilder {
+class PostgreSQLUpsertQueryBuilder {
 
     private final String query;
 
-    PostgreSqlUpsertQueryBuilder(JdbcTable jdbcTable) {
+    PostgreSQLUpsertQueryBuilder(JdbcTable jdbcTable) {
         StringBuilder stringBuilder = new StringBuilder();
 
         getInsertClause(jdbcTable, stringBuilder);

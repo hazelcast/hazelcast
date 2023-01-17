@@ -19,11 +19,11 @@ package com.hazelcast.jet.sql.impl.connector.jdbc;
 import java.util.List;
 import java.util.stream.Collectors;
 
-class MySqlUpsertQueryBuilder {
+class MySQLUpsertQueryBuilder {
 
     private final String query;
 
-    MySqlUpsertQueryBuilder(JdbcTable jdbcTable) {
+    MySQLUpsertQueryBuilder(JdbcTable jdbcTable) {
         StringBuilder stringBuilder = new StringBuilder();
 
         getInsertClause(jdbcTable, stringBuilder);

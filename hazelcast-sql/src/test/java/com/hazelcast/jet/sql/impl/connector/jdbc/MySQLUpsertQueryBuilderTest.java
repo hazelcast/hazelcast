@@ -26,7 +26,7 @@ import java.util.Arrays;
 import static org.junit.Assert.assertEquals;
 import static org.mockito.Mockito.when;
 
-public class MySqlUpsertQueryBuilderTest {
+public class MySQLUpsertQueryBuilderTest {
 
     @Mock
     JdbcTable jdbcTable;
@@ -41,7 +41,7 @@ public class MySqlUpsertQueryBuilderTest {
         when(jdbcTable.getExternalName()).thenReturn("table1");
         when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
 
-        MySqlUpsertQueryBuilder builder = new MySqlUpsertQueryBuilder(jdbcTable);
+        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
         StringBuilder stringBuilder = new StringBuilder();
         builder.getInsertClause(jdbcTable, stringBuilder);
 
@@ -53,7 +53,7 @@ public class MySqlUpsertQueryBuilderTest {
     public void testGetValuesClause() {
         when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
 
-        MySqlUpsertQueryBuilder builder = new MySqlUpsertQueryBuilder(jdbcTable);
+        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
         StringBuilder stringBuilder = new StringBuilder();
         builder.getValuesClause(jdbcTable, stringBuilder);
 
@@ -66,7 +66,7 @@ public class MySqlUpsertQueryBuilderTest {
         when(jdbcTable.getPrimaryKeyList()).thenReturn(Arrays.asList("pk1", "pk2"));
         when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
 
-        MySqlUpsertQueryBuilder builder = new MySqlUpsertQueryBuilder(jdbcTable);
+        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
         StringBuilder stringBuilder = new StringBuilder();
         builder.getOnDuplicateClause(jdbcTable, stringBuilder);
 
@@ -80,7 +80,7 @@ public class MySqlUpsertQueryBuilderTest {
         when(jdbcTable.getPrimaryKeyList()).thenReturn(Arrays.asList("pk1", "pk2"));
         when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
 
-        MySqlUpsertQueryBuilder builder = new MySqlUpsertQueryBuilder(jdbcTable);
+        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
         String result = builder.query();
         assertEquals("INSERT INTO table1 (field1,field2) VALUES (?,?) ON DUPLICATE KEY UPDATE field1 = VALUES(field1),field2 = VALUES(field2)", result);
     }
