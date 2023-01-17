@@ -26,7 +26,7 @@ import org.junit.runner.RunWith;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
-public class GroupPropertyTest extends HazelcastTestSupport {
+public class ClusterPropertyTest extends HazelcastTestSupport {
 
     @Test
     public void testConstructor() {
