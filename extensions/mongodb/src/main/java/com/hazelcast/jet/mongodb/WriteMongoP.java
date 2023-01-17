@@ -32,6 +32,7 @@ import com.hazelcast.jet.retry.impl.RetryTracker;
 import com.hazelcast.logging.ILogger;
 import com.mongodb.MongoBulkWriteException;
 import com.mongodb.MongoCommandException;
+import com.mongodb.MongoSocketException;
 import com.mongodb.ReadPreference;
 import com.mongodb.TransactionOptions;
 import com.mongodb.WriteConcern;
@@ -89,11 +90,15 @@ import static java.util.stream.Collectors.toList;
  * @param <I> type of saved item
  */
 public class WriteMongoP<I> extends AbstractProcessor {
+    /**
+     * Max number of items processed (written) in one invocation of {@linkplain #process}.
+     */
+    private static final int MAX_BATCH_SIZE = 2_000;
     @SuppressWarnings("checkstyle:MagicNumber")
     private static final RetryStrategy RETRY_STRATEGY = RetryStrategies.custom()
                                                                       .intervalFunction(exponentialBackoffWithCap(100
                                                                               , 2.0, 3000))
-                                                                      .maxAttempts(10)
+                                                                      .maxAttempts(20)
                                                                       .build();
 
     private static final long MAX_COMMIT_TIME = 10L;
@@ -211,6 +216,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public void process(int ordinal, @Nonnull Inbox inbox) {
         if (!reconnectIfNecessary()) {
             return;
@@ -218,38 +224,53 @@ public class WriteMongoP<I> extends AbstractProcessor {
         MongoTransaction mongoTransaction = transactionUtility.activeTransaction();
 
         ArrayList<I> items = new ArrayList<>();
-        inbox.drainTo(items);
+        for (Object item : inbox) {
+            items.add((I) item);
+            if (items.size() >= MAX_BATCH_SIZE) {
+                break;
+            }
+        }
+//        inbox.drainTo(items);
 
-        @SuppressWarnings("DataFlowIssue")
-        Map<MongoCollectionKey, List<I>> itemsPerCollection = items
-                .stream()
-                .map(e -> tuple2(collectionPicker.pick(e), e))
-                .collect(groupingBy(Tuple2::f0, mapping(Tuple2::getValue, toList())));
+        try {
+            @SuppressWarnings("DataFlowIssue")
+            Map<MongoCollectionKey, List<I>> itemsPerCollection = items
+                    .stream()
+                    .map(e -> tuple2(collectionPicker.pick(e), e))
+                    .collect(groupingBy(Tuple2::f0, mapping(Tuple2::getValue, toList())));
 
-        for (MongoCollectionKey collectionKey : itemsPerCollection.keySet()) {
-            MongoCollection<I> collection = collectionKey.get(mongoClient, documentType);
+            for (MongoCollectionKey collectionKey : itemsPerCollection.keySet()) {
+                MongoCollection<I> collection = collectionKey.get(mongoClient, documentType);
 
-            Set<Object> docsFound = queryForExistingIds(items, collection);
-            List<WriteModel<I>> writes = new ArrayList<>();
+                Set<Object> docsFound = queryForExistingIds(items, collection);
+                List<WriteModel<I>> writes = new ArrayList<>();
 
-            for (I item : itemsPerCollection.get(collectionKey)) {
-                Object id = documentIdentityFn.apply(item);
+                for (I item : itemsPerCollection.get(collectionKey)) {
+                    Object id = documentIdentityFn.apply(item);
 
-                if (docsFound.contains(id)) {
-                    Bson filter = eq(documentIdentityFieldName, id);
-                    ReplaceOneModel<I> update = new ReplaceOneModel<>(filter, item, replaceOptions);
-                    writes.add(update);
+                    if (docsFound.contains(id)) {
+                        Bson filter = eq(documentIdentityFieldName, id);
+                        ReplaceOneModel<I> update = new ReplaceOneModel<>(filter, item, replaceOptions);
+                        writes.add(update);
+                    } else {
+                        InsertOneModel<I> insert = new InsertOneModel<>(item);
+                        writes.add(insert);
+                    }
+                }
+                if (transactionUtility.usesTransactionLifecycle()) {
+                    checkNotNull(mongoTransaction, "there is no active transaction");
+                    mongoTransaction.addWrites(collectionKey, writes);
                 } else {
-                    InsertOneModel<I> insert = new InsertOneModel<>(item);
-                    writes.add(insert);
+                    collection.bulkWrite(writes);
                 }
             }
-            if (transactionUtility.usesTransactionLifecycle()) {
-                checkNotNull(mongoTransaction, "there is no active transaction");
-                mongoTransaction.addWrites(collectionKey, writes);
-            } else {
-                collection.bulkWrite(writes);
+
+            for (int i = 0; i < items.size(); i++) {
+                inbox.remove();
             }
+        } catch (Exception e) {
+            logger.info("Unable to process Mongo Sink: " + e.getMessage());
+            // not removing from inbox, so it will be retried
         }
     }
 
@@ -470,8 +491,12 @@ public class WriteMongoP<I> extends AbstractProcessor {
                         }
                     } catch (MongoBulkWriteException e) {
                         throw new JetException(e);
+                    } catch (MongoSocketException e) {
+                        commitRetryTracker.attemptFailed();
+                        if (!commitRetryTracker.shouldTryAgain()) {
+                            throw e;
+                        }
                     }
-
                 }
             }
         }

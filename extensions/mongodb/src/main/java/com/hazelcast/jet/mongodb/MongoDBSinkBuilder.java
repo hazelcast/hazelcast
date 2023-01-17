@@ -27,6 +27,8 @@ import com.hazelcast.jet.pipeline.SinkBuilder;
 import com.hazelcast.jet.pipeline.Sinks;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.ReplaceOptions;
+import org.bson.BsonDocument;
+import org.bson.Document;
 
 import javax.annotation.Nonnull;
 
@@ -70,6 +72,13 @@ public final class MongoDBSinkBuilder<T> {
         this.connectionSupplier = checkNonNullAndSerializable(connectionSupplier, "connectionSupplier");
         this.documentClass = checkNotNull(documentClass, "document class cannot be null");
         this.name = checkNotNull(name, "sink name cannot be null");
+
+        if (Document.class.isAssignableFrom(documentClass)) {
+            identifyDocumentBy("_id", doc -> ((Document) doc).get("_id"));
+        }
+        if (BsonDocument.class.isAssignableFrom(documentClass)) {
+            identifyDocumentBy("_id", doc -> ((BsonDocument) doc).get("_id"));
+        }
     }
 
     /**

@@ -17,6 +17,9 @@
 package com.hazelcast.jet.mongodb;
 
 import com.hazelcast.collection.ISet;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.EventJournalConfig;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
@@ -25,8 +28,10 @@ import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.pipeline.Pipeline;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.SinkBuilder;
+import com.hazelcast.jet.pipeline.Sources;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.mongodb.ConnectionString;
@@ -42,6 +47,7 @@ import org.bson.Document;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
+import org.junit.rules.TestName;
 import org.junit.runner.RunWith;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.containers.Network;
@@ -60,9 +66,9 @@ import java.util.function.Consumer;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static eu.rekawek.toxiproxy.model.ToxicDirection.DOWNSTREAM;
 import static eu.rekawek.toxiproxy.model.ToxicDirection.UPSTREAM;
-import static java.lang.Thread.sleep;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 
@@ -84,6 +90,9 @@ public class MongoDBSourceResilienceTest extends SimpleTestInClusterSupport {
     @Rule
     public ToxiproxyContainer  toxi = new ToxiproxyContainer("ghcr.io/shopify/toxiproxy:2.5.0")
             .withNetwork(network);
+
+    @Rule
+    public TestName testName  = new TestName();
 
     private final Random random = new Random();
 
@@ -131,17 +140,17 @@ public class MongoDBSourceResilienceTest extends SimpleTestInClusterSupport {
     }
 
     @Test
-    public void testNetworkCutoff() throws IOException, InterruptedException {
-        networkTest(false);
+    public void testNetworkCutoff() throws IOException {
+        sourceNetworkTest(false);
     }
 
 
     @Test
-    public void testNetworkTimeout() throws IOException, InterruptedException {
-        networkTest(true);
+    public void testNetworkTimeout() throws IOException {
+        sourceNetworkTest(true);
     }
 
-    private void networkTest(boolean timeout) throws IOException, InterruptedException {
+    private void sourceNetworkTest(boolean timeout) throws IOException {
         final String directConnectionString = mongoContainer.getConnectionString();
         HazelcastInstance hz = createHazelcastInstance();
         JobRepository jobRepository = new JobRepository(hz);
@@ -206,6 +215,113 @@ public class MongoDBSourceResilienceTest extends SimpleTestInClusterSupport {
     }
 
     @Nonnull
+    private static Sink<Integer> getSetSink(String setName) {
+        return SinkBuilder
+                .sinkBuilder(setName + "Sink", c -> c.hazelcastInstance().getSet(setName))
+                .<Integer>receiveFn(Set::add)
+                .build();
+    }
+
+    @Nonnull
+    private static Pipeline buildIngestPipeline(String mongoContainerConnectionString, Sink<Integer> setSink,
+                                                String databaseName, String collectionName) {
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(MongoDBSourceBuilder
+                        .stream("mongo source", () -> mongoClient(mongoContainerConnectionString))
+                        .database(databaseName)
+                        .collection(collectionName)
+                        .mapFn(ChangeStreamDocument::getFullDocument)
+                        .startAtOperationTime(new BsonTimestamp(System.currentTimeMillis()))
+                        .build())
+                .withNativeTimestamps(0)
+                .setLocalParallelism(4)
+                .map(doc -> doc.getInteger("key"))
+                .writeTo(setSink);
+        return pipeline;
+    }
+
+    @Test
+    public void testSink_networkCutoff() throws IOException {
+        sinkNetworkTest(false);
+    }
+
+
+    @Test
+    public void testSink_networkTimeout() throws IOException {
+        sinkNetworkTest(true);
+    }
+
+    private void sinkNetworkTest(boolean timeout) throws IOException {
+        Config conf = new Config();
+        conf.addMapConfig(new MapConfig("*").setEventJournalConfig(new EventJournalConfig().setEnabled(true)));
+        conf.getJetConfig().setEnabled(true);
+        HazelcastInstance hz = createHazelcastInstance(conf);
+        JobRepository jobRepository = new JobRepository(hz);
+        createHazelcastInstance(conf);
+
+        final ToxiproxyClient toxiproxyClient = new ToxiproxyClient(toxi.getHost(), toxi.getControlPort());
+        final Proxy proxy = toxiproxyClient.createProxy("mongo", "0.0.0.0:8670", "mongo:27017");
+
+        final String databaseName = "networkCutoff";
+        final String collectionName = "testNetworkCutoff";
+        final String connectionViaToxi = "mongodb://" + toxi.getHost() + ":" + toxi.getMappedPort(8670);
+
+        IMap<Integer, Integer> sourceMap = hz.getMap(testName.getMethodName());
+
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(Sources.mapJournal(sourceMap, START_FROM_OLDEST))
+                .withIngestionTimestamps()
+                .map(doc -> new Document("dummy", "test")
+                        .append("key", doc.getKey())
+                        .append("value", doc.getValue())
+                ).setLocalParallelism(2)
+                .writeTo(MongoDBSinks.builder("mongoSink", Document.class, () -> mongoClient(connectionViaToxi))
+                                     .into(databaseName, collectionName)
+                                     .preferredLocalParallelism(2)
+                                     .build());
+
+        Job job = invokeJob(hz, pipeline);
+        final AtomicBoolean continueCounting = new AtomicBoolean(true);
+        final AtomicInteger counter = new AtomicInteger(0);
+        spawn(() -> {
+            while (continueCounting.get()) {
+                int val = counter.incrementAndGet();
+                sourceMap.put(val, val);
+                sleep(random.nextInt(100));
+            }
+        });
+        waitForFirstSnapshot(jobRepository, job.getId(), 30, true);
+        sleep(1_000);
+
+        logger.info("Injecting toxis");
+        if (timeout) {
+            proxy.toxics().timeout("TIMEOUT", UPSTREAM, 0);
+            proxy.toxics().timeout("TIMEOUT_DOWNSTREAM", DOWNSTREAM, 0);
+        } else {
+            proxy.toxics().bandwidth("CUT_CONNECTION_DOWNSTREAM", DOWNSTREAM, 0);
+            proxy.toxics().bandwidth("CUT_CONNECTION_UPSTREAM", UPSTREAM, 0);
+        }
+        sleep(4_000 + random.nextInt(1000));
+        if (timeout) {
+            proxy.toxics().get("TIMEOUT").remove();
+            proxy.toxics().get("TIMEOUT_DOWNSTREAM").remove();
+        } else {
+            proxy.toxics().get("CUT_CONNECTION_DOWNSTREAM").remove();
+            proxy.toxics().get("CUT_CONNECTION_UPSTREAM").remove();
+        }
+        logger.info("Toxiing over");
+        sleep(1_000 + random.nextInt(1500));
+        continueCounting.compareAndSet(true, false);
+
+        final String directConnectionString = mongoContainer.getConnectionString();
+        MongoClient directClinent = MongoClients.create(directConnectionString);
+        MongoCollection<Document> collection = directClinent.getDatabase(databaseName).getCollection(collectionName);
+        assertTrueEventually(() ->
+                assertEquals(counter.get(), collection.countDocuments())
+        );
+    }
+
+    @Nonnull
     private static Job invokeJob(HazelcastInstance hz, Pipeline pipeline) {
         JobConfig jobConfig = new JobConfig();
         jobConfig.setProcessingGuarantee(EXACTLY_ONCE)
@@ -224,31 +340,13 @@ public class MongoDBSourceResilienceTest extends SimpleTestInClusterSupport {
         new Thread(futureTask).start();
         return futureTask;
     }
-
-    @Nonnull
-    private static Sink<Integer> getSetSink(String setName) {
-        return SinkBuilder
-                .sinkBuilder(setName + "Sink", c -> c.hazelcastInstance().getSet(setName))
-                .<Integer>receiveFn(Set::add)
-                .build();
-    }
-
-    @Nonnull
-    private static Pipeline buildIngestPipeline(String mongoContainerConnectionString, Sink<Integer> setSink,
-                                        String databaseName, String collectionName) {
-        Pipeline pipeline = Pipeline.create();
-        pipeline.readFrom(MongoDBSourceBuilder
-                        .stream("mongo source", () -> mongoClient(mongoContainerConnectionString))
-                        .database(databaseName)
-                        .collection(collectionName)
-                        .mapFn(ChangeStreamDocument::getFullDocument)
-                        .startAtOperationTime(new BsonTimestamp(System.currentTimeMillis()))
-                        .build())
-                .withNativeTimestamps(0)
-                .setLocalParallelism(4)
-                .map(doc -> doc.getInteger("key"))
-                .writeTo(setSink);
-        return pipeline;
+    private static void sleep(long milliseconds) {
+        try {
+            Thread.sleep(milliseconds);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new RuntimeException(e);
+        }
     }
 
     private static MongoClient mongoClient(String connectionString) {
