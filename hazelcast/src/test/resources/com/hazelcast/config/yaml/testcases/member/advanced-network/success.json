@@ -239,19 +239,17 @@
           }
         },
         "wan-server-socket-endpoint-config": {
-          "wan-server-socket-config": {
-            "interfaces": {
-              "enabled": false,
-              "interfaces": [
-                "192.168.8.101",
-                "10.20.10.100"
-              ]
-            },
-            "alto-socket": {
-              "port-range": "14000-16000",
-              "receive-buffer-size-kb": 256,
-              "send-buffer-size-kb": 256
-            }
+          "interfaces": {
+            "enabled": false,
+            "interfaces": [
+              "192.168.8.101",
+              "10.20.10.100"
+            ]
+          },
+          "alto-socket": {
+            "port-range": "14000-16000",
+            "receive-buffer-size-kb": 256,
+            "send-buffer-size-kb": 256
           }
         },
         "memcache-server-socket-endpoint-config": {
