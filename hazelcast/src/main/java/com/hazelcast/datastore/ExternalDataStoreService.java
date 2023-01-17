@@ -16,6 +16,7 @@
 
 package com.hazelcast.datastore;
 
+import com.hazelcast.config.ExternalDataStoreConfig;
 import com.hazelcast.core.HazelcastException;
 import com.hazelcast.spi.annotation.Beta;
 
@@ -26,6 +27,16 @@ import com.hazelcast.spi.annotation.Beta;
  */
 @Beta
 public interface ExternalDataStoreService extends AutoCloseable {
+
+    /**
+     * Tests external data store configuration.
+     *
+     * @param config name of the data store factory
+     * @return {@code true} if test was successful
+     * @throws Exception if the test operation fails
+     */
+    boolean testConnection(ExternalDataStoreConfig config) throws Exception;
+
     /**
      * Returns external data store factory with given name.
      *
