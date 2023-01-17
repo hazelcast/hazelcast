@@ -485,19 +485,30 @@ public class WriteMongoP<I> extends AbstractProcessor {
                         commitRetryTracker.reset();
                         success = true;
                     } catch (MongoCommandException e) {
+                        tryExternalRollback();
                         commitRetryTracker.attemptFailed();
                         if (!commitRetryTracker.shouldTryAgain() || e.getErrorCode() != MONGODB_TRANSIENT_ERROR) {
                             throw e;
                         }
                     } catch (MongoBulkWriteException e) {
+                        tryExternalRollback();
                         throw new JetException(e);
                     } catch (MongoSocketException e) {
+                        tryExternalRollback();
                         commitRetryTracker.attemptFailed();
                         if (!commitRetryTracker.shouldTryAgain()) {
                             throw e;
                         }
                     }
                 }
+            }
+        }
+
+        private void tryExternalRollback() {
+            try {
+                clientSession.abortTransaction();
+            } catch (IllegalStateException e) {
+                ignore(e);
             }
         }
 
