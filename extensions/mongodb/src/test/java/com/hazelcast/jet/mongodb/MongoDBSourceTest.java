@@ -28,7 +28,6 @@ import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.model.Sorts;
 import org.bson.BsonTimestamp;
 import org.bson.Document;
 import org.junit.Test;
@@ -49,6 +48,7 @@ import static com.mongodb.client.model.Filters.and;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.gte;
 import static com.mongodb.client.model.Projections.include;
+import static com.mongodb.client.model.Sorts.ascending;
 import static java.util.Arrays.asList;
 import static java.util.Comparator.comparingInt;
 import static java.util.stream.Collectors.toList;
@@ -60,6 +60,8 @@ import static org.junit.Assert.assertNull;
 @Category({QuickTest.class})
 public class MongoDBSourceTest extends AbstractMongoDBTest {
 
+    private static final int COUNT_IN_BATCH = 30_000;
+    private static final int FILTERED_BOUND = 10;
     @Parameter(0)
     public boolean filter;
     @Parameter(1)
@@ -80,17 +82,19 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
     @Test
     public void testBatchOneCollection() {
         IList<Object> list = instance().getList(testName.getMethodName());
+        final String connectionString = mongoContainer.getConnectionString();
 
-
-        collection().insertMany(range(0, 30).mapToObj(i -> newDocument("key", i).append("val", i)).collect(toList()));
-        assertEquals(collection().countDocuments(), 30L);
+        collection().insertMany(range(0, COUNT_IN_BATCH)
+                .mapToObj(i -> newDocument("key", i).append("val", i))
+                .collect(toList())
+        );
+        assertEquals(collection().countDocuments(), COUNT_IN_BATCH);
 
         Pipeline pipeline = Pipeline.create();
-        String connectionString = mongoContainer.getConnectionString();
         Batch<?> sourceBuilder = MongoDBSources.batch(SOURCE_NAME, () -> mongoClient(connectionString))
                                                .database(defaultDatabase())
-                                               .collection(testName.getMethodName(), Document.class)
-                                               .sort(Sorts.ascending("key"));
+                                               .collection(testName.getMethodName())
+                                               .sort(ascending("key"));
         sourceBuilder = batchFilters(sourceBuilder);
         pipeline.readFrom(sourceBuilder.build())
                 .setLocalParallelism(2)
@@ -98,7 +102,10 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
         instance().getJet().newJob(pipeline, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE)).join();
 
-        assertTrueEventually(() -> contentAsserts(list, filter ? 10 : 0, 29, filter ? 20 : 30));
+        assertTrueEventually(() -> contentAsserts(list,
+                filter ? FILTERED_BOUND : 0,
+                COUNT_IN_BATCH - 1,
+                filter ? COUNT_IN_BATCH - FILTERED_BOUND : COUNT_IN_BATCH));
     }
 
     @Test
@@ -126,18 +133,18 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
         instance().getJet().newJob(pipeline, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE)).join();
 
-        assertTrueEventually(() -> contentAsserts(list, filter ? 10 : 0, 19, filter ? 20 : 40));
+        assertTrueEventually(() -> contentAsserts(list, filter ? FILTERED_BOUND : 0, 19, filter ? 20 : 40));
     }
 
     private Batch<?> batchFilters(Batch<?> sourceBuilder) {
         if (filter) {
-            sourceBuilder = sourceBuilder.filter(gte("key", 10));
+            sourceBuilder = sourceBuilder.filter(gte("key", FILTERED_BOUND));
         }
         if (projection) {
             sourceBuilder = sourceBuilder.project(include("val", "testName"));
         }
         if (sort) {
-            sourceBuilder = sourceBuilder.sort(Sorts.ascending("val"));
+            sourceBuilder = sourceBuilder.sort(ascending("val"));
         }
         if (map) {
             sourceBuilder = sourceBuilder.mapFn(Mappers.toClass(KV.class));
@@ -163,15 +170,15 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         Job job = instance().getJet().newJob(pipeline);
 
         collection().insertOne(newDocument("val", 1));
-        collection().insertOne(newDocument("val", 10).append("foo", "bar"));
+        collection().insertOne(newDocument("val", FILTERED_BOUND).append("foo", "bar"));
         collection("someOther").insertOne(newDocument("val", 1000).append("foo", "bar"));
 
-        assertTrueEventually(() -> contentAsserts(list, filter ? 10 : 1, 10, filter ? 1 : 2));
+        assertTrueEventually(() -> contentAsserts(list, filter ? FILTERED_BOUND : 1, FILTERED_BOUND, filter ? 1 : 2));
 
         collection().insertOne(newDocument("val", 2));
         collection().insertOne(newDocument("val", 20).append("foo", "bar"));
 
-        assertTrueEventually(() -> contentAsserts(list, filter ? 10 : 1, 20, filter ? 2 : 4));
+        assertTrueEventually(() -> contentAsserts(list, filter ? FILTERED_BOUND : 1, 20, filter ? 2 : 4));
         job.cancel();
     }
 
@@ -198,12 +205,12 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         MongoCollection<Document> col2 = collection("col2");
 
         col1.insertOne(newDocument("val", 1));
-        col1.insertOne(newDocument("val", 10).append("foo", "bar"));
+        col1.insertOne(newDocument("val", FILTERED_BOUND).append("foo", "bar"));
 
         col2.insertOne(newDocument("val", 2));
         col2.insertOne(newDocument("val", 11).append("foo", "bar"));
 
-        assertTrueEventually(() -> contentAsserts(list, filter ? 10 : 1, 11, filter ? 2 : 4), 5);
+        assertTrueEventually(() -> contentAsserts(list, filter ? FILTERED_BOUND : 1, 11, filter ? 2 : 4), 5);
 
         col1.insertOne(newDocument("val", 3));
         col1.insertOne(newDocument("val", 12).append("foo", "bar"));
@@ -211,7 +218,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         col2.insertOne(newDocument("val", 4));
         col2.insertOne(newDocument("val", 13).append("foo", "bar"));
 
-        assertTrueEventually(() -> contentAsserts(list, filter ? 10 : 1, 13, filter ? 4 : 8), 5);
+        assertTrueEventually(() -> contentAsserts(list, filter ? FILTERED_BOUND : 1, 13, filter ? 4 : 8), 5);
 
     }
 
@@ -267,7 +274,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
     private Stream<?> streamFilters(Stream<?> sourceBuilder) {
         if (filter) {
             sourceBuilder = sourceBuilder.filter(and(
-                    gte("fullDocument.val", 10),
+                    gte("fullDocument.val", FILTERED_BOUND),
                     eq("operationType", "insert")
             ));
         } else {

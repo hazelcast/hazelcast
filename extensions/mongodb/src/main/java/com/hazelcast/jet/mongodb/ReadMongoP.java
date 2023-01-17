@@ -28,6 +28,9 @@ import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.retry.impl.RetryTracker;
 import com.hazelcast.logging.ILogger;
 import com.mongodb.MongoException;
+import com.mongodb.MongoServerException;
+import com.mongodb.MongoServerUnavailableException;
+import com.mongodb.MongoTimeoutException;
 import com.mongodb.client.ChangeStreamIterable;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
@@ -235,6 +238,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
         private void connect(boolean snapshotsEnabled) {
             try {
+                logger.info("(Re)connecting to MongoDB");
                 mongoClient = connectionSupplier.get();
                 if (databaseName != null) {
                     this.database = mongoClient.getDatabase(databaseName);
@@ -367,7 +371,6 @@ public class ReadMongoP<I> extends AbstractProcessor {
     }
 
     private final class StreamMongoReader extends MongoChunkedReader {
-        private ChangeStreamIterable<Document>  changeStream;
         private final FunctionEx<ChangeStreamDocument<Document>, I> mapFn;
         private final Long startTimestamp;
         private final List<Bson> aggregates;
@@ -397,13 +400,21 @@ public class ReadMongoP<I> extends AbstractProcessor {
             if (totalParallelism > 1) {
                 aggregateList.addAll(0, partitionAggregate(totalParallelism, processorIndex, true));
             }
+            ChangeStreamIterable<Document>  changeStream;
             if (collection != null) {
-                this.changeStream = collection.watch(aggregateList);
+                changeStream = collection.watch(aggregateList);
             } else if (database != null) {
-                this.changeStream = database.watch(aggregateList);
+                changeStream = database.watch(aggregateList);
             } else {
-                this.changeStream = mongoClient.watch(aggregateList);
+                changeStream = mongoClient.watch(aggregateList);
             }
+
+            if (resumeToken != null) {
+                changeStream.resumeAfter(resumeToken);
+            } else if (startTimestamp != null) {
+                changeStream.startAtOperationTime(new BsonTimestamp(startTimestamp));
+            }
+            cursor = changeStream.batchSize(BATCH_SIZE).iterator();
         }
 
         @Override
@@ -415,26 +426,24 @@ public class ReadMongoP<I> extends AbstractProcessor {
         @Override
         public Traverser<?> nextChunkTraverser() {
             try {
-                if (cursor == null) {
-                    if (resumeToken != null) {
-                        changeStream.resumeAfter(resumeToken);
-                    } else if (startTimestamp != null) {
-                        changeStream.startAtOperationTime(new BsonTimestamp(startTimestamp));
-                    }
-                    cursor = changeStream.batchSize(BATCH_SIZE).iterator();
-                }
-
                 ArrayList<ChangeStreamDocument<Document>> chunk = new ArrayList<>(BATCH_SIZE);
                 int count = 0;
                 boolean eagerEnd = false;
-                while (count < BATCH_SIZE && !eagerEnd) {
-                    ChangeStreamDocument<Document> doc = cursor.tryNext();
-                    if (doc != null) {
-                        chunk.add(doc);
-                        count++;
-                    } else {
-                        eagerEnd = true;
+                try {
+                    while (count < BATCH_SIZE && !eagerEnd) {
+                        ChangeStreamDocument<Document> doc;
+                        doc = cursor.tryNext();
+                        if (doc != null) {
+                            chunk.add(doc);
+                            count++;
+                        } else {
+                            eagerEnd = true;
+                        }
                     }
+                } catch (MongoTimeoutException | MongoServerUnavailableException | MongoServerException e) {
+                    logger.severe("Lost connection to MongoDB", e);
+                    mongoClient = null;
+                    return Traversers.empty();
                 }
 
                 Traverser<?> traverser = Traversers.traverseIterable(chunk)
