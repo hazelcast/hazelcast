@@ -56,7 +56,6 @@ public class UploadJobMetaDataOperation extends Operation implements IdentifiedD
     public void run() {
 
         JetServiceBackend jetServiceBackend = getJetServiceBackend();
-        jetServiceBackend.checkIfCanExecuteJar();
         jetServiceBackend.storeJobMetaData(jobMetaDataParameterObject);
         response = true;
 

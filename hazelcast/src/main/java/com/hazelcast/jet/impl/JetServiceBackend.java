@@ -406,8 +406,9 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         jobCoordinationService.startScanningForJobs();
     }
 
-    // Store the metadata about the job jar that is uploaded
+    // Store the metadata about the job jar that is uploaded from client side
     public void storeJobMetaData(JobMetaDataParameterObject parameterObject) {
+        checkIfCanExecuteJar();
         jobUploadStore.processJobMetaData(parameterObject);
     }
 
@@ -423,16 +424,18 @@ public class JetServiceBackend implements ManagedService, MembershipAwareService
         return result;
     }
 
-    public void checkIfCanExecuteJar() {
+    private void checkIfCanExecuteJar() {
         if (!jetConfig.isResourceUploadEnabled()) {
             throw new JetException("Resource upload is not enabled");
         }
     }
 
-    // Run the given jar as Jet job
+    // Run the given jar as Jet job. Triggered by both client and member side job uploads
     public void executeJar(JobMetaDataParameterObject parameterObject) {
 
         logger.info("executeJar is called for session id :" + parameterObject.getSessionId());
+
+        checkIfCanExecuteJar();
 
         try {
             HazelcastBootstrap.executeJar(this::getHazelcastInstance,

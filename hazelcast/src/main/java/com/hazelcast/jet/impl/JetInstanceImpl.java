@@ -70,9 +70,11 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
         return config;
     }
 
+    // Called by member to run a job on itself
     @Override
     public void submitJobFromJar(@Nonnull Path jarPath, String snapshotName, String jobName, String mainClass,
                                  List<String> jobParameters) {
+
 
         try {
             JobMetaDataParameterObject parameterObject = new JobMetaDataParameterObject();
@@ -83,8 +85,6 @@ public class JetInstanceImpl extends AbstractJetInstance<Address> {
             parameterObject.setJarPath(jarPath);
 
             JetServiceBackend jetServiceBackend = nodeEngine.getService(JetServiceBackend.SERVICE_NAME);
-
-            jetServiceBackend.checkIfCanExecuteJar();
             jetServiceBackend.executeJar(parameterObject);
 
         } catch (Exception exception) {
