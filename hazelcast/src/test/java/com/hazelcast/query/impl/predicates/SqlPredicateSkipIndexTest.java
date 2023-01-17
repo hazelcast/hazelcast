@@ -41,7 +41,7 @@ public class SqlPredicateSkipIndexTest
         SkipIndexPredicate skipIndexPredicate = (SkipIndexPredicate) p;
 
         InPredicate inPredicate = (InPredicate) skipIndexPredicate.getTarget();
-        assertEquals("age", inPredicate.attributeName, "age");
+        assertEquals("age", "age", inPredicate.attributeName);
         assertArrayEquals(new String[]{"1"}, inPredicate.values);
     }
 
@@ -53,7 +53,7 @@ public class SqlPredicateSkipIndexTest
         SkipIndexPredicate skipIndexPredicate = (SkipIndexPredicate) p;
 
         EqualPredicate equalPredicate = (EqualPredicate) skipIndexPredicate.getTarget();
-        assertEquals("age", equalPredicate.attributeName, "age");
+        assertEquals("age", "age", equalPredicate.attributeName);
         assertEquals("40", equalPredicate.value);
     }
 
@@ -70,7 +70,7 @@ public class SqlPredicateSkipIndexTest
         SkipIndexPredicate skipIndexPredicate = (SkipIndexPredicate) p;
 
         NotEqualPredicate equalPredicate = (NotEqualPredicate) skipIndexPredicate.getTarget();
-        assertEquals("age", equalPredicate.attributeName, "age");
+        assertEquals("age", "age", equalPredicate.attributeName);
         assertEquals("40", equalPredicate.value);
     }
 
@@ -89,7 +89,7 @@ public class SqlPredicateSkipIndexTest
         SkipIndexPredicate skipIndexPredicate = (SkipIndexPredicate) p;
 
         GreaterLessPredicate equalPredicate = (GreaterLessPredicate) skipIndexPredicate.getTarget();
-        assertEquals("age", equalPredicate.attributeName, "age");
+        assertEquals("age", "age", equalPredicate.attributeName);
         assertEquals("40", equalPredicate.value);
     }
 }

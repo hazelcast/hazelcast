@@ -113,7 +113,7 @@ public class DefaultCyclicBufferTest {
             readFromSequence++;
         } while (true);
 
-        assertEquals("read count should be = " + readFromSequence, readFromSequence, itemCount);
+        assertEquals("read count should be = " + readFromSequence, itemCount, readFromSequence);
     }
 
     @Test

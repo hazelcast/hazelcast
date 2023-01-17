@@ -94,7 +94,7 @@ public class LiveOperationRegistryTest {
         r.populate(liveOperations);
 
         Set<Address> addresses = liveOperations.addresses();
-        assertEquals(addresses.size(), 2);
+        assertEquals(2, addresses.size());
         assertTrue(addresses.contains(new Address("1.2.3.4", 1234)));
         assertTrue(addresses.contains(new Address("1.2.3.3", 1234)));
         long[] runningOperations = liveOperations.toOpControl(new Address("1.2.3.4", 1234)).runningOperations();

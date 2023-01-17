@@ -46,8 +46,8 @@ public class NearCacheConfigAccessorTest extends HazelcastTestSupport {
         NearCacheConfig nearCacheConfig = new NearCacheConfig();
         NearCacheConfig copy = NearCacheConfigAccessor.copyWithInitializedDefaultMaxSizeForOnHeapMaps(nearCacheConfig);
 
-        assertEquals(copy.getEvictionConfig().getSize(), MapConfig.DEFAULT_MAX_SIZE);
-        assertEquals(nearCacheConfig.getEvictionConfig().getSize(), EvictionConfig.DEFAULT_MAX_ENTRY_COUNT);
+        assertEquals(MapConfig.DEFAULT_MAX_SIZE, copy.getEvictionConfig().getSize());
+        assertEquals(EvictionConfig.DEFAULT_MAX_ENTRY_COUNT, nearCacheConfig.getEvictionConfig().getSize());
     }
 
     @Test

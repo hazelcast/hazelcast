@@ -195,8 +195,8 @@ public class DefaultQueryCacheEventDataTest {
         assertEquals(queryCacheEventData, queryCacheEventData);
         assertEquals(queryCacheEventData, queryCacheEventDataSameAttributes);
 
-        assertNotEquals(queryCacheEventData, null);
-        assertNotEquals(queryCacheEventData, new Object());
+        assertNotEquals(null, queryCacheEventData);
+        assertNotEquals(new Object(), queryCacheEventData);
 
         assertNotEquals(queryCacheEventData, queryCacheEventDataOtherSequence);
         assertNotEquals(queryCacheEventData, queryCacheEventDataOtherEventType);

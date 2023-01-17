@@ -53,8 +53,8 @@ public class DurableExecutorWaitNotifyKeyTest {
         assertEquals(notifyKey, notifyKey);
         assertEquals(notifyKey, notifyKeySameAttributes);
 
-        assertNotEquals(notifyKey, null);
-        assertNotEquals(notifyKey, new Object());
+        assertNotEquals(null, notifyKey);
+        assertNotEquals(new Object(), notifyKey);
 
         assertNotEquals(notifyKey, notifyKeyOtherUniqueId);
         assertNotEquals(notifyKey, notifyKeyOtherName);
