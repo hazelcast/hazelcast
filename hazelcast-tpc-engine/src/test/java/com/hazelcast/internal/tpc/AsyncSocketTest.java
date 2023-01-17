@@ -53,7 +53,7 @@ public abstract class AsyncSocketTest {
     @Test
     public void test_remoteAddress_whenNotConnected() {
         Eventloop eventloop = createEventloop();
-        AsyncSocket socket = eventloop.openAsyncSocket();
+        AsyncSocket socket = eventloop.openAsyncTcpSocket();
         socket.setReadHandler(mock(ReadHandler.class));
         socket.activate(eventloop);
 
@@ -64,7 +64,7 @@ public abstract class AsyncSocketTest {
     @Test
     public void test_receiveBufferSize() {
         Eventloop eventloop = createEventloop();
-        AsyncSocket socket = eventloop.openAsyncSocket();
+        AsyncSocket socket = eventloop.openAsyncTcpSocket();
 
         int size = 64 * 1024;
         socket.setReceiveBufferSize(size);
@@ -74,7 +74,7 @@ public abstract class AsyncSocketTest {
     @Test
     public void test_sendBufferSize() {
         Eventloop eventloop = createEventloop();
-        AsyncSocket socket = eventloop.openAsyncSocket();
+        AsyncSocket socket = eventloop.openAsyncTcpSocket();
 
         int size = 64 * 1024;
         socket.setSendBufferSize(size);
@@ -84,7 +84,7 @@ public abstract class AsyncSocketTest {
     @Test
     public void test_tcpNoDelay() {
         Eventloop eventloop = createEventloop();
-        AsyncSocket socket = eventloop.openAsyncSocket();
+        AsyncSocket socket = eventloop.openAsyncTcpSocket();
 
         socket.setTcpNoDelay(false);
         assertFalse(socket.isTcpNoDelay());
@@ -96,7 +96,7 @@ public abstract class AsyncSocketTest {
     @Test
     public void test_soLinger() {
         Eventloop eventloop = createEventloop();
-        AsyncSocket socket = eventloop.openAsyncSocket();
+        AsyncSocket socket = eventloop.openAsyncTcpSocket();
 
         socket.setSoLinger(10);
         assertEquals(10, socket.getSoLinger());
@@ -114,18 +114,18 @@ public abstract class AsyncSocketTest {
 
         Eventloop eventloop = createEventloop();
 
-        AsyncSocket socket = eventloop.openAsyncSocket();
+        AsyncSocket socket = eventloop.openAsyncTcpSocket();
 
         socket.setTcpKeepAliveTime(100);
         assertEquals(100, socket.getTcpKeepAliveTime());
     }
 
     @Test
-    public void test_sTcpKeepaliveIntvl() {
+    public void test_TcpKeepaliveIntvl() {
         assumeIfNioThenJava11Plus();
 
         Eventloop eventloop = createEventloop();
-        AsyncSocket socket = eventloop.openAsyncSocket();
+        AsyncSocket socket = eventloop.openAsyncTcpSocket();
 
         socket.setTcpKeepaliveIntvl(100);
         assertEquals(100, socket.getTcpKeepaliveIntvl());
@@ -136,7 +136,7 @@ public abstract class AsyncSocketTest {
         assumeIfNioThenJava11Plus();
 
         Eventloop eventloop = createEventloop();
-        AsyncSocket socket = eventloop.openAsyncSocket();
+        AsyncSocket socket = eventloop.openAsyncTcpSocket();
 
         socket.setTcpKeepAliveProbes(5);
         assertEquals(5, socket.getTcpKeepaliveProbes());
@@ -174,7 +174,7 @@ public abstract class AsyncSocketTest {
     @Test
     public void test_connect_whenNotActivated() {
         Eventloop eventloop = createEventloop();
-        AsyncSocket socket = eventloop.openAsyncSocket();
+        AsyncSocket socket = eventloop.openAsyncTcpSocket();
         socket.setReadHandler(mock(ReadHandler.class));
         try {
             socket.connect(new InetSocketAddress(5000));
@@ -196,7 +196,7 @@ public abstract class AsyncSocketTest {
     @Test
     public void test_close_whenNotActivated() {
         Eventloop eventloop = createEventloop();
-        AsyncSocket socket = eventloop.openAsyncSocket();
+        AsyncSocket socket = eventloop.openAsyncTcpSocket();
         socket.close();
         assertTrue(socket.isClosed());
     }
@@ -204,7 +204,7 @@ public abstract class AsyncSocketTest {
     @Test
     public void test_close_whenNotActivated_andAlreadyClosed() {
         Eventloop eventloop = createEventloop();
-        AsyncSocket socket = eventloop.openAsyncSocket();
+        AsyncSocket socket = eventloop.openAsyncTcpSocket();
         socket.close();
         socket.close();
         assertTrue(socket.isClosed());
@@ -213,7 +213,7 @@ public abstract class AsyncSocketTest {
     @Test
     public void test_activate_whenNull() {
         Eventloop eventloop = createEventloop();
-        AsyncSocket socket = eventloop.openAsyncSocket();
+        AsyncSocket socket = eventloop.openAsyncTcpSocket();
         socket.setReadHandler(mock(ReadHandler.class));
 
         assertThrows(NullPointerException.class, ()->socket.activate(null));
@@ -224,7 +224,7 @@ public abstract class AsyncSocketTest {
         Eventloop eventloop1 = createEventloop();
         Eventloop eventloop2 = createEventloop();
 
-        AsyncSocket socket = eventloop1.openAsyncSocket();
+        AsyncSocket socket = eventloop1.openAsyncTcpSocket();
         socket.setReadHandler(mock(ReadHandler.class));
 
         socket.activate(eventloop1);
@@ -235,7 +235,7 @@ public abstract class AsyncSocketTest {
     public void test_activate_whenReadHandlerNotConfigured() {
         Eventloop eventloop = createEventloop();
 
-        AsyncSocket socket = eventloop.openAsyncSocket();
+        AsyncSocket socket = eventloop.openAsyncTcpSocket();
         assertThrows(IllegalStateException.class, ()->socket.activate(eventloop));
     }
 }

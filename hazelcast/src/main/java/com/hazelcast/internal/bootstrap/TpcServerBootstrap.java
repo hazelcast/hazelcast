@@ -132,7 +132,7 @@ public class TpcServerBootstrap {
                     () -> new ClientAsyncReadHandler(nodeEngine.getNode().clientEngine);
             readHandlerSuppliers.put(eventloop, readHandlerSupplier);
 
-            AsyncServerSocket serverSocket = eventloop.openAsyncServerSocket();
+            AsyncServerSocket serverSocket = eventloop.openTcpServerSocket();
             serverSockets.add(serverSocket);
             int receiveBufferSize = clientSocketConfig.getReceiveBufferSize();
             int sendBufferSize = clientSocketConfig.getSendBufferSize();

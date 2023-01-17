@@ -72,14 +72,14 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     /**
-     * Opens a NioAsyncServerSocket.
+     * Opens a TCP/IP (stream) based IPv4 NioAsyncServerSocket.
      * <p/>
-     * To prevent coupling to Nio, it is better to use the {@link Eventloop#openAsyncServerSocket()}.
+     * To prevent coupling to Nio, it is better to use the {@link Eventloop#openTcpServerSocket()}.
      *
      * @param eventloop the eventloop the opened socket will be processed by.
      * @return the opened NioAsyncServerSocket.
      */
-    public static NioAsyncServerSocket open(NioEventloop eventloop) {
+    public static NioAsyncServerSocket openTcpServerSocket(NioEventloop eventloop) {
         return new NioAsyncServerSocket(eventloop);
     }
 

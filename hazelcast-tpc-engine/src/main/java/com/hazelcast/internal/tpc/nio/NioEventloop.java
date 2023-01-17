@@ -19,7 +19,6 @@ package com.hazelcast.internal.tpc.nio;
 import com.hazelcast.internal.tpc.AsyncServerSocket;
 import com.hazelcast.internal.tpc.AsyncSocket;
 import com.hazelcast.internal.tpc.Eventloop;
-import com.hazelcast.internal.tpc.EventloopType;
 import com.hazelcast.internal.tpc.util.NanoClock;
 
 import java.io.IOException;
@@ -33,7 +32,8 @@ import static java.util.concurrent.TimeUnit.NANOSECONDS;
  * Nio implementation of the {@link Eventloop}.
  */
 public final class NioEventloop extends Eventloop {
-    final Selector selector;
+
+    final Selector selector = SelectorOptimizer.newSelector();
 
     public NioEventloop() {
         this(new NioEventloopBuilder());
@@ -41,17 +41,16 @@ public final class NioEventloop extends Eventloop {
 
     public NioEventloop(NioEventloopBuilder eventloopBuilder) {
         super(eventloopBuilder);
-        this.selector = SelectorOptimizer.newSelector();
     }
 
     @Override
-    public AsyncServerSocket openAsyncServerSocket() {
-        return NioAsyncServerSocket.open(this);
+    public AsyncServerSocket openTcpServerSocket() {
+        return NioAsyncServerSocket.openTcpServerSocket(this);
     }
 
     @Override
-    public AsyncSocket openAsyncSocket() {
-        return NioAsyncSocket.open();
+    public AsyncSocket openAsyncTcpSocket() {
+        return NioAsyncSocket.openTcpSocket();
     }
 
     @Override
