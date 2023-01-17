@@ -17,10 +17,11 @@
 package com.hazelcast.internal.tpc.nio;
 
 import com.hazelcast.internal.tpc.AsyncServerSocket;
+import com.hazelcast.internal.tpc.AsyncSocket;
+import com.hazelcast.internal.tpc.Eventloop;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.lang.reflect.Field;
 import java.net.SocketAddress;
 import java.net.SocketOption;
 import java.net.StandardSocketOptions;
@@ -30,31 +31,24 @@ import java.nio.channels.ServerSocketChannel;
 import java.nio.channels.SocketChannel;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
 
-import static com.hazelcast.internal.tpc.util.Util.closeResource;
+import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
+import static com.hazelcast.internal.tpc.util.ReflectionUtil.findStaticFieldValue;
 import static java.net.StandardSocketOptions.SO_RCVBUF;
 import static java.net.StandardSocketOptions.SO_REUSEADDR;
 import static java.nio.channels.SelectionKey.OP_ACCEPT;
 
 /**
- * Nio version of the {@link AsyncServerSocket}.
+ * Nio implementation of the {@link AsyncServerSocket}.
  */
 public final class NioAsyncServerSocket extends AsyncServerSocket {
     private static final int DEFAULT_LATCH_TIMEOUT_SECONDS = 10;
+    private static final AtomicBoolean REUSE_PORT_PRINTED = new AtomicBoolean();
 
     // This option is available since Java 9, so we need to use reflection.
-    private static final SocketOption SO_REUSEPORT;
-
-    static {
-        SocketOption value = null;
-        try {
-            Field field = StandardSocketOptions.class.getField("SO_REUSEPORT");
-            value = (SocketOption) field.get(null);
-        } catch (Exception ignore) {
-        }
-        SO_REUSEPORT = value;
-    }
+    private static final SocketOption<Boolean> SO_REUSEPORT = findStaticFieldValue(StandardSocketOptions.class, "SO_REUSEPORT");
 
     private final ServerSocketChannel serverSocketChannel;
     private final Selector selector;
@@ -68,7 +62,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
             this.eventloop = eventloop;
             this.eventloopThread = eventloop.eventloopThread();
             this.selector = eventloop.selector;
-            if (!eventloop.registerResource(this)) {
+            if (!eventloop.registerCloseable(this)) {
                 close();
                 throw new IllegalStateException(eventloop + " is not running");
             }
@@ -77,31 +71,30 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         }
     }
 
-    public static NioAsyncServerSocket open(NioEventloop eventloop) {
+    /**
+     * Opens a TCP/IP (stream) based IPv4 NioAsyncServerSocket.
+     * <p/>
+     * To prevent coupling to Nio, it is better to use the {@link Eventloop#openTcpServerSocket()}.
+     *
+     * @param eventloop the eventloop the opened socket will be processed by.
+     * @return the opened NioAsyncServerSocket.
+     */
+    public static NioAsyncServerSocket openTcpServerSocket(NioEventloop eventloop) {
         return new NioAsyncServerSocket(eventloop);
     }
 
     @Override
-    public NioEventloop eventloop() {
+    public NioEventloop getEventloop() {
         return eventloop;
     }
 
-    /**
-     * Returns the underlying {@link ServerSocketChannel}.
-     *
-     * @return the ServerSocketChannel.
-     */
-    public ServerSocketChannel serverSocketChannel() {
-        return serverSocketChannel;
-    }
-
     @Override
-    protected SocketAddress localAddress0() throws IOException {
+    protected SocketAddress getLocalAddress0() throws IOException {
         return serverSocketChannel.getLocalAddress();
     }
 
     @Override
-    public int localPort() {
+    public int getLocalPort() {
         return serverSocketChannel.socket().getLocalPort();
     }
 
@@ -112,22 +105,25 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         }
 
         try {
-            return (Boolean) serverSocketChannel.getOption(SO_REUSEPORT);
+            return serverSocketChannel.getOption(SO_REUSEPORT);
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
     }
 
     @Override
-    public void reusePort(boolean reusePort) {
+    public void setReusePort(boolean reusePort) {
         if (SO_REUSEPORT == null) {
-            return;
-        }
-
-        try {
-            serverSocketChannel.setOption(SO_REUSEPORT, reusePort);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
+            if (REUSE_PORT_PRINTED.compareAndSet(false, true)) {
+                logger.warning("Ignoring NioAsyncServerSocket.reusePort." +
+                        "Please upgrade to Java 9+ to enable the SO_REUSEPORT option.");
+            }
+        } else {
+            try {
+                serverSocketChannel.setOption(SO_REUSEPORT, reusePort);
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
+            }
         }
     }
 
@@ -141,7 +137,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public void reuseAddress(boolean reuseAddress) {
+    public void setReuseAddress(boolean reuseAddress) {
         try {
             serverSocketChannel.setOption(SO_REUSEADDR, reuseAddress);
         } catch (IOException e) {
@@ -150,7 +146,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public void receiveBufferSize(int size) {
+    public void setReceiveBufferSize(int size) {
         try {
             serverSocketChannel.setOption(SO_RCVBUF, size);
         } catch (IOException e) {
@@ -159,7 +155,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
     }
 
     @Override
-    public int receiveBufferSize() {
+    public int getReceiveBufferSize() {
         try {
             return serverSocketChannel.getOption(SO_RCVBUF);
         } catch (IOException e) {
@@ -169,8 +165,8 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
 
     @Override
     protected void close0() {
-        closeResource(serverSocketChannel.socket());
-        eventloop.deregisterResource(this);
+        closeQuietly(serverSocketChannel.socket());
+        eventloop.deregisterCloseable(this);
     }
 
 
@@ -191,7 +187,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
         }
     }
 
-    public void accept(Consumer<NioAsyncSocket> consumer) {
+    public void accept(Consumer<AsyncSocket> consumer) {
         CountDownLatch latch = new CountDownLatch(1);
 
         Runnable acceptTask = () -> {
@@ -222,9 +218,9 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
 
     private final class AcceptHandler implements NioSelectedKeyListener {
 
-        private final Consumer<NioAsyncSocket> consumer;
+        private final Consumer<AsyncSocket> consumer;
 
-        private AcceptHandler(Consumer<NioAsyncSocket> consumer) {
+        private AcceptHandler(Consumer<AsyncSocket> consumer) {
             this.consumer = consumer;
         }
 
@@ -238,6 +234,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
             SocketChannel socketChannel = serverSocketChannel.accept();
             NioAsyncSocket socket = new NioAsyncSocket(socketChannel);
 
+            accepted.inc();
             consumer.accept(socket);
 
             if (logger.isInfoEnabled()) {

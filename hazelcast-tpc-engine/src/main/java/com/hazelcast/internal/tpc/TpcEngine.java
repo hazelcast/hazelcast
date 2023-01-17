@@ -18,7 +18,6 @@ package com.hazelcast.internal.tpc;
 
 import com.hazelcast.internal.tpc.logging.TpcLogger;
 import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
-import com.hazelcast.internal.tpc.nio.NioEventloop.NioConfiguration;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
@@ -28,11 +27,10 @@ import static com.hazelcast.internal.tpc.TpcEngine.State.NEW;
 import static com.hazelcast.internal.tpc.TpcEngine.State.RUNNING;
 import static com.hazelcast.internal.tpc.TpcEngine.State.SHUTDOWN;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
-import static com.hazelcast.internal.tpc.util.Preconditions.checkPositive;
 import static java.lang.System.getProperty;
 
 /**
- * The TpcEngine is effectively an array of eventloops
+ * The TpcEngine is effectively an array of eventloops.
  * <p>
  * The TpcEngine is not aware of any specific applications. E.g. it could execute operations, but it
  * can equally well run client requests or completely different applications.
@@ -44,7 +42,7 @@ public final class TpcEngine {
     private final int eventloopCount;
     private final Eventloop[] eventloops;
     private final AtomicReference<State> state = new AtomicReference<>(NEW);
-    private final Configuration engineCfg;
+    private final Configuration configuration;
 
     /**
      * Creates an TpcEngine with the default {@link Configuration}.
@@ -56,18 +54,17 @@ public final class TpcEngine {
     /**
      * Creates an TpcEngine with the given Configuration.
      *
-     * @param engineCfg the Configuration for the TpcEngine.
+     * @param configuration the Configuration for the TpcEngine.
      * @throws NullPointerException when configuration is null.
      */
-    public TpcEngine(Configuration engineCfg) {
-        this.engineCfg = engineCfg;
-        this.eventloopCount = engineCfg.eventloopCount;
-        Eventloop.Configuration eventloopCfg = engineCfg.eventloopConfiguration;
+    public TpcEngine(Configuration configuration) {
+        this.configuration = checkNotNull(configuration, "configuration");
+        this.eventloopCount = configuration.eventloopCount;
         this.eventloops = new Eventloop[eventloopCount];
         this.terminationLatch = new CountDownLatch(eventloopCount);
 
         for (int idx = 0; idx < eventloopCount; idx++) {
-            eventloops[idx] = eventloopCfg.create();
+            eventloops[idx] = configuration.eventloopBuilder.create();
             eventloops[idx].engine = this;
         }
     }
@@ -88,8 +85,8 @@ public final class TpcEngine {
      *
      * @return the type of Eventloop.
      */
-    public Eventloop.Type eventloopType() {
-        return engineCfg.eventloopConfiguration.type;
+    public EventloopType eventloopType() {
+        return configuration.eventloopBuilder.type;
     }
 
     /**
@@ -197,27 +194,10 @@ public final class TpcEngine {
         }
     }
 
-    /**
-     * Contains the configuration of the {@link TpcEngine}.
-     */
-    public static class Configuration {
-        private int eventloopCount = Runtime.getRuntime().availableProcessors();
-        private Eventloop.Configuration eventloopConfiguration = new NioConfiguration();
-
-        public void setEventloopConfiguration(Eventloop.Configuration eventloopConfiguration) {
-            this.eventloopConfiguration = checkNotNull(eventloopConfiguration, "eventloopConfiguration");
-        }
-
-        public void setEventloopCount(int eventloopCount) {
-            this.eventloopCount = checkPositive("eventloopCount", eventloopCount);
-        }
-    }
-
     public enum State {
         NEW,
         RUNNING,
         SHUTDOWN,
         TERMINATED
     }
-
 }

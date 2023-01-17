@@ -18,6 +18,8 @@ package com.hazelcast.internal.tpc;
 
 import com.hazelcast.internal.tpc.logging.TpcLogger;
 import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
+import com.hazelcast.internal.tpc.nio.NioAsyncSocket;
+import com.hazelcast.internal.tpc.util.ProgressIndicator;
 
 import java.io.Closeable;
 import java.io.IOException;
@@ -26,6 +28,7 @@ import java.net.SocketAddress;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.Consumer;
 
 /**
  * A server socket that is asynchronous. So accepting incoming connections does not block,
@@ -41,13 +44,28 @@ public abstract class AsyncServerSocket implements Closeable {
 
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
     protected final AtomicBoolean closed = new AtomicBoolean(false);
+    protected final ProgressIndicator accepted = new ProgressIndicator();
 
-    public AsyncServerSocket(){
+    protected AsyncServerSocket() {
     }
 
-    public final SocketAddress localAddress() {
+    /**
+     * Returns the number of socks that have been accepted by the AsyncServerSocket.
+     *
+     * @return the number of accepted sockets.
+     */
+    public long getAccepted() {
+        return accepted.get();
+    }
+
+    /**
+     * Gets the local address of this ServerSocketChannel.
+     *
+     * @return the local address.
+     */
+    public final SocketAddress getLocalAddress() {
         try {
-            return localAddress0();
+            return getLocalAddress0();
         } catch (Error e) {
             throw e;
         } catch (Exception e) {
@@ -55,7 +73,7 @@ public abstract class AsyncServerSocket implements Closeable {
         }
     }
 
-    protected abstract SocketAddress localAddress0() throws Exception;
+    protected abstract SocketAddress getLocalAddress0() throws Exception;
 
     /**
      * Gets the {@link Eventloop} this ServerSocket belongs to.
@@ -64,10 +82,15 @@ public abstract class AsyncServerSocket implements Closeable {
      *
      * @return the Eventloop.
      */
-    public abstract Eventloop eventloop();
+    public abstract Eventloop getEventloop();
 
-
-    public abstract int localPort();
+    /**
+     * Gets the local port of the ServerSocketChannel.
+     *
+     * @return the local port.
+     * @throws UncheckedIOException if something failed while obtaining the local port.
+     */
+    public abstract int getLocalPort();
 
     /**
      * Checks if the SO_REUSEPORT option has been set.
@@ -87,7 +110,7 @@ public abstract class AsyncServerSocket implements Closeable {
      * @param reusePort if the SO_REUSEPORT option should be enabled.
      * @throws UncheckedIOException if something failed with configuring the socket
      */
-    public abstract void reusePort(boolean reusePort);
+    public abstract void setReusePort(boolean reusePort);
 
     /**
      * Checks if the SO_REUSEADDR option has been set.
@@ -103,7 +126,7 @@ public abstract class AsyncServerSocket implements Closeable {
      * @param reuseAddress if the SO_REUSEADDR option should be enabled.
      * @throws UncheckedIOException if something failed with configuring the socket
      */
-    public abstract void reuseAddress(boolean reuseAddress);
+    public abstract void setReuseAddress(boolean reuseAddress);
 
     /**
      * Sets the receivebuffer size in bytes.
@@ -112,7 +135,7 @@ public abstract class AsyncServerSocket implements Closeable {
      * @throws IllegalArgumentException when the size isn't positive.
      * @throws UncheckedIOException     if something failed with configuring the socket
      */
-    public abstract void receiveBufferSize(int size);
+    public abstract void setReceiveBufferSize(int size);
 
     /**
      * Gets the receivebuffer size in bytes.
@@ -120,7 +143,7 @@ public abstract class AsyncServerSocket implements Closeable {
      * @return the size of the receive buffer.
      * @throws UncheckedIOException if something failed with configuring the socket
      */
-    public abstract int receiveBufferSize();
+    public abstract int getReceiveBufferSize();
 
     /**
      * Binds this AsyncServerSocket to the local.
@@ -131,6 +154,16 @@ public abstract class AsyncServerSocket implements Closeable {
     public abstract void bind(SocketAddress local);
 
     public abstract void listen(int backlog);
+
+    /**
+     * Accept incoming AsyncSocket.
+     * <p/>
+     * This call can be made from any thread, but the actual processing will happen on the eventloop-thread.
+     *
+     * @param consumer a function that is called when a socket has connected.
+     * @throws NullPointerException if consumer is null.
+     */
+    public abstract void accept(Consumer<AsyncSocket> consumer);
 
     /**
      * Closes the AsyncServerSocket.
@@ -158,10 +191,19 @@ public abstract class AsyncServerSocket implements Closeable {
         }
     }
 
+    /**
+     * Does the actual closing. No guarantee is made on which thread this is called.
+     * <p/>
+     * Is guaranteed to be called at most once.
+     *
+     * @throws IOException
+     */
     protected abstract void close0() throws IOException;
 
     /**
      * Checks if the AsyncServerSocket is closed.
+     *
+     * This method is thread-safe.
      *
      * @return true if closed, false otherwise.
      */
@@ -171,6 +213,6 @@ public abstract class AsyncServerSocket implements Closeable {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "[" + localAddress() + "]";
+        return getClass().getSimpleName() + "[" + getLocalAddress() + "]";
     }
 }

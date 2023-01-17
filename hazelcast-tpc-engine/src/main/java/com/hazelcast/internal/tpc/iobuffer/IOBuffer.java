@@ -17,17 +17,15 @@
 package com.hazelcast.internal.tpc.iobuffer;
 
 import com.hazelcast.internal.tpc.AsyncSocket;
-import com.hazelcast.internal.tpc.util.Util;
 
 import java.nio.ByteBuffer;
 import java.util.concurrent.atomic.AtomicInteger;
 
-
-import static com.hazelcast.internal.tpc.util.IOUtil.SIZEOF_BYTE;
-import static com.hazelcast.internal.tpc.util.Util.nextPowerOfTwo;
-import static com.hazelcast.internal.tpc.util.IOUtil.SIZEOF_CHAR;
-import static com.hazelcast.internal.tpc.util.IOUtil.SIZEOF_INT;
-import static com.hazelcast.internal.tpc.util.IOUtil.SIZEOF_LONG;
+import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_BYTE;
+import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_CHAR;
+import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_INT;
+import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_LONG;
+import static com.hazelcast.internal.tpc.util.BitUtil.nextPowerOfTwo;
 
 
 /**
@@ -63,7 +61,7 @@ public class IOBuffer {
     public boolean trackRelease;
     private ByteBuffer buff;
     public IOBufferAllocator allocator;
-    public boolean concurrent = false;
+    public boolean concurrent;
     // make field?
     protected AtomicInteger refCount = new AtomicInteger();
 

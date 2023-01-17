@@ -21,7 +21,7 @@ import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
 /**
  * A scheduler that doesn't do anything.
  */
-public class NopScheduler implements Eventloop.Scheduler {
+public class NopScheduler implements Scheduler {
 
     @Override
     public void init(Eventloop eventloop) {

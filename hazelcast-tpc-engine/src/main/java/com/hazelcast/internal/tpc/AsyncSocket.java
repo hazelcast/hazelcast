@@ -17,13 +17,13 @@
 package com.hazelcast.internal.tpc;
 
 import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
-import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
 import com.hazelcast.internal.tpc.logging.TpcLogger;
-import com.hazelcast.internal.tpc.util.LongCounter;
-
+import com.hazelcast.internal.tpc.logging.TpcLoggerLocator;
+import com.hazelcast.internal.tpc.util.ProgressIndicator;
 
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.SocketAddress;
 import java.util.Collection;
 import java.util.concurrent.CompletableFuture;
@@ -54,42 +54,74 @@ public abstract class AsyncSocket implements Closeable {
     protected volatile SocketAddress localAddress;
     protected boolean clientSide;
 
-    protected final LongCounter ioBuffersWritten = new LongCounter();
-    protected final LongCounter bytesRead = new LongCounter();
-    protected final LongCounter bytesWritten = new LongCounter();
-    protected final LongCounter ioBuffersRead = new LongCounter();
-    protected final LongCounter handleWriteCnt = new LongCounter();
-    protected final LongCounter readEvents = new LongCounter();
+    protected final ProgressIndicator ioBuffersWritten = new ProgressIndicator();
+    protected final ProgressIndicator bytesRead = new ProgressIndicator();
+    protected final ProgressIndicator bytesWritten = new ProgressIndicator();
+    protected final ProgressIndicator ioBuffersRead = new ProgressIndicator();
+    protected final ProgressIndicator writeEvents = new ProgressIndicator();
+    protected final ProgressIndicator readEvents = new ProgressIndicator();
 
     private CloseListener closeListener;
     private Executor closeExecutor;
+    protected ReadHandler readHandler;
 
-    public final long ioBuffersWritten() {
-        return ioBuffersWritten.get();
-    }
 
-    public final long bytesRead() {
+    /**
+     * Gets the number of bytes read.
+     *
+     * @return number of bytes read.
+     */
+    public final long getBytesRead() {
         return bytesRead.get();
     }
 
-    public final long bytesWritten() {
+    /**
+     * Gets the number of bytes written.
+     *
+     * @return number of bytes written.
+     */
+    public final long getBytesWritten() {
         return bytesWritten.get();
     }
 
-    public final long ioBuffersRead() {
+    /**
+     * Gets the number of IOBuffers read.
+     *
+     * @return the number of IOBuffers read.
+     */
+    public final long getIoBuffersRead() {
         return ioBuffersRead.get();
     }
 
-    public final long handleWriteCnt() {
-        return handleWriteCnt.get();
+    /**
+     * Gets the number of IOBuffers written.
+     *
+     * @return the number of IOBuffers written.
+     */
+    public final long getIoBuffersWritten() {
+        return ioBuffersWritten.get();
     }
 
-    public final long readEvents() {
+    /**
+     * Gets the number of write events.
+     *
+     * @return the number of write events.
+     */
+    public final long getWriteEvents() {
+        return writeEvents.get();
+    }
+
+    /**
+     * Gets the number of read events.
+     *
+     * @return the number of read events.
+     */
+    public final long getReadEvents() {
         return readEvents.get();
     }
 
     /**
-     * Returns the {@link Eventloop} this {@link AsyncSocket} belongs to.
+     * Gets the {@link Eventloop} this {@link AsyncSocket} belongs to.
      *
      * @return the {@link Eventloop} this AsyncSocket belongs to or null if
      * the AsyncSocket has not been activated yet.
@@ -97,7 +129,7 @@ public abstract class AsyncSocket implements Closeable {
     public abstract Eventloop eventloop();
 
     /**
-     * Returns the remote address.
+     * Gets the remote address.
      * <p>
      * If the AsyncSocket isn't connected yet, null is returned.
      * <p>
@@ -105,12 +137,12 @@ public abstract class AsyncSocket implements Closeable {
      *
      * @return the remote address.
      */
-    public final SocketAddress remoteAddress() {
+    public final SocketAddress getRemoteAddress() {
         return remoteAddress;
     }
 
     /**
-     * Returns the local address.
+     * Gets the local address.
      * <p>
      * If the AsyncSocket isn't connected yet, null is returned.
      * <p>
@@ -118,32 +150,161 @@ public abstract class AsyncSocket implements Closeable {
      *
      * @return the local address.
      */
-    public final SocketAddress localAddress() {
+    public final SocketAddress getLocalAddress() {
         return localAddress;
     }
 
     // TODO: This option only makes sense for blocking sockets according to StandardSocketOptions.SO_LINGER
-    public abstract void soLinger(int soLinger);
+    public abstract void setSoLinger(int soLinger);
 
-    public abstract int soLinger();
+    public abstract int getSoLinger();
 
-    public abstract void keepAlive(boolean keepAlive);
+    /**
+     * Set the SO_KEEPALIVE option.
+     *
+     * @param keepAlive a boolean indicating whether or not SO_KEEPALIVE is enabled.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
+    public abstract void setKeepAlive(boolean keepAlive);
 
+    /**
+     * Tests if SO_KEEPALIVE is enabled.
+     *
+     * @return a boolean indicating whether or not SO_KEEPALIVE is enabled.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
     public abstract boolean isKeepAlive();
 
-    public abstract void tcpNoDelay(boolean tcpNoDelay);
+    /**
+     * Sets the interval in seconds between the last data packet sent (simple ACKs are not considered data) and
+     * the first keepalive probe; after the connection is marked to need keepalive, this counter is not used
+     * any further.
+     * <p/>
+     * If the setting isn't supported, the call is ignored.
+     *
+     * @param keepAliveTime the keep alive time.
+     * @throws IllegalArgumentException if keepAliveIntvl is smaller than 0.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
+    public abstract void setTcpKeepAliveTime(int keepAliveTime);
 
+    /**
+     * Gets the interval in seconds between the last data packet sent (simple ACKs are not considered data) and
+     * the first keepalive probe; after the connection is marked to need keepalive, this counter is not used any
+     * further.
+     * <p/>
+     * If the setting isn't supported, 0 is returned.
+     *
+     * @return the interval.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
+    public abstract int getTcpKeepAliveTime();
+
+    /**
+     * Sets the interval in seconds between subsequent keepalive probes, regardless of what the connection
+     * has exchanged in the meantime.
+     * <p/>
+     * If the setting isn't supported, the call is ignored.
+     *
+     * @param keepaliveIntvl the interval in seconds.
+     * @throws IllegalArgumentException if keepAliveIntvl is smaller than 0.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
+    public abstract void setTcpKeepaliveIntvl(int keepaliveIntvl);
+
+    /**
+     * Gets the interval in seconds between subsequent keepalive probes, regardless of what the connection
+     * has exchanged in the meantime
+     * <p/>
+     * If the setting isn't supported, 0 is returned.
+     *
+     * @return the interval.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
+    public abstract int getTcpKeepaliveIntvl();
+
+    /**
+     * Sets the number of unacknowledged probes to send before considering the connection dead and notifying the
+     * application layer.
+     * <p/>
+     * If the setting isn't supported, the call is ignored.
+     *
+     * @param keepAliveProbes the number of unacknowledged probes.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
+    public abstract void setTcpKeepAliveProbes(int keepAliveProbes);
+
+    /**
+     * Gets the number of unacknowledged probes to send before considering the connection dead and notifying the
+     * application layer.
+     * <p/>
+     * If the setting isn't supported, 0 is returned.
+     *
+     * @return the number of unacknowledged probes.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
+    public abstract int getTcpKeepaliveProbes();
+
+    /**
+     * Sets the TCP_NODELAY option.
+     *
+     * @param tcpNoDelay a boolean indicating whether or not TCP_NODELAY is enabled.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
+    public abstract void setTcpNoDelay(boolean tcpNoDelay);
+
+    /**
+     * Tests if TCP_NODELAY is enabled.
+     *
+     * @return a boolean indicating whether or not TCP_NODELAY is enabled.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
     public abstract boolean isTcpNoDelay();
 
-    public abstract void receiveBufferSize(int size);
+    /**
+     * Sets the receivebuffer size in bytes.
+     *
+     * @param size the receivebuffer size in bytes.
+     * @throws IllegalArgumentException when the size isn't positive.
+     * @throws UncheckedIOException     if something failed with configuring the socket
+     */
+    public abstract void setReceiveBufferSize(int size);
 
-    public abstract int receiveBufferSize();
+    /**
+     * Gets the receivebuffer size in bytes.
+     *
+     * @return the size of the receive buffer.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
+    public abstract int getReceiveBufferSize();
 
-    public abstract void sendBufferSize(int size);
+    /**
+     * Sets the sendbuffer size in bytes.
+     *
+     * @param size the sendbuffer size in bytes.
+     * @throws IllegalArgumentException when the size isn't positive.
+     * @throws UncheckedIOException     if something failed with configuring the socket
+     */
+    public abstract void setSendBufferSize(int size);
 
-    public abstract int sendBufferSize();
+    /**
+     * Gets the sendbuffer size in bytes.
+     *
+     * @return the size of the send buffer.
+     * @throws UncheckedIOException if something failed with configuring the socket
+     */
+    public abstract int getSendBufferSize();
 
-    public abstract void readHandler(ReadHandler readHandler);
+    /**
+     * Sets the ReadHandler. Should be called before this AsyncSocket is activated.
+     *
+     * @param readHandler the ReadHandler
+     * @throws NullPointerException if readHandler is null.
+     */
+    public final void setReadHandler(ReadHandler readHandler) {
+        this.readHandler = checkNotNull(readHandler);
+        this.readHandler.init(this);
+    }
 
     /**
      * Configures the CloseListener.
@@ -181,6 +342,8 @@ public abstract class AsyncSocket implements Closeable {
      * to the socket.
      * <p>
      * This method is thread-safe.
+     * <p>
+     * This call is ignored when then AsyncSocket is already closed.
      */
     public abstract void flush();
 
@@ -250,10 +413,13 @@ public abstract class AsyncSocket implements Closeable {
         }
 
         try {
-            doClose();
+            close0();
         } catch (Exception e) {
             logger.warning(e);
         }
+
+        localAddress = null;
+        remoteAddress = null;
 
         if (closeListener != null) {
             try {
@@ -271,9 +437,13 @@ public abstract class AsyncSocket implements Closeable {
     }
 
     /**
-     * Takes care of the actual closing.
+     * Does the actual closing. No guarantee is made on which thread this is called.
+     * <p/>
+     * Is guaranteed to be called at most once.
+     *
+     * @throws IOException
      */
-    protected abstract void doClose() throws IOException;
+    protected abstract void close0() throws IOException;
 
     /**
      * Checks if this AsyncSocket is closed.

@@ -16,21 +16,10 @@
 
 package com.hazelcast.internal.tpc.util;
 
-import java.io.Closeable;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.nio.Buffer;
 import java.nio.ByteBuffer;
-import java.util.Collection;
 
-public class IOUtil {
-
-    public static final int SIZEOF_INT = Integer.BYTES;
-    public static final int SIZEOF_LONG = Long.BYTES;
-    public static final int SIZEOF_CHAR = Character.BYTES;
-    public static final int SIZEOF_BYTE = 1;
-
+public class BufferUtil {
     /**
      * Compacts or clears the buffer depending if bytes are remaining in the byte-buffer.
      *
@@ -74,20 +63,6 @@ public class IOUtil {
         return buf;
     }
 
-    public static void closeResources(Collection<? extends Closeable> collection) {
-        if (collection == null) {
-            return;
-        }
-        for (Closeable closeable : collection) {
-            if (closeable != null) {
-                try {
-                    closeable.close();
-                } catch (IOException e) {
-                }
-            }
-        }
-    }
-
     public static void put(ByteBuffer dst, ByteBuffer src) {
         if (src.remaining() <= dst.remaining()) {
             // there is enough space in the dst buffer to copy the src
@@ -100,5 +75,8 @@ public class IOUtil {
             dst.put(src);
             src.limit(srcOldLimit);
         }
+    }
+
+    private BufferUtil() {
     }
 }

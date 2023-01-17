@@ -43,7 +43,7 @@ public class TpcEngineTest {
 
     @Test
     public void test() {
-        TpcEngine.Configuration configuration = new TpcEngine.Configuration();
+        Configuration configuration = new Configuration();
         int eventloopCount = 5;
         configuration.setEventloopCount(eventloopCount);
 
@@ -51,7 +51,7 @@ public class TpcEngineTest {
 
         assertEquals(5, engine.eventloops().length);
         assertEquals(eventloopCount, engine.eventloopCount());
-        assertEquals(Eventloop.Type.NIO, engine.eventloopType());
+        assertEquals(EventloopType.NIO, engine.eventloopType());
     }
 
     // ===================== start =======================

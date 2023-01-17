@@ -16,7 +16,6 @@
 
 package com.hazelcast.internal.tpc.nio;
 
-import com.hazelcast.internal.tpc.AsyncSocket;
 import com.hazelcast.internal.tpc.AsyncSocketTest;
 import com.hazelcast.internal.tpc.Eventloop;
 
@@ -24,13 +23,8 @@ public class NioAsyncSocketTest extends AsyncSocketTest {
 
     @Override
     public Eventloop createEventloop() {
-        return new NioEventloop();
-    }
-
-    @Override
-    public AsyncSocket createAsyncSocket() {
-        AsyncSocket socket = NioAsyncSocket.open();
-        closeables.add(socket);
-        return socket;
+        NioEventloop eventloop = new NioEventloop();
+        eventloop.start();
+        return eventloop;
     }
 }
