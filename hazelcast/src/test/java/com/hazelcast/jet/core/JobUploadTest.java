@@ -25,6 +25,7 @@ import com.hazelcast.internal.util.Sha256Util;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.SubmitJobParameters;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.impl.JetClientInstanceImpl;
 import com.hazelcast.jet.test.SerialTest;
@@ -65,12 +66,13 @@ public class JobUploadTest extends JetTestSupport {
         HazelcastInstance client = createHazelcastClient();
         JetService jetService = client.getJet();
         List<String> jobParameters = emptyList();
+
+        SubmitJobParameters submitJobParameters = new SubmitJobParameters();
+        submitJobParameters.setJarPath(getJarPath());
+        submitJobParameters.setJobParameters(jobParameters);
+
         assertThrows(JetException.class, () ->
-                jetService.submitJobFromJar(getJarPath(),
-                        null,
-                        null,
-                        null,
-                        jobParameters)
+                jetService.submitJobFromJar(submitJobParameters)
         );
 
         assertEqualsEventually(() -> jetService.getJobs().size(), 0);
@@ -82,12 +84,13 @@ public class JobUploadTest extends JetTestSupport {
         HazelcastInstance hazelcastInstance = createHazelcastInstance();
         JetService jetService = hazelcastInstance.getJet();
         List<String> jobParameters = emptyList();
+
+        SubmitJobParameters submitJobParameters = new SubmitJobParameters();
+        submitJobParameters.setJarPath(getJarPath());
+        submitJobParameters.setJobParameters(jobParameters);
+
         assertThrows(JetException.class, () ->
-                jetService.submitJobFromJar(getJarPath(),
-                        null,
-                        null,
-                        null,
-                        jobParameters)
+                jetService.submitJobFromJar(submitJobParameters)
         );
 
         assertEqualsEventually(() -> jetService.getJobs().size(), 0);
@@ -108,11 +111,11 @@ public class JobUploadTest extends JetTestSupport {
         JetService jetService = client.getJet();
         List<String> jobParameters = emptyList();
 
-        jetService.submitJobFromJar(getJarPath(),
-                null,
-                null,
-                null,
-                jobParameters);
+        SubmitJobParameters submitJobParameters = new SubmitJobParameters();
+        submitJobParameters.setJarPath(getJarPath());
+        submitJobParameters.setJobParameters(jobParameters);
+
+        jetService.submitJobFromJar(submitJobParameters);
 
         assertEqualsEventually(() -> jetService.getJobs().size(), 1);
         hazelcastInstance.shutdown();
@@ -131,11 +134,11 @@ public class JobUploadTest extends JetTestSupport {
         JetService jetService = hazelcastInstance.getJet();
         List<String> jobParameters = emptyList();
 
-        jetService.submitJobFromJar(getJarPath(),
-                null,
-                null,
-                null,
-                jobParameters);
+        SubmitJobParameters submitJobParameters = new SubmitJobParameters();
+        submitJobParameters.setJarPath(getJarPath());
+        submitJobParameters.setJobParameters(jobParameters);
+
+        jetService.submitJobFromJar(submitJobParameters);
 
         assertEqualsEventually(() -> jetService.getJobs().size(), 1);
         hazelcastInstance.shutdown();
@@ -161,12 +164,11 @@ public class JobUploadTest extends JetTestSupport {
         when(spyJetService.calculateSha256Hex(jarPath)).thenReturn("1");
         List<String> jobParameters = emptyList();
 
-        assertThrows(JetException.class, () ->
-                spyJetService.submitJobFromJar(jarPath,
-                        null,
-                        null,
-                        null,
-                        jobParameters));
+        SubmitJobParameters submitJobParameters = new SubmitJobParameters();
+        submitJobParameters.setJarPath(getJarPath());
+        submitJobParameters.setJobParameters(jobParameters);
+
+        assertThrows(JetException.class, () -> spyJetService.submitJobFromJar(submitJobParameters));
 
         assertEqualsEventually(() -> jetService.getJobs().size(), 0);
         hazelcastInstance.shutdown();
@@ -193,11 +195,11 @@ public class JobUploadTest extends JetTestSupport {
         JetService jetService = client.getJet();
         List<String> jobParameters = emptyList();
 
-        jetService.submitJobFromJar(getJarPath(),
-                null,
-                null,
-                null,
-                jobParameters);
+        SubmitJobParameters submitJobParameters = new SubmitJobParameters();
+        submitJobParameters.setJarPath(getJarPath());
+        submitJobParameters.setJobParameters(jobParameters);
+
+        jetService.submitJobFromJar(submitJobParameters);
 
         assertEqualsEventually(() -> jetService.getJobs().size(), 1);
         hazelcastInstance.shutdown();
@@ -225,11 +227,11 @@ public class JobUploadTest extends JetTestSupport {
                 JetService jetService = client.getJet();
                 List<String> jobParameters = emptyList();
 
-                jetService.submitJobFromJar(getJarPath(),
-                        null,
-                        null,
-                        null,
-                        jobParameters);
+                SubmitJobParameters submitJobParameters = new SubmitJobParameters();
+                submitJobParameters.setJarPath(getJarPath());
+                submitJobParameters.setJobParameters(jobParameters);
+
+                jetService.submitJobFromJar(submitJobParameters);
                 client.shutdown();
             });
         }
@@ -256,18 +258,19 @@ public class JobUploadTest extends JetTestSupport {
         List<String> jobParameters = emptyList();
 
         String job1 = "job1";
-        jetService.submitJobFromJar(getJarPath(),
-                null,
-                job1,
-                null,
-                jobParameters);
+        SubmitJobParameters submitJobParameters1 = new SubmitJobParameters();
+        submitJobParameters1.setJarPath(getJarPath());
+        submitJobParameters1.setJobName(job1);
+        submitJobParameters1.setJobParameters(jobParameters);
+
+        jetService.submitJobFromJar(submitJobParameters1);
 
         String job2 = "job2";
-        jetService.submitJobFromJar(getJarPath(),
-                null,
-                job2,
-                null,
-                jobParameters);
+        SubmitJobParameters submitJobParameters2 = new SubmitJobParameters();
+        submitJobParameters2.setJarPath(getJarPath());
+        submitJobParameters2.setJobName(job2);
+        submitJobParameters2.setJobParameters(jobParameters);
+        jetService.submitJobFromJar(submitJobParameters2);
 
         assertTrueEventually(() -> {
             List<Job> jobs = jetService.getJobs();

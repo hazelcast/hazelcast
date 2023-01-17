@@ -42,6 +42,7 @@ import com.hazelcast.jet.JetCacheManager;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.Observable;
+import com.hazelcast.jet.SubmitJobParameters;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.DAG;
@@ -76,7 +77,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.file.Path;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
@@ -671,9 +671,8 @@ public final class HazelcastBootstrap {
         }
 
         @Override
-        public void submitJobFromJar(@Nonnull Path jarPath, String snapshotName, String jobName, String mainClass,
-                                     List<String> jobParameters) {
-            jet.submitJobFromJar(jarPath, snapshotName, jobName, mainClass, jobParameters);
+        public void submitJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
+            jet.submitJobFromJar(submitJobParameters);
         }
 
         @Nonnull

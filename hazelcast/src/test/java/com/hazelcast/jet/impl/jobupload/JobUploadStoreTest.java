@@ -125,7 +125,7 @@ public class JobUploadStoreTest {
         parameterObject1.setTotalPartNumber(2);
         parameterObject1.setPartData(jarData);
         parameterObject1.setPartSize(jarData.length);
-        parameterObject1.setSha256Hex(Sha256Util.calculateSha256HexOfData(jarData,jarData.length));
+        parameterObject1.setSha256Hex(Sha256Util.calculateSha256HexOfData(jarData, jarData.length));
 
         JobMetaDataParameterObject result = jobUploadStore.processJobMultipart(parameterObject1);
         assertNull(result);
@@ -137,7 +137,7 @@ public class JobUploadStoreTest {
         parameterObject2.setTotalPartNumber(2);
         parameterObject2.setPartData(jarData);
         parameterObject2.setPartSize(jarData.length);
-        parameterObject2.setSha256Hex(Sha256Util.calculateSha256HexOfData(jarData,jarData.length));
+        parameterObject2.setSha256Hex(Sha256Util.calculateSha256HexOfData(jarData, jarData.length));
 
         result = jobUploadStore.processJobMultipart(parameterObject2);
 

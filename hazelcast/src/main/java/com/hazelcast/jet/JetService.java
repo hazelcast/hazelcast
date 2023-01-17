@@ -27,7 +27,6 @@ import com.hazelcast.ringbuffer.Ringbuffer;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.nio.file.Path;
 import java.util.Collection;
 import java.util.List;
 
@@ -232,8 +231,7 @@ public interface JetService {
      * </ul>
      *
      */
-    void submitJobFromJar(@Nonnull Path jarPath, String snapshotName, String jobName, String mainClass,
-                          List<String> jobParameters);
+    void submitJobFromJar(@Nonnull SubmitJobParameters submitJobParameters);
 
     /**
      * Returns all submitted jobs. The result includes completed normal jobs,

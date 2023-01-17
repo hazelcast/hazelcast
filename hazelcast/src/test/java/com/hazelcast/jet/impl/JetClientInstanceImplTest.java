@@ -114,17 +114,17 @@ public class JetClientInstanceImplTest extends JetTestSupport {
 
         String expectedFileName = "foo";
         Path jarPath = Paths.get("/mnt/foo.jar");
-        String fileNameWithoutExtension = jetClientInstance.fileNameWithoutExtension(jarPath);
+        String fileNameWithoutExtension = jetClientInstance.getFileNameWithoutExtension(jarPath);
         assertEquals(expectedFileName, fileNameWithoutExtension);
 
         Path jarPath1 = Paths.get("/mnt/foo");
-        assertThrows(JetException.class, () -> jetClientInstance.fileNameWithoutExtension(jarPath1));
+        assertThrows(JetException.class, () -> jetClientInstance.getFileNameWithoutExtension(jarPath1));
 
         jarPath = Paths.get("foo.jar");
-        fileNameWithoutExtension = jetClientInstance.fileNameWithoutExtension(jarPath);
+        fileNameWithoutExtension = jetClientInstance.getFileNameWithoutExtension(jarPath);
         assertEquals(expectedFileName, fileNameWithoutExtension);
 
         Path jarPath2 = Paths.get("foo");
-        assertThrows(JetException.class, () -> jetClientInstance.fileNameWithoutExtension(jarPath2));
+        assertThrows(JetException.class, () -> jetClientInstance.getFileNameWithoutExtension(jarPath2));
     }
 }

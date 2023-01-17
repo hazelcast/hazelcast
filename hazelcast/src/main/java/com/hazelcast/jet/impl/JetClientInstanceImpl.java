@@ -33,6 +33,7 @@ import com.hazelcast.internal.util.Sha256Util;
 import com.hazelcast.internal.util.UuidUtil;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.Job;
+import com.hazelcast.jet.SubmitJobParameters;
 import com.hazelcast.jet.config.JetConfig;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.operation.GetJobIdsOperation.GetJobIdsResult;
@@ -143,19 +144,19 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
     }
 
     @Override
-    public void submitJobFromJar(@Nonnull Path jarPath, String snapshotName, String jobName, String mainClass,
-                                 @Nonnull List<String> jobParameters) {
+    public void submitJobFromJar(@Nonnull SubmitJobParameters submitJobParameters) {
 
         try {
             UUID sessionId = UuidUtil.newSecureUUID();
 
-            String fileName = fileNameWithoutExtension(jarPath);
+            Path jarPath = submitJobParameters.getJarPath();
+            // Calculate some parameters for JobMetadata
+            String fileNameWithoutExtension = getFileNameWithoutExtension(jarPath);
             String sha256Hex = calculateSha256Hex(jarPath);
             long jarSize = Files.size(jarPath);
 
             // Send job meta data
-            boolean result = sendJobMetaData(sessionId, fileName, sha256Hex, snapshotName, jobName, mainClass,
-                    jobParameters);
+            boolean result = sendJobMetaData(sessionId, fileNameWithoutExtension, sha256Hex, submitJobParameters);
             if (result) {
                 logFine(getLogger(), "Submitted JobMetaData successfully for jarPath: %s", jarPath);
             }
@@ -167,7 +168,7 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         }
     }
 
-    protected String fileNameWithoutExtension(Path jarPath) {
+    protected String getFileNameWithoutExtension(Path jarPath) {
         String fileName = jarPath.getFileName().toString();
         if (!fileName.endsWith(".jar")) {
             throw new JetException("File name extension should be .jar");
@@ -180,11 +181,16 @@ public class JetClientInstanceImpl extends AbstractJetInstance<UUID> {
         return Sha256Util.calculateSha256HexOfPath(jarPath);
     }
 
-    private boolean sendJobMetaData(UUID sessionId, String fileName, String sha256Hex, String snapshotName,
-                                    String jobName, String mainClass, List<String> jobParameters) {
+    private boolean sendJobMetaData(UUID sessionId, String fileNameWithoutExtension, String sha256Hex,
+                                    SubmitJobParameters submitJobParameters) {
 
-        ClientMessage jobMetaDataRequest = JetUploadJobMetaDataCodec.encodeRequest(sessionId, fileName, sha256Hex,
-                snapshotName, jobName, mainClass, jobParameters);
+        ClientMessage jobMetaDataRequest = JetUploadJobMetaDataCodec.encodeRequest(sessionId,
+                fileNameWithoutExtension, sha256Hex,
+                submitJobParameters.getSnapshotName(),
+                submitJobParameters.getJobName(),
+                submitJobParameters.getMainClass(),
+                submitJobParameters.getJobParameters());
+
         return invokeRequestOnMasterAndDecodeResponse(jobMetaDataRequest, JetUploadJobMetaDataCodec::decodeResponse);
     }
 

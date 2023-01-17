@@ -70,19 +70,15 @@ HazelcastInstance client = ...;
 JetService jetService = client.getJet();
 List<String> jobParameters = emptyList();
 
-String job1 = "job1";
+SubmitJobParameters submitJobParameters = ...;
 //If there is an error, throws JetException
-jetService.submitJobFromJar (getJarPath(),
-        null,
-        job1,
-        null,
-        jobParameters);
+jetService.submitJobFromJar (submitJobParameters);
 ```
 
 #### Client Related Changes
 A new method has been added to JetService interface. Any client that implements this interface, has to implement this method
 ```java
-void submitJobFromJar (@Nonnull Path jarPath, String snapshotName, String jobName, String mainClass, List<String> jobParameters);
+void submitJobFromJar(@Nonnull SubmitJobParameters submitJobParameters);
 ```
 
 ### Technical Design
