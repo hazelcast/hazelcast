@@ -505,7 +505,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
             try {
                 clientSession.startTransaction(TRANSACTION_OPTIONS);
             } catch (IllegalStateException e) {
-                if (!e.getMessage().contains("already started")) {
+                if (!e.getMessage().contains("already in progress")) {
                     throw sneakyThrow(e);
                 }
             }
