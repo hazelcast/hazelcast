@@ -12,6 +12,11 @@ If this happens during snapshot, snapshot may [become corrupted](https://github.
 
 Snapshot should be safe in case of single node misbehavior or failure.
 
+## Terminology
+
+- **automatic snapshot** - snapshot collected periodically to provide fault tolerance and processing guarantees
+- **named snapshot** - snapshot exported manually on user request 
+
 ## Current snapshotting algorithm
 
 Jet uses [2-phase snapshot algorithm](https://hazelcast.com/blog/transactional-connectors-in-hazelcast-jet/)
@@ -19,7 +24,7 @@ which from the point of view of snapshot data consistency can be summarized as f
 
 ### Snapshot taking procedure
 
-1. Initiate snapshot: generate new `snapshotId`, notify all processors
+1. Initiate snapshot: generate new `ongoingSnapshotId`, notify all processors
 2. 1st snapshot phase (`saveSnapshot` + `snapshotCommitPrepare`):
    Each processor instance writes its state to `IMap` as "chunk"
 3. Make decision: if all processors succeeded in 1st phase then the snapshot will be committed in 2nd phase,
@@ -37,6 +42,11 @@ They are selected using ongoing data map index.
 These maps also contain `SnapshotVerificationRecord`.
 
 Each "chunk" is tagged with `snapshotId` to which it belongs.
+
+Exported snapshots are handled specially:
+- they only save state
+- they do not rollback or commit any transactions when they are taken (2nd phase is mostly a no-op) 
+- they are registered in snapshot cache so they can be listed
 
 ### Snapshot restore procedure
 
@@ -82,7 +92,9 @@ Currently, in such case `IMap` operations return success.
 This behavior will be configurable using private `IMap` API on IMap-proxy level.
 This setting will apply only to single-key operations, it will not affect multi-key operations, for example `clear`.
 
-`IndeterminateOperationStateException` will be enabled for snapshot data `IMap`s.
+Throwing `IndeterminateOperationStateException` will be enabled for:
+- snapshot data `IMap`s.
+- `JobExecutionRecord` map
 
 TBD if it should be enabled for other Jet maps.
 
@@ -93,29 +105,29 @@ New algorithm uses the fact that some `IMap` operations can end with `Indetermin
 
 #### Snapshot taking procedure
 
-1. Clear ongoing snapshot map.
+1. Initiate snapshot: generate new `ongoingSnapshotId` (always incremented, never reused, even for exported snapshots) in `JobExecutionRecord`
+2. Write `JobExecutionRecord`
+   Indeterminate result -> snapshot failed to start, there is no need to rollback or commit anything.
+3. Clear ongoing snapshot map.
    Indeterminate result -> not possible, however operation may not be replicated to all backups.
-   Stray records are not a big problem because each record in snapshot map has snapshot id.
-   We also do not need to ensure the deletion of `SnapshotVerificationRecord` of previous snapshot,
-   because it can be one of the cases:
-   1. Ongoing snapshot map was empty - nothing do delete.
-   2. Ongoing snapshot map contained older snapshot than the other one. 
-      Until full success, the other map will contain correct snapshot which is newer,
-      so it does not matter if we destroy `SnapshotVerificationRecord` or not
-   3. Ongoing snapshot map contained corrupted snapshot but newer than the other one.
-      Partially successful clearing will not make corrupted snapshot a correct one.
-2. Initiate snapshot: generate new `snapshotId`, notify all processors
-3. 1st snapshot phase (`saveSnapshot` + `snapshotCommitPrepare`): 
-   Each processor instance writes its state to `IMap` as "chunk".
+   Stray records are not a big problem because each record in snapshot map has `snapshotId`
+   and we never reuse the same id in more than 1 attempts that could have a chance to write something to snapshot map. 
+4. 1st snapshot phase (`saveSnapshot` + `snapshotCommitPrepare`): 
+   Each processor instance writes its state to `IMap` as "chunks".
    Any indeterminate put -> snapshot failed
-4. Make decision: if all processors succeeded in 1st phase then the snapshot will be committed in 2nd phase,
-   otherwise it will be rolled back.
-5. Write `SnapshotVerificationRecord` (*).
-   Indeterminate result -> restart job immediately without performing 2nd phase of snapshot
-   (no rollback and no commit, one of them will happen after restore)
-6. Update ongoing data map index in memory if the snapshot was successful.
-7. TODO: Update JExR - maybe snapshot data will be removed from it.
-   Indeterminate, other error -> ignore
+5. Write `SnapshotVerificationRecord`
+   Indeterminate result -> snapshot failed
+6. Make decision: if all processors succeeded in 1st phase and `SnapshotVerificationRecord` was written 
+   then the snapshot will be committed in 2nd phase, otherwise it will be rolled back.
+   In case of success: update in memory last good snapshotId in `JobExecutionRecord` to newly created snapshot
+   and switch ongoing snapshot map index if it is not an exported snapshot.
+7. Write `JobExecutionRecord` (*)
+   Indeterminate result -> 
+   - automatic snapshot: restart job immediately without performing 2nd phase of snapshot
+     (no rollback and no commit, one of them will happen after restore)
+   - exported snapshot: do not publish snapshot in cache, proceed to 2nd phase as if the snapshot failed.
+     During restore, we can find `JobExecutionRecord` in the middle of exported snapshot
+     but then 2nd phase can be executed again.
 8. Optionally - clear new ongoing snapshot map if the snapshot was successful to decrease memory usage.
 9. 2nd snapshot phase (`snapshotCommitFinish`) with decision made earlier.
    This step can be performed concurrently with processing of next items and must ultimately succeed.
@@ -127,57 +139,49 @@ This is also more complicated in implementation and may be considered later if n
 
 #### Snapshot restore procedure
 
-1. Check both snapshot maps and find the newest snapshot (greater `snapshotId`) which:
-   1. Has `SnapshotVerificationRecord`
-   2. Is not corrupted (check just in case). If the snapshot is corrupted, 
-      generate warning and proceed to the next snapshot.
-2. It the valid snapshot was found:
-   1. Write `SnapshotVerificationRecord` to map from which it was read to ensure that it is replicated.
-      In case of indeterminate result - do not start job now, schedule restart later.
-   2. Restore processors state from snapshot, rollback/commit any prepared transactions
-   3. Set ongoing data map index to the other map
-3. If the valid snapshot was not found:
-   1. Create processors with initial state
-   2. Rollback any prepared transactions
-4. Schedule next snapshot
-
-TODO: update JExR with snapshot data used for restore?
-TODO: increase snapshotId by 2? clear is not reliable
+1. Load `JobExecutionRecord` from `IMap` to `MasterContext`
+2. Write `JobExecutionRecord` to map from which it was read to ensure that it is replicated.
+   In case of indeterminate result - do not start job now, schedule restart later.
+3. Read last good snapshot id from `JobExecutionRecord`. 
+   `JobExecutionRecord` contains also last snapshot id that could have written something to snapshot data IMap. 
+4. Check consistency of the indicated snapshot using data in snapshot `IMap` and `SnapshotVerificationRecord`.
+   If inconsistent, job fails permanently.
+5. If restoring from exported snapshot, 
+   write `SnapshotVerificationRecord` to map from which it was read to ensure that it is replicated.
+   (TODO: is it necessary? exported snapshot without entry in cache can be used to restore from)
+6. Restore job using data from snapshot. Transactions which have ids in the snapshot are committed (just in case),
+   transactions that are not there are rolled back (also just in case).
+   This ultimately gives consistency between job state and external transactional resources.
 
 #### Correctness
 
-`SnapshotVerificationRecord` for given snapshot can be in one 3 states:
-1. nonexistent
+`JobExecutionRecord` entry version for given job and status can be in one 3 states:
+1. nonexistent: there exists different version (or none only briefly when the job is created)
 2. maybe safe: writing to `IMap` ended in indeterminate result, may exist on primary replica only or in primary and backups
-3. safe: in primary and backups
+3. safe: saved in primary and backups
 
 Updated algorithm guarantees correctness by holding the following invariants:
 1. Snapshot restore is never performed concurrently with snapshot taking
    (guaranteed by various mechanisms in Hazelcast and Jet, among others
    `MasterJobContext.scheduleRestartIfClusterIsNotSafe` and split-brain protection).
-2. Existence of `SnapshotVerificationRecord` implies that given snapshot was prepared (1st phase) successfully.
-   Existence of `SnapshotVerificationRecord` does not determine if 2nd phase has already completed or not. 
-3. 2nd snapshot phase commit is executed if and only if `SnapshotVerificationRecord` is "safe".
-4. 2nd snapshot phase rollback is executed if and only if `SnapshotVerificationRecord` is "nonexistent".
-5. If `SnapshotVerificationRecord` was "maybe safe" but became "nonexistent"
-   snapshot data was irrecoverably lost and the snapshot cannot ever be used. 
-   The same `SnapshotVerificationRecord` cannot reappear. 
-   In other words, transition from "nonexistent" to "safe" is not possible during restore.
-6. Lack of `SnapshotVerificationRecord` during restore means that given snapshot failed 
-   during preparation (1st phase) or writing `SnapshotVerificationRecord`. 
+2. 2nd snapshot phase commit or rollback is executed if and only if `JobExecutionRecord` is "safe".
+3. Next snapshot is performed after 2nd phase of previous snapshot (commit or rollback) has completed.
+4. If `JobExecutionRecord` points to given snapshot during restore, 
+   it implies that given snapshot was prepared (1st phase) successfully.
+   It does not determine if 2nd phase has already completed or not. 
+5. If `JobExecutionRecord` does not point to given snapshot during restore
+   it means that given snapshot failed during preparation (1st phase),
+   writing `SnapshotVerificationRecord` or `JobExecutionRecord`.
    There may exist some transaction that have to be rolled back.
-7. It is possible to rollback transactions prepared by snapshot that failed. 
+6. If `JobExecutionRecord` was "maybe safe" and reverted to previous version
+   snapshot to which it pointed when it was "maybe safe" is treated as failed snapshot cannot ever be used. 
+   Reverted `JobExecutionRecord` version cannot reappear.
+   In other words, change from older to newer snapshot is not possible during restore.
+7. It is possible to rollback transactions prepared by snapshot that failed without data from such snapshot. 
    This is implemented using [XA protocol or workarounds](https://hazelcast.com/blog/transactional-connectors-in-hazelcast-jet/).
-8. Next snapshot is performed after 2nd phase of previous snapshot (commit or rollback) has completed.
-9. Result of `clear` method is not guaranteed to be replicated to all backups -
-   `clear` method does not support overriding of `failOnIndeterminateOperationState` setting. 
-   However, the following should be true:
-   if operation on given partition succeeded (e.g. `putAsync`) with `failOnIndeterminateOperationState` enabled
-   then previous operation (e.g. `clear`) was backed up for given partition.
 
-### Other changes
-
-TBD: Removal of snapshot data from `JobExecutionRecord`
+TODO: update of `JobExecutionRecord` is not executed if the timestamp is older or the same.
+TODO: sometimes we need to force update - by artificially increasing timestamp? Or maybe then we can use `put`?
 
 ## Impact
 
@@ -190,27 +194,26 @@ TBD: job suspension creates snapshot. What if it is indeterminate? There are alr
 Job restart due to failed snapshot (indeterminate result of `SnapshotVerificationRecord` write)
 should not trigger yet another snapshot if `suspendOnFailure` is enabled.
 
-### Manual snapshots (Enterprise version)
+### Exported snapshots (Enterprise version)
 
-Manual snapshots are performed as follows:
-1. if the job is running, take snapshot but write data to `exportedSnapshot.<name>` IMap instead of regular snapshot data IMap
-2. if the job is suspended, copy most recent snapshot data to `exportedSnapshot.<name>` IMap
+Exported snapshots are performed as follows:
+1. if the job is running, take snapshot but write data to `exportedSnapshot.<name>` IMap instead of ordinary snapshot data IMap
+2. if the job is suspended, copy most recent automatic snapshot data to `exportedSnapshot.<name>` IMap
 
 First case will benefit from added protection against corruption.
-However, in case of unstable cluster, performing manual snapshot may cause job restart.
-
-TBD: check if this is actually the case, because for manual snapshots 2nd phase is not executed (?)
-TODO: for manual snapshot we should fail manual snapshot but not restart the job
+`IndeterminateOperationStateException` at the last stage (writing `SnapshotVerificationRecord`)
+of snapshot export will fail it but it is not known if the snapshot actually succeeded (it could).
+User can try to use such snapshot to restore and it might succeed or not.
 
 Second case creates a dedicated Jet job which copies `IMap` contents using regular `readMapP` and `writeMapP`.
 They will not be extended to support `failOnIndeterminateOperationState` setting,
-so it will still be possible that the named snapshot can be silently corrupted.
+so it will still be possible that the exported snapshot can be silently corrupted.
+Before copying snapshot data it will be ensured that the automatic snapshot is valid and safe in similar way to restore,
+by writing `JobExecutionRecord` and failing in case of `IndeterminateOperationStateException`.
 
 ### Rolling upgrade
 
-If there is any member in the cluster with a version different from the coordinator,
-the job does not run, or fails. After all members are upgraded, and after the cluster version is increased,
-then a 5.3 member will find a `JobExecutionRecord` written by an older member and will ignore snapshot id written there.
+Format of data in IMaps will not change.
 
 ### Performance
 
@@ -218,15 +221,13 @@ Most important for performance is snapshot taking as it occurs regularly.
 Other processes are either manual or occur after error or topology changes
 so are rare with little impact for overall performance.
 
-In happy-path, when the cluster is stable, nothing changes for taking snapshots. 
-Jet already uses 1 sync backup for snapshot `IMap`s and operations wait for backup response before completing.
-TODO: deleting SVR?
+In happy-path, when the cluster is stable, there is 1 additional `JobExecutionRecord` update in the `IMap`.
+Other than that, nothing changes.
+Jet already uses 1 sync backup for snapshot and other `IMap`s
+and operations wait for backup ack before completing.
 
-If we skip updating snapshot data in `JobExecutionRecord` it may actually improve performance.
-
-When the cluster is unstable, snapshot will take the same time
+When the cluster is unstable, snapshot will take almost the same time
 but may fail instead silently being successful with risk of corruption.
 
-Snapshot restore has to look into 2 snapshot maps instead of 1, but usually newer one will be correct.
-Difference is negligible (1 additional `IMap` lookup for `SnapshotVerificationRecord`)
-and may be compensated by not having to check `JobExecutionRecord`.
+Snapshot restore has to ensure that `JobExecutionRecord` or `SnapshotVerificationRecord` is safe.
+This is 1 additional `IMap` update.
