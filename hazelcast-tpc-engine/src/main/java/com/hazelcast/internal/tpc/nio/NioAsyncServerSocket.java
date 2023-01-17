@@ -94,8 +94,7 @@ public final class NioAsyncServerSocket extends AsyncServerSocket {
 
     @Override
     public int getLocalPort() {
-        int localPort = serverSocketChannel.socket().getLocalPort();
-        return localPort == -1 ? 0 : localPort;
+        return serverSocketChannel.socket().getLocalPort();
     }
 
     @Override

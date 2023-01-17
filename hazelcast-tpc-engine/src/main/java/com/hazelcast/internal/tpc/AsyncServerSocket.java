@@ -28,6 +28,7 @@ import java.util.function.Consumer;
  * but are executed on an {@link Eventloop}.
  */
 public abstract class AsyncServerSocket extends Socket {
+
     protected final ProgressIndicator accepted = new ProgressIndicator();
 
     protected AsyncServerSocket() {
@@ -71,7 +72,7 @@ public abstract class AsyncServerSocket extends Socket {
     /**
      * Gets the local port of the ServerSocketChannel.
      * <p/>
-     * If {@link #bind(SocketAddress)} has not been called, then 0 is returned.
+     * If {@link #bind(SocketAddress)} has not been called, then -1 is returned.
      *
      * @return the local port.
      * @throws UncheckedIOException if something failed while obtaining the local port.

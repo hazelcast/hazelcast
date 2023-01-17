@@ -60,6 +60,19 @@ public abstract class AsyncSocketTest {
         assertNull(remoteAddress);
     }
 
+
+    @Test
+    public void test_localAddress_whenNotConnected() {
+        Eventloop eventloop = createEventloop();
+        AsyncSocket socket = eventloop.openTcpAsyncSocket();
+        socket.setReadHandler(mock(ReadHandler.class));
+        socket.activate(eventloop);
+
+        SocketAddress localAddress = socket.getLocalAddress();
+        System.out.println(localAddress);
+        assertNull(localAddress);
+    }
+
     @Test
     public void test_receiveBufferSize() {
         Eventloop eventloop = createEventloop();

@@ -31,6 +31,7 @@ import static com.hazelcast.internal.tpc.TpcTestSupport.terminate;
 import static com.hazelcast.internal.tpc.TpcTestSupport.terminateAll;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
@@ -153,7 +154,7 @@ public abstract class AsyncServerSocketTest {
         AsyncServerSocket socket = eventloop.openTcpAsyncServerSocket();
 
         int localPort = socket.getLocalPort();
-        assertEquals(0, localPort);
+        assertEquals(-1, localPort);
     }
 
     @Test
@@ -169,7 +170,7 @@ public abstract class AsyncServerSocketTest {
     public void test_getLocalAddress_whenNotBound() {
         Eventloop eventloop = createEventloop();
         AsyncServerSocket socket = eventloop.openTcpAsyncServerSocket();
-        System.out.println(socket.getLocalAddress());
+        assertNull(socket.getLocalAddress());
     }
 
     @Test
