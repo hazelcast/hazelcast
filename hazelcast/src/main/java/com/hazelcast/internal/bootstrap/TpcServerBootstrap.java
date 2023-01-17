@@ -183,7 +183,7 @@ public class TpcServerBootstrap {
                 // for clients. This means cluster will run but no client ports will be
                 // created, so no clients can connect to the cluster.
                 throw new InvalidConfigurationException("Missing client server socket configuration. "
-                        + "If you have enabled alto and advanced networking, "
+                        + "If you have enabled Alto and advanced networking, "
                         + "please configure a client server socket.");
             }
         }
