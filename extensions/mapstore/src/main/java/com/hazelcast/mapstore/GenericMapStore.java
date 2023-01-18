@@ -549,7 +549,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
         }
     }
 
-    public static Throwable findSQLException(Throwable throwable) {
+    static Throwable findSQLException(Throwable throwable) {
         Throwable rootCause = throwable;
         while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
             rootCause = rootCause.getCause();
@@ -566,7 +566,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
     // The class, which is the first two characters of the string, and
     // the subclass, which is the terminating three characters of the string.
     // See https://en.wikipedia.org/wiki/SQLSTATE for cate
-    boolean isIntegrityConstraintViolation (Exception exception) {
+    boolean isIntegrityConstraintViolation(Exception exception) {
         boolean result = false;
         Throwable rootSQLException = findSQLException(exception);
         if (rootSQLException != null) {
