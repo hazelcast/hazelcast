@@ -45,7 +45,8 @@ class Queries {
     Queries(String mapping, String idColumn, List<SqlColumnMetadata> columnMetadata) {
         loadQuery = String.format("SELECT * FROM \"%s\" WHERE \"%s\" = ?", mapping, idColumn);
 
-        loadAllFactory = n -> String.format("SELECT * FROM \"%s\" WHERE \"%s\" IN (%s)", mapping, idColumn, queryParams(n));
+        loadAllFactory = n -> String.format("SELECT * FROM \"%s\" WHERE \"%s\" IN (%s)", mapping, idColumn,
+                queryParams(n));
 
         loadAllKeys = "SELECT \"" + idColumn + "\" FROM \"" + mapping + "\"";
 
@@ -65,7 +66,8 @@ class Queries {
 
         delete = String.format("DELETE FROM \"%s\" WHERE \"%s\" = ?", mapping, idColumn);
 
-        deleteAllFactory = n -> String.format("DELETE FROM \"%s\" WHERE \"%s\" IN (%s)", mapping, idColumn, queryParams(n));
+        deleteAllFactory = n -> String.format("DELETE FROM \"%s\" WHERE \"%s\" IN (%s)", mapping, idColumn,
+                queryParams(n));
     }
 
     private String queryParams(long n) {
