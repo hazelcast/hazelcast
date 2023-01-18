@@ -238,7 +238,8 @@ public abstract class AsyncSocket extends Socket {
     public abstract boolean isTcpNoDelay();
 
     /**
-     * Sets the receive buffer size in bytes.
+     * Sets the receive buffer size in bytes (SO_RCVBUF). The value is a hint, the
+     * operating system or implementation could pick a different value.
      *
      * @param size the receive buffer size in bytes.
      * @throws IllegalArgumentException when the size isn't positive.
@@ -255,7 +256,8 @@ public abstract class AsyncSocket extends Socket {
     public abstract int getReceiveBufferSize();
 
     /**
-     * Sets the send buffer size in bytes.
+     * Sets the send buffer size in bytes (SO_SNDBUF). The value is a hint, the
+     * operating system or implementation could pick a different value.
      *
      * @param size the send buffer size in bytes.
      * @throws IllegalArgumentException when the size isn't positive.
