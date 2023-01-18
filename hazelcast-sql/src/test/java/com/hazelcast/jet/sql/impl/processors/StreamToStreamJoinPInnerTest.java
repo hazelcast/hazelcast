@@ -84,7 +84,7 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
      * before restore. The highest actual WM can be lower than the highest
      * expected one, but not higher - again, after a restore, it might go back.
      */
-    public static final BiPredicate<List<?>, List<?>> SAME_ITEMS_ANY_ORDER_EQUIVALENT_WMS =
+    protected static final BiPredicate<List<?>, List<?>> SAME_ITEMS_ANY_ORDER_EQUIVALENT_WMS =
             (expected, actual) -> {
                 TestMode testMode = TEST_CONTEXT.get().getTestMode();
                 if (!testMode.isSnapshotsEnabled() || testMode.snapshotRestoreInterval() == Integer.MAX_VALUE) {

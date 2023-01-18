@@ -117,7 +117,7 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
         postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
 
         TestSupport.verifyProcessor(isLeft ? createProcessor(1, 2) : createProcessor(2, 1))
-                .disableSnapshots()
+                .disableSnapshots() // uncomment after outer join snapshot support.
                 .expectExactOutput(
                         in(ordinal0, jetRow(3L)),
                         in(ordinal0, jetRow(4L)),
@@ -164,7 +164,6 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
         ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(1, 1));
 
         TestSupport.verifyProcessor(processorSupplier)
-                .disableSnapshots()
                 .expectExactOutput(
                         in(ordinal1, jetRow(0L)),
                         in(ordinal1, wm(10L, ordinal1)),
@@ -219,7 +218,6 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
         SupplierEx<Processor> supplier = createProcessor(1, 1);
 
         TestSupport.verifyProcessor(supplier)
-                .disableSnapshots()
                 .cooperativeTimeout(0)
                 .expectExactOutput(
                         in(ordinal1, jetRow(42L)),
