@@ -20,21 +20,26 @@ import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
 
-public final class UnsafeUtil {
+public final class UnsafeLocator {
 
     public static final Unsafe UNSAFE;
 
     static {
+        Unsafe unsafe;
         try {
-            Field theUnsafeField = Unsafe.class.getDeclaredField("theUnsafe");
-            theUnsafeField.setAccessible(true);
-            UNSAFE = (Unsafe) theUnsafeField.get(null);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
+            unsafe = Unsafe.getUnsafe();
+        } catch (SecurityException e) {
+            try {
+                Field theUnsafeField = Unsafe.class.getDeclaredField("theUnsafe");
+                theUnsafeField.setAccessible(true);
+                unsafe = (Unsafe) theUnsafeField.get(null);
+            } catch (Exception e2) {
+                throw new RuntimeException(e2);
+            }
         }
+        UNSAFE = unsafe;
     }
 
-    private UnsafeUtil() {
+    private UnsafeLocator() {
     }
 }

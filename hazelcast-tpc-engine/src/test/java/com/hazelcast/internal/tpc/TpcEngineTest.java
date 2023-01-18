@@ -35,9 +35,12 @@ public class TpcEngineTest {
     private TpcEngine engine;
 
     @After
-    public void after() {
+    public void after() throws InterruptedException {
         if (engine != null) {
             engine.shutdown();
+            if(!engine.awaitTermination(10, TimeUnit.SECONDS)){
+                throw new RuntimeException("Failed to await termination due to timeout");
+            }
         }
     }
 

@@ -16,24 +16,17 @@
 
 package com.hazelcast.internal.tpc.nio;
 
-import com.hazelcast.internal.tpc.AsyncServerSocket;
 import com.hazelcast.internal.tpc.AsyncServerSocketTest;
 import com.hazelcast.internal.tpc.Eventloop;
 
 
 public class NioAsyncServerSocketTest extends AsyncServerSocketTest {
+
     @Override
     public Eventloop createEventloop() {
         NioEventloop eventloop = new NioEventloop();
         loops.add(eventloop);
         eventloop.start();
         return eventloop;
-    }
-
-    @Override
-    public AsyncServerSocket createAsyncServerSocket(Eventloop eventloop) {
-        NioAsyncServerSocket socket = NioAsyncServerSocket.openTcpServerSocket((NioEventloop) eventloop);
-        closeables.add(socket);
-        return socket;
     }
 }

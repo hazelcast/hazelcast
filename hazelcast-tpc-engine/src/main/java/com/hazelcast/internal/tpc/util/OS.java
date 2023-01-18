@@ -26,7 +26,7 @@ public class OS {
     private static final boolean IS_LINUX = isLinux0(OS_NAME);
     private static final int LINUX_KERNEL_MAJOR_VERSION = linuxMajorVersion0(OS_VERSION);
     private static final int LINUX_KERNEL_MINOR_VERSION = linuxMinorVersion0(OS_VERSION);
-    private static final int PAGE_SIZE = UnsafeUtil.UNSAFE.pageSize();
+    private static final int PAGE_SIZE = UnsafeLocator.UNSAFE.pageSize();
     private static final String OS_ARCH = System.getProperty("os.arch", "?");
     private static final boolean IS_64BIT = is64bit0(OS_ARCH);
     private static final boolean IS_X86_64 = OS_ARCH.equals("amd64");
