@@ -116,7 +116,8 @@ public abstract class AsyncServerSocket extends Socket {
     public abstract void setReuseAddress(boolean reuseAddress);
 
     /**
-     * Sets the receive buffer size in bytes.
+     * Sets the receive buffer size in bytes (SO_RCVBUF). The value is a hint, the
+     * operating system or implementation could pick a different value.
      *
      * @param size the receive buffer size in bytes.
      * @throws IllegalArgumentException when the size isn't positive.
