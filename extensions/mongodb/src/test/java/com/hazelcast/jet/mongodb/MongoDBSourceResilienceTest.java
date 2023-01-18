@@ -89,8 +89,17 @@ public class MongoDBSourceResilienceTest extends SimpleTestInClusterSupport {
 
     private final Random random = new Random();
 
-    @Test(timeout = 5 * 60_000)
-    public void testSourceStream_whenServerDown() {
+    @Test(timeout = 2 * 60_000)
+    public void testWhenServerDown_graceful() {
+        testWhenServerDown(true);
+    }
+
+    @Test(timeout = 2 * 60_000)
+    public void testWhenServerDown_forceful() {
+        testWhenServerDown(false);
+    }
+
+    void testWhenServerDown(boolean graceful) {
         Config conf = new Config();
         conf.getJetConfig().setEnabled(true);
         conf.addMapConfig(new MapConfig("*").setBackupCount(3));
@@ -129,13 +138,16 @@ public class MongoDBSourceResilienceTest extends SimpleTestInClusterSupport {
                 sleep(random.nextInt(400));
             }
         });
-        serverToShutdown.shutdown();
+        if (graceful) {
+            serverToShutdown.shutdown();
+        } else {
+            serverToShutdown.getLifecycleService().terminate();
+        }
         assertTrueEventually(() -> assertEquals(1, hz.getCluster().getMembers().size()));
 
         shouldContinue.set(false);
 
         assertTrueEventually(() -> assertEquals(totalCount.get(), set.size()));
-        System.clearProperty("hazelcast.partition.count");
     }
 
     @Test
