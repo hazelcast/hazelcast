@@ -44,7 +44,7 @@ import com.hazelcast.sql.SqlService;
 
 import javax.annotation.Nonnull;
 import java.sql.SQLException;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -59,7 +59,6 @@ import java.util.stream.Stream;
 
 import static com.hazelcast.jet.sql.impl.connector.jdbc.JdbcSqlConnector.OPTION_EXTERNAL_DATASTORE_REF;
 import static com.hazelcast.sql.SqlRowMetadata.COLUMN_NOT_FOUND;
-import static java.util.Collections.unmodifiableList;
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static java.util.stream.Stream.of;
@@ -152,9 +151,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
                 .getExecutor(ExecutionService.MAP_STORE_OFFLOADABLE_EXECUTOR);
 
         // Init can run on partition thread, creating a mapping uses other maps, so it needs to run elsewhere
-        asyncExecutor.submit(() -> {
-            createMappingForMapStore(mapName);
-        });
+        asyncExecutor.submit(() -> createMappingForMapStore(mapName));
     }
 
     private void verifyMapStoreOffload(HazelcastInstance instance, String mapName) {
@@ -231,7 +228,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
         return Stream.concat(of(properties.idColumn), properties.columns.stream())
                      .distinct() // avoid duplicate id column if present in columns property
-                     .map((columnName) -> validateColumn(rowMetadata.findColumn(columnName), columnName))
+                     .map(columnName -> validateColumn(rowMetadata.findColumn(columnName), columnName))
                      .map(rowMetadata::getColumn)
                      .map(columnMetadata1 -> columnMetadata1.getName() + " " + columnMetadata1.getType())
                      .collect(Collectors.joining(", "));
@@ -250,16 +247,15 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
     private SqlRowMetadata loadMetadataFromMapping(String mapping) {
         try (SqlResult result = sql.execute("SELECT * FROM \"" + mapping + "\" LIMIT 0")) {
-            SqlRowMetadata rowMetadata = result.getRowMetadata();
-            return rowMetadata;
+            return result.getRowMetadata();
         }
     }
 
     private void readExistingMapping() {
         logger.fine("Reading existing mapping for map" + mapName);
         try (SqlResult mappings = sql.execute("SHOW MAPPINGS")) {
-            for (SqlRow mapping : mappings) {
-                String name = mapping.getObject(MAPPING_NAME_COLUMN);
+            for (SqlRow sqlRow : mappings) {
+                String name = sqlRow.getObject(MAPPING_NAME_COLUMN);
                 if (name.equals(this.mapping)) {
                     SqlRowMetadata rowMetadata = loadMetadataFromMapping(name);
                     validateColumns(rowMetadata);
@@ -276,7 +272,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
     private void validateColumns(SqlRowMetadata rowMetadata) {
         Stream.concat(of(properties.idColumn), properties.columns.stream())
               .distinct() // avoid duplicate id column if present in columns property
-              .forEach((columnName) -> validateColumn(rowMetadata.findColumn(columnName), columnName));
+              .forEach(columnName -> validateColumn(rowMetadata.findColumn(columnName), columnName));
     }
 
     private int validateColumn(int column, String columnName) {
@@ -303,7 +299,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
                 if (it.hasNext()) {
                     throw new IllegalStateException("multiple matching rows for a key " + key);
                 }
-                return convertRowToGenericRecord(key, row);
+                return convertRowToGenericRecord(row);
             } else {
                 return null;
             }
@@ -311,7 +307,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
     }
 
     @Nonnull
-    private GenericRecord convertRowToGenericRecord(K key, SqlRow row) {
+    private GenericRecord convertRowToGenericRecord(SqlRow row) {
         GenericRecordBuilder builder = GenericRecordBuilder.compact(properties.compactTypeName);
 
         SqlRowMetadata metadata = row.getMetadata();
@@ -393,7 +389,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
             while (it.hasNext()) {
                 SqlRow row = it.next();
                 K id = row.getObject(properties.idColumn);
-                GenericRecord record = convertRowToGenericRecord(id, row);
+                GenericRecord record = convertRowToGenericRecord(row);
                 result.put(id, record);
             }
             return result;
@@ -606,9 +602,8 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
             String columnsProperty = properties.getProperty(COLUMNS_PROPERTY);
             if (columnsProperty != null) {
-                List<String> columns = new ArrayList<>();
-                Collections.addAll(columns, columnsProperty.split(","));
-                this.columns = unmodifiableList(columns);
+                List<String> list = Arrays.asList(columnsProperty.split(","));
+                this.columns = Collections.unmodifiableList(list);
             } else {
                 columns = Collections.emptyList();
             }
