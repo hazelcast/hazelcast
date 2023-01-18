@@ -122,6 +122,56 @@ public class JobUploadTest extends JetTestSupport {
     }
 
     @Test
+    public void test_jarUploadByClient_withMainClassname() {
+        // Reset the singleton because a new HazelcastInstance will be created for the test
+        HazelcastBootstrap.resetSupplier();
+
+        Config config = smallInstanceConfig();
+        JetConfig jetConfig = config.getJetConfig();
+        jetConfig.setResourceUploadEnabled(true);
+
+        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+        HazelcastInstance client = createHazelcastClient();
+        JetService jetService = client.getJet();
+        List<String> jobParameters = emptyList();
+
+        SubmitJobParameters submitJobParameters = new SubmitJobParameters();
+        submitJobParameters.setJarPath(getJarPath());
+        submitJobParameters.setMainClass("org.example.Main");
+        submitJobParameters.setJobParameters(jobParameters);
+
+        jetService.submitJobFromJar(submitJobParameters);
+
+        assertEqualsEventually(() -> jetService.getJobs().size(), 1);
+        hazelcastInstance.shutdown();
+    }
+
+    @Test
+    public void test_jarUploadByClient_withWrongMainClassname() {
+
+        // Reset the singleton because a new HazelcastInstance will be created for the test
+        HazelcastBootstrap.resetSupplier();
+
+        Config config = smallInstanceConfig();
+        JetConfig jetConfig = config.getJetConfig();
+        jetConfig.setResourceUploadEnabled(true);
+
+        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+        HazelcastInstance client = createHazelcastClient();
+        JetService jetService = client.getJet();
+        List<String> jobParameters = emptyList();
+
+        SubmitJobParameters submitJobParameters = new SubmitJobParameters();
+        submitJobParameters.setJarPath(getJarPath());
+        submitJobParameters.setMainClass("org.example.Main1");
+        submitJobParameters.setJobParameters(jobParameters);
+
+        assertThrows(JetException.class, () -> jetService.submitJobFromJar(submitJobParameters));
+        hazelcastInstance.shutdown();
+
+    }
+
+    @Test
     public void test_jarUploadByMember_whenResourceUploadIsEnabled() {
         // Reset the singleton because a new HazelcastInstance will be created for the test
         HazelcastBootstrap.resetSupplier();
@@ -141,6 +191,53 @@ public class JobUploadTest extends JetTestSupport {
         jetService.submitJobFromJar(submitJobParameters);
 
         assertEqualsEventually(() -> jetService.getJobs().size(), 1);
+        hazelcastInstance.shutdown();
+    }
+
+    @Test
+    public void test_jarUploadByMember_withMainClassname() {
+        // Reset the singleton because a new HazelcastInstance will be created for the test
+        HazelcastBootstrap.resetSupplier();
+
+        Config config = smallInstanceConfig();
+        JetConfig jetConfig = config.getJetConfig();
+        jetConfig.setResourceUploadEnabled(true);
+
+        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+        JetService jetService = hazelcastInstance.getJet();
+        List<String> jobParameters = emptyList();
+
+        SubmitJobParameters submitJobParameters = new SubmitJobParameters();
+        submitJobParameters.setJarPath(getJarPath());
+        submitJobParameters.setMainClass("org.example.Main");
+        submitJobParameters.setJobParameters(jobParameters);
+
+        jetService.submitJobFromJar(submitJobParameters);
+
+        assertEqualsEventually(() -> jetService.getJobs().size(), 1);
+        hazelcastInstance.shutdown();
+    }
+
+    @Test
+    public void test_jarUploadByMember_withWrongMainClassname() {
+        // Reset the singleton because a new HazelcastInstance will be created for the test
+        HazelcastBootstrap.resetSupplier();
+
+        Config config = smallInstanceConfig();
+        JetConfig jetConfig = config.getJetConfig();
+        jetConfig.setResourceUploadEnabled(true);
+
+        HazelcastInstance hazelcastInstance = createHazelcastInstance(config);
+        JetService jetService = hazelcastInstance.getJet();
+        List<String> jobParameters = emptyList();
+
+        SubmitJobParameters submitJobParameters = new SubmitJobParameters();
+        submitJobParameters.setJarPath(getJarPath());
+        submitJobParameters.setMainClass("org.example.Main1");
+        submitJobParameters.setJobParameters(jobParameters);
+
+        assertThrows(ClassNotFoundException.class, () -> jetService.submitJobFromJar(submitJobParameters));
+
         hazelcastInstance.shutdown();
     }
 
@@ -290,6 +387,7 @@ public class JobUploadTest extends JetTestSupport {
     }
 
     // this jar is only as below
+    // Source is https://github.com/OrcunColak/simplejob.git
     /*
      public class Main {
        public static void main(String[] args) {
