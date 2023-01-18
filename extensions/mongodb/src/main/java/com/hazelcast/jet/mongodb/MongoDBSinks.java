@@ -51,16 +51,16 @@ public final class MongoDBSinks {
      * @since 5.3
      *
      * @param name               name of the sink
-     * @param connectionSupplier MongoDB client supplier
+     * @param clientSupplier MongoDB client supplier
      * @param itemClass          type of document that will be saved
      * @param <T>                type of the items the sink accepts
      */
     public static <T> MongoDBSinkBuilder<T> builder(
             @Nonnull String name,
             @Nonnull Class<T> itemClass,
-            @Nonnull SupplierEx<MongoClient> connectionSupplier
+            @Nonnull SupplierEx<MongoClient> clientSupplier
     ) {
-        return new MongoDBSinkBuilder<>(name, itemClass, connectionSupplier);
+        return new MongoDBSinkBuilder<>(name, itemClass, clientSupplier);
     }
 
 

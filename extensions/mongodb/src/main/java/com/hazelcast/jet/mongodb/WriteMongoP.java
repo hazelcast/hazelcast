@@ -31,7 +31,9 @@ import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.jet.retry.impl.RetryTracker;
 import com.hazelcast.logging.ILogger;
 import com.mongodb.MongoBulkWriteException;
+import com.mongodb.MongoClientException;
 import com.mongodb.MongoCommandException;
+import com.mongodb.MongoServerException;
 import com.mongodb.MongoSocketException;
 import com.mongodb.ReadPreference;
 import com.mongodb.TransactionOptions;
@@ -40,6 +42,7 @@ import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.ClientSession;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
+import com.mongodb.client.MongoIterable;
 import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.client.model.ReplaceOptions;
@@ -114,7 +117,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
      * try to re-process such transaction.
      */
     private static final int MONGODB_TRANSIENT_ERROR = 112;
-    private final SupplierEx<? extends MongoClient> connectionSupplier;
+    private final SupplierEx<? extends MongoClient> clientSupplier;
     private final Class<I> documentType;
     private MongoClient mongoClient;
     private final RetryTracker connectionRetryTracker;
@@ -135,33 +138,22 @@ public class WriteMongoP<I> extends AbstractProcessor {
      * Creates a new processor that will always insert to the same database and collection.
      */
     public WriteMongoP(
-            SupplierEx<? extends MongoClient> connectionSupplier,
+            SupplierEx<? extends MongoClient> clientSupplier,
             String databaseName,
             String collectionName,
             Class<I> documentType,
             FunctionEx<I, Object> documentIdentityFn,
             ConsumerEx<ReplaceOptions> replaceOptionAdjuster,
             String documentIdentityFieldName) {
-        this.connectionSupplier = connectionSupplier;
-        this.documentIdentityFn = documentIdentityFn;
-        this.documentIdentityFieldName = documentIdentityFieldName;
-        this.documentType = documentType;
-
-        ReplaceOptions options = new ReplaceOptions().upsert(true);
-        if (replaceOptionAdjuster != null) {
-            replaceOptionAdjuster.accept(options);
-        }
-        this.replaceOptions = options;
-        this.connectionRetryTracker = new RetryTracker(RETRY_STRATEGY);
-
-        collectionPicker = new ConstantCollectionPicker(databaseName, collectionName);
+        this(clientSupplier, new ConstantCollectionPicker<>(databaseName, collectionName),
+                documentType, documentIdentityFn, replaceOptionAdjuster, documentIdentityFieldName);
     }
 
     /**
      * Creates a new processor that will choose database and collection for each item.
      */
     public WriteMongoP(
-            SupplierEx<? extends MongoClient> connectionSupplier,
+            SupplierEx<? extends MongoClient> clientSupplier,
             FunctionEx<I, String> databaseNameSelectFn,
             FunctionEx<I, String> collectionNameSelectFn,
             Class<I> documentType,
@@ -169,19 +161,34 @@ public class WriteMongoP<I> extends AbstractProcessor {
             ConsumerEx<ReplaceOptions> replaceOptionAdjuster,
             String documentIdentityFieldName
     ) {
-        this.documentType = documentType;
-        this.connectionSupplier = connectionSupplier;
+       this(clientSupplier, new FunctionalCollectionPicker<>(databaseNameSelectFn, collectionNameSelectFn),
+               documentType, documentIdentityFn, replaceOptionAdjuster, documentIdentityFieldName);
+    }
+
+    /**
+     * Creates a new processor that will always insert to the same database and collection.
+     */
+    public WriteMongoP(
+            SupplierEx<? extends MongoClient> clientSupplier,
+            CollectionPicker<I> picker,
+            Class<I> documentType,
+            FunctionEx<I, Object> documentIdentityFn,
+            ConsumerEx<ReplaceOptions> replaceOptionAdjuster,
+            String documentIdentityFieldName) {
+        this.clientSupplier = clientSupplier;
         this.documentIdentityFn = documentIdentityFn;
         this.documentIdentityFieldName = documentIdentityFieldName;
+        this.documentType = documentType;
+        this.collectionPicker = picker;
+
         ReplaceOptions options = new ReplaceOptions().upsert(true);
         if (replaceOptionAdjuster != null) {
             replaceOptionAdjuster.accept(options);
         }
         this.replaceOptions = options;
         this.connectionRetryTracker = new RetryTracker(RETRY_STRATEGY);
-
-        collectionPicker = new FunctionalCollectionPicker(databaseNameSelectFn, collectionNameSelectFn);
     }
+
 
     @Override
     protected void init(@Nonnull Context context) {
@@ -231,7 +238,6 @@ public class WriteMongoP<I> extends AbstractProcessor {
                 break;
             }
         }
-//        inbox.drainTo(items);
 
         try {
             @SuppressWarnings("DataFlowIssue")
@@ -249,14 +255,14 @@ public class WriteMongoP<I> extends AbstractProcessor {
                 for (I item : itemsPerCollection.get(collectionKey)) {
                     Object id = documentIdentityFn.apply(item);
 
+                    WriteModel<I> write;
                     if (docsFound.contains(id)) {
                         Bson filter = eq(documentIdentityFieldName, id);
-                        ReplaceOneModel<I> update = new ReplaceOneModel<>(filter, item, replaceOptions);
-                        writes.add(update);
+                        write = new ReplaceOneModel<>(filter, item, replaceOptions);
                     } else {
-                        InsertOneModel<I> insert = new InsertOneModel<>(item);
-                        writes.add(insert);
+                        write = new InsertOneModel<>(item);
                     }
+                    writes.add(write);
                 }
                 if (transactionUtility.usesTransactionLifecycle()) {
                     checkNotNull(mongoTransaction, "there is no active transaction");
@@ -324,11 +330,14 @@ public class WriteMongoP<I> extends AbstractProcessor {
         transactionUtility.restoreFromSnapshot(key, value);
     }
 
-    boolean reconnectIfNecessary() {
+    /**
+     * @return true if there is a connection to Mongo after exiting this method
+     */
+    private boolean reconnectIfNecessary() {
         if (!isConnectionUp()) {
             if (connectionRetryTracker.shouldTryAgain()) {
                 try {
-                    mongoClient = connectionSupplier.get();
+                    mongoClient = clientSupplier.get();
                     connectionRetryTracker.reset();
                     return true;
                 } catch (Exception e) {
@@ -345,7 +354,16 @@ public class WriteMongoP<I> extends AbstractProcessor {
     }
 
     private boolean isConnectionUp() {
-        return mongoClient != null;
+        if (mongoClient == null) {
+            return false;
+        }
+        try {
+            MongoIterable<String> names = mongoClient.listDatabaseNames().batchSize(1);
+            names.first();
+            return true;
+        } catch (MongoClientException | MongoServerException e) {
+            return false;
+        }
     }
 
     private static class MongoTransactionId implements TwoPhaseSnapshotCommitUtility.TransactionId, Serializable {
@@ -543,7 +561,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
         MongoCollectionKey pick(I item);
     }
 
-    private final class ConstantCollectionPicker implements CollectionPicker<I> {
+    private static final class ConstantCollectionPicker<I> implements CollectionPicker<I> {
 
         private final String databaseName;
         private final String collectionName;
@@ -561,7 +579,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
 
     }
 
-    private final class FunctionalCollectionPicker implements CollectionPicker<I> {
+    private static final class FunctionalCollectionPicker<I> implements CollectionPicker<I> {
 
         private final FunctionEx<I, String> databaseNameSelectFn;
         private final FunctionEx<I, String> collectionNameSelectFn;

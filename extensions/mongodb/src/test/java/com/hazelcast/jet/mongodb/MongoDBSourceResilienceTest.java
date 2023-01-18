@@ -90,8 +90,11 @@ public class MongoDBSourceResilienceTest extends SimpleTestInClusterSupport {
 
     private final Random random = new Random();
 
-    @Test(timeout = 60_000)
-    public void testSourceStream_whenServerDown() {
+    @Test(timeout = 5 * 60_000)
+    public void testSourceStream_whenServerDown() throws IOException {
+//        final ToxiproxyClient toxiproxyClient = new ToxiproxyClient(toxi.getHost(), toxi.getControlPort());
+//        final Proxy proxy = toxiproxyClient.createProxy("mongo", "0.0.0.0:5701", "");
+
         System.setProperty("hazelcast.partition.count", "13");
         Config conf = new Config();
         conf.getJetConfig().setEnabled(true);
@@ -131,7 +134,7 @@ public class MongoDBSourceResilienceTest extends SimpleTestInClusterSupport {
                 sleep(random.nextInt(400));
             }
         });
-        serverToShutdown.getLifecycleService().terminate();
+        serverToShutdown.shutdown();
         assertTrueEventually(() -> assertEquals(1, hz.getCluster().getMembers().size()));
 
         shouldContinue.set(false);

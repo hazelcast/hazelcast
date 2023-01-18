@@ -46,14 +46,14 @@ public final class MongoDBSources {
      * Creates as builder for new batch mongo source. Equivalent to calling {@link MongoDBSourceBuilder#batch}.
      *
      * @since 5.3
-     * @param name descriptive name for the source (diagnostic purposes) connectionSupplier.
-     * @param connectionSupplier a function that creates MongoDB client.
+     * @param name descriptive name for the source (diagnostic purposes) client.
+     * @param clientSupplier a function that creates MongoDB client.
      * @return Batch Mongo source builder
      */
     public static MongoDBSourceBuilder.Batch<Document> batch(
             @Nonnull String name,
-            @Nonnull SupplierEx<? extends MongoClient> connectionSupplier) {
-        return MongoDBSourceBuilder.batch(name, connectionSupplier);
+            @Nonnull SupplierEx<? extends MongoClient> clientSupplier) {
+        return MongoDBSourceBuilder.batch(name, clientSupplier);
     }
 
     /**
@@ -61,14 +61,14 @@ public final class MongoDBSources {
      *
      * @since 5.3
      *
-     * @param name descriptive name for the source (diagnostic purposes) connectionSupplier.
-     * @param connectionSupplier a function that creates MongoDB client.
+     * @param name descriptive name for the source (diagnostic purposes) client.
+     * @param clientSupplier a function that creates MongoDB client.
      * @return Stream Mongo source builder
      */
     public static MongoDBSourceBuilder.Stream<Document> stream(
             @Nonnull String name,
-            @Nonnull SupplierEx<? extends MongoClient> connectionSupplier) {
-        return MongoDBSourceBuilder.stream(name, connectionSupplier);
+            @Nonnull SupplierEx<? extends MongoClient> clientSupplier) {
+        return MongoDBSourceBuilder.stream(name, clientSupplier);
     }
 
     /**

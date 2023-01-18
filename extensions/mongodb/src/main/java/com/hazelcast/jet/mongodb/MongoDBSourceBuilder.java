@@ -69,14 +69,14 @@ public final class MongoDBSourceBuilder {
      * each item to json.
      *
      * @param name               a descriptive name for the source (diagnostic purposes)
-     * @param connectionSupplier a function that creates MongoDB client
+     * @param clientSupplier a function that creates MongoDB client
      */
     @Nonnull
     public static MongoDBSourceBuilder.Batch<Document> batch(
             @Nonnull String name,
-            @Nonnull SupplierEx<? extends MongoClient> connectionSupplier
+            @Nonnull SupplierEx<? extends MongoClient> clientSupplier
     ) {
-        return new Batch<>(name, connectionSupplier);
+        return new Batch<>(name, clientSupplier);
     }
 
     /**
@@ -89,20 +89,20 @@ public final class MongoDBSourceBuilder {
      * tolerance using {@link ChangeStreamDocument#getResumeToken()}.
      *
      * @param name               a descriptive name for the source (diagnostic purposes)
-     * @param connectionSupplier a function that creates MongoDB client
+     * @param clientSupplier a function that creates MongoDB client
      */
     @Nonnull
     public static MongoDBSourceBuilder.Stream<Document> stream(
             @Nonnull String name,
-            @Nonnull SupplierEx<? extends MongoClient> connectionSupplier
+            @Nonnull SupplierEx<? extends MongoClient> clientSupplier
     ) {
-        return new Stream<>(name, connectionSupplier);
+        return new Stream<>(name, clientSupplier);
     }
 
     private abstract static class Base<T> {
 
         protected String name;
-        protected SupplierEx<? extends MongoClient> connectionSupplier;
+        protected SupplierEx<? extends MongoClient> clientSupplier;
         protected Class<T> mongoType;
 
         protected String databaseName;
@@ -145,11 +145,11 @@ public final class MongoDBSourceBuilder {
         @SuppressWarnings("unchecked")
         private Batch(
                 @Nonnull String name,
-                @Nonnull SupplierEx<? extends MongoClient> connectionSupplier
+                @Nonnull SupplierEx<? extends MongoClient> clientSupplier
         ) {
-            checkSerializable(connectionSupplier, "connectionSupplier");
+            checkSerializable(clientSupplier, "clientSupplier");
             this.name = name;
-            this.connectionSupplier = connectionSupplier;
+            this.clientSupplier = clientSupplier;
             mapFn = (FunctionEx<Document, T>) toClass(Document.class);
         }
 
@@ -296,17 +296,17 @@ public final class MongoDBSourceBuilder {
          */
         @Nonnull
         public BatchSource<T> build() {
-            checkNotNull(connectionSupplier, "connectionSupplier must be set");
+            checkNotNull(clientSupplier, "clientSupplier must be set");
             checkNotNull(mapFn, "mapFn must be set");
 
             List<Bson> aggregates = this.aggregates;
             String databaseName = this.databaseName;
             String collectionName = this.collectionName;
-            SupplierEx<? extends MongoClient> localConnectionSupplier = connectionSupplier;
+            SupplierEx<? extends MongoClient> localclientSupplier = clientSupplier;
             FunctionEx<Document, T> localMapFn = mapFn;
 
             return Sources.batchFromProcessor(name, ProcessorMetaSupplier.of(
-                    () -> new ReadMongoP<>(localConnectionSupplier, aggregates,
+                    () -> new ReadMongoP<>(localclientSupplier, aggregates,
                             databaseName, collectionName, localMapFn)));
         }
     }
@@ -324,11 +324,11 @@ public final class MongoDBSourceBuilder {
         @SuppressWarnings("unchecked")
         private Stream(
                 @Nonnull String name,
-                @Nonnull SupplierEx<? extends MongoClient> connectionSupplier
+                @Nonnull SupplierEx<? extends MongoClient> clientSupplier
         ) {
-            checkSerializable(connectionSupplier, "connectionSupplier");
+            checkSerializable(clientSupplier, "clientSupplier");
             this.name = name;
-            this.connectionSupplier = connectionSupplier;
+            this.clientSupplier = clientSupplier;
             mapFn = (FunctionEx<ChangeStreamDocument<Document>, T>) streamToClass(Document.class);
         }
 
@@ -471,10 +471,10 @@ public final class MongoDBSourceBuilder {
          */
         @Nonnull
         public StreamSource<T> build() {
-            checkNotNull(connectionSupplier, "connectionSupplier must be set");
+            checkNotNull(clientSupplier, "clientSupplier must be set");
             checkNotNull(mapFn, "mapFn must be set");
 
-            SupplierEx<? extends MongoClient> localConnectionSupplier = connectionSupplier;
+            SupplierEx<? extends MongoClient> localclientSupplier = clientSupplier;
             FunctionEx<ChangeStreamDocument<Document>, T> localMapFn = mapFn;
             Long startAtOperationTime = this.startAtOperationTime;
             List<Bson> aggregates = this.aggregates;
@@ -483,7 +483,7 @@ public final class MongoDBSourceBuilder {
 
             return Sources.streamFromProcessorWithWatermarks(name, true,
                     eventTimePolicy -> ProcessorMetaSupplier.of(
-                        () -> new ReadMongoP<>(localConnectionSupplier, startAtOperationTime, eventTimePolicy, aggregates,
+                        () -> new ReadMongoP<>(localclientSupplier, startAtOperationTime, eventTimePolicy, aggregates,
                                 databaseName, collectionName, localMapFn)));
         }
     }

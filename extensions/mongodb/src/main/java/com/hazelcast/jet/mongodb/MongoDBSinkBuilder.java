@@ -47,7 +47,7 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
 public final class MongoDBSinkBuilder<T> {
 
     private final String name;
-    private final SupplierEx<MongoClient> connectionSupplier;
+    private final SupplierEx<MongoClient> clientSupplier;
     @Nonnull
     private final Class<T> documentClass;
 
@@ -67,9 +67,9 @@ public final class MongoDBSinkBuilder<T> {
     MongoDBSinkBuilder(
             @Nonnull String name,
             @Nonnull Class<T> documentClass,
-            @Nonnull SupplierEx<MongoClient> connectionSupplier
+            @Nonnull SupplierEx<MongoClient> clientSupplier
     ) {
-        this.connectionSupplier = checkNonNullAndSerializable(connectionSupplier, "connectionSupplier");
+        this.clientSupplier = checkNonNullAndSerializable(clientSupplier, "clientSupplier");
         this.documentClass = checkNotNull(documentClass, "document class cannot be null");
         this.name = checkNotNull(name, "sink name cannot be null");
 
@@ -151,10 +151,10 @@ public final class MongoDBSinkBuilder<T> {
      */
     @Nonnull
     public Sink<T> build() {
-        checkNotNull(connectionSupplier, "connectionSupplier must be set");
+        checkNotNull(clientSupplier, "clientSupplier must be set");
         checkNotNull(documentIdentityFn, "documentIdentityFn must be set");
 
-        final SupplierEx<MongoClient> connectionSupplier = this.connectionSupplier;
+        final SupplierEx<MongoClient> clientSupplier = this.clientSupplier;
         final Class<T> documentClass = this.documentClass;
         final String databaseName = this.databaseName;
         final String collectionName = this.collectionName;
@@ -176,11 +176,11 @@ public final class MongoDBSinkBuilder<T> {
 
         if (databaseName != null) {
         return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism,
-                ProcessorSupplier.of(() -> new WriteMongoP<>(connectionSupplier, databaseName, collectionName,
+                ProcessorSupplier.of(() -> new WriteMongoP<>(clientSupplier, databaseName, collectionName,
                         documentClass, documentIdentityFn, updateOptionsChanger, fieldName))));
         } else {
             return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism,
-                    ProcessorSupplier.of(() -> new WriteMongoP<>(connectionSupplier, selectDatabaseNameFn,
+                    ProcessorSupplier.of(() -> new WriteMongoP<>(clientSupplier, selectDatabaseNameFn,
                             selectCollectionNameFn, documentClass, documentIdentityFn, updateOptionsChanger, fieldName))));
         }
     }
