@@ -172,6 +172,15 @@ public interface Job {
     JobConfig getConfig();
 
     /**
+     * Sets the specified configuration if this job is suspended.
+     *
+     * @throws IllegalStateException if this job is not suspended
+     * @throws UnsupportedOperationException if called for a light job
+     * @since 5.3
+     */
+    void setConfig(@Nonnull JobConfig config);
+
+    /**
      * Return a {@link JobSuspensionCause description of the cause} that has
      * led to the suspension of the job. Throws an {@code IllegalStateException}
      * if the job is not currently suspended. Not supported for light jobs.

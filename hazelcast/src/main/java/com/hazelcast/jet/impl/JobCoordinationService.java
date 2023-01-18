@@ -825,6 +825,22 @@ public class JobCoordinationService {
     }
 
     /**
+     * Sets the specified configuration if the given job is suspended.
+     * Otherwise, an {@link IllegalStateException} is thrown by the returned future.
+     */
+    public CompletableFuture<Void> setJobConfig(long jobId, @Nonnull JobConfig config) {
+        return runWithJob(jobId,
+                masterContext -> masterContext.setJobConfig(config),
+                jobResult -> {
+                    throw new IllegalStateException("Job not suspended");
+                },
+                jobRecord -> {
+                    throw new IllegalStateException("Job not suspended");
+                }
+        );
+    }
+
+    /**
      * Add the given member to shutting down members. This will prevent
      * submission of more executions until the member actually leaves the
      * cluster. The returned future will complete when all executions of which

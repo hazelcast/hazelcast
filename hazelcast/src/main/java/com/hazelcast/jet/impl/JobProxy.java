@@ -35,6 +35,7 @@ import com.hazelcast.jet.impl.operation.GetJobSuspensionCauseOperation;
 import com.hazelcast.jet.impl.operation.IsJobUserCancelledOperation;
 import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
 import com.hazelcast.jet.impl.operation.ResumeJobOperation;
+import com.hazelcast.jet.impl.operation.SetJobConfigOperation;
 import com.hazelcast.jet.impl.operation.SubmitJobOperation;
 import com.hazelcast.jet.impl.operation.TerminateJobOperation;
 import com.hazelcast.logging.LoggingService;
@@ -188,6 +189,11 @@ public class JobProxy extends AbstractJobProxy<NodeEngineImpl, Address> {
         } catch (Throwable t) {
             throw rethrow(t);
         }
+    }
+
+    @Override
+    public CompletableFuture<Void> invokeSetConfig(JobConfig config) {
+        return invokeOp(new SetJobConfigOperation(getId(), config));
     }
 
     @Override

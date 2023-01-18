@@ -35,9 +35,8 @@ import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.util.Util.toLocalDateTime;
 
 /**
- * Static metadata information about the job. There's one instance for each
- * jobId, used across multiple executions. The information is created initially
- * and never modified (unless we allow DAG updates in the future).
+ * Metadata information about the job. There's one instance for each jobId,
+ * used across multiple executions.
  */
 public class JobRecord implements IdentifiedDataSerializable {
 
@@ -47,7 +46,7 @@ public class JobRecord implements IdentifiedDataSerializable {
     private Data dag;
     // JSON representation of DAG, used by Management Center
     private String dagJson;
-    private JobConfig config;
+    private volatile JobConfig config;
     private Set<String> ownedObservables;
     private Subject subject;
 
@@ -93,6 +92,10 @@ public class JobRecord implements IdentifiedDataSerializable {
 
     public JobConfig getConfig() {
         return config;
+    }
+
+    public void setConfig(JobConfig config) {
+        this.config = config;
     }
 
     public Set<String> getOwnedObservables() {

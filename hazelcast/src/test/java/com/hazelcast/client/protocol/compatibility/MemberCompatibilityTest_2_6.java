@@ -7964,6 +7964,23 @@ public class MemberCompatibilityTest_2_6 {
         compareClientMessages(fromFile, encoded);
     }
 
+    @Test
+    public void test_JetSetJobConfigCodec_decodeRequest() {
+        int fileClientMessageIndex = 901;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        JetSetJobConfigCodec.RequestParameters parameters = JetSetJobConfigCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aLong, parameters.jobId));
+        assertTrue(isEqual(aData, parameters.config));
+    }
+
+    @Test
+    public void test_JetSetJobConfigCodec_encodeResponse() {
+        int fileClientMessageIndex = 902;
+        ClientMessage encoded = JetSetJobConfigCodec.encodeResponse();
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
         ClientMessage.Frame binaryFrame, encodedFrame;
 

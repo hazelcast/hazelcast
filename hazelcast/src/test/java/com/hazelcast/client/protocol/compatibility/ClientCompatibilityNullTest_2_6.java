@@ -7073,6 +7073,19 @@ public class ClientCompatibilityNullTest_2_6 {
         assertTrue(isEqual(aBoolean, JetIsJobUserCancelledCodec.decodeResponse(fromFile)));
     }
 
+    @Test
+    public void test_JetSetJobConfigCodec_encodeRequest() {
+        int fileClientMessageIndex = 901;
+        ClientMessage encoded = JetSetJobConfigCodec.encodeRequest(aLong, aData);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetSetJobConfigCodec_decodeResponse() {
+        int fileClientMessageIndex = 902;
+    }
+
     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
         ClientMessage.Frame binaryFrame, encodedFrame;
 

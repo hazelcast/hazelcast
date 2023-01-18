@@ -31,6 +31,10 @@ import com.hazelcast.jet.core.TestProcessors.MockP;
 import com.hazelcast.jet.core.TestProcessors.MockPS;
 import com.hazelcast.jet.core.TestProcessors.NoOutputSourceP;
 import com.hazelcast.jet.core.processor.DiagnosticProcessors;
+import com.hazelcast.jet.pipeline.Pipeline;
+import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.jet.pipeline.test.AssertionSinks;
+import com.hazelcast.jet.pipeline.test.TestSources;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.StreamSerializer;
@@ -1026,6 +1030,83 @@ public class JobTest extends SimpleTestInClusterSupport {
                 ", light=" + job.isLightJob() +
                 ", submissionTime=" + job.getSubmissionTime() +
                 ", status=" + job.getStatus();
+    }
+
+    @Test
+    public void test_changeJobConfig_member() {
+        test_changeJobConfig(instances()[1]);
+    }
+
+    @Test
+    public void test_changeJobConfig_client() {
+        test_changeJobConfig(client());
+    }
+
+    private void test_changeJobConfig(HazelcastInstance instance) {
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(TestSources.items(asList(2, 3, 1)))
+                .sort()
+                .writeTo(AssertionSinks.assertOrdered(asList(1, 2, 3)));
+
+        JobConfig config = new JobConfig().setSuspendOnFailure(true).setMaxProcessorAccumulatedRecords(2);
+        Job job = instance.getJet().newJob(pipeline, config);
+        assertJobStatusEventually(job, SUSPENDED);
+        assertThat(job.getSuspensionCause().errorCause())
+                .contains("Exception thrown to prevent an OutOfMemoryError on this Hazelcast instance");
+
+        job.setConfig(new JobConfig().setMaxProcessorAccumulatedRecords(3));
+        job.resume();
+        job.join();
+
+        assertThatThrownBy(() -> job.setConfig(new JobConfig())).hasMessage("Job not suspended");
+    }
+
+    @Test
+    public void test_tryChangingJobConfig_then_fail_member() {
+        test_tryChangingJobConfig_then_fail(instances()[1]);
+    }
+
+    @Test
+    public void test_tryChangingJobConfig_then_fail_client() {
+        test_tryChangingJobConfig_then_fail(client());
+    }
+
+    private void test_tryChangingJobConfig_then_fail(HazelcastInstance instance) {
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(TestSources.itemStream(1))
+                .withoutTimestamps()
+                .writeTo(Sinks.noop());
+
+        Job job = instance.getJet().newJob(pipeline);
+        assertThatThrownBy(() -> job.setConfig(new JobConfig())).hasMessage("Job not suspended");
+
+        assertJobStatusEventually(job, RUNNING);
+        assertThatThrownBy(() -> job.setConfig(new JobConfig())).hasMessage("Job not suspended");
+
+        cancelAndJoin(job);
+        assertThatThrownBy(() -> job.setConfig(new JobConfig())).hasMessage("Job not suspended");
+    }
+
+    @Test
+    public void test_tryChangingLightJobConfig_then_fail_member() {
+        test_tryChangingLightJobConfig_then_fail(instances()[1]);
+    }
+
+    @Test
+    public void test_tryChangingLightJobConfig_then_fail_client() {
+        test_tryChangingLightJobConfig_then_fail(client());
+    }
+
+    private void test_tryChangingLightJobConfig_then_fail(HazelcastInstance instance) {
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(TestSources.itemStream(1))
+                .withoutTimestamps()
+                .writeTo(Sinks.noop());
+
+        Job job = instance.getJet().newLightJob(pipeline);
+        assertThatThrownBy(() -> job.setConfig(new JobConfig()))
+                .hasMessage("not supported for light jobs: setConfig");
+        cancelAndJoin(job);
     }
 
     // ### Tests for light jobs

@@ -45,6 +45,7 @@ import com.hazelcast.jet.impl.operation.JoinSubmittedJobOperation;
 import com.hazelcast.jet.impl.operation.NotifyMemberShutdownOperation;
 import com.hazelcast.jet.impl.operation.PrepareForPassiveClusterOperation;
 import com.hazelcast.jet.impl.operation.ResumeJobOperation;
+import com.hazelcast.jet.impl.operation.SetJobConfigOperation;
 import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation;
 import com.hazelcast.jet.impl.operation.SnapshotPhase1Operation.SnapshotPhase1Result;
 import com.hazelcast.jet.impl.operation.SnapshotPhase2Operation;
@@ -99,8 +100,7 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
     public static final int SNAPSHOT_STATS = 30;
     public static final int PREPARE_FOR_PASSIVE_CLUSTER_OP = 31;
     public static final int SNAPSHOT_VALIDATION_RECORD = 32;
-    // Moved to AggregateDataSerializerHook
-    // public static final int AGGREGATE_OP_AGGREGATOR = 33;
+    public static final int SET_JOB_CONFIG_OP = 33;
     public static final int GET_JOB_METRICS_OP = 34;
     public static final int GET_LOCAL_JOB_METRICS_OP = 35;
     public static final int SNAPSHOT_PHASE2_OPERATION = 36;
@@ -197,6 +197,8 @@ public final class JetInitDataSerializerHook implements DataSerializerHook {
                     return new PrepareForPassiveClusterOperation();
                 case SNAPSHOT_VALIDATION_RECORD:
                     return new SnapshotValidationRecord();
+                case SET_JOB_CONFIG_OP:
+                    return new SetJobConfigOperation();
                 case GET_JOB_METRICS_OP:
                     return new GetJobMetricsOperation();
                 case GET_LOCAL_JOB_METRICS_OP:

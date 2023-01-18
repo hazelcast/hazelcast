@@ -28,6 +28,7 @@ import com.hazelcast.client.impl.protocol.codec.JetGetJobSuspensionCauseCodec;
 import com.hazelcast.client.impl.protocol.codec.JetIsJobUserCancelledCodec;
 import com.hazelcast.client.impl.protocol.codec.JetJoinSubmittedJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetResumeJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetSetJobConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetTerminateJobCodec;
 import com.hazelcast.client.impl.spi.impl.ClientInvocation;
@@ -206,6 +207,13 @@ public class ClientJobProxy extends AbstractJobProxy<HazelcastClientInstanceImpl
             Data data = JetGetJobConfigCodec.decodeResponse(response);
             return serializationService().toObject(data);
         });
+    }
+
+    @Override
+    public CompletableFuture<Void> invokeSetConfig(JobConfig config) {
+        Data configData = serializationService().toData(config);
+        ClientMessage request = JetSetJobConfigCodec.encodeRequest(getId(), configData);
+        return invocation(request, masterId()).invoke().thenApply(c -> null);
     }
 
     @Nonnull @Override

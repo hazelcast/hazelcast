@@ -33,6 +33,7 @@ import javax.annotation.Nullable;
 import java.util.Collection;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -48,6 +49,7 @@ import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.core.JobStatus.NOT_RUNNING;
 import static com.hazelcast.jet.core.JobStatus.SUSPENDED;
+import static com.hazelcast.jet.core.JobStatus.SUSPENDED_EXPORTING_SNAPSHOT;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.peel;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.Util.jobNameAndExecutionId;
@@ -153,6 +155,23 @@ public class MasterContext {
 
     public JobConfig jobConfig() {
         return jobRecord.getConfig();
+    }
+
+    public void setJobConfig(JobConfig config) {
+        JobConfig currentConfig = jobConfig();
+        if (!Objects.equals(currentConfig.getName(), config.getName())) {
+            throw new UnsupportedOperationException("Job name cannot be changed");
+        }
+        lock();
+        try {
+            if (jobStatus != SUSPENDED && jobStatus != SUSPENDED_EXPORTING_SNAPSHOT) {
+                throw new IllegalStateException("Job not suspended");
+            }
+            jobRecord.setConfig(config);
+            jobRepository.updateJobRecord(jobRecord);
+        } finally {
+            unlock();
+        }
     }
 
     public JobRecord jobRecord() {

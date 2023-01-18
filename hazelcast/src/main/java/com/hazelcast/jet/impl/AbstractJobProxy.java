@@ -25,6 +25,7 @@ import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.core.JobNotFoundException;
 import com.hazelcast.jet.core.JobStatus;
 import com.hazelcast.jet.impl.exception.CancellationByUserException;
+import com.hazelcast.jet.impl.operation.SetJobConfigOperation;
 import com.hazelcast.jet.impl.util.NonCompletableFuture;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.LoggingService;
@@ -126,21 +127,25 @@ public abstract class AbstractJobProxy<C, M> implements Job {
 
     @Nonnull @Override
     public JobConfig getConfig() {
-        // The common path will use a single volatile load
-        JobConfig loadResult = jobConfig;
-        if (loadResult != null) {
-            return loadResult;
-        }
         synchronized (this) {
-            // The uncommon path can use simpler code with multiple volatile loads
-            if (jobConfig != null) {
-                return jobConfig;
-            }
             jobConfig = doGetJobConfig();
             if (jobConfig == null) {
                 throw new NullPointerException("Supplier returned null");
             }
             return jobConfig;
+        }
+    }
+
+    @Override
+    public void setConfig(@Nonnull JobConfig config) {
+        checkNotLightJob("setConfig");
+        synchronized (this) {
+            try {
+                invokeSetConfig(config).get();
+                jobConfig = config;
+            } catch (Throwable t) {
+                throw rethrow(t);
+            }
         }
     }
 
@@ -307,6 +312,16 @@ public abstract class AbstractJobProxy<C, M> implements Job {
     protected abstract long doGetJobSubmissionTime();
 
     protected abstract JobConfig doGetJobConfig();
+
+    /**
+     * Sends a {@link SetJobConfigOperation} to the master member. On the master member,
+     * if the job is SUSPENDED, the job record is updated both locally and {@linkplain
+     * JobRepository#JOB_RECORDS_MAP_NAME globally} (in order for {@link #getConfig()} to
+     * reflect the changes); otherwise, the operation fails. If the operation succeeds, on
+     * the request-initiating member, {@link #jobConfig} is updated, which is used as a
+     * cache for {@link #getName()}.
+     */
+    protected abstract CompletableFuture<Void> invokeSetConfig(JobConfig config);
 
     /**
      * Return the ID of the coordinator - the master member for normal jobs and

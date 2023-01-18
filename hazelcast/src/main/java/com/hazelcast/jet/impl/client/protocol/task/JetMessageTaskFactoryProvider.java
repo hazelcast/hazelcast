@@ -32,6 +32,7 @@ import com.hazelcast.client.impl.protocol.codec.JetGetJobSuspensionCauseCodec;
 import com.hazelcast.client.impl.protocol.codec.JetIsJobUserCancelledCodec;
 import com.hazelcast.client.impl.protocol.codec.JetJoinSubmittedJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetResumeJobCodec;
+import com.hazelcast.client.impl.protocol.codec.JetSetJobConfigCodec;
 import com.hazelcast.client.impl.protocol.codec.JetSubmitJobCodec;
 import com.hazelcast.client.impl.protocol.codec.JetTerminateJobCodec;
 import com.hazelcast.client.impl.protocol.task.MessageTask;
@@ -62,6 +63,7 @@ public class JetMessageTaskFactoryProvider implements MessageTaskFactoryProvider
         factories.put(JetGetJobSubmissionTimeCodec.REQUEST_MESSAGE_TYPE,
                 toFactory(JetGetJobSubmissionTimeMessageTask::new));
         factories.put(JetGetJobConfigCodec.REQUEST_MESSAGE_TYPE, toFactory(JetGetJobConfigMessageTask::new));
+        factories.put(JetSetJobConfigCodec.REQUEST_MESSAGE_TYPE, toFactory(JetSetJobConfigMessageTask::new));
         factories.put(JetResumeJobCodec.REQUEST_MESSAGE_TYPE, toFactory(JetResumeJobMessageTask::new));
         factories.put(JetExportSnapshotCodec.REQUEST_MESSAGE_TYPE, toFactory(JetExportSnapshotMessageTask::new));
         factories.put(JetGetJobSummaryListCodec.REQUEST_MESSAGE_TYPE, toFactory(JetGetJobSummaryListMessageTask::new));
