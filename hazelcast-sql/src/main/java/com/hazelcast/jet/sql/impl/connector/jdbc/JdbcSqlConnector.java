@@ -375,10 +375,13 @@ public class JdbcSqlConnector implements SqlConnector {
         );
     }
 
-    protected boolean isUpsertAvailable(JdbcTable jdbcTable) {
+    // Returns if upsert is supported for the given dialect
+    protected boolean isUpsertSupported(JdbcTable jdbcTable) {
         boolean result = false;
         SqlDialect dialect = jdbcTable.sqlDialect();
-        if (dialect instanceof MysqlSqlDialect || dialect instanceof PostgresqlSqlDialect || dialect instanceof H2SqlDialect) {
+        if (dialect instanceof MysqlSqlDialect ||
+            dialect instanceof PostgresqlSqlDialect ||
+            dialect instanceof H2SqlDialect) {
             result = true;
         }
         return result;
@@ -389,7 +392,7 @@ public class JdbcSqlConnector implements SqlConnector {
     public Vertex sinkProcessor(@Nonnull DAG dag, @Nonnull Table table) {
         JdbcTable jdbcTable = (JdbcTable) table;
         SqlDialect dialect = jdbcTable.sqlDialect();
-        if (isUpsertAvailable(jdbcTable)) {
+        if (isUpsertSupported(jdbcTable)) {
             String query = null;
 
             if (dialect instanceof MysqlSqlDialect) {
@@ -413,6 +416,7 @@ public class JdbcSqlConnector implements SqlConnector {
                     )
             );
         }
+        // Unsupported dialect. Execute the INSERT statement
         VertexWithInputConfig vertexWithInputConfig = insertProcessor(dag, table);
         return vertexWithInputConfig.vertex();
     }

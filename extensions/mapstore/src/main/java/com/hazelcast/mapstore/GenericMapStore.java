@@ -43,6 +43,7 @@ import com.hazelcast.sql.SqlRowMetadata;
 import com.hazelcast.sql.SqlService;
 
 import javax.annotation.Nonnull;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -113,10 +114,6 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
     static final String TYPE_NAME_PROPERTY = "type-name";
 
     static final String MAPPING_NAME_COLUMN = "name";
-
-    static final String H2_PK_VIOLATION = "Unique index or primary key violation";
-    static final String PG_PK_VIOLATION = "ERROR: duplicate key value violates unique constraint";
-    static final String MYSQL_PK_VIOLATION = "Duplicate entry";
 
     private ILogger logger;
 
@@ -488,13 +485,15 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
         }
         try (SqlResult ignored = sql.execute(queries.storeInsert(), params)) {
         } catch (Exception e) {
-            if (e.getMessage() != null && (e.getMessage().contains(H2_PK_VIOLATION) ||
-                    e.getMessage().contains(PG_PK_VIOLATION) ||
-                    e.getMessage().contains(MYSQL_PK_VIOLATION))) {
+
+            if (isIntegrityConstraintViolation(e)) {
+
+                //Try to update the row
                 Object tmp = params[idPos];
                 params[idPos] = params[params.length - 1];
                 params[params.length - 1] = tmp;
-                sql.execute(queries.storeUpdate(), params).close();
+                String updateSQL = queries.storeUpdate();
+                sql.execute(updateSQL, params).close();
             } else {
                 throw e;
             }
@@ -552,6 +551,36 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
         } catch (InterruptedException e) {
             throw new HazelcastException(e);
         }
+    }
+
+    public static Throwable findSQLException(Throwable throwable) {
+        Throwable rootCause = throwable;
+        while (rootCause.getCause() != null && rootCause.getCause() != rootCause) {
+            rootCause = rootCause.getCause();
+            if (rootCause instanceof SQLException) {
+                return rootCause;
+            }
+        }
+        return null;
+    }
+
+    // SQLException returns SQL state in five digit number.
+    // These five-digit numbers tell about the status of the SQL statements.
+    // The SQLSTATE values consists of two fields.
+    // The class, which is the first two characters of the string, and
+    // the subclass, which is the terminating three characters of the string.
+    // See https://en.wikipedia.org/wiki/SQLSTATE for cate
+    boolean isIntegrityConstraintViolation (Exception exception) {
+        boolean result = false;
+        Throwable rootSQLException = findSQLException(exception);
+        if (rootSQLException != null) {
+            SQLException sqlException = (SQLException) rootSQLException;
+            String sqlState = sqlException.getSQLState();
+            if (sqlState != null) {
+                result = sqlState.startsWith("23");
+            }
+        }
+        return result;
     }
 
     @VisibleForTesting
