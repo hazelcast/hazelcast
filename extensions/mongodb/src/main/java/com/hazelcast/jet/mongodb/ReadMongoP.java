@@ -84,10 +84,10 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
     private boolean snapshotInProgress;
     private final MongoChunkedReader reader;
+    private final MongoDbConnection connection;
 
     private Traverser<?> traverser;
     private Traverser<? extends Entry<BroadcastKey<Integer>, ?>> snapshotTraverser;
-    protected MongoDbConnection connection;
 
     /**
      * Creates a new processor with batch reader.
