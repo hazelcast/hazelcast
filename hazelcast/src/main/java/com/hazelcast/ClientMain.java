@@ -5,14 +5,17 @@ import com.hazelcast.core.Hazelcast;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.map.IMap;
 
+import static com.hazelcast.spi.properties.ClusterProperty.ALTO_ENABLED;
+import static com.hazelcast.spi.properties.ClusterProperty.ALTO_EVENTLOOP_COUNT;
+
 /**
  * Demo application for TPC. Will be removed in in the final release.
  */
 public class ClientMain {
 
     public static void main(String[] args) {
-        System.setProperty("hz.alto.enabled", "true");
-        System.setProperty("hz.alto.eventloop-count", "" + Runtime.getRuntime().availableProcessors());
+        System.setProperty(ALTO_ENABLED.getName(), "true");
+        System.setProperty(ALTO_EVENTLOOP_COUNT.getName(), "" + Runtime.getRuntime().availableProcessors());
         HazelcastInstance server = Hazelcast.newHazelcastInstance();
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
         System.out.println("Client created");

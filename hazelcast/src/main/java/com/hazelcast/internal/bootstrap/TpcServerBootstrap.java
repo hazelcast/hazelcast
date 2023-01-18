@@ -47,7 +47,8 @@ import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
-import static java.lang.System.getProperty;
+import static com.hazelcast.spi.properties.ClusterProperty.ALTO_ENABLED;
+import static com.hazelcast.spi.properties.ClusterProperty.ALTO_EVENTLOOP_COUNT;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
 @SuppressWarnings("checkstyle:MagicNumber, checkstyle:")
@@ -73,10 +74,21 @@ public class TpcServerBootstrap {
         this.logger = nodeEngine.getLogger(TpcServerBootstrap.class);
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
         this.config = nodeEngine.getConfig();
-        this.enabled = config.getAltoConfig().isEnabled();
-        logger.info("TPC: " + (enabled ? "enabled" : "disabled"));
+        this.enabled = calculateEnabled();
         this.thisAddress = nodeEngine.getThisAddress();
         this.tpcEngine = newTpcEngine();
+    }
+
+    private boolean calculateEnabled() {
+        boolean enabled;
+        String enabledString = nodeEngine.getProperties().getString(ALTO_ENABLED);
+        if (enabledString != null) {
+            enabled = Boolean.parseBoolean(enabledString);
+        } else {
+            enabled = config.getAltoConfig().isEnabled();
+        }
+        logger.info("TPC: " + (enabled ? "enabled" : "disabled"));
+        return enabled;
     }
 
     public boolean isEnabled() {
@@ -100,8 +112,19 @@ public class TpcServerBootstrap {
         NioEventloopBuilder eventloopBuilder = new NioEventloopBuilder();
         eventloopBuilder.setThreadFactory(AltoEventloopThread::new);
         configuration.setEventloopBuilder(eventloopBuilder);
-        configuration.setEventloopCount(config.getAltoConfig().getEventloopCount());
+        configuration.setEventloopCount(calculateEventloopCount());
         return new TpcEngine(configuration);
+    }
+
+    private int calculateEventloopCount() {
+        int eventloopCount;
+        String eventloopCountString = nodeEngine.getProperties().getString(ALTO_EVENTLOOP_COUNT);
+        if (eventloopCountString != null) {
+            eventloopCount = Integer.parseInt(eventloopCountString);
+        } else {
+            eventloopCount = config.getAltoConfig().getEventloopCount();
+        }
+        return eventloopCount;
     }
 
     public void start() {

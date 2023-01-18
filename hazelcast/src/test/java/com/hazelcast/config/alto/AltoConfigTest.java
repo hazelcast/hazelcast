@@ -14,6 +14,8 @@ import org.junit.runner.RunWith;
 
 import static com.hazelcast.config.alto.AltoConfigTestUtil.getEventloopCount;
 import static com.hazelcast.config.alto.AltoConfigTestUtil.isTpcEnabled;
+import static com.hazelcast.spi.properties.ClusterProperty.ALTO_ENABLED;
+import static com.hazelcast.spi.properties.ClusterProperty.ALTO_EVENTLOOP_COUNT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -25,7 +27,7 @@ public class AltoConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testTPCDisabledByDefault() {
-        assertFalse(isTpcEnabled(createHazelcastInstance()));
+        assertFalse(isTpcEnabled(createHazelcastInstance(config)));
     }
 
     @Test
@@ -48,6 +50,24 @@ public class AltoConfigTest extends HazelcastTestSupport {
     public void testConfigValidation() {
         AltoConfig altoConfig = config.getAltoConfig();
         assertThrows(IllegalArgumentException.class, () -> altoConfig.setEventloopCount(0));
+    }
+
+    @Test
+    public void testSystemProperties() {
+        System.setProperty(ALTO_ENABLED.getName(), "true");
+        System.setProperty(ALTO_EVENTLOOP_COUNT.getName(), "3");
+        HazelcastInstance hz = createHazelcastInstance(config);
+        assertTrue(isTpcEnabled(hz));
+        assertEquals(3, getEventloopCount(hz));
+    }
+
+    @Test
+    public void testConfigProperties() {
+        config.setProperty(ALTO_ENABLED.getName(), "true");
+        config.setProperty(ALTO_EVENTLOOP_COUNT.getName(), "3");
+        HazelcastInstance hz = createHazelcastInstance(config);
+        assertTrue(isTpcEnabled(hz));
+        assertEquals(3, getEventloopCount(hz));
     }
 
     @Test
