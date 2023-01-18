@@ -37,7 +37,7 @@ import java.util.Set;
 
 import static java.util.Collections.newSetFromMap;
 
-public class UDTObjectToJsonFunction extends UniExpressionWithType<HazelcastJsonValue> implements IdentifiedDataSerializable {
+public class UdtObjectToJsonFunction extends UniExpressionWithType<HazelcastJsonValue> implements IdentifiedDataSerializable {
 
     public UDTObjectToJsonFunction() { }
 

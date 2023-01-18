@@ -161,7 +161,8 @@ public class ParserOperationsTest extends SqlTestSupport {
     @Test
     public void testHiddenFunctions() {
         checkFailure("SELECT JSON_PARSE('[1,2,3]')", "Function 'JSON_PARSE' does not exist");
-        checkFailure("SELECT UDT_OBJECT_TO_JSON(null)", "Function 'UDT_OBJECT_TO_JSON' does not exist");
+        String fname = HazelcastUDTObjectToJsonFunction.INSTANCE.getName();
+        checkFailure("SELECT " + fname + "(null)", "Function '" + fname + "' does not exist");
     }
 
     private void checkSuccess(String sql) {
