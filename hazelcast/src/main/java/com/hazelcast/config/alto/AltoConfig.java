@@ -41,22 +41,21 @@ public class AltoConfig {
     }
 
     /**
-     * In Alto, everything is done in threads called Eventloop. This method
-     * gets the number of such threads. By default, it's equal to the
-     * number of available processors.
+     * Gets the number of eventloops.
      *
      * @return the number of eventloop threads
      * @see Runtime#availableProcessors()
      * @see com.hazelcast.internal.tpc.Eventloop
+     * @see AltoConfig#setEventloopCount(int)
      */
     public int getEventloopCount() {
         return eventloopCount;
     }
 
     /**
-     * In Alto, everything is done in threads called Eventloop. This method
-     * gets the number of such threads. By default, it's equal to the
-     * number of available processors.
+     * In Alto, everything is done in eventloops. This method sets the
+     * number eventloops. By default, it's equal to the number of
+     * available processors.
      *
      * @param eventloopCount the number of eventloop threads to set
      * @return this alto configuration
