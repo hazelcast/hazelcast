@@ -95,12 +95,12 @@ public class ForcefulShutdownTest extends JetTestSupport {
     // SnapshotVerificationKey
     private int masterKeyPartitionInstanceIdx;
     private int backupKeyPartitionInstanceIdx;
-    private final CountDownLatch snapshotDone = new CountDownLatch(NODE_COUNT * LOCAL_PARALLELISM);
+    private CountDownLatch snapshotDone;
     // Job
     private Integer masterJobPartitionInstanceIdx;
     private Integer backupJobPartitionInstanceIdx;
 
-    private final CompletableFuture<Integer> failingInstanceFuture = new CompletableFuture<>();
+    private CompletableFuture<Integer> failingInstanceFuture;
 
     @Override
     public Config getConfig() {
@@ -112,6 +112,10 @@ public class ForcefulShutdownTest extends JetTestSupport {
 
     @Before
     public void setup() {
+        // @Repeat does not recreate test class object, so all initialization must be in the setup method
+        failingInstanceFuture = new CompletableFuture<>();
+        snapshotDone = new CountDownLatch(NODE_COUNT * LOCAL_PARALLELISM);
+
         instances = createHazelcastInstances(getConfig(), NODE_COUNT);
         SnapshotInstrumentationP.reset();
     }
@@ -346,7 +350,6 @@ public class ForcefulShutdownTest extends JetTestSupport {
 //                .hasMessageContainingAll("State for job", "is corrupted: it should have");
         logger.info("Joined");
 
-        // TODO: this check will make sense after fix
         if (allowedSnapshotsCount > 0) {
             assertTrue("Should be restored from snapshot", SnapshotInstrumentationP.restoredFromSnapshot);
             assertThat(SnapshotInstrumentationP.restoredCounters.values())
@@ -617,8 +620,9 @@ public class ForcefulShutdownTest extends JetTestSupport {
         @Override
         public boolean complete() {
             // emit current snapshot counter
-            tryEmit(10000 * (globalIndex + 1) + snapshotCounter);
-            return snapshotCounter == numItems;
+            // finish when requested number of items was emitted
+            return tryEmit(10000 * (globalIndex + 1) + snapshotCounter)
+                    && snapshotCounter == numItems;
         }
 
         @Override
