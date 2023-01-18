@@ -19,6 +19,7 @@ package com.hazelcast.config;
 import com.hazelcast.config.alto.AltoSocketConfig;
 import com.hazelcast.instance.ProtocolType;
 import com.hazelcast.internal.util.StringUtil;
+import com.hazelcast.spi.annotation.Beta;
 import com.hazelcast.spi.annotation.PrivateApi;
 
 import javax.annotation.Nonnull;
@@ -275,6 +276,8 @@ public class ServerSocketEndpointConfig
         return this;
     }
 
+    @Beta
+    @Nonnull
     @Override
     public ServerSocketEndpointConfig setAltoSocketConfig(@Nonnull AltoSocketConfig altoSocketConfig) {
         super.setAltoSocketConfig(altoSocketConfig);

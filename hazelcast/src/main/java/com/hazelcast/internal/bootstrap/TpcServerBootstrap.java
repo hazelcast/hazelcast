@@ -74,12 +74,12 @@ public class TpcServerBootstrap {
         this.logger = nodeEngine.getLogger(TpcServerBootstrap.class);
         this.ss = (InternalSerializationService) nodeEngine.getSerializationService();
         this.config = nodeEngine.getConfig();
-        this.enabled = calculateEnabled();
+        this.enabled = enabled();
         this.thisAddress = nodeEngine.getThisAddress();
         this.tpcEngine = newTpcEngine();
     }
 
-    private boolean calculateEnabled() {
+    private boolean enabled() {
         boolean enabled;
         String enabledString = nodeEngine.getProperties().getString(ALTO_ENABLED);
         if (enabledString != null) {
@@ -112,11 +112,11 @@ public class TpcServerBootstrap {
         NioEventloopBuilder eventloopBuilder = new NioEventloopBuilder();
         eventloopBuilder.setThreadFactory(AltoEventloopThread::new);
         configuration.setEventloopBuilder(eventloopBuilder);
-        configuration.setEventloopCount(calculateEventloopCount());
+        configuration.setEventloopCount(eventloopCount());
         return new TpcEngine(configuration);
     }
 
-    private int calculateEventloopCount() {
+    private int eventloopCount() {
         int eventloopCount;
         String eventloopCountString = nodeEngine.getProperties().getString(ALTO_EVENTLOOP_COUNT);
         if (eventloopCountString != null) {

@@ -10,7 +10,7 @@ import static com.hazelcast.internal.util.Preconditions.checkPositive;
 
 /**
  * Socket configuration for Alto. In Alto, each eventloop has its own
- * socket.
+ * sockets.
  *
  * @see AltoConfig
  * @since 5.3
@@ -22,20 +22,25 @@ public class AltoSocketConfig {
     private int sendBufferSizeKB = 128;
 
     /**
-     * This method gets the possible port range for alto sockets to bind.
+     * Gets the possible port range for alto sockets to bind.
      *
      * @return the port range string
      */
+    @Nonnull
     public String getPortRange() {
         return portRange;
     }
 
     /**
-     * This method sets the possible port range for alto sockets to bind.
+     * Sets the possible port range for alto sockets to bind.
      *
      * @param portRange the port range to set
      * @return this alto socket config
+     * @throws IllegalArgumentException if portRange doesn't match {@code
+     *                                  \d{1,5}-\d{1,5}} regular expression
+     *                                  or null
      */
+    @Nonnull
     public AltoSocketConfig setPortRange(@Nonnull String portRange) {
         checkNotNull(portRange);
         if (!portRange.matches("\\d{1,5}-\\d{1,5}")) {
@@ -47,6 +52,8 @@ public class AltoSocketConfig {
     }
 
     /**
+     * Gets the receive-buffer size of the alto sockets in kilobytes.
+     *
      * @return the receive-buffer size of the alto sockets in kilobytes
      * @see java.net.SocketOptions#SO_RCVBUF
      */
@@ -55,17 +62,22 @@ public class AltoSocketConfig {
     }
 
     /**
-     * @param receiveBufferSizeKB the receive-buffer size of the alto sockets to set in kilobytes
+     * Sets the receive-buffer size of the alto sockets in kilobytes.
+     *
+     * @param receiveBufferSizeKB the receive-buffer size of the alto sockets in kilobytes
      * @return this alto socket config
+     * @throws IllegalArgumentException if receiveBufferSizeKB isn't positive
      * @see java.net.SocketOptions#SO_RCVBUF
      */
+    @Nonnull
     public AltoSocketConfig setReceiveBufferSizeKB(int receiveBufferSizeKB) {
-        checkPositive("receiveBufferSizeKB", receiveBufferSizeKB);
-        this.receiveBufferSizeKB = receiveBufferSizeKB;
+        this.receiveBufferSizeKB = checkPositive("receiveBufferSizeKB", receiveBufferSizeKB);
         return this;
     }
 
     /**
+     * Gets the send-buffer size of the alto sockets in kilobytes.
+     *
      * @return the send-buffer size of the alto sockets in kilobytes
      * @see java.net.SocketOptions#SO_SNDBUF
      */
@@ -74,13 +86,16 @@ public class AltoSocketConfig {
     }
 
     /**
-     * @param sendBufferSizeKB the send-buffer size of the alto sockets to set in kilobytes
+     * Sets the send-buffer size of the alto sockets in kilobytes.
+     *
+     * @param sendBufferSizeKB the send-buffer size of the alto sockets in kilobytes
      * @return this alto socket config
+     * @throws IllegalArgumentException if sendBufferSizeKB isn't positive
      * @see java.net.SocketOptions#SO_SNDBUF
      */
+    @Nonnull
     public AltoSocketConfig setSendBufferSizeKB(int sendBufferSizeKB) {
-        checkPositive("sendBufferSizeKB", sendBufferSizeKB);
-        this.sendBufferSizeKB = sendBufferSizeKB;
+        this.sendBufferSizeKB = checkPositive("sendBufferSizeKB", sendBufferSizeKB);
         return this;
     }
 

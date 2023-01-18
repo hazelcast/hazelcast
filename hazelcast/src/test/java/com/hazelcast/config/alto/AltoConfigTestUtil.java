@@ -30,9 +30,9 @@ public class AltoConfigTestUtil {
     }
 
     public static void assertClientPorts(int eventloopCount, int startInclusive, int endInclusive,
-                                         HazelcastInstance... hz) {
-        for (HazelcastInstance i : hz) {
-            assertThat(getClientPorts(i))
+                                         HazelcastInstance... instances) {
+        for (HazelcastInstance instance : instances) {
+            assertThat(getClientPorts(instance))
                     .allSatisfy(port -> assertThat(port).isBetween(startInclusive, endInclusive))
                     .hasSize(eventloopCount);
         }

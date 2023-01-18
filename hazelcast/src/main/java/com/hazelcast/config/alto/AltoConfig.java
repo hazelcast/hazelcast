@@ -2,6 +2,7 @@ package com.hazelcast.config.alto;
 
 import com.hazelcast.spi.annotation.Beta;
 
+import javax.annotation.Nonnull;
 import java.util.Objects;
 
 import static com.hazelcast.internal.util.Preconditions.checkPositive;
@@ -19,6 +20,8 @@ public class AltoConfig {
     private int eventloopCount = Runtime.getRuntime().availableProcessors();
 
     /**
+     * Gets the enabled flag which defines alto is enabled or not.
+     *
      * @return true if alto is enabled
      */
     public boolean isEnabled() {
@@ -26,9 +29,12 @@ public class AltoConfig {
     }
 
     /**
+     * Sets the enabled flag which defines alto is enabled or not.
+     *
      * @param enabled a boolean to enable or disable alto
      * @return this alto configuration
      */
+    @Nonnull
     public AltoConfig setEnabled(boolean enabled) {
         this.enabled = enabled;
         return this;
@@ -54,12 +60,13 @@ public class AltoConfig {
      *
      * @param eventloopCount the number of eventloop threads to set
      * @return this alto configuration
+     * @throws IllegalArgumentException if eventloopCount isn't positive
      * @see Runtime#availableProcessors()
      * @see com.hazelcast.internal.tpc.Eventloop
      */
+    @Nonnull
     public AltoConfig setEventloopCount(int eventloopCount) {
-        checkPositive("eventloopCount", eventloopCount);
-        this.eventloopCount = eventloopCount;
+        this.eventloopCount = checkPositive("eventloopCount", eventloopCount);
         return this;
     }
 

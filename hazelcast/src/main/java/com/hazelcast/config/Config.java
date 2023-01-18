@@ -3223,23 +3223,28 @@ public class Config {
     }
 
     /**
+     * Gets the alto config.
+     *
      * @return the alto configuration
      * @since 5.3
      */
     @Beta
+    @Nonnull
     public AltoConfig getAltoConfig() {
         return altoConfig;
     }
 
     /**
+     * Sets the alto config.
+     *
      * @param altoConfig alto configuration to be set
      * @return this config
+     * @throws IllegalArgumentException if altoConfig is null
      * @since 5.3
      */
     @Beta
-    public Config setAltoConfig(@Nonnull AltoConfig altoConfig) {
-        checkNotNull(altoConfig);
-        this.altoConfig = altoConfig;
+    public @Nonnull Config setAltoConfig(@Nonnull AltoConfig altoConfig) {
+        this.altoConfig = checkNotNull(altoConfig);
         return this;
     }
 

@@ -31,16 +31,16 @@ public class AltoSocketConfigTest extends HazelcastTestSupport {
 
     @Test
     public void testReceiveSize() {
-        getAltoSocketConfig().setReceiveBufferSizeKB(1 << 10);
+        getAltoSocketConfig().setReceiveBufferSizeKB(1024);
         HazelcastInstance hz = createHazelcastInstance(config);
-        assertEquals(1 << 10, getClientSocketConfig(hz).getReceiveBufferSizeKB());
+        assertEquals(1024, getClientSocketConfig(hz).getReceiveBufferSizeKB());
     }
 
     @Test
     public void testSendSize() {
-        getAltoSocketConfig().setSendBufferSizeKB(1 << 10);
+        getAltoSocketConfig().setSendBufferSizeKB(1024);
         HazelcastInstance hz = createHazelcastInstance(config);
-        assertEquals(1 << 10, getClientSocketConfig(hz).getSendBufferSizeKB());
+        assertEquals(1024, getClientSocketConfig(hz).getSendBufferSizeKB());
     }
 
     @Test
