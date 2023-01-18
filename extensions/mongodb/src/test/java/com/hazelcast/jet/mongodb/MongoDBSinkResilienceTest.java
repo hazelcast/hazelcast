@@ -87,11 +87,77 @@ public class MongoDBSinkResilienceTest extends SimpleTestInClusterSupport {
 
     private final Random random = new Random();
 
+    @Test(timeout = 2 * 60_000)
+    public void testWhenServerDown_graceful() {
+        testWhenServerDown(true);
+    }
+
+    @Test(timeout = 2 * 60_000)
+    public void testWhenServerDown_forceful() {
+        testWhenServerDown(false);
+    }
+
+    void testWhenServerDown(boolean graceful) {
+        Config conf = new Config();
+        conf.addMapConfig(new MapConfig("*")
+                .setEventJournalConfig(new EventJournalConfig().setEnabled(true))
+                .setBackupCount(3)
+        );
+        conf.getJetConfig().setEnabled(true);
+        HazelcastInstance hz = createHazelcastInstance(conf);
+        JobRepository jobRepository = new JobRepository(hz);
+        HazelcastInstance serverToShutdown = createHazelcastInstance(conf);
+
+        final String databaseName = "shutdownTest";
+        final String collectionName = "testStream_whenServerDown";
+        final String connectionString = mongoContainer.getConnectionString();
+        IMap<Integer, Integer> sourceMap = hz.getMap(testName.getMethodName());
+
+        Pipeline pipeline = Pipeline.create();
+        pipeline.readFrom(Sources.mapJournal(sourceMap, START_FROM_OLDEST))
+                .withIngestionTimestamps()
+                .map(doc -> new Document("dummy", "test")
+                        .append("key", doc.getKey())
+                        .append("other", "" + doc.getValue())
+                ).setLocalParallelism(2)
+                .writeTo(MongoDBSinks.builder("mongoSink", Document.class, () -> mongoClient(connectionString))
+                                     .into(databaseName, collectionName)
+                                     .preferredLocalParallelism(2)
+                                     .build());
+
+        Job job = invokeJob(hz, pipeline);
+        AtomicInteger totalCount = new AtomicInteger(0);
+        AtomicBoolean continueCounting = new AtomicBoolean(true);
+
+        spawn(() -> {
+            while (continueCounting.get()) {
+                int val = totalCount.incrementAndGet();
+                sourceMap.put(val, val);
+                sleep(random.nextInt(100));
+            }
+        });
+        waitForFirstSnapshot(jobRepository, job.getId(), 30, true);
+        sleep(500);
+
+        if (graceful) {
+            serverToShutdown.shutdown();
+        } else {
+            serverToShutdown.getLifecycleService().terminate();
+        }
+        assertTrueEventually(() -> assertEquals(1, hz.getCluster().getMembers().size()));
+
+        continueCounting.set(false);
+        MongoClient directClinent = MongoClients.create(connectionString);
+        MongoCollection<Document> collection = directClinent.getDatabase(databaseName).getCollection(collectionName);
+        assertTrueEventually(() ->
+                assertEquals(totalCount.get(), collection.countDocuments())
+        );
+    }
+
     @Test
     public void testSink_networkCutoff() throws IOException {
         sinkNetworkTest(false);
     }
-
 
     @Test
     public void testSink_networkTimeout() throws IOException {
