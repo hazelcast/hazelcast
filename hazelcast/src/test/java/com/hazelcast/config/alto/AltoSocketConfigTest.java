@@ -63,7 +63,8 @@ public class AltoSocketConfigTest extends HazelcastTestSupport {
     }
 
     @Test
-    public void testClientPortsNotEnough_whenPortRangeIsDecreasing() {
+    public void testCreatingHazelcastInstanceThrows_whenPortRangeMatchesButDecreasing() {
+        // 13000-12000 will match the regex in setPortRange() but should throw
         getAltoSocketConfig().setPortRange("13000-12000");
         assertThrows(HazelcastException.class, () -> createHazelcastInstance(config));
     }
