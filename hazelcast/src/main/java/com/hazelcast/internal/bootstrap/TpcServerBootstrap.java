@@ -40,9 +40,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static java.lang.System.getProperty;
 import static java.util.concurrent.TimeUnit.SECONDS;
 
@@ -94,6 +96,11 @@ public class TpcServerBootstrap {
         Configuration configuration = new Configuration();
         NioEventloopBuilder eventloopBuilder = new NioEventloopBuilder();
         eventloopBuilder.setThreadFactory(AltoEventloopThread::new);
+        AtomicInteger threadId = new AtomicInteger();
+        eventloopBuilder.setThreadNameSupplier(() -> createThreadPoolName(
+                nodeEngine.getHazelcastInstance().getName(),
+                "alto-eventloop"
+        ) + threadId.incrementAndGet());
         configuration.setEventloopBuilder(eventloopBuilder);
         configuration.setEventloopCount(nodeEngine.getConfig().getAltoConfig().getEventloopCount());
         return new TpcEngine(configuration);
