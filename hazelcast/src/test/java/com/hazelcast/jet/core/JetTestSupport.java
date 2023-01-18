@@ -118,6 +118,8 @@ public abstract class JetTestSupport extends HazelcastTestSupport {
                         "This is a bug, but it is not necessarily related to this test. " +
                         "The classloader was leaked for the following jobIds: " + ids);
             }
+
+            instanceFactory = null;
         }
     }
 
