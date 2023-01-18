@@ -18,6 +18,7 @@ package com.hazelcast.jet.core;
 
 import com.hazelcast.cluster.Address;
 import com.hazelcast.config.Config;
+import com.hazelcast.config.NetworkConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.instance.EndpointQualifier;
 import com.hazelcast.instance.impl.Node;
@@ -40,6 +41,7 @@ import com.hazelcast.test.Accessors;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import com.hazelcast.test.annotation.Repeat;
 import org.jetbrains.annotations.NotNull;
 import org.junit.Before;
 import org.junit.Test;
@@ -71,6 +73,7 @@ import static com.hazelcast.jet.core.Edge.between;
 import static com.hazelcast.jet.core.TestUtil.throttle;
 import static com.hazelcast.test.PacketFiltersUtil.resetPacketFiltersFrom;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assumptions.assumeThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
@@ -83,7 +86,7 @@ import static org.junit.Assert.assertTrue;
 public class ForcefulShutdownTest extends JetTestSupport {
 
     private static final int NODE_COUNT = 5;
-    private static final int BASE_PORT = 5701;
+    private static final int BASE_PORT = NetworkConfig.DEFAULT_PORT;
     // increase number of chunks in snapshot by setting greater parallelism
     private static final int LOCAL_PARALLELISM = 10;
 
@@ -291,11 +294,13 @@ public class ForcefulShutdownTest extends JetTestSupport {
     }
 
     @Test
+    @Repeat(5)
     public void whenFirstSnapshotPossiblyCorruptedAfter1stPhase_thenRestartWithoutSnapshot() throws InterruptedException {
         when_shutDownAfter1stPhase(true, 0);
     }
 
     @Test
+    @Repeat(5)
     public void whenNextSnapshotPossiblyCorruptedAfter1stPhase_thenRestartFromLastGoodSnapshot() throws InterruptedException {
         when_shutDownAfter1stPhase(true, 3);
     }
@@ -331,13 +336,16 @@ public class ForcefulShutdownTest extends JetTestSupport {
         Job job = createJob(snapshotted, numItems);
 
         // choose failing node
-        // TODO: due to these constraints this test cannot be executed 2 times out of NODE_COUNT times.
-        // they are necessary for the test to be more deterministic but jobId is random.
-        assertThat(masterKeyPartitionInstanceIdx)
+
+        // Due to these constraints this test cannot be executed 2 times out of NODE_COUNT times.
+        // They are necessary for the test to be more deterministic but jobId is random.
+        // The test is repeated a few times so the chance that it actually runs are increased.
+        assumeThat(masterKeyPartitionInstanceIdx)
                 // Keep job data, in particular JobExecutionRecord safe
                 .as("Should not damage job data").isNotEqualTo(masterJobPartitionInstanceIdx)
                 // To not restart Jet master (TODO: this could be another test)
                 .as("Should not restart Jet master").isNotEqualTo(0);
+
         int failingInstance = chooseConstantFailingNode(masterKeyPartitionInstanceIdx);
         int liveInstance = backupKeyPartitionInstanceIdx;
 
@@ -360,7 +368,6 @@ public class ForcefulShutdownTest extends JetTestSupport {
 //                .hasMessageContainingAll("snapshot with ID", "is damaged. Unable to restore the state for job");
         logger.info("Joined");
 
-        // TODO: this check will make sense after fix
         if (allowedSnapshotsCount > 0) {
             assertTrue("Should be restored from snapshot", SnapshotInstrumentationP.restoredFromSnapshot);
             assertThat(SnapshotInstrumentationP.restoredCounters.values())
