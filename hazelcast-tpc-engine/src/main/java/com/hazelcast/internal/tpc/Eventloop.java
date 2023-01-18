@@ -52,7 +52,7 @@ public abstract class Eventloop implements Runnable {
     public final Reactor reactor;
     protected final boolean spin;
     protected final int batchSize;
-    protected final MpmcArrayQueue concurrentTaskQueue;
+    protected final MpmcArrayQueue externalTaskQueue;
     private final ReactorBuilder builder;
     protected long earliestDeadlineNanos = -1;
     protected final PriorityQueue<ScheduledTask> scheduledTaskQueue;
@@ -69,7 +69,7 @@ public abstract class Eventloop implements Runnable {
         this.builder = builder;
         this.scheduledTaskQueue = new BoundPriorityQueue<>(builder.scheduledTaskQueueCapacity);
         this.localTaskQueue = new CircularQueue<>(builder.localTaskQueueCapacity);
-        this.concurrentTaskQueue = new MpmcArrayQueue(builder.concurrentTaskQueueCapacity);
+        this.externalTaskQueue = new MpmcArrayQueue(builder.externalTaskQueueCapacity);
         this.spin = builder.spin;
         this.batchSize = builder.batchSize;
         this.promiseAllocator = new PromiseAllocator(this, INITIAL_ALLOCATOR_CAPACITY);
@@ -209,7 +209,7 @@ public abstract class Eventloop implements Runnable {
 
     protected final boolean runConcurrentTasks() {
         final int batchSize = this.batchSize;
-        final MpmcArrayQueue concurrentTaskQueue = this.concurrentTaskQueue;
+        final MpmcArrayQueue concurrentTaskQueue = this.externalTaskQueue;
         final Scheduler scheduler = this.scheduler;
         for (int k = 0; k < batchSize; k++) {
             Object task = concurrentTaskQueue.poll();

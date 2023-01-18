@@ -63,7 +63,7 @@ public abstract class Reactor implements Executor {
 
     protected final TpcLogger logger = TpcLoggerLocator.getLogger(getClass());
     protected final AtomicBoolean wakeupNeeded;
-    protected final MpmcArrayQueue concurrentTaskQueue;
+    protected final MpmcArrayQueue externalTaskQueue;
     protected final Eventloop eventloop;
     public final CircularQueue<Runnable> localTaskQueue;
     protected final boolean spin;
@@ -88,7 +88,7 @@ public abstract class Reactor implements Executor {
         this.eventloop = createEventloop(builder);
         this.wakeupNeeded = eventloop.wakeupNeeded;
         this.spin = eventloop.spin;
-        this.concurrentTaskQueue = eventloop.concurrentTaskQueue;
+        this.externalTaskQueue = eventloop.externalTaskQueue;
         this.localTaskQueue = eventloop.localTaskQueue;
         this.eventloopThread = builder.threadFactory.newThread(eventloop);
         if (builder.threadNameSupplier != null) {
@@ -225,7 +225,7 @@ public abstract class Reactor implements Executor {
                     break;
                 case RUNNING:
                     if (STATE.compareAndSet(this, oldState, SHUTDOWN)) {
-                        concurrentTaskQueue.add((Runnable) () -> eventloop.stop = true);
+                        externalTaskQueue.add((Runnable) () -> eventloop.stop = true);
                         wakeup();
                         return;
                     }
@@ -272,7 +272,7 @@ public abstract class Reactor implements Executor {
     public final boolean offer(Runnable task) {
         if (Thread.currentThread() == eventloopThread) {
             return localTaskQueue.offer(task);
-        } else if (concurrentTaskQueue.offer(task)) {
+        } else if (externalTaskQueue.offer(task)) {
             wakeup();
             return true;
         } else {
@@ -290,7 +290,7 @@ public abstract class Reactor implements Executor {
     public final boolean offer(IOBuffer buff) {
         //todo: Don't want to add localRunQueue optimization like the offer(Runnable)?
 
-        if (concurrentTaskQueue.offer(buff)) {
+        if (externalTaskQueue.offer(buff)) {
             wakeup();
             return true;
         } else {
