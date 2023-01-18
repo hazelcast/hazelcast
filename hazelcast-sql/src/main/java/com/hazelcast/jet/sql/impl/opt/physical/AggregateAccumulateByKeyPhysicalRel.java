@@ -18,7 +18,6 @@ package com.hazelcast.jet.sql.impl.opt.physical;
 
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.jet.aggregate.AggregateOperation;
-import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
@@ -65,7 +64,7 @@ public class AggregateAccumulateByKeyPhysicalRel extends SingleRel implements Ph
     }
 
     @Override
-    public Vertex accept(CreateDagVisitor visitor) {
+    public <V> V accept(CreateDagVisitor<V> visitor) {
         return visitor.onAccumulateByKey(this);
     }
 
