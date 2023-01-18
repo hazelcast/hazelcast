@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -717,7 +717,7 @@ public class JobTest extends SimpleTestInClusterSupport {
         // Then
         Job job2 = instances()[1].getJet().newJobIfAbsent(dag, config);
         assertEquals(job1.getId(), job2.getId());
-        assertEquals(job2.getStatus(), SUSPENDED);
+        assertEquals(SUSPENDED, job2.getStatus());
     }
 
     @Test

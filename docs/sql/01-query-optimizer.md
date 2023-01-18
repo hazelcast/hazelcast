@@ -311,7 +311,7 @@ The rule abstraction is defined in the `RelOptRule` abstract class. Its construc
 must implement the method `onMatch`, where the actual transformation is performed.
 
 ```java
-abstract class RelNode {
+abstract class RelOptRule {
     void onMatch(RelOptRuleCall call);
 }
 ```
@@ -667,7 +667,7 @@ The `VolcanoPlanner` is not suitable to work in the bottom-up trait propagation 
 integration with the Apache Calcite as follows:
 
 1. During the physical optimization, we gradually convert nodes from the `LOGICAL` convention to `PHYSICAL`. For the
-   `PHYSICAL` convention we override a couple of methods (see `HazelcastConventions.PHYSICAL`) that roughly forces the optimizer
+   `PHYSICAL` convention we override a couple of methods (see `Conventions.PHYSICAL`) that roughly forces the optimizer
    to do the following: when a new `PHYSICAL` node is created, force re-optimization of the `LOGICAL` parent. This way, whenever a
    new `PHYSICAL` node is added to MEMO, the rules for the `LOGICAL` parent node is added to the execution queue.
 2. Optimization rules for intermediate nodes (i.e., not leaves, and not root) follow a similar pattern: get the input's

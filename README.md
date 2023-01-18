@@ -388,6 +388,6 @@ We owe (the good parts of) our CLI tool's user experience to
 
 ## Copyright
 
-Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
 
 Visit [www.hazelcast.com](http://www.hazelcast.com/) for more info.

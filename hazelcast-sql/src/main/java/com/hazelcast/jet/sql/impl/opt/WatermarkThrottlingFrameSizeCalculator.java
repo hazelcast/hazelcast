@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.hazelcast.jet.sql.impl.opt;
 
 import com.hazelcast.jet.impl.util.Util;
-import com.hazelcast.jet.sql.impl.opt.physical.CreateDagVisitor;
+import com.hazelcast.jet.sql.impl.opt.physical.CreateTopLevelDagVisitor;
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.SlidingWindowAggregatePhysicalRel;
 import com.hazelcast.jet.sql.impl.opt.physical.StreamToStreamJoinPhysicalRel;
@@ -60,7 +60,7 @@ public final class WatermarkThrottlingFrameSizeCalculator {
         private void visit0(RelNode node) {
             if (node instanceof SlidingWindowAggregatePhysicalRel) {
                 SlidingWindowAggregatePhysicalRel slidingWindow = (SlidingWindowAggregatePhysicalRel) node;
-                long windowSize = slidingWindow.windowPolicyProvider().apply(CreateDagVisitor.MOCK_EEC).frameSize();
+                long windowSize = slidingWindow.windowPolicyProvider().apply(CreateTopLevelDagVisitor.MOCK_EEC).frameSize();
                 gcd = gcd > 0L ? Util.gcd(gcd, windowSize) : windowSize;
             } else if (node instanceof StreamToStreamJoinPhysicalRel) {
                 StreamToStreamJoinPhysicalRel s2sJoin = (StreamToStreamJoinPhysicalRel) node;

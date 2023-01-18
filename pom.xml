@@ -1,5 +1,5 @@
 <!--
-  ~ Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+  ~ Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
   ~
   ~ Licensed under the Apache License, Version 2.0 (the "License");
   ~ you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@
         <hazelcast.previous.version>5.2.0</hazelcast.previous.version>
 
         <maven.compiler.plugin.version>3.10.0</maven.compiler.plugin.version>
-        <maven.jar.plugin.version>3.2.2</maven.jar.plugin.version>
+        <maven.jar.plugin.version>3.3.0</maven.jar.plugin.version>
         <maven.source.plugin.version>3.2.1</maven.source.plugin.version>
         <maven.javadoc.plugin.version>3.3.2</maven.javadoc.plugin.version>
         <maven.javadoc.plugin.excludePackageNames>
@@ -68,20 +68,19 @@
         <maven.rar.plugin.version>2.2</maven.rar.plugin.version>
         <maven.bundle.plugin.version>2.4.0</maven.bundle.plugin.version>
         <maven.shade.plugin.version>3.2.4</maven.shade.plugin.version>
-        <maven.dependency.plugin.version>3.4.0</maven.dependency.plugin.version>
+        <maven.dependency.plugin.version>3.5.0</maven.dependency.plugin.version>
         <maven.animal.sniffer.plugin.version>1.21</maven.animal.sniffer.plugin.version>
         <maven.git.commit.id.plugin.version>2.1.10</maven.git.commit.id.plugin.version>
 
         <maven.surefire.plugin.version>3.0.0-M7</maven.surefire.plugin.version>
-        <maven.checkstyle.plugin.version>3.2.0</maven.checkstyle.plugin.version>
-        <maven.sonar.plugin.version>3.6.0.1398</maven.sonar.plugin.version>
-        <maven.jacoco.plugin.version>0.8.7</maven.jacoco.plugin.version>
-        <maven.failsafe.plugin.version>3.0.0-M7</maven.failsafe.plugin.version>
+        <maven.checkstyle.plugin.version>3.2.1</maven.checkstyle.plugin.version>
+        <maven.jacoco.plugin.version>0.8.8</maven.jacoco.plugin.version>
+        <maven.failsafe.plugin.version>3.0.0-M8</maven.failsafe.plugin.version>
         <maven.cobertura.plugin.version>2.7</maven.cobertura.plugin.version>
-        <maven.enforcer.plugin.version>3.0.0-M3</maven.enforcer.plugin.version>
+        <maven.enforcer.plugin.version>3.1.0</maven.enforcer.plugin.version>
         <maven.os.plugin.version>1.7.1</maven.os.plugin.version>
         <maven.protobuf.plugin.version>0.6.1</maven.protobuf.plugin.version>
-        <maven.resources.plugin.version>3.2.0</maven.resources.plugin.version>
+        <maven.resources.plugin.version>3.3.0</maven.resources.plugin.version>
         <owasp.dependency-check.version>7.4.4</owasp.dependency-check.version>
         <maven.dependency.plugin.version>3.1.2</maven.dependency.plugin.version>
         <codehause.license.plugin.version>2.0.0</codehause.license.plugin.version>
@@ -93,16 +92,17 @@
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.1</avro.version>
-        <aws.sdk.version>1.12.333</aws.sdk.version>
+        <aws.sdk.version>1.12.383</aws.sdk.version>
         <classgraph.version>4.8.154</classgraph.version>
         <debezium.version>1.9.5.Final</debezium.version>
         <grpc.version>1.48.0</grpc.version>
-        <guava.version>30.1.1-jre</guava.version>
+        <guava.version>31.1-jre</guava.version>
         <hadoop.version>3.3.4</hadoop.version>
         <h2.version>2.1.214</h2.version>
         <!-- The Jackson version must match the version in EE, if you change this you must send EE PR as well -->
-        <jackson.version>2.13.4.20221013</jackson.version>
+        <jackson.version>2.14.1</jackson.version>
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
+        <jaxb.version>2.3.1</jaxb.version>
         <jline.version>3.21.0</jline.version>
         <jms.api.version>2.0.1</jms.api.version>
         <json-surfer.version>0.11</json-surfer.version>
@@ -111,37 +111,37 @@
         <kafka.version>2.8.2</kafka.version>
         <kotlin.version>1.7.10</kotlin.version>
         <log4j.version>1.2.17.redhat-00008</log4j.version>
-        <log4j2.version>2.18.0</log4j2.version>
+        <log4j2.version>2.19.0</log4j2.version>
         <mysql.connector.version>8.0.30</mysql.connector.version>
-        <netty.version>4.1.79.Final</netty.version>
-        <objenesis.version>3.2</objenesis.version>
+        <netty.version>4.1.86.Final</netty.version>
+        <objenesis.version>3.3</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.12.3</parquet.version>
         <picocli.version>4.6.3</picocli.version>
         <postgresql.version>42.5.1</postgresql.version>
-        <prometheus.version>0.17.1</prometheus.version>
+        <prometheus.version>0.17.2</prometheus.version>
 
         <!--
         Protobuf libraries for each language have own major version, but share minor and patch
         See https://developers.google.com/protocol-buffers/docs/news/2022-05-06
         -->
-        <protobuf.version>21.9</protobuf.version>
+        <protobuf.version>21.12</protobuf.version>
         <java.protobuf.version>3.${protobuf.version}</java.protobuf.version>
         <python.protobuf.version>4.${protobuf.version}</python.protobuf.version>
 
         <scala.version>2.13</scala.version>
         <slf4j.version>1.7.36</slf4j.version>
         <spring.version>4.3.0.RELEASE</spring.version>
-        <snakeyaml.version>1.32</snakeyaml.version>
-        <snakeyaml.engine.version>2.3</snakeyaml.engine.version>
-        <mongodb.version>4.7.2</mongodb.version>
+        <snakeyaml.version>1.33</snakeyaml.version>
+        <snakeyaml.engine.version>2.5</snakeyaml.engine.version>
+        <mongodb.version>4.8.1</mongodb.version>
 
         <!-- test dependencies -->
         <activemq-artemis.version>2.11.0</activemq-artemis.version>
         <activemq.version>5.15.11</activemq.version>
         <assertj.version>3.15.0</assertj.version>
         <atomikos.version>3.9.3</atomikos.version>
-        <bytebuddy.version>1.12.12</bytebuddy.version>
+        <bytebuddy.version>1.12.21</bytebuddy.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-io.version>2.11.0</commons-io.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
@@ -157,16 +157,10 @@
         <testcontainers.version>1.17.6</testcontainers.version>
         <jna.version>5.12.1</jna.version>
         <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitRulesTest.java -->
-        <archunit.version>1.0.0</archunit.version>
-        <errorprone.version>2.15.0</errorprone.version>
-        <awaitility.version>4.1.1</awaitility.version>
+        <archunit.version>1.0.1</archunit.version>
+        <errorprone.version>2.18.0</errorprone.version>
+        <awaitility.version>4.2.0</awaitility.version>
         <hikari.version>4.0.3</hikari.version>
-
-        <sonar.jacoco.jar>${basedir}/lib/jacocoagent.jar</sonar.jacoco.jar>
-        <!--<sonar.phase>post-integration-test</sonar.phase>-->
-        <sonar.java.coveragePlugin>jacoco</sonar.java.coveragePlugin>
-        <sonar.language>java</sonar.language>
-        <sonar.verbose>true</sonar.verbose>
 
         <maven.test.redirectTestOutputToFile>true</maven.test.redirectTestOutputToFile>
 
@@ -184,7 +178,7 @@
         <checkstyle.version>8.38</checkstyle.version>
         <checkstyle.configLocation>${main.basedir}/checkstyle/checkstyle.xml</checkstyle.configLocation>
         <checkstyle.supressionsLocation>${main.basedir}/checkstyle/suppressions.xml</checkstyle.supressionsLocation>
-        <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeader.txt</checkstyle.headerLocation>
+        <checkstyle.headerLocation>${main.basedir}/checkstyle/ClassHeaderApache.txt</checkstyle.headerLocation>
 
         <shade.jar-with-dependencies.phase>package</shade.jar-with-dependencies.phase>
         <fat.dependency.classifier>jar-with-dependencies</fat.dependency.classifier>
@@ -440,10 +434,43 @@
                                     <!-- JDK 1.8+ is required for compilation. -->
                                     <version>[1.8.0,)</version>
                                 </requireJavaVersion>
+                                <enforceBytecodeVersion>
+                                    <maxJdkVersion>1.8</maxJdkVersion>
+                                    <excludes>
+                                        <!--
+                                        The archunit library containse several classes to process JDK9 modules.
+                                        It is a test dependency and can be ignored.
+                                        -->
+                                        <exclude>com.tngtech.archunit:archunit</exclude>
+                                    </excludes>
+                                    <ignoreClasses>
+                                        <!--
+                                        Some dependencies contain JDK9 specific classes with JDK9 in the name
+                                        e.g. wiremock.org.eclipse.jetty.alpn.java.server.JDK9ServerALPNProcessor
+                                        -->
+                                        <ignoreClass>*JDK9*</ignoreClass>
+                                        <!--
+                                        Classes from org:mongodb:bson-record-codec to map record to bson.
+                                        Ignoring whole package, because we shade the module into hazelcast-jet-mongodb.
+                                        -->
+                                        <ignoreClass>org.bson.codecs.record.*</ignoreClass>
+                                    </ignoreClasses>
+                                </enforceBytecodeVersion>
                             </rules>
                         </configuration>
                     </execution>
                 </executions>
+                <dependencies>
+                    <dependency>
+                        <groupId>org.codehaus.mojo</groupId>
+                        <artifactId>extra-enforcer-rules</artifactId>
+                        <!--
+                        Version 1.6.1 produces harmless, but noisy warning about missing dependencies.
+                        See https://github.com/mojohaus/extra-enforcer-rules/issues/225
+                        -->
+                        <version>1.5.1</version>
+                    </dependency>
+                </dependencies>
             </plugin>
             <plugin>
                 <artifactId>maven-resources-plugin</artifactId>
@@ -943,6 +970,9 @@
             <properties>
                 <vmHeapSettings>-Xms128m -Xmx1G</vmHeapSettings>
             </properties>
+            <modules>
+                <module>hazelcast-coverage-report</module>
+            </modules>
             <build>
                 <plugins>
                     <plugin>
@@ -1002,6 +1032,9 @@
 
         <profile>
             <id>test-coverage</id>
+            <modules>
+                <module>hazelcast-coverage-report</module>
+            </modules>
             <properties>
                 <argLine>
                     ${vmHeapSettings}
@@ -1036,12 +1069,6 @@
                                 <id>prepare-agent</id>
                                 <goals>
                                     <goal>prepare-agent</goal>
-                                </goals>
-                            </execution>
-                            <execution>
-                                <id>report</id>
-                                <goals>
-                                    <goal>report</goal>
                                 </goals>
                             </execution>
                         </executions>
@@ -1096,12 +1123,6 @@
                                 </goals>
                             </execution>
                         </executions>
-                    </plugin>
-
-                    <plugin>
-                        <groupId>org.codehaus.mojo</groupId>
-                        <artifactId>sonar-maven-plugin</artifactId>
-                        <version>${maven.sonar.plugin.version}</version>
                     </plugin>
                 </plugins>
             </build>
@@ -1560,7 +1581,7 @@
             <dependency>
                 <groupId>org.eclipse.jetty</groupId>
                 <artifactId>jetty-bom</artifactId>
-                <version>9.4.49.v20220914</version>
+                <version>9.4.50.v20221201</version>
                 <scope>import</scope>
                 <type>pom</type>
             </dependency>
@@ -1595,7 +1616,7 @@
             <dependency>
                 <groupId>com.google.http-client</groupId>
                 <artifactId>google-http-client-bom</artifactId>
-                <version>1.41.4</version>
+                <version>1.42.3</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -1691,6 +1712,21 @@
                     </exclusion>
                 </exclusions>
             </dependency>
+            <dependency>
+                <groupId>org.apache.parquet</groupId>
+                <artifactId>parquet-avro</artifactId>
+                <version>${parquet.version}</version>
+                <exclusions>
+                    <!--
+                    The following library is not required, it only contains annotations and doclets
+                    It also requires JDK11 since version 0.14
+                    -->
+                    <exclusion>
+                        <groupId>org.apache.yetus</groupId>
+                        <artifactId>audience-annotations</artifactId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
 
             <dependency>
                 <groupId>org.yaml</groupId>
@@ -1735,7 +1771,7 @@
             <dependency>
                 <groupId>joda-time</groupId>
                 <artifactId>joda-time</artifactId>
-                <version>2.11.0</version>
+                <version>2.12.2</version>
             </dependency>
             <dependency>
                 <groupId>org.xerial.snappy</groupId>
@@ -1771,7 +1807,7 @@
             <dependency>
                 <groupId>com.google.auto.value</groupId>
                 <artifactId>auto-value-annotations</artifactId>
-                <version>1.7.4</version>
+                <version>1.10.1</version>
             </dependency>
             <dependency>
                 <groupId>com.nimbusds</groupId>
@@ -1791,7 +1827,7 @@
             <dependency>
                 <groupId>com.google.code.gson</groupId>
                 <artifactId>gson</artifactId>
-                <version>2.9.1</version>
+                <version>2.10.1</version>
             </dependency>
             <dependency>
                 <groupId>com.amazonaws</groupId>
@@ -1806,12 +1842,12 @@
             <dependency>
                 <groupId>org.objenesis</groupId>
                 <artifactId>objenesis</artifactId>
-                <version>3.2</version>
+                <version>3.3</version>
             </dependency>
             <dependency>
                 <groupId>com.github.luben</groupId>
                 <artifactId>zstd-jni</artifactId>
-                <version>1.4.5-12</version>
+                <version>1.5.2-5</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
@@ -1831,7 +1867,7 @@
             <dependency>
                 <groupId>org.checkerframework</groupId>
                 <artifactId>checker-qual</artifactId>
-                <version>3.27.0</version>
+                <version>3.29.0</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
@@ -1871,7 +1907,7 @@
             <dependency>
               <groupId>io.netty</groupId>
               <artifactId>netty-tcnative-classes</artifactId>
-              <version>2.0.55.Final</version>
+              <version>2.0.56.Final</version>
             </dependency>
             <dependency>
               <groupId>com.google.api-client</groupId>
@@ -1889,6 +1925,11 @@
                 <groupId>net.java.dev.jna</groupId>
                 <artifactId>jna</artifactId>
                 <version>${jna.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>javax.xml.bind</groupId>
+                <artifactId>jaxb-api</artifactId>
+                <version>${jaxb.version}</version>
             </dependency>
             <!--
             The following are test dependencies, they are not in the final distribution.
@@ -1919,15 +1960,6 @@
                 <artifactId>mockito-core</artifactId>
                 <version>${mockito.version}</version>
                 <scope>test</scope>
-            </dependency>
-            <dependency>
-                <!--
-                parquet-avro depends on this transitively, but it has an invalid pom, generating warnings during build.
-                This is newer fixed version.
-                -->
-                <groupId>org.apache.yetus</groupId>
-                <artifactId>audience-annotations</artifactId>
-                <version>0.12.0</version>
             </dependency>
             <dependency>
                 <groupId>org.reflections</groupId>

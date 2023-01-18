@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -495,7 +495,7 @@ public class SerializationIssueTest extends HazelcastTestSupport {
         Data data = ss.toData(obj);
         Object obj2 = ss.toObject(data);
 
-        assertEquals(obj2.getClass(), TheClassThatExtendArrayList.class);
+        assertEquals(TheClassThatExtendArrayList.class, obj2.getClass());
     }
 
     static class TheClassThatExtendArrayList<E> extends ArrayList<E> implements DataSerializable {

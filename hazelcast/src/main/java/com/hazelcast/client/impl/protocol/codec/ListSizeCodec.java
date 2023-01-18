@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -37,7 +37,7 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Returns the number of elements in this list.  If this list contains more than Integer.MAX_VALUE elements, returns
  * Integer.MAX_VALUE.
  */
-@Generated("d425ab7a5c9154fd3337f8f0a83b17e8")
+@Generated("b31a8e12fcc7a5f376cf6fc565a1885b")
 public final class ListSizeCodec {
     //hex: 0x050100
     public static final int REQUEST_MESSAGE_TYPE = 327936;

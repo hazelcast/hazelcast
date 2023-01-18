@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -116,7 +116,7 @@ public class NonSmartClientTest extends SimpleTestInClusterSupport {
             assertTrue(jet.getJobs().stream().anyMatch(j -> j.getId() == jobId));
             assertFalse(jet.getJobs(jobName).isEmpty());
             assertNotNull(jet.getJob(jobId).getStatus());
-            assertEquals(jet.getJob(jobId).getStatus(), JobStatus.RUNNING);
+            assertEquals(JobStatus.RUNNING, jet.getJob(jobId).getStatus());
             Job j = jet.getJob(jobName);
             assertNotNull(j.getConfig());
             assertGreaterOrEquals("submissionTime", j.getSubmissionTime(), 0);

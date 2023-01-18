@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -94,7 +94,7 @@ public class LiveOperationRegistryTest {
         r.populate(liveOperations);
 
         Set<Address> addresses = liveOperations.addresses();
-        assertEquals(addresses.size(), 2);
+        assertEquals(2, addresses.size());
         assertTrue(addresses.contains(new Address("1.2.3.4", 1234)));
         assertTrue(addresses.contains(new Address("1.2.3.3", 1234)));
         long[] runningOperations = liveOperations.toOpControl(new Address("1.2.3.4", 1234)).runningOperations();

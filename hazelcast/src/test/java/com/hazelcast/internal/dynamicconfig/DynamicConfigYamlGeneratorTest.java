@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008-2022, Hazelcast, Inc. All Rights Reserved.
+ * Copyright (c) 2008-2023, Hazelcast, Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -99,14 +99,14 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
         Config newConfigViaGenerator = getNewConfigViaGenerator(cfg, true);
         SSLConfig generatedSSLConfig = newConfigViaGenerator.getNetworkConfig().getSSLConfig();
 
-        assertEquals(generatedSSLConfig.getProperty("keyStorePassword"), MASK_FOR_SENSITIVE_DATA);
-        assertEquals(generatedSSLConfig.getProperty("trustStorePassword"), MASK_FOR_SENSITIVE_DATA);
+        assertEquals(MASK_FOR_SENSITIVE_DATA, generatedSSLConfig.getProperty("keyStorePassword"));
+        assertEquals(MASK_FOR_SENSITIVE_DATA, generatedSSLConfig.getProperty("trustStorePassword"));
 
         String secPassword = newConfigViaGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getPassword();
         String theSalt = newConfigViaGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getSalt();
-        assertEquals(secPassword, MASK_FOR_SENSITIVE_DATA);
-        assertEquals(theSalt, MASK_FOR_SENSITIVE_DATA);
-        assertEquals(newConfigViaGenerator.getLicenseKey(), MASK_FOR_SENSITIVE_DATA);
+        assertEquals(MASK_FOR_SENSITIVE_DATA, secPassword);
+        assertEquals(MASK_FOR_SENSITIVE_DATA, theSalt);
+        assertEquals(MASK_FOR_SENSITIVE_DATA, newConfigViaGenerator.getLicenseKey());
     }
 
     @Test
@@ -138,9 +138,9 @@ public class DynamicConfigYamlGeneratorTest extends AbstractDynamicConfigGenerat
 
         String secPassword = newConfigViaGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getPassword();
         String theSalt = newConfigViaGenerator.getNetworkConfig().getSymmetricEncryptionConfig().getSalt();
-        assertEquals(secPassword, password);
-        assertEquals(theSalt, salt);
-        assertEquals(newConfigViaGenerator.getLicenseKey(), licenseKey);
+        assertEquals(password, secPassword);
+        assertEquals(salt, theSalt);
+        assertEquals(licenseKey, newConfigViaGenerator.getLicenseKey());
     }
 
     private MemberAddressProviderConfig getMemberAddressProviderConfig(Config cfg) {

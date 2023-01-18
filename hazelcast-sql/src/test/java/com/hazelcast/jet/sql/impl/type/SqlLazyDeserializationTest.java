@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -136,7 +136,7 @@ public class SqlLazyDeserializationTest {
         // 1. UserType that is accessed using readAsInternalGenericRecord
         // 2,3. Organization and office types that are accessed using getInternalGenericRecord.
         CopyOnWriteArrayList<InternalGenericRecord> results = resultCaptor.getResults();
-        assertEquals(results.size(), 3);
+        assertEquals(3, results.size());
         // 2. FieldAccessExpression uses getInternalGenericRecord to get the organization
         verify(results.get(0), times(1)).getInternalGenericRecord("organization");
         // 3. FieldAccessExpression uses getInternalGenericRecord to get office
@@ -158,7 +158,7 @@ public class SqlLazyDeserializationTest {
         // There should be three InternalGenericRecords in results:
         // 1. UserType that is accessed using readAsInternalGenericRecord
         // 2,3. Organization and office types that are accessed using getInternalGenericRecord.
-        assertEquals(results.size(), 3);
+        assertEquals(3, results.size());
         // 2. FieldAccessExpression uses getInternalGenericRecord to get the organization
         verify(results.get(0), times(1)).getInternalGenericRecord("organization");
         // 3. FieldAccessExpression uses getInternalGenericRecord to get office
