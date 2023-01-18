@@ -194,7 +194,7 @@ public abstract class Eventloop implements Executor {
      * Opens TCP/IP (stream) based async socket. The returned socket assumes IPv4. When support for
      * IPv6 is added, a boolean 'ipv4' flag needs to be added.
      * <p/>
-     * This AsyncSocket isn't tied to this Eventloop. After it is opened, it needs to be assigned
+     * The opened AsyncSocket isn't tied to this Eventloop. After it is opened, it needs to be assigned
      * to a particular eventloop by calling {@link AsyncSocket#activate(Eventloop)}. The reason why
      * this isn't done in 1 go, is that it could be that when the AsyncServerSocket accepts an
      * AsyncSocket, we want to assign that AsyncSocket to a different Eventloop. Otherwise if there

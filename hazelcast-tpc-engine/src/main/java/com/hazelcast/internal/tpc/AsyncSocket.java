@@ -39,9 +39,9 @@ public abstract class AsyncSocket extends Socket {
     protected boolean clientSide;
 
     protected final ProgressIndicator ioBuffersWritten = new ProgressIndicator();
+    protected final ProgressIndicator ioBuffersRead = new ProgressIndicator();
     protected final ProgressIndicator bytesRead = new ProgressIndicator();
     protected final ProgressIndicator bytesWritten = new ProgressIndicator();
-    protected final ProgressIndicator ioBuffersRead = new ProgressIndicator();
     protected final ProgressIndicator writeEvents = new ProgressIndicator();
     protected final ProgressIndicator readEvents = new ProgressIndicator();
 
