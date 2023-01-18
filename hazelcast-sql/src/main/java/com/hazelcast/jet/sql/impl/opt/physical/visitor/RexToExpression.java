@@ -20,7 +20,7 @@ import com.google.common.collect.RangeSet;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.expression.Sarg;
 import com.hazelcast.jet.sql.impl.expression.ToRowFunction;
-import com.hazelcast.jet.sql.impl.expression.UDTObjectToJsonFunction;
+import com.hazelcast.jet.sql.impl.expression.UdtObjectToJsonFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonArrayFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonObjectFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonParseFunction;
@@ -501,7 +501,7 @@ public final class RexToExpression {
                 } else if (function == HazelcastSqlOperatorTable.TO_ROW) {
                     return ToRowFunction.create(operands[0]);
                 } else if (function == HazelcastUDTObjectToJsonFunction.INSTANCE) {
-                    return UDTObjectToJsonFunction.create(operands[0]);
+                    return UdtObjectToJsonFunction.create(operands[0]);
                 }
 
                 break;

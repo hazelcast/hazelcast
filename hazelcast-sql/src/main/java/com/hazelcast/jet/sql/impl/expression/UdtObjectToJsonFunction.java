@@ -39,14 +39,14 @@ import static java.util.Collections.newSetFromMap;
 
 public class UdtObjectToJsonFunction extends UniExpressionWithType<HazelcastJsonValue> implements IdentifiedDataSerializable {
 
-    public UDTObjectToJsonFunction() { }
+    public UdtObjectToJsonFunction() { }
 
-    private UDTObjectToJsonFunction(Expression<?> operand) {
+    private UdtObjectToJsonFunction(Expression<?> operand) {
         super(operand, QueryDataType.JSON);
     }
 
-    public static UDTObjectToJsonFunction create(Expression<?> operand) {
-        return new UDTObjectToJsonFunction(operand);
+    public static UdtObjectToJsonFunction create(Expression<?> operand) {
+        return new UdtObjectToJsonFunction(operand);
     }
 
     @Override

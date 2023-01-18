@@ -23,7 +23,7 @@ import com.hazelcast.internal.util.ConstructorFunction;
 import com.hazelcast.jet.sql.impl.connector.keyvalue.KvRowProjector;
 import com.hazelcast.jet.sql.impl.connector.map.RowProjectorProcessorSupplier;
 import com.hazelcast.jet.sql.impl.expression.ToRowFunction;
-import com.hazelcast.jet.sql.impl.expression.UDTObjectToJsonFunction;
+import com.hazelcast.jet.sql.impl.expression.UdtObjectToJsonFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonArrayFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonObjectFunction;
 import com.hazelcast.jet.sql.impl.expression.json.JsonParseFunction;
@@ -115,7 +115,7 @@ public class JetSqlSerializerHook implements DataSerializerHook {
         constructors[AGGREGATE_EXPORT_FUNCTION] = arg -> AggregateAbstractPhysicalRule.AggregateExportFunction.INSTANCE;
         constructors[AGGREGATE_JSON_OBJECT_AGG_SUPPLIER] = arg -> new AggregateAbstractPhysicalRule.AggregateObjectAggSupplier();
         constructors[TO_ROW] = arg -> new ToRowFunction();
-        constructors[UDT_OBJECT_TO_JSON] = arg -> new UDTObjectToJsonFunction();
+        constructors[UDT_OBJECT_TO_JSON] = arg -> new UdtObjectToJsonFunction();
 
         return new ArrayDataSerializableFactory(constructors);
     }

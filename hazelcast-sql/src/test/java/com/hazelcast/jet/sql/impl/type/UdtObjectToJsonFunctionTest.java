@@ -39,7 +39,7 @@ import static java.lang.String.format;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @RunWith(HazelcastSerialClassRunner.class)
-public class UDTObjectToJsonFunctionTest extends SqlJsonTestSupport {
+public class UdtObjectToJsonFunctionTest extends SqlJsonTestSupport {
     @BeforeClass
     public static void beforeClass() {
         Config config = smallInstanceConfig()
