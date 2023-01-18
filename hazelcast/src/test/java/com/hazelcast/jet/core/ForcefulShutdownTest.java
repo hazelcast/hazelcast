@@ -182,6 +182,70 @@ public class ForcefulShutdownTest extends JetTestSupport {
         assertNotEquals("Should lose some writes", 1 + numExtraPuts, mapBackup.size());
     }
 
+    // demonstrates that IMap.clear() can silently fail to send backups
+    // and some elements may remain in the IMap
+    @Test
+    public void mapShouldNotBeFullyCleared_whenReplicationNetworkFailure() {
+        // Jet does not start when there is no data in partitions (?)
+        IMap<String, String> otherMap = instances[0].getMap("dummy");
+        otherMap.put("1", "2");
+
+        IMap<String, String> map = instances[0].getMap("testMapPutAndGet");
+
+        InternalPartition partitionForKey = getPartitionForKey("Hello");
+        logger.fine("KEY partition id:" + partitionForKey.getPartitionId() + " owner: " + partitionForKey.getOwnerOrNull());
+        for (int i = 0; i < 3; ++i) {
+            logger.fine("KEY partition addr:" + partitionForKey.getReplica(i));
+        }
+
+        int masterPartitionInstanceIdx = partitionForKey.getReplica(0).address().getPort() - BASE_PORT;
+        int backupPartitionInstanceIdx = partitionForKey.getReplica(1).address().getPort() - BASE_PORT;
+        int noPartitionInstanceIdx = partitionForKey.getReplica(2).address().getPort() - BASE_PORT;
+
+        String value = map.put("Hello", "World");
+        assertEquals("World", map.get("Hello"));
+        assertEquals(1, map.size());
+        assertNull(value);
+
+        final int numExtraPuts = 60;
+        IntStream.range(0, numExtraPuts)
+                .forEach(i -> map.put("Hello" + i, "World"));
+        assertEquals(1 + numExtraPuts, map.size());
+
+        // break network
+        setBackupPacketDropFilter(instances[masterPartitionInstanceIdx], 1f);
+        setBackupPacketDropFilter(instances[backupPartitionInstanceIdx], 0f, instances[masterPartitionInstanceIdx]);
+        setBackupPacketDropFilter(instances[noPartitionInstanceIdx], 0f);
+
+        map.clear();
+
+        // kill master
+        logger.info("Killing master: " + masterPartitionInstanceIdx);
+        instances[masterPartitionInstanceIdx].getLifecycleService().terminate();
+
+        assertTrueEventually(() -> {
+            boolean state =
+                    instances[backupPartitionInstanceIdx].getPartitionService().isLocalMemberSafe()
+                            && instances[noPartitionInstanceIdx].getPartitionService().isLocalMemberSafe();
+            if (!state) {
+                logger.fine("Partition replication is not in safe state");
+            }
+            assertTrue(state);
+        });
+
+        IMap<String, String> mapNoInstance = instances[noPartitionInstanceIdx].getMap("testMapPutAndGet");
+
+        logger.fine("Size after clear: " + mapNoInstance.size());
+        assertGreaterOrEquals("Should lose some clear executions", mapNoInstance.size(), 1);
+
+        assertEquals("Should lose clear on master", "World", mapNoInstance.get("Hello"));
+        assertNotEquals("Should clear some entries", 1 + numExtraPuts, mapNoInstance.size());
+
+        IMap<String, String> mapBackup = instances[backupPartitionInstanceIdx].getMap("testMapPutAndGet");
+        assertEquals("Should lose clear on master", "World", mapBackup.get("Hello"));
+        assertNotEquals("Should clear some entries", 1 + numExtraPuts, mapBackup.size());
+    }
+
     @Test
     public void whenFirstSnapshotPossiblyCorrupted_thenRestartWithoutSnapshot() throws InterruptedException {
         when_shutDown(true, 0);
