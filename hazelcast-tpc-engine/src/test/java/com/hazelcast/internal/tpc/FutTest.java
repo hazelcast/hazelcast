@@ -123,6 +123,7 @@ public class FutTest {
         fut.completeExceptionally(exception);
 
         assertOpenEventually(executed);
+        assertTrue(fut.isCompletedExceptionally());
         assertNull(valueRef.get());
         assertSame(exception, throwableRef.get());
     }

@@ -16,21 +16,27 @@
 
 package com.hazelcast.internal.tpc.nio;
 
-import com.hazelcast.internal.tpc.Eventloop;
-import com.hazelcast.internal.tpc.EventloopTest;
-import com.hazelcast.internal.tpc.EventloopType;
+import java.io.IOException;
+import java.nio.channels.SelectionKey;
 
-public class NioEventloopTest extends EventloopTest {
+/**
+ * A callback interface when something interesting happened on a {@link SelectionKey}.
+ */
+public interface SelectionKeyListener {
 
-    @Override
-    public EventloopType getType() {
-        return EventloopType.NIO;
-    }
+    /**
+     * Signals the listener that socket should be closed.
+     *
+     * @param reason the reason (can be null).
+     * @param cause the cause (can be null).
+     */
+    void close(String reason, Exception cause);
 
-    @Override
-    public Eventloop createEventloop() {
-        NioEventloop eventloop = new NioEventloop();
-        loops.add(eventloop);
-        return eventloop;
-    }
+    /**
+     * Signals that something interesting happened on a SelectionKey.
+     *
+     * @param key the SelectionKey
+     * @throws IOException if handling lead to problems.
+     */
+    void handle(SelectionKey key) throws IOException;
 }
