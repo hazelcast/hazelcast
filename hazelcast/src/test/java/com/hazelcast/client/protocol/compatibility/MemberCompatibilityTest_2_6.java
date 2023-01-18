@@ -7964,6 +7964,48 @@ public class MemberCompatibilityTest_2_6 {
         compareClientMessages(fromFile, encoded);
     }
 
+    @Test
+    public void test_JetAddJobStatusListenerCodec_decodeRequest() {
+        int fileClientMessageIndex = 901;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        JetAddJobStatusListenerCodec.RequestParameters parameters = JetAddJobStatusListenerCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aLong, parameters.jobId));
+        assertTrue(isEqual(aBoolean, parameters.localOnly));
+    }
+
+    @Test
+    public void test_JetAddJobStatusListenerCodec_encodeResponse() {
+        int fileClientMessageIndex = 902;
+        ClientMessage encoded = JetAddJobStatusListenerCodec.encodeResponse(aUUID);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetAddJobStatusListenerCodec_encodeJobEvent() {
+        int fileClientMessageIndex = 903;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        ClientMessage encoded = JetAddJobStatusListenerCodec.encodeJobEvent(aLong, anInt, anInt, aString, aBoolean);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetRemoveJobStatusListenerCodec_decodeRequest() {
+        int fileClientMessageIndex = 904;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        JetRemoveJobStatusListenerCodec.RequestParameters parameters = JetRemoveJobStatusListenerCodec.decodeRequest(fromFile);
+        assertTrue(isEqual(aLong, parameters.jobId));
+        assertTrue(isEqual(aUUID, parameters.registrationId));
+    }
+
+    @Test
+    public void test_JetRemoveJobStatusListenerCodec_encodeResponse() {
+        int fileClientMessageIndex = 905;
+        ClientMessage encoded = JetRemoveJobStatusListenerCodec.encodeResponse(aBoolean);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
         ClientMessage.Frame binaryFrame, encodedFrame;
 

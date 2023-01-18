@@ -37,12 +37,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
 /**
  * Adds a JobListener to the specified job.
  */
-@Generated("3e54e34b957fffc3686b93dd0ca33054")
+@Generated("1229d6062447782da0a9b658efbbf164")
 public final class JetAddJobStatusListenerCodec {
-    //hex: 0xFE1000
-    public static final int REQUEST_MESSAGE_TYPE = 16650240;
-    //hex: 0xFE1001
-    public static final int RESPONSE_MESSAGE_TYPE = 16650241;
+    //hex: 0xFE1100
+    public static final int REQUEST_MESSAGE_TYPE = 16650496;
+    //hex: 0xFE1101
+    public static final int RESPONSE_MESSAGE_TYPE = 16650497;
     private static final int REQUEST_JOB_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_LOCAL_ONLY_FIELD_OFFSET = REQUEST_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_LOCAL_ONLY_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
@@ -53,8 +53,8 @@ public final class JetAddJobStatusListenerCodec {
     private static final int EVENT_JOB_NEW_STATUS_FIELD_OFFSET = EVENT_JOB_OLD_STATUS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_JOB_USER_REQUESTED_FIELD_OFFSET = EVENT_JOB_NEW_STATUS_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int EVENT_JOB_INITIAL_FRAME_SIZE = EVENT_JOB_USER_REQUESTED_FIELD_OFFSET + BOOLEAN_SIZE_IN_BYTES;
-    //hex: 0xFE1002
-    private static final int EVENT_JOB_MESSAGE_TYPE = 16650242;
+    //hex: 0xFE1102
+    private static final int EVENT_JOB_MESSAGE_TYPE = 16650498;
 
     private JetAddJobStatusListenerCodec() {
     }

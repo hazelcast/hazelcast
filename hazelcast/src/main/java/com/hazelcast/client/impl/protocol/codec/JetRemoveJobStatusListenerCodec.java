@@ -37,12 +37,12 @@ import static com.hazelcast.client.impl.protocol.codec.builtin.FixedSizeTypesCod
  * Removes the specified job listener. If there is no such listener added before,
  * this call does no change in the cluster and returns false.
  */
-@Generated("f6900d8ccbce790b7d57d23bb61317f1")
+@Generated("2df4a07b869e09079c8061bf734bcd34")
 public final class JetRemoveJobStatusListenerCodec {
-    //hex: 0xFE1100
-    public static final int REQUEST_MESSAGE_TYPE = 16650496;
-    //hex: 0xFE1101
-    public static final int RESPONSE_MESSAGE_TYPE = 16650497;
+    //hex: 0xFE1200
+    public static final int REQUEST_MESSAGE_TYPE = 16650752;
+    //hex: 0xFE1201
+    public static final int RESPONSE_MESSAGE_TYPE = 16650753;
     private static final int REQUEST_JOB_ID_FIELD_OFFSET = PARTITION_ID_FIELD_OFFSET + INT_SIZE_IN_BYTES;
     private static final int REQUEST_REGISTRATION_ID_FIELD_OFFSET = REQUEST_JOB_ID_FIELD_OFFSET + LONG_SIZE_IN_BYTES;
     private static final int REQUEST_INITIAL_FRAME_SIZE = REQUEST_REGISTRATION_ID_FIELD_OFFSET + UUID_SIZE_IN_BYTES;

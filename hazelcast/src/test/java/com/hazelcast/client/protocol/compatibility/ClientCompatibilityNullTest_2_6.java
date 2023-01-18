@@ -7073,6 +7073,55 @@ public class ClientCompatibilityNullTest_2_6 {
         assertTrue(isEqual(aBoolean, JetIsJobUserCancelledCodec.decodeResponse(fromFile)));
     }
 
+    @Test
+    public void test_JetAddJobStatusListenerCodec_encodeRequest() {
+        int fileClientMessageIndex = 901;
+        ClientMessage encoded = JetAddJobStatusListenerCodec.encodeRequest(aLong, aBoolean);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetAddJobStatusListenerCodec_decodeResponse() {
+        int fileClientMessageIndex = 902;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aUUID, JetAddJobStatusListenerCodec.decodeResponse(fromFile)));
+    }
+
+    private static class JetAddJobStatusListenerCodecHandler extends JetAddJobStatusListenerCodec.AbstractEventHandler {
+        @Override
+        public void handleJobEvent(long jobId, int oldStatus, int newStatus, java.lang.String description, boolean userRequested) {
+            assertTrue(isEqual(aLong, jobId));
+            assertTrue(isEqual(anInt, oldStatus));
+            assertTrue(isEqual(anInt, newStatus));
+            assertTrue(isEqual(null, description));
+            assertTrue(isEqual(aBoolean, userRequested));
+        }
+    }
+
+    @Test
+    public void test_JetAddJobStatusListenerCodec_handleJobEvent() {
+        int fileClientMessageIndex = 903;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        JetAddJobStatusListenerCodecHandler handler = new JetAddJobStatusListenerCodecHandler();
+        handler.handle(fromFile);
+    }
+
+    @Test
+    public void test_JetRemoveJobStatusListenerCodec_encodeRequest() {
+        int fileClientMessageIndex = 904;
+        ClientMessage encoded = JetRemoveJobStatusListenerCodec.encodeRequest(aLong, aUUID);
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        compareClientMessages(fromFile, encoded);
+    }
+
+    @Test
+    public void test_JetRemoveJobStatusListenerCodec_decodeResponse() {
+        int fileClientMessageIndex = 905;
+        ClientMessage fromFile = clientMessages.get(fileClientMessageIndex);
+        assertTrue(isEqual(aBoolean, JetRemoveJobStatusListenerCodec.decodeResponse(fromFile)));
+    }
+
     private void compareClientMessages(ClientMessage binaryMessage, ClientMessage encodedMessage) {
         ClientMessage.Frame binaryFrame, encodedFrame;
 
