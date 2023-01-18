@@ -16,17 +16,17 @@
 
 package com.hazelcast.jet.mongodb;
 
-import com.hazelcast.collection.ISet;
+import com.hazelcast.config.Config;
+import com.hazelcast.config.MapConfig;
 import com.hazelcast.core.HazelcastInstance;
 import com.hazelcast.jet.Job;
 import com.hazelcast.jet.SimpleTestInClusterSupport;
 import com.hazelcast.jet.config.JobConfig;
 import com.hazelcast.jet.impl.JobRepository;
 import com.hazelcast.jet.pipeline.Pipeline;
-import com.hazelcast.jet.pipeline.Sink;
-import com.hazelcast.jet.pipeline.SinkBuilder;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
+import com.hazelcast.map.IMap;
 import com.hazelcast.test.HazelcastSerialClassRunner;
 import com.hazelcast.test.annotation.QuickTest;
 import com.mongodb.ConnectionString;
@@ -52,7 +52,6 @@ import org.testcontainers.utility.DockerImageName;
 import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.Random;
-import java.util.Set;
 import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -60,6 +59,8 @@ import java.util.function.Consumer;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
+import static com.hazelcast.jet.pipeline.Sinks.map;
 import static eu.rekawek.toxiproxy.model.ToxicDirection.DOWNSTREAM;
 import static eu.rekawek.toxiproxy.model.ToxicDirection.UPSTREAM;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -89,52 +90,60 @@ public class MongoDBSourceResilienceTest extends SimpleTestInClusterSupport {
 
     private final Random random = new Random();
 
-    @Test
+    @Test(timeout = 60_000)
     public void testSourceStream_whenServerDown() {
+        System.setProperty("hazelcast.partition.count", "13");
+        Config conf = new Config();
+        conf.getJetConfig().setEnabled(true);
+        conf.addMapConfig(new MapConfig("*").setBackupCount(3));
         HazelcastInstance hz = createHazelcastInstance();
         HazelcastInstance serverToShutdown = createHazelcastInstance();
         JobRepository jobRepository = new JobRepository(hz);
-        int itemCount = 10_000;
 
         final String databaseName = "shutdownTest";
         final String collectionName = "testStream_whenServerDown";
         final String connectionString = mongoContainer.getConnectionString();
-        Pipeline pipeline = buildIngestPipeline(connectionString, "set", databaseName, collectionName);
+        Pipeline pipeline = buildIngestPipeline(connectionString, "whenServerDown", databaseName, collectionName);
 
         Job job = invokeJob(hz, pipeline);
-        ISet<Integer> set = hz.getSet("set");
+        IMap<Integer, Integer> set = hz.getMap("whenServerDown");
+        AtomicInteger totalCount = new AtomicInteger(0);
+        AtomicBoolean shouldContinue = new AtomicBoolean(true);
 
         spawnMongo(connectionString, mongoClient -> {
             MongoCollection<Document> collection = mongoClient.getDatabase(databaseName).getCollection(collectionName);
 
-            for (int i = 0; i < itemCount / 2; i++) {
-                collection.insertOne(new Document("key", i));
+            for (int i = 0; i < 20; i++) {
+                collection.insertOne(new Document("key", i).append("source", "first"));
+                totalCount.incrementAndGet();
+                sleep(random.nextInt(100));
             }
         });
+
         waitForFirstSnapshot(jobRepository, job.getId(), 30, false);
         assertTrueEventually(() -> assertGreaterOrEquals("should have some records", set.size(), 1));
-
         spawnMongo(connectionString, mongoClient -> {
-            MongoCollection<Document> collection =
-                    mongoClient.getDatabase(databaseName).getCollection(collectionName);
+            MongoCollection<Document> collection = mongoClient.getDatabase(databaseName).getCollection(collectionName);
 
-            for (int i = itemCount / 2; i < itemCount; i++) {
+            for (int i = 50; shouldContinue.get(); i++) {
                 collection.insertOne(new Document("key", i));
+                totalCount.incrementAndGet();
+                sleep(random.nextInt(400));
             }
         });
+        serverToShutdown.getLifecycleService().terminate();
+        assertTrueEventually(() -> assertEquals(1, hz.getCluster().getMembers().size()));
 
-        serverToShutdown.shutdown();
+        shouldContinue.set(false);
 
-        assertTrueEventually(() ->
-            assertEquals(itemCount, set.size())
-        );
+        assertTrueEventually(() -> assertEquals(totalCount.get(), set.size()));
+        System.clearProperty("hazelcast.partition.count");
     }
 
     @Test
     public void testNetworkCutoff() throws IOException {
         sourceNetworkTest(false);
     }
-
 
     @Test
     public void testNetworkTimeout() throws IOException {
@@ -156,9 +165,9 @@ public class MongoDBSourceResilienceTest extends SimpleTestInClusterSupport {
         Pipeline pipeline = buildIngestPipeline(connectionViaToxi, "networkTest", databaseName, collectionName);
 
         Job job = invokeJob(hz, pipeline);
-        ISet<Integer> set = hz.getSet("networkTest");
+        IMap<Integer, Integer> set = hz.getMap("networkTest");
 
-        final int itemCount = 200;
+        final int itemCount = 20;
         AtomicInteger totalCount = new AtomicInteger(0);
         AtomicBoolean shouldContinue = new AtomicBoolean(true);
 
@@ -178,6 +187,7 @@ public class MongoDBSourceResilienceTest extends SimpleTestInClusterSupport {
             for (int i = itemCount; shouldContinue.get(); i++) {
                 collection.insertOne(new Document("key", i));
                 totalCount.incrementAndGet();
+                sleep(300);
             }
         });
         logger.info("Injecting toxis");
@@ -188,7 +198,7 @@ public class MongoDBSourceResilienceTest extends SimpleTestInClusterSupport {
             proxy.toxics().bandwidth("CUT_CONNECTION_DOWNSTREAM", DOWNSTREAM, 0);
             proxy.toxics().bandwidth("CUT_CONNECTION_UPSTREAM", UPSTREAM, 0);
         }
-        sleep(10_000 + random.nextInt(2000));
+        sleep(3_000 + random.nextInt(1000));
         if (timeout) {
             proxy.toxics().get("TIMEOUT").remove();
             proxy.toxics().get("TIMEOUT_DOWNSTREAM").remove();
@@ -197,20 +207,10 @@ public class MongoDBSourceResilienceTest extends SimpleTestInClusterSupport {
             proxy.toxics().get("CUT_CONNECTION_UPSTREAM").remove();
         }
         logger.info("Toxiing over");
-        sleep(5_000 + random.nextInt(1500));
+        sleep(3_000 + random.nextInt(1000));
         shouldContinue.compareAndSet(true, false);
 
-        assertTrueEventually(() ->
-                assertEquals(totalCount.get(), set.size())
-        );
-    }
-
-    @Nonnull
-    private static Sink<Integer> getSetSink(String setName) {
-        return SinkBuilder
-                .sinkBuilder(setName + "Sink", c -> c.hazelcastInstance().getSet(setName))
-                .<Integer>receiveFn(Set::add)
-                .build();
+        assertTrueEventually(() -> assertEquals(totalCount.get(), set.size()));
     }
 
     @Nonnull
@@ -226,8 +226,8 @@ public class MongoDBSourceResilienceTest extends SimpleTestInClusterSupport {
                         .build())
                 .withNativeTimestamps(0)
                 .setLocalParallelism(4)
-                .map(doc -> doc.getInteger("key"))
-                .writeTo(getSetSink(sinkName));
+                .map(doc -> tuple2(doc.getInteger("key"), doc.getInteger("key")))
+                .writeTo(map(sinkName));
         return pipeline;
     }
 
@@ -269,7 +269,7 @@ public class MongoDBSourceResilienceTest extends SimpleTestInClusterSupport {
                     builder.readTimeout(2, SECONDS);
                 })
                 .applyConnectionString(new ConnectionString(connectionString))
-                .applyToClusterSettings(b -> b.serverSelectionTimeout(5, SECONDS))
+                .applyToClusterSettings(b -> b.serverSelectionTimeout(2, SECONDS))
                 .build();
 
         return MongoClients.create(settings);
