@@ -8,6 +8,7 @@ import com.hazelcast.map.IMap;
 /**
  * Demo application for TPC. Will be removed in in the final release.
  */
+@SuppressWarnings({"checkstyle:HideUtilityClassConstructor", "checkstyle:MagicNumber"})
 public class ClientMain {
 
     public static void main(String[] args) {

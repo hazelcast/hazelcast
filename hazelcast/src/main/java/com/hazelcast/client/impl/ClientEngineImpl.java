@@ -82,7 +82,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static com.hazelcast.instance.EndpointQualifier.CLIENT;
-import static com.hazelcast.internal.tpc.iobuffer.IOBufferAllocatorFactory.createConcurrentAllocator;
+import static com.hazelcast.internal.tpc.iobuffer.IOBufferAllocatorFactory.createGrowingThreadLocal;
 import static com.hazelcast.internal.util.MapUtil.createHashMap;
 import static com.hazelcast.internal.util.SetUtil.createHashSet;
 import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
@@ -121,7 +121,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
     private final ClientLifecycleMonitor lifecycleMonitor;
     private final Map<UUID, Consumer<Long>> backupListeners = new ConcurrentHashMap<>();
     private final AddressChecker addressChecker;
-    private final IOBufferAllocator responseBufAllocator = createConcurrentAllocator();
+    private final IOBufferAllocator responseBufAllocator = createGrowingThreadLocal();
 
     // not final for the testing purposes
     private ClientEndpointStatisticsManager endpointStatisticsManager;
@@ -226,7 +226,7 @@ public class ClientEngineImpl implements ClientEngine, CoreService,
         Connection connection = clientMessage.getConnection();
         MessageTask messageTask = messageTaskFactory.create(clientMessage, connection);
 
-        if(messageTask instanceof AbstractMessageTask){
+        if (messageTask instanceof AbstractMessageTask) {
             AbstractMessageTask abstractMessageTask = (AbstractMessageTask) messageTask;
             abstractMessageTask.asyncSocket = clientMessage.getAsyncSocket();
             abstractMessageTask.responseBufAllocator = responseBufAllocator;

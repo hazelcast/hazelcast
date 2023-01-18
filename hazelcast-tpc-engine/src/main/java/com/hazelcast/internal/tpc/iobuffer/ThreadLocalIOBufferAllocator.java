@@ -19,7 +19,7 @@ package com.hazelcast.internal.tpc.iobuffer;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
 
-class ThreadLocalIOBufferAllocator implements IOBufferAllocator<ThreadLocalIOBuffer> {
+public class ThreadLocalIOBufferAllocator implements IOBufferAllocator<ThreadLocalIOBuffer> {
     static final int INITIAL_POOL_SIZE = 4096;
     static final int BUFFER_SIZE = 16384;
 

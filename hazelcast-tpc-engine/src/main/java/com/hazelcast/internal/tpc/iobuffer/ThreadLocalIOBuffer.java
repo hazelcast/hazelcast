@@ -24,7 +24,7 @@ import static com.hazelcast.internal.tpc.nio.Bits.INT_SIZE_IN_BYTES;
 import static com.hazelcast.internal.tpc.nio.Bits.LONG_SIZE_IN_BYTES;
 import static com.hazelcast.internal.tpc.nio.Bits.SHORT_SIZE_IN_BYTES;
 
-class ThreadLocalIOBuffer implements IOBuffer {
+public class ThreadLocalIOBuffer implements IOBuffer {
     ByteBuffer[] chunks;
 
     private final ConcurrentIOBufferAllocator superAllocator;
@@ -44,7 +44,7 @@ class ThreadLocalIOBuffer implements IOBuffer {
 
     private int chunkToRelease;
 
-    ThreadLocalIOBuffer(ThreadLocalIOBufferAllocator allocator, int minSize, ConcurrentIOBufferAllocator concurrentAllocator) {
+    public ThreadLocalIOBuffer(ThreadLocalIOBufferAllocator allocator, int minSize, ConcurrentIOBufferAllocator concurrentAllocator) {
         this.allocator = allocator;
         this.superAllocator = concurrentAllocator;
         this.chunks = new ByteBuffer[((minSize - 1) / BUFFER_SIZE) + 1];
