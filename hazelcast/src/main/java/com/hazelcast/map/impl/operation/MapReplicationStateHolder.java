@@ -218,7 +218,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             LocalRecordStoreStats stats = statsEntry.getValue();
 
             RecordStore recordStore = operation.getRecordStore(mapName);
-            recordStore.setStats(stats);
+            recordStore.setLocalRecordStoreStats(stats);
 
         }
     }
@@ -333,7 +333,7 @@ public class MapReplicationStateHolder implements IdentifiedDataSerializable, Ve
             RecordStore<Record> recordStore = entry.getValue();
             out.writeString(mapName);
             writeRecordStore(mapName, recordStore, out);
-            recordStore.getStats().writeData(out);
+            recordStore.getLocalRecordStoreStats().writeData(out);
         }
 
         out.writeInt(loaded.size());

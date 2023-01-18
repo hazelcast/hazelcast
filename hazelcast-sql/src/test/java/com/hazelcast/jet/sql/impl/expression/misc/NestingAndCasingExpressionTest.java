@@ -517,6 +517,11 @@ public class NestingAndCasingExpressionTest extends ExpressionTestSupport {
     }
 
     @Test
+    public void test_TO_CHAR() {
+        check(sql("TO_CHAR(?, ?) || TO_CHAR(?, ?)"), LOCAL_DATE_VAL, "YYYY-MM-DD", 1, "9");
+    }
+
+    @Test
     public void test_COUNT() {
         check(sql("COUNT(?) || COUNT(?)"), 1L, 1L);
     }

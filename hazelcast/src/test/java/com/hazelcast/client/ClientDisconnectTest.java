@@ -109,7 +109,7 @@ public class ClientDisconnectTest extends HazelcastTestSupport {
         assertTrueAllTheTime(new AssertTask() {
             @Override
             public void run() throws Exception {
-                assertEquals(queue.size(), 1);
+                assertEquals(1, queue.size());
             }
         }, 3);
     }

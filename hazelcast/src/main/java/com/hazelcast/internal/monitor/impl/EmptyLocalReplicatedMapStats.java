@@ -81,6 +81,16 @@ public class EmptyLocalReplicatedMapStats implements LocalReplicatedMapStats {
     }
 
     @Override
+    public long getEvictionCount() {
+        return 0;
+    }
+
+    @Override
+    public long getExpirationCount() {
+        return 0;
+    }
+
+    @Override
     public long getLockedEntryCount() {
         return 0;
     }

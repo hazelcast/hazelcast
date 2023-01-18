@@ -99,7 +99,7 @@ public class NotEqualPredicateTest {
         int id = predicate.getClassId();
 
         // make sure the ID has not been changed by accident
-        assertEquals(id, 9);
+        assertEquals(9, id);
     }
 
     @Test
