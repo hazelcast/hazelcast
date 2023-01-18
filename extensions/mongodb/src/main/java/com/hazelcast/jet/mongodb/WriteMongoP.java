@@ -18,7 +18,6 @@ package com.hazelcast.jet.mongodb;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
-import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Watermark;
@@ -30,9 +29,7 @@ import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.jet.retry.impl.RetryTracker;
 import com.hazelcast.logging.ILogger;
-import com.mongodb.MongoBulkWriteException;
-import com.mongodb.MongoCommandException;
-import com.mongodb.MongoSocketException;
+import com.mongodb.MongoException;
 import com.mongodb.ReadPreference;
 import com.mongodb.TransactionOptions;
 import com.mongodb.WriteConcern;
@@ -109,11 +106,6 @@ public class WriteMongoP<I> extends AbstractProcessor {
             .maxCommitTime(MAX_COMMIT_TIME, MINUTES)
             .readPreference(ReadPreference.primaryPreferred())
             .build();
-    /**
-     * Error code used by MongoDB when there is Transient Error during transaction commit - which means we can
-     * try to re-process such transaction.
-     */
-    private static final int MONGODB_TRANSIENT_ERROR = 112;
     private final MongoDbConnection connection;
     private final Class<I> documentType;
     private ILogger logger;
@@ -459,19 +451,10 @@ public class WriteMongoP<I> extends AbstractProcessor {
                         clientSession.commitTransaction();
                         commitRetryTracker.reset();
                         success = true;
-                    } catch (MongoCommandException e) {
+                    } catch (MongoException e) {
                         tryExternalRollback();
                         commitRetryTracker.attemptFailed();
-                        if (!commitRetryTracker.shouldTryAgain() || e.getErrorCode() != MONGODB_TRANSIENT_ERROR) {
-                            throw e;
-                        }
-                    } catch (MongoBulkWriteException e) {
-                        tryExternalRollback();
-                        throw new JetException(e);
-                    } catch (MongoSocketException | IllegalStateException e) {
-                        tryExternalRollback();
-                        commitRetryTracker.attemptFailed();
-                        if (!commitRetryTracker.shouldTryAgain()) {
+                        if (!commitRetryTracker.shouldTryAgain() || !e.hasErrorLabel("TransientTransactionError")) {
                             throw e;
                         }
                     }
