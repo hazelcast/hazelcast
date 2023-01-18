@@ -548,18 +548,16 @@ public class WriteMongoP<I> extends AbstractProcessor {
 
     private static final class ConstantCollectionPicker<I> implements CollectionPicker<I> {
 
-        private final String databaseName;
-        private final String collectionName;
+        private final MongoCollectionKey key;
 
         private ConstantCollectionPicker(String databaseName, String collectionName) {
-            this.databaseName = databaseName;
-            this.collectionName = collectionName;
+            this.key = new MongoCollectionKey(databaseName, collectionName);
         }
 
 
         @Override
         public MongoCollectionKey pick(I item) {
-            return new MongoCollectionKey(databaseName, collectionName);
+            return key;
         }
 
     }
