@@ -111,14 +111,14 @@ Upon reception of uploadJobMetaData message, the server performs validation. If 
 
 The upload process continues with this message. It contains jar's bytes. This message contains these fields
 
-| Term              | Type      | Definition                                                                     |
-|-------------------|-----------|--------------------------------------------------------------------------------|
-| sessionId         | UUID      | It is explained in the previous message                                        |
-| currentPartNumber | int       | It starts from 1 and shows the sequence number of the part. For example 1 of 5 |
-| totalPartNumber   | int       | It is the total number of parts of the sequence                                |
-| partData          | byteArray | is the **byte[]** containing jar data                                          |
-| partSize          | int       | shows how many bytes of the partData byte[] is valid,                          |
-| sha256Hex          | int       | Hexadecimal SHA256 of the part                                                |
+| Term              | Type      | Definition                                                                  |
+|-------------------|-----------|-----------------------------------------------------------------------------|
+| sessionId         | UUID      | Explained in the previous message                                           |
+| currentPartNumber | int       | Starts from 1 and shows the sequence number of the part. For example 1 of 5 |
+| totalPartNumber   | int       | The total number of parts of the sequence                                   |
+| partData          | byteArray | The **byte[]** containing jar data                                          |
+| partSize          | int       | Shows how many bytes of the partData byte[] is valid,                       |
+| sha256Hex         | String    | Hexadecimal SHA256 of the part                                              |
 
 **Why do we need an extra partSize field?** 
 
