@@ -6060,28 +6060,57 @@
     </xs:complexType>
 
     <xs:complexType name="alto">
-        Hazelcast Alto is the next generation of Hazelcast built with thread per core architecture. It's still being developed and everything is subject to change. Alto is disabled by default.
+        <xs:annotation>
+            <xs:documentation>
+                Hazelcast Alto is the next generation of Hazelcast built with thread per core architecture. It's still
+                being developed and everything is subject to change. Alto is disabled by default.
+            </xs:documentation>
+        </xs:annotation>
         <xs:all>
             <xs:element name="eventloop-count" type="xs:integer" minOccurs="0">
-                Configures the number of eventloop threads. It's equal to available processor count by default.
+                <xs:annotation>
+                    <xs:documentation>
+                        Configures the number of eventloop threads. It's equal to available processor count by default.
+                    </xs:documentation>
+                </xs:annotation>
             </xs:element>
         </xs:all>
         <xs:attribute name="enabled" type="xs:boolean" use="required">
-            Enables Hazelcast Alto. Disabled by default.
+            <xs:annotation>
+                <xs:documentation>
+                    Enables Hazelcast Alto. Disabled by default.
+                </xs:documentation>
+            </xs:annotation>
         </xs:attribute>
     </xs:complexType>
 
     <xs:complexType name="alto-socket">
-        Socket configuration for Alto. In Alto, each eventloop has its own socket.
+        <xs:annotation>
+            <xs:documentation>
+                Socket configuration for Alto. In Alto, each eventloop has its own socket.
+            </xs:documentation>
+        </xs:annotation>
         <xs:all>
             <xs:element name="port-range" type="xs:string" minOccurs="0">
-                Configures the port range available for alto sockets.
+                <xs:annotation>
+                    <xs:documentation>
+                        Configures the port range available for alto sockets.
+                    </xs:documentation>
+                </xs:annotation>
             </xs:element>
             <xs:element name="receive-buffer-size-kb" type="xs:integer" minOccurs="0">
-                Configures SO_RCVBUF socket option for alto sockets.
+                <xs:annotation>
+                    <xs:documentation>
+                        Configures SO_RCVBUF socket option for alto sockets.
+                    </xs:documentation>
+                </xs:annotation>
             </xs:element>
             <xs:element name="send-buffer-size-kb" type="xs:integer" minOccurs="0">
-                Configures SO_SNDBUF socket option for alto sockets.
+                <xs:annotation>
+                    <xs:documentation>
+                        Configures SO_SNDBUF socket option for alto sockets.
+                    </xs:documentation>
+                </xs:annotation>
             </xs:element>
         </xs:all>
     </xs:complexType>
