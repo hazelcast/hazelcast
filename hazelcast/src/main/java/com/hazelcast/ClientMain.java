@@ -16,7 +16,7 @@ public class ClientMain {
         HazelcastInstance server = Hazelcast.newHazelcastInstance();
         HazelcastInstance client = HazelcastClient.newHazelcastClient();
         System.out.println("Client created");
-        IMap map = client.getMap("foo");
+        IMap<Integer, Integer> map = client.getMap("foo");
 
         long count = 4_000_000;
         long startTime = System.currentTimeMillis();
@@ -25,7 +25,7 @@ public class ClientMain {
             if (k % 100000 == 0) {
                 System.out.println("At:" + k);
             }
-            map.put(0, k);
+            map.put(k, k);
         }
 
         long duration = System.currentTimeMillis() - startTime;
