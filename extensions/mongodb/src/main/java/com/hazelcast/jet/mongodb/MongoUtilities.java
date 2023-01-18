@@ -15,10 +15,6 @@
  */
 package com.hazelcast.jet.mongodb;
 
-import com.mongodb.MongoClientException;
-import com.mongodb.MongoServerException;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoIterable;
 import com.mongodb.client.model.Field;
 import com.mongodb.client.model.Filters;
 import org.bson.BsonArray;
@@ -61,19 +57,4 @@ final class MongoUtilities {
         return aggregateList;
     }
 
-    /**
-     * True if client is not null and can communicate over network.
-     */
-    static boolean isConnectionUp(MongoClient mongoClient) {
-        if (mongoClient == null) {
-            return false;
-        }
-        try {
-            MongoIterable<String> names = mongoClient.listDatabaseNames().batchSize(1);
-            names.first();
-            return true;
-        } catch (MongoClientException | MongoServerException e) {
-            return false;
-        }
-    }
 }

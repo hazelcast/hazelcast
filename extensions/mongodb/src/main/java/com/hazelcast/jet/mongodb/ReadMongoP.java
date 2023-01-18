@@ -24,8 +24,6 @@ import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.EventTimeMapper;
 import com.hazelcast.jet.core.EventTimePolicy;
-import com.hazelcast.jet.retry.RetryStrategies;
-import com.hazelcast.jet.retry.impl.RetryTracker;
 import com.hazelcast.logging.ILogger;
 import com.mongodb.MongoException;
 import com.mongodb.MongoServerException;
@@ -56,7 +54,6 @@ import static com.hazelcast.jet.Traversers.singleton;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
-import static com.hazelcast.jet.mongodb.MongoUtilities.isConnectionUp;
 import static com.hazelcast.jet.mongodb.MongoUtilities.partitionAggregate;
 import static com.mongodb.client.model.Aggregates.sort;
 import static com.mongodb.client.model.Sorts.ascending;
@@ -77,7 +74,6 @@ import static com.mongodb.client.model.Sorts.ascending;
  */
 public class ReadMongoP<I> extends AbstractProcessor {
 
-    private static final long RETRY_INTERVAL_MS = 3_000;
     private static final int BATCH_SIZE = 1000;
     private ILogger logger;
 
@@ -91,6 +87,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
     private Traverser<?> traverser;
     private Traverser<? extends Entry<BroadcastKey<Integer>, ?>> snapshotTraverser;
+    protected MongoDbConnection connection;
 
     /**
      * Creates a new processor with batch reader.
@@ -102,14 +99,15 @@ public class ReadMongoP<I> extends AbstractProcessor {
             String collectionName,
             FunctionEx<Document, I> mapItemFn
     ) {
-        reader = new BatchMongoReader(clientSupplier, databaseName, collectionName, mapItemFn, aggregates);
+        this.reader = new BatchMongoReader(databaseName, collectionName, mapItemFn, aggregates);
+        this.connection = new MongoDbConnection(clientSupplier, client -> reader.connect(client, snapshotsEnabled));
     }
 
     /**
      * Creates a new processor with streaming reader.
      */
     public ReadMongoP(
-            SupplierEx<? extends MongoClient> connectionSupplier,
+            SupplierEx<? extends MongoClient> clientSupplier,
             Long startAtTimestamp,
             EventTimePolicy<? super I> eventTimePolicy,
             List<Bson> aggregates,
@@ -119,8 +117,9 @@ public class ReadMongoP<I> extends AbstractProcessor {
     ) {
         EventTimeMapper<I> eventTimeMapper = new EventTimeMapper<>(eventTimePolicy);
         eventTimeMapper.addPartitions(1);
-        reader = new StreamMongoReader(connectionSupplier, databaseName, collectionName, mapStreamFn,
+        this.reader = new StreamMongoReader(databaseName, collectionName, mapStreamFn,
                 startAtTimestamp, aggregates, eventTimeMapper);
+        this.connection = new MongoDbConnection(clientSupplier, client -> reader.connect(client, snapshotsEnabled));
     }
 
     @Override
@@ -130,7 +129,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
         processorIndex = context.globalProcessorIndex();
         this.snapshotsEnabled = context.snapshottingEnabled();
 
-        reader.reconnectIfNecessary(snapshotsEnabled);
+        connection.reconnectIfNecessary();
     }
 
     @Override
@@ -140,7 +139,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
 
     @Override
     public boolean complete() {
-        reader.reconnectIfNecessary(snapshotsEnabled);
+        connection.reconnectIfNecessary();
         if (traverser == null) {
             this.traverser = reader.nextChunkTraverser()
                                    .onFirstNull(() -> traverser = null);
@@ -209,41 +208,25 @@ public class ReadMongoP<I> extends AbstractProcessor {
         protected MongoClient mongoClient;
         protected MongoDatabase database;
         protected MongoCollection<Document> collection;
-        private final RetryTracker connectionRetryTracker;
-        private final SupplierEx<? extends MongoClient> clientSupplier;
         private final String databaseName;
         private final String collectionName;
 
         protected MongoChunkedReader(
                 String databaseName,
-                String collectionName,
-                SupplierEx<? extends MongoClient> clientSupplier
+                String collectionName
         ) {
             this.databaseName = databaseName;
             this.collectionName = collectionName;
-            this.clientSupplier = clientSupplier;
-            this.connectionRetryTracker = new RetryTracker(RetryStrategies.indefinitely(RETRY_INTERVAL_MS));
-        }
-
-        private void reconnectIfNecessary(boolean snapshotsEnabled) {
-            if (!isConnectionUp(mongoClient)) {
-                if (connectionRetryTracker.shouldTryAgain()) {
-                    connect(snapshotsEnabled);
-                } else {
-                    throw new JetException("cannot connect to MongoDB");
-                }
-            }
         }
 
         void onConnect(MongoClient mongoClient, boolean snapshotsEnabled) {
         }
 
-        private void connect(boolean snapshotsEnabled) {
+        void connect(MongoClient newClient, boolean snapshotsEnabled) {
             try {
                 logger.info("(Re)connecting to MongoDB");
-                mongoClient = clientSupplier.get();
                 if (databaseName != null) {
-                    this.database = mongoClient.getDatabase(databaseName);
+                    this.database = newClient.getDatabase(databaseName);
                 }
                 if (collectionName != null) {
                     checkState(databaseName != null, "you have to provide database name if collection name" +
@@ -253,12 +236,9 @@ public class ReadMongoP<I> extends AbstractProcessor {
                     this.collection = database.getCollection(collectionName);
                 }
 
-                onConnect(mongoClient, snapshotsEnabled);
-
-                connectionRetryTracker.reset();
+                onConnect(newClient, snapshotsEnabled);
             } catch (Exception e) {
                 logger.warning("Could not connect to MongoDB", e);
-                connectionRetryTracker.attemptFailed();
             }
         }
 
@@ -286,12 +266,11 @@ public class ReadMongoP<I> extends AbstractProcessor {
         private ObjectId lastKey;
 
         private BatchMongoReader(
-                SupplierEx<? extends MongoClient> connectionSupplier,
                 String databaseName,
                 String collectionName,
                 FunctionEx<Document, I> mapItemFn,
                 List<Bson> aggregates) {
-            super(databaseName, collectionName, connectionSupplier);
+            super(databaseName, collectionName);
             this.mapItemFn = mapItemFn;
             this.aggregates = aggregates;
         }
@@ -381,7 +360,6 @@ public class ReadMongoP<I> extends AbstractProcessor {
         private BsonDocument resumeToken;
 
         private StreamMongoReader(
-                SupplierEx<? extends MongoClient> connectionSupplier,
                 String databaseName,
                 String collectionName,
                 FunctionEx<ChangeStreamDocument<Document>, I> mapFn,
@@ -389,7 +367,7 @@ public class ReadMongoP<I> extends AbstractProcessor {
                 List<Bson> aggregates,
                 EventTimeMapper<I> eventTimeMapper
         ) {
-            super(databaseName, collectionName, connectionSupplier);
+            super(databaseName, collectionName);
             this.mapFn = mapFn;
             this.startTimestamp = startTimestamp;
             this.aggregates = aggregates;

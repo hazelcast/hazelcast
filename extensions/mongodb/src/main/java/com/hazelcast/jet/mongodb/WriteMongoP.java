@@ -65,7 +65,6 @@ import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.mongodb.Mappers.defaultCodecRegistry;
-import static com.hazelcast.jet.mongodb.MongoUtilities.isConnectionUp;
 import static com.hazelcast.jet.retry.IntervalFunction.exponentialBackoffWithCap;
 import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.project;
@@ -115,10 +114,8 @@ public class WriteMongoP<I> extends AbstractProcessor {
      * try to re-process such transaction.
      */
     private static final int MONGODB_TRANSIENT_ERROR = 112;
-    private final SupplierEx<? extends MongoClient> clientSupplier;
+    private final MongoDbConnection connection;
     private final Class<I> documentType;
-    private MongoClient mongoClient;
-    private final RetryTracker connectionRetryTracker;
     private ILogger logger;
 
     private UnboundedTransactionsProcessorUtility<MongoTransactionId, MongoTransaction> transactionUtility;
@@ -173,7 +170,8 @@ public class WriteMongoP<I> extends AbstractProcessor {
             FunctionEx<I, Object> documentIdentityFn,
             ConsumerEx<ReplaceOptions> replaceOptionAdjuster,
             String documentIdentityFieldName) {
-        this.clientSupplier = clientSupplier;
+        this.connection = new MongoDbConnection(clientSupplier, client -> {
+        });
         this.documentIdentityFn = documentIdentityFn;
         this.documentIdentityFieldName = documentIdentityFieldName;
         this.documentType = documentType;
@@ -184,9 +182,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
             replaceOptionAdjuster.accept(options);
         }
         this.replaceOptions = options;
-        this.connectionRetryTracker = new RetryTracker(RETRY_STRATEGY);
     }
-
 
     @Override
     protected void init(@Nonnull Context context) {
@@ -224,7 +220,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
     @Override
     @SuppressWarnings("unchecked")
     public void process(int ordinal, @Nonnull Inbox inbox) {
-        if (!reconnectIfNecessary()) {
+        if (!connection.reconnectIfNecessary()) {
             return;
         }
         MongoTransaction mongoTransaction = transactionUtility.activeTransaction();
@@ -245,7 +241,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
                     .collect(groupingBy(Tuple2::f0, mapping(Tuple2::getValue, toList())));
 
             for (MongoCollectionKey collectionKey : itemsPerCollection.keySet()) {
-                MongoCollection<I> collection = collectionKey.get(mongoClient, documentType);
+                MongoCollection<I> collection = collectionKey.get(connection.client(), documentType);
 
                 Set<Object> docsFound = queryForExistingIds(items, collection);
                 List<WriteModel<I>> writes = new ArrayList<>();
@@ -296,9 +292,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
 
     @Override
     public void close() {
-        if (mongoClient != null) {
-            mongoClient.close();
-        }
+        connection.close();
         transactionUtility.close();
     }
 
@@ -326,29 +320,6 @@ public class WriteMongoP<I> extends AbstractProcessor {
     @Override
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
         transactionUtility.restoreFromSnapshot(key, value);
-    }
-
-    /**
-     * @return true if there is a connection to Mongo after exiting this method
-     */
-    private boolean reconnectIfNecessary() {
-        if (!isConnectionUp(mongoClient)) {
-            if (connectionRetryTracker.shouldTryAgain()) {
-                try {
-                    mongoClient = clientSupplier.get();
-                    connectionRetryTracker.reset();
-                    return true;
-                } catch (Exception e) {
-                    logger.warning("Could not connect to MongoDB", e);
-                    connectionRetryTracker.attemptFailed();
-                    return false;
-                }
-            } else {
-                throw new JetException("cannot connect to MongoDB");
-            }
-        } else {
-            return true;
-        }
     }
 
     private static class MongoTransactionId implements TwoPhaseSnapshotCommitUtility.TransactionId, Serializable {
@@ -455,12 +426,13 @@ public class WriteMongoP<I> extends AbstractProcessor {
         }
 
         @Override
+        @SuppressWarnings("resource")
         public void begin() {
             if (!txnInitialized) {
                 logFine(logger, "beginning transaction %s", transactionId);
                 txnInitialized = true;
             }
-            clientSession = mongoClient.startSession();
+            clientSession = connection.client().startSession();
             activeTransactions.put(transactionId, this);
         }
 
@@ -474,7 +446,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
                         for (Entry<MongoCollectionKey, List<WriteModel<I>>> entry :
                                 documents.entrySet()) {
 
-                            MongoCollection<I> collection = entry.getKey().get(mongoClient, documentType);
+                            MongoCollection<I> collection = entry.getKey().get(connection.client(), documentType);
                             List<WriteModel<I>> writes = entry.getValue();
 
                             BulkWriteResult result = collection.bulkWrite(clientSession, writes);
@@ -496,7 +468,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
                     } catch (MongoBulkWriteException e) {
                         tryExternalRollback();
                         throw new JetException(e);
-                    } catch (MongoSocketException e) {
+                    } catch (MongoSocketException | IllegalStateException e) {
                         tryExternalRollback();
                         commitRetryTracker.attemptFailed();
                         if (!commitRetryTracker.shouldTryAgain()) {
