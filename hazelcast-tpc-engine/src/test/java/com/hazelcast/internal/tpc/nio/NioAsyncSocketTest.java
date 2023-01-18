@@ -24,6 +24,7 @@ public class NioAsyncSocketTest extends AsyncSocketTest {
     @Override
     public Eventloop createEventloop() {
         NioEventloop eventloop = new NioEventloop();
+        eventloops.add(eventloop);
         eventloop.start();
         return eventloop;
     }

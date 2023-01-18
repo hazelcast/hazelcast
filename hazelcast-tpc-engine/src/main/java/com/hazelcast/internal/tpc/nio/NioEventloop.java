@@ -26,6 +26,7 @@ import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
 import java.util.Iterator;
 
+import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 /**
@@ -44,12 +45,12 @@ public final class NioEventloop extends Eventloop {
     }
 
     @Override
-    public AsyncServerSocket openTcpServerSocket() {
+    public AsyncServerSocket openTcpAsyncServerSocket() {
         return NioAsyncServerSocket.openTcpServerSocket(this);
     }
 
     @Override
-    public AsyncSocket openAsyncTcpSocket() {
+    public AsyncSocket openTcpAsyncSocket() {
         return NioAsyncSocket.openTcpSocket();
     }
 
@@ -100,11 +101,11 @@ public final class NioEventloop extends Eventloop {
                     SelectionKey key = it.next();
                     it.remove();
 
-                    NioSelectedKeyListener listener = (NioSelectedKeyListener) key.attachment();
+                    SelectionKeyListener listener = (SelectionKeyListener) key.attachment();
                     try {
                         listener.handle(key);
                     } catch (IOException e) {
-                        listener.handleException(e);
+                        listener.close(null, e);
                     }
                 }
             }
@@ -116,7 +117,27 @@ public final class NioEventloop extends Eventloop {
         } while (state == State.RUNNING);
     }
 
-    private class NioUnsafe extends Unsafe {
+    @Override
+    protected void afterEventloop() {
+        for (SelectionKey key : selector.keys()) {
+            SelectionKeyListener listener = (SelectionKeyListener) key.attachment();
+
+            if (listener == null) {
+                // There is no listener; so lets cancel the key to be sure it gets cancelled.
+                key.cancel();
+            } else {
+                // There is a listener; so it will take care of cancelling the key.
+                try {
+                    listener.close(NioEventloop.this + " is terminating.", null);
+                } catch (Exception e) {
+                    logger.fine(e);
+                }
+            }
+        }
+
+        closeQuietly(selector);
     }
 
+    private class NioUnsafe extends Unsafe {
+    }
 }

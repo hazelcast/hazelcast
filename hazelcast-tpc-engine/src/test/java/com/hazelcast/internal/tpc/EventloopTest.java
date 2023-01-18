@@ -16,8 +16,14 @@
 
 package com.hazelcast.internal.tpc;
 
+import org.junit.After;
 import org.junit.Test;
 
+import java.net.InetSocketAddress;
+import java.net.SocketAddress;
+import java.nio.ByteBuffer;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.internal.tpc.Eventloop.State.NEW;
@@ -26,16 +32,25 @@ import static com.hazelcast.internal.tpc.Eventloop.State.SHUTDOWN;
 import static com.hazelcast.internal.tpc.Eventloop.State.TERMINATED;
 import static com.hazelcast.internal.tpc.TpcTestSupport.assertInstanceOf;
 import static com.hazelcast.internal.tpc.TpcTestSupport.assertOpenEventually;
+import static com.hazelcast.internal.tpc.TpcTestSupport.assertTrueEventually;
 import static com.hazelcast.internal.tpc.TpcTestSupport.sleepMillis;
+import static com.hazelcast.internal.tpc.TpcTestSupport.terminateAll;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 public abstract class EventloopTest {
 
+    public List<Eventloop> loops = new ArrayList<>();
+
     public abstract Eventloop createEventloop();
 
     public abstract EventloopType getType();
+
+    @After
+    public void after() throws InterruptedException {
+        terminateAll(loops);
+    }
 
     @Test(expected = NullPointerException.class)
     public void test_offer_Runnable_whenNull() {
@@ -152,5 +167,46 @@ public abstract class EventloopTest {
 
         assertTrue(eventloop.awaitTermination(5, SECONDS));
         assertEquals(TERMINATED, eventloop.state());
+    }
+
+    @Test
+    public void test_shutdown_thenAsyncServerSocketsClosed() {
+        Eventloop eventloop = createEventloop();
+        eventloop.start();
+        AsyncServerSocket serverSocket = eventloop.openTcpAsyncServerSocket();
+        serverSocket.setReusePort(true);
+        SocketAddress local = new InetSocketAddress("127.0.0.1", 5000);
+        serverSocket.bind(local);
+        serverSocket.accept(socket -> {
+        }).join();
+
+        eventloop.shutdown();
+        assertTrueEventually(() -> assertTrue(serverSocket.isClosed()));
+    }
+
+    @Test
+    public void test_shutdown_thenAsyncSocketClosed() {
+        Eventloop serverEventloop = createEventloop();
+        serverEventloop.start();
+        AsyncServerSocket serverSocket = serverEventloop.openTcpAsyncServerSocket();
+        SocketAddress serverAddress = new InetSocketAddress("127.0.0.1", 5000);
+        serverSocket.setReusePort(true);
+        serverSocket.bind(serverAddress);
+        serverSocket.accept(socket -> {
+        }).join();
+
+        AsyncSocket clientSocket = serverEventloop.openTcpAsyncSocket();
+        clientSocket.setReadHandler(new ReadHandler() {
+            @Override
+            public void onRead(ByteBuffer receiveBuffer) {
+            }
+        });
+        Eventloop clientEventloop = createEventloop();
+        clientEventloop.start();
+        clientSocket.activate(clientEventloop);
+        clientSocket.connect(serverAddress);
+
+        clientEventloop.shutdown();
+        assertTrueEventually(() -> assertTrue(clientSocket.isClosed()));
     }
 }

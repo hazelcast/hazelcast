@@ -14,14 +14,24 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpc.nio;
+package com.hazelcast.internal.tpc;
 
-import java.io.IOException;
-import java.nio.channels.SelectionKey;
+import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
+import org.junit.Test;
 
-public interface NioSelectedKeyListener {
+import static org.junit.Assert.assertFalse;
 
-    void handleException(Exception e);
+public class NopSchedulerTest {
 
-    void handle(SelectionKey key) throws IOException;
+    @Test
+    public void test(){
+        NopScheduler scheduler = new NopScheduler();
+        scheduler.schedule(new IOBuffer(64));
+    }
+
+    @Test
+    public void test_tick(){
+        NopScheduler scheduler = new NopScheduler();
+        assertFalse(scheduler.tick());
+    }
 }

@@ -50,7 +50,6 @@ public final class SelectorOptimizer {
     /**
      * Creates a new Selector and will optimize it if possible.
      *
-     * @param logger the logger used for the optimization process.
      * @return the created Selector.
      * @throws NullPointerException if logger is null.
      */
@@ -97,7 +96,6 @@ public final class SelectorOptimizer {
             selectedKeysField.set(selector, set);
             publicSelectedKeysField.set(selector, set);
 
-            //System.out.println("Optimized Selector: " + selector.getClass().getName());
             logger.finest("Optimized Selector: " + selector.getClass().getName());
             return set;
         } catch (Throwable t) {

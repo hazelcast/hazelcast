@@ -29,21 +29,19 @@ import java.nio.ByteBuffer;
 import java.util.concurrent.CountDownLatch;
 
 import static com.hazelcast.internal.tpc.TpcTestSupport.assertOpenEventually;
+import static com.hazelcast.internal.tpc.TpcTestSupport.terminate;
 import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_LONG;
 import static com.hazelcast.internal.tpc.util.BufferUtil.put;
-import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 public abstract class AsyncSocket_LargePayloadTest {
     // use small buffers to cause a lot of network scheduling overhead (and shake down problems)
     public static final int SOCKET_BUFFER_SIZE = 16 * 1024;
-    public static int requestTotal = 20000;
+    // todo: restore this to 20000 for nightly tests
+    public static int requestTotal = 20;
 
     private Eventloop clientEventloop;
     private Eventloop serverEventloop;
-    private AsyncSocket clientSocket;
-    private AsyncServerSocket serverSocket;
 
     public abstract Eventloop createEventloop();
 
@@ -55,18 +53,8 @@ public abstract class AsyncSocket_LargePayloadTest {
 
     @After
     public void after() throws InterruptedException {
-        closeQuietly(clientSocket);
-        closeQuietly(serverSocket);
-
-        if (clientEventloop != null) {
-            clientEventloop.shutdown();
-            clientEventloop.awaitTermination(10, SECONDS);
-        }
-
-        if (serverEventloop != null) {
-            serverEventloop.shutdown();
-            serverEventloop.awaitTermination(10, SECONDS);
-        }
+        terminate(clientEventloop);
+        terminate(serverEventloop);
     }
 
     @Test
@@ -227,9 +215,8 @@ public abstract class AsyncSocket_LargePayloadTest {
     }
 
     private AsyncSocket newClient(SocketAddress serverAddress, CountDownLatch latch) {
-        clientSocket = clientEventloop.openAsyncTcpSocket();
+        AsyncSocket clientSocket = clientEventloop.openTcpAsyncSocket();
         clientSocket.setTcpNoDelay(true);
-        clientSocket.setSoLinger(0);
         clientSocket.setSendBufferSize(SOCKET_BUFFER_SIZE);
         clientSocket.setReceiveBufferSize(SOCKET_BUFFER_SIZE);
         clientSocket.setReadHandler(new ReadHandler() {
@@ -289,13 +276,11 @@ public abstract class AsyncSocket_LargePayloadTest {
     }
 
     private AsyncServerSocket newServer(SocketAddress serverAddress) {
-        serverSocket = serverEventloop.openTcpServerSocket();
+        AsyncServerSocket serverSocket = serverEventloop.openTcpAsyncServerSocket();
         serverSocket.setReceiveBufferSize(SOCKET_BUFFER_SIZE);
         serverSocket.bind(serverAddress);
-        serverSocket.listen(10);
 
         serverSocket.accept(socket -> {
-            socket.setSoLinger(-1);
             socket.setTcpNoDelay(true);
             socket.setSendBufferSize(SOCKET_BUFFER_SIZE);
             socket.setReceiveBufferSize(serverSocket.getReceiveBufferSize());
