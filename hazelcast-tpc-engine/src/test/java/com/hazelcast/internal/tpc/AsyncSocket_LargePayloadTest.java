@@ -37,8 +37,7 @@ import static com.hazelcast.internal.tpc.util.BufferUtil.put;
 public abstract class AsyncSocket_LargePayloadTest {
     // use small buffers to cause a lot of network scheduling overhead (and shake down problems)
     public static final int SOCKET_BUFFER_SIZE = 16 * 1024;
-    // todo: restore this to 20000 for nightly tests
-    public static int requestTotal = 20;
+    public int iterations = 20;
 
     private Eventloop clientEventloop;
     private Eventloop serverEventloop;
@@ -202,7 +201,7 @@ public abstract class AsyncSocket_LargePayloadTest {
             byte[] payload = new byte[payloadSize];
             IOBuffer buf = new IOBuffer(SIZEOF_INT + SIZEOF_LONG + payload.length, true);
             buf.writeInt(payload.length);
-            buf.writeLong(requestTotal / concurrency);
+            buf.writeLong(iterations / concurrency);
             buf.writeBytes(payload);
             buf.flip();
             if (!clientSocket.write(buf)) {
