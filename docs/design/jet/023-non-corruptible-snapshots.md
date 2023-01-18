@@ -16,6 +16,7 @@ Snapshot should be safe in case of single node misbehavior or failure.
 
 - **automatic snapshot** - snapshot collected periodically to provide fault tolerance and processing guarantees
 - **named snapshot** - snapshot exported manually on user request 
+- **terminal snapshot** - snapshot after which the job will be cancelled
 
 ## Current snapshotting algorithm
 
@@ -43,10 +44,12 @@ These maps also contain `SnapshotVerificationRecord`.
 
 Each "chunk" is tagged with `snapshotId` to which it belongs.
 
-Exported snapshots are handled specially:
+Exported snapshots (with exception for terminal ones) are handled specially:
 - they only save state
 - they do not rollback or commit any transactions when they are taken (2nd phase is mostly a no-op) 
-- they are registered in snapshot cache so they can be listed
+- they are registered in `exportedSnapshotsCache` so they can be listed, 
+  but can be used to start job even if they are not present on the list
+  (this applies also for terminal exported snapshots)
 
 ### Snapshot restore procedure
 
@@ -76,10 +79,9 @@ the job may be never restored from the snapshot.
 Amount of snapshot data shall be limited.
 Storing potentially unlimited number of snapshots is not allowed.
 
-It is allowed for the snapshot to become corrupted if more than 1 nodes fail simultaneously,
+It is allowed for the snapshot to become corrupted when the number of failed members is higher
+than the sync backup count of Jet IMaps,
 per standard guarantees of `IMap`. In such case exactly-once semantics is not guaranteed.
-This could be alleviated by increasing number of sync backups of `IMap`
-but is outside the scope of this change. 
 
 The change does not aim to protect against "zombie" operations
 (operations executed very late by repetition logic).
@@ -96,8 +98,6 @@ Throwing `IndeterminateOperationStateException` will be enabled for:
 - snapshot data `IMap`s.
 - `JobExecutionRecord` map
 
-TBD if it should be enabled for other Jet maps.
-
 ### Updated snapshotting algorithm
 
 New algorithm uses the fact that some `IMap` operations can end with `IndeterminateOperationStateException`
@@ -106,8 +106,8 @@ New algorithm uses the fact that some `IMap` operations can end with `Indetermin
 #### Snapshot taking procedure
 
 1. Initiate snapshot: generate new `ongoingSnapshotId` (always incremented, never reused, even for exported snapshots) in `JobExecutionRecord`
-2. Write `JobExecutionRecord`
-   Indeterminate result -> snapshot failed to start, there is no need to rollback or commit anything.
+2. Write `JobExecutionRecord` using safe method
+   Indeterminate result or other failure -> snapshot failed to start, there is no need to rollback or commit anything.
 3. Clear ongoing snapshot map.
    Indeterminate result -> not possible, however operation may not be replicated to all backups.
    Stray records are not a big problem because each record in snapshot map has `snapshotId`
@@ -121,13 +121,16 @@ New algorithm uses the fact that some `IMap` operations can end with `Indetermin
    then the snapshot will be committed in 2nd phase, otherwise it will be rolled back.
    In case of success: update in memory last good snapshotId in `JobExecutionRecord` to newly created snapshot
    and switch ongoing snapshot map index if it is not an exported snapshot.
-7. Write `JobExecutionRecord` (*)
-   Indeterminate result -> 
-   - automatic snapshot: restart job immediately without performing 2nd phase of snapshot
-     (no rollback and no commit, one of them will happen after restore)
+7. Write `JobExecutionRecord` using safe method (*)
+   Indeterminate result or other failure (in particular network problem, timeout) -> 
+   - automatic snapshot and terminal exported snapshot:
+     restart job immediately without performing 2nd phase of snapshot
+     (no rollback and no commit, one of them will happen after restore).
+     `MasterJobContext.requestTermination` with `RESTART_FORCEFUL` mode will be used.
+     TODO: what if there is already termination in progress that waits for snapshot completion (eg. terminal snapshot export)? Maybe just allow it to continue?
    - exported snapshot: do not publish snapshot in cache, proceed to 2nd phase as if the snapshot failed.
-     During restore, we can find `JobExecutionRecord` in the middle of exported snapshot
-     but then 2nd phase can be executed again.
+     During restore, we can find `JobExecutionRecord` indicating that exported snapshot is still in progress.
+     This information can be safely ignored, no 2nd phase for such snapshot is necessary.
 8. Optionally - clear new ongoing snapshot map if the snapshot was successful to decrease memory usage.
 9. 2nd snapshot phase (`snapshotCommitFinish`) with decision made earlier.
    This step can be performed concurrently with processing of next items and must ultimately succeed.
@@ -139,11 +142,11 @@ This is also more complicated in implementation and may be considered later if n
 
 #### Snapshot restore procedure
 
-1. Load `JobExecutionRecord` from `IMap` to `MasterContext`
-2. Write `JobExecutionRecord` to map from which it was read to ensure that it is replicated.
-   In case of indeterminate result - do not start job now, schedule restart later.
+1. Load `JobExecutionRecord` from `IMap` to `MasterContext` (skipped if the job coordinator has not changed) (*)
+2. Write `JobExecutionRecord` using safe method to map from which it was read to ensure that it is replicated.
+   In case of indeterminate result or other failure (in particular network problem, timeout) - do not start job now, schedule restart later.
 3. Read last good snapshot id from `JobExecutionRecord`. 
-   `JobExecutionRecord` contains also last snapshot id that could have written something to snapshot data IMap. 
+   `JobExecutionRecord` contains also last snapshot id that could have written something to snapshot data `IMap`. 
 4. Check consistency of the indicated snapshot using data in snapshot `IMap` and `SnapshotVerificationRecord`.
    If inconsistent, job fails permanently.
 5. If restoring from exported snapshot, 
@@ -153,7 +156,30 @@ This is also more complicated in implementation and may be considered later if n
    transactions that are not there are rolled back (also just in case).
    This ultimately gives consistency between job state and external transactional resources.
 
+(*) Note that unless job coordinator changes, we try to proceed with the new snapshot id (saved in memory)
+and write `JobExecutionRecord` for it. If we succeed, the snapshot can be committed so items do not need to be reprocessed.
+
+#### Ensuring that JobExecutionRecord is backed up
+
+Current method of updating `JobExecutionRecord` has the following characteristics:
+1. Timestamp is updated automatically before write.
+2. `JobExecutionRecord` can be updated in parallel. If some update is skipped (based on timestamp) it will not throw indeterminate state exception.
+3. `MasterContext.writeJobExecutionRecord` swallows all exceptions and code invoking it does not expect exceptions.
+
+This is not sufficient for updates during snapshot taking and restoring.
+A new method `MasterContext.writeJobExecutionRecordSafe` will be introduced which:
+1. Returns information if the update actually took place
+2. Propagates all exceptions
+
+`writeJobExecutionRecordSafe` will be executed in a loop until it either returns true or throws exception.
+This process should not loop forever because other updates to `JobExecutionRecord` can be only caused by:
+- job state updates
+- quorum size updates
+Both of them are not happening very frequently and constantly.
+
 #### Correctness
+
+TODO: make this section clearer
 
 `JobExecutionRecord` entry version for given job and status can be in one 3 states:
 1. nonexistent: there exists different version (or none only briefly when the job is created)
@@ -180,18 +206,16 @@ Updated algorithm guarantees correctness by holding the following invariants:
 7. It is possible to rollback transactions prepared by snapshot that failed without data from such snapshot. 
    This is implemented using [XA protocol or workarounds](https://hazelcast.com/blog/transactional-connectors-in-hazelcast-jet/).
 
-TODO: update of `JobExecutionRecord` is not executed if the timestamp is older or the same.
-TODO: sometimes we need to force update - by artificially increasing timestamp? Or maybe then we can use `put`?
-
 ## Impact
 
 ### Job suspension
 
-TBD: job suspension creates snapshot. What if it is indeterminate? There are already some warnings in `Job.suspend()` docs. 
+TBD: job suspension creates snapshot. What if it is indeterminate? 
+There are already some warnings in `Job.suspend()` docs that the job can be restarted instead of suspended. 
 
 ### Job suspension on failure
 
-Job restart due to failed snapshot (indeterminate result of `SnapshotVerificationRecord` write)
+Job restart due to failed snapshot (indeterminate result of `JobExecutionRecord` write)
 should not trigger yet another snapshot if `suspendOnFailure` is enabled.
 
 ### Exported snapshots (Enterprise version)
@@ -223,11 +247,14 @@ so are rare with little impact for overall performance.
 
 In happy-path, when the cluster is stable, there is 1 additional `JobExecutionRecord` update in the `IMap`.
 Other than that, nothing changes.
-Jet already uses 1 sync backup for snapshot and other `IMap`s
+Jet already uses 1 sync backup for snapshot and other `IMap`s by default
 and operations wait for backup ack before completing.
 
 When the cluster is unstable, snapshot will take almost the same time
 but may fail instead silently being successful with risk of corruption.
 
 Snapshot restore has to ensure that `JobExecutionRecord` or `SnapshotVerificationRecord` is safe.
-This is 1 additional `IMap` update.
+This is 1 or 2 additional `IMap` updates.
+
+`writeJobExecutionRecordSafe` can be invoked a few times in case of concurrent `JobExecutionRecord` updates.
+This increases number of additional `IMap` updates but is unlikely.
