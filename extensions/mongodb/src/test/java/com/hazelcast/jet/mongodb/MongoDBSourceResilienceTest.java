@@ -78,24 +78,19 @@ public class MongoDBSourceResilienceTest extends SimpleTestInClusterSupport {
     public MongoDBContainer mongoContainer = new MongoDBContainer(DOCKER_IMAGE_NAME)
             .withExposedPorts(27017)
             .withNetwork(network)
-            .withNetworkAliases("mongo")
-            ;
+            .withNetworkAliases("mongo");
 
     @Rule
     public ToxiproxyContainer  toxi = new ToxiproxyContainer("ghcr.io/shopify/toxiproxy:2.5.0")
             .withNetwork(network);
 
     @Rule
-    public TestName testName  = new TestName();
+    public TestName testName = new TestName();
 
     private final Random random = new Random();
 
     @Test(timeout = 5 * 60_000)
-    public void testSourceStream_whenServerDown() throws IOException {
-//        final ToxiproxyClient toxiproxyClient = new ToxiproxyClient(toxi.getHost(), toxi.getControlPort());
-//        final Proxy proxy = toxiproxyClient.createProxy("mongo", "0.0.0.0:5701", "");
-
-        System.setProperty("hazelcast.partition.count", "13");
+    public void testSourceStream_whenServerDown() {
         Config conf = new Config();
         conf.getJetConfig().setEnabled(true);
         conf.addMapConfig(new MapConfig("*").setBackupCount(3));

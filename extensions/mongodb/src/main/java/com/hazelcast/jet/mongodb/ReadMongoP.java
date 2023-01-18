@@ -27,7 +27,6 @@ import com.hazelcast.jet.core.EventTimePolicy;
 import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.retry.impl.RetryTracker;
 import com.hazelcast.logging.ILogger;
-import com.mongodb.MongoClientException;
 import com.mongodb.MongoException;
 import com.mongodb.MongoServerException;
 import com.mongodb.MongoServerUnavailableException;
@@ -57,6 +56,7 @@ import static com.hazelcast.jet.Traversers.singleton;
 import static com.hazelcast.jet.Traversers.traverseIterable;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
+import static com.hazelcast.jet.mongodb.MongoUtilities.isConnectionUp;
 import static com.hazelcast.jet.mongodb.MongoUtilities.partitionAggregate;
 import static com.mongodb.client.model.Aggregates.sort;
 import static com.mongodb.client.model.Sorts.ascending;
@@ -226,22 +226,12 @@ public class ReadMongoP<I> extends AbstractProcessor {
         }
 
         private void reconnectIfNecessary(boolean snapshotsEnabled) {
-            if (!isConnectionUp()) {
+            if (!isConnectionUp(mongoClient)) {
                 if (connectionRetryTracker.shouldTryAgain()) {
                     connect(snapshotsEnabled);
                 } else {
                     throw new JetException("cannot connect to MongoDB");
                 }
-            }
-        }
-
-        private boolean isConnectionUp() {
-            try {
-                MongoIterable<String> names = mongoClient.listDatabaseNames().batchSize(1);
-                names.first();
-                return true;
-            } catch (MongoClientException | MongoServerException e) {
-                return false;
             }
         }
 

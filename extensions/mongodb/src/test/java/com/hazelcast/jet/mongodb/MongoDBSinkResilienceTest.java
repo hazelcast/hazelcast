@@ -83,7 +83,7 @@ public class MongoDBSinkResilienceTest extends SimpleTestInClusterSupport {
             .withNetwork(network);
 
     @Rule
-    public TestName testName  = new TestName();
+    public TestName testName = new TestName();
 
     private final Random random = new Random();
 

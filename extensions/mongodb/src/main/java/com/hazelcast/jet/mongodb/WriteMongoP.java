@@ -31,9 +31,7 @@ import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.jet.retry.impl.RetryTracker;
 import com.hazelcast.logging.ILogger;
 import com.mongodb.MongoBulkWriteException;
-import com.mongodb.MongoClientException;
 import com.mongodb.MongoCommandException;
-import com.mongodb.MongoServerException;
 import com.mongodb.MongoSocketException;
 import com.mongodb.ReadPreference;
 import com.mongodb.TransactionOptions;
@@ -42,7 +40,6 @@ import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.ClientSession;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoIterable;
 import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.client.model.ReplaceOptions;
@@ -68,6 +65,7 @@ import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.mongodb.Mappers.defaultCodecRegistry;
+import static com.hazelcast.jet.mongodb.MongoUtilities.isConnectionUp;
 import static com.hazelcast.jet.retry.IntervalFunction.exponentialBackoffWithCap;
 import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.project;
@@ -334,7 +332,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
      * @return true if there is a connection to Mongo after exiting this method
      */
     private boolean reconnectIfNecessary() {
-        if (!isConnectionUp()) {
+        if (!isConnectionUp(mongoClient)) {
             if (connectionRetryTracker.shouldTryAgain()) {
                 try {
                     mongoClient = clientSupplier.get();
@@ -350,19 +348,6 @@ public class WriteMongoP<I> extends AbstractProcessor {
             }
         } else {
             return true;
-        }
-    }
-
-    private boolean isConnectionUp() {
-        if (mongoClient == null) {
-            return false;
-        }
-        try {
-            MongoIterable<String> names = mongoClient.listDatabaseNames().batchSize(1);
-            names.first();
-            return true;
-        } catch (MongoClientException | MongoServerException e) {
-            return false;
         }
     }
 

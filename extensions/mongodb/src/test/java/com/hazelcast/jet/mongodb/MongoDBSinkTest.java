@@ -181,7 +181,8 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
 
         Sink<Doc> sink = builder(SINK_NAME, Doc.class, () -> createClient(connectionString))
                 .identifyDocumentBy("key", o -> o.key)
-                .into(i -> defaultDatabase, i -> "col_" + (i.key % 10))//
+                .into(i -> defaultDatabase, i -> "col_" + (i.key % 10))
+                .withCustomReplaceOptions(opt -> opt.upsert(false))
                 .build();
         toAddSource
                 .merge(alreadyExistingSource)
