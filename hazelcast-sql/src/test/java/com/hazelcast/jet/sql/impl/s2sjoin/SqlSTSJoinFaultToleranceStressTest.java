@@ -1,5 +1,5 @@
 /*
- * Copyright 2021 Hazelcast Inc.
+ * Copyright 2023 Hazelcast Inc.
  *
  * Licensed under the Hazelcast Community License (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,11 +36,12 @@ import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
+import org.junit.runners.Parameterized;
 import org.junit.runners.Parameterized.Parameter;
-import org.junit.runners.Parameterized.Parameters;
 import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.IOException;
+import java.util.Collection;
 
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
@@ -52,10 +53,12 @@ import static org.junit.Assert.assertEquals;
 @Category({NightlyTest.class, ParallelJVMTest.class})
 public class SqlSTSJoinFaultToleranceStressTest extends SqlTestSupport {
     private static final int INITIAL_PARTITION_COUNT = 1;
-    private static final int EVENTS_COUNT = 20_000;
+    private static final int EVENTS_PER_SINK = 20_000;
+    private static final int SINK_ATTEMPTS = 10;
     private static KafkaTestSupport kafkaTestSupport;
 
     private SqlService sqlService;
+    private Thread kafkaFeedThread;
     private String resultListName;
     private String topicName;
     private IList<Tuple2<Integer, String>> map;
@@ -63,12 +66,20 @@ public class SqlSTSJoinFaultToleranceStressTest extends SqlTestSupport {
 
     private String query;
 
-    @Parameter
+    @Parameter(value = 0)
     public String processingGuarantee;
 
-    @Parameters(name = "{0}")
-    public static Iterable<Object> parameters() {
-        return asList("none", "atLeastOnce", "exactlyOnce");
+    @Parameter(value = 1)
+    public boolean restartGraceful;
+
+    @Parameterized.Parameters(name = "processingGuarantee:{0}, restartGraceful:{1}")
+    public static Collection<Object[]> parameters() {
+        return asList(new Object[][]{
+                {"atLeastOnce", true},
+                {"atLeastOnce", false},
+                {"exactlyOnce", true},
+                {"exactlyOnce", false}
+        });
     }
 
     @BeforeClass
@@ -100,7 +111,8 @@ public class SqlSTSJoinFaultToleranceStressTest extends SqlTestSupport {
                 + ", 'auto.offset.reset'='earliest'"
                 + ")");
 
-        createTopicData(sqlService, topicName);
+        kafkaFeedThread = new Thread(() -> createTopicData(sqlService, topicName));
+        kafkaFeedThread.start();
 
         sqlService.execute("CREATE VIEW s1 AS " +
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + topicName + " , DESCRIPTOR(__key), 10))");
@@ -119,10 +131,11 @@ public class SqlSTSJoinFaultToleranceStressTest extends SqlTestSupport {
 
         SqlResult result = sqlService.execute(query);
         assertEquals(0, result.updateCount());
-        assertTrueEventually(() -> assertEquals(EVENTS_COUNT, map.size()));
+        assertTrueEventually(() -> assertEquals(EVENTS_PER_SINK, map.size()));
         jobRestarter.finish();
 
         try {
+            kafkaFeedThread.join();
             jobRestarter.join();
         } catch (AssertionError e) {
             Assert.fail(e.getMessage());
@@ -131,7 +144,7 @@ public class SqlSTSJoinFaultToleranceStressTest extends SqlTestSupport {
         }
     }
 
-    static class JobRestarter extends Thread {
+    class JobRestarter extends Thread {
         private final JetService jetService;
         private volatile boolean finish;
 
@@ -149,6 +162,7 @@ public class SqlSTSJoinFaultToleranceStressTest extends SqlTestSupport {
                     Thread.sleep(1000L);
                     assert jetService.getJobs().size() == 1;
                     Job job = jetService.getJobs().get(0);
+//                    restartGraceful ? job.restart() : job.;
                     job.restart();
                 } catch (InterruptedException e) {
                     throw new RuntimeException(e);
@@ -168,12 +182,17 @@ public class SqlSTSJoinFaultToleranceStressTest extends SqlTestSupport {
     }
 
     private static void createTopicData(SqlService sqlService, String topicName) {
-        StringBuilder queryBuilder = new StringBuilder("INSERT INTO " + topicName + " VALUES ");
-        for (int i = 1; i < EVENTS_COUNT; ++i) {
-            queryBuilder.append("(").append(i).append(", 'value-").append(i).append("'), ");
-        }
-        queryBuilder.append("(").append(EVENTS_COUNT).append(", 'value-").append(EVENTS_COUNT).append("')");
+        int itemsSank = 0;
+        for (int sink = 1; sink <= SINK_ATTEMPTS; sink++) {
+            StringBuilder queryBuilder = new StringBuilder("INSERT INTO " + topicName + " VALUES ");
+            for (int i = 1; i < EVENTS_PER_SINK; ++i) {
+                ++itemsSank;
+                queryBuilder.append("(").append(itemsSank).append(", 'value-").append(itemsSank).append("'), ");
+            }
+            queryBuilder.append("(").append(itemsSank).append(", 'value-").append(itemsSank).append("')");
 
-        sqlService.execute(queryBuilder.toString());
+            assert itemsSank == EVENTS_PER_SINK * sink;
+            sqlService.execute(queryBuilder.toString());
+        }
     }
 }
