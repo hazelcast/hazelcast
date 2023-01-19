@@ -102,7 +102,8 @@ final class InfoSchemaConnector implements SqlConnector {
         List<Expression<?>> convertedProjection = context.convertProjection(projection);
         return context.getDag().newUniqueVertex(
                 table.toString(),
-                forceTotalParallelismOne(ProcessorSupplier.of(() -> new StaticSourceP(convertedPredicate, convertedProjection, rows)))
+                forceTotalParallelismOne(ProcessorSupplier.of(() ->
+                        new StaticSourceP(convertedPredicate, convertedProjection, rows)))
         );
     }
 

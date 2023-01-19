@@ -34,7 +34,7 @@ class SelectQueryBuilder {
     private final ParamCollectingVisitor paramCollectingVisitor = new ParamCollectingVisitor();
 
     @SuppressWarnings("ExecutableStatementCount")
-    public SelectQueryBuilder(Table table0, RexNode filter, List<RexNode> projects) {
+    SelectQueryBuilder(Table table0, RexNode filter, List<RexNode> projects) {
         JdbcTable table = (JdbcTable) table0;
         SqlDialect dialect = table.sqlDialect();
 
