@@ -166,10 +166,8 @@ public class ReflectiveCompactSerializer<T> implements CompactSerializer<T> {
     }
 
     private void createFastReadWriteCaches(Class clazz) {
-        // The class cannot be registered as compact explicitly in configuration, otherwise we would use that serializer
-        boolean isRegisteredAsCompact = false;
         // The top level class might not be Compact serializable
-        CompactUtil.verifyClassIsCompactSerializable(clazz, isRegisteredAsCompact);
+        CompactUtil.verifyClassIsCompactSerializable(clazz);
 
         // get inherited fields as well
         List<Field> allFields = getAllFields(new LinkedList<>(), clazz);

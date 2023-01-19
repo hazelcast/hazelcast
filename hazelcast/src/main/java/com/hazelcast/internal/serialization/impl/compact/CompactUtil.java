@@ -174,12 +174,8 @@ public final class CompactUtil {
         return shortArray;
     }
 
-    /**
-     * @param clazz class to check
-     * @param isRegisteredAsCompact If class is registered as compact serializable in configuration
-     */
-    public static void verifyClassIsCompactSerializable(Class<?> clazz, boolean isRegisteredAsCompact) {
-        if (canBeSerializedAsCompact(clazz, isRegisteredAsCompact)) {
+    public static void verifyClassIsCompactSerializable(Class<?> clazz) {
+        if (canBeSerializedAsCompact(clazz)) {
             return;
         }
 
@@ -190,14 +186,8 @@ public final class CompactUtil {
                 + "for it.");
     }
 
-    /**
-     * @param fieldClass the class of the field to be serialized
-     * @param clazz Top level class that is being serialized
-     * @param isRegisteredAsCompact If fieldClass is registered as compact serializable in config
-     */
-    public static void verifyFieldClassIsCompactSerializable(Class<?> fieldClass, Class<?> clazz,
-                                                             boolean isRegisteredAsCompact) {
-        if (canBeSerializedAsCompact(fieldClass, isRegisteredAsCompact)) {
+    public static void verifyFieldClassIsCompactSerializable(Class<?> fieldClass, Class<?> clazz) {
+        if (canBeSerializedAsCompact(fieldClass)) {
             return;
         }
 
@@ -222,7 +212,7 @@ public final class CompactUtil {
                 + "overriding that serialization mechanism.");
     }
 
-    private static boolean canBeSerializedAsCompact(Class<?> clazz, boolean isRegisteredAsCompact) {
+    private static boolean canBeSerializedAsCompact(Class<?> clazz) {
         Package classPackage = clazz.getPackage();
         if (classPackage == null) {
             // If the Java version is 8, we can hit this branch if the user
@@ -247,8 +237,7 @@ public final class CompactUtil {
 
         String name = classPackage.getName();
         for (UnsupportedPackagePrefix prefix : UNSUPPORTED_PACKAGE_PREFIXES) {
-            // We allow serializing classes in unsupported packages if there is an explicit serializer for them.
-            if (prefix.matches(name) && !isRegisteredAsCompact) {
+            if (prefix.matches(name)) {
                 return false;
             }
         }
