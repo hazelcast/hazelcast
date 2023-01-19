@@ -16,7 +16,6 @@
 
 package com.hazelcast.jet.sql.impl.opt.physical;
 
-import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.sql.impl.QueryParameterMetadata;
 import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.plan.RelOptCluster;
@@ -44,10 +43,6 @@ public class UpdatePhysicalRel extends TableModify implements PhysicalRel {
             boolean flattened
     ) {
         super(cluster, traitSet, table, catalogReader, input, UPDATE, updateColumnList, sourceExpressionList, flattened);
-    }
-
-    public PlanNodeSchema tableSchema() {
-        return OptUtils.schema(getTable());
     }
 
     @Override

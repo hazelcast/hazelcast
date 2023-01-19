@@ -17,7 +17,6 @@
 package com.hazelcast.jet.sql.impl;
 
 import com.hazelcast.jet.sql.impl.opt.physical.PhysicalRel;
-import com.hazelcast.sql.impl.plan.node.PlanNodeSchema;
 import org.apache.calcite.rex.RexNode;
 
 import java.util.List;
@@ -26,6 +25,4 @@ public interface HazelcastPhysicalScan extends PhysicalRel {
 
     RexNode filter();
     List<RexNode> projection();
-
-    PlanNodeSchema tableSchema();
 }

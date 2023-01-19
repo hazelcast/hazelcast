@@ -21,7 +21,6 @@ import com.hazelcast.function.ComparatorEx;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.opt.FieldCollation;
-import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
@@ -87,11 +86,6 @@ public class IndexScanMapPhysicalRel extends TableScan implements HazelcastPhysi
 
     public RexNode getRemainderExp() {
         return remainderExp;
-    }
-
-    @Override
-    public PlanNodeSchema tableSchema() {
-        return OptUtils.schema(getTable());
     }
 
     public ComparatorEx<JetSqlRow> getComparator() {

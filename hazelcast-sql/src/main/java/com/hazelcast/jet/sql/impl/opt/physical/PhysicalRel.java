@@ -37,7 +37,6 @@ public interface PhysicalRel extends RelNode {
 
     PlanNodeSchema schema(QueryParameterMetadata parameterMetadata);
 
-    // TODO [viliam] do we need this?
     @SuppressWarnings("unchecked")
     default Expression<Boolean> filter(
             PlanNodeFieldTypeProvider schema,
@@ -51,7 +50,6 @@ public interface PhysicalRel extends RelNode {
         return (Expression<Boolean>) node.accept(visitor);
     }
 
-    // TODO [viliam] do we need this?
     default List<Expression<?>> project(
             PlanNodeFieldTypeProvider schema,
             List<? extends RexNode> nodes,

@@ -23,7 +23,6 @@ import com.hazelcast.jet.sql.impl.CalciteSqlOptimizer;
 import com.hazelcast.jet.sql.impl.HazelcastPhysicalScan;
 import com.hazelcast.jet.sql.impl.aggregate.WindowUtils;
 import com.hazelcast.jet.sql.impl.opt.FullScan;
-import com.hazelcast.jet.sql.impl.opt.OptUtils;
 import com.hazelcast.jet.sql.impl.opt.cost.CostUtils;
 import com.hazelcast.jet.sql.impl.schema.HazelcastTable;
 import com.hazelcast.jet.sql.impl.validate.types.HazelcastTypeUtils;
@@ -53,8 +52,7 @@ import static com.hazelcast.jet.sql.impl.opt.cost.CostUtils.TABLE_SCAN_CPU_MULTI
 public class FullScanPhysicalRel extends FullScan implements HazelcastPhysicalScan {
 
     /**
-     * TODO [viliam] fix
-     * See {@link CalciteSqlOptimizer#uniquifyScans}.
+     * See {@link CalciteSqlOptimizer#postOptimizationRewrites(PhysicalRel)}.
      */
     private final int discriminator;
 
@@ -78,11 +76,6 @@ public class FullScanPhysicalRel extends FullScan implements HazelcastPhysicalSc
     @Override
     public List<RexNode> projection() {
         return getTable().unwrap(HazelcastTable.class).getProjects();
-    }
-
-    @Override
-    public PlanNodeSchema tableSchema() {
-        return OptUtils.schema(getTable());
     }
 
     @Override
