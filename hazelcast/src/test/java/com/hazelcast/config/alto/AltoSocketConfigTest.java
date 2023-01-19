@@ -14,8 +14,10 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
-import static com.hazelcast.config.alto.AltoConfigTestUtil.assertClientPorts;
-import static com.hazelcast.config.alto.AltoConfigTestUtil.getClientSocketConfig;
+import java.util.ArrayList;
+
+import static com.hazelcast.config.alto.AltoConfigAccessors.getClientPorts;
+import static com.hazelcast.config.alto.AltoConfigAccessors.getClientSocketConfig;
 import static org.junit.Assert.assertEquals;
 
 @RunWith(HazelcastSerialClassRunner.class)
@@ -46,14 +48,22 @@ public class AltoSocketConfigTest extends HazelcastTestSupport {
     @Test
     public void testClientPortDefaults() {
         HazelcastInstance hz = createHazelcastInstance(config);
-        assertClientPorts(EVENTLOOP_COUNT, 11000, 21000, hz);
+        ArrayList<Integer> expectedPorts = new ArrayList<>();
+        for (int i = 0; i < EVENTLOOP_COUNT; i++) {
+            expectedPorts.add(11000 + i);
+        }
+        assertEquals(expectedPorts, getClientPorts(hz));
     }
 
     @Test
     public void testClientPorts() {
         getAltoSocketConfig().setPortRange("13000-14000");
         HazelcastInstance hz = createHazelcastInstance(config);
-        assertClientPorts(EVENTLOOP_COUNT, 13000, 14000, hz);
+        ArrayList<Integer> expectedPorts = new ArrayList<>();
+        for (int i = 0; i < EVENTLOOP_COUNT; i++) {
+            expectedPorts.add(13000 + i);
+        }
+        assertEquals(expectedPorts, getClientPorts(hz));
     }
 
     @Test
@@ -73,7 +83,25 @@ public class AltoSocketConfigTest extends HazelcastTestSupport {
     public void testClientPortsWith3Members() {
         getAltoSocketConfig().setPortRange("13000-14000");
         HazelcastInstance[] hz = createHazelcastInstances(config, 3);
-        assertClientPorts(EVENTLOOP_COUNT, 13000, 14000, hz);
+        ArrayList<Integer> expectedPorts = new ArrayList<>();
+
+        // ports of hz0
+        for (int i = 0; i < EVENTLOOP_COUNT; i++) {
+            expectedPorts.add(13000 + i);
+        }
+        assertEquals(expectedPorts, getClientPorts(hz[0]));
+
+        // ports of hz1
+        for (int i = 0; i < EVENTLOOP_COUNT; i++) {
+            expectedPorts.set(i, expectedPorts.get(i) + EVENTLOOP_COUNT);
+        }
+        assertEquals(expectedPorts, getClientPorts(hz[1]));
+
+        // ports of hz2
+        for (int i = 0; i < EVENTLOOP_COUNT; i++) {
+            expectedPorts.set(i, expectedPorts.get(i) + EVENTLOOP_COUNT);
+        }
+        assertEquals(expectedPorts, getClientPorts(hz[2]));
     }
 
     @Test

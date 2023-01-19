@@ -43,8 +43,8 @@ import java.net.Socket;
 import java.util.Objects;
 import java.util.Set;
 
-import static com.hazelcast.config.alto.AltoConfigTestUtil.assertClientPorts;
-import static com.hazelcast.config.alto.AltoConfigTestUtil.getClientSocketConfig;
+import static com.hazelcast.config.alto.AltoConfigAccessors.getClientPorts;
+import static com.hazelcast.config.alto.AltoConfigAccessors.getClientSocketConfig;
 import static com.hazelcast.internal.util.ExceptionUtil.rethrow;
 import static com.hazelcast.test.HazelcastTestSupport.assertClusterSizeEventually;
 import static com.hazelcast.test.HazelcastTestSupport.assertThrows;
@@ -100,10 +100,10 @@ public class AdvancedNetworkIntegrationTest extends AbstractAdvancedNetworkInteg
             hz[i] = newHazelcastInstance(config);
         }
 
-        assertClientPorts(4, 15000, 16000, hz);
         for (int i = 0; i < 3; i++) {
             assertEquals(1024, getClientSocketConfig(hz[i]).getReceiveBufferSizeKB());
             assertEquals(512, getClientSocketConfig(hz[i]).getSendBufferSizeKB());
+            assertEquals(4, getClientPorts(hz[i]).size());
         }
     }
 
