@@ -397,6 +397,7 @@ public interface SqlConnector {
         /**
          * Returns the {@link DAG} that's being created.
          */
+        @Nonnull
         DAG getDag();
 
         /**
@@ -406,6 +407,7 @@ public interface SqlConnector {
          *     <li>for nested loop reader, it's the table read in the inner loop (the right join input)
          * </ul>
          */
+        @Nullable
         Table getTable();
 
         /**
@@ -416,13 +418,15 @@ public interface SqlConnector {
          *     <li>Otherwise the conversion of an input ref will fail.
          * </ul>
          */
-        Expression<Boolean> convertFilter(RexNode node);
+        @Nullable
+        Expression<Boolean> convertFilter(@Nullable RexNode node);
 
         /**
          * Converts a list of RexNodes. See also {@link #convertFilter(RexNode)}
          * for information about {@link RexInputRef} conversion.
          */
-        List<Expression<?>> convertProjection(List<RexNode> nodes);
+        @Nonnull
+        List<Expression<?>> convertProjection(@Nonnull List<RexNode> nodes);
     }
 
     /**

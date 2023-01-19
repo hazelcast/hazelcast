@@ -490,8 +490,6 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
     @Override
     public Vertex onHashJoin(JoinHashPhysicalRel rel) {
-        dagBuildContext.setTable(null);
-        dagBuildContext.setRel(rel);
         JetJoinInfo joinInfo = rel.joinInfo(dagBuildContext.getParameterMetadata());
 
         Vertex joinVertex = dag.newUniqueVertex(
@@ -507,8 +505,6 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
     @Override
     public Vertex onStreamToStreamJoin(StreamToStreamJoinPhysicalRel rel) {
-        dagBuildContext.setTable(null);
-        dagBuildContext.setRel(rel);
         JetJoinInfo joinInfo = rel.joinInfo(dagBuildContext.getParameterMetadata());
 
         Map<Byte, ToLongFunctionEx<JetSqlRow>> leftExtractors = new HashMap<>();
@@ -594,8 +590,6 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
 
         Expression<?> fetch = ConstantExpression.create(Long.MAX_VALUE, QueryDataType.BIGINT);
         Expression<?> offset = ConstantExpression.create(0L, QueryDataType.BIGINT);
-        dagBuildContext.setTable(null);
-        dagBuildContext.setRel(rootRel);
 
         // We support only top-level LIMIT ... OFFSET.
         if (input instanceof LimitPhysicalRel) {

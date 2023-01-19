@@ -42,11 +42,13 @@ public class DagBuildContextImpl implements DagBuildContext {
         this.parameterMetadata = parameterMetadata;
     }
 
+    @Nonnull
     @Override
     public DAG getDag() {
         return dag;
     }
 
+    @Nullable
     @Override
     public Table getTable() {
         return table;
@@ -60,17 +62,19 @@ public class DagBuildContextImpl implements DagBuildContext {
         this.table = table;
     }
 
+    @Nullable
     @SuppressWarnings("unchecked")
     @Override
-    public Expression<Boolean> convertFilter(RexNode node) {
+    public Expression<Boolean> convertFilter(@Nullable RexNode node) {
         if (node == null) {
             return null;
         }
         return (Expression<Boolean>) node.accept(createVisitor());
     }
 
+    @Nonnull
     @Override
-    public List<Expression<?>> convertProjection(List<RexNode> nodes) {
+    public List<Expression<?>> convertProjection(@Nonnull List<RexNode> nodes) {
         RexVisitor<Expression<?>> visitor = createVisitor();
         return Util.toList(nodes, node -> node.accept(visitor));
     }
