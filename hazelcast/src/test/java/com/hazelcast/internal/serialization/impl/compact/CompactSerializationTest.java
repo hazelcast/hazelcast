@@ -38,7 +38,6 @@ import example.serialization.MainDTOSerializer;
 import example.serialization.SameClassEmployeeDTOSerializer;
 import example.serialization.SameTypeNameEmployeeDTOSerializer;
 import example.serialization.SerializableEmployeeDTO;
-import org.jetbrains.annotations.NotNull;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
@@ -692,27 +691,27 @@ public class CompactSerializationTest {
     }
 
     private static class InstantSerializer implements CompactSerializer<Instant> {
-        @NotNull
+        @Nonnull
         @Override
-        public Instant read(@NotNull CompactReader reader) {
+        public Instant read(@Nonnull CompactReader reader) {
             long epoch = reader.readInt64("epoch");
             int nano = reader.readInt32("nano");
             return Instant.ofEpochSecond(epoch, nano);
         }
 
         @Override
-        public void write(@NotNull CompactWriter writer, @NotNull Instant object) {
+        public void write(@Nonnull CompactWriter writer, @Nonnull Instant object) {
             writer.writeInt64("epoch", object.getEpochSecond());
             writer.writeInt32("nano", object.getNano());
         }
 
-        @NotNull
+        @Nonnull
         @Override
         public String getTypeName() {
             return "instant";
         }
 
-        @NotNull
+        @Nonnull
         @Override
         public Class<Instant> getCompactClass() {
             return Instant.class;
