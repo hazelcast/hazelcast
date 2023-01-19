@@ -1,0 +1,10 @@
+{
+  "instance": {
+    "hazelcast-client": {
+      "alto": {
+        "enabled": true
+      }
+    }
+  },
+  "error": null
+}

@@ -41,6 +41,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
 
+import static com.hazelcast.client.config.impl.ClientConfigHelper.unisocketModeConfigured;
 import static com.hazelcast.client.properties.ClientProperty.BACKPRESSURE_BACKOFF_TIMEOUT_MILLIS;
 import static com.hazelcast.client.properties.ClientProperty.FAIL_ON_INDETERMINATE_OPERATION_STATE;
 import static com.hazelcast.client.properties.ClientProperty.INVOCATION_RETRY_PAUSE_MILLIS;
@@ -96,7 +97,7 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
     private final boolean isBackupAckToClientEnabled;
     private final ClientConnectionManager connectionManager;
     private final ClientPartitionService partitionService;
-    private final boolean isSmartRoutingEnabled;
+    private final boolean isUnisocketClient;
 
     public ClientInvocationServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
@@ -113,8 +114,8 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
         this.operationBackupTimeoutMillis = properties.getInteger(OPERATION_BACKUP_TIMEOUT_MILLIS);
         this.shouldFailOnIndeterminateOperationState = properties.getBoolean(FAIL_ON_INDETERMINATE_OPERATION_STATE);
         client.getMetricsRegistry().registerStaticMetrics(this, CLIENT_PREFIX_INVOCATIONS);
-        this.isSmartRoutingEnabled = client.getClientConfig().getNetworkConfig().isSmartRouting();
-        this.isBackupAckToClientEnabled = isSmartRoutingEnabled && client.getClientConfig().isBackupAckToClientEnabled();
+        this.isUnisocketClient = unisocketModeConfigured(client.getClientConfig());
+        this.isBackupAckToClientEnabled = !isUnisocketClient && client.getClientConfig().isBackupAckToClientEnabled();
         this.connectionManager = client.getConnectionManager();
         this.partitionService = client.getClientPartitionService();
     }
@@ -328,8 +329,8 @@ public class ClientInvocationServiceImpl implements ClientInvocationService {
         return shouldFailOnIndeterminateOperationState;
     }
 
-    public boolean isSmartRoutingEnabled() {
-        return isSmartRoutingEnabled;
+    public boolean isUnisocketClient() {
+        return isUnisocketClient;
     }
 
     private class BackupTimeoutTask implements Runnable {

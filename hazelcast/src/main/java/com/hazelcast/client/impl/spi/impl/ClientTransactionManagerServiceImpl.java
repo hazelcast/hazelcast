@@ -36,6 +36,7 @@ import javax.annotation.Nonnull;
 import javax.transaction.xa.Xid;
 import java.util.Set;
 
+import static com.hazelcast.client.config.impl.ClientConfigHelper.unisocketModeConfigured;
 import static com.hazelcast.internal.util.Clock.currentTimeMillis;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.StringUtil.timeToString;
@@ -110,14 +111,12 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
         ClientInvocationServiceImpl invocationService = (ClientInvocationServiceImpl) client.getInvocationService();
         long startTimeMillis = System.currentTimeMillis();
         long invocationTimeoutMillis = invocationService.getInvocationTimeoutMillis();
-        ClientConfig clientConfig = client.getClientConfig();
-        boolean smartRouting = clientConfig.getNetworkConfig().isSmartRouting();
 
         while (client.getLifecycleService().isRunning()) {
             try {
                 ClientConnection connection = client.getConnectionManager().getRandomConnection();
                 if (connection == null) {
-                    throw throwException(smartRouting);
+                    throw throwException();
                 }
                 return connection;
             } catch (Exception e) {
@@ -144,14 +143,14 @@ public class ClientTransactionManagerServiceImpl implements ClientTransactionMan
         return new OperationTimeoutException(msg, e);
     }
 
-    private RuntimeException throwException(boolean smartRouting) {
+    private RuntimeException throwException() {
         ClientConfig clientConfig = client.getClientConfig();
         ClientConnectionStrategyConfig connectionStrategyConfig = clientConfig.getConnectionStrategyConfig();
         ClientConnectionStrategyConfig.ReconnectMode reconnectMode = connectionStrategyConfig.getReconnectMode();
         if (reconnectMode.equals(ClientConnectionStrategyConfig.ReconnectMode.ASYNC)) {
             throw new HazelcastClientOfflineException();
         }
-        if (smartRouting) {
+        if (!unisocketModeConfigured(clientConfig)) {
             Set<Member> members = client.getCluster().getMembers();
             String msg;
             if (members.isEmpty()) {

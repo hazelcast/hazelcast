@@ -59,6 +59,7 @@ import java.util.concurrent.Future;
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadFactory;
 
+import static com.hazelcast.client.config.impl.ClientConfigHelper.unisocketModeConfigured;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_LISTENER_SERVICE_EVENTS_PROCESSED;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_METRIC_LISTENER_SERVICE_EVENT_QUEUE_SIZE;
 import static com.hazelcast.internal.metrics.MetricDescriptorConstants.CLIENT_PREFIX_LISTENERS;
@@ -73,11 +74,11 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
     private final ILogger logger;
     private final ExecutorService registrationExecutor;
     private final StripedExecutor eventExecutor;
-    private final boolean isSmart;
+    private final boolean isUnisocket;
 
     public ClientListenerServiceImpl(HazelcastClientInstanceImpl client) {
         this.client = client;
-        this.isSmart = client.getClientConfig().getNetworkConfig().isSmartRouting();
+        this.isUnisocket = unisocketModeConfigured(client.getClientConfig());
         this.logger = client.getLoggingService().getLogger(ClientListenerService.class);
         String name = client.getName();
         HazelcastProperties properties = client.getProperties();
@@ -305,7 +306,7 @@ public class ClientListenerServiceImpl implements ClientListenerService, StaticM
     }
 
     private boolean registersLocalOnly() {
-        return isSmart;
+        return !isUnisocket;
     }
 
     private Boolean deregisterListenerInternal(@Nullable UUID userRegistrationId) {

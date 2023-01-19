@@ -972,3 +972,15 @@ hazelcast-client:
   #     Sets the resubmission mode for failing queries. By default, it is set to NEVER.
   sql:
     resubmission-mode: RETRY_SELECTS
+  # Configures the Alto-aware client, which is the next generation Hazelcast
+  # that uses thread-per-core model. Alto-aware clients will maintain
+  # connections to all cluster members along with connections to all Alto
+  # cores of each cluster member to route invocations to the correct cores
+  # of the correct members in best-effort basis. Configuration element's
+  # name is "alto".
+  #
+  # It has the following sub-elements:
+  # * "enabled":
+  #     Enables or disables the Alto-aware mode.
+  alto:
+    enabled: true

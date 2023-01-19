@@ -555,4 +555,7 @@ public abstract class AbstractClientConfigBuilderTest extends HazelcastTestSuppo
 
     @Test
     public abstract void testCompactSerialization_withInvalidCompactSerializableClass();
+
+    @Test
+    public abstract void testAlto();
 }

@@ -38,10 +38,14 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
+import static com.hazelcast.client.config.impl.ClientConfigHelper.unisocketModeConfigured;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -162,5 +166,28 @@ public class ClientConfigTest {
 
         assertEquals("com.hazelcast.client.test.CustomLoadBalancer", clientConfig.getLoadBalancerClassName());
         assertNull(clientConfig.getLoadBalancer());
+    }
+
+    @Test
+    public void testAltoConfig() {
+        ClientConfig config = new ClientConfig();
+        ClientAltoConfig altoConfig = new ClientAltoConfig();
+        altoConfig.setEnabled(true);
+        config.setAltoConfig(altoConfig);
+
+        assertTrue(config.getAltoConfig().isEnabled());
+        assertThrows(IllegalArgumentException.class, () -> config.setAltoConfig(null));
+    }
+
+    @Test
+    public void testAltoConfig_overridesSmartRoutingSelection() {
+        ClientConfig config = new ClientConfig();
+        config.getNetworkConfig().setSmartRouting(false);
+
+        assertTrue(unisocketModeConfigured(config));
+
+        config.getAltoConfig().setEnabled(true);
+
+        assertFalse(unisocketModeConfigured(config));
     }
 }

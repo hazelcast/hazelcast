@@ -105,6 +105,7 @@ import java.util.function.Function;
 import static com.hazelcast.client.config.ClientConnectionStrategyConfig.ReconnectMode.OFF;
 import static com.hazelcast.client.config.ConnectionRetryConfig.DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS;
 import static com.hazelcast.client.config.ConnectionRetryConfig.FAILOVER_CLIENT_DEFAULT_CLUSTER_CONNECT_TIMEOUT_MILLIS;
+import static com.hazelcast.client.config.impl.ClientConfigHelper.unisocketModeConfigured;
 import static com.hazelcast.client.impl.management.ManagementCenterService.MC_CLIENT_MODE_PROP;
 import static com.hazelcast.client.impl.protocol.AuthenticationStatus.NOT_ALLOWED_IN_CLUSTER;
 import static com.hazelcast.client.impl.protocol.ClientMessage.UNFRAGMENTED_MESSAGE;
@@ -130,7 +131,7 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 @SuppressWarnings({"checkstyle:MethodLength", "checkstyle:NPathComplexity"})
 public class TcpClientConnectionManager implements ClientConnectionManager, MembershipListener {
 
-    private static final int DEFAULT_SMART_CLIENT_THREAD_COUNT = 3;
+    private static final int DEFAULT_IO_THREAD_COUNT = 3;
     private static final int EXECUTOR_CORE_POOL_SIZE = 10;
     private static final int SMALL_MACHINE_PROCESSOR_COUNT = 8;
     private static final int SQL_CONNECTION_RANDOM_ATTEMPTS = 10;
@@ -161,7 +162,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     private final boolean asyncStart;
     private final ReconnectMode reconnectMode;
     private final LoadBalancer loadBalancer;
-    private final boolean isSmartRoutingEnabled;
+    private final boolean isUnisocketClient;
+    private final boolean isAltoAwareClient;
     private volatile Credentials currentCredentials;
 
     // following fields are updated inside synchronized(clientStateMutex)
@@ -218,8 +220,9 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
     public TcpClientConnectionManager(HazelcastClientInstanceImpl client) {
         this.client = client;
+        ClientConfig config = client.getClientConfig();
         this.loadBalancer = client.getLoadBalancer();
-        this.labels = Collections.unmodifiableSet(client.getClientConfig().getLabels());
+        this.labels = Collections.unmodifiableSet(config.getLabels());
         this.logger = client.getLoggingService().getLogger(ClientConnectionManager.class);
         this.connectionType = client.getProperties().getBoolean(MC_CLIENT_MODE_PROP)
                 ? ConnectionType.MC_JAVA_CLIENT : ConnectionType.JAVA_CLIENT;
@@ -231,11 +234,12 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
         this.failoverConfigProvided = client.getFailoverConfig() != null;
         this.executor = createExecutorService();
         this.clusterDiscoveryService = client.getClusterDiscoveryService();
-        this.waitStrategy = initializeWaitStrategy(client.getClientConfig());
+        this.waitStrategy = initializeWaitStrategy(config);
         this.shuffleMemberList = client.getProperties().getBoolean(SHUFFLE_MEMBER_LIST);
-        this.isSmartRoutingEnabled = client.getClientConfig().getNetworkConfig().isSmartRouting();
-        this.asyncStart = client.getClientConfig().getConnectionStrategyConfig().isAsyncStart();
-        this.reconnectMode = client.getClientConfig().getConnectionStrategyConfig().getReconnectMode();
+        this.isUnisocketClient = unisocketModeConfigured(config);
+        this.isAltoAwareClient = config.getAltoConfig().isEnabled();
+        this.asyncStart = config.getConnectionStrategyConfig().isAsyncStart();
+        this.reconnectMode = config.getConnectionStrategyConfig().getReconnectMode();
         this.connectionProcessListenerRunner = new ClientConnectionProcessListenerRunner(client);
     }
 
@@ -275,8 +279,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
         int inputThreads;
         if (configuredInputThreads == -1) {
-            if (isSmartRoutingEnabled && RuntimeAvailableProcessors.get() > SMALL_MACHINE_PROCESSOR_COUNT) {
-                inputThreads = DEFAULT_SMART_CLIENT_THREAD_COUNT;
+            if (!isUnisocketClient && RuntimeAvailableProcessors.get() > SMALL_MACHINE_PROCESSOR_COUNT) {
+                inputThreads = DEFAULT_IO_THREAD_COUNT;
             } else {
                 inputThreads = 1;
             }
@@ -286,8 +290,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
         int outputThreads;
         if (configuredOutputThreads == -1) {
-            if (isSmartRoutingEnabled && RuntimeAvailableProcessors.get() > SMALL_MACHINE_PROCESSOR_COUNT) {
-                outputThreads = DEFAULT_SMART_CLIENT_THREAD_COUNT;
+            if (!isUnisocketClient && RuntimeAvailableProcessors.get() > SMALL_MACHINE_PROCESSOR_COUNT) {
+                outputThreads = DEFAULT_IO_THREAD_COUNT;
             } else {
                 outputThreads = 1;
             }
@@ -344,7 +348,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
     }
 
     public void tryConnectToAllClusterMembers(boolean sync) {
-        if (!isSmartRoutingEnabled) {
+        if (isUnisocketClient) {
             return;
         }
 
@@ -862,8 +866,8 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
     @Override
     public ClientConnection getRandomConnection() {
-        // Try getting the connection from the load balancer, if smart routing is enabled
-        if (isSmartRoutingEnabled) {
+        // Try getting the connection from the load balancer, if the client is not unisocket
+        if (!isUnisocketClient) {
             Member member = loadBalancer.next();
 
             // Failed to get a member
@@ -884,7 +888,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
 
     @Override
     public ClientConnection getConnectionForSql() {
-        if (isSmartRoutingEnabled) {
+        if (!isUnisocketClient) {
             // There might be a race - the chosen member might be just connected or disconnected - try a
             // couple of times, the memberOfLargerSameVersionGroup returns a random connection,
             // we might be lucky...
@@ -947,7 +951,7 @@ public class TcpClientConnectionManager implements ClientConnectionManager, Memb
             connection.setRemoteUuid(response.memberUuid);
             connection.setClusterUuid(response.clusterId);
 
-            if (tpcPorts == null || tpcPorts.isEmpty()) {
+            if (!isAltoAwareClient || tpcPorts == null || tpcPorts.isEmpty()) {
                 logger.info("TPC Client: disabled, no TPC ports detected");
             } else {
                 try {

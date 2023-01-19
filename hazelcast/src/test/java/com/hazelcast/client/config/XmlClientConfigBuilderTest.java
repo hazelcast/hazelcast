@@ -864,6 +864,16 @@ public class XmlClientConfigBuilderTest extends AbstractClientConfigBuilderTest 
                 .hasMessageContaining("Cannot load");
     }
 
+    @Override
+    public void testAlto() {
+        String xml = HAZELCAST_CLIENT_START_TAG
+                + "    <alto enabled=\"true\"/>\n"
+                + HAZELCAST_CLIENT_END_TAG;
+
+        ClientAltoConfig altoConfig = buildConfig(xml).getAltoConfig();
+        assertTrue(altoConfig.isEnabled());
+    }
+
     static ClientConfig buildConfig(String xml, Properties properties) {
         ByteArrayInputStream bis = new ByteArrayInputStream(xml.getBytes());
         XmlClientConfigBuilder configBuilder = new XmlClientConfigBuilder(bis);

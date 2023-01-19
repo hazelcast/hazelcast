@@ -31,7 +31,7 @@
 <hazelcast-client xmlns="http://www.hazelcast.com/schema/client-config"
                   xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
                   xsi:schemaLocation="http://www.hazelcast.com/schema/client-config
-                  http://www.hazelcast.com/schema/client-config/hazelcast-client-config-5.2.xsd">
+                  http://www.hazelcast.com/schema/client-config/hazelcast-client-config-5.3.xsd">
 
     <!--
         You can use the <import> element to load different Hazelcast declarative configuration files you prepared.
@@ -1019,4 +1019,20 @@
     <sql>
         <resubmission-mode>RETRY_SELECTS</resubmission-mode>
     </sql>
+
+    <!--
+    ===== HAZELCAST ALTO CONFIGURATION =====
+
+    Configures the Alto-aware client, which is the next generation Hazelcast
+    that uses thread-per-core model. Alto-aware clients will maintain
+    connections to all cluster members along with connections to all Alto
+    cores of each cluster member to route invocations to the correct cores
+    of the correct members in best-effort basis. Configuration element's
+    name is <alto>.
+
+    It has the following attributes:
+      - enabled:
+          Enables or disables the Alto-aware mode.
+    -->
+    <alto enabled="true"/>
 </hazelcast-client>
