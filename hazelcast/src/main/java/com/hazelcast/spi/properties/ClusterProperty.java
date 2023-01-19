@@ -1827,8 +1827,8 @@ public final class ClusterProperty {
             "hazelcast.alto.enabled");
 
     /**
-     * Sets the eventloop thread count in Hazelcast Alto. If present,
-     * overrides the eventloopCount field in AltoConfig.
+     * Sets the eventloop count in Hazelcast Alto. If present, overrides
+     * the eventloopCount field in AltoConfig.
      *
      * @see com.hazelcast.config.alto.AltoConfig
      * @since 5.3

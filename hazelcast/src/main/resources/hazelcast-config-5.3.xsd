@@ -6070,7 +6070,7 @@
             <xs:element name="eventloop-count" type="xs:integer" minOccurs="0">
                 <xs:annotation>
                     <xs:documentation>
-                        Configures the number of eventloop threads. It's equal to available processor count by default.
+                        Configures the number of eventloops. It's equal to available processor count by default.
                     </xs:documentation>
                 </xs:annotation>
             </xs:element>

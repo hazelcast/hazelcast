@@ -3968,7 +3968,7 @@
     It's still being developed and everything is subject to change. Alto is disabled by default.
     -->
     <alto enabled="true">
-        <!-- Configures the number of eventloop threads. It's equal to available processor count by default. -->
+        <!-- Configures the number of eventloops. It's equal to available processor count by default. -->
         <eventloop-count>12</eventloop-count>
     </alto>
 

@@ -5009,7 +5009,7 @@
         },
         "eventloop-count": {
           "type": "integer",
-          "description": "Configures the number of eventloop threads. It's equal to available processor count by default."
+          "description": "Configures the number of eventloops. It's equal to available processor count by default."
         }
       },
       "required": [

@@ -43,7 +43,7 @@ public class AltoConfig {
     /**
      * Gets the number of eventloops.
      *
-     * @return the number of eventloop threads
+     * @return the number of eventloops
      * @see Runtime#availableProcessors()
      * @see com.hazelcast.internal.tpc.Eventloop
      * @see AltoConfig#setEventloopCount(int)
@@ -57,7 +57,7 @@ public class AltoConfig {
      * number eventloops. By default, it's equal to the number of
      * available processors.
      *
-     * @param eventloopCount the number of eventloop threads to set
+     * @param eventloopCount the number of eventloops
      * @return this Alto configuration
      * @throws IllegalArgumentException if eventloopCount isn't positive
      * @see Runtime#availableProcessors()
