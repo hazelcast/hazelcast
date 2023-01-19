@@ -155,7 +155,7 @@
         <powermock.version>2.0.9</powermock.version>
         <reflections.version>0.9.10</reflections.version>
         <testcontainers.version>1.17.6</testcontainers.version>
-        <jna.version>5.12.1</jna.version>
+        <jna.version>5.13.0</jna.version>
         <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitRulesTest.java -->
         <archunit.version>1.0.1</archunit.version>
         <errorprone.version>2.18.0</errorprone.version>
