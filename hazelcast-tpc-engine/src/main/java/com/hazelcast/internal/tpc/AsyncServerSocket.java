@@ -136,6 +136,8 @@ public abstract class AsyncServerSocket extends Socket {
     /**
      * Binds this AsyncServerSocket to the localAddress address. This method is equivalent to calling
      * {@link #bind(SocketAddress, int)} with an Integer.MAX_VALUE backlog.
+     * <p/>
+     * This can be made on any thread, but it isn't threadsafe.
      *
      * @param localAddress the local address.
      * @throws UncheckedIOException if something failed while binding.
@@ -155,14 +157,15 @@ public abstract class AsyncServerSocket extends Socket {
      *     Because every AsyncServerSocket is such a passive socket, there is no point in adding a
      *     listen method to the AsyncServerSocket.</li>
      * </ol>
+     * This can be made on any thread, but it isn't threadsafe.
      * <p>
      * This call needs to be made before {@link #accept(Consumer)}.
      * <p/>
      * Bind should only be called once, otherwise an UncheckedIOException is thrown.
      *
      * @param localAddress the local address.
-     * @param backlog      the maximum number of pending connections. The backlog argument doesn't need
-     *                     to be respected by the socket implementation.
+     * @param backlog      the maximum number of pending connections. The backlog argument
+     *                     doesn't need to be respected by the socket implementation.
      * @throws UncheckedIOException     if something failed while binding.
      * @throws NullPointerException     if localAddress is null.
      * @throws IllegalArgumentException if backlog smaller than 0.
@@ -170,9 +173,12 @@ public abstract class AsyncServerSocket extends Socket {
     public abstract void bind(SocketAddress localAddress, int backlog);
 
     /**
-     * Start accept incoming sockets asynchronously This call should only be made once.
+     * Start accepting incoming sockets asynchronously.
      * <p/>
-     * This call can be made from any thread, but the actual processing will happen on the eventloop-thread.
+     * This method can be called from any thread, but the actual processing will happen on the
+     * eventloop-thread.
+     * <p/>
+     * This method should only be called once and isn't threadsafe.
      * <p/>
      * Before accept is called, bind needs to be called.
      *
