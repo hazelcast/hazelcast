@@ -20,7 +20,11 @@ import com.hazelcast.function.ToLongFunctionEx;
 import com.hazelcast.internal.serialization.SerializationService;
 import com.hazelcast.internal.serialization.impl.SerializationUtil;
 import com.hazelcast.internal.util.collection.Object2LongHashMap;
+import com.hazelcast.jet.JetException;
+import com.hazelcast.jet.Traverser;
+import com.hazelcast.jet.config.ProcessingGuarantee;
 import com.hazelcast.jet.core.AbstractProcessor;
+import com.hazelcast.jet.core.BroadcastKey;
 import com.hazelcast.jet.core.Processor;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Watermark;
@@ -28,6 +32,7 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
+import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -46,27 +51,31 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
+import java.util.stream.Stream;
 
 import static com.hazelcast.internal.util.CollectionUtil.hasNonEmptyIntersection;
+import static com.hazelcast.jet.Traversers.traverseStream;
+import static com.hazelcast.jet.Util.entry;
+import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
+import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinBroadcastKeys.LAST_RECEIVED_WM_KEY;
+import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinBroadcastKeys.WM_STATE_KEY;
+import static java.util.function.Function.identity;
 
 /**
  * See {@code docs/design/sql/15-stream-to-stream-join.md}.
  */
 public class StreamToStreamJoinP extends AbstractProcessor {
+    private static final long OBJECT_2_LONG_MAP_MIN_VALUE = Long.MIN_VALUE + 1;
+
     // package-visible for tests
+    // tracks the current minimum event time for each watermark
     final Object2LongHashMap<Byte> wmState = new Object2LongHashMap<>(Long.MIN_VALUE);
     final Object2LongHashMap<Byte> lastReceivedWm = new Object2LongHashMap<>(Long.MIN_VALUE);
     final Object2LongHashMap<Byte> lastEmittedWm = new Object2LongHashMap<>(Long.MIN_VALUE);
-
-    /**
-     * Maps wmKey to minimum buffer time for all items in the {@link #buffer}
-     * for that WM. Must be updated when adding and removing anything to/from
-     * the buffer.
-     */
-    final Object2LongHashMap<Byte> minimumBufferTimes = new Object2LongHashMap<>(Long.MIN_VALUE);
 
     // package-visible for tests
     final StreamToStreamJoinBuffer[] buffer;
@@ -88,6 +97,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     private final Queue<Object> pendingOutput = new ArrayDeque<>();
     private JetSqlRow emptyLeftRow;
     private JetSqlRow emptyRightRow;
+
+    private Traverser<Entry<?, ?>> snapshotTraverser;
 
     @SuppressWarnings("checkstyle:ExecutableStatementCount")
     public StreamToStreamJoinP(
@@ -119,10 +130,9 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
         for (Byte wmKey : postponeTimeMap.keySet()) {
             // using MIN_VALUE + 1 because Object2LongHashMap uses MIN_VALUE as a missing value, and it cannot be used as a value
-            wmState.put(wmKey, Long.MIN_VALUE + 1);
-            lastEmittedWm.put(wmKey, Long.MIN_VALUE + 1);
-            lastReceivedWm.put(wmKey, Long.MIN_VALUE + 1);
-            minimumBufferTimes.put(wmKey, Long.MAX_VALUE);
+            wmState.put(wmKey, OBJECT_2_LONG_MAP_MIN_VALUE);
+            lastEmittedWm.put(wmKey, OBJECT_2_LONG_MAP_MIN_VALUE);
+            lastReceivedWm.put(wmKey, OBJECT_2_LONG_MAP_MIN_VALUE);
         }
 
         // no key must be on both sides
@@ -171,6 +181,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             throw new AccumulationLimitExceededException();
         }
 
+        // region item placement in buffer
         boolean avoidBuffer = false;
         if (currItem == null) {
             // drop the event, if it's late according to any watermarked value it contains
@@ -196,13 +207,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             currItem = (JetSqlRow) item;
             if (!avoidBuffer) {
                 buffer[ordinal].add(currItem);
-                // update the minimumBufferTimes when adding to buffer
-                for (int i = 0; i < extractors.size(); i++) {
-                    Byte wmKey = extractors.get(i).getKey();
-                    if (times[i] < minimumBufferTimes.get(wmKey)) {
-                        minimumBufferTimes.put(wmKey, times[i]);
-                    }
-                }
             }
             // we'll emit joined rows from currItem and the buffered rows from the opposite side
             iterator = buffer[1 - ordinal].iterator();
@@ -210,7 +214,9 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                 unusedEventsTracker.add(currItem);
             }
         }
+        // endregion
 
+        // region join procedure
         while (iterator.hasNext()) {
             JetSqlRow oppositeBufferItem = iterator.next();
             JetSqlRow preparedOutput = ExpressionUtil.join(
@@ -244,6 +250,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                 return false;
             }
         }
+        // endregion
 
         iterator = null;
         currItem = null;
@@ -256,11 +263,12 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             return processPendingOutput();
         }
 
-        assert wmState.containsKey(watermark.key()) : "unexpected watermark key: " + watermark.key();
-        assert lastReceivedWm.get(watermark.key()) < watermark.timestamp() : "non-monotonic watermark: " + watermark
-                + " when state is " + lastReceivedWm.get(watermark.key());
+        Byte receivedWmKey = watermark.key();
+        assert wmState.containsKey(receivedWmKey) : "unexpected watermark key: " + receivedWmKey;
+        assert lastReceivedWm.get(receivedWmKey) < watermark.timestamp() : "non-monotonic watermark: " + watermark
+                + " when state is " + lastReceivedWm.get(receivedWmKey);
 
-        lastReceivedWm.put((Byte) watermark.key(), watermark.timestamp());
+        lastReceivedWm.put(receivedWmKey, watermark.timestamp());
 
         // 5.1 : update wm state
         boolean modified = applyToWmState(watermark);
@@ -272,12 +280,11 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
         // Note: We can't immediately emit current WM, as it could render items in buffers late.
         for (Byte wmKey : wmState.keySet()) {
-            long minimumBufferTime = minimumBufferTimes.get(wmKey);
-            long lastReceivedWm = this.lastReceivedWm.getValue(wmKey);
-            long newWmTime = Math.min(minimumBufferTime, lastReceivedWm);
-            if (newWmTime > lastEmittedWm.getValue(wmKey)) {
-                pendingOutput.add(new Watermark(newWmTime, wmKey));
-                lastEmittedWm.put(wmKey, newWmTime);
+            long lastReceivedWatermark = lastReceivedWm.getValue(wmKey);
+            long newWm = Math.min(wmState.get(wmKey), lastReceivedWatermark);
+            if (newWm > lastEmittedWm.getValue(wmKey)) {
+                pendingOutput.add(new Watermark(newWm, wmKey));
+                lastEmittedWm.put(wmKey, newWm);
             }
         }
 
@@ -286,6 +293,94 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
     @Override
     public boolean tryProcessWatermark(@Nonnull Watermark watermark) {
+        return true;
+    }
+
+    @Override
+    public boolean saveToSnapshot() {
+        if (snapshotTraverser == null) {
+            List<Entry<?, ?>> snapshotList = new ArrayList<>();
+
+            for (Entry<Byte, Long> e : wmState.entrySet()) {
+                Long timestamp = e.getValue();
+                if (timestamp != OBJECT_2_LONG_MAP_MIN_VALUE) {
+                    snapshotList.add(
+                            entry(
+                                    broadcastKey(WM_STATE_KEY),
+                                    WatermarkStateValue.wmValue(e.getKey(), timestamp)
+                            )
+                    );
+                }
+            }
+
+            for (Entry<?, Long> e : lastReceivedWm.entrySet()) {
+                Long timestamp = e.getValue();
+                if (timestamp != OBJECT_2_LONG_MAP_MIN_VALUE) {
+                    snapshotList.add(
+                            entry(
+                                    broadcastKey(LAST_RECEIVED_WM_KEY),
+                                    WatermarkStateValue.wmValue((Byte) e.getKey(), timestamp)
+                            )
+                    );
+                }
+            }
+
+            Stream<Entry<?, ?>> leftBufferStream = buffer[0].content()
+                    .stream()
+                    .map(row -> entry(
+                            ObjectArrayKey.project(row, joinInfo.leftEquiJoinIndices()),
+                            BufferSnapshotValue.bufferValue(row, 0)
+                    ));
+
+            Stream<Entry<?, ?>> rightBufferStream = buffer[1].content()
+                    .stream()
+                    .map(row -> entry(
+                            ObjectArrayKey.project(row, joinInfo.rightEquiJoinIndices()),
+                            BufferSnapshotValue.bufferValue(row, 1)
+                    ));
+
+            snapshotTraverser =
+                    traverseStream(Stream.of(snapshotList.stream(), leftBufferStream, rightBufferStream).flatMap(identity()))
+                            .onFirstNull(() -> snapshotTraverser = null);
+        }
+
+        return emitFromTraverserToSnapshot(snapshotTraverser);
+    }
+
+    @Override
+    protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
+        if (key instanceof BroadcastKey) {
+            BroadcastKey<?> broadcastKey = (BroadcastKey<?>) key;
+            WatermarkStateValue wmValue = (WatermarkStateValue) value;
+            // We pick minimal available watermark (both emitted/received) among all processors
+            if (WM_STATE_KEY.equals(broadcastKey.key())) {
+                Long stateWm = wmState.get(wmValue.key());
+                boolean shouldUpdateReceived = stateWm <= OBJECT_2_LONG_MAP_MIN_VALUE || stateWm > wmValue.timestamp();
+                if (shouldUpdateReceived) {
+                    wmState.put(wmValue.key(), wmValue.timestamp());
+                }
+            } else if (LAST_RECEIVED_WM_KEY.equals(broadcastKey.key())) {
+                Long stateWm = lastReceivedWm.get(wmValue.key());
+                boolean shouldUpdateReceived = stateWm <= OBJECT_2_LONG_MAP_MIN_VALUE || stateWm > wmValue.timestamp();
+                if (shouldUpdateReceived) {
+                    lastReceivedWm.put(wmValue.key(), wmValue.timestamp());
+                }
+            } else {
+                throw new JetException("Unexpected broadcast key: " + broadcastKey.key());
+            }
+            return;
+        }
+
+        if (value instanceof BufferSnapshotValue) {
+            BufferSnapshotValue bsv = (BufferSnapshotValue) value;
+            buffer[bsv.bufferOrdinal()].add(bsv.row());
+        } else {
+            throw new AssertionError("Unreachable");
+        }
+    }
+
+    @Override
+    public boolean closeIsCooperative() {
         return true;
     }
 
@@ -329,7 +424,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             limits[i] = wmState.getOrDefault(extractors.get(i).getKey(), Long.MIN_VALUE);
         }
 
-        long[] newMinimums = buffer[ordinal].clearExpiredItems(limits, row -> {
+        buffer[ordinal].clearExpiredItems(limits, row -> {
             if (outerJoinSide == ordinal && unusedEventsTracker.remove(row)) {
                 // 5.4 : If doing an outer join, emit events removed from the buffer,
                 // with `null`s for the other side, if the event was never joined.
@@ -339,18 +434,14 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                 }
             }
         });
-
-        for (int i = 0; i < extractors.size(); i++) {
-            minimumBufferTimes.put(extractors.get(i).getKey(), newMinimums[i]);
-        }
     }
 
     private List<Entry<Byte, ToLongFunctionEx<JetSqlRow>>> timeExtractors(int ordinal) {
         return ordinal == 0 ? leftTimeExtractors : rightTimeExtractors;
     }
-
     // If current join type is LEFT/RIGHT and a row don't have a matching row on the other side
     // we should to produce input row with null-filled opposite side.
+
     private JetSqlRow composeRowWithNulls(JetSqlRow row, int ordinal) {
         JetSqlRow joinedRow = null;
         if (ordinal == 1 && joinInfo.isRightOuter()) {
@@ -384,6 +475,11 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         };
     }
 
+    enum StreamToStreamJoinBroadcastKeys {
+        WM_STATE_KEY,
+        LAST_RECEIVED_WM_KEY
+    }
+
     public static final class StreamToStreamJoinProcessorSupplier implements ProcessorSupplier, DataSerializable {
         private JetJoinInfo joinInfo;
         private Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors;
@@ -411,6 +507,15 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             this.leftInputColumnCount = leftInputColumnCount;
             this.rightInputColumnCount = rightInputColumnCount;
 
+        }
+
+        @Override
+        public void init(@Nonnull Context context) throws Exception {
+            if ((!joinInfo.isEquiJoin() || !joinInfo.isInner())
+                    && context.processingGuarantee() != ProcessingGuarantee.NONE) {
+                throw new UnsupportedOperationException(
+                        "Non-equi-join fault-tolerant stream-to-stream JOIN is not supported");
+            }
         }
 
         @Nonnull
@@ -450,8 +555,111 @@ public class StreamToStreamJoinP extends AbstractProcessor {
         }
     }
 
-    @Override
-    public boolean closeIsCooperative() {
-        return true;
+    private static final class BufferSnapshotValue implements DataSerializable {
+        private JetSqlRow row;
+        private int bufferOrdinal;
+
+        @SuppressWarnings("unused")
+        BufferSnapshotValue() {
+        }
+
+        private BufferSnapshotValue(JetSqlRow row, int bufferOrdinal) {
+            this.row = row;
+            this.bufferOrdinal = bufferOrdinal;
+        }
+
+        public JetSqlRow row() {
+            return row;
+        }
+
+        public int bufferOrdinal() {
+            return bufferOrdinal;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeInt(bufferOrdinal);
+            out.writeObject(row);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            bufferOrdinal = in.readInt();
+            row = in.readObject(JetSqlRow.class);
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (o == null || getClass() != o.getClass()) {
+                return false;
+            }
+            BufferSnapshotValue that = (BufferSnapshotValue) o;
+            return row.equals(that.row) && bufferOrdinal == that.bufferOrdinal;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(row, bufferOrdinal);
+        }
+
+        @Override
+        public String toString() {
+            return "BufferSnapshotValue{" +
+                    "row=" + row.get(0) +
+                    ", isLeftBuffer=" + bufferOrdinal +
+                    '}';
+        }
+
+        public static BufferSnapshotValue bufferValue(@Nonnull JetSqlRow row, int bufferOrdinal) {
+            return new BufferSnapshotValue(row, bufferOrdinal);
+        }
+    }
+
+    private static final class WatermarkStateValue implements DataSerializable {
+        private Byte key;
+        private Long timestamp;
+
+        WatermarkStateValue() {
+        }
+
+        private WatermarkStateValue(Byte key, Long timestamp) {
+            this.key = key;
+            this.timestamp = timestamp;
+        }
+
+        public Byte key() {
+            return key;
+        }
+
+        public Long timestamp() {
+            return timestamp;
+        }
+
+        @Override
+        public void writeData(ObjectDataOutput out) throws IOException {
+            out.writeByte(key);
+            out.writeLong(timestamp);
+        }
+
+        @Override
+        public void readData(ObjectDataInput in) throws IOException {
+            key = in.readByte();
+            timestamp = in.readLong();
+        }
+
+        @Override
+        public String toString() {
+            return "WatermarkValue{" +
+                    "key=" + key +
+                    ", timestamp=" + timestamp +
+                    '}';
+        }
+
+        public static WatermarkStateValue wmValue(@Nonnull Byte key, @Nonnull Long timestamp) {
+            return new WatermarkStateValue(key, timestamp);
+        }
     }
 }
