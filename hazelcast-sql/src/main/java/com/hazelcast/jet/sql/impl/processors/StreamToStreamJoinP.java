@@ -509,13 +509,11 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             this.postponeTimeMap = postponeTimeMap;
             this.leftInputColumnCount = leftInputColumnCount;
             this.rightInputColumnCount = rightInputColumnCount;
-
         }
 
         @Override
         public void init(@Nonnull Context context) throws Exception {
-            if ((!joinInfo.isEquiJoin() || !joinInfo.isInner())
-                    && context.processingGuarantee() != ProcessingGuarantee.NONE) {
+            if (!joinInfo.isEquiJoin() && context.processingGuarantee() != ProcessingGuarantee.NONE) {
                 throw new UnsupportedOperationException(
                         "Non-equi-join fault-tolerant stream-to-stream JOIN is not supported");
             }
