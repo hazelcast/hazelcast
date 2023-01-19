@@ -52,7 +52,7 @@ public class CPMemberInfoTest {
 
         // need a list of CPMemberInfo to trigger the default java serializer
         Data data = SERIALIZATION_SERVICE.toData(Arrays.asList(cpMemberInfo));
-        List<CPMemberInfo> cpMemberInfoList =  SERIALIZATION_SERVICE.toObject(data);
+        List<CPMemberInfo> cpMemberInfoList = SERIALIZATION_SERVICE.toObject(data);
         CPMemberInfo restoredCPMemberInfo = cpMemberInfoList.get(0);
         Address memberInfoAddress = restoredCPMemberInfo.getAddress();
 
@@ -67,7 +67,7 @@ public class CPMemberInfoTest {
 
         // need a list of CPMemberInfo to trigger the default java serializer
         Data data = SERIALIZATION_SERVICE.toData(Arrays.asList(cpMemberInfo));
-        List<CPMemberInfo> cpMemberInfoList =  SERIALIZATION_SERVICE.toObject(data);
+        List<CPMemberInfo> cpMemberInfoList = SERIALIZATION_SERVICE.toObject(data);
         CPMemberInfo restoredCPMemberInfo = cpMemberInfoList.get(0);
         Address memberInfoAddress = restoredCPMemberInfo.getAddress();
 
