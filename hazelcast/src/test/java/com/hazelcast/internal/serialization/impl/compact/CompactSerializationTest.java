@@ -482,7 +482,7 @@ public class CompactSerializationTest {
 
     private static class ClassWithInstantField {
         private final Instant instant;
-        public ClassWithInstantField(Instant instant) {
+        ClassWithInstantField(Instant instant) {
             this.instant = instant;
         }
 
@@ -510,7 +510,7 @@ public class CompactSerializationTest {
 
     private static class ClassWithInstantArrayField {
         private final Instant[] instants;
-        public ClassWithInstantArrayField(Instant[] instants) {
+        ClassWithInstantArrayField(Instant[] instants) {
             this.instants = instants;
         }
 
