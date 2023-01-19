@@ -33,11 +33,10 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicLong;
 
+import static com.hazelcast.internal.tpc.TpcTestSupport.terminate;
 import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_INT;
 import static com.hazelcast.internal.tpc.util.BitUtil.SIZEOF_LONG;
 import static com.hazelcast.internal.tpc.util.BufferUtil.put;
-import static com.hazelcast.internal.tpc.util.CloseUtil.closeQuietly;
-import static java.util.concurrent.TimeUnit.SECONDS;
 
 /**
  * Mimics an RPC call. So there are worker threads that send request with a call id and a payload. This request is
@@ -49,12 +48,11 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 public abstract class AsyncSocket_RpcTest {
     // use small buffers to cause a lot of network scheduling overhead (and shake down problems)
     public static final int SOCKET_BUFFER_SIZE = 16 * 1024;
-    public static int requestTotal = 20000;
+    public int iterations = 200;
     public final ConcurrentMap<Long, CompletableFuture> futures = new ConcurrentHashMap<>();
+
     private Eventloop clientEventloop;
     private Eventloop serverEventloop;
-    private AsyncSocket clientSocket;
-    private AsyncServerSocket serverSocket;
 
     public abstract Eventloop createEventloop();
 
@@ -66,18 +64,8 @@ public abstract class AsyncSocket_RpcTest {
 
     @After
     public void after() throws InterruptedException {
-        closeQuietly(clientSocket);
-        closeQuietly(serverSocket);
-
-        if (clientEventloop != null) {
-            clientEventloop.shutdown();
-            clientEventloop.awaitTermination(10, SECONDS);
-        }
-
-        if (serverEventloop != null) {
-            serverEventloop.shutdown();
-            serverEventloop.awaitTermination(10, SECONDS);
-        }
+        terminate(clientEventloop);
+        terminate(serverEventloop);
     }
 
     @Test
@@ -242,13 +230,11 @@ public abstract class AsyncSocket_RpcTest {
 
         AsyncSocket clientSocket = newClient(serverAddress);
 
-        System.out.println("Starting");
-
         AtomicLong callIdGenerator = new AtomicLong();
         List<WorkerThread> threads = new ArrayList<>();
-        int requestPerThread = requestTotal / concurrency;
+        int requestPerThread = iterations / concurrency;
         for (int k = 0; k < concurrency; k++) {
-            WorkerThread thread = new WorkerThread(requestPerThread, payloadSize, callIdGenerator);
+            WorkerThread thread = new WorkerThread(requestPerThread, payloadSize, callIdGenerator, clientSocket);
             threads.add(thread);
             thread.start();
         }
@@ -262,11 +248,13 @@ public abstract class AsyncSocket_RpcTest {
         private final int requests;
         private final byte[] payload;
         private final AtomicLong callIdGenerator;
+        private final AsyncSocket clientSocket;
 
-        public WorkerThread(int requests, int payloadSize, AtomicLong callIdGenerator) {
+        public WorkerThread(int requests, int payloadSize, AtomicLong callIdGenerator, AsyncSocket clientSocket) {
             this.requests = requests;
             this.payload = new byte[payloadSize];
             this.callIdGenerator = callIdGenerator;
+            this.clientSocket = clientSocket;
         }
 
         @Override
@@ -292,23 +280,17 @@ public abstract class AsyncSocket_RpcTest {
     }
 
     private AsyncSocket newClient(SocketAddress serverAddress) {
-        clientSocket = clientEventloop.openAsyncTcpSocket();
+        AsyncSocket clientSocket = clientEventloop.openTcpAsyncSocket();
         clientSocket.setTcpNoDelay(true);
-        clientSocket.setSoLinger(0);
         clientSocket.setSendBufferSize(SOCKET_BUFFER_SIZE);
         clientSocket.setReceiveBufferSize(SOCKET_BUFFER_SIZE);
         clientSocket.setReadHandler(new ReadHandler() {
-            private boolean firstTime = true;
             private ByteBuffer payloadBuffer;
             private long callId;
             private int payloadSize = -1;
 
             @Override
             public void onRead(ByteBuffer receiveBuffer) {
-                if (firstTime) {
-                    firstTime = false;
-                }
-
                 for (; ; ) {
                     if (payloadSize == -1) {
                         if (receiveBuffer.remaining() < SIZEOF_INT + SIZEOF_LONG) {
@@ -342,18 +324,15 @@ public abstract class AsyncSocket_RpcTest {
     }
 
     private AsyncServerSocket newServer(SocketAddress serverAddress) {
-        serverSocket = serverEventloop.openTcpServerSocket();
+        AsyncServerSocket serverSocket = serverEventloop.openTcpAsyncServerSocket();
         serverSocket.setReceiveBufferSize(SOCKET_BUFFER_SIZE);
         serverSocket.bind(serverAddress);
-        serverSocket.listen(10);
 
         serverSocket.accept(socket -> {
-            socket.setSoLinger(-1);
             socket.setTcpNoDelay(true);
             socket.setSendBufferSize(SOCKET_BUFFER_SIZE);
             socket.setReceiveBufferSize(serverSocket.getReceiveBufferSize());
             socket.setReadHandler(new ReadHandler() {
-                private boolean firstTime;
                 private ByteBuffer payloadBuffer;
                 private long callId;
                 private int payloadSize = -1;
@@ -361,10 +340,6 @@ public abstract class AsyncSocket_RpcTest {
 
                 @Override
                 public void onRead(ByteBuffer receiveBuffer) {
-                    if (firstTime) {
-                        firstTime = false;
-                    }
-
                     for (; ; ) {
                         if (payloadSize == -1) {
                             if (receiveBuffer.remaining() < SIZEOF_INT + SIZEOF_LONG) {
@@ -381,7 +356,6 @@ public abstract class AsyncSocket_RpcTest {
                             break;
                         }
 
-
                         payloadBuffer.flip();
                         IOBuffer responseBuf = responseAllocator.allocate(SIZEOF_INT + SIZEOF_LONG + payloadSize);
                         responseBuf.writeInt(payloadSize);
@@ -396,7 +370,6 @@ public abstract class AsyncSocket_RpcTest {
                     }
                 }
             });
-            System.out.println("Activating server side socket");
             socket.activate(serverEventloop);
         });
 

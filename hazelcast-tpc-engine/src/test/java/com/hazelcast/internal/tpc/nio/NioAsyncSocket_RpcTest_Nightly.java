@@ -14,27 +14,16 @@
  * limitations under the License.
  */
 
-package com.hazelcast.internal.tpc.util;
+package com.hazelcast.internal.tpc.nio;
 
-import sun.misc.Unsafe;
 
-import java.lang.reflect.Field;
+import com.hazelcast.test.annotation.NightlyTest;
+import org.junit.experimental.categories.Category;
 
-public final class UnsafeUtil {
+@Category(NightlyTest.class)
+public class NioAsyncSocket_RpcTest_Nightly extends NioAsyncSocket_RpcTest {
 
-    public static final Unsafe UNSAFE;
-
-    static {
-        try {
-            Field theUnsafeField = Unsafe.class.getDeclaredField("theUnsafe");
-            theUnsafeField.setAccessible(true);
-            UNSAFE = (Unsafe) theUnsafeField.get(null);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        }
-    }
-
-    private UnsafeUtil() {
+    public NioAsyncSocket_RpcTest_Nightly() {
+        iterations = 20000;
     }
 }

@@ -30,7 +30,7 @@ import java.lang.reflect.Field;
  */
 public class ProgressIndicator {
 
-    private static final Unsafe UNSAFE = UnsafeUtil.UNSAFE;
+    private static final Unsafe UNSAFE = UnsafeLocator.UNSAFE;
     private static final long OFFSET;
 
     static {

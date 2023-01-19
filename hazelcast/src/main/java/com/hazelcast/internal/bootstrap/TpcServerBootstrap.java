@@ -43,9 +43,11 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
+import static com.hazelcast.internal.util.ThreadUtil.createThreadPoolName;
 import static com.hazelcast.internal.server.ServerContext.KILO_BYTE;
 import static com.hazelcast.spi.properties.ClusterProperty.ALTO_ENABLED;
 import static com.hazelcast.spi.properties.ClusterProperty.ALTO_EVENTLOOP_COUNT;
@@ -111,6 +113,11 @@ public class TpcServerBootstrap {
         Configuration configuration = new Configuration();
         NioEventloopBuilder eventloopBuilder = new NioEventloopBuilder();
         eventloopBuilder.setThreadFactory(AltoEventloopThread::new);
+        AtomicInteger threadId = new AtomicInteger();
+        eventloopBuilder.setThreadNameSupplier(() -> createThreadPoolName(
+                nodeEngine.getHazelcastInstance().getName(),
+                "alto-eventloop"
+        ) + threadId.incrementAndGet());
         configuration.setEventloopBuilder(eventloopBuilder);
         configuration.setEventloopCount(eventloopCount());
         return new TpcEngine(configuration);
@@ -152,7 +159,7 @@ public class TpcServerBootstrap {
                     () -> new ClientAsyncReadHandler(nodeEngine.getNode().clientEngine);
             readHandlerSuppliers.put(eventloop, readHandlerSupplier);
 
-            AsyncServerSocket serverSocket = eventloop.openTcpServerSocket();
+            AsyncServerSocket serverSocket = eventloop.openTcpAsyncServerSocket();
             serverSockets.add(serverSocket);
             int receiveBufferSize = clientSocketConfig.getReceiveBufferSizeKB() * KILO_BYTE;
             int sendBufferSize = clientSocketConfig.getSendBufferSizeKB() * KILO_BYTE;

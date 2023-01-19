@@ -16,12 +16,16 @@
 
 package com.hazelcast.internal.tpc;
 
+import com.hazelcast.internal.util.ThreadAffinity;
 import org.junit.Test;
 
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
 
 public abstract class EventloopBuilderTest {
 
@@ -121,5 +125,31 @@ public abstract class EventloopBuilderTest {
     public void test_setSchedulerSupplier_whenNull() {
         EventloopBuilder builder = newBuilder();
         assertThrows(NullPointerException.class, () -> builder.setSchedulerSupplier(null));
+    }
+
+    @Test
+    public void test_setThreadAffinity_nullAffinityIsAllowed(){
+        EventloopBuilder builder = newBuilder();
+        builder.setThreadAffinity(null);
+
+        assertNull(builder.threadAffinity);
+    }
+
+
+    @Test
+    public void test_setThreadAffinity(){
+        EventloopBuilder builder = newBuilder();
+        ThreadAffinity affinity = new ThreadAffinity("1-5");
+        builder.setThreadAffinity(affinity);
+
+        assertSame(affinity, builder.threadAffinity);
+    }
+
+    @Test
+    public void test_setSpin(){
+        EventloopBuilder builder = newBuilder();
+        builder.setSpin(true);
+
+        assertTrue(builder.spin);
     }
 }

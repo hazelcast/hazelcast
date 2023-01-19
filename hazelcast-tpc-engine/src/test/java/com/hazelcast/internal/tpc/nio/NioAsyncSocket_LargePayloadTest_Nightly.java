@@ -16,21 +16,13 @@
 
 package com.hazelcast.internal.tpc.nio;
 
-import com.hazelcast.internal.tpc.Eventloop;
-import com.hazelcast.internal.tpc.EventloopTest;
-import com.hazelcast.internal.tpc.EventloopType;
+import com.hazelcast.test.annotation.NightlyTest;
+import org.junit.experimental.categories.Category;
 
-public class NioEventloopTest extends EventloopTest {
+@Category(NightlyTest.class)
+public class NioAsyncSocket_LargePayloadTest_Nightly extends NioAsyncSocket_LargePayloadTest{
 
-    @Override
-    public EventloopType getType() {
-        return EventloopType.NIO;
-    }
-
-    @Override
-    public Eventloop createEventloop() {
-        NioEventloop eventloop = new NioEventloop();
-        loops.add(eventloop);
-        return eventloop;
+    public NioAsyncSocket_LargePayloadTest_Nightly(){
+        iterations = 20000;
     }
 }

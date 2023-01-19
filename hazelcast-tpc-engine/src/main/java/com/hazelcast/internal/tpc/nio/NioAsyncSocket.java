@@ -22,11 +22,13 @@ import com.hazelcast.internal.tpc.iobuffer.IOBuffer;
 import jdk.net.ExtendedSocketOptions;
 import org.jctools.queues.MpmcArrayQueue;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.SocketAddress;
 import java.net.SocketOption;
 import java.nio.ByteBuffer;
+import java.nio.channels.CancelledKeyException;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SelectionKey;
 import java.nio.channels.Selector;
@@ -43,7 +45,6 @@ import static com.hazelcast.internal.tpc.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.tpc.util.Preconditions.checkPositive;
 import static com.hazelcast.internal.tpc.util.ReflectionUtil.findStaticFieldValue;
 import static java.net.StandardSocketOptions.SO_KEEPALIVE;
-import static java.net.StandardSocketOptions.SO_LINGER;
 import static java.net.StandardSocketOptions.SO_RCVBUF;
 import static java.net.StandardSocketOptions.SO_SNDBUF;
 import static java.net.StandardSocketOptions.TCP_NODELAY;
@@ -73,7 +74,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     /**
      * Opens a stream based IPv4 NioAsyncSocket.
      * <p/>
-     * To prevent coupling, it is better to use the {@link Eventloop#openAsyncTcpSocket()}.
+     * To prevent coupling, it is better to use the {@link Eventloop#openTcpAsyncSocket()}.
      *
      * @return the opened NioAsyncSocket.
      */
@@ -87,7 +88,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     private final AtomicReference<Thread> flushThread = new AtomicReference<>();
     private MpmcArrayQueue<IOBuffer> unflushedBufs;
     private final EventLoopHandler eventLoopHandler = new EventLoopHandler();
-    private CompletableFuture<AsyncSocket> connectFuture;
+    private CompletableFuture<Void> connectFuture;
 
     // immutable state
     private final SocketChannel socketChannel;
@@ -186,6 +187,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     @Override
     public void setTcpKeepaliveIntvl(int keepaliveIntvl) {
         checkPositive(keepaliveIntvl, "keepaliveIntvl");
+
         if (TCP_KEEPINTERVAL == null) {
             if (TCP_KEEPINTERVAL_PRINTED.compareAndSet(false, true)) {
                 logger.warning("Ignoring NioAsyncSocket.setTcpKeepaliveIntvl. " +
@@ -218,6 +220,7 @@ public final class NioAsyncSocket extends AsyncSocket {
     @Override
     public void setTcpKeepAliveProbes(int keepAliveProbes) {
         checkPositive(keepAliveProbes, "keepAliveProbes");
+
         if (TCP_KEEPCOUNT == null) {
             if (TCP_KEEPCOUNT_PRINTED.compareAndSet(false, true)) {
                 logger.warning("Ignoring NioAsyncSocket.setTcpKeepAliveProbes. " +
@@ -244,24 +247,6 @@ public final class NioAsyncSocket extends AsyncSocket {
             } catch (IOException e) {
                 throw new UncheckedIOException(e);
             }
-        }
-    }
-
-    @Override
-    public void setSoLinger(int soLinger) {
-        try {
-            socketChannel.setOption(SO_LINGER, soLinger);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
-    @Override
-    public int getSoLinger() {
-        try {
-            return socketChannel.getOption(SO_LINGER);
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
         }
     }
 
@@ -347,23 +332,24 @@ public final class NioAsyncSocket extends AsyncSocket {
             throw new IllegalStateException("Can't activate " + this + ": readhandler isn't set");
         }
 
-        this.eventloop = checkInstanceOf(NioEventloop.class, eventloop, "evenloop");
-        this.eventloopThread = this.eventloop.eventloopThread();
+        this.eventloop = checkInstanceOf(NioEventloop.class, eventloop, "eventloop");
+        this.eventloopThread = eventloop.eventloopThread();
         this.unflushedBufs = new MpmcArrayQueue<>(unflushedBufsCapacity);
-        if (!this.eventloop.registerCloseable(NioAsyncSocket.this)) {
-            throw new IllegalStateException("Can't activate NioAsynSocket: Eventloop is shutdown");
-        }
 
         // todo: if something fails within this task, you just get a logged exception and that is it.
-        boolean offered = this.eventloop.offer(() -> {
-            selector = this.eventloop.selector;
-            receiveBuffer = ByteBuffer.allocateDirect(getReceiveBufferSize());
-            if (!clientSide) {
-                try {
-                    key = socketChannel.register(selector, OP_READ, eventLoopHandler);
-                } catch (ClosedChannelException e) {
-                    throw new UncheckedIOException(e);
+        boolean offered = eventloop.offer(() -> {
+            try {
+                selector = this.eventloop.selector;
+                receiveBuffer = ByteBuffer.allocateDirect(getReceiveBufferSize());
+                if (!clientSide) {
+                    try {
+                        key = socketChannel.register(selector, OP_READ, eventLoopHandler);
+                    } catch (ClosedChannelException e) {
+                        throw new UncheckedIOException(e);
+                    }
                 }
+            } catch (Exception e) {
+                close();
             }
         });
 
@@ -450,67 +436,80 @@ public final class NioAsyncSocket extends AsyncSocket {
     }
 
     @Override
-    protected void close0() {
-        closeQuietly(socketChannel.socket());
+    protected void close0() throws IOException {
+        // First we need to obtain the key, because as soon as the
+        // socketChannel is closed, the key is deregistered.
+        // Can be called on any thread, so we need to make use of the
+        // synchronization of the socketChannel to obtain the key
+        SelectionKey key = socketChannel.keyFor(selector);
 
-        if (eventloop != null) {
-            eventloop.deregisterCloseable(this);
+        closeQuietly(socketChannel);
+
+        if (key != null) {
+            key.cancel();
         }
+
+        super.close0();
     }
 
     @Override
-    public CompletableFuture<AsyncSocket> connect(SocketAddress address) {
+    public CompletableFuture<Void> connect(SocketAddress address) {
         checkNotNull(address, "address");
+
+        CompletableFuture<Void> future = new CompletableFuture<>();
         if (eventloop == null) {
             throw new IllegalStateException("Can't connect, NioAsyncSocket isn't activated.");
         }
+
         if (logger.isInfoEnabled()) {
             logger.info("Connect to address:" + address);
         }
 
-        CompletableFuture<AsyncSocket> future = new CompletableFuture<>();
-        eventloop.offer(() -> {
+         eventloop.offer(() -> {
             try {
                 key = socketChannel.register(selector, OP_CONNECT, eventLoopHandler);
                 connectFuture = future;
                 socketChannel.connect(address);
             } catch (IOException e) {
-                throw new UncheckedIOException(e);
+                connectFuture.completeExceptionally(e);
             }
         });
         return future;
     }
 
-    private class EventLoopHandler implements NioSelectedKeyListener, Runnable {
+    private class EventLoopHandler implements SelectionKeyListener, Runnable {
 
         @Override
         public void run() {
             try {
                 handleWriteReady();
             } catch (Exception e) {
-                handleException(e);
+                close(null, e);
             }
         }
 
         @Override
-        public void handleException(Exception e) {
-            logger.warning("Closing NioAsyncSocket due to exception", e);
-            close();
+        public void close(String reason, Exception cause) {
+              NioAsyncSocket.this.close(reason, cause);
         }
 
         @Override
         public void handle(SelectionKey key) throws IOException {
-            int readyOp = key.readyOps();
+            if (!key.isValid()) {
+                throw new CancelledKeyException();
+            }
 
-            if (key.isValid() && (readyOp & OP_READ) != 0) {
+            int readyOps = key.readyOps();
+
+            if ((readyOps & OP_READ) != 0) {
                 handleReadReady();
             }
 
-            if (key.isValid() && (readyOp & OP_WRITE) != 0) {
+            if ((readyOps & OP_WRITE) != 0) {
                 handleWriteReady();
             }
 
-            if (key.isValid() && (readyOp & OP_CONNECT) != 0) {
+            if ((readyOps & OP_CONNECT) != 0) {
                 handleConnectReady();
             }
         }
@@ -519,9 +518,10 @@ public final class NioAsyncSocket extends AsyncSocket {
             readEvents.inc();
 
             int read = socketChannel.read(receiveBuffer);
-            //System.out.println(this + " bytes read: " + bytesRead);
+            //System.out.println(this + " bytes read: " + read);
+
             if (read == -1) {
-                close();
+                throw new EOFException("Remote socket closed!");
             } else {
                 bytesRead.inc(read);
                 receiveBuffer.flip();
@@ -536,12 +536,14 @@ public final class NioAsyncSocket extends AsyncSocket {
             writeEvents.inc();
 
             ioVector.populate(unflushedBufs);
+
             long written = ioVector.write(socketChannel);
 
             bytesWritten.inc(written);
             //System.out.println(this + " bytes written:" + written);
 
             if (ioVector.isEmpty()) {
+                // everything got written
                 int interestOps = key.interestOps();
 
                 // clear the OP_WRITE flag if it was set
@@ -566,7 +568,7 @@ public final class NioAsyncSocket extends AsyncSocket {
                 }
 
                 socketChannel.register(selector, OP_READ, this);
-                connectFuture.complete(NioAsyncSocket.this);
+                connectFuture.complete(null);
             } catch (IOException e) {
                 connectFuture.completeExceptionally(e);
                 throw e;

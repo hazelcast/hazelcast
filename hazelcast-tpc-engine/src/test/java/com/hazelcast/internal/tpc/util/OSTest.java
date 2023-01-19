@@ -26,7 +26,7 @@ public class OSTest {
 
     @Test
     public void test_pageSize(){
-        assertEquals(UnsafeUtil.UNSAFE.pageSize(), OS.pageSize());
+        assertEquals(UnsafeLocator.UNSAFE.pageSize(), OS.pageSize());
     }
 
     @Test
