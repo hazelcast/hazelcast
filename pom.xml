@@ -468,7 +468,7 @@
                         Version 1.6.1 produces harmless, but noisy warning about missing dependencies.
                         See https://github.com/mojohaus/extra-enforcer-rules/issues/225
                         -->
-                        <version>1.5.1</version>
+                        <version>1.6.1</version>
                     </dependency>
                 </dependencies>
             </plugin>
