@@ -508,7 +508,6 @@ public class MapPredicateJsonTest extends HazelcastTestSupport {
                 .add("id", 171);
 
         IMap<String, HazelcastJsonValue> map = instance.getMap(randomMapName());
-        System.out.println(">>> " + object.toString());
         HazelcastJsonValue p1 = putJsonString(map, "one", object);
 
         Collection<HazelcastJsonValue> vals = map.values(Predicates.equal("outerArray[any].one", 1));
