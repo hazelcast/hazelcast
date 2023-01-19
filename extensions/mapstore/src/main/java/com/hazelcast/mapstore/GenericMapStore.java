@@ -44,7 +44,6 @@ import com.hazelcast.sql.SqlService;
 
 import javax.annotation.Nonnull;
 import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -416,88 +415,20 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
     public void store(K key, GenericRecord record) {
         awaitSuccessfulInit();
 
-        int idPos = -1;
-        Object[] params = new Object[columnMetadataList.size()];
-        for (int i = 0; i < columnMetadataList.size(); i++) {
-            SqlColumnMetadata columnMetadata = columnMetadataList.get(i);
+        JDBCParameters jdbcParameters = GenericRecordUtils.toJDBCParameters(key, record, columnMetadataList,
+                properties.idColumn);
 
-            String columnMetadataName = columnMetadata.getName();
-            if (columnMetadataName.equals(properties.idColumn)) {
-                idPos = i;
-            }
 
-            switch (columnMetadata.getType()) {
-                case VARCHAR:
-                    params[i] = record.getString(columnMetadataName);
-                    break;
-
-                case BOOLEAN:
-                    params[i] = record.getBoolean(columnMetadataName);
-                    break;
-
-                case TINYINT:
-                    params[i] = record.getInt8(columnMetadataName);
-                    break;
-
-                case SMALLINT:
-                    params[i] = record.getInt16(columnMetadataName);
-                    break;
-
-                case INTEGER:
-                    params[i] = record.getInt32(columnMetadataName);
-                    break;
-
-                case BIGINT:
-                    params[i] = record.getInt64(columnMetadataName);
-                    break;
-
-                case REAL:
-                    params[i] = record.getFloat32(columnMetadataName);
-                    break;
-
-                case DOUBLE:
-                    params[i] = record.getFloat64(columnMetadataName);
-                    break;
-
-                case DATE:
-                    params[i] = record.getDate(columnMetadataName);
-                    break;
-
-                case TIME:
-                    params[i] = record.getTime(columnMetadataName);
-                    break;
-
-                case TIMESTAMP:
-                    params[i] = record.getTimestamp(columnMetadataName);
-                    break;
-
-                case TIMESTAMP_WITH_TIME_ZONE:
-                    params[i] = record.getTimestampWithTimezone(columnMetadataName);
-                    break;
-
-                case DECIMAL:
-                    params[i] = record.getDecimal(columnMetadataName);
-                    break;
-
-                default:
-                    throw new HazelcastException("Column type " + columnMetadata.getType() + " not supported");
-            }
-        }
-        try (SqlResult ignored = sql.execute(queries.storeInsert(), params)) {
+        try (SqlResult ignored = sql.execute(queries.storeInsert(), jdbcParameters.getParams())) {
         } catch (Exception e) {
 
             if (isIntegrityConstraintViolation(e)) {
 
                 // Try to update the row
-
-                // Move the id parameter to last position and shift everything else down
-                List<Object> paramsList = new ArrayList<>(Arrays.asList(params));
-                Object idValue = paramsList.remove(idPos);
-                paramsList.add(idValue);
-                params = paramsList.toArray(new Object[0]);
+                jdbcParameters.shiftParametersForUpdate();
 
                 String updateSQL = queries.storeUpdate();
-                sql.execute(updateSQL, params).close();
+                sql.execute(updateSQL, jdbcParameters.getParams()).close();
             } else {
                 throw e;
             }
