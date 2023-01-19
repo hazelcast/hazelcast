@@ -211,7 +211,8 @@ public final class ValueReaderWriters {
         }
 
         // The nested field might not be Compact serializable
-        verifyFieldClassIsCompactSerializable(type, clazz);
+        boolean isRegisteredAsCompact = compactStreamSerializer.isRegisteredAsCompact(type);
+        verifyFieldClassIsCompactSerializable(type, clazz, isRegisteredAsCompact);
         verifyFieldClassShouldBeSerializedAsCompact(compactStreamSerializer, type, clazz);
         return new CompactReaderWriter(fieldName);
     }
@@ -229,7 +230,8 @@ public final class ValueReaderWriters {
         }
 
         // Elements of the array might not be Compact serializable
-        verifyFieldClassIsCompactSerializable(componentType, clazz);
+        boolean isRegisteredAsCompact = compactStreamSerializer.isRegisteredAsCompact(componentType);
+        verifyFieldClassIsCompactSerializable(componentType, clazz, isRegisteredAsCompact);
         verifyFieldClassShouldBeSerializedAsCompact(compactStreamSerializer, componentType, clazz);
         return new CompactArrayReaderWriter(fieldName, componentType);
     }

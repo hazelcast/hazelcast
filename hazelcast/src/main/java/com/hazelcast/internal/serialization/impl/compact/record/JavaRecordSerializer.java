@@ -138,7 +138,8 @@ public class JavaRecordSerializer implements CompactSerializer<Object> {
 
     private void populateReadersWriters(Class<?> clazz) {
         // The top level class might not be Compact serializable
-        CompactUtil.verifyClassIsCompactSerializable(clazz);
+        boolean isRegisteredAsCompact = compactStreamSerializer.isRegisteredAsCompact(clazz);
+        CompactUtil.verifyClassIsCompactSerializable(clazz, isRegisteredAsCompact);
 
         try {
             Object[] recordComponents = (Object[]) getRecordComponentsMethod.invoke(clazz);
