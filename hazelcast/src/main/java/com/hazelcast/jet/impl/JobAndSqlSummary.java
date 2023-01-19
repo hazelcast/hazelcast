@@ -106,7 +106,7 @@ public class JobAndSqlSummary {
     }
 
     /**
-     * @return True, if the job has been cancelled based on a user request,
+     * @return true, if the job has been cancelled based on a user request,
      * false otherwise (also while the job is running).
      */
     public boolean isUserCancelled() {
