@@ -19,21 +19,16 @@ package com.hazelcast.internal.util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 
-import java.lang.reflect.Method;
+import java.util.Arrays;
 
 /**
  * Utility for checking runtime Java version.
  * <p>
- * This class relies on the {@code java.lang.Runtime.Version.major()} method
- * available since Java 9, therefore it's accessed via reflection. If
- * {@code java.lang.Runtime.Version} is not present, we treat the runtime
- * environment as Java 8. Also, if there is any exception thrown during the
- * reflective access, we fall back to Java 8.
- * <p>
- * Since we rely on a public Java API returning the major Java version
+ * Since we rely on a public Java API returning the major Java version,
  * version comparisons can be done safely even with versions that didn't
  * exist at the time the given Hazelcast version was released.
- * See {@link FutureJavaVersion).
+ *
+ * @see FutureJavaVersion
  */
 public enum JavaVersion implements JavaMajorVersion {
     JAVA_8(8),
@@ -53,7 +48,7 @@ public enum JavaVersion implements JavaMajorVersion {
 
     public static final JavaMajorVersion CURRENT_VERSION = detectCurrentVersion();
 
-    private int majorVersion;
+    private final int majorVersion;
 
     JavaVersion(int majorVersion) {
         this.majorVersion = majorVersion;
@@ -65,20 +60,14 @@ public enum JavaVersion implements JavaMajorVersion {
     }
 
     /**
-     * Check if the current runtime version is at least the given version.
-     *
-     * @param version version to be compared against the current runtime version
-     * @return Return true if current runtime version of Java is the same or greater than given version.
+     * Check if the current runtime version is greater than or equal to the given version.
      */
     public static boolean isAtLeast(JavaVersion version) {
         return isAtLeast(CURRENT_VERSION, version);
     }
 
     /**
-     * Check if the current runtime version is at most the given version.
-     *
-     * @param version version to be compared against the current runtime version
-     * @return Return true if current runtime version of Java is the same or less than given version.
+     * Check if the current runtime version is less than or equal to the given version.
      */
     public static boolean isAtMost(JavaVersion version) {
         return isAtMost(CURRENT_VERSION, version);
@@ -92,60 +81,47 @@ public enum JavaVersion implements JavaMajorVersion {
         return currentVersion.getMajorVersion() <= maxVersion.getMajorVersion();
     }
 
-    private static JavaVersion valueOf(int majorVersion) {
-        for (JavaVersion version : values()) {
-            if (version.majorVersion == majorVersion) {
-                return version;
-            }
-        }
-
-        return null;
-    }
-
+    /**
+     * <pre>
+     * <= JDK 8
+     *     VNUM  := 1\.[1-9]\.[0-9](_[0-9]{2})?         Version number
+     *     PRE   := [a-zA-Z0-9]+                        Pre-release identifier
+     *     java.version
+     *           := $VNUM(-$PRE)*
+     * >= JDK 9
+     *     VNUM  := [1-9][0-9]*(\.(0|[1-9][0-9]*))*     Version number
+     *     PRE   := [a-zA-Z0-9]+                        Pre-release identifier
+     *     BUILD := 0|[1-9][0-9]*                       Build number
+     *     OPT   := [-a-zA-Z0-9\.]+                     Build information
+     *     java.version
+     *           := $VNUM(-$PRE)?\+$BUILD(-$OPT)?
+     *            | $VNUM-$PRE(-$OPT)?
+     *            | $VNUM(+-$OPT)?
+     * </pre>
+     * @see <a href="https://www.oracle.com/java/technologies/javase/versioning-naming.html">
+     *      J2SE SDK/JRE Version String Naming Convention (<= JDK 8)
+     * @see <a href="https://openjdk.org/jeps/223">
+     *      JEP 223: New Version-String Scheme (>= JDK 9)
+     */
     private static JavaMajorVersion detectCurrentVersion() {
-        final ILogger logger = Logger.getLogger(JavaVersion.class);
-        final Class runtimeClass = Runtime.class;
-        final Class versionClass;
+        String[] version = System.getProperty("java.version").split("[-+.]");
+        int major = Integer.parseInt(version[version[0].equals("1") ? 1 : 0]);
 
-        try {
-            versionClass = Class.forName("java.lang.Runtime$Version");
-        } catch (ClassNotFoundException e) {
-            // if Runtime is present but Runtime.Version doesn't, it's Java8 for sure
-            if (logger.isFineEnabled()) {
-                logger.fine("Detected runtime version: Java 8");
-            }
-            return JAVA_8;
+        ILogger logger = Logger.getLogger(JavaVersion.class);
+        if (logger.isFineEnabled()) {
+            logger.fine("Detected runtime version: Java " + major);
         }
 
-        try {
-            Method versionMethod = runtimeClass.getDeclaredMethod("version");
-            Object versionObj = versionMethod.invoke(Runtime.getRuntime());
-            Method majorMethod = versionClass.getDeclaredMethod("major");
-            int majorVersion = (int) majorMethod.invoke(versionObj);
-
-            if (logger.isFineEnabled()) {
-                logger.fine("Detected runtime version: Java " + majorVersion);
-            }
-
-            JavaVersion foundVersion = valueOf(majorVersion);
-            if (foundVersion != null) {
-                return foundVersion;
-            }
-
-            return new FutureJavaVersion(majorVersion);
-        } catch (Exception e) {
-            logger.warning("Unable to detect Java version, falling back to Java 8", e);
-            return JAVA_8;
-        }
+        return Arrays.<JavaMajorVersion>stream(values())
+                .filter(v -> v.getMajorVersion() == major).findFirst()
+                .orElseGet(() -> new FutureJavaVersion(major));
     }
 
     /**
-     * Represents a future Java version that has not yet added to the
-     * {@link JavaVersion} enum. This class allows comparison of known
-     * versions against future, not yet listed (in the enum) Java versions,
-     * making {@link JavaVersion#isAtLeast(JavaVersion)} and
-     * {@link JavaVersion#isAtMost(JavaVersion)} methods usable in this
-     * case too.
+     * Represents a future Java version that has not yet added to the {@link JavaVersion}
+     * enum. This class allows comparison of known versions against future, not yet
+     * listed (in the enum) Java versions, making {@link #isAtLeast(JavaVersion)} and
+     * {@link #isAtMost(JavaVersion)} methods usable in this case too.
      */
     static class FutureJavaVersion implements JavaMajorVersion {
         private final int majorVersion;
