@@ -53,12 +53,12 @@ public class JoinNestedLoopPhysicalRel extends JoinPhysicalRel {
         super(cluster, traitSet, left, right, condition, joinType);
     }
 
-    public Expression<Boolean> rightFilter(QueryParameterMetadata parameterMetadata) {
-        return ((HazelcastPhysicalScan) getRight()).filter(parameterMetadata);
+    public RexNode rightFilter() {
+        return ((HazelcastPhysicalScan) getRight()).filter();
     }
 
-    public List<Expression<?>> rightProjection(QueryParameterMetadata parameterMetadata) {
-        return ((HazelcastPhysicalScan) getRight()).projection(parameterMetadata);
+    public List<RexNode> rightProjection() {
+        return ((HazelcastPhysicalScan) getRight()).projection();
     }
 
     public JetJoinInfo joinInfo(QueryParameterMetadata parameterMetadata) {
