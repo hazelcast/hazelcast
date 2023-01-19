@@ -3223,9 +3223,9 @@ public class Config {
     }
 
     /**
-     * Gets the alto config.
+     * Gets the Alto config.
      *
-     * @return the alto configuration
+     * @return the Alto configuration
      * @since 5.3
      */
     @Beta
@@ -3235,9 +3235,9 @@ public class Config {
     }
 
     /**
-     * Sets the alto config.
+     * Sets the Alto config.
      *
-     * @param altoConfig alto configuration to be set
+     * @param altoConfig Alto configuration to be set
      * @return this config
      * @throws IllegalArgumentException if altoConfig is null
      * @since 5.3

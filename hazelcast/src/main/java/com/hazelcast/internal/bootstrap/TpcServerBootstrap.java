@@ -229,7 +229,7 @@ public class TpcServerBootstrap {
             }
         }
 
-        throw new HazelcastException("Allowed alto socket port range isn't enough.");
+        throw new HazelcastException("Allowed Alto socket port range isn't enough.");
     }
 
     public void shutdown() {

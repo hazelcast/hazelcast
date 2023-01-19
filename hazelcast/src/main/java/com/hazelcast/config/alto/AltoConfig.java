@@ -20,19 +20,19 @@ public class AltoConfig {
     private int eventloopCount = Runtime.getRuntime().availableProcessors();
 
     /**
-     * Gets the enabled flag which defines alto is enabled or not.
+     * Gets the enabled flag which defines Alto is enabled or not.
      *
-     * @return true if alto is enabled
+     * @return true if Alto is enabled
      */
     public boolean isEnabled() {
         return enabled;
     }
 
     /**
-     * Sets the enabled flag which defines alto is enabled or not.
+     * Sets the enabled flag which defines Alto is enabled or not.
      *
      * @param enabled a boolean to enable or disable alto
-     * @return this alto configuration
+     * @return this Alto configuration
      */
     @Nonnull
     public AltoConfig setEnabled(boolean enabled) {
@@ -58,7 +58,7 @@ public class AltoConfig {
      * available processors.
      *
      * @param eventloopCount the number of eventloop threads to set
-     * @return this alto configuration
+     * @return this Alto configuration
      * @throws IllegalArgumentException if eventloopCount isn't positive
      * @see Runtime#availableProcessors()
      * @see com.hazelcast.internal.tpc.Eventloop

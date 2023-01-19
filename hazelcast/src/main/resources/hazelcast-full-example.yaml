@@ -614,11 +614,11 @@ hazelcast:
   # - "alto-socket":
   #   Socket configuration for Alto. In Alto, each eventloop has its own socket.
   #   - "port-range":
-  #       Configures the port range available for alto sockets.
+  #       Configures the port range available for Alto sockets.
   #   - "receive-buffer-size-kb":
-  #       Configures SO_RCVBUF socket option for alto sockets.
+  #       Configures SO_RCVBUF socket option for Alto sockets.
   #   - "send-buffer-size-kb":
-  #       Configures SO_SNDBUF socket option for alto sockets.
+  #       Configures SO_SNDBUF socket option for Alto sockets.
   network:
     public-address: 11.22.33.44:5555
     port:
@@ -3107,11 +3107,11 @@ hazelcast:
   #      - "alto-socket":
   #        Socket configuration for Alto. In Alto, each eventloop has its own socket.
   #        - "port-range":
-  #            Configures the port range available for alto sockets.
+  #            Configures the port range available for Alto sockets.
   #        - "receive-buffer-size-kb":
-  #            Configures SO_RCVBUF socket option for alto sockets.
+  #            Configures SO_RCVBUF socket option for Alto sockets.
   #        - "send-buffer-size-kb":
-  #            Configures SO_SNDBUF socket option for alto sockets.
+  #            Configures SO_SNDBUF socket option for Alto sockets.
   #
   #  * "rest-server-socket-endpoint-config":
   #      Controls access to Hazelcast HTTP REST API.

@@ -5022,15 +5022,15 @@
       "properties": {
         "port-range": {
           "type": "string",
-          "description": "Configures the port range available for alto sockets."
+          "description": "Configures the port range available for Alto sockets."
         },
         "receive-buffer-size-kb": {
           "type": "integer",
-          "description": "Configures SO_RCVBUF socket option for alto sockets."
+          "description": "Configures SO_RCVBUF socket option for Alto sockets."
         },
         "send-buffer-size-kb": {
           "type": "integer",
-          "description": "Configures SO_SNDBUF socket option for alto sockets."
+          "description": "Configures SO_SNDBUF socket option for Alto sockets."
         }
       },
       "description": "Socket configuration for Alto. In Alto, each eventloop has its own socket."

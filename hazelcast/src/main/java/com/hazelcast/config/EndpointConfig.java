@@ -279,9 +279,9 @@ public class EndpointConfig implements NamedConfig {
     }
 
     /**
-     * Gets the alto socket config.
+     * Gets the Alto socket config.
      *
-     * @return the alto socket config
+     * @return the Alto socket config
      * @see com.hazelcast.config.alto.AltoConfig
      * @since 5.3
      */
@@ -292,9 +292,9 @@ public class EndpointConfig implements NamedConfig {
     }
 
     /**
-     * Sets the alto socket config.
+     * Sets the Alto socket config.
      *
-     * @param altoSocketConfig alto socket config to set
+     * @param altoSocketConfig Alto socket config to set
      * @return this endpoint config
      * @throws IllegalArgumentException if altoSocketConfig is null
      * @see com.hazelcast.config.alto.AltoConfig
