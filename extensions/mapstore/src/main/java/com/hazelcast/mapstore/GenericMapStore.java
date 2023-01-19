@@ -44,6 +44,7 @@ import com.hazelcast.sql.SqlService;
 
 import javax.annotation.Nonnull;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -419,60 +420,63 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
         Object[] params = new Object[columnMetadataList.size()];
         for (int i = 0; i < columnMetadataList.size(); i++) {
             SqlColumnMetadata columnMetadata = columnMetadataList.get(i);
-            if (columnMetadata.getName().equals(properties.idColumn)) {
+
+            String columnMetadataName = columnMetadata.getName();
+            if (columnMetadataName.equals(properties.idColumn)) {
                 idPos = i;
             }
+
             switch (columnMetadata.getType()) {
                 case VARCHAR:
-                    params[i] = record.getString(columnMetadata.getName());
+                    params[i] = record.getString(columnMetadataName);
                     break;
 
                 case BOOLEAN:
-                    params[i] = record.getBoolean(columnMetadata.getName());
+                    params[i] = record.getBoolean(columnMetadataName);
                     break;
 
                 case TINYINT:
-                    params[i] = record.getInt8(columnMetadata.getName());
+                    params[i] = record.getInt8(columnMetadataName);
                     break;
 
                 case SMALLINT:
-                    params[i] = record.getInt16(columnMetadata.getName());
+                    params[i] = record.getInt16(columnMetadataName);
                     break;
 
                 case INTEGER:
-                    params[i] = record.getInt32(columnMetadata.getName());
+                    params[i] = record.getInt32(columnMetadataName);
                     break;
 
                 case BIGINT:
-                    params[i] = record.getInt64(columnMetadata.getName());
+                    params[i] = record.getInt64(columnMetadataName);
                     break;
 
                 case REAL:
-                    params[i] = record.getFloat32(columnMetadata.getName());
+                    params[i] = record.getFloat32(columnMetadataName);
                     break;
 
                 case DOUBLE:
-                    params[i] = record.getFloat64(columnMetadata.getName());
+                    params[i] = record.getFloat64(columnMetadataName);
                     break;
 
                 case DATE:
-                    params[i] = record.getDate(columnMetadata.getName());
+                    params[i] = record.getDate(columnMetadataName);
                     break;
 
                 case TIME:
-                    params[i] = record.getTime(columnMetadata.getName());
+                    params[i] = record.getTime(columnMetadataName);
                     break;
 
                 case TIMESTAMP:
-                    params[i] = record.getTimestamp(columnMetadata.getName());
+                    params[i] = record.getTimestamp(columnMetadataName);
                     break;
 
                 case TIMESTAMP_WITH_TIME_ZONE:
-                    params[i] = record.getTimestampWithTimezone(columnMetadata.getName());
+                    params[i] = record.getTimestampWithTimezone(columnMetadataName);
                     break;
 
                 case DECIMAL:
-                    params[i] = record.getDecimal(columnMetadata.getName());
+                    params[i] = record.getDecimal(columnMetadataName);
                     break;
 
                 default:
@@ -484,10 +488,14 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
             if (isIntegrityConstraintViolation(e)) {
 
-                //Try to update the row
-                Object tmp = params[idPos];
-                params[idPos] = params[params.length - 1];
-                params[params.length - 1] = tmp;
+                // Try to update the row
+
+                // Move the id parameter to last position and shift everything else down
+                List<Object> paramsList = new ArrayList<>(Arrays.asList(params));
+                Object idValue = paramsList.remove(idPos);
+                paramsList.add(idValue);
+                params = paramsList.toArray(new Object[0]);
+
                 String updateSQL = queries.storeUpdate();
                 sql.execute(updateSQL, params).close();
             } else {
@@ -602,8 +610,7 @@ public class GenericMapStore<K> implements MapStore<K, GenericRecord>, MapLoader
 
             String columnsProperty = properties.getProperty(COLUMNS_PROPERTY);
             if (columnsProperty != null) {
-                List<String> list = Arrays.asList(columnsProperty.split(","));
-                this.columns = Collections.unmodifiableList(list);
+                this.columns = Arrays.asList(columnsProperty.split(","));
             } else {
                 columns = Collections.emptyList();
             }
