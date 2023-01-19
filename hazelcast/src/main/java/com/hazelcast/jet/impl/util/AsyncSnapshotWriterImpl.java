@@ -28,7 +28,6 @@ import com.hazelcast.jet.impl.execution.SnapshotContext;
 import com.hazelcast.jet.impl.execution.init.JetInitDataSerializerHook;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.IMap;
-import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -48,6 +47,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.BiConsumer;
 import java.util.function.Supplier;
+
+import static com.hazelcast.jet.impl.JobRepository.safeImap;
 
 public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
 
@@ -274,10 +275,9 @@ public class AsyncSnapshotWriterImpl implements AsyncSnapshotWriter {
             if (mapName == null) {
                 return false;
             }
-            currentMap = nodeEngine.getHazelcastInstance().getMap(mapName);
             // Snapshot IMap proxy instance may be shared, but we always want it
             // to have failOnIndeterminateOperationState enabled.
-            ((MapProxyImpl<?, ?>) currentMap).setFailOnIndeterminateOperationState(true);
+            currentMap = safeImap(nodeEngine.getHazelcastInstance().getMap(mapName));
             this.currentSnapshotId = snapshotContext.currentSnapshotId();
         }
         return true;

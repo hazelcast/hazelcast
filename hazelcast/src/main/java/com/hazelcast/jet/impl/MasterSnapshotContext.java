@@ -16,6 +16,7 @@
 
 package com.hazelcast.jet.impl;
 
+import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.jet.JetException;
 import com.hazelcast.jet.datamodel.Tuple3;
@@ -51,6 +52,7 @@ import static com.hazelcast.jet.core.JobStatus.RUNNING;
 import static com.hazelcast.jet.datamodel.Tuple3.tuple3;
 import static com.hazelcast.jet.impl.JobRepository.EXPORTED_SNAPSHOTS_PREFIX;
 import static com.hazelcast.jet.impl.JobRepository.exportedSnapshotMapName;
+import static com.hazelcast.jet.impl.JobRepository.safeImap;
 import static com.hazelcast.jet.impl.JobRepository.snapshotDataMapName;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.withTryCatch;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
@@ -163,7 +165,7 @@ class MasterSnapshotContext {
                 mc.unlock();
             }
 
-            mc.writeJobExecutionRecord(false);
+            mc.writeJobExecutionRecordSafe(false);
             long newSnapshotId = mc.jobExecutionRecord().ongoingSnapshotId();
             boolean isExport = snapshotMapName != null;
             int snapshotFlags = SnapshotFlags.create(isTerminal, isExport);
@@ -251,6 +253,7 @@ class MasterSnapshotContext {
         mc.coordinationService().submitToCoordinatorThread(() -> {
             mc.lock();
 
+            boolean isExported = snapshotMapName.startsWith(EXPORTED_SNAPSHOTS_PREFIX);
             boolean isSuccess;
             SnapshotStats stats;
             try {
@@ -279,10 +282,9 @@ class MasterSnapshotContext {
                     }
                 }
 
-                IMap<Object, Object> snapshotMap = mc.nodeEngine().getHazelcastInstance().getMap(snapshotMapName);
                 // Snapshot IMap proxy instance may be shared, but we always want it
                 // to have failOnIndeterminateOperationState enabled.
-                ((MapProxyImpl<?, ?>) snapshotMap).setFailOnIndeterminateOperationState(true);
+                IMap<Object, Object> snapshotMap = safeImap(mc.nodeEngine().getHazelcastInstance().getMap(snapshotMapName));
                 try {
                     SnapshotValidationRecord validationRecord = new SnapshotValidationRecord(snapshotId,
                             mergedResult.getNumChunks(), mergedResult.getNumBytes(),
@@ -294,7 +296,7 @@ class MasterSnapshotContext {
                     // record is inserted into the cache below
                     Object oldValue = snapshotMap.put(SnapshotValidationRecord.KEY, validationRecord);
 
-                    if (snapshotMapName.startsWith(EXPORTED_SNAPSHOTS_PREFIX)) {
+                    if (isExported) {
                         String snapshotName = snapshotMapName.substring(EXPORTED_SNAPSHOTS_PREFIX.length());
                         mc.jobRepository().cacheValidationRecord(snapshotName, validationRecord);
                     }
@@ -312,7 +314,23 @@ class MasterSnapshotContext {
                         mergedResult.getError());
 
                 // the decision moment for regular snapshots: after this the snapshot is ready to be restored from
-                mc.writeJobExecutionRecord(false);
+                try {
+                    mc.writeJobExecutionRecordSafe(false);
+                } catch(IndeterminateOperationStateException indeterminate) {
+                    boolean shouldRestart = !isExported || SnapshotFlags.isTerminal(snapshotFlags);
+                    logger.warning(mc.jobIdString() + " snapshot " + snapshotId + " update of JobExecutionRecord was indeterminate." +
+                            (shouldRestart ? " Restarting job forcefully." : ""));
+                    if (shouldRestart) {
+                        // TODO: this should not be done like that
+                        mc.unlock();
+                        try {
+                            mc.jobContext().requestTermination(TerminationMode.RESTART_FORCEFUL, true);
+                        } finally {
+                            mc.lock();
+                        }
+                        return;
+                    }
+                }
 
                 if (logger.isFineEnabled()) {
                     logger.fine(String.format("Snapshot %d phase 1 for %s completed with status %s in %dms, " +

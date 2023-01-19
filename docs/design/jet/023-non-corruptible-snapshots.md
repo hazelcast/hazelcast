@@ -144,6 +144,8 @@ This is also more complicated in implementation and may be considered later if n
 
 1. Load `JobExecutionRecord` from `IMap` to `MasterContext` (skipped if the job coordinator has not changed) (*)
 2. Write `JobExecutionRecord` using safe method to map from which it was read to ensure that it is replicated.
+   This is also necessary if `JobExecutionRecord` loaded from `IMap` indicates that there was no completed snapshot yet 
+   (there could one with indeterminate result).
    In case of indeterminate result or other failure (in particular network problem, timeout) - do not start job now, schedule restart later.
 3. Read last good snapshot id from `JobExecutionRecord`. 
    `JobExecutionRecord` contains also last snapshot id that could have written something to snapshot data `IMap`. 

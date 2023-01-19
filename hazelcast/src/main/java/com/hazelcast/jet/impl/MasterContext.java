@@ -17,6 +17,7 @@
 package com.hazelcast.jet.impl;
 
 import com.hazelcast.cluster.Address;
+import com.hazelcast.core.IndeterminateOperationStateException;
 import com.hazelcast.core.OperationTimeoutException;
 import com.hazelcast.internal.cluster.MemberInfo;
 import com.hazelcast.jet.config.JobConfig;
@@ -245,6 +246,20 @@ public class MasterContext {
             // probably crumbling apart anyway. And we don't depend on it, we only write out for
             // others to know or for the case should the master fail.
             logger.warning("Failed to update JobExecutionRecord", e);
+        }
+    }
+
+    /**
+     * Ensure that {@link JobExecutionRecord} is safe, that is: it is stored in IMap and all backups succeeded.
+     * @param canCreate
+     * @throws IndeterminateOperationStateException when update was attempted and not all backups succeeded
+     */
+    void writeJobExecutionRecordSafe(boolean canCreate) {
+        coordinationService.assertOnCoordinatorThread();
+
+        while(!coordinationService.jobRepository().writeJobExecutionRecord(jobRecord.getJobId(), jobExecutionRecord,
+                    canCreate)) {
+            logger.info("Repeating JobExecutionRecord update to be safe");
         }
     }
 

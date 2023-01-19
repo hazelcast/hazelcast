@@ -38,6 +38,7 @@ import com.hazelcast.jet.impl.util.Util;
 import com.hazelcast.logging.ILogger;
 import com.hazelcast.map.EntryProcessor;
 import com.hazelcast.map.IMap;
+import com.hazelcast.map.impl.proxy.MapProxyImpl;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.IdentifiedDataSerializable;
@@ -190,10 +191,20 @@ public class JobRepository {
 
         jobRecords = new ConcurrentMemoizingSupplier<>(() -> instance.getMap(JOB_RECORDS_MAP_NAME));
         jobResults = new ConcurrentMemoizingSupplier<>(() -> instance.getMap(JOB_RESULTS_MAP_NAME));
-        jobExecutionRecords = memoizeConcurrent(() -> instance.getMap(JOB_EXECUTION_RECORDS_MAP_NAME));
+        jobExecutionRecords = memoizeConcurrent(() -> safeImap(instance.getMap(JOB_EXECUTION_RECORDS_MAP_NAME)));
         jobMetrics = memoizeConcurrent(() -> instance.getMap(JOB_METRICS_MAP_NAME));
         exportedSnapshotDetailsCache = memoizeConcurrent(() -> instance.getMap(EXPORTED_SNAPSHOTS_DETAIL_CACHE));
         idGenerator = memoizeConcurrent(() -> instance.getFlakeIdGenerator(RANDOM_ID_GENERATOR_NAME));
+    }
+
+    /**
+     * Configures given IMap to fail on indeterminate operation state.
+     * @param map map to configure
+     * @return the same map with applied configuration
+     */
+    public static <K,V> IMap<K, V> safeImap(IMap<K, V> map) {
+        ((MapProxyImpl<K, V>) map).setFailOnIndeterminateOperationState(true);
+        return map;
     }
 
     // for tests
@@ -613,14 +624,17 @@ public class JobRepository {
      * than the timestamp of the stored record. See {@link
      * UpdateJobExecutionRecordEntryProcessor#process}. It will also be ignored
      * if the key doesn't exist in the IMap.
+     *
+     * @return if the update was executed (not ignored)
      */
-    void writeJobExecutionRecord(long jobId, JobExecutionRecord record, boolean canCreate) {
+    boolean writeJobExecutionRecord(long jobId, JobExecutionRecord record, boolean canCreate) {
         record.updateTimestamp();
         String message = (String) jobExecutionRecords.get().executeOnKey(jobId,
                 new UpdateJobExecutionRecordEntryProcessor(jobId, record, canCreate));
         if (message != null) {
             logger.fine(message);
         }
+        return message == null;
     }
 
     /**
