@@ -221,12 +221,10 @@ public abstract class AbstractJsonGetter extends Getter {
                 return false;
             }
             if (pathCursor.getCurrent().equals(parser.getCurrentName())) {
+                // current token matched, advance to next token before returning
                 parser.nextToken();
                 return true;
-            } else if (multiValue) {
-                parser.nextToken();
-            } else {
-                parser.nextToken();
+            } else if (!multiValue) {
                 parser.skipChildren();
             }
         }
