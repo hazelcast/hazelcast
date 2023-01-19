@@ -474,7 +474,9 @@ Since: HZ 5.3
 
 For fault tolerance, we need to save the contents of the buffers, and also
 ensure that if a null-padded row was emitted, after restore, a matching row
-that's _not late by chance_ isn't emitted.
+that's _not late by chance_ isn't emitted, and conversely, if some joined row
+was emitted, a null-padded row is not emitted after restart. To ensure the
+latter, we need to save a flag whether a row was unused along with the row.
 
 The processor uses two routing schemes:
 
@@ -532,9 +534,9 @@ doesn't depend solely on the input WM, as in `SlidingWindowP`, but also on the
 outputWm = min(lastReceivedWm, minBufferTime)
 ```
 
-Since the `lastEmittedWm` can effectively go back after restart, the same issue
-as in the example above is possible, because what was late before the restart,
-might not be late after the restart.
+Since the `lastEmittedWm` can effectively go back after restart even in
+exactly-once mode, the same issue as in the example above is possible, because
+what was late before the restart, might not be late after the restart.
 
 The `minBufferTime` is the lower bound for the time value _actually_ in the
 buffer. It depends on the actual buffered rows in each processor, and that's
@@ -548,8 +550,8 @@ formula to this:
 outputWm = min(lastReceivedWm, wmState)
 ```
 
-The `lastEmittedWm` will be equal in all processors, because `lastReceivedWm`
-and `wmState` are also equal.
+The `lastEmittedWm` will now be equal in all processors, because
+`lastReceivedWm` and `wmState` are also equal.
 
 This will slightly increase the output WM latency. Thanks to coalescing, the
 processors downstream from this processor would receive the WM capped by the
