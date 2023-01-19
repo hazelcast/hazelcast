@@ -86,7 +86,7 @@ public abstract class Socket implements Closeable {
     /**
      * Closes the socket with a null reason and cause.
      * <p/>
-     * If the socket is already closed, it is ignored.
+     * If the socket is already closed, the call is ignored.
      * <p/>
      * This method is thread-safe.
      * <p/>
