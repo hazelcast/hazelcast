@@ -47,6 +47,7 @@ import static com.hazelcast.jet.core.test.TestSupport.in;
 import static com.hazelcast.jet.core.test.TestSupport.out;
 import static com.hazelcast.jet.core.test.TestSupport.processorAssertion;
 import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
+import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinPInnerTest.SAME_ITEMS_ANY_ORDER_EQUIVALENT_WMS;
 import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinPInnerTest.createConditionFromPostponeTimeMap;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
@@ -94,7 +95,7 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
         SupplierEx<Processor> supplier = createProcessor(1, 1);
 
         TestSupport.verifyProcessor(supplier)
-                .disableSnapshots()
+                .outputChecker(SAME_ITEMS_ANY_ORDER_EQUIVALENT_WMS)
                 .expectExactOutput(
                         in(0, wm(1L, (byte) 0)),
                         in(1, wm(1L, (byte) 1)),
@@ -117,7 +118,6 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
         postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
 
         TestSupport.verifyProcessor(isLeft ? createProcessor(1, 2) : createProcessor(2, 1))
-                .disableSnapshots() // uncomment after outer join snapshot support.
                 .expectExactOutput(
                         in(ordinal0, jetRow(3L)),
                         in(ordinal0, jetRow(4L)),
@@ -142,7 +142,6 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
         SupplierEx<Processor> supplier = createProcessor(1, 1);
 
         TestSupport.verifyProcessor(supplier)
-                .disableSnapshots()
                 .expectExactOutput(
                         in(ordinal1, wm(10, ordinal1)),
                         processorAssertion((StreamToStreamJoinP p) ->
@@ -197,7 +196,6 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
         SupplierEx<Processor> supplier = createProcessor(2, 1);
 
         TestSupport.verifyProcessor(supplier)
-                .disableSnapshots()
                 .expectExactOutput(
                         in(1, wm(10, (byte) 2)),
                         in(0, wm(10, (byte) 1)),
