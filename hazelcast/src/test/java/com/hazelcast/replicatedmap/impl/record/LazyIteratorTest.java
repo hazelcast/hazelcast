@@ -36,7 +36,7 @@ import java.util.Set;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.mockito.Matchers.anyObject;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -62,8 +62,8 @@ public class LazyIteratorTest extends HazelcastTestSupport {
     public void setUp() {
         // mocks a ReplicatedRecordStore, which does nothing beside returning the given key on (un)marshalling
         replicatedRecordStore = mock(ReplicatedRecordStore.class);
-        when(replicatedRecordStore.marshall(anyObject())).thenAnswer(new ReturnFirstArgumentAnswer());
-        when(replicatedRecordStore.unmarshall(anyObject())).thenAnswer(new ReturnFirstArgumentAnswer());
+        when(replicatedRecordStore.marshall(any())).thenAnswer(new ReturnFirstArgumentAnswer());
+        when(replicatedRecordStore.unmarshall(any())).thenAnswer(new ReturnFirstArgumentAnswer());
     }
 
     @Test
