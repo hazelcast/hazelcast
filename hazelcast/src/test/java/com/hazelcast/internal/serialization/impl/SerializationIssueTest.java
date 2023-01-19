@@ -495,7 +495,7 @@ public class SerializationIssueTest extends HazelcastTestSupport {
         Data data = ss.toData(obj);
         Object obj2 = ss.toObject(data);
 
-        assertEquals(obj2.getClass(), TheClassThatExtendArrayList.class);
+        assertEquals(TheClassThatExtendArrayList.class, obj2.getClass());
     }
 
     static class TheClassThatExtendArrayList<E> extends ArrayList<E> implements DataSerializable {

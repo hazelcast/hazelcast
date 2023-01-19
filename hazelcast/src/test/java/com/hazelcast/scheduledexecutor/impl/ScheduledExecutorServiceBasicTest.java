@@ -1492,7 +1492,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         IScheduledFuture<Double> copy = executorService.getScheduledFuture(handler);
 
         assertEquals(first.getHandler(), copy.getHandler());
-        assertEquals(copy.getHandler().getTaskName(), taskName);
+        assertEquals(taskName, copy.getHandler().getTaskName());
     }
 
     @Test
@@ -1509,7 +1509,7 @@ public class ScheduledExecutorServiceBasicTest extends ScheduledExecutorServiceT
         IScheduledFuture<Double> copy = executorService.getScheduledFuture(handler);
 
         assertEquals(first.getHandler(), copy.getHandler());
-        assertEquals(copy.getHandler().getTaskName(), taskName);
+        assertEquals(taskName, copy.getHandler().getTaskName());
     }
 
     @Test

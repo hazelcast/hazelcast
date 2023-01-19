@@ -134,7 +134,7 @@ public class ParserNameResolutionTest extends SqlTestSupport {
         assertEquals(SqlIdentifier.getString(Arrays.asList(last(tableComponents), fieldName)), fieldIdentifier.toString());
 
         SqlCall from = (SqlCall) select.getFrom();
-        assertEquals(from.getKind(), SqlKind.AS);
+        assertEquals(SqlKind.AS, from.getKind());
         assertEquals(tableFqn, from.operand(0).toString());
         assertEquals(last(tableComponents), from.operand(1).toString());
     }

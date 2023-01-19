@@ -760,7 +760,7 @@ public class JobTest extends SimpleTestInClusterSupport {
         // Then
         Job job2 = instances()[1].getJet().newJobIfAbsent(dag, config);
         assertEquals(job1.getId(), job2.getId());
-        assertEquals(job2.getStatus(), SUSPENDED);
+        assertEquals(SUSPENDED, job2.getStatus());
         assertJobIsUserCancelledCannotBeQueried(job2);
     }
 

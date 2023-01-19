@@ -96,7 +96,7 @@ public class AuthenticationInformationLeakTest {
             res.set(tryGettingKeyValueWithoutAuthentication());
             assertNotNull(res.get());
         });
-        assertEquals(res.get().getMessageType(), ErrorsCodec.EXCEPTION_MESSAGE_TYPE);
+        assertEquals(ErrorsCodec.EXCEPTION_MESSAGE_TYPE, res.get().getMessageType());
         ClientExceptionFactory factory = new ClientExceptionFactory(false, Thread.currentThread().getContextClassLoader());
         Throwable err = factory.createException(res.get());
         String message = err.getMessage();
@@ -178,7 +178,7 @@ public class AuthenticationInformationLeakTest {
         ClientTestUtil.writeClientMessage(os, msg);
 
         ClientMessage res = ClientTestUtil.readResponse(is);
-        assertEquals(res.getMessageType(), ClientAuthenticationCodec.RESPONSE_MESSAGE_TYPE);
+        assertEquals(ClientAuthenticationCodec.RESPONSE_MESSAGE_TYPE, res.getMessageType());
         return res;
     }
 
@@ -190,7 +190,7 @@ public class AuthenticationInformationLeakTest {
         ClientTestUtil.writeClientMessage(os, msg);
         ClientMessage res = ClientTestUtil.readResponse(is);
         if (res.getMessageType() != ErrorsCodec.EXCEPTION_MESSAGE_TYPE) {
-            assertEquals(res.getMessageType(), MapGetCodec.RESPONSE_MESSAGE_TYPE);
+            assertEquals(MapGetCodec.RESPONSE_MESSAGE_TYPE, res.getMessageType());
         }
         return res;
     }

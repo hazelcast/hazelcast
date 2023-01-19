@@ -115,7 +115,7 @@ public class NonSmartClientTest extends SimpleTestInClusterSupport {
             assertTrue(jet.getJobs().stream().anyMatch(j -> j.getId() == jobId));
             assertFalse(jet.getJobs(jobName).isEmpty());
             assertNotNull(jet.getJob(jobId).getStatus());
-            assertEquals(jet.getJob(jobId).getStatus(), JobStatus.RUNNING);
+            assertEquals(JobStatus.RUNNING, jet.getJob(jobId).getStatus());
             Job j = jet.getJob(jobName);
             assertNotNull(j.getConfig());
             assertGreaterOrEquals("submissionTime", j.getSubmissionTime(), 0);

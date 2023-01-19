@@ -35,10 +35,12 @@ public class PostgresAllTypesInsertJdbcSqlConnectorTest extends AllTypesInsertJd
 
     @Before
     public void setUp() throws Exception {
-        assumeThat(type).isNotEqualTo("TINYINT")
-                        .describedAs("TINYINT not supported on Postgres");
-        assumeThat(type).isNotEqualTo("TIMESTAMP WITH TIME ZONE")
-                        .describedAs("TIMESTAMP WITH TIME ZONE not supported on Postgres");
+        assumeThat(type).describedAs("TINYINT not supported on Postgres")
+                .isNotEqualTo("TINYINT");
+
+        assumeThat(type).describedAs("TIMESTAMP WITH TIME ZONE not supported on Postgres")
+                .isNotEqualTo("TIMESTAMP WITH TIME ZONE");
+
 
         if (type.equals("DOUBLE")) {
             type = "DOUBLE PRECISION";

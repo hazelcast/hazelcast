@@ -196,6 +196,18 @@ public class LocalReplicatedMapStatsImpl implements LocalReplicatedMapStats {
         return hits;
     }
 
+    // TODO: Not implemented for replicated map
+    @Override
+    public long getEvictionCount() {
+        return 0;
+    }
+
+    // TODO: Not implemented for replicated map
+    @Override
+    public long getExpirationCount() {
+        return 0;
+    }
+
     public void setHits(long hits) {
         HITS.set(this, hits);
     }
