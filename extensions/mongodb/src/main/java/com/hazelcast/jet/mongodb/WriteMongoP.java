@@ -215,17 +215,17 @@ public class WriteMongoP<I> extends AbstractProcessor {
         if (!connection.reconnectIfNecessary()) {
             return;
         }
-        MongoTransaction mongoTransaction = transactionUtility.activeTransaction();
-
-        ArrayList<I> items = new ArrayList<>();
-        for (Object item : inbox) {
-            items.add((I) item);
-            if (items.size() >= MAX_BATCH_SIZE) {
-                break;
-            }
-        }
 
         try {
+            MongoTransaction mongoTransaction = transactionUtility.activeTransaction();
+
+            ArrayList<I> items = new ArrayList<>();
+            for (Object item : inbox) {
+                items.add((I) item);
+                if (items.size() >= MAX_BATCH_SIZE) {
+                    break;
+                }
+            }
             @SuppressWarnings("DataFlowIssue")
             Map<MongoCollectionKey, List<I>> itemsPerCollection = items
                     .stream()
@@ -455,6 +455,12 @@ public class WriteMongoP<I> extends AbstractProcessor {
                         tryExternalRollback();
                         commitRetryTracker.attemptFailed();
                         if (!commitRetryTracker.shouldTryAgain() || !e.hasErrorLabel("TransientTransactionError")) {
+                            throw e;
+                        }
+                    } catch (IllegalStateException e) {
+                        tryExternalRollback();
+                        commitRetryTracker.attemptFailed();
+                        if (!commitRetryTracker.shouldTryAgain()) {
                             throw e;
                         }
                     }

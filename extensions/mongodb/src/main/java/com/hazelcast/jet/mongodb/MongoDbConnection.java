@@ -25,6 +25,7 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.logging.Logger;
 import com.mongodb.client.MongoClient;
 
+import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.jet.retry.IntervalFunction.exponentialBackoffWithCap;
 
 /***
@@ -52,10 +53,7 @@ class MongoDbConnection {
     }
 
     MongoClient client() {
-        boolean connected;
-        do {
-            connected = reconnectIfNecessary();
-        } while (!connected);
+        checkState(reconnectIfNecessary(), "should be connected");
         return mongoClient;
     }
 
