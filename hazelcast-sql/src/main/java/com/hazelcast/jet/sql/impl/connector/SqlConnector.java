@@ -406,8 +406,10 @@ public interface SqlConnector {
          *     <li>for DML, it's the target table
          *     <li>for nested loop reader, it's the table read in the inner loop (the right join input)
          * </ul>
+         *
+         * @throws IllegalStateException if the table doesn't apply in the current context
          */
-        @Nullable
+        @Nonnull
         Table getTable();
 
         /**
