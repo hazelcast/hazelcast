@@ -56,7 +56,7 @@ public class AbstractInvocationFuture_AndThenTest extends AbstractInvocationFutu
 //        future.complete(value);
 //
 //        verify(customExecutor).execute(any(Runnable.class));
-//        verifyZeroInteractions(defaultExecutor);
+//        verifyNoInteractions(defaultExecutor);
 //    }
 //
 //    @Test
@@ -87,7 +87,7 @@ public class AbstractInvocationFuture_AndThenTest extends AbstractInvocationFutu
 //        future.andThen(callback);
 //
 //        sleepSeconds(5);
-//        verifyZeroInteractions(callback);
+//        verifyNoInteractions(callback);
 //
 //        future.complete(value);
 //
@@ -100,7 +100,7 @@ public class AbstractInvocationFuture_AndThenTest extends AbstractInvocationFutu
 //        future.andThen(callback);
 //
 //        sleepSeconds(5);
-//        verifyZeroInteractions(callback);
+//        verifyNoInteractions(callback);
 //
 //        final ExpectedRuntimeException ex = new ExpectedRuntimeException();
 //        future.completeExceptionally(ex);
