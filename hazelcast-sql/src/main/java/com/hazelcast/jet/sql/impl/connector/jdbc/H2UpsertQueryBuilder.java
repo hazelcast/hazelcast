@@ -32,26 +32,26 @@ class H2UpsertQueryBuilder {
         query = stringBuilder.toString();
     }
 
-    protected void getMergeClause(JdbcTable jdbcTable, StringBuilder stringBuilder) {
+    void getMergeClause(JdbcTable jdbcTable, StringBuilder stringBuilder) {
 
         stringBuilder.append("MERGE INTO ")
                 .append(jdbcTable.getExternalName())
-                .append(" ( ")
+                .append(" (")
                 .append(String.join(",", jdbcTable.dbFieldNames()))
-                .append(" ) ");
+                .append(") ");
     }
 
-    protected void getKeyClause(JdbcTable jdbcTable, StringBuilder stringBuilder) {
+    void getKeyClause(JdbcTable jdbcTable, StringBuilder stringBuilder) {
         stringBuilder.append("KEY (")
                 .append(String.join(",", jdbcTable.getPrimaryKeyList()))
                 .append(" ) ");
     }
 
-    protected void getValuesClause(JdbcTable jdbcTable, StringBuilder stringBuilder) {
+    void getValuesClause(JdbcTable jdbcTable, StringBuilder stringBuilder) {
 
         List<String> dbFieldNames = jdbcTable.dbFieldNames();
 
-        stringBuilder.append(" VALUES (");
+        stringBuilder.append("VALUES (");
 
         for (int i = 0; i < dbFieldNames.size(); i++) {
             stringBuilder.append('?');

@@ -63,7 +63,6 @@ public class MySQLUpsertQueryBuilderTest {
 
     @Test
     public void testGetOnDuplicateClause() {
-        when(jdbcTable.getPrimaryKeyList()).thenReturn(Arrays.asList("pk1", "pk2"));
         when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
 
         MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
@@ -77,7 +76,6 @@ public class MySQLUpsertQueryBuilderTest {
     @Test
     public void testQuery() {
         when(jdbcTable.getExternalName()).thenReturn("table1");
-        when(jdbcTable.getPrimaryKeyList()).thenReturn(Arrays.asList("pk1", "pk2"));
         when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
 
         MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);

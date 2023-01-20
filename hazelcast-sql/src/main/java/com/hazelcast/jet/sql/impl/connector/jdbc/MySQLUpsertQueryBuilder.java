@@ -33,7 +33,7 @@ class MySQLUpsertQueryBuilder {
         query = stringBuilder.toString();
     }
 
-    protected void getInsertClause(JdbcTable jdbcTable, StringBuilder stringBuilder) {
+    void getInsertClause(JdbcTable jdbcTable, StringBuilder stringBuilder) {
 
         stringBuilder.append("INSERT INTO ")
                 .append(jdbcTable.getExternalName())
@@ -42,7 +42,7 @@ class MySQLUpsertQueryBuilder {
                 .append(") ");
     }
 
-    protected void getValuesClause(JdbcTable jdbcTable, StringBuilder stringBuilder) {
+    void getValuesClause(JdbcTable jdbcTable, StringBuilder stringBuilder) {
 
         List<String> dbFieldNames = jdbcTable.dbFieldNames();
 
@@ -50,11 +50,10 @@ class MySQLUpsertQueryBuilder {
                 .map(dbFieldName -> "?")
                 .collect(Collectors.joining(","));
 
-        String format = String.format("VALUES (%s) ", values);
-        stringBuilder.append(format);
+        stringBuilder.append("VALUES (").append(values).append(") ");
     }
 
-    protected void getOnDuplicateClause(JdbcTable jdbcTable, StringBuilder stringBuilder) {
+    void getOnDuplicateClause(JdbcTable jdbcTable, StringBuilder stringBuilder) {
         String values = jdbcTable.dbFieldNames().stream()
                 .map(dbFieldName -> String.format("%s = VALUES(%s)", dbFieldName, dbFieldName))
                 .collect(Collectors.joining(","));
