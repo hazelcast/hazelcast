@@ -14,51 +14,53 @@
  * limitations under the License.
  */
 
-package com.hazelcast.client.impl.protocol.task.jet;
+package com.hazelcast.jet.impl.client.protocol.task;
 
 import com.hazelcast.client.impl.protocol.ClientMessage;
-import com.hazelcast.client.impl.protocol.codec.JetRemoveJobStatusListenerCodec;
-import com.hazelcast.client.impl.protocol.codec.JetRemoveJobStatusListenerCodec.RequestParameters;
-import com.hazelcast.client.impl.protocol.task.AbstractRemoveListenerMessageTask;
+import com.hazelcast.client.impl.protocol.codec.JetAddJobStatusListenerCodec;
+import com.hazelcast.client.impl.protocol.codec.JetAddJobStatusListenerCodec.RequestParameters;
+import com.hazelcast.client.impl.protocol.task.AbstractAddListenerMessageTask;
 import com.hazelcast.instance.impl.Node;
 import com.hazelcast.internal.nio.Connection;
+import com.hazelcast.jet.JobEvent;
+import com.hazelcast.jet.JobListener;
 import com.hazelcast.jet.impl.JobService;
 import com.hazelcast.security.permission.ActionConstants;
 import com.hazelcast.security.permission.JobPermission;
 
 import java.security.Permission;
 import java.util.UUID;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 
 import static com.hazelcast.jet.Util.idToString;
 import static com.hazelcast.jet.impl.JobProxy.checkJobStatusListenerSupported;
+import static com.hazelcast.spi.impl.InternalCompletableFuture.newCompletedFuture;
 
-public class JetRemoveJobStatusListenerMessageTask extends AbstractRemoveListenerMessageTask<RequestParameters> {
+public class JetAddJobStatusListenerMessageTask extends AbstractAddListenerMessageTask<RequestParameters> {
 
-    public JetRemoveJobStatusListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
+    public JetAddJobStatusListenerMessageTask(ClientMessage clientMessage, Node node, Connection connection) {
         super(clientMessage, node, connection);
     }
 
     @Override
-    protected Future<Boolean> deRegisterListener() {
+    protected CompletableFuture<UUID> processInternal() {
         checkJobStatusListenerSupported(nodeEngine);
         JobService jobService = getService(JobService.SERVICE_NAME);
-        return jobService.removeEventListenerAsync(parameters.jobId, parameters.registrationId);
-    }
-
-    @Override
-    protected UUID getRegistrationId() {
-        return parameters.registrationId;
+        long jobId = parameters.jobId;
+        JobListener listener = new ClientJobListener();
+        return parameters.localOnly
+                ? newCompletedFuture(jobService.addLocalEventListener(jobId, listener))
+                : jobService.addEventListenerAsync(jobId, listener);
     }
 
     @Override
     protected RequestParameters decodeClientMessage(ClientMessage clientMessage) {
-        return JetRemoveJobStatusListenerCodec.decodeRequest(clientMessage);
+        return JetAddJobStatusListenerCodec.decodeRequest(clientMessage);
     }
 
     @Override
     protected ClientMessage encodeResponse(Object response) {
-        return JetRemoveJobStatusListenerCodec.encodeResponse((boolean) response);
+        return JetAddJobStatusListenerCodec.encodeResponse((UUID) response);
     }
 
     @Override
@@ -68,7 +70,7 @@ public class JetRemoveJobStatusListenerMessageTask extends AbstractRemoveListene
 
     @Override
     public String getMethodName() {
-        return "removeJobStatusListener";
+        return "addJobStatusListener";
     }
 
     @Override
@@ -84,5 +86,16 @@ public class JetRemoveJobStatusListenerMessageTask extends AbstractRemoveListene
     @Override
     public Object[] getParameters() {
         return null;
+    }
+
+    private class ClientJobListener implements JobListener {
+        @Override
+        public void jobStatusChanged(JobEvent e) {
+            if (endpoint.isAlive()) {
+                sendClientMessage(JetAddJobStatusListenerCodec.encodeJobEvent(
+                        e.getJobId(), e.getOldStatus().getId(), e.getNewStatus().getId(),
+                        e.getDescription(), e.isUserRequested()));
+            }
+        }
     }
 }

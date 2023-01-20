@@ -139,8 +139,6 @@ import com.hazelcast.client.impl.protocol.codec.FencedLockLockCodec;
 import com.hazelcast.client.impl.protocol.codec.FencedLockTryLockCodec;
 import com.hazelcast.client.impl.protocol.codec.FencedLockUnlockCodec;
 import com.hazelcast.client.impl.protocol.codec.FlakeIdGeneratorNewIdBatchCodec;
-import com.hazelcast.client.impl.protocol.codec.JetAddJobStatusListenerCodec;
-import com.hazelcast.client.impl.protocol.codec.JetRemoveJobStatusListenerCodec;
 import com.hazelcast.client.impl.protocol.codec.ListAddAllCodec;
 import com.hazelcast.client.impl.protocol.codec.ListAddAllWithIndexCodec;
 import com.hazelcast.client.impl.protocol.codec.ListAddCodec;
@@ -514,7 +512,6 @@ import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableEx
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorRetrieveResultMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorShutdownMessageTask;
 import com.hazelcast.client.impl.protocol.task.executorservice.durable.DurableExecutorSubmitToPartitionMessageTask;
-import com.hazelcast.client.impl.protocol.task.jet.JetRemoveJobStatusListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.list.ListAddAllMessageTask;
 import com.hazelcast.client.impl.protocol.task.list.ListAddAllWithIndexMessageTask;
 import com.hazelcast.client.impl.protocol.task.list.ListAddListenerMessageTask;
@@ -572,7 +569,6 @@ import com.hazelcast.client.impl.protocol.task.management.ShutdownMemberMessageT
 import com.hazelcast.client.impl.protocol.task.management.UpdateConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.UpdateMapConfigMessageTask;
 import com.hazelcast.client.impl.protocol.task.management.WanSyncMapMessageTask;
-import com.hazelcast.client.impl.protocol.task.jet.JetAddJobStatusListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAddEntryListenerMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAddEntryListenerToKeyMessageTask;
 import com.hazelcast.client.impl.protocol.task.map.MapAddEntryListenerToKeyWithPredicateMessageTask;
@@ -916,7 +912,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
         initializeSemaphoreTaskFactories();
         initializeManagementCenterTaskFactories();
         initializeSqlTaskFactories();
-        initializeJetTaskFactories();
         initializeSchemaFactories();
     }
 
@@ -1863,13 +1858,6 @@ public class DefaultMessageTaskFactoryProvider implements MessageTaskFactoryProv
                 (cm, con) -> new SqlCloseMessageTask(cm, node, con));
         factories.put(SqlMappingDdlCodec.REQUEST_MESSAGE_TYPE,
                 (cm, con) -> new SqlMappingDdlTask(cm, node, con));
-    }
-
-    private void initializeJetTaskFactories() {
-        factories.put(JetAddJobStatusListenerCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new JetAddJobStatusListenerMessageTask(cm, node, con));
-        factories.put(JetRemoveJobStatusListenerCodec.REQUEST_MESSAGE_TYPE,
-                (cm, con) -> new JetRemoveJobStatusListenerMessageTask(cm, node, con));
     }
 
     private void initializeSchemaFactories() {
