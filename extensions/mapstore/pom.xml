@@ -101,6 +101,7 @@
             <version>${mysql.connector.version}</version>
             <scope>test</scope>
         </dependency>
+        <!--MSSQL-->
         <dependency>
             <groupId>org.testcontainers</groupId>
             <artifactId>mssqlserver</artifactId>
@@ -113,11 +114,17 @@
             <version>11.2.2.jre8</version>
             <scope>test</scope>
         </dependency>
-
+        <!--MariDB-->
         <dependency>
             <groupId>org.testcontainers</groupId>
-            <artifactId>db2</artifactId>
+            <artifactId>mariadb</artifactId>
             <version>${testcontainers.version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mariadb.jdbc</groupId>
+            <artifactId>mariadb-java-client</artifactId>
+            <version>3.1.1</version>
             <scope>test</scope>
         </dependency>
     </dependencies>
