@@ -89,6 +89,9 @@ import static java.util.stream.Stream.of;
  * <p>
  * The GenericMapStore creates a SQL mapping with name "__map-store." + mapName.
  * This mapping is removed when the map is destroyed.
+ * <p>
+ * Note : When GenericMapStore uses GenericRecord as value, even if the GenericRecord contains the primary key as a field,
+ * the primary key is still received from @{link {@link com.hazelcast.map.IMap} method call
  *
  * @param <K>
  */
