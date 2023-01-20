@@ -49,10 +49,10 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import javax.sql.DataSource;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -145,34 +145,52 @@ public class JdbcSqlConnector implements SqlConnector {
                 OPTION_EXTERNAL_DATASTORE_REF + " must be set"
         );
         DataSource dataSource = createDataStore(nodeEngine, externalDataStoreRef);
-        try (
-                Connection connection = dataSource.getConnection();
-                Statement statement = connection.createStatement()
-        ) {
-            Set<String> pkColumns = readPrimaryKeyColumns(externalTableName, connection);
+        try (Connection connection = dataSource.getConnection()) {
 
-            boolean hasResultSet = statement.execute("SELECT * FROM " + externalTableName + " LIMIT 0");
-            if (!hasResultSet) {
-                throw new IllegalStateException("Could not resolve fields for table " + externalTableName);
-            }
-            ResultSet rs = statement.getResultSet();
-            ResultSetMetaData metaData = rs.getMetaData();
+            DatabaseMetaData databaseMetaData = connection.getMetaData();
 
-            Map<String, DbField> fields = new LinkedHashMap<>();
-            for (int i = 1; i <= metaData.getColumnCount(); i++) {
-                String columnName = metaData.getColumnName(i);
-                fields.put(columnName,
-                        new DbField(metaData.getColumnTypeName(i),
-                                columnName,
-                                pkColumns.contains(columnName)
-                        ));
-            }
-            return fields;
+            Set<String> pkColumns = readPrimaryKeyColumns(externalTableName, databaseMetaData);
+
+            return readColumns(externalTableName, databaseMetaData, pkColumns);
+
         } catch (Exception e) {
             throw new HazelcastException("Could not read column metadata for table " + externalTableName, e);
         } finally {
             closeDataSource(dataSource);
         }
+    }
+
+    private static Map<String, DbField> readColumns(String externalTableName, DatabaseMetaData databaseMetaData,
+                                                    Set<String> pkColumns) {
+        Map<String, DbField> fields = new LinkedHashMap<>();
+        try (ResultSet resultSet = databaseMetaData.getColumns(null, null, externalTableName,
+                null)) {
+            while (resultSet.next()) {
+                String columnTypeName = resultSet.getString("TYPE_NAME");
+                String columnName = resultSet.getString("COLUMN_NAME");
+                fields.put(columnName,
+                        new DbField(columnTypeName,
+                                columnName,
+                                pkColumns.contains(columnName)
+                        ));
+            }
+        } catch (SQLException e) {
+            throw new HazelcastException("Could not read columns for table " + externalTableName, e);
+        }
+        return fields;
+    }
+
+    private static Set<String> readPrimaryKeyColumns(String externalTableName, DatabaseMetaData databaseMetaData) {
+        Set<String> pkColumns = new HashSet<>();
+        try (ResultSet resultSet = databaseMetaData.getPrimaryKeys(null, null, externalTableName)) {
+            while (resultSet.next()) {
+                String columnName = resultSet.getString("COLUMN_NAME");
+                pkColumns.add(columnName);
+            }
+        } catch (SQLException e) {
+            throw new HazelcastException("Could not read primary key columns for table " + externalTableName, e);
+        }
+        return pkColumns;
     }
 
     private void closeDataSource(DataSource dataSource) {
@@ -191,24 +209,11 @@ public class JdbcSqlConnector implements SqlConnector {
         return externalDataStoreFactory.getDataStore();
     }
 
-    private Set<String> readPrimaryKeyColumns(@Nonnull String externalName, Connection connection) {
-        Set<String> primaryKeyColumns = new HashSet<>();
-        try (ResultSet rs = connection.getMetaData().getPrimaryKeys(null, connection.getSchema(), externalName)) {
-            while (rs.next()) {
-                String columnName = rs.getString("COLUMN_NAME");
-                primaryKeyColumns.add(columnName);
-            }
-        } catch (SQLException e) {
-            throw new HazelcastException("Could not read primary key columns for table " + externalName, e);
-        }
-        return primaryKeyColumns;
-    }
-
     private void validateType(MappingField field, DbField dbField) {
         QueryDataType type = resolveType(dbField.columnTypeName);
         if (!field.type().equals(type) && !type.getConverter().canConvertTo(field.type().getTypeFamily())) {
             throw new IllegalStateException("Type " + field.type().getTypeFamily() + " of field " + field.name()
-                    + " does not match db type " + type.getTypeFamily());
+                                            + " does not match db type " + type.getTypeFamily());
         }
     }
 
@@ -271,7 +276,7 @@ public class JdbcSqlConnector implements SqlConnector {
 
         } catch (Exception e) {
             throw new HazelcastException("Could not determine dialect for externalDataStoreRef: "
-                    + externalDataStoreRef, e);
+                                         + externalDataStoreRef, e);
         } finally {
             closeDataSource(dataSource);
         }
@@ -501,10 +506,10 @@ public class JdbcSqlConnector implements SqlConnector {
         @Override
         public String toString() {
             return "DbField{" +
-                    "name='" + columnName + '\'' +
-                    ", typeName='" + columnTypeName + '\'' +
-                    ", primaryKey=" + primaryKey +
-                    '}';
+                   "name='" + columnName + '\'' +
+                   ", typeName='" + columnTypeName + '\'' +
+                   ", primaryKey=" + primaryKey +
+                   '}';
         }
     }
 }
