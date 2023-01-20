@@ -26,6 +26,7 @@ import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
@@ -114,6 +115,7 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
 
     @Test
     public void test_rowContainsMultipleColumns() {
+        // l.time == r.time
         postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 0L));
         postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
 
@@ -226,8 +228,15 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
 
     private SupplierEx<Processor> createProcessor(int leftColumnCount, int rightColumnCount) {
         Expression<Boolean> condition = createConditionFromPostponeTimeMap(postponeTimeMap);
-        JetJoinInfo joinInfo = new JetJoinInfo(joinType, new int[0], new int[0], condition, condition);
+        int[] left = new int[0];
+        int[] right = new int[0];
+        if (condition instanceof ComparisonPredicate) {
+            left = new int[]{0};
+            right = new int[]{0};
+        }
+        JetJoinInfo joinInfo = new JetJoinInfo(joinType, left, right, condition, condition);
         return () -> new StreamToStreamJoinP(
+                0,
                 joinInfo,
                 leftExtractors,
                 rightExtractors,

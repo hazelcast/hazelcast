@@ -708,7 +708,7 @@ public class CreateTopLevelDagVisitor extends CreateDagVisitorBase<Vertex> {
             left = left.distributed().broadcast();
             right = right.unicast().local();
         } else {
-            // this strategy applies to left and inner joins non-equi joins
+            // this strategy applies to non-equi left and inner joins
             left = left.unicast().local();
             right = right.distributed().broadcast();
         }

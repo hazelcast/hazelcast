@@ -279,6 +279,7 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         JetJoinInfo joinInfo = new JetJoinInfo(INNER, new int[0], new int[0], condition, condition);
 
         SupplierEx<Processor> supplier = () -> new StreamToStreamJoinP(
+                0,
                 joinInfo,
                 leftExtractors,
                 rightExtractors,
@@ -419,7 +420,18 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
             wmKeyToColumnIndexMap.put((byte) wmKeyToColumnIndex[i], (byte) wmKeyToColumnIndex[i + 1]);
         }
 
+        // specific case for simple equi-join : l.time == r.time
+        if (postponeTimeMap.size() == 2
+                && postponeTimeMap.get((byte) 0).get((byte) 1) == 0L
+                && postponeTimeMap.get((byte) 1).get((byte) 0) == 0L) {
+            return ComparisonPredicate.create(
+                    ColumnExpression.create(0, BIGINT),
+                    ColumnExpression.create(1, BIGINT),
+                    ComparisonMode.EQUALS);
+        }
+
         List<Expression<Boolean>> conditions = new ArrayList<>();
+        
         for (Entry<Byte, Map<Byte, Long>> enOuter : postponeTimeMap.entrySet()) {
             for (Entry<Byte, Long> enInner : enOuter.getValue().entrySet()) {
                 int leftColumnIndex = wmKeyToColumnIndexMap.getOrDefault(enOuter.getKey(), enOuter.getKey());
@@ -441,6 +453,7 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         Expression<Boolean> condition = createConditionFromPostponeTimeMap(postponeTimeMap, wmKeyToColumnIndex);
         JetJoinInfo joinInfo = new JetJoinInfo(INNER, new int[0], new int[0], condition, condition);
         return () -> new StreamToStreamJoinP(
+                0,
                 joinInfo,
                 leftExtractors,
                 rightExtractors,
