@@ -398,16 +398,16 @@ public class JdbcSqlConnector implements SqlConnector {
         JdbcTable jdbcTable = (JdbcTable) table;
 
         // If dialect is supported
-        if (UpsertBuilderFactory.isUpsertSupported(jdbcTable)) {
+        if (UpsertBuilder.isUpsertDialectSupported(jdbcTable)) {
 
             // Get the upsert statement
-            String query = UpsertBuilderFactory.getUpsertQuery(jdbcTable);
+            String upsertStatement = UpsertBuilder.getUpsertStatement(jdbcTable);
 
             return dag.newUniqueVertex(
                     "sinkProcessor(" + jdbcTable.getExternalName() + ")",
                     new UpsertProcessorSupplier(
                             jdbcTable.getExternalDataStoreRef(),
-                            query,
+                            upsertStatement,
                             jdbcTable.getBatchLimit()
                     )
             );

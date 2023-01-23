@@ -21,25 +21,30 @@ import org.apache.calcite.sql.dialect.H2SqlDialect;
 import org.apache.calcite.sql.dialect.MysqlSqlDialect;
 import org.apache.calcite.sql.dialect.PostgresqlSqlDialect;
 
-final class UpsertBuilderFactory {
+import java.util.Arrays;
+import java.util.List;
 
-    private UpsertBuilderFactory() {
+final class UpsertBuilder {
+
+    static List<Class<? extends SqlDialect>> supportedDialects = Arrays.asList(
+            MysqlSqlDialect.class,
+            PostgresqlSqlDialect.class,
+            H2SqlDialect.class);
+
+    private UpsertBuilder() {
 
     }
 
     // Returns if upsert is supported for the given dialect
-    static boolean isUpsertSupported(JdbcTable jdbcTable) {
-        boolean result = false;
+    static boolean isUpsertDialectSupported(JdbcTable jdbcTable) {
+
         SqlDialect dialect = jdbcTable.sqlDialect();
-        if (dialect instanceof MysqlSqlDialect ||
-            dialect instanceof PostgresqlSqlDialect ||
-            dialect instanceof H2SqlDialect) {
-            result = true;
-        }
-        return result;
+
+        return supportedDialects.stream().anyMatch(clazz -> clazz.isInstance(dialect));
+
     }
 
-    static String getUpsertQuery(JdbcTable jdbcTable) {
+    static String getUpsertStatement(JdbcTable jdbcTable) {
 
         SqlDialect sqlDialect = jdbcTable.sqlDialect();
 
