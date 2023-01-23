@@ -144,7 +144,3 @@ To run the tests run the command below:
 ```
 ./gradlew test
 ```
-
-## Authors
-
-* **[Emin Demirci](https://github.com/eminn)**
