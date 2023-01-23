@@ -25,8 +25,11 @@ import com.hazelcast.jet.pipeline.Sinks;
 import com.hazelcast.jet.pipeline.StreamStage;
 import com.hazelcast.jet.pipeline.test.AssertionCompletedException;
 import com.hazelcast.jet.pipeline.test.AssertionSinks;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.connect.data.Values;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import java.util.Objects;
 import java.util.Properties;
@@ -36,6 +39,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class KafkaConnectRandomIntIntegrationTest extends JetTestSupport {
 
     public static final int ITEM_COUNT = 10_000;

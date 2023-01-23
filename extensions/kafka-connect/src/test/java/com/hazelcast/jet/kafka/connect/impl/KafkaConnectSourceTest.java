@@ -21,8 +21,11 @@ import com.hazelcast.jet.Traverser;
 import com.hazelcast.jet.impl.JetEvent;
 import com.hazelcast.jet.impl.pipeline.SourceBufferImpl;
 import com.hazelcast.jet.kafka.connect.impl.DummySourceConnector.DummyTask;
+import com.hazelcast.test.annotation.ParallelJVMTest;
+import com.hazelcast.test.annotation.QuickTest;
 import org.apache.kafka.connect.source.SourceRecord;
 import org.junit.Test;
+import org.junit.experimental.categories.Category;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
@@ -38,6 +41,7 @@ import static java.util.Collections.singletonList;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+@Category({QuickTest.class, ParallelJVMTest.class})
 public class KafkaConnectSourceTest {
     @Test
     public void should_create_and_start_source_with_minimal_properties() {
