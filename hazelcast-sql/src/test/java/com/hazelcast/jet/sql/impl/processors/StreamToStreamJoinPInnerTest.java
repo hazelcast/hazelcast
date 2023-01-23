@@ -420,7 +420,7 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
             wmKeyToColumnIndexMap.put((byte) wmKeyToColumnIndex[i], (byte) wmKeyToColumnIndex[i + 1]);
         }
 
-        // specific case for simple equi-join : l.time == r.time
+        // specific case for simple equi-join: l.time == r.time
         if (postponeTimeMap.size() == 2
                 && postponeTimeMap.get((byte) 0).get((byte) 1) == 0L
                 && postponeTimeMap.get((byte) 1).get((byte) 0) == 0L) {
