@@ -80,6 +80,7 @@ import static org.hamcrest.CoreMatchers.startsWith;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastSerialClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -318,7 +319,7 @@ public class MapLoaderTest extends HazelcastTestSupport {
 
         assertEquals(2, map.size());
         assertEquals("1", map.get("1"));
-        assertEquals(null, map.get("2"));
+        assertNull(map.get("2"));
         assertEquals("3", map.get("3"));
     }
 

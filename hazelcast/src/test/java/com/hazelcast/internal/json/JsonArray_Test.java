@@ -36,6 +36,7 @@ import static com.hazelcast.internal.json.TestUtil.assertException;
 import static com.hazelcast.internal.json.TestUtil.serializeAndDeserialize;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.inOrder;
@@ -582,41 +583,42 @@ public class JsonArray_Test {
 
   @Test
   public void equals_trueForSameInstance() {
-    assertTrue(array.equals(array));
+      assertEquals(array, array);
   }
 
   @Test
   public void equals_trueForEqualArrays() {
-    assertTrue(array().equals(array()));
-    assertTrue(array("foo", "bar").equals(array("foo", "bar")));
+      assertEquals(array(), array());
+      assertEquals(array("foo", "bar"), array("foo", "bar"));
   }
 
   @Test
   public void equals_falseForDifferentArrays() {
-    assertFalse(array("foo", "bar").equals(array("foo", "bar", "baz")));
-    assertFalse(array("foo", "bar").equals(array("bar", "foo")));
+      assertNotEquals(array("foo", "bar"), array("foo", "bar", "baz"));
+      assertNotEquals(array("foo", "bar"), array("bar", "foo"));
   }
 
   @Test
   public void equals_falseForNull() {
-    assertFalse(array.equals(null));
+      assertNotEquals(null, array);
   }
 
   @Test
   public void equals_falseForSubclass() {
-    assertFalse(array.equals(new JsonArray(array) {}));
+      assertNotEquals(array, new JsonArray(array) {
+      });
   }
 
   @Test
   public void hashCode_equalsForEqualArrays() {
-    assertTrue(array().hashCode() == array().hashCode());
-    assertTrue(array("foo").hashCode() == array("foo").hashCode());
+      assertEquals(array().hashCode(), array().hashCode());
+      assertEquals(array("foo").hashCode(), array("foo").hashCode());
   }
 
   @Test
   public void hashCode_differsForDifferentArrays() {
-    assertFalse(array().hashCode() == array("bar").hashCode());
-    assertFalse(array("foo").hashCode() == array("bar").hashCode());
+      assertNotEquals(array().hashCode(), array("bar").hashCode());
+      assertNotEquals(array("foo").hashCode(), array("bar").hashCode());
   }
 
   @Test

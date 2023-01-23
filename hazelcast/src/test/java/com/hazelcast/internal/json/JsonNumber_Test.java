@@ -142,38 +142,39 @@ public class JsonNumber_Test {
   public void equals_trueForSameInstance() {
     JsonNumber number = new JsonNumber("23");
 
-    assertTrue(number.equals(number));
+      assertEquals(number, number);
   }
 
   @Test
   public void equals_trueForEqualNumberStrings() {
-    assertTrue(new JsonNumber("23").equals(new JsonNumber("23")));
+      assertEquals(new JsonNumber("23"), new JsonNumber("23"));
   }
 
   @Test
   public void equals_falseForDifferentNumberStrings() {
-    assertFalse(new JsonNumber("23").equals(new JsonNumber("42")));
-    assertFalse(new JsonNumber("1e+5").equals(new JsonNumber("1e5")));
+      assertNotEquals(new JsonNumber("23"), new JsonNumber("42"));
+      assertNotEquals(new JsonNumber("1e+5"), new JsonNumber("1e5"));
   }
 
   @Test
   public void equals_falseForNull() {
-    assertFalse(new JsonNumber("23").equals(null));
+      assertNotEquals(null, new JsonNumber("23"));
   }
 
   @Test
   public void equals_falseForSubclass() {
-    assertFalse(new JsonNumber("23").equals(new JsonNumber("23") {}));
+      assertNotEquals(new JsonNumber("23"), new JsonNumber("23") {
+      });
   }
 
   @Test
   public void hashCode_equalsForEqualStrings() {
-    assertTrue(new JsonNumber("23").hashCode() == new JsonNumber("23").hashCode());
+      assertEquals(new JsonNumber("23").hashCode(), new JsonNumber("23").hashCode());
   }
 
   @Test
   public void hashCode_differsForDifferentStrings() {
-    assertFalse(new JsonNumber("23").hashCode() == new JsonNumber("42").hashCode());
+      assertNotEquals(new JsonNumber("23").hashCode(), new JsonNumber("42").hashCode());
   }
 
   @Test

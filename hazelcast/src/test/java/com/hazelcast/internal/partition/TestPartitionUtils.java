@@ -234,7 +234,7 @@ public final class TestPartitionUtils {
     public static void assertAllPartitionsBelongTo(HazelcastInstance instance) {
         InternalPartitionService internalPartitionService = getPartitionService(instance);
         int partitionCount = internalPartitionService.getPartitionCount();
-        assertTrue(internalPartitionService.getMemberPartitionsIfAssigned(getAddress(instance)).size() == partitionCount);
+        assertEquals(internalPartitionService.getMemberPartitionsIfAssigned(getAddress(instance)).size(), partitionCount);
     }
 
     public static void assertSomePartitionsBelongTo(HazelcastInstance instance, Address address) {

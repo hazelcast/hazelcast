@@ -196,7 +196,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         boolean[] booleanArray = {true, false};
         map.put("boolean", booleanArray);
-        assertTrue(Arrays.equals(booleanArray, (boolean[]) map.get("boolean")));
+        assertArrayEquals(booleanArray, (boolean[]) map.get("boolean"));
 
         int[] intArray = {1, 2};
         map.put("int", intArray);
@@ -216,11 +216,11 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         float[] floatArray = {(float) 1, (float) 2};
         map.put("float", floatArray);
-        assertTrue(Arrays.equals(floatArray, (float[]) map.get("float")));
+        assertArrayEquals(floatArray, (float[]) map.get("float"), 0.0);
 
         double[] doubleArray = {(double) 1, (double) 2};
         map.put("double", doubleArray);
-        assertTrue(Arrays.equals(doubleArray, (double[]) map.get("double")));
+        assertArrayEquals(doubleArray, (double[]) map.get("double"), 0.0);
 
         char[] charArray = {'1', '2'};
         map.put("char", charArray);
@@ -250,8 +250,8 @@ public class BasicMapTest extends HazelcastTestSupport {
     @Test
     public void testMapPutIfAbsent() {
         IMap<String, String> map = getInstance().getMap("testMapPutIfAbsent");
-        assertEquals(null, map.putIfAbsent("key1", "value1"));
-        assertEquals(null, map.putIfAbsent("key2", "value2"));
+        assertNull(map.putIfAbsent("key1", "value1"));
+        assertNull(map.putIfAbsent("key2", "value2"));
         assertEquals("value1", map.putIfAbsent("key1", "valueX"));
         assertEquals("value1", map.get("key1"));
         assertEquals(2, map.size());
@@ -367,7 +367,7 @@ public class BasicMapTest extends HazelcastTestSupport {
             assertTrue(latchCleared.await(5, SECONDS));
         } catch (InterruptedException e) {
             e.printStackTrace();
-            assertFalse(e.getMessage(), true);
+            fail(e.getMessage());
         }
     }
 
@@ -418,7 +418,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key3", "value3");
         assertEquals("value1", map.remove("key1"));
         assertEquals(2, map.size());
-        assertEquals(null, map.remove("key1"));
+        assertNull(map.remove("key1"));
         assertEquals(2, map.size());
         assertEquals("value3", map.remove("key3"));
         assertEquals(1, map.size());
@@ -446,9 +446,9 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key3", "value3");
         map.clear();
         assertEquals(0, map.size());
-        assertEquals(null, map.get("key1"));
-        assertEquals(null, map.get("key2"));
-        assertEquals(null, map.get("key3"));
+        assertNull(map.get("key1"));
+        assertNull(map.get("key2"));
+        assertNull(map.get("key3"));
     }
 
     @Test
@@ -476,7 +476,7 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key3", "value3");
         assertEquals("value1", map.remove("key1"));
         assertEquals(2, map.size());
-        assertEquals(null, map.remove("key1"));
+        assertNull(map.remove("key1"));
         assertEquals(2, map.size());
         assertEquals("value3", map.remove("key3"));
         assertEquals(1, map.size());
@@ -566,12 +566,12 @@ public class BasicMapTest extends HazelcastTestSupport {
         map.put("key1", "value1");
         map.put("key2", "value2");
         map.put("key3", "value3");
-        assertEquals(true, map.containsKey("key1"));
-        assertEquals(false, map.containsKey("key5"));
+        assertTrue(map.containsKey("key1"));
+        assertFalse(map.containsKey("key5"));
         map.remove("key1");
-        assertEquals(false, map.containsKey("key1"));
-        assertEquals(true, map.containsKey("key2"));
-        assertEquals(false, map.containsKey("key5"));
+        assertFalse(map.containsKey("key1"));
+        assertTrue(map.containsKey("key2"));
+        assertFalse(map.containsKey("key5"));
     }
 
     @Test
@@ -1472,12 +1472,12 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         assertTrueEventually(() -> {
             assertEquals("key", addedKey[0]);
-            assertEquals(null, addedValue[0]);
+            assertNull(addedValue[0]);
             assertEquals("key", updatedKey[0]);
-            assertEquals(null, oldValue[0]);
-            assertEquals(null, newValue[0]);
+            assertNull(oldValue[0]);
+            assertNull(newValue[0]);
             assertEquals("key", removedKey[0]);
-            assertEquals(null, removedValue[0]);
+            assertNull(removedValue[0]);
         });
     }
 

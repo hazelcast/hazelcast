@@ -61,6 +61,7 @@ import java.util.concurrent.ConcurrentMap;
 import static com.hazelcast.osgi.impl.HazelcastOSGiTestUtil.createHazelcastOSGiInstance;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
@@ -76,7 +77,7 @@ public class HazelcastOSGiInstanceTest {
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
-        assertTrue(hazelcastOSGiInstance.equals(hazelcastOSGiInstance));
+        assertEquals(hazelcastOSGiInstance, hazelcastOSGiInstance);
     }
 
     @Test
@@ -85,7 +86,7 @@ public class HazelcastOSGiInstanceTest {
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
-        assertFalse(hazelcastOSGiInstance.equals(null));
+        assertNotEquals(null, hazelcastOSGiInstance);
     }
 
     @Test
@@ -93,7 +94,7 @@ public class HazelcastOSGiInstanceTest {
         HazelcastInstance mockHazelcastInstance = mock(HazelcastInstance.class);
         HazelcastOSGiInstance hazelcastOSGiInstance = createHazelcastOSGiInstance(mockHazelcastInstance);
 
-        assertFalse(hazelcastOSGiInstance.equals(new Object()));
+        assertNotEquals(hazelcastOSGiInstance, new Object());
     }
 
     @Test
@@ -104,7 +105,7 @@ public class HazelcastOSGiInstanceTest {
         HazelcastOSGiInstance hazelcastOSGiInstance1 = createHazelcastOSGiInstance(mockHazelcastInstance1, mockService);
         HazelcastOSGiInstance hazelcastOSGiInstance2 = createHazelcastOSGiInstance(mockHazelcastInstance2, mockService);
 
-        assertFalse(hazelcastOSGiInstance1.equals(hazelcastOSGiInstance2));
+        assertNotEquals(hazelcastOSGiInstance1, hazelcastOSGiInstance2);
     }
 
     @Test
@@ -115,7 +116,7 @@ public class HazelcastOSGiInstanceTest {
         HazelcastOSGiInstance hazelcastOSGiInstance1 = createHazelcastOSGiInstance(mockHazelcastInstance, mockService1);
         HazelcastOSGiInstance hazelcastOSGiInstance2 = createHazelcastOSGiInstance(mockHazelcastInstance, mockService2);
 
-        assertFalse(hazelcastOSGiInstance1.equals(hazelcastOSGiInstance2));
+        assertNotEquals(hazelcastOSGiInstance1, hazelcastOSGiInstance2);
     }
 
     @Test
@@ -127,7 +128,7 @@ public class HazelcastOSGiInstanceTest {
         HazelcastOSGiInstance hazelcastOSGiInstance1 = createHazelcastOSGiInstance(mockHazelcastInstance1, mockService1);
         HazelcastOSGiInstance hazelcastOSGiInstance2 = createHazelcastOSGiInstance(mockHazelcastInstance2, mockService2);
 
-        assertFalse(hazelcastOSGiInstance1.equals(hazelcastOSGiInstance2));
+        assertNotEquals(hazelcastOSGiInstance1, hazelcastOSGiInstance2);
     }
 
     @Test
@@ -137,7 +138,7 @@ public class HazelcastOSGiInstanceTest {
         HazelcastOSGiInstance hazelcastOSGiInstance1 = createHazelcastOSGiInstance(mockHazelcastInstance, mockService);
         HazelcastOSGiInstance hazelcastOSGiInstance2 = createHazelcastOSGiInstance(mockHazelcastInstance, mockService);
 
-        assertTrue(hazelcastOSGiInstance1.equals(hazelcastOSGiInstance2));
+        assertEquals(hazelcastOSGiInstance1, hazelcastOSGiInstance2);
     }
 
     @Test

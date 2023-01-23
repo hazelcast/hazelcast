@@ -35,6 +35,7 @@ import java.io.IOException;
 import java.io.Serializable;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -74,7 +75,7 @@ public class LazyMapEntryTest extends HazelcastTestSupport {
 
         entry.init(serializationService, keyData, valueObject, null);
 
-        assertTrue("Old valueData should not be here", valueData != entry.getValueData());
+        assertNotSame("Old valueData should not be here", valueData, entry.getValueData());
     }
 
     @Test

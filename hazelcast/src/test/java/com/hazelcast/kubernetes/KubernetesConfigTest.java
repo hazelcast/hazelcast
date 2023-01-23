@@ -49,7 +49,9 @@ import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_LABEL_VALUE;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_NAME;
 import static com.hazelcast.kubernetes.KubernetesProperties.SERVICE_PORT;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -117,8 +119,8 @@ public class KubernetesConfigTest {
         // then
         assertEquals(DiscoveryMode.KUBERNETES_API, config.getMode());
         assertEquals("test", config.getNamespace());
-        assertEquals(true, config.isResolveNotReadyAddresses());
-        assertEquals(false, config.isUseNodeNameAsExternalAddress());
+        assertTrue(config.isResolveNotReadyAddresses());
+        assertFalse(config.isUseNodeNameAsExternalAddress());
         assertEquals(TEST_API_TOKEN, config.getTokenProvider().getToken());
         assertEquals(TEST_CA_CERTIFICATE, config.getKubernetesCaCertificate());
         assertEquals(ExposeExternallyMode.AUTO, config.getExposeExternallyMode());
@@ -167,7 +169,7 @@ public class KubernetesConfigTest {
         KubernetesConfig config = new KubernetesConfig(properties);
 
         // then
-        assertEquals(true, config.isUseNodeNameAsExternalAddress());
+        assertTrue(config.isUseNodeNameAsExternalAddress());
     }
 
     @Test

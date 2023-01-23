@@ -451,7 +451,7 @@ public class ByteArrayObjectDataInputTest extends HazelcastTestSupport {
 
         assertNull(theNullArray);
         assertArrayEquals(new boolean[0], theZeroLenghtArray);
-        assertTrue(Arrays.equals(new boolean[]{true}, booleanArray));
+        assertArrayEquals(new boolean[]{true}, booleanArray);
     }
 
     @Test

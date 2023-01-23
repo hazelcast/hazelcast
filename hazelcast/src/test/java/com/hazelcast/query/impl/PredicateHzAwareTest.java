@@ -66,7 +66,7 @@ public class PredicateHzAwareTest extends HazelcastTestSupport {
 
         final Collection<Integer> result = m.project(new SimpleProjection(), new SimplePredicate());
 
-        assertTrue(result.size() == 1);
+        assertEquals(1, result.size());
         assertEquals(2, (int) result.iterator().next());
     }
 

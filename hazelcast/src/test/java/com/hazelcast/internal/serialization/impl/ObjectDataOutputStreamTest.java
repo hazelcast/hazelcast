@@ -75,7 +75,7 @@ public class ObjectDataOutputStreamTest {
         SerializationV1DataSerializable testDataFromSerializer = new SerializationV1DataSerializable();
         testDataFromSerializer.readData(input);
 
-        assertTrue(testData.equals(testDataFromSerializer));
+        assertEquals(testData, testDataFromSerializer);
     }
 
     @Test
@@ -94,7 +94,7 @@ public class ObjectDataOutputStreamTest {
         SerializationV1DataSerializable testDataFromSerializer = new SerializationV1DataSerializable();
         testDataFromSerializer.readData(input);
 
-        assertTrue(testData.equals(testDataFromSerializer));
+        assertEquals(testData, testDataFromSerializer);
     }
 
     @Test

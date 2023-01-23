@@ -161,7 +161,7 @@ public class StringUtilTest extends HazelcastTestSupport {
 
     @Test
     public void testStripTrailingSlash() throws Exception {
-        assertEquals(null, StringUtil.stripTrailingSlash(null));
+        assertNull(StringUtil.stripTrailingSlash(null));
         assertEquals("", StringUtil.stripTrailingSlash(""));
         assertEquals("a", StringUtil.stripTrailingSlash("a"));
         assertEquals("a", StringUtil.stripTrailingSlash("a/"));
@@ -215,10 +215,10 @@ public class StringUtilTest extends HazelcastTestSupport {
 
     @Test
     public void isNotBlank() {
-        assertTrue(!StringUtil.isNullOrEmptyAfterTrim("string"));
-        assertFalse(!StringUtil.isNullOrEmptyAfterTrim("  "));
-        assertFalse(!StringUtil.isNullOrEmptyAfterTrim(""));
-        assertFalse(!StringUtil.isNullOrEmptyAfterTrim(null));
+        assertFalse(StringUtil.isNullOrEmptyAfterTrim("string"));
+        assertTrue(StringUtil.isNullOrEmptyAfterTrim("  "));
+        assertTrue(StringUtil.isNullOrEmptyAfterTrim(""));
+        assertTrue(StringUtil.isNullOrEmptyAfterTrim(null));
     }
 
     @Test

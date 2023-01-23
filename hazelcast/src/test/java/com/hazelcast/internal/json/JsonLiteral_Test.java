@@ -118,32 +118,32 @@ public class JsonLiteral_Test {
 
   @Test
   public void NULL_equals() {
-    assertTrue(NULL.equals(NULL));
+      assertEquals(NULL, NULL);
 
-    assertFalse(NULL.equals(null));
-    assertFalse(NULL.equals(TRUE));
-    assertFalse(NULL.equals(FALSE));
-    assertFalse(NULL.equals(Json.value("null")));
+      assertNotEquals(null, NULL);
+      assertNotEquals(NULL, TRUE);
+      assertNotEquals(NULL, FALSE);
+      assertNotEquals(NULL, value("null"));
   }
 
   @Test
   public void TRUE_equals() {
-    assertTrue(TRUE.equals(TRUE));
+      assertEquals(TRUE, TRUE);
 
-    assertFalse(TRUE.equals(null));
-    assertFalse(TRUE.equals(FALSE));
-    assertFalse(TRUE.equals(Boolean.TRUE));
-    assertFalse(NULL.equals(Json.value("true")));
+      assertNotEquals(null, TRUE);
+      assertNotEquals(TRUE, FALSE);
+      assertNotEquals(TRUE, Boolean.TRUE);
+      assertNotEquals(NULL, value("true"));
   }
 
   @Test
   public void FALSE_equals() {
-    assertTrue(FALSE.equals(FALSE));
+      assertEquals(FALSE, FALSE);
 
-    assertFalse(FALSE.equals(null));
-    assertFalse(FALSE.equals(TRUE));
-    assertFalse(FALSE.equals(Boolean.FALSE));
-    assertFalse(NULL.equals(Json.value("false")));
+      assertNotEquals(null, FALSE);
+      assertNotEquals(FALSE, TRUE);
+      assertNotEquals(FALSE, Boolean.FALSE);
+      assertNotEquals(NULL, value("false"));
   }
 
   @Test

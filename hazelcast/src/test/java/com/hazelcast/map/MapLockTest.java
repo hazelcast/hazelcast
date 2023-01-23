@@ -45,6 +45,7 @@ import java.util.stream.Collectors;
 import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -261,8 +262,8 @@ public class MapLockTest extends HazelcastTestSupport {
         assertFalse("the result of try put should be false as the absent key is locked", putResult);
         assertTrueEventually(new AssertTask() {
             public void run() {
-                assertEquals("the key should be absent ", null, map1.get(key));
-                assertEquals("the key should be absent ", null, map2.get(key));
+                assertNull("the key should be absent ", map1.get(key));
+                assertNull("the key should be absent ", map2.get(key));
             }
         });
     }
@@ -282,7 +283,7 @@ public class MapLockTest extends HazelcastTestSupport {
 
         assertEquals("TTL of KEY has expired, KEY is locked, we expect VAL", val, map.get(key));
         map.unlock(key);
-        assertEquals("TTL of KEY has expired, KEY is unlocked, we expect null", null, map.get(key));
+        assertNull("TTL of KEY has expired, KEY is unlocked, we expect null", map.get(key));
     }
 
     @Test
@@ -295,8 +296,8 @@ public class MapLockTest extends HazelcastTestSupport {
         map.lock(KEY);
         map.clear();
 
-        assertEquals("a locked key should not be removed by map clear", false, map.isEmpty());
-        assertEquals("a key present in a map, should be locked after map clear", true, map.isLocked(KEY));
+        assertFalse("a locked key should not be removed by map clear", map.isEmpty());
+        assertTrue("a key present in a map, should be locked after map clear", map.isLocked(KEY));
     }
 
     /**

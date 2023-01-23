@@ -40,6 +40,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_BACKUP_SYNC
 import static com.hazelcast.test.Accessors.getPartitionService;
 import static java.util.Arrays.asList;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastParallelParametersRunnerFactory.class)
@@ -83,7 +84,7 @@ public class AntiEntropyCleanupTest extends HazelcastTestSupport {
                 public void run() throws Exception {
                     for (int partitionId = 0; partitionId < partitionService.getPartitionCount(); partitionId++) {
                         for (ServiceNamespace namespace : replicaVersionManager.getNamespaces(partitionId)) {
-                            assertFalse(namespace.getServiceName().equals(MapService.SERVICE_NAME));
+                            assertNotEquals(MapService.SERVICE_NAME, namespace.getServiceName());
                         }
                     }
                 }

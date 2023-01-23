@@ -148,7 +148,7 @@ public class MemberVersionTest {
 
     @Test
     public void testCompareTo() {
-        assertTrue(VERSION_3_8.compareTo(VERSION_3_8) == 0);
+        assertEquals(0, VERSION_3_8.compareTo(VERSION_3_8));
         assertTrue(VERSION_3_8.compareTo(VERSION_3_8_1) < 0);
         assertTrue(VERSION_3_8.compareTo(VERSION_3_8_2) < 0);
         assertTrue(VERSION_3_8.compareTo(VERSION_3_9) < 0);

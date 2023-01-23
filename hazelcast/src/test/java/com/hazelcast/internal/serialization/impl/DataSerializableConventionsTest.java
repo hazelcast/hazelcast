@@ -60,6 +60,7 @@ import java.util.TreeSet;
 import static com.hazelcast.test.ReflectionsHelper.REFLECTIONS;
 import static com.hazelcast.test.ReflectionsHelper.filterNonConcreteClasses;
 import static com.hazelcast.test.ReflectionsHelper.filterNonHazelcastClasses;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -281,9 +282,8 @@ public class DataSerializableConventionsTest {
 
                 IdentifiedDataSerializable instanceFromFactory = factories.get(factoryId).create(typeId);
                 assertNotNull("Factory with ID " + factoryId + " returned null for type with ID " + typeId, instanceFromFactory);
-                assertTrue("Factory with ID " + factoryId + " instantiated an object of " + instanceFromFactory.getClass()
-                                + " while expected type was " + instance.getClass(),
-                        instanceFromFactory.getClass().equals(instance.getClass()));
+                assertEquals("Factory with ID " + factoryId + " instantiated an object of " + instanceFromFactory.getClass()
+                        + " while expected type was " + instance.getClass(), instanceFromFactory.getClass(), instance.getClass());
             } catch (UnsupportedOperationException ignored) {
                 // expected from local operation classes not meant for serialization
             }

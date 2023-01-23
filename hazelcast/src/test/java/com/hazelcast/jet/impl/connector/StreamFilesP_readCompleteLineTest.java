@@ -27,6 +27,7 @@ import java.io.StringReader;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -36,12 +37,12 @@ public class StreamFilesP_readCompleteLineTest {
 
     @Test
     public void when_emptyFile_then_null() throws Exception {
-        assertEquals(null, p.readCompleteLine(new StringReader("")));
+        assertNull(p.readCompleteLine(new StringReader("")));
     }
 
     @Test
     public void when_nonTerminatedSingleLine_then_null() throws Exception {
-        assertEquals(null, p.readCompleteLine(new StringReader("blabla")));
+        assertNull(p.readCompleteLine(new StringReader("blabla")));
     }
 
     @Test
@@ -56,7 +57,7 @@ public class StreamFilesP_readCompleteLineTest {
         StringReader reader = new StringReader("blabla\nbla");
 
         assertEquals("blabla", p.readCompleteLine(reader));
-        assertEquals(null, p.readCompleteLine(reader));
+        assertNull(p.readCompleteLine(reader));
     }
 
     @Test

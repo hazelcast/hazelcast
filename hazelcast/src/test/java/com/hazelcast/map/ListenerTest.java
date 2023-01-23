@@ -373,7 +373,7 @@ public class ListenerTest extends HazelcastTestSupport {
         assertTrueEventually(new AssertTask() {
             @Override
             public void run() {
-                assertTrue(globalCount.get() == 1);
+                assertEquals(1, globalCount.get());
             }
         });
     }

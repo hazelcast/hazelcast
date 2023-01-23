@@ -256,7 +256,7 @@ public class MapStoreWriteBehindTest extends AbstractMapStoreTest {
         assertEquals(0, map.size());
 
         long timeBeforePut = System.nanoTime();
-        assertEquals("Map produced a value out of thin air", null, map.put("1", "value1"));
+        assertNull("Map produced a value out of thin air", map.put("1", "value1"));
         assertEquals("Map did not return a previously stored value", "value1", map.get("1"));
         String mapStoreValue = (String) testMapStore.getStore().get("1");
         if (mapStoreValue != null) {

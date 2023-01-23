@@ -30,7 +30,9 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -108,10 +110,10 @@ public class GreaterLessPredicateTest {
         assertFalse(new GreaterLessPredicate("this", 0.0d, equal, less).apply(entry(-0.0)));
 
         // whereas in Java
-        assertTrue(0.0 == -0.0);
-        assertTrue(0.0d == -0.0d);
-        assertTrue(0.0 == -0.0d);
-        assertTrue(0.0d == -0.0);
+        assertEquals(0.0, -0.0, 0.0);
+        assertEquals(0.0d, -0.0d, 0.0);
+        assertEquals(0.0, -0.0d, 0.0);
+        assertEquals(0.0d, -0.0, 0.0);
     }
 
     @Test
@@ -130,12 +132,12 @@ public class GreaterLessPredicateTest {
         assertTrue(new GreaterLessPredicate("this", Float.NaN, equal, less).apply(entry(-Double.NaN)));
 
         // whereas in Java
-        assertFalse(Double.NaN == Double.NaN);
-        assertFalse(Float.NaN == Float.NaN);
-        assertFalse(Double.NaN == -Double.NaN);
-        assertFalse(Float.NaN == -Float.NaN);
-        assertFalse(Double.NaN == -Float.NaN);
-        assertFalse(Float.NaN == -Double.NaN);
+        assertNotEquals(Double.NaN, Double.NaN, 0.0);
+        assertNotEquals(Float.NaN, Float.NaN, 0.0);
+        assertNotEquals(Double.NaN, -Double.NaN, 0.0);
+        assertNotEquals(Float.NaN, -Float.NaN, 0.0);
+        assertNotEquals(Double.NaN, -Float.NaN, 0.0);
+        assertNotEquals(Float.NaN, -Double.NaN, 0.0);
     }
 
     @Test

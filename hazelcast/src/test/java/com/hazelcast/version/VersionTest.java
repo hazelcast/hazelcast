@@ -33,6 +33,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThan;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 
@@ -143,10 +144,10 @@ public class VersionTest {
         assertEquals(Version.UNKNOWN, Version.UNKNOWN);
         assertEquals(Version.of(3, 0), Version.of(3, 0));
 
-        assertFalse(Version.of(3, 0).equals(Version.of(4, 0)));
-        assertFalse(Version.UNKNOWN.equals(Version.of(4, 0)));
+        assertNotEquals(of(3, 0), of(4, 0));
+        assertNotEquals(UNKNOWN, of(4, 0));
 
-        assertFalse(Version.UNKNOWN.equals(new Object()));
+        assertNotEquals(UNKNOWN, new Object());
     }
 
     @Test

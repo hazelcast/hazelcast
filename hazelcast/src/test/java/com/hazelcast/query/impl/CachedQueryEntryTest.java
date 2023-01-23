@@ -31,6 +31,7 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -168,7 +169,7 @@ public class CachedQueryEntryTest extends QueryEntryTest {
     public void testEquals_givenSameInstance_thenReturnTrue() {
         CachedQueryEntry entry1 = createEntry("key");
 
-        assertTrue(entry1.equals(entry1));
+        assertEquals(entry1, entry1);
     }
 
     @Test
@@ -177,7 +178,7 @@ public class CachedQueryEntryTest extends QueryEntryTest {
         CachedQueryEntry entry1 = createEntry("key");
         CachedQueryEntry entry2 = null;
 
-        assertFalse(entry1.equals(entry2));
+        assertNotEquals(entry1, entry2);
     }
 
     @Test
@@ -185,7 +186,7 @@ public class CachedQueryEntryTest extends QueryEntryTest {
         CachedQueryEntry entry1 = createEntry("key");
         Object entry2 = new Object();
 
-        assertFalse(entry1.equals(entry2));
+        assertNotEquals(entry1, entry2);
     }
 
     @Test
@@ -193,7 +194,7 @@ public class CachedQueryEntryTest extends QueryEntryTest {
         CachedQueryEntry entry1 = createEntry("key1");
         CachedQueryEntry entry2 = createEntry("key2");
 
-        assertFalse(entry1.equals(entry2));
+        assertNotEquals(entry1, entry2);
     }
 
     @Test
@@ -201,7 +202,7 @@ public class CachedQueryEntryTest extends QueryEntryTest {
         CachedQueryEntry entry1 = createEntry("key");
         CachedQueryEntry entry2 = createEntry("key");
 
-        assertTrue(entry1.equals(entry2));
+        assertEquals(entry1, entry2);
     }
 
     @Test

@@ -43,7 +43,7 @@ public class SetEqualsHashTest extends HazelcastTestSupport {
         Data value = build.toData(randomString());
         CollectionItem firstItem = new CollectionItem(1, value);
         CollectionItem secondItem = new CollectionItem(2, value);
-        assertTrue(firstItem.equals(secondItem));
+        assertEquals(firstItem, secondItem);
         assertEquals(firstItem.hashCode(), secondItem.hashCode());
     }
 }

@@ -55,6 +55,7 @@ import static com.hazelcast.internal.networking.HandlerStatus.CLEAN;
 import static com.hazelcast.internal.util.JVMUtil.upcast;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
 @Category({QuickTest.class, ParallelJVMTest.class})
@@ -230,7 +231,7 @@ public class ClientMessageEncoderDecoderTest extends HazelcastTestSupport {
         assertEquals("3.12", parameters.serverHazelcastVersion);
         assertEquals(271, parameters.partitionCount);
         assertEquals(clusterId, parameters.clusterId);
-        assertEquals(true, parameters.failoverSupported);
+        assertTrue(parameters.failoverSupported);
     }
 
     class EventHandler extends MapAddEntryListenerCodec.AbstractEventHandler {

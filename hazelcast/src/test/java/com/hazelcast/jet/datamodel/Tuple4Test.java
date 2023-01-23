@@ -27,6 +27,7 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.jet.datamodel.Tuple4.tuple4;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -54,8 +55,8 @@ public class Tuple4Test {
         Tuple4<String, String, String, String> t_b = tuple4("a", "b", "c", "d");
 
         // When - Then
-        assertTrue(t.equals(t_b));
-        assertTrue(t.hashCode() == t_b.hashCode());
+        assertEquals(t, t_b);
+        assertEquals(t.hashCode(), t_b.hashCode());
     }
 
     @Test
@@ -64,7 +65,7 @@ public class Tuple4Test {
         Tuple4<String, String, String, String> t_b = tuple4("a", "b", "c", "xd");
 
         // When - Then
-        assertFalse(t.equals(t_b));
+        assertNotEquals(t, t_b);
     }
 
     @Test

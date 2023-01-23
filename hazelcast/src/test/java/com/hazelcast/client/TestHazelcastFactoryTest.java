@@ -31,6 +31,7 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -106,8 +107,7 @@ public class TestHazelcastFactoryTest extends HazelcastTestSupport {
         String instanceName = clientInstanceImpl.getName();
         HazelcastInstance[] registeredClients = OutOfMemoryErrorDispatcher.getClientInstancesRef().get();
         for (HazelcastInstance registeredClient : registeredClients) {
-            assertTrue("We expect no registered ref for the clientInstanceImpl",
-                    clientInstanceImpl != registeredClient);
+            assertNotSame("We expect no registered ref for the clientInstanceImpl", clientInstanceImpl, registeredClient);
         }
 
         assertNull(HazelcastClient.getHazelcastClientByName(instanceName));

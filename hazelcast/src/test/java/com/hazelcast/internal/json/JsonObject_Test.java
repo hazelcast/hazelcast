@@ -795,45 +795,46 @@ public class JsonObject_Test {
 
   @Test
   public void equals_trueForSameInstance() {
-    assertTrue(object.equals(object));
+      assertEquals(object, object);
   }
 
   @Test
   public void equals_trueForEqualObjects() {
-    assertTrue(object().equals(object()));
-    assertTrue(object("a", "1", "b", "2").equals(object("a", "1", "b", "2")));
+      assertEquals(object(), object());
+      assertEquals(object("a", "1", "b", "2"), object("a", "1", "b", "2"));
   }
 
   @Test
   public void equals_falseForDifferentObjects() {
-    assertFalse(object("a", "1").equals(object("a", "2")));
-    assertFalse(object("a", "1").equals(object("b", "1")));
-    assertFalse(object("a", "1", "b", "2").equals(object("b", "2", "a", "1")));
+      assertNotEquals(object("a", "1"), object("a", "2"));
+      assertNotEquals(object("a", "1"), object("b", "1"));
+      assertNotEquals(object("a", "1", "b", "2"), object("b", "2", "a", "1"));
   }
 
   @Test
   public void equals_falseForNull() {
-    assertFalse(new JsonObject().equals(null));
+      assertNotEquals(null, new JsonObject());
   }
 
   @Test
   public void equals_falseForSubclass() {
     JsonObject jsonObject = new JsonObject();
 
-    assertFalse(jsonObject.equals(new JsonObject(jsonObject) {}));
+      assertNotEquals(jsonObject, new JsonObject(jsonObject) {
+      });
   }
 
   @Test
   public void hashCode_equalsForEqualObjects() {
-    assertTrue(object().hashCode() == object().hashCode());
-    assertTrue(object("a", "1").hashCode() == object("a", "1").hashCode());
+      assertEquals(object().hashCode(), object().hashCode());
+      assertEquals(object("a", "1").hashCode(), object("a", "1").hashCode());
   }
 
   @Test
   public void hashCode_differsForDifferentObjects() {
-    assertFalse(object().hashCode() == object("a", "1").hashCode());
-    assertFalse(object("a", "1").hashCode() == object("a", "2").hashCode());
-    assertFalse(object("a", "1").hashCode() == object("b", "1").hashCode());
+      assertNotEquals(object().hashCode(), object("a", "1").hashCode());
+      assertNotEquals(object("a", "1").hashCode(), object("a", "2").hashCode());
+      assertNotEquals(object("a", "1").hashCode(), object("b", "1").hashCode());
   }
 
   @Test
@@ -992,51 +993,52 @@ public class JsonObject_Test {
   public void member_equals_trueForSameInstance() {
     Member member = new Member("a", Json.TRUE);
 
-    assertTrue(member.equals(member));
+      assertEquals(member, member);
   }
 
   @Test
   public void member_equals_trueForEqualObjects() {
     Member member = new Member("a", Json.TRUE);
 
-    assertTrue(member.equals(new Member("a", Json.TRUE)));
+      assertEquals(member, new Member("a", Json.TRUE));
   }
 
   @Test
   public void member_equals_falseForDifferingObjects() {
     Member member = new Member("a", Json.TRUE);
 
-    assertFalse(member.equals(new Member("b", Json.TRUE)));
-    assertFalse(member.equals(new Member("a", Json.FALSE)));
+      assertNotEquals(member, new Member("b", Json.TRUE));
+      assertNotEquals(member, new Member("a", Json.FALSE));
   }
 
   @Test
   public void member_equals_falseForNull() {
     Member member = new Member("a", Json.TRUE);
 
-    assertFalse(member.equals(null));
+      assertNotEquals(null, member);
   }
 
   @Test
   public void member_equals_falseForSubclass() {
     Member member = new Member("a", Json.TRUE);
 
-    assertFalse(member.equals(new Member("a", Json.TRUE) {}));
+      assertNotEquals(member, new Member("a", Json.TRUE) {
+      });
   }
 
   @Test
   public void member_hashCode_equalsForEqualObjects() {
     Member member = new Member("a", Json.TRUE);
 
-    assertTrue(member.hashCode() == new Member("a", Json.TRUE).hashCode());
+      assertEquals(member.hashCode(), new Member("a", Json.TRUE).hashCode());
   }
 
   @Test
   public void member_hashCode_differsForDifferingobjects() {
     Member member = new Member("a", Json.TRUE);
 
-    assertFalse(member.hashCode() == new Member("b", Json.TRUE).hashCode());
-    assertFalse(member.hashCode() == new Member("a", Json.FALSE).hashCode());
+      assertNotEquals(member.hashCode(), new Member("b", Json.TRUE).hashCode());
+      assertNotEquals(member.hashCode(), new Member("a", Json.FALSE).hashCode());
   }
 
   private static JsonObject object(String... namesAndValues) {

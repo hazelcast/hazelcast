@@ -31,7 +31,9 @@ import static com.hazelcast.function.PredicateEx.alwaysFalse;
 import static com.hazelcast.function.PredicateEx.alwaysTrue;
 import static com.hazelcast.query.impl.predicates.PredicateTestUtils.entry;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 @Category({QuickTest.class, ParallelJVMTest.class})
 @RunWith(HazelcastParallelClassRunner.class)
@@ -60,12 +62,12 @@ public class FunctionsTest extends HazelcastTestSupport {
 
     @Test
     public void when_alwaysTrue() {
-        assertEquals(true, alwaysTrue().test(3));
+        assertTrue(alwaysTrue().test(3));
     }
 
     @Test
     public void when_alwaysFalse() {
-        assertEquals(false, alwaysFalse().test(2));
+        assertFalse(alwaysFalse().test(2));
     }
 
     @Test

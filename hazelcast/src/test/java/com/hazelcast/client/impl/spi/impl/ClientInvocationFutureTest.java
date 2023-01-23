@@ -47,6 +47,7 @@ import static com.hazelcast.test.HazelcastTestSupport.ignore;
 import static com.hazelcast.test.HazelcastTestSupport.sleepSeconds;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -195,7 +196,7 @@ public class ClientInvocationFutureTest {
         });
         invocationFuture.complete(response);
 
-        assertEquals(null, nextStage.get(10, TimeUnit.SECONDS));
+        assertNull(nextStage.get(10, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(2)).complete();
     }
@@ -225,7 +226,7 @@ public class ClientInvocationFutureTest {
         CompletableFuture nextStage = invocationFuture.thenAccept((v) -> ignore(null));
         invocationFuture.complete(response);
 
-        assertEquals(null, nextStage.get(10, TimeUnit.SECONDS));
+        assertNull(nextStage.get(10, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(2)).complete();
     }
@@ -236,7 +237,7 @@ public class ClientInvocationFutureTest {
                 (t, u) -> ignore(null));
         invocationFuture.complete(null);
 
-        assertEquals(null, nextStage.get(10, TimeUnit.SECONDS));
+        assertNull(nextStage.get(10, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(2)).complete();
     }
@@ -277,7 +278,7 @@ public class ClientInvocationFutureTest {
         CompletableFuture nextStage = invocationFuture.acceptEither(newCompletedFuture(null),
                 t -> ignore(null));
 
-        assertEquals(null, nextStage.get(10, TimeUnit.SECONDS));
+        assertNull(nextStage.get(10, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(1)).complete();
     }
@@ -286,7 +287,7 @@ public class ClientInvocationFutureTest {
     public void test_applyEither() throws Exception {
         CompletableFuture nextStage = invocationFuture.applyToEither(newCompletedFuture(null), (t) -> t);
 
-        assertEquals(null, nextStage.get(10, TimeUnit.SECONDS));
+        assertNull(nextStage.get(10, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(1)).complete();
     }
@@ -296,7 +297,7 @@ public class ClientInvocationFutureTest {
         CompletableFuture<Void> nextStage = invocationFuture.runAfterBoth(newCompletedFuture(null), () -> ignore(null));
         invocationFuture.complete(null);
 
-        assertEquals(null, nextStage.get(10, TimeUnit.SECONDS));
+        assertNull(nextStage.get(10, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(2)).complete();
     }
@@ -306,7 +307,7 @@ public class ClientInvocationFutureTest {
         CompletableFuture<Void> nextStage = invocationFuture.runAfterEither(newCompletedFuture(null),
                 () -> ignore(null));
 
-        assertEquals(null, nextStage.get(10, TimeUnit.SECONDS));
+        assertNull(nextStage.get(10, TimeUnit.SECONDS));
         verify(callIdSequence).forceNext();
         verify(callIdSequence, times(1)).complete();
     }

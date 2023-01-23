@@ -43,6 +43,7 @@ import java.util.concurrent.ExecutionException;
 import static com.hazelcast.test.HazelcastTestSupport.assertInstanceOf;
 import static com.hazelcast.test.HazelcastTestSupport.assertTrueEventually;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
@@ -122,7 +123,7 @@ public class ClientDelegatingFutureTest {
 
     @Test
     public void getNow_whenNotDoneShouldReturnDefaultValue() throws Exception {
-        assertTrue(!delegatingFuture.isDone());
+        assertFalse(delegatingFuture.isDone());
         assertEquals(DESERIALIZED_DEFAULT_VALUE, delegatingFuture.getNow(DESERIALIZED_DEFAULT_VALUE));
     }
 

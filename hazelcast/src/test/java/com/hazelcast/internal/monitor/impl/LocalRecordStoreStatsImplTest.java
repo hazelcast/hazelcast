@@ -202,7 +202,7 @@ public class LocalRecordStoreStatsImplTest extends HazelcastTestSupport {
         if (updated) {
             assertTrue(lastUpdateTimeAfter > lastUpdateTimeBefore);
         } else {
-            assertTrue(lastUpdateTimeAfter == lastUpdateTimeBefore);
+            assertEquals(lastUpdateTimeAfter, lastUpdateTimeBefore);
         }
     }
 

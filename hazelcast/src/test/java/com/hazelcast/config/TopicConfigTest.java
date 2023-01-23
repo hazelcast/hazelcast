@@ -27,9 +27,11 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static com.hazelcast.test.HazelcastTestSupport.assumeDifferentHashCodes;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  *
@@ -53,7 +55,7 @@ public class TopicConfigTest {
     @Test
     public void testSetName() {
         TopicConfig topicConfig = new TopicConfig().setName("test");
-        assertTrue("test".equals(topicConfig.getName()));
+        assertEquals("test", topicConfig.getName());
     }
 
     /**
@@ -74,7 +76,7 @@ public class TopicConfigTest {
         assertTrue(topicConfig.isGlobalOrderingEnabled());
         try {
             topicConfig.setMultiThreadingEnabled(true);
-            assertTrue("multi-threading must be disabled when global-ordering is enabled", false);
+            fail("multi-threading must be disabled when global-ordering is enabled");
         } catch (IllegalArgumentException e) {
             // anticipated..
         }
@@ -100,7 +102,7 @@ public class TopicConfigTest {
         assertTrue(topicConfig.isMultiThreadingEnabled());
         try {
             topicConfig.setGlobalOrderingEnabled(true);
-            assertTrue("global-ordering must be disabled when multi-threading is enabled", false);
+            fail("global-ordering must be disabled when multi-threading is enabled");
         } catch (IllegalArgumentException e) {
             // anticipated..
         }

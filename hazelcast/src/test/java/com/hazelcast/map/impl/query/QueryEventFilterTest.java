@@ -30,7 +30,9 @@ import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -114,7 +116,7 @@ public class QueryEventFilterTest {
         QueryEventFilter filter1 = new QueryEventFilter(key, Predicates.alwaysTrue(), true);
         QueryEventFilter filter2 = filter1;
 
-        assertTrue(filter1.equals(filter2));
+        assertEquals(filter1, filter2);
     }
 
     @Test
@@ -123,7 +125,7 @@ public class QueryEventFilterTest {
         QueryEventFilter filter1 = new QueryEventFilter(key, Predicates.alwaysTrue(), true);
         QueryEventFilter filter2 = null;
 
-        assertFalse(filter1.equals(filter2));
+        assertNotEquals(filter1, filter2);
     }
 
     @Test
@@ -132,7 +134,7 @@ public class QueryEventFilterTest {
         QueryEventFilter filter1 = new QueryEventFilter(key, Predicates.alwaysTrue(), true);
         Object filter2 = new Object();
 
-        assertFalse(filter1.equals(filter2));
+        assertNotEquals(filter1, filter2);
     }
 
     @Test
@@ -142,7 +144,7 @@ public class QueryEventFilterTest {
 
         QueryEventFilter filter2 = new QueryEventFilter(key, Predicates.alwaysTrue(), false);
 
-        assertFalse(filter1.equals(filter2));
+        assertNotEquals(filter1, filter2);
     }
 
     @Test
@@ -152,7 +154,7 @@ public class QueryEventFilterTest {
 
         QueryEventFilter filter2 = new QueryEventFilter(key, Predicates.alwaysTrue(), true);
 
-        assertFalse(filter1.equals(filter2));
+        assertNotEquals(filter1, filter2);
     }
 
     @Test
@@ -162,7 +164,7 @@ public class QueryEventFilterTest {
         Data key = serializationService.toData("key");
         QueryEventFilter filter2 = new QueryEventFilter(key, Predicates.alwaysTrue(), true);
 
-        assertFalse(filter1.equals(filter2));
+        assertNotEquals(filter1, filter2);
     }
 
     @Test
@@ -173,7 +175,7 @@ public class QueryEventFilterTest {
         Data key2 = serializationService.toData("key2");
         QueryEventFilter filter2 = new QueryEventFilter(key2, Predicates.alwaysTrue(), true);
 
-        assertFalse(filter1.equals(filter2));
+        assertNotEquals(filter1, filter2);
     }
 
     @Test
@@ -181,7 +183,7 @@ public class QueryEventFilterTest {
         QueryEventFilter filter1 = new QueryEventFilter(null, Predicates.alwaysTrue(), true);
         QueryEventFilter filter2 = new QueryEventFilter(null, Predicates.alwaysTrue(), true);
 
-        assertTrue(filter1.equals(filter2));
+        assertEquals(filter1, filter2);
     }
 
     @Test
@@ -189,7 +191,7 @@ public class QueryEventFilterTest {
         QueryEventFilter filter1 = new QueryEventFilter(null, Predicates.alwaysTrue(), true);
         QueryEventFilter filter2 = new QueryEventFilter(null, Predicates.alwaysFalse(), true);
 
-        assertFalse(filter1.equals(filter2));
+        assertNotEquals(filter1, filter2);
     }
 
     @Test
@@ -197,7 +199,7 @@ public class QueryEventFilterTest {
         QueryEventFilter filter1 = new QueryEventFilter(null, Predicates.alwaysTrue(), true);
         QueryEventFilter filter2 = new QueryEventFilter(null, Predicates.alwaysFalse(), true);
 
-        assertFalse(filter1.equals(filter2));
+        assertNotEquals(filter1, filter2);
     }
 
     private QueryableEntry mockEntryWithKeyData(Data key) {

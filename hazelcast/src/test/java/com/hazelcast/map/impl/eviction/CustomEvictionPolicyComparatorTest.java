@@ -40,6 +40,7 @@ import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_COUNT;
 import static java.lang.String.format;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -89,7 +90,7 @@ public class CustomEvictionPolicyComparatorTest extends HazelcastTestSupport {
             assertNotNull(e1);
             assertNotNull(e2);
 
-            assertFalse(e1.equals(e2));
+            assertNotEquals(e1, e2);
 
             assertTrue(e1.hashCode() != 0);
             assertTrue(e2.hashCode() != 0);

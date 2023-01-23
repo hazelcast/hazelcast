@@ -53,6 +53,7 @@ import static com.hazelcast.test.Accessors.getNodeEngineImpl;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -199,7 +200,7 @@ public class CacheThroughHazelcastInstanceTest extends HazelcastTestSupport {
         assertNotNull(cache2);
 
         // verify that they are same cache instance
-        assertTrue(cache1 == cache2);
+        assertSame(cache1, cache2);
     }
 
     @Test
@@ -227,7 +228,7 @@ public class CacheThroughHazelcastInstanceTest extends HazelcastTestSupport {
         assertNotNull(cache2);
 
         // verify that they are same cache instance
-        assertTrue(cache1 == cache2);
+        assertSame(cache1, cache2);
     }
 
     @Test
@@ -284,7 +285,7 @@ public class CacheThroughHazelcastInstanceTest extends HazelcastTestSupport {
         assertNotNull(cache2);
 
         // verify that they are same cache instance
-        assertTrue(cache1 == cache2);
+        assertSame(cache1, cache2);
     }
 
     @Test

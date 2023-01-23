@@ -25,6 +25,7 @@ import org.junit.experimental.categories.Category;
 import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -56,6 +57,6 @@ public class NearCacheConfigAccessorTest extends HazelcastTestSupport {
         nearCacheConfig.setEvictionConfig(new EvictionConfig().setSize(10));
         NearCacheConfig copy = NearCacheConfigAccessor.copyWithInitializedDefaultMaxSizeForOnHeapMaps(nearCacheConfig);
 
-        assertTrue(nearCacheConfig == copy);
+        assertSame(nearCacheConfig, copy);
     }
 }

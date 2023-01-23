@@ -104,8 +104,7 @@ public class SnapshotContextTest {
         }
 
         assertNotNull("future == null", future);
-        assertTrue("future.isDone() == " + future.isDone(),
-                future.isDone() == (taskletCount == 1));
+        assertEquals("future.isDone() == " + future.isDone(), future.isDone(), (taskletCount == 1));
         assertEquals("numRemainingTasklets", taskletCount - 1, ssContext.getNumRemainingTasklets().get());
         assertEquals("activeSnapshotId at the end",
                 taskletDone == TaskletDone.NOT_DONE && numHigherPriority > 0

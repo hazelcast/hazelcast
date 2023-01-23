@@ -43,6 +43,7 @@ import java.util.function.Function;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -218,8 +219,8 @@ public class ClientComputeConditionallyTests extends ClientTestSupport {
         final IMap<String, String> map = client.getMap("testCompute");
         map.put("present_key", "present_value");
         String newValue = map.compute("present_key", (k, v) -> null);
-        assertEquals(null, newValue);
-        assertEquals(null, map.get("present_key"));
+        assertNull(newValue);
+        assertNull(map.get("present_key"));
     }
 
     @Test
@@ -234,8 +235,8 @@ public class ClientComputeConditionallyTests extends ClientTestSupport {
     public void testComputeShouldNotDoAnythingWhenBothOldAndNewValuesAreNotPresent() {
         final IMap<String, String> map = client.getMap("testCompute");
         String result = map.compute("absent_key", (k, v) -> null);
-        assertEquals(null, result);
-        assertEquals(null, map.get("absent_key"));
+        assertNull(result);
+        assertNull(map.get("absent_key"));
     }
 
     @Test
@@ -252,8 +253,8 @@ public class ClientComputeConditionallyTests extends ClientTestSupport {
         final IMap<String, String> map = client.getMap("testMerge");
         map.put("present_key", "present_value");
         String newValue = map.merge("present_key", "some_value", (ov, nv) -> null);
-        assertEquals(null, newValue);
-        assertEquals(null, map.get("present_key"));
+        assertNull(newValue);
+        assertNull(map.get("present_key"));
     }
 
     @Test

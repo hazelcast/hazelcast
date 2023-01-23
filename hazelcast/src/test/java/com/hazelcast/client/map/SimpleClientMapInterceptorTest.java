@@ -39,6 +39,7 @@ import org.junit.runner.RunWith;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -96,7 +97,7 @@ public class SimpleClientMapInterceptorTest extends HazelcastTestSupport {
         }
 
         assertEquals(6, map.size());
-        assertEquals(null, map.get(1));
+        assertNull(map.get(1));
         assertEquals("ISTANBUL:", map.get(2));
         assertEquals("TOKYO:", map.get(3));
         assertEquals("LONDON:", map.get(4));
@@ -108,7 +109,7 @@ public class SimpleClientMapInterceptorTest extends HazelcastTestSupport {
         map.put(8, "Moscow");
 
         assertEquals("Moscow", map.get(8));
-        assertEquals(null, map.get(1));
+        assertNull(map.get(1));
         assertEquals("ISTANBUL", map.get(2));
         assertEquals("TOKYO", map.get(3));
         assertEquals("LONDON", map.get(4));

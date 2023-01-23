@@ -59,8 +59,8 @@ public class MutableLongTest {
         assertEquals(MutableLong.valueOf(0), MutableLong.valueOf(0));
         assertEquals(MutableLong.valueOf(10), MutableLong.valueOf(10));
         assertNotEquals(MutableLong.valueOf(0), MutableLong.valueOf(10));
-        assertFalse(MutableLong.valueOf(0).equals(null));
-        assertFalse(MutableLong.valueOf(0).equals("foo"));
+        assertNotEquals(null, MutableLong.valueOf(0));
+        assertNotEquals("foo", MutableLong.valueOf(0));
 
 
         MutableLong self = MutableLong.valueOf(0);
