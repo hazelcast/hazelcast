@@ -19,6 +19,8 @@ package com.hazelcast.jet.mongodb;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
 import com.hazelcast.jet.core.ProcessorMetaSupplier;
 import com.hazelcast.jet.core.ProcessorSupplier;
 import com.hazelcast.jet.core.Vertex;
@@ -68,6 +70,8 @@ public final class MongoDBSinkBuilder<T> {
             .intervalFunction(exponentialBackoffWithCap(100, 2.0, 3000))
             .maxAttempts(20)
             .build();
+
+    private static final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
     private final String name;
     private final SupplierEx<MongoClient> clientSupplier;
     @Nonnull
@@ -226,7 +230,7 @@ public final class MongoDBSinkBuilder<T> {
                 ? ConsumerEx.noop()
                 : this.replaceOptionsChanger;
         final RetryStrategy commitRetryStrategy = this.commitRetryStrategy;
-        final TransactionOptions transactionOptions = this.transactionOptions;
+        final byte[] transactionOptions = serializationService.toData(this.transactionOptions).toByteArray();
 
         checkState((databaseName == null) == (collectionName == null), "if one of [databaseName, collectionName]" +
                 " is provided, so should the other one");
@@ -238,14 +242,14 @@ public final class MongoDBSinkBuilder<T> {
 
         if (databaseName != null) {
             return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism,
-                    ProcessorSupplier.of(() -> new WriteMongoP<>(clientSupplier, databaseName, collectionName,
+                    () -> new WriteMongoP<>(clientSupplier, databaseName, collectionName,
                             documentClass, documentIdentityFn, updateOptionsChanger, fieldName,
-                            commitRetryStrategy, transactionOptions))));
+                            commitRetryStrategy, transactionOptions)));
         } else {
             return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism,
-                    ProcessorSupplier.of(() -> new WriteMongoP<>(clientSupplier, selectDatabaseNameFn,
+                    () -> new WriteMongoP<>(clientSupplier, selectDatabaseNameFn,
                             selectCollectionNameFn, documentClass, documentIdentityFn, updateOptionsChanger, fieldName,
-                            commitRetryStrategy, transactionOptions))));
+                            commitRetryStrategy, transactionOptions)));
         }
     }
 

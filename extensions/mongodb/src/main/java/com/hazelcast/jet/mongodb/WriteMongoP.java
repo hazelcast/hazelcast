@@ -18,6 +18,9 @@ package com.hazelcast.jet.mongodb;
 import com.hazelcast.function.ConsumerEx;
 import com.hazelcast.function.FunctionEx;
 import com.hazelcast.function.SupplierEx;
+import com.hazelcast.internal.serialization.InternalSerializationService;
+import com.hazelcast.internal.serialization.impl.DefaultSerializationServiceBuilder;
+import com.hazelcast.internal.serialization.impl.HeapData;
 import com.hazelcast.jet.core.AbstractProcessor;
 import com.hazelcast.jet.core.Inbox;
 import com.hazelcast.jet.core.Watermark;
@@ -87,6 +90,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
      * Max number of items processed (written) in one invocation of {@linkplain #process}.
      */
     private static final int MAX_BATCH_SIZE = 2_000;
+    private static final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
     private final MongoDbConnection connection;
     private final Class<I> documentType;
@@ -117,7 +121,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
             ConsumerEx<ReplaceOptions> replaceOptionAdjuster,
             String documentIdentityFieldName,
             RetryStrategy commitRetryStrategy,
-            TransactionOptions transactionOptions) {
+            byte[] transactionOptions) {
         this(clientSupplier, new ConstantCollectionPicker<>(databaseName, collectionName),
                 documentType, documentIdentityFn, replaceOptionAdjuster, documentIdentityFieldName,
                 commitRetryStrategy, transactionOptions);
@@ -135,7 +139,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
             ConsumerEx<ReplaceOptions> replaceOptionAdjuster,
             String documentIdentityFieldName,
             RetryStrategy commitRetryStrategy,
-            TransactionOptions transactionOptions
+            byte[] transactionOptions
     ) {
        this(clientSupplier, new FunctionalCollectionPicker<>(databaseNameSelectFn, collectionNameSelectFn),
                documentType, documentIdentityFn, replaceOptionAdjuster, documentIdentityFieldName,
@@ -153,7 +157,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
             ConsumerEx<ReplaceOptions> replaceOptionAdjuster,
             String documentIdentityFieldName,
             RetryStrategy commitRetryStrategy,
-            TransactionOptions transactionOptions) {
+            byte[] transactionOptions) {
         this.connection = new MongoDbConnection(clientSupplier, client -> {
         });
         this.documentIdentityFn = documentIdentityFn;
@@ -167,7 +171,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
         }
         this.replaceOptions = options;
         this.commitRetryStrategy = commitRetryStrategy;
-        this.transactionOptions = transactionOptions;
+        this.transactionOptions = serializationService.toObject(new HeapData(transactionOptions));
     }
 
     @Override
