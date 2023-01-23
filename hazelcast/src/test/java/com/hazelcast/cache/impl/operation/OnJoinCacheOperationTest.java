@@ -25,12 +25,14 @@ import com.hazelcast.logging.ILogger;
 import com.hazelcast.spi.impl.NodeEngine;
 import com.hazelcast.test.annotation.ParallelJVMTest;
 import com.hazelcast.test.annotation.QuickTest;
+import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.experimental.categories.Category;
 import org.junit.rules.ExpectedException;
+import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -47,6 +49,8 @@ import static org.mockito.Mockito.when;
 @Category({QuickTest.class, ParallelJVMTest.class})
 public class OnJoinCacheOperationTest {
 
+    private static MockedStatic mockedStatic;
+
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
@@ -56,7 +60,12 @@ public class OnJoinCacheOperationTest {
 
     @BeforeClass
     public static void beforeClass() throws Exception {
-        Mockito.mockStatic(JCacheDetector.class);
+        mockedStatic = Mockito.mockStatic(JCacheDetector.class);
+    }
+
+    @AfterClass
+    public static void cleanupMocks() {
+        mockedStatic.close();
     }
 
     @Before
