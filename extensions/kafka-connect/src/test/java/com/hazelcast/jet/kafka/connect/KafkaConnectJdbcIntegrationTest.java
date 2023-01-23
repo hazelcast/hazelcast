@@ -95,8 +95,6 @@ public class KafkaConnectJdbcIntegrationTest extends JetTestSupport {
         config.getJetConfig().setResourceUploadEnabled(true);
         Job job = createHazelcastInstance(config).getJet().newJob(pipeline, jobConfig);
 
-        sleepAtLeastSeconds(5);
-
         try {
             job.join();
             fail("Job should have completed with an AssertionCompletedException, but completed normally");
