@@ -132,6 +132,10 @@ public class ReadMongoP<I> extends AbstractProcessor {
         connection.reconnectIfNecessary();
     }
 
+    /**
+     * Source cannot be cooperative; the async driver is much older than sync driver, probably it's not Mongo's team
+     * priority to keep it up to date. Sync version seems to be better for us then.
+     */
     @Override
     public boolean isCooperative() {
         return false;

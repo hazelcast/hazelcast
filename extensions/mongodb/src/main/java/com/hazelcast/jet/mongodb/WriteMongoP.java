@@ -284,8 +284,16 @@ public class WriteMongoP<I> extends AbstractProcessor {
 
     @Override
     public void close() {
-        connection.close();
-        transactionUtility.close();
+        try {
+            connection.close();
+        } catch (Throwable e) {
+            logger.severe("Error while closing MongoDB connection", e);
+        }
+        try {
+            transactionUtility.close();
+        } catch (Throwable e) {
+            logger.severe("Error while closing MongoDB transaction utility", e);
+        }
     }
 
     @Override
