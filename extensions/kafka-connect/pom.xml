@@ -52,46 +52,9 @@
                         <filter>
                             <artifact>*:*</artifact>
                             <excludes>
-                                <exclude>module-info.class</exclude>
-                            </excludes>
-                        </filter>
-                        <filter>
-                            <artifact>org.apache.kafka:*</artifact>
-                            <excludes>
                                 <exclude>META-INF/MANIFEST.MF</exclude>
                                 <exclude>LICENSE</exclude>
                                 <exclude>NOTICE</exclude>
-                            </excludes>
-                        </filter>
-                        <!-- kafka dependencies -->
-                        <filter>
-                            <artifact>com.github.luben:zstd-jni:*</artifact>
-                            <excludes>
-                                <exclude>META-INF/MANIFEST.MF</exclude>
-                            </excludes>
-                        </filter>
-                        <filter>
-                            <artifact>org.lz4:lz4-java:*</artifact>
-                            <excludes>
-                                <exclude>META-INF/MANIFEST.MF</exclude>
-                            </excludes>
-                        </filter>
-                        <filter>
-                            <artifact>org.xerial.snappy:snappy-java:*</artifact>
-                            <excludes>
-                                <exclude>META-INF/MANIFEST.MF</exclude>
-                            </excludes>
-                        </filter>
-                        <filter>
-                            <artifact>org.slf4j:slf4j-api:*</artifact>
-                            <excludes>
-                                <exclude>META-INF/MANIFEST.MF</exclude>
-                            </excludes>
-                        </filter>
-                        <filter>
-                            <artifact>javax.ws.rs:javax.ws.rs-api:*</artifact>
-                            <excludes>
-                                <exclude>META-INF/MANIFEST.MF</exclude>
                             </excludes>
                         </filter>
                     </filters>
