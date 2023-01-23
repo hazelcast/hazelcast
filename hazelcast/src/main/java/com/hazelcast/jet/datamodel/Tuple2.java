@@ -106,4 +106,5 @@ public final class Tuple2<E0, E1> implements Map.Entry<E0, E1> {
     public String toString() {
         return "(" + f0 + ", " + f1 + ')';
     }
+
 }

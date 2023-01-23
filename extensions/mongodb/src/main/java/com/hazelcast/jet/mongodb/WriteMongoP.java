@@ -41,19 +41,16 @@ import com.mongodb.client.model.InsertOneModel;
 import com.mongodb.client.model.ReplaceOneModel;
 import com.mongodb.client.model.ReplaceOptions;
 import com.mongodb.client.model.WriteModel;
-import org.bson.Document;
 import org.bson.conversions.Bson;
 
 import javax.annotation.Nonnull;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Objects;
-import java.util.Set;
 
 import static com.hazelcast.internal.util.EmptyStatement.ignore;
 import static com.hazelcast.internal.util.Preconditions.checkNotNull;
@@ -62,12 +59,7 @@ import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.mongodb.Mappers.defaultCodecRegistry;
-import static com.mongodb.client.model.Aggregates.match;
-import static com.mongodb.client.model.Aggregates.project;
 import static com.mongodb.client.model.Filters.eq;
-import static com.mongodb.client.model.Filters.in;
-import static com.mongodb.client.model.Projections.include;
-import static java.util.Arrays.asList;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
@@ -208,7 +200,6 @@ public class WriteMongoP<I> extends AbstractProcessor {
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public void process(int ordinal, @Nonnull Inbox inbox) {
         if (!connection.reconnectIfNecessary()) {
             return;
@@ -217,13 +208,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
         try {
             MongoTransaction mongoTransaction = transactionUtility.activeTransaction();
 
-            ArrayList<I> items = new ArrayList<>();
-            for (Object item : inbox) {
-                items.add((I) item);
-                if (items.size() >= MAX_BATCH_SIZE) {
-                    break;
-                }
-            }
+            ArrayList<I> items = drainItems(inbox);
             @SuppressWarnings("DataFlowIssue")
             Map<MongoCollectionKey, List<I>> itemsPerCollection = items
                     .stream()
@@ -233,18 +218,17 @@ public class WriteMongoP<I> extends AbstractProcessor {
             for (MongoCollectionKey collectionKey : itemsPerCollection.keySet()) {
                 MongoCollection<I> collection = collectionKey.get(connection.client(), documentType);
 
-                Set<Object> docsFound = queryForExistingIds(items, collection);
                 List<WriteModel<I>> writes = new ArrayList<>();
 
                 for (I item : itemsPerCollection.get(collectionKey)) {
                     Object id = documentIdentityFn.apply(item);
 
                     WriteModel<I> write;
-                    if (docsFound.contains(id)) {
+                    if (id == null) {
+                        write = new InsertOneModel<>(item);
+                    } else {
                         Bson filter = eq(documentIdentityFieldName, id);
                         write = new ReplaceOneModel<>(filter, item, replaceOptions);
-                    } else {
-                        write = new InsertOneModel<>(item);
                     }
                     writes.add(write);
                 }
@@ -265,19 +249,16 @@ public class WriteMongoP<I> extends AbstractProcessor {
         }
     }
 
-    private Set<Object> queryForExistingIds(ArrayList<I> items, MongoCollection<?> collection) {
-        List<Object> identityValues = items.stream()
-                                           .map(documentIdentityFn)
-                                           .filter(Objects::nonNull)
-                                           .collect(toList());
-        Iterable<Document> foundIds = collection.aggregate(
-                asList(project(include("_id")), match(in("_id", identityValues))),
-                Document.class);
-        Set<Object> docsFound = new HashSet<>();
-        for (Document document : foundIds) {
-            docsFound.add(document.get("_id"));
+    @SuppressWarnings("unchecked")
+    private static <I> ArrayList<I> drainItems(Inbox inbox) {
+        ArrayList<I> items = new ArrayList<>();
+        for (Object item : inbox) {
+            items.add((I) item);
+            if (items.size() >= MAX_BATCH_SIZE) {
+                break;
+            }
         }
-        return docsFound;
+        return items;
     }
 
     @Override

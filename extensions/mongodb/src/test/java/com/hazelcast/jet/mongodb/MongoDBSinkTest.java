@@ -86,6 +86,7 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
         List<Document> docsToUpdate = new ArrayList<>();
         docsToUpdate.add(new Document("key", 1).append("val", 11).append("type", "existing"));
         docsToUpdate.add(new Document("key", 2).append("val", 11).append("type", "existing"));
+        collection.insertMany(docsToUpdate);
 
         String connectionString = mongoContainer.getConnectionString();
 
@@ -105,7 +106,7 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
         JobConfig config = new JobConfig().setProcessingGuarantee(processingGuarantee).setSnapshotIntervalMillis(500);
         instance().getJet().newJob(pipeline, config).join();
 
-        assertEquals(COUNT, collection.countDocuments());
+        assertTrueEventually(() -> assertEquals(COUNT, collection.countDocuments()));
         assertEquals(HALF, collection.countDocuments(eq("type", "existing")));
         assertEquals(HALF, collection.countDocuments(eq("type", "new")));
     }
