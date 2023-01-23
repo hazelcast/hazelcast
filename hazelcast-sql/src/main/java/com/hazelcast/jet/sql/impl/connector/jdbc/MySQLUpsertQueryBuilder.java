@@ -65,11 +65,10 @@ class MySQLUpsertQueryBuilder {
 
     void getOnDuplicateClause(StringBuilder stringBuilder) {
         String values = quotedColumnNames.stream()
-                .map(dbFieldName -> String.format("%s = VALUES(%s)", dbFieldName, dbFieldName))
+                .map(dbFieldName -> dbFieldName + " = VALUES(" + dbFieldName + ")")
                 .collect(Collectors.joining(","));
 
-        String clause = String.format("ON DUPLICATE KEY UPDATE %s", values);
-        stringBuilder.append(clause);
+        stringBuilder.append("ON DUPLICATE KEY UPDATE ").append(values);
     }
 
     String query() {

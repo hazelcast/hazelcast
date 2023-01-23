@@ -76,12 +76,10 @@ class PostgreSQLUpsertQueryBuilder {
         String primaryKeys = String.join(",", quotedPrimaryKeys);
 
         String values = quotedColumnNames.stream()
-                .map(dbFieldName -> String.format("%s = EXCLUDED.%s", dbFieldName, dbFieldName))
+                .map(dbFieldName -> dbFieldName + " = EXCLUDED." + dbFieldName)
                 .collect(Collectors.joining(","));
 
-        String clause = String.format("ON CONFLICT (%s) DO UPDATE SET %s", primaryKeys, values);
-
-        stringBuilder.append(clause);
+        stringBuilder.append("ON CONFLICT (").append(primaryKeys).append(") DO UPDATE SET ").append(values);
     }
 
     String query() {
