@@ -356,7 +356,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                             ));
                 }
 
-                if (!joinInfo.isEquiJoin() && processorIndex == 0) {
+                if (joinInfo.isLeftOuter() && processorIndex == 0) {
                     rightBufferStream = buffer[1].content()
                             .stream()
                             .map(row -> entry(
