@@ -20,6 +20,7 @@ import com.hazelcast.internal.util.Preconditions;
 import com.hazelcast.jet.kafka.connect.impl.KafkaConnectSource;
 import com.hazelcast.jet.pipeline.SourceBuilder;
 import com.hazelcast.jet.pipeline.StreamSource;
+import com.hazelcast.spi.annotation.Beta;
 import org.apache.kafka.connect.source.SourceRecord;
 
 import javax.annotation.Nonnull;
@@ -31,6 +32,7 @@ import static com.hazelcast.internal.util.Preconditions.checkRequiredProperty;
 /**
  * Contains factory methods to create a Kafka Connect source.
  */
+@Beta
 public final class KafkaConnectSources {
 
     private KafkaConnectSources() {
@@ -61,6 +63,7 @@ public final class KafkaConnectSources {
      * @return a source to use in {@link com.hazelcast.jet.pipeline.Pipeline#readFrom(StreamSource)}
      */
     @Nonnull
+    @Beta
     public static StreamSource<SourceRecord> connect(@Nonnull Properties properties) {
         Preconditions.checkRequiredProperty(properties, "name");
         String name = properties.getProperty("name");
