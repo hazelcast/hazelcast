@@ -25,14 +25,11 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility;
 import com.hazelcast.jet.impl.processor.TwoPhaseSnapshotCommitUtility.TransactionalResource;
 import com.hazelcast.jet.impl.processor.UnboundedTransactionsProcessorUtility;
-import com.hazelcast.jet.retry.RetryStrategies;
 import com.hazelcast.jet.retry.RetryStrategy;
 import com.hazelcast.jet.retry.impl.RetryTracker;
 import com.hazelcast.logging.ILogger;
 import com.mongodb.MongoException;
-import com.mongodb.ReadPreference;
 import com.mongodb.TransactionOptions;
-import com.mongodb.WriteConcern;
 import com.mongodb.bulk.BulkWriteResult;
 import com.mongodb.client.ClientSession;
 import com.mongodb.client.MongoClient;
@@ -62,14 +59,12 @@ import static com.hazelcast.jet.datamodel.Tuple2.tuple2;
 import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.impl.util.LoggingUtil.logFine;
 import static com.hazelcast.jet.mongodb.Mappers.defaultCodecRegistry;
-import static com.hazelcast.jet.retry.IntervalFunction.exponentialBackoffWithCap;
 import static com.mongodb.client.model.Aggregates.match;
 import static com.mongodb.client.model.Aggregates.project;
 import static com.mongodb.client.model.Filters.eq;
 import static com.mongodb.client.model.Filters.in;
 import static com.mongodb.client.model.Projections.include;
 import static java.util.Arrays.asList;
-import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.mapping;
 import static java.util.stream.Collectors.toList;
@@ -92,20 +87,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
      * Max number of items processed (written) in one invocation of {@linkplain #process}.
      */
     private static final int MAX_BATCH_SIZE = 2_000;
-    @SuppressWarnings("checkstyle:MagicNumber")
-    private static final RetryStrategy RETRY_STRATEGY = RetryStrategies.custom()
-                                                                      .intervalFunction(exponentialBackoffWithCap(100
-                                                                              , 2.0, 3000))
-                                                                      .maxAttempts(20)
-                                                                      .build();
 
-    private static final long MAX_COMMIT_TIME = 10L;
-    private static final TransactionOptions TRANSACTION_OPTIONS = TransactionOptions
-            .builder()
-            .writeConcern(WriteConcern.MAJORITY)
-            .maxCommitTime(MAX_COMMIT_TIME, MINUTES)
-            .readPreference(ReadPreference.primaryPreferred())
-            .build();
     private final MongoDbConnection connection;
     private final Class<I> documentType;
     private ILogger logger;
@@ -120,6 +102,8 @@ public class WriteMongoP<I> extends AbstractProcessor {
     private final ReplaceOptions replaceOptions;
 
     private final Map<MongoTransactionId, MongoTransaction> activeTransactions = new HashMap<>();
+    private final RetryStrategy commitRetryStrategy;
+    private final TransactionOptions transactionOptions;
 
     /**
      * Creates a new processor that will always insert to the same database and collection.
@@ -131,9 +115,12 @@ public class WriteMongoP<I> extends AbstractProcessor {
             Class<I> documentType,
             FunctionEx<I, Object> documentIdentityFn,
             ConsumerEx<ReplaceOptions> replaceOptionAdjuster,
-            String documentIdentityFieldName) {
+            String documentIdentityFieldName,
+            RetryStrategy commitRetryStrategy,
+            TransactionOptions transactionOptions) {
         this(clientSupplier, new ConstantCollectionPicker<>(databaseName, collectionName),
-                documentType, documentIdentityFn, replaceOptionAdjuster, documentIdentityFieldName);
+                documentType, documentIdentityFn, replaceOptionAdjuster, documentIdentityFieldName,
+                commitRetryStrategy, transactionOptions);
     }
 
     /**
@@ -146,10 +133,13 @@ public class WriteMongoP<I> extends AbstractProcessor {
             Class<I> documentType,
             FunctionEx<I, Object> documentIdentityFn,
             ConsumerEx<ReplaceOptions> replaceOptionAdjuster,
-            String documentIdentityFieldName
+            String documentIdentityFieldName,
+            RetryStrategy commitRetryStrategy,
+            TransactionOptions transactionOptions
     ) {
        this(clientSupplier, new FunctionalCollectionPicker<>(databaseNameSelectFn, collectionNameSelectFn),
-               documentType, documentIdentityFn, replaceOptionAdjuster, documentIdentityFieldName);
+               documentType, documentIdentityFn, replaceOptionAdjuster, documentIdentityFieldName,
+               commitRetryStrategy, transactionOptions);
     }
 
     /**
@@ -161,7 +151,9 @@ public class WriteMongoP<I> extends AbstractProcessor {
             Class<I> documentType,
             FunctionEx<I, Object> documentIdentityFn,
             ConsumerEx<ReplaceOptions> replaceOptionAdjuster,
-            String documentIdentityFieldName) {
+            String documentIdentityFieldName,
+            RetryStrategy commitRetryStrategy,
+            TransactionOptions transactionOptions) {
         this.connection = new MongoDbConnection(clientSupplier, client -> {
         });
         this.documentIdentityFn = documentIdentityFn;
@@ -174,6 +166,8 @@ public class WriteMongoP<I> extends AbstractProcessor {
             replaceOptionAdjuster.accept(options);
         }
         this.replaceOptions = options;
+        this.commitRetryStrategy = commitRetryStrategy;
+        this.transactionOptions = transactionOptions;
     }
 
     @Override
@@ -413,7 +407,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
                 ILogger logger) {
             this.transactionId = transactionId;
             this.logger = logger;
-            this.commitRetryTracker = new RetryTracker(RETRY_STRATEGY);
+            this.commitRetryTracker = new RetryTracker(commitRetryStrategy);
         }
 
         @Override
@@ -478,7 +472,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
 
         private void startTransactionQuietly() {
             try {
-                clientSession.startTransaction(TRANSACTION_OPTIONS);
+                clientSession.startTransaction(transactionOptions);
             } catch (IllegalStateException e) {
                 if (!e.getMessage().contains("already in progress")) {
                     throw sneakyThrow(e);

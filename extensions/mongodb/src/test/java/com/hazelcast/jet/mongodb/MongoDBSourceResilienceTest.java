@@ -47,7 +47,6 @@ import org.junit.runner.RunWith;
 import org.testcontainers.containers.MongoDBContainer;
 import org.testcontainers.containers.Network;
 import org.testcontainers.containers.ToxiproxyContainer;
-import org.testcontainers.utility.DockerImageName;
 
 import javax.annotation.Nonnull;
 import java.io.IOException;

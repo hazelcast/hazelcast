@@ -25,6 +25,9 @@ import com.hazelcast.jet.core.Vertex;
 import com.hazelcast.jet.pipeline.Sink;
 import com.hazelcast.jet.pipeline.SinkBuilder;
 import com.hazelcast.jet.pipeline.Sinks;
+import com.hazelcast.jet.retry.RetryStrategies;
+import com.hazelcast.jet.retry.RetryStrategy;
+import com.mongodb.TransactionOptions;
 import com.mongodb.client.MongoClient;
 import com.mongodb.client.model.ReplaceOptions;
 import org.bson.BsonDocument;
@@ -36,6 +39,10 @@ import static com.hazelcast.internal.util.Preconditions.checkNotNull;
 import static com.hazelcast.internal.util.Preconditions.checkState;
 import static com.hazelcast.jet.impl.util.Util.checkNonNullAndSerializable;
 import static com.hazelcast.jet.impl.util.Util.checkSerializable;
+import static com.hazelcast.jet.retry.IntervalFunction.exponentialBackoffWithCap;
+import static com.mongodb.ReadPreference.primaryPreferred;
+import static com.mongodb.WriteConcern.MAJORITY;
+import static java.util.concurrent.TimeUnit.MINUTES;
 
 /**
  * See {@link MongoDBSinks#builder}
@@ -44,8 +51,23 @@ import static com.hazelcast.jet.impl.util.Util.checkSerializable;
  *
  * @param <T> type of the items the sink will accept
  */
+@SuppressWarnings("UnusedReturnValue")
 public final class MongoDBSinkBuilder<T> {
 
+    @SuppressWarnings("checkstyle:MagicNumber")
+    private static final TransactionOptions DEFAULT_TRANSACTION_OPTION = TransactionOptions
+            .builder()
+            .writeConcern(MAJORITY)
+            .maxCommitTime(10L, MINUTES)
+            .readPreference(primaryPreferred())
+            .build();
+
+    @SuppressWarnings("checkstyle:MagicNumber")
+    private static final RetryStrategy DEFAULT_COMMIT_RETRY_STRATEGY = RetryStrategies
+            .custom()
+            .intervalFunction(exponentialBackoffWithCap(100, 2.0, 3000))
+            .maxAttempts(20)
+            .build();
     private final String name;
     private final SupplierEx<MongoClient> clientSupplier;
     @Nonnull
@@ -60,6 +82,8 @@ public final class MongoDBSinkBuilder<T> {
     private String idFieldName;
     private FunctionEx<T, Object> documentIdentityFn;
     private ConsumerEx<ReplaceOptions> replaceOptionsChanger;
+    private RetryStrategy commitRetryStrategy;
+    private TransactionOptions transactionOptions;
 
     /**
      * See {@link MongoDBSinks#builder}
@@ -79,6 +103,9 @@ public final class MongoDBSinkBuilder<T> {
         if (BsonDocument.class.isAssignableFrom(documentClass)) {
             identifyDocumentBy("_id", doc -> ((BsonDocument) doc).get("_id"));
         }
+
+        transactionOptions(DEFAULT_TRANSACTION_OPTION);
+        commitRetryStrategy(DEFAULT_COMMIT_RETRY_STRATEGY);
     }
 
     /**
@@ -146,6 +173,37 @@ public final class MongoDBSinkBuilder<T> {
     }
 
     /**
+     * Sets the retry strategy in case of commit failure.
+     *
+     * MongoDB by default retries simple operations, but commits must be retried manually.
+     *
+     * This option is taken into consideration only if
+     * {@linkplain com.hazelcast.jet.config.ProcessingGuarantee#EXACTLY_ONCE} is used.
+     *
+     * Default value is {@linkplain #DEFAULT_COMMIT_RETRY_STRATEGY}.
+     */
+    @Nonnull
+    public MongoDBSinkBuilder<T> commitRetryStrategy(@Nonnull RetryStrategy commitRetryStrategy) {
+        this.commitRetryStrategy = commitRetryStrategy;
+        return this;
+    }
+
+
+    /**
+     * Sets options which will be used by MongoDB transaction mechanism.
+     *
+     * This option is taken into consideration only if
+     * {@linkplain com.hazelcast.jet.config.ProcessingGuarantee#EXACTLY_ONCE} is used.
+     *
+     * Default value is {@linkplain #DEFAULT_TRANSACTION_OPTION}.
+     */
+    @Nonnull
+    public MongoDBSinkBuilder<T> transactionOptions(@Nonnull TransactionOptions transactionOptions) {
+        this.transactionOptions = transactionOptions;
+        return this;
+    }
+
+    /**
      * Creates and returns the MongoDB {@link Sink} with the components you
      * supplied to this builder.
      */
@@ -153,6 +211,8 @@ public final class MongoDBSinkBuilder<T> {
     public Sink<T> build() {
         checkNotNull(clientSupplier, "clientSupplier must be set");
         checkNotNull(documentIdentityFn, "documentIdentityFn must be set");
+        checkNotNull(commitRetryStrategy, "commitRetryStrategy must be set");
+        checkNotNull(transactionOptions, "transactionOptions must be set");
 
         final SupplierEx<MongoClient> clientSupplier = this.clientSupplier;
         final Class<T> documentClass = this.documentClass;
@@ -165,6 +225,8 @@ public final class MongoDBSinkBuilder<T> {
         final ConsumerEx<ReplaceOptions> updateOptionsChanger = this.replaceOptionsChanger == null
                 ? ConsumerEx.noop()
                 : this.replaceOptionsChanger;
+        final RetryStrategy commitRetryStrategy = this.commitRetryStrategy;
+        final TransactionOptions transactionOptions = this.transactionOptions;
 
         checkState((databaseName == null) == (collectionName == null), "if one of [databaseName, collectionName]" +
                 " is provided, so should the other one");
@@ -177,11 +239,13 @@ public final class MongoDBSinkBuilder<T> {
         if (databaseName != null) {
             return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism,
                     ProcessorSupplier.of(() -> new WriteMongoP<>(clientSupplier, databaseName, collectionName,
-                            documentClass, documentIdentityFn, updateOptionsChanger, fieldName))));
+                            documentClass, documentIdentityFn, updateOptionsChanger, fieldName,
+                            commitRetryStrategy, transactionOptions))));
         } else {
             return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism,
                     ProcessorSupplier.of(() -> new WriteMongoP<>(clientSupplier, selectDatabaseNameFn,
-                            selectCollectionNameFn, documentClass, documentIdentityFn, updateOptionsChanger, fieldName))));
+                            selectCollectionNameFn, documentClass, documentIdentityFn, updateOptionsChanger, fieldName,
+                            commitRetryStrategy, transactionOptions))));
         }
     }
 

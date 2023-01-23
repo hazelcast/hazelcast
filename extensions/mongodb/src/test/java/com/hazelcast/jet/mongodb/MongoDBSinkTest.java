@@ -112,7 +112,8 @@ public class MongoDBSinkTest extends AbstractMongoDBTest {
 
     @Test
     public void test_withStreamAsInput() {
-        MongoCollection<Doc> collection = collection(defaultDatabase(), testName.getMethodName()).withDocumentClass(Doc.class);
+        MongoCollection<Doc> collection = collection(defaultDatabase(), testName.getMethodName())
+                .withDocumentClass(Doc.class);
         IMap<Long, Doc> mapToInsert = instance().getMap("toInsert");
         for (long i = 0; i < HALF; i++) {
             mapToInsert.put(i, new Doc(null, i, "new", "text lorem ipsum etc"));
