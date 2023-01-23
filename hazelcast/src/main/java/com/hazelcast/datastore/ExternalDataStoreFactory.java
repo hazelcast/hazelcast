@@ -42,7 +42,9 @@ public interface ExternalDataStoreFactory<DS> extends AutoCloseable {
     void init(ExternalDataStoreConfig config);
 
     /**
-     * Test data store connection.
+     * Test connection of previously initialized data store.
+     *
+     * @since 5.3
      */
     boolean testConnection() throws Exception;
 

@@ -41,7 +41,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Beta
 public class JdbcDataStoreFactory implements ExternalDataStoreFactory<DataSource> {
 
-    private static final int JDBC_TEST_CONNECTION_TIMEOUT_SECONDS = 1;
+    private static final int JDBC_TEST_CONNECTION_TIMEOUT_SECONDS = 5;
     private static final AtomicInteger DATA_SOURCE_COUNTER = new AtomicInteger();
 
     protected HikariDataSource sharedDataSource;

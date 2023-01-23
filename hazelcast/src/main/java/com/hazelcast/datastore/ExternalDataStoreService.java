@@ -34,6 +34,7 @@ public interface ExternalDataStoreService extends AutoCloseable {
      * @param config name of the data store factory
      * @return {@code true} if test was successful
      * @throws Exception if the test operation fails
+     * @since 5.3
      */
     boolean testConnection(ExternalDataStoreConfig config) throws Exception;
 
