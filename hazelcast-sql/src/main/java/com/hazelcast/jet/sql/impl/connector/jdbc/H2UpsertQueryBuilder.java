@@ -16,50 +16,65 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
+import org.apache.calcite.sql.SqlDialect;
+
 import java.util.List;
+import java.util.stream.Collectors;
 
 class H2UpsertQueryBuilder {
 
     private final String query;
 
-    H2UpsertQueryBuilder(JdbcTable jdbcTable) {
+    private final String quotedTableName;
+    private final List<String> quotedColumnNames;
+
+    private final List<String> quotedPrimaryKeys;
+
+    H2UpsertQueryBuilder(JdbcTable jdbcTable, SqlDialect dialect) {
+        // Quote identifiers
+        quotedTableName = dialect.quoteIdentifier(jdbcTable.getExternalName());
+        quotedColumnNames = jdbcTable.dbFieldNames()
+                .stream()
+                .map(dialect::quoteIdentifier)
+                .collect(Collectors.toList());
+        quotedPrimaryKeys = jdbcTable.getPrimaryKeyList()
+                .stream()
+                .map(dialect::quoteIdentifier)
+                .collect(Collectors.toList());
+
+
         StringBuilder stringBuilder = new StringBuilder();
 
-        getMergeClause(jdbcTable, stringBuilder);
-        getKeyClause(jdbcTable, stringBuilder);
-        getValuesClause(jdbcTable, stringBuilder);
+        getMergeClause(stringBuilder);
+        getKeyClause(stringBuilder);
+        getValuesClause(stringBuilder);
 
         query = stringBuilder.toString();
     }
 
-    void getMergeClause(JdbcTable jdbcTable, StringBuilder stringBuilder) {
+    void getMergeClause(StringBuilder stringBuilder) {
 
         stringBuilder.append("MERGE INTO ")
-                .append(jdbcTable.getExternalName())
+                .append(quotedTableName)
                 .append(" (")
-                .append(String.join(",", jdbcTable.dbFieldNames()))
+                .append(String.join(",", quotedColumnNames))
                 .append(") ");
     }
 
-    void getKeyClause(JdbcTable jdbcTable, StringBuilder stringBuilder) {
+    void getKeyClause(StringBuilder stringBuilder) {
         stringBuilder.append("KEY (")
-                .append(String.join(",", jdbcTable.getPrimaryKeyList()))
+                .append(String.join(",", quotedPrimaryKeys))
                 .append(" ) ");
     }
 
-    void getValuesClause(JdbcTable jdbcTable, StringBuilder stringBuilder) {
+    void getValuesClause(StringBuilder stringBuilder) {
 
-        List<String> dbFieldNames = jdbcTable.dbFieldNames();
+        String values = quotedColumnNames.stream()
+                .map(dbFieldName -> "?")
+                .collect(Collectors.joining(","));
 
-        stringBuilder.append("VALUES (");
+        stringBuilder.append("VALUES (").append(values).append(")");
 
-        for (int i = 0; i < dbFieldNames.size(); i++) {
-            stringBuilder.append('?');
-            if (i < (dbFieldNames.size() - 1)) {
-                stringBuilder.append(", ");
-            }
-        }
-        stringBuilder.append(')');
     }
 
     String query() {

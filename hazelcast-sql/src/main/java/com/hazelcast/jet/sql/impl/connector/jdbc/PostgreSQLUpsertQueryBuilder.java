@@ -16,6 +16,8 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
+import org.apache.calcite.sql.SqlDialect;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,40 +25,57 @@ class PostgreSQLUpsertQueryBuilder {
 
     private final String query;
 
-    PostgreSQLUpsertQueryBuilder(JdbcTable jdbcTable) {
+    private final String quotedTableName;
+    private final List<String> quotedColumnNames;
+
+    private final List<String> quotedPrimaryKeys;
+
+    PostgreSQLUpsertQueryBuilder(JdbcTable jdbcTable, SqlDialect sqlDialect) {
+        // Quote identifiers
+        quotedTableName = sqlDialect.quoteIdentifier(jdbcTable.getExternalName());
+        quotedColumnNames = jdbcTable.dbFieldNames()
+                .stream()
+                .map(sqlDialect::quoteIdentifier)
+                .collect(Collectors.toList());
+
+        quotedPrimaryKeys = jdbcTable.getPrimaryKeyList()
+                .stream()
+                .map(sqlDialect::quoteIdentifier)
+                .collect(Collectors.toList());
+
+
         StringBuilder stringBuilder = new StringBuilder();
 
-        getInsertClause(jdbcTable, stringBuilder);
-        getValuesClause(jdbcTable, stringBuilder);
-        getOnConflictClause(jdbcTable, stringBuilder);
+        getInsertClause(stringBuilder);
+        getValuesClause(stringBuilder);
+        getOnConflictClause(stringBuilder);
 
         query = stringBuilder.toString();
     }
 
-    void getInsertClause(JdbcTable jdbcTable, StringBuilder stringBuilder) {
+    void getInsertClause(StringBuilder stringBuilder) {
 
         stringBuilder.append("INSERT INTO ")
-                .append(jdbcTable.getExternalName())
+                .append(quotedTableName)
                 .append(" (")
-                .append(String.join(",", jdbcTable.dbFieldNames()))
+                .append(String.join(",", quotedColumnNames))
                 .append(") ");
     }
 
-    void getValuesClause(JdbcTable jdbcTable, StringBuilder stringBuilder) {
+    void getValuesClause(StringBuilder stringBuilder) {
 
-        List<String> dbFieldNames = jdbcTable.dbFieldNames();
 
-        String values = dbFieldNames.stream()
+        String values = quotedColumnNames.stream()
                 .map(dbFieldName -> "?")
                 .collect(Collectors.joining(","));
 
         stringBuilder.append("VALUES (").append(values).append(") ");
     }
 
-    void getOnConflictClause(JdbcTable jdbcTable, StringBuilder stringBuilder) {
-        String primaryKeys = String.join(",", jdbcTable.getPrimaryKeyList());
+    void getOnConflictClause(StringBuilder stringBuilder) {
+        String primaryKeys = String.join(",", quotedPrimaryKeys);
 
-        String values = jdbcTable.dbFieldNames().stream()
+        String values = quotedColumnNames.stream()
                 .map(dbFieldName -> String.format("%s = EXCLUDED.%s", dbFieldName, dbFieldName))
                 .collect(Collectors.joining(","));
 

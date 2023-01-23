@@ -16,14 +16,17 @@
 
 package com.hazelcast.jet.sql.impl.connector.jdbc;
 
+import org.apache.calcite.sql.SqlDialect;
 import org.junit.Before;
 import org.junit.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.mockito.invocation.InvocationOnMock;
 
 import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
 
 public class MySQLUpsertQueryBuilderTest {
@@ -31,31 +34,42 @@ public class MySQLUpsertQueryBuilderTest {
     @Mock
     JdbcTable jdbcTable;
 
+    @Mock
+    SqlDialect sqlDialect;
+
     @Before
     public void setUp() {
+
         MockitoAnnotations.openMocks(this);
+
+        when(jdbcTable.getExternalName()).thenReturn("table1");
+        when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
+
+        when(sqlDialect.quoteIdentifier(anyString())).thenAnswer((InvocationOnMock invocation) -> {
+            Object argument = invocation.getArguments()[0];
+            return "`" + argument + "`";
+        });
+
+
     }
 
     @Test
     public void testGetInsertClause() {
-        when(jdbcTable.getExternalName()).thenReturn("table1");
-        when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
 
-        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
+        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, sqlDialect);
         StringBuilder stringBuilder = new StringBuilder();
-        builder.getInsertClause(jdbcTable, stringBuilder);
+        builder.getInsertClause(stringBuilder);
 
         String insertClause = stringBuilder.toString();
-        assertEquals("INSERT INTO table1 (field1,field2) ", insertClause);
+        assertEquals("INSERT INTO `table1` (`field1`,`field2`) ", insertClause);
     }
 
     @Test
     public void testGetValuesClause() {
-        when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
 
-        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
+        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, sqlDialect);
         StringBuilder stringBuilder = new StringBuilder();
-        builder.getValuesClause(jdbcTable, stringBuilder);
+        builder.getValuesClause(stringBuilder);
 
         String valuesClause = stringBuilder.toString();
         assertEquals("VALUES (?,?) ", valuesClause);
@@ -63,23 +77,21 @@ public class MySQLUpsertQueryBuilderTest {
 
     @Test
     public void testGetOnDuplicateClause() {
-        when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
 
-        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
+        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, sqlDialect);
         StringBuilder stringBuilder = new StringBuilder();
-        builder.getOnDuplicateClause(jdbcTable, stringBuilder);
+        builder.getOnDuplicateClause(stringBuilder);
 
         String valuesClause = stringBuilder.toString();
-        assertEquals("ON DUPLICATE KEY UPDATE field1 = VALUES(field1),field2 = VALUES(field2)", valuesClause);
+        assertEquals("ON DUPLICATE KEY UPDATE `field1` = VALUES(`field1`),`field2` = VALUES(`field2`)",
+                valuesClause);
     }
 
     @Test
     public void testQuery() {
-        when(jdbcTable.getExternalName()).thenReturn("table1");
-        when(jdbcTable.dbFieldNames()).thenReturn(Arrays.asList("field1", "field2"));
-
-        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
+        MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, sqlDialect);
         String result = builder.query();
-        assertEquals("INSERT INTO table1 (field1,field2) VALUES (?,?) ON DUPLICATE KEY UPDATE field1 = VALUES(field1),field2 = VALUES(field2)", result);
+        assertEquals("INSERT INTO `table1` (`field1`,`field2`) VALUES (?,?) " +
+                     "ON DUPLICATE KEY UPDATE `field1` = VALUES(`field1`),`field2` = VALUES(`field2`)", result);
     }
 }

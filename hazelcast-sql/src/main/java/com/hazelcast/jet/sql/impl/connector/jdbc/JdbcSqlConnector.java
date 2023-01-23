@@ -396,20 +396,20 @@ public class JdbcSqlConnector implements SqlConnector {
     @Override
     public Vertex sinkProcessor(@Nonnull DAG dag, @Nonnull Table table) {
         JdbcTable jdbcTable = (JdbcTable) table;
-        SqlDialect dialect = jdbcTable.sqlDialect();
+        SqlDialect sqlDialect = jdbcTable.sqlDialect();
         if (isUpsertSupported(jdbcTable)) {
             String query = null;
 
-            if (dialect instanceof MysqlSqlDialect) {
-                MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable);
+            if (sqlDialect instanceof MysqlSqlDialect) {
+                MySQLUpsertQueryBuilder builder = new MySQLUpsertQueryBuilder(jdbcTable, sqlDialect);
                 query = builder.query();
 
-            } else if (dialect instanceof PostgresqlSqlDialect) {
-                PostgreSQLUpsertQueryBuilder builder = new PostgreSQLUpsertQueryBuilder(jdbcTable);
+            } else if (sqlDialect instanceof PostgresqlSqlDialect) {
+                PostgreSQLUpsertQueryBuilder builder = new PostgreSQLUpsertQueryBuilder(jdbcTable, sqlDialect);
                 query = builder.query();
 
-            } else if (dialect instanceof H2SqlDialect) {
-                H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(jdbcTable);
+            } else if (sqlDialect instanceof H2SqlDialect) {
+                H2UpsertQueryBuilder builder = new H2UpsertQueryBuilder(jdbcTable, sqlDialect);
                 query = builder.query();
             }
             return dag.newUniqueVertex(
