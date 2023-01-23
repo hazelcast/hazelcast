@@ -32,7 +32,6 @@ import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.impl.memory.AccumulationLimitExceededException;
 import com.hazelcast.jet.sql.impl.ExpressionUtil;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
-import com.hazelcast.jet.sql.impl.ObjectArrayKey;
 import com.hazelcast.nio.ObjectDataInput;
 import com.hazelcast.nio.ObjectDataOutput;
 import com.hazelcast.nio.serialization.DataSerializable;
@@ -61,6 +60,8 @@ import static com.hazelcast.jet.Traversers.traverseStream;
 import static com.hazelcast.jet.Util.entry;
 import static com.hazelcast.jet.core.BroadcastKey.broadcastKey;
 import static com.hazelcast.jet.impl.util.Util.logLateEvent;
+import static com.hazelcast.jet.sql.impl.ObjectArrayKey.project;
+import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinBroadcastKeys.DISTRIBUTED_EDGE_EVENTS_KEY;
 import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinBroadcastKeys.LAST_RECEIVED_WM_KEY;
 import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinP.StreamToStreamJoinBroadcastKeys.WM_STATE_KEY;
 import static java.util.function.Function.identity;
@@ -80,6 +81,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     // package-visible for tests
     final StreamToStreamJoinBuffer[] buffer;
 
+    private final int processorIndex;
     private final JetJoinInfo joinInfo;
     private final int outerJoinSide;
     private final List<Entry<Byte, ToLongFunctionEx<JetSqlRow>>> leftTimeExtractors;
@@ -102,12 +104,14 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
     @SuppressWarnings("checkstyle:ExecutableStatementCount")
     public StreamToStreamJoinP(
+            final int processorIndex,
             final JetJoinInfo joinInfo,
             final Map<Byte, ToLongFunctionEx<JetSqlRow>> leftTimeExtractors,
             final Map<Byte, ToLongFunctionEx<JetSqlRow>> rightTimeExtractors,
             final Map<Byte, Map<Byte, Long>> postponeTimeMap,
             final Tuple2<Integer, Integer> columnCounts
     ) {
+        this.processorIndex = processorIndex;
         this.joinInfo = joinInfo;
         this.leftTimeExtractors = new ArrayList<>(leftTimeExtractors.entrySet());
         this.rightTimeExtractors = new ArrayList<>(rightTimeExtractors.entrySet());
@@ -162,7 +166,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
     @Override
     protected void init(@Nonnull Context context) throws Exception {
-        this.evalContext = ExpressionEvalContext.from(context);
+        evalContext = ExpressionEvalContext.from(context);
         SerializationService ss = evalContext.getSerializationService();
         emptyLeftRow = new JetSqlRow(ss, new Object[columnCounts.f0()]);
         emptyRightRow = new JetSqlRow(ss, new Object[columnCounts.f1()]);
@@ -300,6 +304,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     public boolean saveToSnapshot() {
         if (snapshotTraverser == null) {
             List<Entry<?, ?>> snapshotList = new ArrayList<>();
+            Stream<Entry<?, ?>> leftBufferStream;
+            Stream<Entry<?, ?>> rightBufferStream;
 
             for (Entry<Byte, Long> e : wmState.entrySet()) {
                 Long timestamp = e.getValue();
@@ -307,7 +313,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                     snapshotList.add(
                             entry(
                                     broadcastKey(WM_STATE_KEY),
-                                    WatermarkStateValue.wmValue(e.getKey(), timestamp)
+                                    new WatermarkStateValue(e.getKey(), timestamp)
                             )
                     );
                 }
@@ -319,28 +325,50 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                     snapshotList.add(
                             entry(
                                     broadcastKey(LAST_RECEIVED_WM_KEY),
-                                    WatermarkStateValue.wmValue((Byte) e.getKey(), timestamp)
+                                    new WatermarkStateValue((Byte) e.getKey(), timestamp)
                             )
                     );
                 }
             }
 
-            Stream<Entry<?, ?>> leftBufferStream = buffer[0].content()
+            leftBufferStream = buffer[0].content()
                     .stream()
                     .map(row -> entry(
-                            ObjectArrayKey.project(row, joinInfo.leftEquiJoinIndices()),
-                            BufferSnapshotValue.bufferValue(row, 0)
+                            joinInfo.isEquiJoin() ? project(row, joinInfo.leftEquiJoinIndices()) : row.hashCode(),
+                            new BufferSnapshotValue(row, unusedEventsTracker.contains(row), 0)
                     ));
 
-            Stream<Entry<?, ?>> rightBufferStream = buffer[1].content()
+            rightBufferStream = buffer[1].content()
                     .stream()
                     .map(row -> entry(
-                            ObjectArrayKey.project(row, joinInfo.rightEquiJoinIndices()),
-                            BufferSnapshotValue.bufferValue(row, 1)
+                            joinInfo.isEquiJoin() ? project(row, joinInfo.rightEquiJoinIndices()) : row.hashCode(),
+                            new BufferSnapshotValue(row, unusedEventsTracker.contains(row), 1)
                     ));
+
+            if (!joinInfo.isEquiJoin()) {
+                // Note : details are described in TDD : docs/design/sql/15-stream-to-stream-join.md
+                if (joinInfo.isRightOuter() && processorIndex == 0) {
+                    leftBufferStream = buffer[0].content()
+                            .stream()
+                            .map(row -> entry(
+                                    broadcastKey(DISTRIBUTED_EDGE_EVENTS_KEY),
+                                    new BufferSnapshotValue(row, unusedEventsTracker.contains(row), 0)
+                            ));
+                }
+
+                if (!joinInfo.isEquiJoin() && processorIndex == 0) {
+                    rightBufferStream = buffer[1].content()
+                            .stream()
+                            .map(row -> entry(
+                                    broadcastKey(DISTRIBUTED_EDGE_EVENTS_KEY),
+                                    new BufferSnapshotValue(row, unusedEventsTracker.contains(row), 1)
+                            ));
+                }
+            }
 
             snapshotTraverser =
-                    traverseStream(Stream.of(snapshotList.stream(), leftBufferStream, rightBufferStream).flatMap(identity()))
+                    traverseStream(Stream.of(snapshotList.stream(), leftBufferStream, rightBufferStream)
+                            .flatMap(identity()))
                             .onFirstNull(() -> snapshotTraverser = null);
         }
 
@@ -349,6 +377,15 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
     @Override
     protected void restoreFromSnapshot(@Nonnull Object key, @Nonnull Object value) {
+        if (value instanceof BufferSnapshotValue) {
+            BufferSnapshotValue bsv = (BufferSnapshotValue) value;
+            buffer[bsv.bufferOrdinal()].add(bsv.row());
+            if (bsv.unused()) {
+                unusedEventsTracker.add(bsv.row());
+            }
+            return;
+        }
+
         if (key instanceof BroadcastKey) {
             BroadcastKey<?> broadcastKey = (BroadcastKey<?>) key;
             WatermarkStateValue wmValue = (WatermarkStateValue) value;
@@ -368,14 +405,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             } else {
                 throw new JetException("Unexpected broadcast key: " + broadcastKey.key());
             }
-            return;
-        }
-
-        if (value instanceof BufferSnapshotValue) {
-            BufferSnapshotValue bsv = (BufferSnapshotValue) value;
-            buffer[bsv.bufferOrdinal()].add(bsv.row());
-        } else {
-            throw new AssertionError("Unreachable");
         }
     }
 
@@ -477,7 +506,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
     enum StreamToStreamJoinBroadcastKeys {
         WM_STATE_KEY,
-        LAST_RECEIVED_WM_KEY
+        LAST_RECEIVED_WM_KEY,
+        DISTRIBUTED_EDGE_EVENTS_KEY
     }
 
     public static final class StreamToStreamJoinProcessorSupplier implements ProcessorSupplier, DataSerializable {
@@ -506,13 +536,11 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             this.postponeTimeMap = postponeTimeMap;
             this.leftInputColumnCount = leftInputColumnCount;
             this.rightInputColumnCount = rightInputColumnCount;
-
         }
 
         @Override
         public void init(@Nonnull Context context) throws Exception {
-            if ((!joinInfo.isEquiJoin() || !joinInfo.isInner())
-                    && context.processingGuarantee() != ProcessingGuarantee.NONE) {
+            if (!joinInfo.isEquiJoin() && context.processingGuarantee() != ProcessingGuarantee.NONE) {
                 throw new UnsupportedOperationException(
                         "Non-equi-join fault-tolerant stream-to-stream JOIN is not supported");
             }
@@ -525,6 +553,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             for (int i = 0; i < count; i++) {
                 processors.add(
                         new StreamToStreamJoinP(
+                                i,
                                 joinInfo,
                                 leftTimeExtractors,
                                 rightTimeExtractors,
@@ -557,14 +586,16 @@ public class StreamToStreamJoinP extends AbstractProcessor {
 
     private static final class BufferSnapshotValue implements DataSerializable {
         private JetSqlRow row;
+        private boolean unused;
         private int bufferOrdinal;
 
         @SuppressWarnings("unused")
         BufferSnapshotValue() {
         }
 
-        private BufferSnapshotValue(JetSqlRow row, int bufferOrdinal) {
+        private BufferSnapshotValue(JetSqlRow row, boolean unused, int bufferOrdinal) {
             this.row = row;
+            this.unused = unused;
             this.bufferOrdinal = bufferOrdinal;
         }
 
@@ -576,15 +607,21 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             return bufferOrdinal;
         }
 
+        public boolean unused() {
+            return unused;
+        }
+
         @Override
         public void writeData(ObjectDataOutput out) throws IOException {
             out.writeInt(bufferOrdinal);
+            out.writeBoolean(unused);
             out.writeObject(row);
         }
 
         @Override
         public void readData(ObjectDataInput in) throws IOException {
             bufferOrdinal = in.readInt();
+            unused = in.readBoolean();
             row = in.readObject(JetSqlRow.class);
         }
 
@@ -597,24 +634,21 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                 return false;
             }
             BufferSnapshotValue that = (BufferSnapshotValue) o;
-            return row.equals(that.row) && bufferOrdinal == that.bufferOrdinal;
+            return unused == that.unused && bufferOrdinal == that.bufferOrdinal && row.equals(that.row);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(row, bufferOrdinal);
+            return Objects.hash(row, unused, bufferOrdinal);
         }
 
         @Override
         public String toString() {
             return "BufferSnapshotValue{" +
                     "row=" + row.get(0) +
+                    ", unused=" + unused +
                     ", isLeftBuffer=" + bufferOrdinal +
                     '}';
-        }
-
-        public static BufferSnapshotValue bufferValue(@Nonnull JetSqlRow row, int bufferOrdinal) {
-            return new BufferSnapshotValue(row, bufferOrdinal);
         }
     }
 
@@ -656,10 +690,6 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                     "key=" + key +
                     ", timestamp=" + timestamp +
                     '}';
-        }
-
-        public static WatermarkStateValue wmValue(@Nonnull Byte key, @Nonnull Long timestamp) {
-            return new WatermarkStateValue(key, timestamp);
         }
     }
 }

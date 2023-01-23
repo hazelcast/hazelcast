@@ -40,7 +40,7 @@ import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.reset;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.verifyZeroInteractions;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 @RunWith(HazelcastParametrizedRunner.class)
@@ -91,7 +91,7 @@ public class ConfigStreamTest {
 
         byte[] actualBytes = new byte[expectedRead.getBytes().length];
         configStream.read(actualBytes);
-        verifyZeroInteractions(mockIs);
+        verifyNoInteractions(mockIs);
         assertArrayEquals(expectedRead.getBytes(), actualBytes);
     }
 
@@ -122,7 +122,7 @@ public class ConfigStreamTest {
 
         byte[] actualBytes = new byte[expectedRead.getBytes().length];
         configStream.read(actualBytes);
-        verifyZeroInteractions(mockIs);
+        verifyNoInteractions(mockIs);
         assertArrayEquals(expectedRead.getBytes(), actualBytes);
     }
 

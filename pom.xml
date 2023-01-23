@@ -92,7 +92,7 @@
         <!--<affinity.version>3.2.3</affinity.version>-->
         <antlr4.version>4.9.3</antlr4.version>
         <avro.version>1.11.1</avro.version>
-        <aws.sdk.version>1.12.383</aws.sdk.version>
+        <aws.sdk.version>1.12.387</aws.sdk.version>
         <classgraph.version>4.8.154</classgraph.version>
         <debezium.version>1.9.5.Final</debezium.version>
         <grpc.version>1.48.0</grpc.version>
@@ -103,7 +103,7 @@
         <jackson.version>2.14.1</jackson.version>
         <jackson.mapper.asl.version>1.9.14.jdk17-redhat-00001</jackson.mapper.asl.version>
         <jaxb.version>2.3.1</jaxb.version>
-        <jline.version>3.21.0</jline.version>
+        <jline.version>3.22.0</jline.version>
         <jms.api.version>2.0.1</jms.api.version>
         <json-surfer.version>0.11</json-surfer.version>
         <jsr107.api.version>1.1.1</jsr107.api.version> <!-- JCache -->
@@ -113,7 +113,7 @@
         <log4j.version>1.2.17.redhat-00008</log4j.version>
         <log4j2.version>2.19.0</log4j2.version>
         <mysql.connector.version>8.0.30</mysql.connector.version>
-        <netty.version>4.1.86.Final</netty.version>
+        <netty.version>4.1.87.Final</netty.version>
         <objenesis.version>3.3</objenesis.version>
         <osgi.version>4.2.0</osgi.version>
         <parquet.version>1.12.3</parquet.version>
@@ -133,7 +133,7 @@
         <slf4j.version>1.7.36</slf4j.version>
         <spring.version>4.3.0.RELEASE</spring.version>
         <snakeyaml.version>1.33</snakeyaml.version>
-        <snakeyaml.engine.version>2.5</snakeyaml.engine.version>
+        <snakeyaml.engine.version>2.6</snakeyaml.engine.version>
         <mongodb.version>4.8.1</mongodb.version>
 
         <!-- test dependencies -->
@@ -141,7 +141,7 @@
         <activemq.version>5.15.11</activemq.version>
         <assertj.version>3.15.0</assertj.version>
         <atomikos.version>3.9.3</atomikos.version>
-        <bytebuddy.version>1.12.21</bytebuddy.version>
+        <bytebuddy.version>1.12.22</bytebuddy.version>
         <commons-codec.version>1.15</commons-codec.version>
         <commons-io.version>2.11.0</commons-io.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
@@ -151,11 +151,11 @@
         <http.components.version>4.3.6</http.components.version>
         <jsr107.tck.version>1.1.1</jsr107.tck.version>
         <junit.version>4.13.2</junit.version>
-        <mockito.version>3.6.0</mockito.version>
+        <mockito.version>4.11.0</mockito.version>
         <powermock.version>2.0.9</powermock.version>
         <reflections.version>0.9.10</reflections.version>
         <testcontainers.version>1.17.6</testcontainers.version>
-        <jna.version>5.12.1</jna.version>
+        <jna.version>5.13.0</jna.version>
         <!--  When updating archunit.version, check/remove Java version assumptions in ArchUnitRulesTest.java -->
         <archunit.version>1.0.1</archunit.version>
         <errorprone.version>2.18.0</errorprone.version>
@@ -1817,7 +1817,7 @@
             <dependency>
                 <groupId>com.fasterxml.woodstox</groupId>
                 <artifactId>woodstox-core</artifactId>
-                <version>6.4.0</version>
+                <version>6.5.0</version>
             </dependency>
             <dependency>
                 <groupId>org.codehaus.woodstox</groupId>

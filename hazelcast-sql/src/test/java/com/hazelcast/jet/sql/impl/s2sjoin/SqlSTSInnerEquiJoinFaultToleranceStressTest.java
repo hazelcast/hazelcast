@@ -22,13 +22,14 @@ import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.kafka.KafkaSqlConnector;
 import com.hazelcast.map.IMap;
-import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
+import com.hazelcast.sql.SqlStatement;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
 import com.hazelcast.test.annotation.NightlyTest;
 import com.hazelcast.test.annotation.ParallelJVMTest;
+import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Assert;
 import org.junit.Before;
@@ -42,28 +43,34 @@ import org.junit.runners.Parameterized.UseParametersRunnerFactory;
 
 import java.io.IOException;
 import java.util.Collection;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
+import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.impl.util.ExceptionUtil.sneakyThrow;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_KEY_FORMAT;
 import static com.hazelcast.jet.sql.impl.connector.SqlConnector.OPTION_VALUE_FORMAT;
 import static java.util.Arrays.asList;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 
 @RunWith(HazelcastParametrizedRunner.class)
 @UseParametersRunnerFactory(HazelcastSerialParametersRunnerFactory.class)
 @Category({NightlyTest.class, ParallelJVMTest.class})
-public class SqlSTSJoinFaultToleranceStressTest extends SqlTestSupport {
+public class SqlSTSInnerEquiJoinFaultToleranceStressTest extends SqlTestSupport {
     private static final int INITIAL_PARTITION_COUNT = 1;
-    private static final int EVENTS_PER_SINK = 20_000;
-    private static final int SINK_ATTEMPTS = 10;
+    private static final int EVENTS_PER_SINK = 100_000;
+    private static final int SINK_ATTEMPTS = 5;
+    private static final int EVENTS_TO_PROCESS = EVENTS_PER_SINK * SINK_ATTEMPTS;
     private static KafkaTestSupport kafkaTestSupport;
 
     private SqlService sqlService;
     private Thread kafkaFeedThread;
     private String resultMapName;
-    private String resultMultiMapName;
     private String topicName;
     private IMap<Integer, String> resultMap;
-    private MultiMap<Integer, String> resultSet;
 
     private String query;
 
@@ -85,7 +92,7 @@ public class SqlSTSJoinFaultToleranceStressTest extends SqlTestSupport {
 
     @BeforeClass
     public static void beforeClass() throws IOException {
-        initialize(3, null);
+        initialize(5, null);
         kafkaTestSupport = KafkaTestSupport.create();
         kafkaTestSupport.createKafkaCluster();
     }
@@ -99,9 +106,7 @@ public class SqlSTSJoinFaultToleranceStressTest extends SqlTestSupport {
     public void setUp() throws Exception {
         sqlService = instance().getSql();
         resultMapName = randomName();
-        resultMultiMapName = randomName();
         resultMap = instance().getMap(resultMapName);
-        resultSet = instance().getMultiMap(resultMultiMapName);
         createMapping(resultMapName, Integer.class, String.class);
 
         topicName = createRandomTopic();
@@ -125,6 +130,18 @@ public class SqlSTSJoinFaultToleranceStressTest extends SqlTestSupport {
         query = "CREATE JOB job OPTIONS ('processingGuarantee'='" + processingGuarantee + "') AS " +
                 " SINK INTO " + resultMapName +
                 " SELECT s1.__key, s2.this FROM s1 JOIN s2 ON s1.__key = s2.__key";
+
+        Thread.sleep(120_000L);
+    }
+
+    @Override
+    @After
+    public void tearDown() {
+        try {
+            Thread.sleep(2000L);
+        } catch (InterruptedException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Test
@@ -132,15 +149,14 @@ public class SqlSTSJoinFaultToleranceStressTest extends SqlTestSupport {
         JobRestarter jobRestarter = new JobRestarter(instance().getJet());
         jobRestarter.start();
 
-        SqlResult result = sqlService.execute(query);
-        assertEquals(0, result.updateCount());
+        assertQueryFinished(query, resultMap, EVENTS_TO_PROCESS);
+        assertEquals(EVENTS_TO_PROCESS, resultMap.size());
         jobRestarter.finish();
 
-        for (int i = 1; i <= EVENTS_PER_SINK * SINK_ATTEMPTS; ++i) {
-//            assertEquals(1, resultSet.get(i).size());
-            resultMap.remove(i);
+        for (int i = 1; i <= EVENTS_TO_PROCESS; ++i) {
+            assertEquals("value-" + i, resultMap.remove(i));
         }
-        assertEquals(0, resultSet.size());
+        assertEquals(0, resultMap.size());
 
         try {
             kafkaFeedThread.join();
@@ -167,9 +183,11 @@ public class SqlSTSJoinFaultToleranceStressTest extends SqlTestSupport {
                     if (finish) {
                         return;
                     }
-                    Thread.sleep(1000L);
-                    assert jetService.getJobs().size() == 1;
+                    Thread.sleep(500L);
+                    assert jetService.getJobs().size() == 1 : "Jobs active " + jetService.getJobs().size();
                     Job job = jetService.getJobs().get(0);
+                    assertNotNull(job);
+                    assertJobStatusEventually(job, RUNNING);
 //                    restartGraceful ? job.restart() : job.;
                     job.restart();
                 } catch (InterruptedException e) {
@@ -193,14 +211,50 @@ public class SqlSTSJoinFaultToleranceStressTest extends SqlTestSupport {
         int itemsSank = 0;
         for (int sink = 1; sink <= SINK_ATTEMPTS; sink++) {
             StringBuilder queryBuilder = new StringBuilder("INSERT INTO " + topicName + " VALUES ");
-            for (int i = 1; i < EVENTS_PER_SINK; ++i) {
+            for (int i = 1; i <= EVENTS_PER_SINK; ++i) {
                 ++itemsSank;
                 queryBuilder.append("(").append(itemsSank).append(", 'value-").append(itemsSank).append("'), ");
             }
             queryBuilder.append("(").append(itemsSank).append(", 'value-").append(itemsSank).append("')");
 
-            assert itemsSank == EVENTS_PER_SINK * sink;
+            assertEquals(itemsSank, EVENTS_PER_SINK * sink);
             sqlService.execute(queryBuilder.toString());
+            System.err.println("Items sank " + itemsSank);
         }
+    }
+
+    private static void assertQueryFinished(String sql, IMap map, int elements) {
+        SqlService sqlService = instance().getSql();
+        CompletableFuture<Void> future = new CompletableFuture<>();
+
+        Thread thread = new Thread(() -> {
+            SqlStatement statement = new SqlStatement(sql);
+
+            try (SqlResult result = sqlService.execute(statement)) {
+                while (map.size() < elements) {
+                    System.err.println("THREAD SLEEP");
+                    Thread.sleep(500L);
+                }
+                future.complete(null);
+            } catch (Throwable e) {
+                e.printStackTrace();
+                future.completeExceptionally(e);
+            }
+        });
+
+        thread.start();
+
+        try {
+            try {
+                future.get(2, TimeUnit.MINUTES);
+            } catch (TimeoutException e) {
+                thread.interrupt();
+                thread.join();
+            }
+        } catch (Exception e) {
+            throw sneakyThrow(e);
+        }
+
+        assertThat(map.size()).isEqualTo(elements);
     }
 }

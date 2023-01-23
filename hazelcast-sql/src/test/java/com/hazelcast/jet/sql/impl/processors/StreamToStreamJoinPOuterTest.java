@@ -26,6 +26,7 @@ import com.hazelcast.jet.core.test.TestSupport;
 import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.sql.impl.JetJoinInfo;
 import com.hazelcast.sql.impl.expression.Expression;
+import com.hazelcast.sql.impl.expression.predicate.ComparisonPredicate;
 import com.hazelcast.sql.impl.row.JetSqlRow;
 import com.hazelcast.test.HazelcastParametrizedRunner;
 import com.hazelcast.test.HazelcastSerialParametersRunnerFactory;
@@ -47,6 +48,7 @@ import static com.hazelcast.jet.core.test.TestSupport.in;
 import static com.hazelcast.jet.core.test.TestSupport.out;
 import static com.hazelcast.jet.core.test.TestSupport.processorAssertion;
 import static com.hazelcast.jet.sql.SqlTestSupport.jetRow;
+import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinPInnerTest.SAME_ITEMS_ANY_ORDER_EQUIVALENT_WMS;
 import static com.hazelcast.jet.sql.impl.processors.StreamToStreamJoinPInnerTest.createConditionFromPostponeTimeMap;
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.singletonMap;
@@ -94,7 +96,7 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
         SupplierEx<Processor> supplier = createProcessor(1, 1);
 
         TestSupport.verifyProcessor(supplier)
-                .disableSnapshots()
+                .outputChecker(SAME_ITEMS_ANY_ORDER_EQUIVALENT_WMS)
                 .expectExactOutput(
                         in(0, wm(1L, (byte) 0)),
                         in(1, wm(1L, (byte) 1)),
@@ -113,11 +115,11 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
 
     @Test
     public void test_rowContainsMultipleColumns() {
+        // l.time == r.time
         postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 0L));
         postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
 
         TestSupport.verifyProcessor(isLeft ? createProcessor(1, 2) : createProcessor(2, 1))
-                .disableSnapshots() // uncomment after outer join snapshot support.
                 .expectExactOutput(
                         in(ordinal0, jetRow(3L)),
                         in(ordinal0, jetRow(4L)),
@@ -142,7 +144,6 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
         SupplierEx<Processor> supplier = createProcessor(1, 1);
 
         TestSupport.verifyProcessor(supplier)
-                .disableSnapshots()
                 .expectExactOutput(
                         in(ordinal1, wm(10, ordinal1)),
                         processorAssertion((StreamToStreamJoinP p) ->
@@ -197,7 +198,6 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
         SupplierEx<Processor> supplier = createProcessor(2, 1);
 
         TestSupport.verifyProcessor(supplier)
-                .disableSnapshots()
                 .expectExactOutput(
                         in(1, wm(10, (byte) 2)),
                         in(0, wm(10, (byte) 1)),
@@ -228,8 +228,15 @@ public class StreamToStreamJoinPOuterTest extends JetTestSupport {
 
     private SupplierEx<Processor> createProcessor(int leftColumnCount, int rightColumnCount) {
         Expression<Boolean> condition = createConditionFromPostponeTimeMap(postponeTimeMap);
-        JetJoinInfo joinInfo = new JetJoinInfo(joinType, new int[0], new int[0], condition, condition);
+        int[] left = new int[0];
+        int[] right = new int[0];
+        if (condition instanceof ComparisonPredicate) {
+            left = new int[]{0};
+            right = new int[]{0};
+        }
+        JetJoinInfo joinInfo = new JetJoinInfo(joinType, left, right, condition, condition);
         return () -> new StreamToStreamJoinP(
+                0,
                 joinInfo,
                 leftExtractors,
                 rightExtractors,

@@ -21,7 +21,7 @@ import com.hazelcast.cp.IAtomicLong;
 import java.util.concurrent.atomic.AtomicLong;
 
 import static com.hazelcast.mock.MockUtil.delegateTo;
-import static org.mockito.Matchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
