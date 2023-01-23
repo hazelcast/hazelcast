@@ -388,4 +388,10 @@ public class PreconditionsTest {
 
         assertThat(checkRequiredProperty(properties, "some-key")).isEqualTo("some-value");
     }
+    @Test
+    public void test_checkRequiredProperty_when_null() {
+        Assertions.assertThatThrownBy(() -> checkRequiredProperty(null, "some-key"))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessage("Properties are required");
+    }
 }
