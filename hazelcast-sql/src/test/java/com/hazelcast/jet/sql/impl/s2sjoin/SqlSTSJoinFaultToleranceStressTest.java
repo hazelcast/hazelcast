@@ -16,13 +16,13 @@
 
 package com.hazelcast.jet.sql.impl.s2sjoin;
 
-import com.hazelcast.collection.IList;
 import com.hazelcast.jet.JetService;
 import com.hazelcast.jet.Job;
-import com.hazelcast.jet.datamodel.Tuple2;
 import com.hazelcast.jet.kafka.impl.KafkaTestSupport;
 import com.hazelcast.jet.sql.SqlTestSupport;
 import com.hazelcast.jet.sql.impl.connector.kafka.KafkaSqlConnector;
+import com.hazelcast.map.IMap;
+import com.hazelcast.multimap.MultiMap;
 import com.hazelcast.sql.SqlResult;
 import com.hazelcast.sql.SqlService;
 import com.hazelcast.test.HazelcastParametrizedRunner;
@@ -59,10 +59,11 @@ public class SqlSTSJoinFaultToleranceStressTest extends SqlTestSupport {
 
     private SqlService sqlService;
     private Thread kafkaFeedThread;
-    private String resultListName;
+    private String resultMapName;
+    private String resultMultiMapName;
     private String topicName;
-    private IList<Tuple2<Integer, String>> map;
-    private AssertionError ex;
+    private IMap<Integer, String> resultMap;
+    private MultiMap<Integer, String> resultSet;
 
     private String query;
 
@@ -97,9 +98,11 @@ public class SqlSTSJoinFaultToleranceStressTest extends SqlTestSupport {
     @Before
     public void setUp() throws Exception {
         sqlService = instance().getSql();
-        resultListName = randomName();
-        createMapping(resultListName, Integer.class, String.class);
-        map = instance().getList(resultListName);
+        resultMapName = randomName();
+        resultMultiMapName = randomName();
+        resultMap = instance().getMap(resultMapName);
+        resultSet = instance().getMultiMap(resultMultiMapName);
+        createMapping(resultMapName, Integer.class, String.class);
 
         topicName = createRandomTopic();
         sqlService.execute("CREATE MAPPING " + topicName + ' '
@@ -120,7 +123,7 @@ public class SqlSTSJoinFaultToleranceStressTest extends SqlTestSupport {
                 "SELECT * FROM TABLE(IMPOSE_ORDER(TABLE " + topicName + " , DESCRIPTOR(__key), 5))");
 
         query = "CREATE JOB job OPTIONS ('processingGuarantee'='" + processingGuarantee + "') AS " +
-                " SINK INTO " + resultListName +
+                " SINK INTO " + resultMapName +
                 " SELECT s1.__key, s2.this FROM s1 JOIN s2 ON s1.__key = s2.__key";
     }
 
@@ -131,8 +134,13 @@ public class SqlSTSJoinFaultToleranceStressTest extends SqlTestSupport {
 
         SqlResult result = sqlService.execute(query);
         assertEquals(0, result.updateCount());
-        assertTrueEventually(() -> assertEquals(EVENTS_PER_SINK, map.size()));
         jobRestarter.finish();
+
+        for (int i = 1; i <= EVENTS_PER_SINK * SINK_ATTEMPTS; ++i) {
+//            assertEquals(1, resultSet.get(i).size());
+            resultMap.remove(i);
+        }
+        assertEquals(0, resultSet.size());
 
         try {
             kafkaFeedThread.join();
