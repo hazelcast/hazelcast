@@ -341,7 +341,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
             rightBufferStream = buffer[1].content()
                     .stream()
                     .map(row -> entry(
-                            joinInfo.isEquiJoin() ? project(row, joinInfo.leftEquiJoinIndices()) : row.hashCode(),
+                            joinInfo.isEquiJoin() ? project(row, joinInfo.rightEquiJoinIndices()) : row.hashCode(),
                             new BufferSnapshotValue(row, unusedEventsTracker.contains(row), 1)
                     ));
 
