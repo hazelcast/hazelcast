@@ -37,7 +37,6 @@ import org.junit.ClassRule;
 import org.junit.Rule;
 import org.junit.rules.TestName;
 import org.testcontainers.containers.MongoDBContainer;
-import org.testcontainers.utility.DockerImageName;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -53,6 +52,7 @@ import static org.junit.Assert.assertEquals;
 import static com.hazelcast.test.DockerTestUtil.assumeDockerEnabled;
 
 public abstract class AbstractMongoDBTest extends SimpleTestInClusterSupport {
+    static final String TEST_MONGO_VERSION = System.getProperty("test.mongo.version", "6.0.3");
 
     static final String SOURCE_NAME = "source";
     static final String SINK_NAME = "sink";
@@ -62,10 +62,9 @@ public abstract class AbstractMongoDBTest extends SimpleTestInClusterSupport {
 
     private static final Map<String, String> TEST_NAME_TO_DEFAULT_DB_NAME = new ConcurrentHashMap<>();
     private static final AtomicInteger COUNTER = new AtomicInteger();
-    private static final DockerImageName DOCKER_IMAGE_NAME = DockerImageName.parse("mongo:6.0.3");
 
     @ClassRule
-    public static MongoDBContainer mongoContainer = new MongoDBContainer(DOCKER_IMAGE_NAME);
+    public static MongoDBContainer mongoContainer = new MongoDBContainer("mongo:" + TEST_MONGO_VERSION);
 
     @Rule
     public TestName testName = new TestName();

@@ -61,7 +61,7 @@ import static org.junit.Assert.assertNull;
 public class MongoDBSourceTest extends AbstractMongoDBTest {
 
     private static final int COUNT_IN_BATCH = 10;
-    private static final int FILTERED_BOUND = 1;
+    private static final int FILTERED_BOUND = 5;
     @Parameter(0)
     public boolean filter;
     @Parameter(1)
@@ -117,7 +117,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
         collection(testName.getMethodName() + "_second")
                 .insertMany(range(0, 5)
-                        .mapToObj(i -> newDocument("key", i).append("val", i).append("test", "other"))
+                        .mapToObj(i -> newDocument("key", i).append("val", i + 5).append("test", "other"))
                         .collect(toList()));
         assertEquals(collection().countDocuments(), 5L);
 
@@ -132,7 +132,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
         instance().getJet().newJob(pipeline, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE)).join();
 
-        assertTrueEventually(() -> contentAsserts(list, filter ? FILTERED_BOUND : 0, 4, filter ? 8 : 10));
+        assertTrueEventually(() -> contentAsserts(list, filter ? FILTERED_BOUND : 0, 9, filter ? 8 : 10));
     }
 
     private Batch<?> batchFilters(Batch<?> sourceBuilder) {
@@ -223,7 +223,6 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
     @Test
     public void testStream_whenWatchAll() {
-        sleepSeconds(1);
         IList<Object> list = instance().getList(testName.getMethodName());
 
         String connectionString = mongoContainer.getConnectionString();
@@ -259,7 +258,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
         col2.insertOne(newDocument("val", 6));
         col2.insertOne(newDocument("val", 16).append("foo", "bar"));
 
-        assertTrueEventually(() -> contentAsserts(list, filter ? 11  : 1, 16, filter ? 6 : 12));
+        assertTrueEventually(() -> contentAsserts(list, filter ? 5  : 1, 16, filter ? 8 : 12));
 
         job.cancel();
     }

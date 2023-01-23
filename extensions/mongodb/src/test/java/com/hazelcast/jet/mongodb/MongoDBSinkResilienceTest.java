@@ -57,6 +57,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.hazelcast.jet.config.ProcessingGuarantee.EXACTLY_ONCE;
 import static com.hazelcast.jet.core.JobStatus.RUNNING;
+import static com.hazelcast.jet.mongodb.AbstractMongoDBTest.TEST_MONGO_VERSION;
 import static com.hazelcast.jet.pipeline.JournalInitialPosition.START_FROM_OLDEST;
 import static eu.rekawek.toxiproxy.model.ToxicDirection.DOWNSTREAM;
 import static eu.rekawek.toxiproxy.model.ToxicDirection.UPSTREAM;
@@ -67,12 +68,11 @@ import static org.junit.Assert.assertEquals;
 @Category({QuickTest.class}) // TODO #23348 move it to nightly test
 public class MongoDBSinkResilienceTest extends SimpleTestInClusterSupport {
     private static final ILogger logger = Logger.getLogger(MongoDBSinkResilienceTest.class);
-    private static final DockerImageName DOCKER_IMAGE_NAME = DockerImageName.parse("mongo:6.0.3");
 
     @Rule
     public Network network = Network.newNetwork();
     @Rule
-    public MongoDBContainer mongoContainer = new MongoDBContainer(DOCKER_IMAGE_NAME)
+    public MongoDBContainer mongoContainer = new MongoDBContainer("mongo:" + TEST_MONGO_VERSION)
             .withExposedPorts(27017)
             .withNetwork(network)
             .withNetworkAliases("mongo")
