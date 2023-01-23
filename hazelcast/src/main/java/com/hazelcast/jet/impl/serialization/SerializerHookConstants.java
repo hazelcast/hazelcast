@@ -63,6 +63,9 @@ public final class SerializerHookConstants {
     public static final int CDC_RECORD_PART = -341;
     public static final int CDC_SOURCE_STATE = -342;
     public static final int MONGO_TRANSACTION_OPTIONS = -343;
+    public static final int MONGO_READ_CONCERN = -344;
+    public static final int MONGO_READ_LEVEL = -345;
+    public static final int MONGO_WRITE_CONCERN = -346;
 
 
     // reserved for hadoop module: -380 to -390

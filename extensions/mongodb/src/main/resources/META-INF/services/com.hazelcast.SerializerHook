@@ -13,5 +13,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 com.hazelcast.jet.mongodb.MongoDBSerializerHooks$TransactionOptionsHook
+com.hazelcast.jet.mongodb.MongoDBSerializerHooks$ReadConcernLevelHook
+com.hazelcast.jet.mongodb.MongoDBSerializerHooks$ReadConcernHook
+com.hazelcast.jet.mongodb.MongoDBSerializerHooks$WriteConcernHook
+
