@@ -112,12 +112,12 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
     public void testBatchDatabase() {
         IList<Object> list = instance().getList(testName.getMethodName());
 
-        collection().insertMany(range(0, 5).mapToObj(i -> newDocument("key", i).append("val", i)).collect(toList()));
+        collection().insertMany(range(1, 6).mapToObj(i -> newDocument("key", i).append("val", i)).collect(toList()));
         assertEquals(collection().countDocuments(), 5L);
 
         collection(testName.getMethodName() + "_second")
-                .insertMany(range(0, 5)
-                        .mapToObj(i -> newDocument("key", i).append("val", i + 5).append("test", "other"))
+                .insertMany(range(1, 6)
+                        .mapToObj(i -> newDocument("key", i).append("val", i).append("test", "other"))
                         .collect(toList()));
         assertEquals(collection().countDocuments(), 5L);
 
@@ -132,7 +132,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
         instance().getJet().newJob(pipeline, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE)).join();
 
-        assertTrueEventually(() -> contentAsserts(list, filter ? FILTERED_BOUND : 0, 9, filter ? 8 : 10));
+        assertTrueEventually(() -> contentAsserts(list, filter ? FILTERED_BOUND : 1, 5, filter ? 2 : 10));
     }
 
     private Batch<?> batchFilters(Batch<?> sourceBuilder) {
