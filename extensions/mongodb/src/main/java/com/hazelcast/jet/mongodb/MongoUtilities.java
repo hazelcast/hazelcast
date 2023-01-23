@@ -36,6 +36,17 @@ final class MongoUtilities {
     private MongoUtilities() {
     }
 
+    /**
+     * Adds an aggregate to the query, that for each document will calculate
+     * {@code document._id.getTimestamp().getTime() MOD totalParallelism == processorIndex}, using MongoDB
+     * <a href="https://www.mongodb.com/docs/manual/reference/operator/aggregation/function/">function aggregate</a>.
+     *
+     * Only if this comparison is true, the document will be read by given processor (filtering is done on MongoDB
+     * side as well).
+     *
+     * Additional, temporary column {@code _thisPartition} will be created during this calculation and will be removed
+     * at the end of calculation.
+     */
     @Nonnull
     static List<Bson> partitionAggregate(int totalParallelism, int processorIndex, boolean stream) {
         List<Bson> aggregateList = new ArrayList<>(3);

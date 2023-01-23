@@ -45,6 +45,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
+import static com.hazelcast.jet.mongodb.Mappers.defaultCodecRegistry;
 import static java.util.Arrays.asList;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
@@ -70,9 +71,8 @@ public abstract class AbstractMongoDBTest extends SimpleTestInClusterSupport {
     public TestName testName = new TestName();
 
     @BeforeClass
-    public static void beforeClass() {
+    public static void setUpHazelcast() {
         assumeDockerEnabled();
-        mongoContainer.start();
         Config config = new Config();
         config.addMapConfig(new MapConfig("*").setEventJournalConfig(new EventJournalConfig().setEnabled(true)));
         config.getJetConfig().setEnabled(true);
@@ -80,7 +80,7 @@ public abstract class AbstractMongoDBTest extends SimpleTestInClusterSupport {
     }
 
     @BeforeClass
-    public static void setUp() {
+    public static void setUpMongo() {
         mongo = MongoClients.create(mongoContainer.getConnectionString());
 
         // workaround to obtain a timestamp before starting the test
@@ -132,7 +132,7 @@ public abstract class AbstractMongoDBTest extends SimpleTestInClusterSupport {
     }
 
     MongoCollection<Document> collection(String databaseName, String collectionName) {
-        return mongo.getDatabase(databaseName).getCollection(collectionName);
+        return mongo.getDatabase(databaseName).getCollection(collectionName).withCodecRegistry(defaultCodecRegistry());
     }
 
     static MongoClient mongoClient(String connectionString) {

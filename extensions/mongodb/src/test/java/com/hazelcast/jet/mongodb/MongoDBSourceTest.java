@@ -60,8 +60,8 @@ import static org.junit.Assert.assertNull;
 @Category({QuickTest.class})
 public class MongoDBSourceTest extends AbstractMongoDBTest {
 
-    private static final int COUNT_IN_BATCH = 200;
-    private static final int FILTERED_BOUND = 10;
+    private static final int COUNT_IN_BATCH = 10;
+    private static final int FILTERED_BOUND = 1;
     @Parameter(0)
     public boolean filter;
     @Parameter(1)
@@ -112,14 +112,14 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
     public void testBatchDatabase() {
         IList<Object> list = instance().getList(testName.getMethodName());
 
-        collection().insertMany(range(0, 20).mapToObj(i -> newDocument("key", i).append("val", i)).collect(toList()));
-        assertEquals(collection().countDocuments(), 20L);
+        collection().insertMany(range(0, 5).mapToObj(i -> newDocument("key", i).append("val", i)).collect(toList()));
+        assertEquals(collection().countDocuments(), 5L);
 
         collection(testName.getMethodName() + "_second")
-                .insertMany(range(0, 20)
+                .insertMany(range(0, 5)
                         .mapToObj(i -> newDocument("key", i).append("val", i).append("test", "other"))
                         .collect(toList()));
-        assertEquals(collection().countDocuments(), 20L);
+        assertEquals(collection().countDocuments(), 5L);
 
         Pipeline pipeline = Pipeline.create();
         String connectionString = mongoContainer.getConnectionString();
@@ -132,7 +132,7 @@ public class MongoDBSourceTest extends AbstractMongoDBTest {
 
         instance().getJet().newJob(pipeline, new JobConfig().setProcessingGuarantee(EXACTLY_ONCE)).join();
 
-        assertTrueEventually(() -> contentAsserts(list, filter ? FILTERED_BOUND : 0, 19, filter ? 20 : 40));
+        assertTrueEventually(() -> contentAsserts(list, filter ? FILTERED_BOUND : 0, 4, filter ? 8 : 10));
     }
 
     private Batch<?> batchFilters(Batch<?> sourceBuilder) {

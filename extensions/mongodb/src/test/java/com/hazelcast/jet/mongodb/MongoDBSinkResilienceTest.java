@@ -147,8 +147,8 @@ public class MongoDBSinkResilienceTest extends SimpleTestInClusterSupport {
         assertTrueEventually(() -> assertEquals(1, hz.getCluster().getMembers().size()));
 
         continueCounting.set(false);
-        MongoClient directClinent = MongoClients.create(connectionString);
-        MongoCollection<Document> collection = directClinent.getDatabase(databaseName).getCollection(collectionName);
+        MongoClient directClient = MongoClients.create(connectionString);
+        MongoCollection<Document> collection = directClient.getDatabase(databaseName).getCollection(collectionName);
         assertTrueEventually(() ->
                 assertEquals(totalCount.get(), collection.countDocuments())
         );

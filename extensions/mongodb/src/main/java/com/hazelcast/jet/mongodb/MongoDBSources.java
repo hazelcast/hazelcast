@@ -45,6 +45,18 @@ public final class MongoDBSources {
     /**
      * Creates as builder for new batch mongo source. Equivalent to calling {@link MongoDBSourceBuilder#batch}.
      *
+     * Example usage:
+     * <pre>{@code
+     * BatchSource<Document> batchSource =
+     *         MongoDBSources.batch("batch-source", () -> MongoClients.create("mongodb://127.0.0.1:27017"))
+     *                 .into("myDatabase", "myCollection")
+     *                 .filter(new Document("age", new Document("$gt", 10)),
+     *                 .projection(new Document("age", 1))
+     *         );
+     * Pipeline p = Pipeline.create();
+     * BatchStage<Document> srcStage = p.readFrom(batchSource);
+     * }</pre>
+     *
      * @since 5.3
      * @param name descriptive name for the source (diagnostic purposes) client.
      * @param clientSupplier a function that creates MongoDB client.
@@ -58,6 +70,18 @@ public final class MongoDBSources {
 
     /**
      * Creates as builder for new stream mongo source. Equivalent to calling {@link MongoDBSourceBuilder#stream}.
+     *
+     * Example usage:
+     * <pre>{@code
+     * StreamSource<Document> streamSource =
+     *         MongoDBSources.stream("batch-source", () -> MongoClients.create("mongodb://127.0.0.1:27017"))
+     *                 .into("myDatabase", "myCollection")
+     *                 .filter(new Document("age", new Document("$gt", 10)),
+     *                 .projection(new Document("age", 1))
+     *         );
+     * Pipeline p = Pipeline.create();
+     * StreamStage<Document> srcStage = p.readFrom(streamSource);
+     * }</pre>
      *
      * @since 5.3
      *

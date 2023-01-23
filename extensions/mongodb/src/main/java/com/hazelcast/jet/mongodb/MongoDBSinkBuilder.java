@@ -175,9 +175,9 @@ public final class MongoDBSinkBuilder<T> {
                 "Only select*Fn or *Name functions should be called, never mixed");
 
         if (databaseName != null) {
-        return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism,
-                ProcessorSupplier.of(() -> new WriteMongoP<>(clientSupplier, databaseName, collectionName,
-                        documentClass, documentIdentityFn, updateOptionsChanger, fieldName))));
+            return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism,
+                    ProcessorSupplier.of(() -> new WriteMongoP<>(clientSupplier, databaseName, collectionName,
+                            documentClass, documentIdentityFn, updateOptionsChanger, fieldName))));
         } else {
             return Sinks.fromProcessor(name, ProcessorMetaSupplier.of(preferredLocalParallelism,
                     ProcessorSupplier.of(() -> new WriteMongoP<>(clientSupplier, selectDatabaseNameFn,
