@@ -62,7 +62,6 @@ import static com.hazelcast.test.ReflectionsHelper.filterNonConcreteClasses;
 import static com.hazelcast.test.ReflectionsHelper.filterNonHazelcastClasses;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**

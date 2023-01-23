@@ -31,7 +31,6 @@ import org.junit.runner.RunWith;
 
 import java.io.EOFException;
 import java.nio.ByteOrder;
-import java.util.Arrays;
 
 import static com.hazelcast.internal.nio.IOUtil.readData;
 import static java.nio.ByteOrder.BIG_ENDIAN;

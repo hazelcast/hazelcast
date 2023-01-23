@@ -39,7 +39,6 @@ import java.util.Collection;
 import static com.hazelcast.spi.properties.ClusterProperty.PARTITION_BACKUP_SYNC_INTERVAL;
 import static com.hazelcast.test.Accessors.getPartitionService;
 import static java.util.Arrays.asList;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 
 @RunWith(HazelcastParametrizedRunner.class)

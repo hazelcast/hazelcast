@@ -59,7 +59,6 @@ import java.io.Serializable;
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.nio.file.Files;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -216,7 +215,7 @@ public class BasicMapTest extends HazelcastTestSupport {
 
         float[] floatArray = {(float) 1, (float) 2};
         map.put("float", floatArray);
-        assertArrayEquals(floatArray, (float[]) map.get("float"), 0.0);
+        assertArrayEquals(floatArray, (float[]) map.get("float"), 0.0f);
 
         double[] doubleArray = {(double) 1, (double) 2};
         map.put("double", doubleArray);
