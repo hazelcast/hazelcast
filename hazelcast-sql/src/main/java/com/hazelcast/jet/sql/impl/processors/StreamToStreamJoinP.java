@@ -304,8 +304,8 @@ public class StreamToStreamJoinP extends AbstractProcessor {
     public boolean saveToSnapshot() {
         if (snapshotTraverser == null) {
             List<Entry<?, ?>> snapshotList = new ArrayList<>();
-            Stream<Entry<?, ?>> leftBufferStream = Stream.empty();
-            Stream<Entry<?, ?>> rightBufferStream = Stream.empty();
+            Stream<Entry<?, ?>> leftBufferStream;
+            Stream<Entry<?, ?>> rightBufferStream;
 
             for (Entry<Byte, Long> e : wmState.entrySet()) {
                 Long timestamp = e.getValue();
@@ -346,6 +346,7 @@ public class StreamToStreamJoinP extends AbstractProcessor {
                     ));
 
             if (!joinInfo.isEquiJoin()) {
+                // Note : details are described in TDD : docs/design/sql/15-stream-to-stream-join.md
                 if (joinInfo.isRightOuter() && processorIndex == 0) {
                     leftBufferStream = buffer[0].content()
                             .stream()

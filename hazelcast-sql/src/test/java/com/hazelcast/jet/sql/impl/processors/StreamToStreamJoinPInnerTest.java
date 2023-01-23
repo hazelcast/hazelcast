@@ -300,7 +300,7 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         postponeTimeMap.put((byte) 0, singletonMap((byte) 1, 0L));
         postponeTimeMap.put((byte) 1, singletonMap((byte) 0, 0L));
 
-        ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(2, 1, 1, 2));
+        ProcessorSupplier processorSupplier = ProcessorSupplier.of(createProcessor(2, 1, 0, 2));
 
         TestSupport.verifyProcessor(processorSupplier)
                 .outputChecker(TestSupport.SAME_ITEMS_ANY_ORDER)
@@ -424,14 +424,20 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
         if (postponeTimeMap.size() == 2
                 && postponeTimeMap.get((byte) 0).get((byte) 1) == 0L
                 && postponeTimeMap.get((byte) 1).get((byte) 0) == 0L) {
+            int leftIndex = 0;
+            int rightIndex = 1;
+            if (wmKeyToColumnIndex.length > 0) {
+                leftIndex = wmKeyToColumnIndex[0];
+                rightIndex = wmKeyToColumnIndex[1];
+            }
             return ComparisonPredicate.create(
-                    ColumnExpression.create(0, BIGINT),
-                    ColumnExpression.create(1, BIGINT),
+                    ColumnExpression.create(leftIndex, BIGINT),
+                    ColumnExpression.create(rightIndex, BIGINT),
                     ComparisonMode.EQUALS);
         }
 
         List<Expression<Boolean>> conditions = new ArrayList<>();
-        
+
         for (Entry<Byte, Map<Byte, Long>> enOuter : postponeTimeMap.entrySet()) {
             for (Entry<Byte, Long> enInner : enOuter.getValue().entrySet()) {
                 int leftColumnIndex = wmKeyToColumnIndexMap.getOrDefault(enOuter.getKey(), enOuter.getKey());
@@ -451,7 +457,13 @@ public class StreamToStreamJoinPInnerTest extends JetTestSupport {
 
     private SupplierEx<Processor> createProcessor(int leftColumnCount, int rightColumnCount, int... wmKeyToColumnIndex) {
         Expression<Boolean> condition = createConditionFromPostponeTimeMap(postponeTimeMap, wmKeyToColumnIndex);
-        JetJoinInfo joinInfo = new JetJoinInfo(INNER, new int[0], new int[0], condition, condition);
+        int[] left = new int[0];
+        int[] right = new int[0];
+        if (condition instanceof ComparisonPredicate) {
+            left = new int[]{0};
+            right = new int[]{0};
+        }
+        JetJoinInfo joinInfo = new JetJoinInfo(INNER, left, right, condition, condition);
         return () -> new StreamToStreamJoinP(
                 0,
                 joinInfo,
