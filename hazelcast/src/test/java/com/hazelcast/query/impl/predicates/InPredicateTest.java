@@ -28,7 +28,6 @@ import org.junit.runner.RunWith;
 import static com.hazelcast.query.impl.predicates.PredicateTestUtils.entry;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 @RunWith(HazelcastParallelClassRunner.class)
@@ -65,12 +64,12 @@ public class InPredicateTest {
         assertTrue(new InPredicate("this", Float.NaN).apply(entry(-Double.NaN)));
 
         // whereas in Java
-        assertNotEquals(Double.NaN, Double.NaN, 0.0);
-        assertNotEquals(Float.NaN, Float.NaN, 0.0);
-        assertNotEquals(Double.NaN, -Double.NaN, 0.0);
-        assertNotEquals(Float.NaN, -Float.NaN, 0.0);
-        assertNotEquals(Double.NaN, -Float.NaN, 0.0);
-        assertNotEquals(Float.NaN, -Double.NaN, 0.0);
+        assertFalse(Double.NaN == Double.NaN);
+        assertFalse(Float.NaN == Float.NaN);
+        assertFalse(Double.NaN == -Double.NaN);
+        assertFalse(Float.NaN == -Float.NaN);
+        assertFalse(Double.NaN == -Float.NaN);
+        assertFalse(Float.NaN == -Double.NaN);
     }
 
     @Test
