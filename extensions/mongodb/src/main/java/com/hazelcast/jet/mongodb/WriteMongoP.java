@@ -82,7 +82,6 @@ public class WriteMongoP<I> extends AbstractProcessor {
      * Max number of items processed (written) in one invocation of {@linkplain #process}.
      */
     private static final int MAX_BATCH_SIZE = 2_000;
-    private static final InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
 
     private final MongoDbConnection connection;
     private final Class<I> documentType;
@@ -163,6 +162,7 @@ public class WriteMongoP<I> extends AbstractProcessor {
         }
         this.replaceOptions = options;
         this.commitRetryStrategy = commitRetryStrategy;
+        InternalSerializationService serializationService = new DefaultSerializationServiceBuilder().build();
         this.transactionOptions = serializationService.toObject(new HeapData(transactionOptions));
     }
 
